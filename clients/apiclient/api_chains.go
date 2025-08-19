@@ -710,6 +710,8 @@ func (r ApiEstimateGasOnledgerRequest) Execute() (*OnLedgerEstimationResponse, *
 /*
 EstimateGasOnledger Estimates gas for a given on-ledger ISC request
 
+Estimates gas usage for a given on-ledger ISC request. To calculate required L1 and L2 gas budgets use values of L1.GasBudget and L2.GasBurned respectively.
+
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @return ApiEstimateGasOnledgerRequest
 */

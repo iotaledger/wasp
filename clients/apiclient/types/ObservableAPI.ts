@@ -350,6 +350,7 @@ export class ObservableChainsApi {
     }
 
     /**
+     * Estimates gas usage for a given on-ledger ISC request. To calculate required L1 and L2 gas budgets use values of L1.GasBudget and L2.GasBurned respectively.
      * Estimates gas for a given on-ledger ISC request
      * @param request Request
      */
@@ -373,6 +374,7 @@ export class ObservableChainsApi {
     }
 
     /**
+     * Estimates gas usage for a given on-ledger ISC request. To calculate required L1 and L2 gas budgets use values of L1.GasBudget and L2.GasBurned respectively.
      * Estimates gas for a given on-ledger ISC request
      * @param request Request
      */

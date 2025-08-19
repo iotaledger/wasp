@@ -910,6 +910,9 @@ paths:
       x-codegen-request-body-name: Request
   /v1/chain/estimategas-onledger:
     post:
+      description: Estimates gas usage for a given on-ledger ISC request. To calculate
+        required L1 and L2 gas budgets use values of L1.GasBudget and L2.GasBurned
+        respectively.
       operationId: estimateGasOnledger
       requestBody:
         content:

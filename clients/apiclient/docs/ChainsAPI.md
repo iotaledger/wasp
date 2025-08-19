@@ -408,6 +408,8 @@ No authorization required
 
 Estimates gas for a given on-ledger ISC request
 
+
+
 ### Example
 
 ```go

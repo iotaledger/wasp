@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
+
 	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
@@ -12,7 +13,7 @@ type RequestJSON struct {
 	Allowance      *AssetsJSON       `json:"allowance" swagger:"required"`
 	CallTarget     CallTargetJSON    `json:"callTarget" swagger:"required"`
 	Assets         AssetsJSON        `json:"assets" swagger:"required"`
-	GasBudget      string            `json:"gasBudget,string" swagger:"required,desc(The gas budget (uint64 as string))"`
+	GasBudget      string            `json:"gasBudget" swagger:"required,desc(The gas budget (uint64 as string))"`
 	IsEVM          bool              `json:"isEVM" swagger:"required"`
 	IsOffLedger    bool              `json:"isOffLedger" swagger:"required"`
 	Params         CallArgumentsJSON `json:"params" swagger:"required"`
