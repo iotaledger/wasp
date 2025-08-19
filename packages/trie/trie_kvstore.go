@@ -263,7 +263,11 @@ func (tr *TrieReader) iterate(root Hash, triePath []byte, fun func(k []byte, v [
 	})
 }
 
-type IterateNodesAction byte
+type (
+	IterateNodesAction                byte
+	IterateNodesCallback              = func(nodeKey []byte, n *NodeData, depth int) IterateNodesAction
+	IterateNodesWithRefcountsCallback = func(nodeKey []byte, n *NodeData, depth int, nodeRefcount, valueRefcount uint32) IterateNodesAction
+)
 
 const (
 	IterateStop IterateNodesAction = iota
@@ -272,22 +276,59 @@ const (
 )
 
 // IterateNodes iterates nodes of the trie in the lexicographical order of trie keys in "depth first" order
-func (tr *TrieReader) IterateNodes(fun func(nodeKey []byte, n *NodeData, depth int) IterateNodesAction) {
+func (tr *TrieReader) IterateNodes(fun IterateNodesCallback) {
 	root, found := tr.nodeStore.FetchNodeData(tr.root)
 	assertf(found, "root node not found: %s", tr.root)
 
 	tr.iterateNodes(0, root, nil, fun)
 }
 
-func (tr *TrieReader) iterateNodes(depth int, n *NodeData, path []byte, fun func(nodeKey []byte, n *NodeData, depth int) IterateNodesAction) bool {
+func (tr *TrieReader) iterateNodes(depth int, n *NodeData, path []byte, fun IterateNodesCallback) bool {
 	action := fun(path, n, depth)
 	if action == IterateContinue {
-		childrenNodes := tr.nodeStore.FetchChildrenNodeData(n)
+		childrenNodes := tr.nodeStore.fetchChildrenNodeData(n)
 		for childIndex := range NumChildren {
 			if childrenNodes[childIndex] == nil {
 				continue
 			}
 			if !tr.iterateNodes(depth+1, childrenNodes[childIndex], concat(path, n.PathExtension, []byte{byte(childIndex)}), fun) {
+				break
+			}
+		}
+	}
+	return action != IterateStop
+}
+
+// IterateNodesWithRefcounts is like IterateNodes but it also fetches each node's refcount
+func (tr *TrieReader) IterateNodesWithRefcounts(refcounts *Refcounts, fun IterateNodesWithRefcountsCallback) {
+	root, found := tr.nodeStore.FetchNodeData(tr.root)
+	assertf(found, "root node not found: %s", tr.root)
+
+	nodeRefcount := refcounts.GetNode(root.Commitment)
+	valueRefcount := uint32(0)
+	if root.Terminal != nil && !root.Terminal.IsValue {
+		valueRefcount = refcounts.GetValue(root.Terminal.Bytes())
+	}
+	tr.iterateNodesWithRefcounts(refcounts, 0, root, nil, nodeRefcount, valueRefcount, fun)
+}
+
+func (tr *TrieReader) iterateNodesWithRefcounts(refcounts *Refcounts, depth int, n *NodeData, path []byte, nodeRefcount, valueRefcount uint32, fun IterateNodesWithRefcountsCallback) bool {
+	action := fun(path, n, depth, nodeRefcount, valueRefcount)
+	if action == IterateContinue {
+		childrenNodes := tr.nodeStore.fetchChildrenNodeDataWithRefcounts(refcounts, n)
+		for childIndex := range NumChildren {
+			if childrenNodes[childIndex].node == nil {
+				continue
+			}
+			if !tr.iterateNodesWithRefcounts(
+				refcounts,
+				depth+1,
+				childrenNodes[childIndex].node,
+				concat(path, n.PathExtension, []byte{byte(childIndex)}),
+				childrenNodes[childIndex].nodeRefcount,
+				childrenNodes[childIndex].valueRefcount,
+				fun,
+			) {
 				break
 			}
 		}

@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/VictoriaMetrics/fastcache"
 	"github.com/Yiling-J/theine-go"
@@ -858,9 +857,9 @@ type ScrambledZipfian struct {
 	z *generator.ScrambledZipfian
 }
 
-func NewScrambledZipfian(maximum int) Generator {
+func NewScrambledZipfian(maximum int, seed int64) Generator {
 	return &ScrambledZipfian{
-		r: rand.New(rand.NewSource(time.Now().UnixNano())),
+		r: rand.New(rand.NewSource(seed)),
 		z: generator.NewScrambledZipfian(0, int64(maximum), generator.ZipfianConstant),
 	}
 }
@@ -997,7 +996,7 @@ func BenchmarkCaches(b *testing.B) {
 							b.StopTimer()
 							var hits, misses float64
 							cache.Init(cacheSize)
-							gen := NewScrambledZipfian(cacheSize * multiplier)
+							gen := NewScrambledZipfian(cacheSize*multiplier, 0)
 							var hitrate float64
 							b.StartTimer()
 							defer func() {

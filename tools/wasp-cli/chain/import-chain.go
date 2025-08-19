@@ -16,8 +16,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/database"
 	"github.com/iotaledger/wasp/v2/packages/kvstore/rocksdb"
 	"github.com/iotaledger/wasp/v2/packages/origin"
-	"github.com/iotaledger/wasp/v2/packages/state/indexedstore"
-	"github.com/iotaledger/wasp/v2/packages/state/statetest"
+	"github.com/iotaledger/wasp/v2/packages/state"
 	"github.com/iotaledger/wasp/v2/packages/transaction"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/evm/emulator"
@@ -29,14 +28,16 @@ import (
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/waspcmd"
 )
 
-func openChainAndRead(dbPath string) (transaction.StateMetadata, uint32) {
+func openChainAndRead(dbPath string) (transaction.StateMetadata, uint32, error) {
 	dbConn := lo.Must(rocksdb.OpenDBReadOnly(dbPath))
 	db := database.New(dbPath, rocksdb.New(dbConn), hivedb.EngineRocksDB, false, func() bool {
 		return false
 	})
 
-	store := db.KVStore()
-	rebasedDBStore := indexedstore.New(statetest.NewStoreWithUniqueWriteMutex(store))
+	rebasedDBStore, err := state.NewStoreReadonly(db.KVStore())
+	if err != nil {
+		return transaction.StateMetadata{}, 0, fmt.Errorf("failed to open read only chain db: %w", err)
+	}
 
 	latestBlock := lo.Must(rebasedDBStore.LatestBlock())
 	latestState := lo.Must(rebasedDBStore.LatestState())
@@ -64,7 +65,7 @@ func openChainAndRead(dbPath string) (transaction.StateMetadata, uint32) {
 		GasFeePolicy:  governanceReader.GetGasFeePolicy(),
 	}
 
-	return anchorStateMetadata, latestBlock.StateIndex()
+	return anchorStateMetadata, latestBlock.StateIndex(), nil
 }
 
 func initImportCmd() *cobra.Command {
@@ -96,7 +97,8 @@ func initImportCmd() *cobra.Command {
 			}
 
 			dbPath := args[0]
-			anchorStateMetadata, blockIndex := openChainAndRead(dbPath)
+			anchorStateMetadata, blockIndex, err := openChainAndRead(dbPath)
+			log.Check(err)
 			anchorStateMetadata.GasCoinObjectID = &result.gasCoinObject
 
 			anchor, err := cliclients.L2Client().StartNewChain(ctx, &iscmoveclient.StartNewChainRequest{
