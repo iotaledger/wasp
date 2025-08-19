@@ -1,0 +1,23 @@
+{
+  "name": "onledger-estimation-example",
+  "module": "index.ts",
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@iota/iota-sdk": "^1.5.0",
+    "@iota/isc-sdk": "^0.1.2",
+    "@types/bun": "latest",
+    "bignumber.js": "^9.1.2",
+    "@noble/hashes": "^1.8.0",
+
+            "dotenv": "^16.4.5",
+        "ethers": "^6.13.5",
+        "tsx": "^3.12.7",
+        "typescript": "^5.5.3",
+        "vite": "^5.4.12",
+        "vite-plugin-dts": "^4.3.0",
+        "vitest": "^2.1.9",
+        "zod": "^3.21.4"
+  }
+}
