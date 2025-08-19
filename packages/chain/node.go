@@ -270,7 +270,7 @@ func New(
 	mempoolBroadcastInterval time.Duration,
 	originDeposit coin.Value,
 ) (Chain, error) {
-	log.LogDebugf("Starting the chain, chainID=%v")
+	log.LogDebugf("Starting the chain, chainID=%v", chainID)
 	if listener == nil {
 		listener = NewEmptyChainListener()
 	}
@@ -342,7 +342,7 @@ func New(
 	// Create sub-components.
 	chainMgr, err := chainmanager.New(
 		cni.me,
-		chainID,
+		cni.chainID,
 		cni.chainStore,
 		consensusStateRegistry,
 		dkShareRegistryProvider,
@@ -400,7 +400,7 @@ func New(
 	peerPubKeys = append(peerPubKeys, cni.accessNodesFromNode...)
 	stateMgr, err := statemanager.New(
 		ctx,
-		chainID,
+		cni.chainID,
 		nodeIdentity.GetPublicKey(),
 		peerPubKeys,
 		net,

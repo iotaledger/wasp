@@ -62,11 +62,10 @@ func (amd *accessMgrDist) AsGPA() gpa.GPA {
 
 // Implements the Output interface.
 func (amd *accessMgrDist) ChainServerNodes() []*cryptolib.PublicKey {
-	if amd.chain == nil {
-		return []*cryptolib.PublicKey{}
+	if amd.chain != nil {
+		return amd.chain.server.Values()
 	}
-
-	return amd.chain.server.Values()
+	return []*cryptolib.PublicKey{}
 }
 
 // Implements the gpa.GPA interface.
@@ -106,7 +105,7 @@ func (amd *accessMgrDist) handleInputChainDisabled(input *inputChainDisabled) gp
 		return nil // Already disabled.
 	}
 	amd.chain.Disabled()
-	amd.chain = nil // Forget the chain.
+	amd.chain = nil
 	msgs := gpa.NoMessages()
 	amd.nodes.ForEach(func(_ gpa.NodeID, node *accessMgrNode) bool {
 		msgs.AddAll(node.SetChainAccess(false))
