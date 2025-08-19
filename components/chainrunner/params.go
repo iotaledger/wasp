@@ -1,7 +1,7 @@
-// Package chains provides functionality for managing IOTA Smart Contract chains,
+// Package chains provides functionality for managing IOTA Smart Contract chain runner,
 // including chain configuration parameters, write-ahead logging, validator settings,
 // state management, and snapshot capabilities.
-package chains
+package chainrunner
 
 import (
 	"time"
@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/hive.go/app"
 )
 
-type ParametersChains struct {
+type ParametersChainRunner struct {
 	BroadcastUpToNPeers               int           `default:"2" usage:"number of peers an offledger request is broadcasted to"`
 	BroadcastInterval                 time.Duration `default:"0s" usage:"time between re-broadcast of offledger requests; 0 value means that re-broadcasting is disabled"`
 	APICacheTTL                       time.Duration `default:"300s" usage:"time to keep processed offledger requests in api cache"`
@@ -65,7 +65,7 @@ type ParametersSnapshotManager struct {
 }
 
 var (
-	ParamsChains          = &ParametersChains{}
+	ParamsChainRunner     = &ParametersChainRunner{}
 	ParamsWAL             = &ParametersWAL{}
 	ParamsValidator       = &ParametersValidator{}
 	ParamsStateManager    = &ParametersStateManager{}
@@ -74,7 +74,7 @@ var (
 
 var params = &app.ComponentParams{
 	Params: map[string]any{
-		"chains":       ParamsChains,
+		"chains":       ParamsChainRunner, // TODO: fix the name
 		"wal":          ParamsWAL,
 		"validator":    ParamsValidator,
 		"stateManager": ParamsStateManager,

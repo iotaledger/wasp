@@ -154,11 +154,11 @@ func (amd *accessMgrDist) handleInputTrustedNodes(input *inputTrustedNodes) gpa.
 		if amd.nodes.Has(trustedNodeID) {
 			continue
 		}
-		hasAccess := false
+		isAccessNode := false
 		if amd.chain != nil && amd.chain.IsAccessGrantedFor(trustedNodeID) {
-			hasAccess = true
+			isAccessNode = true
 		}
-		trustedNode, trustedNodeMsgs := newAccessMgrNode(trustedNodeID, trustedNodePubKey, hasAccess)
+		trustedNode, trustedNodeMsgs := newAccessMgrNode(trustedNodeID, trustedNodePubKey, isAccessNode)
 		msgs.AddAll(trustedNodeMsgs)
 		amd.nodes.Set(trustedNodeID, trustedNode)
 	}
@@ -266,29 +266,29 @@ func (amc *accessMgrChain) Disabled() {
 ////////////////////////////////////////////////////////////////////////////////
 
 type accessMgrNode struct {
-	nodeID    gpa.NodeID
-	pubKey    *cryptolib.PublicKey
-	ourLC     int
-	peerLC    int
-	hasAccess bool
-	isServer  bool
+	nodeID       gpa.NodeID
+	pubKey       *cryptolib.PublicKey
+	ourLC        int
+	peerLC       int
+	isAccessNode bool
+	isServer     bool
 }
 
 func newAccessMgrNode(
 	nodeID gpa.NodeID,
 	pubKey *cryptolib.PublicKey,
-	hasAccess bool,
+	isAccessNode bool,
 ) (*accessMgrNode, gpa.OutMessages) {
 	amn := &accessMgrNode{
-		nodeID:    nodeID,
-		pubKey:    pubKey,
-		ourLC:     1,
-		peerLC:    0,
-		hasAccess: hasAccess,
-		isServer:  false,
+		nodeID:       nodeID,
+		pubKey:       pubKey,
+		ourLC:        1,
+		peerLC:       0,
+		isAccessNode: isAccessNode,
+		isServer:     false,
 	}
 	msgs := gpa.NoMessages()
-	msgs.Add(newMsgAccess(amn.nodeID, amn.ourLC, amn.peerLC, amn.hasAccess, amn.isServer))
+	msgs.Add(newMsgAccess(amn.nodeID, amn.ourLC, amn.peerLC, amn.isAccessNode, amn.isServer))
 	return amn, msgs
 }
 
@@ -300,51 +300,51 @@ func (amn *accessMgrNode) SetChainAccess(access bool) gpa.OutMessages {
 }
 
 func (amn *accessMgrNode) grantAccess() gpa.OutMessages {
-	if amn.hasAccess {
+	if amn.isAccessNode {
 		return nil
 	}
-	amn.hasAccess = true
+	amn.isAccessNode = true
 	amn.ourLC++
 	msgs := gpa.NoMessages()
-	msgs.Add(newMsgAccess(amn.nodeID, amn.ourLC, amn.peerLC, amn.hasAccess, amn.isServer))
+	msgs.Add(newMsgAccess(amn.nodeID, amn.ourLC, amn.peerLC, amn.isAccessNode, amn.isServer))
 	return msgs
 }
 
 func (amn *accessMgrNode) revokeAccess() gpa.OutMessages {
-	if !amn.hasAccess {
+	if !amn.isAccessNode {
 		return nil
 	}
-	amn.hasAccess = false
+	amn.isAccessNode = false
 	amn.ourLC++
 	msgs := gpa.NoMessages()
-	msgs.Add(newMsgAccess(amn.nodeID, amn.ourLC, amn.peerLC, amn.hasAccess, amn.isServer))
+	msgs.Add(newMsgAccess(amn.nodeID, amn.ourLC, amn.peerLC, amn.isAccessNode, amn.isServer))
 	return msgs
 }
 
 func (amn *accessMgrNode) handleMsgAccess(msg *msgAccess) gpa.OutMessages {
 	// This has to be checked before updating the state.
 	// > IF /\ m.access = isServer(n, m.src)    \* Peer's info hasn't changed, so we don't need to ack it.
-	// >    /\ m.server = H(hasAccess(n, m.src)) \* Our info echoed, so that was an ack.
+	// >    /\ m.server = H(isAccessNode(n, m.src)) \* Our info echoed, so that was an ack.
 	// >    /\ m.src_lc >= lClock[n][m.src]            \* Peer's clock is not outdated, we don't need to push it forward.
 	// >    /\ m.dst_lc <= lClock[n][n]                \* And the echoed clock don't exceed our clock, so we don't need to push it.
 	// > THEN sendAndAck(m, {})
 	// > ELSE sendAndAck(m, accessMsgs(n))
 	sendDone := true &&
-		msg.hasAccess == amn.isServer &&
-		msg.isServer == amn.hasAccess &&
+		msg.isAccessNode == amn.isServer &&
+		msg.isServer == amn.isAccessNode &&
 		msg.senderLClock >= amn.peerLC &&
 		msg.receiverLClock <= amn.ourLC
 	//
 	// Update isServer and peerLC.
 	if msg.senderLClock > amn.peerLC {
-		amn.isServer = msg.hasAccess
+		amn.isServer = msg.isAccessNode
 		amn.peerLC = msg.senderLClock
 	}
 	//
 	// Update ourLC.
 	if amn.ourLC <= msg.receiverLClock {
 		amn.ourLC = msg.receiverLClock
-		if !amn.hasAccess == msg.isServer {
+		if !amn.isAccessNode == msg.isServer {
 			amn.ourLC++
 		}
 	}
@@ -352,7 +352,7 @@ func (amn *accessMgrNode) handleMsgAccess(msg *msgAccess) gpa.OutMessages {
 	// Send message back, if needed.
 	if !sendDone {
 		return gpa.NoMessages().Add(
-			newMsgAccess(msg.Sender(), amn.ourLC, amn.peerLC, amn.hasAccess, amn.isServer),
+			newMsgAccess(msg.Sender(), amn.ourLC, amn.peerLC, amn.isAccessNode, amn.isServer),
 		)
 	}
 	return nil

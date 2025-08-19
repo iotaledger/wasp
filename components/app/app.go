@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/hive.go/app/components/profiling"
 	"github.com/iotaledger/hive.go/app/components/shutdown"
 	"github.com/iotaledger/wasp/v2/components/cache"
-	"github.com/iotaledger/wasp/v2/components/chains"
+	"github.com/iotaledger/wasp/v2/components/chainrunner"
 	"github.com/iotaledger/wasp/v2/components/database"
 	"github.com/iotaledger/wasp/v2/components/dkg"
 	"github.com/iotaledger/wasp/v2/components/logger"
@@ -48,7 +48,7 @@ func App() *app.App {
 			peering.Component,
 			dkg.Component,
 			processors.Component,
-			chains.Component,
+			chainrunner.Component,
 			publisher.Component,
 			webapi.Component,
 			profiling.Component,

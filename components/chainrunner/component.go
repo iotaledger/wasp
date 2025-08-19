@@ -1,4 +1,4 @@
-package chains
+package chainrunner
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/chain"
 	"github.com/iotaledger/wasp/v2/packages/chain/cmtlog"
 	"github.com/iotaledger/wasp/v2/packages/chain/mempool"
-	"github.com/iotaledger/wasp/v2/packages/chains"
+	chainrunner "github.com/iotaledger/wasp/v2/packages/chainrunner"
 	"github.com/iotaledger/wasp/v2/packages/daemon"
 	"github.com/iotaledger/wasp/v2/packages/database"
 	"github.com/iotaledger/wasp/v2/packages/metrics"
@@ -44,7 +44,7 @@ type dependencies struct {
 	dig.In
 
 	ShutdownHandler *hiveshutdown.ShutdownHandler
-	Chains          *chains.ChainRunner
+	Chains          *chainrunner.ChainRunner
 }
 
 func initConfigParams(c *dig.Container) error {
@@ -55,16 +55,16 @@ func initConfigParams(c *dig.Container) error {
 
 	if err := c.Provide(func() cfgResult {
 		return cfgResult{
-			APICacheTTL: ParamsChains.APICacheTTL,
+			APICacheTTL: ParamsChainRunner.APICacheTTL,
 		}
 	}); err != nil {
 		Component.LogPanic(err.Error())
 	}
 
-	chain.RedeliveryPeriod = ParamsChains.RedeliveryPeriod
-	chain.PrintStatusPeriod = ParamsChains.PrintStatusPeriod
-	chain.ConsensusInstsInAdvance = ParamsChains.ConsensusInstsInAdvance
-	chain.AwaitReceiptCleanupEvery = ParamsChains.AwaitReceiptCleanupEvery
+	chain.RedeliveryPeriod = ParamsChainRunner.RedeliveryPeriod
+	chain.PrintStatusPeriod = ParamsChainRunner.PrintStatusPeriod
+	chain.ConsensusInstsInAdvance = ParamsChainRunner.ConsensusInstsInAdvance
+	chain.AwaitReceiptCleanupEvery = ParamsChainRunner.AwaitReceiptCleanupEvery
 
 	return nil
 }
@@ -86,24 +86,24 @@ func provide(c *dig.Container) error {
 		ChainMetricsProvider        *metrics.ChainMetricsProvider
 	}
 
-	type chainsResult struct {
+	type chainRunnerResult struct {
 		dig.Out
 
-		Chains *chains.ChainRunner
+		Runner *chainrunner.ChainRunner
 	}
 
-	if err := c.Provide(func(deps chainsDeps) chainsResult {
-		return chainsResult{
-			Chains: chains.New(
+	if err := c.Provide(func(deps chainsDeps) chainRunnerResult {
+		return chainRunnerResult{
+			Runner: chainrunner.New(
 				Component.Logger,
 				deps.NodeConnection,
 				deps.ProcessorsConfig,
 				ParamsValidator.Address,
-				ParamsChains.DeriveAliasOutputByQuorum,
-				ParamsChains.PipeliningLimit,
-				ParamsChains.PostponeRecoveryMilestones,
-				ParamsChains.ConsensusDelay,
-				ParamsChains.RecoveryTimeout,
+				ParamsChainRunner.DeriveAliasOutputByQuorum,
+				ParamsChainRunner.PipeliningLimit,
+				ParamsChainRunner.PostponeRecoveryMilestones,
+				ParamsChainRunner.ConsensusDelay,
+				ParamsChainRunner.RecoveryTimeout,
 				deps.NetworkProvider,
 				deps.TrustedNetworkManager,
 				deps.ChainStateDatabaseManager.ChainStateKVStore,
@@ -131,16 +131,16 @@ func provide(c *dig.Container) error {
 				deps.ConsensusStateRegistry,
 				deps.ChainListener,
 				mempool.Settings{
-					TTL:                        ParamsChains.MempoolTTL,
-					OnLedgerRefreshMinInterval: ParamsChains.MempoolOnLedgerRefreshMinInterval,
-					MaxOffledgerInPool:         ParamsChains.MempoolMaxOffledgerInPool,
-					MaxOnledgerInPool:          ParamsChains.MempoolMaxOnledgerInPool,
-					MaxTimedInPool:             ParamsChains.MempoolMaxTimedInPool,
-					MaxOnledgerToPropose:       ParamsChains.MempoolMaxOnledgerToPropose,
-					MaxOffledgerToPropose:      ParamsChains.MempoolMaxOffledgerToPropose,
-					MaxOffledgerPerAccount:     ParamsChains.MempoolMaxOffledgerPerAccount,
+					TTL:                        ParamsChainRunner.MempoolTTL,
+					OnLedgerRefreshMinInterval: ParamsChainRunner.MempoolOnLedgerRefreshMinInterval,
+					MaxOffledgerInPool:         ParamsChainRunner.MempoolMaxOffledgerInPool,
+					MaxOnledgerInPool:          ParamsChainRunner.MempoolMaxOnledgerInPool,
+					MaxTimedInPool:             ParamsChainRunner.MempoolMaxTimedInPool,
+					MaxOnledgerToPropose:       ParamsChainRunner.MempoolMaxOnledgerToPropose,
+					MaxOffledgerToPropose:      ParamsChainRunner.MempoolMaxOffledgerToPropose,
+					MaxOffledgerPerAccount:     ParamsChainRunner.MempoolMaxOffledgerPerAccount,
 				},
-				ParamsChains.BroadcastInterval,
+				ParamsChainRunner.BroadcastInterval,
 				shutdown.NewCoordinator("chains", Component.NewChildLogger("Shutdown")),
 				deps.ChainMetricsProvider,
 			),

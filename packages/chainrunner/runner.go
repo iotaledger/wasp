@@ -1,8 +1,8 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// Package chains provides functionality for managing multiple blockchain instances.
-package chains
+// Package chainrunner provides functionality for managing blockchain instance
+package chainrunner
 
 import (
 	"context"
@@ -20,7 +20,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/chain/statemanager/gpa"
 	"github.com/iotaledger/wasp/v2/packages/chain/statemanager/gpa/utils"
 	"github.com/iotaledger/wasp/v2/packages/chain/statemanager/snapshots"
-	"github.com/iotaledger/wasp/v2/packages/chains/accessmanager"
+	"github.com/iotaledger/wasp/v2/packages/chainrunner/accessmanager"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/database"
 	"github.com/iotaledger/wasp/v2/packages/isc"

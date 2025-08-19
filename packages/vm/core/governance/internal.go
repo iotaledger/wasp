@@ -29,9 +29,10 @@ func (s *StateWriter) SetInitialState(chainAdmin isc.AgentID, blockKeepAmount in
 }
 
 // GetChainInfo returns global variables of the chain
-func (s *StateReader) GetChainInfo() *isc.ChainInfo {
+func (s *StateReader) GetChainInfo(chainID isc.ChainID) *isc.ChainInfo {
 	ret := &isc.ChainInfo{
 		Metadata: &isc.PublicChainMetadata{},
+		ChainID:  chainID,
 	}
 	ret.ChainAdmin = s.GetChainAdmin()
 	ret.GasFeePolicy = s.GetGasFeePolicy()

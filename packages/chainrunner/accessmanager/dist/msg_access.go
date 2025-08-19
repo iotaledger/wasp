@@ -12,7 +12,7 @@ type msgAccess struct {
 	gpa.BasicMessage
 	senderLClock   int  `bcs:"export,type=u32"`
 	receiverLClock int  `bcs:"export,type=u32"`
-	hasAccess      bool `bcs:"export"`
+	isAccessNode   bool `bcs:"export"`
 	isServer       bool `bcs:"export"`
 }
 
@@ -21,14 +21,14 @@ var _ gpa.Message = new(msgAccess)
 func newMsgAccess(
 	recipient gpa.NodeID,
 	senderLClock, receiverLClock int,
-	hasAccess bool,
+	isAccessNode bool,
 	isServer bool,
 ) gpa.Message {
 	return &msgAccess{
 		BasicMessage:   gpa.NewBasicMessage(recipient),
 		senderLClock:   senderLClock,
 		receiverLClock: receiverLClock,
-		hasAccess:      hasAccess,
+		isAccessNode:   isAccessNode,
 		isServer:       isServer,
 	}
 }

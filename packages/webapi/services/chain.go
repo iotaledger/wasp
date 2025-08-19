@@ -12,7 +12,6 @@ import (
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	chainpkg "github.com/iotaledger/wasp/v2/packages/chain"
-	"github.com/iotaledger/wasp/v2/packages/chains"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/kv"
 	"github.com/iotaledger/wasp/v2/packages/metrics"
@@ -28,14 +27,14 @@ import (
 
 type ChainService struct {
 	log                         log.Logger
-	chainsProvider              chains.Provider
+	chainsProvider              chainrunner.Provider
 	chainMetricsProvider        *metrics.ChainMetricsProvider
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
 }
 
 func NewChainService(
 	logger log.Logger,
-	chainsProvider chains.Provider,
+	chainsProvider chainrunner.Provider,
 	chainMetricsProvider *metrics.ChainMetricsProvider,
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
 ) interfaces.ChainService {

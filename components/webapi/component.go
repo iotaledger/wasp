@@ -23,7 +23,7 @@ import (
 	"github.com/iotaledger/hive.go/web/websockethub"
 	"github.com/iotaledger/wasp/v2/packages/authentication"
 	"github.com/iotaledger/wasp/v2/packages/chain"
-	"github.com/iotaledger/wasp/v2/packages/chains"
+	"github.com/iotaledger/wasp/v2/packages/chainrunner"
 	"github.com/iotaledger/wasp/v2/packages/daemon"
 	"github.com/iotaledger/wasp/v2/packages/dkg"
 	"github.com/iotaledger/wasp/v2/packages/evm/jsonrpc"
@@ -216,7 +216,7 @@ func provide(c *dig.Container) error {
 		AppConfig                   *configuration.Configuration `name:"appConfig"`
 		ShutdownHandler             *shutdown.ShutdownHandler
 		APICacheTTL                 time.Duration `name:"apiCacheTTL"`
-		Chains                      *chains.ChainRunner
+		Chains                      *chainrunner.ChainRunner
 		ChainMetricsProvider        *metrics.ChainMetricsProvider
 		ChainRecordRegistryProvider registry.ChainRecordRegistryProvider
 		DKShareRegistryProvider     registry.DKShareRegistryProvider
@@ -277,7 +277,7 @@ func provide(c *dig.Container) error {
 			deps.ChainRecordRegistryProvider,
 			deps.DKShareRegistryProvider,
 			deps.NodeIdentityProvider,
-			func() *chains.ChainRunner {
+			func() *chainrunner.ChainRunner {
 				return deps.Chains
 			},
 			func() *dkg.Node {

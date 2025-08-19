@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	hivelog "github.com/iotaledger/hive.go/log"
-	"github.com/iotaledger/wasp/v2/packages/chains/accessmanager"
+	"github.com/iotaledger/wasp/v2/packages/chainrunner/accessmanager"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/testutil"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"

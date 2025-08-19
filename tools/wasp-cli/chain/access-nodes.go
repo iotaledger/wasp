@@ -1,7 +1,7 @@
 // Copyright 2022 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// Package chain provides functionality for interacting with and managing IOTA smart contract chains.
+// Package chain provides functionality for interacting with and managing IOTA smart contract chainrunner.
 package chain
 
 import (

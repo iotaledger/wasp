@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/v2/packages/chains/accessmanager/dist"
+	"github.com/iotaledger/wasp/v2/packages/chainrunner/accessmanager/dist"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"

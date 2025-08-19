@@ -153,7 +153,7 @@ func (ctx *ViewContext) ChainInfo() *isc.ChainInfo {
 }
 
 func (ctx *ViewContext) ChainID() isc.ChainID {
-	return ctx.chainID
+	return ctx.chainInfo.ChainID
 }
 
 func (ctx *ViewContext) ChainAdmin() isc.AgentID {
@@ -225,7 +225,7 @@ func (ctx *ViewContext) callView(msg isc.Message) (ret isc.CallArguments) {
 
 func (ctx *ViewContext) initAndCallView(msg isc.Message) (ret isc.CallArguments) {
 	ctx.chainInfo = governance.NewStateReader(ctx.contractStateReaderWithGasBurn(governance.Contract.Hname())).
-		GetChainInfo()
+		GetChainInfo(ctx.chainID)
 	ctx.gasBudget = ctx.chainInfo.GasLimits.MaxGasExternalViewCall
 	if ctx.gasBurnLoggingEnabled {
 		ctx.gasBurnLog = gas.NewGasBurnLog()

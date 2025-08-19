@@ -13,7 +13,7 @@ import (
 	"github.com/iotaledger/hive.go/app/shutdown"
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/components/chains"
+	"github.com/iotaledger/wasp/v2/components/chainrunner"
 	"github.com/iotaledger/wasp/v2/packages/chain"
 	"github.com/iotaledger/wasp/v2/packages/daemon"
 	"github.com/iotaledger/wasp/v2/packages/nodeconn"
@@ -54,7 +54,7 @@ func provide(c *dig.Container) error {
 		nodeConnection, err := nodeconn.New(
 			Component.Daemon().ContextStopped(),
 			*address,
-			chains.ParamsChains.MempoolMaxOnledgerInPool,
+			chainrunner.ParamsChainRunner.MempoolMaxOnledgerInPool,
 			ParamsL1.WebsocketURL,
 			ParamsL1.HTTPURL,
 			Component.NewChildLogger("nc"),

@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/hive.go/app/shutdown"
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/v2/packages/authentication"
-	"github.com/iotaledger/wasp/v2/packages/chains"
+	"github.com/iotaledger/wasp/v2/packages/chainrunner"
 	"github.com/iotaledger/wasp/v2/packages/dkg"
 	"github.com/iotaledger/wasp/v2/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/v2/packages/metrics"
@@ -86,7 +86,7 @@ func Init(
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	nodeIdentityProvider registry.NodeIdentityProvider,
-	chainsProvider chains.Provider,
+	chainsProvider chainrunner.Provider,
 	dkgNodeProvider dkg.NodeProvider,
 	shutdownHandler *shutdown.ShutdownHandler,
 	chainMetricsProvider *metrics.ChainMetricsProvider,

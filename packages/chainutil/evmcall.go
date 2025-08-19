@@ -29,7 +29,7 @@ func EVMCall(
 	if err != nil {
 		return nil, err
 	}
-	info := getChainInfo(latestState)
+	info := getChainInfo(anchor.ChainID(), latestState)
 
 	// 0 means view call
 	gasLimit := gas.EVMCallGasLimit(info.GasLimits, &info.GasFeePolicy.EVMGasRatio)
@@ -41,7 +41,7 @@ func EVMCall(
 		call.GasPrice = info.GasFeePolicy.DefaultGasPriceFullDecimals(parameters.BaseTokenDecimals)
 	}
 
-	iscReq := isc.NewEVMOffLedgerCallRequest(call)
+	iscReq := isc.NewEVMOffLedgerCallRequest(info.ChainID, call)
 	res, err := runISCRequest(
 		anchor,
 		l1Params,

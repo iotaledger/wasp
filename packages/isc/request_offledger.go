@@ -48,6 +48,7 @@ func NewImpersonatedOffLedgerRequest(request *OffLedgerRequestDataEssence) Imper
 		OffLedgerRequestData: OffLedgerRequestData{
 			OffLedgerRequestDataEssence: OffLedgerRequestDataEssence{
 				allowance: request.allowance,
+				chainID:   request.chainID,
 				msg:       request.msg,
 				gasBudget: request.gasBudget,
 				nonce:     request.nonce,
@@ -103,6 +104,10 @@ func (req *OffLedgerRequestData) Bytes() []byte {
 
 func (req *OffLedgerRequestData) Message() Message {
 	return req.msg
+}
+
+func (req *OffLedgerRequestData) ChainID() ChainID {
+	return req.chainID
 }
 
 func (req *OffLedgerRequestDataEssence) Bytes() []byte {

@@ -10,7 +10,7 @@ import (
 
 	hivedb "github.com/iotaledger/hive.go/db"
 	"github.com/iotaledger/hive.go/log"
-	"github.com/iotaledger/wasp/v2/packages/chains"
+	"github.com/iotaledger/wasp/v2/packages/chainrunner"
 	"github.com/iotaledger/wasp/v2/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/metrics"
@@ -31,7 +31,7 @@ type EVMService struct {
 	websocketContextMutex sync.Mutex
 	websocketContext      *websocketContext
 
-	chainsProvider  chains.Provider
+	chainsProvider  chainrunner.Provider
 	chainService    interfaces.ChainService
 	networkProvider peering.NetworkProvider
 	publisher       *publisher.Publisher
@@ -42,7 +42,7 @@ type EVMService struct {
 }
 
 func NewEVMService(
-	chainsProvider chains.Provider,
+	chainsProvider chainrunner.Provider,
 	chainService interfaces.ChainService,
 	networkProvider peering.NetworkProvider,
 	pub *publisher.Publisher,
