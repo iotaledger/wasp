@@ -12,6 +12,7 @@ import (
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	chainpkg "github.com/iotaledger/wasp/v2/packages/chain"
+	"github.com/iotaledger/wasp/v2/packages/chainrunner"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/kv"
 	"github.com/iotaledger/wasp/v2/packages/metrics"
