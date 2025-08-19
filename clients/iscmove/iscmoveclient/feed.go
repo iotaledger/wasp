@@ -79,7 +79,7 @@ func (w *WebsocketClientWrapper) SubscribeEvent(ctx context.Context, packageID i
 }
 
 type ChainFeed struct {
-	wsClient      *iotaconn_grpc.EventStreamClient
+	eventClient   *iotaconn_grpc.EventStreamClient
 	httpClient    *Client
 	iscPackageID  iotago.PackageID
 	anchorAddress iotago.ObjectID
@@ -94,16 +94,15 @@ func NewChainFeed(
 	socketURL string,
 	httpURL string,
 ) (*ChainFeed, error) {
-	/*wsClient, err := NewWebsocketClient(ctx, socketURL, "", iotaclient.WaitForEffectsEnabled, log)
+	/*eventClient, err := NewWebsocketClient(ctx, socketURL, "", iotaclient.WaitForEffectsEnabled, log)
 	if err != nil {
 		return nil, err
 	}*/
 
-	cl := iotaconn_grpc.NewEventStreamClient(socketURL, &iotaconn_grpc.EventFilter{
+	cl := iotaconn_grpc.NewEventStreamClient(ctx, socketURL, &iotaconn_grpc.EventFilter{
 		Filter: &iotaconn_grpc.EventFilter_And{
 			And: &iotaconn_grpc.AndFilter{
 				Filters: []*iotaconn_grpc.EventFilter{
-
 					{
 						Filter: &iotaconn_grpc.EventFilter_MoveEventType{
 							MoveEventType: &iotaconn_grpc.MoveEventTypeFilter{
@@ -117,14 +116,11 @@ func NewChainFeed(
 			},
 		},
 	})
-	if err := cl.Start(); err != nil {
-		return nil, err
-	}
 
 	httpClient := NewHTTPClient(httpURL, "", iotaclient.WaitForEffectsEnabled)
 
 	return &ChainFeed{
-		wsClient:      cl,
+		eventClient:   cl,
 		httpClient:    httpClient,
 		iscPackageID:  iscPackageID,
 		anchorAddress: anchorAddress,
@@ -180,7 +176,7 @@ func (f *ChainFeed) subscribeToNewRequests(
 ) {
 
 	for {
-		events, _, _ := f.wsClient.SubscribeEvents()
+		events := f.eventClient.Start()
 
 		if ctx.Err() != nil {
 			f.log.LogErrorf("subscribeToNewRequests: ctx.Err(): %s", ctx.Err())
