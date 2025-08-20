@@ -1,4 +1,4 @@
-module github.com/iotaledger/wasp/tools/evm/evmemulator
+module github.com/iotaledger/wasp/v2/tools/evm/evmemulator
 
 go 1.23.8
 
@@ -6,15 +6,15 @@ toolchain go1.24.4
 
 replace (
 	github.com/ethereum/go-ethereum => github.com/iotaledger/go-ethereum v1.15.5-wasp1
-	github.com/iotaledger/wasp => ../../../
-	github.com/iotaledger/wasp/tools/wasp-cli => ../../wasp-cli/
+	github.com/iotaledger/wasp/v2 => ../../../
+	github.com/iotaledger/wasp/v2/tools/wasp-cli => ../../wasp-cli/
 	go.dedis.ch/kyber/v3 => github.com/kape1395/kyber/v3 v3.0.14-0.20230124095845-ec682ff08c93 // branch: dkg-2suites
 )
 
 require (
 	github.com/ethereum/go-ethereum v1.15.5
-	github.com/iotaledger/wasp v1.0.0-00010101000000-000000000000
-	github.com/iotaledger/wasp/tools/wasp-cli v0.0.0-20230923193348-da186f5602e0
+	github.com/iotaledger/wasp/v2 v2.0.0-00010101000000-000000000000
+	github.com/iotaledger/wasp/v2/tools/wasp-cli v0.0.0-20230923193348-da186f5602e0
 	github.com/spf13/cobra v1.9.1
 )
 

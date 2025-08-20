@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago/serialization"
-	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/serialization"
+	"github.com/iotaledger/wasp/v2/packages/hashing"
 )
 
 type TransactionData struct {
@@ -49,9 +49,9 @@ type GasData struct {
 
 type TransactionKind struct {
 	ProgrammableTransaction *ProgrammableTransaction
-	ChangeEpoch             *ChangeEpoch
-	Genesis                 *GenesisTransaction
-	ConsensusCommitPrologue *ConsensusCommitPrologue
+	ChangeEpoch             *ChangeEpoch             `bcs:"optional"`
+	Genesis                 *GenesisTransaction      `bcs:"optional"`
+	ConsensusCommitPrologue *ConsensusCommitPrologue `bcs:"optional"`
 }
 
 func (t TransactionKind) IsBcsEnum() {}

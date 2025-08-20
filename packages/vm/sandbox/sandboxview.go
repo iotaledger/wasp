@@ -5,8 +5,8 @@
 package sandbox
 
 import (
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/vm/execution"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/vm/execution"
 )
 
 type sandboxView struct {

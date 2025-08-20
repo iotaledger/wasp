@@ -7,12 +7,12 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/webapi/apierrors"
-	"github.com/iotaledger/wasp/packages/webapi/interfaces"
-	"github.com/iotaledger/wasp/packages/webapi/models"
-	"github.com/iotaledger/wasp/packages/webapi/params"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/util"
+	"github.com/iotaledger/wasp/v2/packages/webapi/apierrors"
+	"github.com/iotaledger/wasp/v2/packages/webapi/interfaces"
+	"github.com/iotaledger/wasp/v2/packages/webapi/models"
+	"github.com/iotaledger/wasp/v2/packages/webapi/params"
 )
 
 func (c *Controller) getRegisteredPeers(e echo.Context) error {

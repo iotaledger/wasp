@@ -12,14 +12,14 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 
 	hivedb "github.com/iotaledger/hive.go/db"
-	"github.com/iotaledger/wasp/packages/database"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kvstore"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/trie"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/v2/packages/database"
+	"github.com/iotaledger/wasp/v2/packages/kv/codec"
+	"github.com/iotaledger/wasp/v2/packages/kvstore"
+	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/trie"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/evm/emulator"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/governance"
 )
 
 // Index allows efficient retrieval of EVM blocks and transactions given the block number.

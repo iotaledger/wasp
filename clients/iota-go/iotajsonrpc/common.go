@@ -1,6 +1,6 @@
 package iotajsonrpc
 
-import "github.com/iotaledger/wasp/clients/iota-go/iotago"
+import "github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 
 type ObjectOwnerInternal struct {
 	AddressOwner *iotago.Address `json:"AddressOwner,omitempty"`
@@ -11,10 +11,14 @@ type ObjectOwnerInternal struct {
 	} `json:"Shared,omitempty"`
 }
 
+func (o ObjectOwnerInternal) IsBcsEnum() {}
+
 type ObjectOwner struct {
 	*ObjectOwnerInternal
 	*string
 }
+
+func (o ObjectOwner) IsBcsEnum() {}
 
 type Page[T IotaTransactionBlockResponse | IotaEvent | Coin | *Coin | IotaObjectResponse | DynamicFieldInfo | string | *Checkpoint,
 	C iotago.TransactionDigest | EventId | iotago.ObjectID | BigInt] struct {

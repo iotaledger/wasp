@@ -6,14 +6,14 @@ import (
 	"strconv"
 	"strings"
 
-	chainpkg "github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chainutil"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/packages/trie"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	chainpkg "github.com/iotaledger/wasp/v2/packages/chain"
+	"github.com/iotaledger/wasp/v2/packages/chainutil"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/transaction"
+	"github.com/iotaledger/wasp/v2/packages/trie"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/blocklog"
 )
 
 func ParseReceipt(chain chainpkg.Chain, receipt *blocklog.RequestReceipt) (*isc.Receipt, error) {

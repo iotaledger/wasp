@@ -1,35 +1,51 @@
 package trie
 
+import (
+	"errors"
+
+	"github.com/samber/lo"
+
+	"github.com/iotaledger/wasp/v2/packages/util/rwutil"
+)
+
 type PruneStats struct {
 	DeletedNodes  uint
 	DeletedValues uint
 }
 
+// Prune decrements the refcount of the trie root and all its children,
+// and then deletes all nodes and values that have a refcount of 0.
 func Prune(store KVStore, trieRoot Hash) (PruneStats, error) {
-	refcounts := newRefcounts(store)
-
-	stats := PruneStats{}
+	enabled, refcounts := NewRefcounts(store)
+	if !enabled {
+		return PruneStats{}, errors.New("refcounts disabled, cannot prune trie")
+	}
 
 	tr, err := NewTrieReader(store, trieRoot)
 	if err != nil {
-		return stats, err
+		return PruneStats{}, err
 	}
 
-	var deletedNodes []Hash
-	var deletedValues [][]byte
+	touchedNodes := make(map[Hash]uint32)
+	touchedValues := make(map[string]uint32)
 
-	tr.IterateNodes(func(nodeKey []byte, n *NodeData, depth int) IterateNodesAction {
-		refcount := refcounts.GetNode(n.Commitment)
-		if refcount == 0 {
+	// decrement refcounts
+	tr.IterateNodesWithRefcounts(refcounts, func(nodeKey []byte, n *NodeData, depth int, nr, vr uint32) IterateNodesAction {
+		nodeRefcount := lo.ValueOr(touchedNodes, n.Commitment, nr)
+		if nodeRefcount == 0 {
 			// node already deleted
 			return IterateSkipSubtree
 		}
-		deleteNode, deleteValue := refcounts.Dec(n, refcount)
-		if deleteValue {
-			deletedValues = append(deletedValues, n.Terminal.Bytes())
+		nodeRefcount--
+		touchedNodes[n.Commitment] = nodeRefcount
+		if nodeRefcount == 0 && n.Terminal != nil && !n.Terminal.IsValue {
+			valueBytes := string(n.Terminal.Bytes())
+			valueRefcount := lo.ValueOr(touchedValues, valueBytes, vr)
+			if valueRefcount > 0 {
+				touchedValues[valueBytes] = valueRefcount - 1
+			}
 		}
-		if deleteNode {
-			deletedNodes = append(deletedNodes, n.Commitment)
+		if nodeRefcount == 0 {
 			// node deleted => decrease refcount of children
 			return IterateContinue
 		}
@@ -37,16 +53,24 @@ func Prune(store KVStore, trieRoot Hash) (PruneStats, error) {
 		return IterateSkipSubtree
 	})
 
+	// write modified refcounts and delete nodes/values with refcount 0
 	triePartition := makeWriterPartition(store, partitionTrieNodes)
-	for _, hash := range deletedNodes {
-		triePartition.Del(hash[:])
+	stats := PruneStats{}
+	for hash, n := range touchedNodes {
+		refcounts.SetNode(hash, n)
+		if n == 0 {
+			triePartition.Del(hash[:])
+			stats.DeletedNodes++
+		}
 	}
 	valuePartition := makeWriterPartition(store, partitionValues)
-	for _, key := range deletedValues {
-		valuePartition.Del(key)
+	for valueBytes, n := range touchedValues {
+		t := lo.Must(rwutil.ReadFromBytes([]byte(valueBytes), &Tcommitment{}))
+		refcounts.SetValue(t.Data, n)
+		if n == 0 {
+			valuePartition.Del([]byte(valueBytes))
+			stats.DeletedValues++
+		}
 	}
-	return PruneStats{
-		DeletedNodes:  uint(len(deletedNodes)),
-		DeletedValues: uint(len(deletedValues)),
-	}, nil
+	return stats, nil
 }

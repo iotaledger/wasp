@@ -14,8 +14,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/runtime/ioutils"
-	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/v2/packages/util/rwutil"
 )
 
 const downloaderServerPathConst = "testDownloader"

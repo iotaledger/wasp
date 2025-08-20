@@ -3,9 +3,9 @@ package legacy
 import (
 	"encoding/binary"
 
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/kv/codec"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/migrations/allmigrations"
 )
 
 // EncodeUint32ForDummyTX encodes uint32s in the same way as it was on Stardust

@@ -7,10 +7,10 @@ import (
 	"maps"
 	"slices"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/hashing"
 )
 
 const (
@@ -76,12 +76,10 @@ func (ab *AssetsBag) Equals(other *AssetsBag) bool {
 		ab.Size == other.Size
 }
 
-type (
-	AssetsBagWithBalances struct {
-		AssetsBag
-		Assets
-	}
-)
+type AssetsBagWithBalances struct {
+	AssetsBag
+	Assets `bcs:"optional"`
+}
 
 type Anchor struct {
 	ID            iotago.ObjectID

@@ -1,7 +1,7 @@
 package trie
 
 import (
-	"github.com/iotaledger/wasp/packages/cache"
+	"github.com/iotaledger/wasp/v2/packages/cache"
 )
 
 type cachedKVReader struct {
@@ -46,6 +46,7 @@ func (c *cachedKVReader) MultiGet(keys [][]byte) [][]byte {
 		} else {
 			values[i] = missingValues[0]
 			missingValues = missingValues[1:]
+			c.cache.Add(key, values[i])
 		}
 	}
 	return values

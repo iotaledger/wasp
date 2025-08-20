@@ -11,10 +11,10 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/clients"
-	ledger_go "github.com/iotaledger/wasp/clients/iota-go/hw_ledger/ledger-go"
-	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
-	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
+	"github.com/iotaledger/wasp/v2/clients"
+	ledger_go "github.com/iotaledger/wasp/v2/clients/iota-go/hw_ledger/ledger-go"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 )
 
 func initializeLedger(t *testing.T) *HWLedger {

@@ -3,10 +3,10 @@ package providers
 import (
 	"reflect"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet/wallets"
-	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/config"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/wallet/wallets"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
 )
 
 type KeyChainWallet struct {

@@ -1,4 +1,4 @@
-module github.com/iotaledger/wasp/tools/wasp-cli
+module github.com/iotaledger/wasp/v2/tools/wasp-cli
 
 go 1.23.8
 
@@ -6,7 +6,7 @@ toolchain go1.24.3
 
 replace (
 	github.com/ethereum/go-ethereum => github.com/iotaledger/go-ethereum v1.15.5-wasp1
-	github.com/iotaledger/wasp => ../../
+	github.com/iotaledger/wasp/v2 => ../../
 	go.dedis.ch/kyber/v3 => github.com/kape1395/kyber/v3 v3.0.14-0.20230124095845-ec682ff08c93 // branch: dkg-2suites
 )
 
@@ -22,7 +22,7 @@ require (
 	github.com/iotaledger/hive.go/crypto v0.0.0-20250409140545-e1a365dbea74
 	github.com/iotaledger/hive.go/db v0.0.0-20250409140545-e1a365dbea74
 	github.com/iotaledger/hive.go/log v0.0.0-20250409140545-e1a365dbea74
-	github.com/iotaledger/wasp v1.0.0-00010101000000-000000000000
+	github.com/iotaledger/wasp/v2 v2.0.0-00010101000000-000000000000
 	github.com/knadh/koanf v1.5.0
 	github.com/knadh/koanf/v2 v2.2.0
 	github.com/samber/lo v1.49.1
@@ -188,6 +188,9 @@ require (
 	github.com/supranational/blst v0.3.14 // indirect
 	github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7 // indirect
 	github.com/tcnksm/go-latest v0.0.0-20170313132115-e3007ae9052e // indirect
+	github.com/tidwall/gjson v1.18.0 // indirect
+	github.com/tidwall/match v1.1.1 // indirect
+	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.15 // indirect
 	github.com/tklauser/numcpus v0.10.0 // indirect
 	github.com/tyler-smith/go-bip39 v1.1.0 // indirect

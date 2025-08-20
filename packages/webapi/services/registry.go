@@ -1,10 +1,10 @@
 package services
 
 import (
-	"github.com/iotaledger/wasp/packages/chains"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/webapi/interfaces"
+	"github.com/iotaledger/wasp/v2/packages/chains"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/registry"
+	"github.com/iotaledger/wasp/v2/packages/webapi/interfaces"
 )
 
 type RegistryService struct {

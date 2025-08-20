@@ -1,12 +1,13 @@
 package iotago
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago/serialization"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/serialization"
 )
 
 // https://sdk.mystenlabs.com/typescript/transaction-building/basics#object-references
@@ -69,6 +70,23 @@ type NestedResult struct {
 	Result uint16 // result index
 }
 
+func (nr *NestedResult) UnmarshalJSON(data []byte) error {
+	// Try to unmarshal as an array first
+	var arr []uint16
+	if err := json.Unmarshal(data, &arr); err == nil {
+		if len(arr) == 2 {
+			nr.Cmd = arr[0]
+			nr.Result = arr[1]
+			return nil
+		}
+		return fmt.Errorf("NestedResult array must have exactly 2 elements, got %d", len(arr))
+	}
+
+	// If not an array, try as a regular struct
+	type NestedResultAlias NestedResult
+	return json.Unmarshal(data, (*NestedResultAlias)(nr))
+}
+
 func (a Argument) IsBcsEnum() {}
 
 func (a Argument) String() string {
@@ -95,7 +113,7 @@ type ProgrammableMoveCall struct {
 	Package       *PackageID
 	Module        Identifier
 	Function      Identifier
-	TypeArguments []TypeTag
+	TypeArguments []TypeTag `json:"type_arguments"`
 	Arguments     []Argument
 }
 

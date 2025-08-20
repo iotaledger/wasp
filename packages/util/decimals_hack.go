@@ -3,7 +3,7 @@ package util
 import (
 	"math/big"
 
-	"github.com/iotaledger/wasp/packages/coin"
+	"github.com/iotaledger/wasp/v2/packages/coin"
 )
 
 const ethereumDecimals = uint8(18)

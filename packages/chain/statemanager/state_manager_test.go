@@ -10,22 +10,22 @@ import (
 	"github.com/stretchr/testify/require"
 
 	hivelog "github.com/iotaledger/hive.go/log"
-	"github.com/iotaledger/wasp/packages/kvstore/mapdb"
-
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/utils"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/snapshots"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/metrics"
-	"github.com/iotaledger/wasp/packages/origin"
-	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/testutil"
-	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/iotaledger/wasp/packages/testutil/testpeers"
-	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/packages/chain/statemanager/gpa"
+	"github.com/iotaledger/wasp/v2/packages/chain/statemanager/gpa/utils"
+	"github.com/iotaledger/wasp/v2/packages/chain/statemanager/snapshots"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
+	"github.com/iotaledger/wasp/v2/packages/metrics"
+	"github.com/iotaledger/wasp/v2/packages/origin"
+	"github.com/iotaledger/wasp/v2/packages/parameters/parameterstest"
+	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/state/statetest"
+	"github.com/iotaledger/wasp/v2/packages/testutil"
+	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/v2/packages/testutil/testpeers"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/migrations/allmigrations"
 )
 
 func TestCruelWorld(t *testing.T) {
@@ -85,7 +85,7 @@ func TestCruelWorld(t *testing.T) {
 		t.Logf("Creating %v-th state manager for node %s", i, peeringURLs[i])
 		var err error
 		logNode := log.NewChildLogger(peeringURLs[i])
-		stores[i] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+		stores[i] = statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 		snapMs[i] = NewMockedSnapshotManagerFun(i < snapshotCreateNodeCount, stores[i], logNode)
 		origin.InitChain(allmigrations.LatestSchemaVersion, stores[i], bf.GetChainInitParameters(), iotago.ObjectID{}, 0, parameterstest.L1Mock)
 		chainMetrics := metrics.NewChainMetricsProvider().GetChainMetrics(isc.EmptyChainID())

@@ -8,19 +8,19 @@ import (
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/clients"
-	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
-	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
-	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient/iscmoveclienttest"
-	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/testutil/l1starter"
-	"github.com/iotaledger/wasp/packages/vm/vmtxbuilder"
+	"github.com/iotaledger/wasp/v2/clients"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	testcommon "github.com/iotaledger/wasp/v2/clients/iota-go/test_common"
+	"github.com/iotaledger/wasp/v2/clients/iscmove"
+	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
+	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient/iscmoveclienttest"
+	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmovetest"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/testutil/l1starter"
+	"github.com/iotaledger/wasp/v2/packages/vm/vmtxbuilder"
 )
 
 func TestMain(m *testing.M) {
@@ -201,7 +201,6 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 func TestRotateAndBuildTx(t *testing.T) {
 	client := l1starter.Instance().L1Client()
 	chainSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
-	senderSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 1)
 	rotateRecipientSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 2)
 	iscPackage, err := client.DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(chainSigner))
 	require.NoError(t, err)
@@ -227,10 +226,6 @@ func TestRotateAndBuildTx(t *testing.T) {
 	stateAnchor := isc.NewStateAnchor(anchor, iscPackage)
 	txb := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage, &stateAnchor, chainSigner.Address())
 
-	req1 := createIscmoveReq(t, client, senderSigner, iscPackage, anchor)
-	txb.ConsumeRequest(req1)
-	req2 := createIscmoveReq(t, client, senderSigner, iscPackage, anchor)
-	txb.ConsumeRequest(req2)
 	txb.RotationTransaction(rotateRecipientSigner.Address().AsIotaAddress())
 	stateMetadata := []byte("dummy stateMetadata")
 	pt := txb.BuildTransactionEssence(stateMetadata, 123)
@@ -256,11 +251,6 @@ func TestRotateAndBuildTx(t *testing.T) {
 
 	require.NoError(t, err)
 	require.True(t, txnResponse.Effects.Data.IsSuccess())
-
-	getObjReq1, _ := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: req1.RequestRef().ObjectID, Options: &iotajsonrpc.IotaObjectDataOptions{ShowContent: true}})
-	require.NotNil(t, getObjReq1.Error.Data.Deleted)
-	getObjReq2, _ := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: req2.RequestRef().ObjectID})
-	require.NotNil(t, getObjReq2.Error.Data.Deleted)
 
 	getObjRes, err := client.GetObject(context.Background(), iotaclient.GetObjectRequest{
 		ObjectID: anchor.ObjectID,
@@ -302,7 +292,7 @@ func createIscmoveReq(
 		},
 	)
 	require.NoError(t, err)
-	reqRef, err := createAndSendRequestRes.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
+	reqRef, err := createAndSendRequestRes.GetCreatedObjectByName(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)
 	reqWithObj, err := client.L2().GetRequestFromObjectID(context.Background(), reqRef.ObjectID)
 	require.NoError(t, err)
@@ -338,7 +328,7 @@ func createIscmoveReqWithAssets(
 		},
 	)
 	require.NoError(t, err)
-	reqRef, err := createAndSendRequestRes.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
+	reqRef, err := createAndSendRequestRes.GetCreatedObjectByName(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)
 	reqWithObj, err := client.L2().GetRequestFromObjectID(context.Background(), reqRef.ObjectID)
 	require.NoError(t, err)

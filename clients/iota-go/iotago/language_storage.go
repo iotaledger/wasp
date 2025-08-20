@@ -1,11 +1,12 @@
 package iotago
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strings"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago/serialization"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/serialization"
 )
 
 // refer BCS doc https://github.com/diem/bcs/blob/master/README.md#externally-tagged-enumerations
@@ -130,6 +131,20 @@ func parseStructTypeArgs(structTypeParams string) ([]TypeTag, error) {
 		retTypeTag = append(retTypeTag, *elt)
 	}
 	return retTypeTag, nil
+}
+
+func (s *TypeTag) UnmarshalJSON(data []byte) error {
+	var str string
+	err := json.Unmarshal(data, &str)
+	if err != nil {
+		return err
+	}
+	tag, err := TypeTagFromString(str)
+	if err != nil {
+		return err
+	}
+	*s = *tag
+	return nil
 }
 
 type StructTag struct {

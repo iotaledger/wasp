@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/app"
-	"github.com/iotaledger/wasp/packages/authentication"
+	"github.com/iotaledger/wasp/v2/packages/authentication"
 )
 
 type ParametersWebAPI struct {

@@ -8,9 +8,9 @@ import (
 
 	bcs "github.com/iotaledger/bcs-go"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/packages/coin"
+	"github.com/iotaledger/wasp/v2/packages/hashing"
 )
 
 const BaseTokenDecimals = 9

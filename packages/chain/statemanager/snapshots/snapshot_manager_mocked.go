@@ -12,9 +12,9 @@ import (
 
 	"github.com/iotaledger/hive.go/log"
 
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/util/timeutil"
+	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/util"
+	"github.com/iotaledger/wasp/v2/packages/util/timeutil"
 )
 
 type MockedSnapshotManager struct {
@@ -129,7 +129,7 @@ func (msmT *MockedSnapshotManager) loadSnapshot() SnapshotInfo {
 	snapshot := new(bytes.Buffer)
 	err := msmT.origStore.TakeSnapshot(msmT.snapshotToLoad.TrieRoot(), snapshot)
 	require.NoError(msmT.t, err)
-	err = msmT.nodeStore.RestoreSnapshot(msmT.snapshotToLoad.TrieRoot(), snapshot)
+	err = msmT.nodeStore.RestoreSnapshot(msmT.snapshotToLoad.TrieRoot(), snapshot, true)
 	require.NoError(msmT.t, err)
 	msmT.log.LogDebugf("Loading snapshot %s: snapshot loaded", msmT.snapshotToLoad)
 	return msmT.snapshotToLoad

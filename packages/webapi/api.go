@@ -11,25 +11,26 @@ import (
 	"github.com/iotaledger/hive.go/app/configuration"
 	"github.com/iotaledger/hive.go/app/shutdown"
 	"github.com/iotaledger/hive.go/log"
-	"github.com/iotaledger/wasp/packages/authentication"
-	"github.com/iotaledger/wasp/packages/chains"
-	"github.com/iotaledger/wasp/packages/dkg"
-	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
-	"github.com/iotaledger/wasp/packages/metrics"
-	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/publisher"
-	"github.com/iotaledger/wasp/packages/registry"
-	userspkg "github.com/iotaledger/wasp/packages/users"
-	"github.com/iotaledger/wasp/packages/webapi/controllers/chain"
-	"github.com/iotaledger/wasp/packages/webapi/controllers/corecontracts"
-	apimetrics "github.com/iotaledger/wasp/packages/webapi/controllers/metrics"
-	"github.com/iotaledger/wasp/packages/webapi/controllers/node"
-	"github.com/iotaledger/wasp/packages/webapi/controllers/requests"
-	"github.com/iotaledger/wasp/packages/webapi/controllers/users"
-	"github.com/iotaledger/wasp/packages/webapi/interfaces"
-	"github.com/iotaledger/wasp/packages/webapi/services"
-	"github.com/iotaledger/wasp/packages/webapi/websocket"
+	"github.com/iotaledger/wasp/v2/clients"
+	"github.com/iotaledger/wasp/v2/packages/authentication"
+	"github.com/iotaledger/wasp/v2/packages/chains"
+	"github.com/iotaledger/wasp/v2/packages/dkg"
+	"github.com/iotaledger/wasp/v2/packages/evm/jsonrpc"
+	"github.com/iotaledger/wasp/v2/packages/metrics"
+	"github.com/iotaledger/wasp/v2/packages/parameters"
+	"github.com/iotaledger/wasp/v2/packages/peering"
+	"github.com/iotaledger/wasp/v2/packages/publisher"
+	"github.com/iotaledger/wasp/v2/packages/registry"
+	userspkg "github.com/iotaledger/wasp/v2/packages/users"
+	"github.com/iotaledger/wasp/v2/packages/webapi/controllers/chain"
+	"github.com/iotaledger/wasp/v2/packages/webapi/controllers/corecontracts"
+	apimetrics "github.com/iotaledger/wasp/v2/packages/webapi/controllers/metrics"
+	"github.com/iotaledger/wasp/v2/packages/webapi/controllers/node"
+	"github.com/iotaledger/wasp/v2/packages/webapi/controllers/requests"
+	"github.com/iotaledger/wasp/v2/packages/webapi/controllers/users"
+	"github.com/iotaledger/wasp/v2/packages/webapi/interfaces"
+	"github.com/iotaledger/wasp/v2/packages/webapi/services"
+	"github.com/iotaledger/wasp/v2/packages/webapi/websocket"
 )
 
 const APIVersion = 1
@@ -97,6 +98,7 @@ func Init(
 	accountDumpsPath string,
 	pub *publisher.Publisher,
 	l1ParamsFetcher parameters.L1ParamsFetcher,
+	l1Client clients.L1Client,
 	jsonrpcParams *jsonrpc.Parameters,
 ) {
 	// load mock files to generate correct echo swagger documentation
@@ -118,7 +120,7 @@ func Init(
 	authMiddleware := authentication.AddAuthentication(server, userManager, nodeIdentityProvider, authConfig, mocker)
 
 	controllersToLoad := []interfaces.APIController{
-		chain.NewChainController(logger, chainService, committeeService, evmService, nodeService, offLedgerService, registryService, accountDumpsPath),
+		chain.NewChainController(logger, chainService, committeeService, evmService, nodeService, offLedgerService, registryService, accountDumpsPath, l1Client),
 		apimetrics.NewMetricsController(chainService, metricsService),
 		node.NewNodeController(waspVersion, config, dkgService, nodeService, peeringService),
 		requests.NewRequestsController(chainService, offLedgerService, peeringService),

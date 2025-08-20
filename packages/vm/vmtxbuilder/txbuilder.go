@@ -7,11 +7,11 @@ import (
 	"github.com/samber/lo"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/vm/vmexceptions"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/vm/vmexceptions"
 )
 
 // AnchorTransactionBuilder represents structure which handles all the data needed to eventually
@@ -115,35 +115,38 @@ func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateMetadata []byt
 	if txb.ptb == nil {
 		txb.ptb = iotago.NewProgrammableTransactionBuilder()
 	}
-	ptb := iscmoveclient.PTBReceiveRequestsAndTransition(
-		txb.ptb,
-		txb.iscPackage,
-		txb.ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: txb.anchor.GetObjectRef()}),
-		txb.consumed,
-		txb.sent,
-		stateMetadata,
-		topUpAmount,
-	)
 
-	if txb.rotateToAddr != nil {
-		ptb.Command(iotago.Command{
+	isRotation := txb.rotateToAddr != nil
+
+	if isRotation {
+		txb.ptb.Command(iotago.Command{
 			TransferObjects: &iotago.ProgrammableTransferObjects{
 				Objects: []iotago.Argument{
-					ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: txb.anchor.GetObjectRef()}),
+					txb.ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: txb.anchor.GetObjectRef()}),
 				},
-				Address: ptb.MustForceSeparatePure(txb.rotateToAddr),
+				Address: txb.ptb.MustForceSeparatePure(txb.rotateToAddr),
 			},
 		})
-		ptb.Command(iotago.Command{
+		txb.ptb.Command(iotago.Command{
 			TransferObjects: &iotago.ProgrammableTransferObjects{
 				Objects: []iotago.Argument{
 					iotago.GetArgumentGasCoin(),
 				},
-				Address: ptb.MustForceSeparatePure(txb.rotateToAddr),
+				Address: txb.ptb.MustForceSeparatePure(txb.rotateToAddr),
 			},
 		})
+	} else {
+		txb.ptb = iscmoveclient.PTBReceiveRequestsAndTransition(
+			txb.ptb,
+			txb.iscPackage,
+			txb.ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: txb.anchor.GetObjectRef()}),
+			txb.consumed,
+			txb.sent,
+			stateMetadata,
+			topUpAmount,
+		)
 	}
-	return ptb.Finish()
+	return txb.ptb.Finish()
 }
 
 func (txb *AnchorTransactionBuilder) ViewPTB() *iotago.ProgrammableTransactionBuilder {

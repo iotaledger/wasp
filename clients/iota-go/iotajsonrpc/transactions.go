@@ -1,11 +1,13 @@
 package iotajsonrpc
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago/serialization"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/serialization"
+	"github.com/samber/lo"
 )
 
 type ExecuteTransactionRequestType string
@@ -120,12 +122,12 @@ type IotaTransactionBlockKind = serialization.TagJson[TransactionBlockKind]
 
 type TransactionBlockKind struct {
 	// A system transaction that will update epoch information on-chain.
-	ChangeEpoch *IotaChangeEpoch `json:"ChangeEpoch,omitempty"`
+	ChangeEpoch *IotaChangeEpoch `json:"ChangeEpoch,omitempty" bcs:"optional"`
 	// A system transaction used for initializing the initial state of the chain.
-	Genesis *IotaGenesisTransaction `json:"Genesis,omitempty"`
+	Genesis *IotaGenesisTransaction `json:"Genesis,omitempty" bcs:"optional"`
 	// A system transaction marking the start of a series of transactions scheduled as part of a
 	// checkpoint
-	ConsensusCommitPrologue *IotaConsensusCommitPrologue `json:"ConsensusCommitPrologue,omitempty"`
+	ConsensusCommitPrologue *IotaConsensusCommitPrologue `json:"ConsensusCommitPrologue,omitempty" bcs:"optional"`
 	// A series of transactions where the results of one transaction can be used in future
 	// transactions
 	ProgrammableTransaction *IotaProgrammableTransactionBlock `json:"ProgrammableTransaction,omitempty"`
@@ -159,10 +161,16 @@ type IotaConsensusCommitPrologue struct {
 }
 
 type IotaProgrammableTransactionBlock struct {
-	Inputs []interface{} `json:"inputs"`
+	Inputs json.RawMessage `json:"inputs"`
 	// The transactions to be executed sequentially. A failure in any transaction will
 	// result in the failure of the entire programmable transaction block.
-	Commands []interface{} `json:"transactions"`
+	Commands json.RawMessage `json:"transactions"`
+}
+
+type ProgrammableTransactionBlockPureInput struct {
+	Type      string          `json:"type"`
+	Value     json.RawMessage `json:"value"`
+	ValueType string          `json:"valueType"`
 }
 
 type IotaTransactionBlockDataV1 struct {
@@ -239,6 +247,8 @@ type ObjectChange struct {
 	} `json:"created,omitempty"`
 }
 
+func (o ObjectChange) IsBcsEnum() {}
+
 func (o ObjectChange) Tag() string {
 	return "type"
 }
@@ -309,13 +319,17 @@ func (r *IotaTransactionBlockResponse) GetPublishedPackageID() (*iotago.PackageI
 }
 
 // requires `ShowObjectChanges: true`
-func (r *IotaTransactionBlockResponse) GetCreatedObjectInfo(module string, objectName string) (
+func (r *IotaTransactionBlockResponse) GetCreatedObjectByName(module string, objectName string) (
 	*iotago.ObjectRef,
 	error,
 ) {
 	if r.ObjectChanges == nil {
 		return nil, errors.New("expected ObjectChanges != nil")
 	}
+
+	var ref *iotago.ObjectRef
+	var prevCreatedObj any
+
 	for _, change := range r.ObjectChanges {
 		if change.Data.Created != nil {
 			// some possible examples
@@ -326,25 +340,41 @@ func (r *IotaTransactionBlockResponse) GetCreatedObjectInfo(module string, objec
 				return nil, fmt.Errorf("invalid resource string: %w", err)
 			}
 			if resource.Contains(nil, module, objectName) {
-				ref := iotago.ObjectRef{
+				if ref != nil {
+					return nil, fmt.Errorf("multiple created objects found for %s::%s: first = %v, second = %v",
+						module, objectName,
+						string(lo.Must(json.Marshal(prevCreatedObj))),
+						string(lo.Must(json.Marshal(change.Data.Created))),
+					)
+				}
+
+				ref = &iotago.ObjectRef{
 					ObjectID: &change.Data.Created.ObjectID,
 					Version:  change.Data.Created.Version.Uint64(),
 					Digest:   &change.Data.Created.Digest,
 				}
-				return &ref, nil
+				prevCreatedObj = change.Data.Created
 			}
 		}
 	}
-	return nil, fmt.Errorf("not found")
+
+	if ref == nil {
+		return nil, fmt.Errorf("not found")
+	}
+	return ref, nil
 }
 
-func (r *IotaTransactionBlockResponse) GetMutatedObjectInfo(module string, objectName string) (
+func (r *IotaTransactionBlockResponse) GetMutatedObjectByName(module string, objectName string) (
 	*iotago.ObjectRef,
 	error,
 ) {
 	if r.ObjectChanges == nil {
 		return nil, errors.New("expected ObjectChanges != nil")
 	}
+
+	var ref *iotago.ObjectRef
+	var prevMutatedObj any
+
 	for _, change := range r.ObjectChanges {
 		if change.Data.Mutated != nil {
 			// some possible examples
@@ -355,26 +385,80 @@ func (r *IotaTransactionBlockResponse) GetMutatedObjectInfo(module string, objec
 				return nil, fmt.Errorf("invalid resource string: %w", err)
 			}
 			if resource.Contains(nil, module, objectName) {
-				ref := iotago.ObjectRef{
+				if ref != nil {
+					return nil, fmt.Errorf("multiple mutated objects found for %s::%s: first = %v, second = %v",
+						module, objectName,
+						string(lo.Must(json.Marshal(prevMutatedObj))),
+						string(lo.Must(json.Marshal(change.Data.Mutated))),
+					)
+				}
+
+				ref = &iotago.ObjectRef{
 					ObjectID: &change.Data.Mutated.ObjectID,
 					Version:  change.Data.Mutated.Version.Uint64(),
 					Digest:   &change.Data.Mutated.Digest,
 				}
-				return &ref, nil
+				prevMutatedObj = change.Data.Mutated
 			}
 		}
 	}
-	return nil, fmt.Errorf("not found")
+
+	if ref == nil {
+		return nil, fmt.Errorf("not found")
+	}
+	return ref, nil
 }
 
-// requires `ShowObjectChanges: true`
-func (r *IotaTransactionBlockResponse) GetCreatedCoin(module string, coinType string) (
+func (r *IotaTransactionBlockResponse) GetMutatedObjectByID(objectID iotago.ObjectID) (
 	*iotago.ObjectRef,
 	error,
 ) {
 	if r.ObjectChanges == nil {
 		return nil, errors.New("expected ObjectChanges != nil")
 	}
+
+	var ref *iotago.ObjectRef
+	var prevMutatedObj any
+
+	for _, change := range r.ObjectChanges {
+		if change.Data.Mutated != nil {
+			if change.Data.Mutated.ObjectID == objectID {
+				if ref != nil {
+					return nil, fmt.Errorf("multiple mutated objects found for %v: first = %v, second = %v",
+						objectID.String(),
+						string(lo.Must(json.Marshal(prevMutatedObj))),
+						string(lo.Must(json.Marshal(change.Data.Mutated))),
+					)
+				}
+
+				ref = &iotago.ObjectRef{
+					ObjectID: &change.Data.Mutated.ObjectID,
+					Version:  change.Data.Mutated.Version.Uint64(),
+					Digest:   &change.Data.Mutated.Digest,
+				}
+				prevMutatedObj = change.Data.Mutated
+			}
+		}
+	}
+
+	if ref == nil {
+		return nil, fmt.Errorf("not found")
+	}
+	return ref, nil
+}
+
+// requires `ShowObjectChanges: true`
+func (r *IotaTransactionBlockResponse) GetCreatedCoinByType(module string, coinType string) (
+	*iotago.ObjectRef,
+	error,
+) {
+	if r.ObjectChanges == nil {
+		return nil, errors.New("expected ObjectChanges != nil")
+	}
+
+	var ref *iotago.ObjectRef
+	var prevCreatedObj any
+
 	for _, change := range r.ObjectChanges {
 		if change.Data.Created != nil {
 			resource, err := iotago.NewResourceType(change.Data.Created.ObjectType)
@@ -383,27 +467,43 @@ func (r *IotaTransactionBlockResponse) GetCreatedCoin(module string, coinType st
 			}
 			if resource.Module == "coin" && resource.SubType1 != nil {
 				if resource.SubType1.Module == module && resource.SubType1.ObjectName == coinType {
-					ref := iotago.ObjectRef{
+					if ref != nil {
+						return nil, fmt.Errorf("multiple created coins found for %s::%s: first = %v, second = %v",
+							module, coinType,
+							string(lo.Must(json.Marshal(prevCreatedObj))),
+							string(lo.Must(json.Marshal(change.Data.Created))),
+						)
+					}
+
+					ref = &iotago.ObjectRef{
 						ObjectID: &change.Data.Created.ObjectID,
 						Version:  change.Data.Created.Version.Uint64(),
 						Digest:   &change.Data.Created.Digest,
 					}
-					return &ref, nil
+					prevCreatedObj = change.Data.Created
 				}
 			}
 		}
 	}
-	return nil, errors.New("not found")
+
+	if ref == nil {
+		return nil, fmt.Errorf("not found")
+	}
+	return ref, nil
 }
 
 // requires `ShowObjectChanges: true`
-func (r *IotaTransactionBlockResponse) GetMutatedCoin(module string, coinType string) (
+func (r *IotaTransactionBlockResponse) GetMutatedCoinByType(module string, coinType string) (
 	*iotago.ObjectRef,
 	error,
 ) {
 	if r.ObjectChanges == nil {
 		return nil, errors.New("expected ObjectChanges != nil")
 	}
+
+	var ref *iotago.ObjectRef
+	var prevMutatedObj any
+
 	for _, change := range r.ObjectChanges {
 		if change.Data.Mutated != nil {
 			resource, err := iotago.NewResourceType(change.Data.Mutated.ObjectType)
@@ -412,17 +512,29 @@ func (r *IotaTransactionBlockResponse) GetMutatedCoin(module string, coinType st
 			}
 			if resource.Module == "coin" && resource.SubType1 != nil {
 				if resource.SubType1.Module == module && resource.SubType1.ObjectName == coinType {
-					ref := iotago.ObjectRef{
+					if ref != nil {
+						return nil, fmt.Errorf("multiple mutated coins found for %s::%s: first = %v, second = %v",
+							module, coinType,
+							string(lo.Must(json.Marshal(prevMutatedObj))),
+							string(lo.Must(json.Marshal(change.Data.Mutated))),
+						)
+					}
+
+					ref = &iotago.ObjectRef{
 						ObjectID: &change.Data.Mutated.ObjectID,
 						Version:  change.Data.Mutated.Version.Uint64(),
 						Digest:   &change.Data.Mutated.Digest,
 					}
-					return &ref, nil
+					prevMutatedObj = change.Data.Mutated
 				}
 			}
 		}
 	}
-	return nil, errors.New("not found")
+
+	if ref == nil {
+		return nil, errors.New("not found")
+	}
+	return ref, nil
 }
 
 type (
@@ -502,7 +614,7 @@ type TransactionBlocksPage = Page[IotaTransactionBlockResponse, iotago.Transacti
 type DryRunTransactionBlockResponse struct {
 	Effects        serialization.TagJson[IotaTransactionBlockEffects] `json:"effects"`
 	Events         []IotaEvent                                        `json:"events"`
-	ObjectChanges  []serialization.TagJson[ObjectChange]              `json:"objectChanges"`
-	BalanceChanges []BalanceChange                                    `json:"balanceChanges"`
+	ObjectChanges  []serialization.TagJson[ObjectChange]              `json:"objectChanges" bcs:"optional"`
+	BalanceChanges []BalanceChange                                    `json:"balanceChanges" bcs:"optional"`
 	Input          serialization.TagJson[IotaTransactionBlockData]    `json:"input"`
 }

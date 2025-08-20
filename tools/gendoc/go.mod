@@ -1,4 +1,4 @@
-module github.com/iotaledger/wasp/tools/gendoc
+module github.com/iotaledger/wasp/v2/tools/gendoc
 
 go 1.23.8
 
@@ -6,14 +6,14 @@ toolchain go1.24.4
 
 replace (
 	github.com/ethereum/go-ethereum => github.com/iotaledger/go-ethereum v1.15.5-wasp1
-	github.com/iotaledger/wasp => ../../
+	github.com/iotaledger/wasp/v2 => ../../
 	go.dedis.ch/kyber/v3 => github.com/kape1395/kyber/v3 v3.0.14-0.20230124095845-ec682ff08c93 // branch: dkg-2suites
 )
 
 require (
 	github.com/iotaledger/hive.go/app v0.0.0-20250409140545-e1a365dbea74
 	github.com/iotaledger/hive.go/apputils v1.0.0-rc.1.0.20230417125513-e2e89991217f
-	github.com/iotaledger/wasp v1.0.0-00010101000000-000000000000
+	github.com/iotaledger/wasp/v2 v2.0.0-00010101000000-000000000000
 )
 
 require (
@@ -48,6 +48,7 @@ require (
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
+	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
 	github.com/gofrs/flock v0.8.1 // indirect
 	github.com/golang-jwt/jwt/v5 v5.2.2 // indirect
 	github.com/golang/snappy v1.0.0 // indirect
@@ -84,6 +85,7 @@ require (
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.10 // indirect
 	github.com/knadh/koanf v1.5.0 // indirect
+	github.com/knadh/koanf/v2 v2.2.0 // indirect
 	github.com/koron/go-ssdp v0.0.6 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/labstack/echo-contrib v0.17.2 // indirect

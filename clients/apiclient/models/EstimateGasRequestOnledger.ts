@@ -14,9 +14,9 @@ import { HttpFile } from '../http/http';
 
 export class EstimateGasRequestOnledger {
     /**
-    * Serialized Output (Hex)
+    * Hexadecimal bytes of transaction to estimate
     */
-    'outputBytes': string;
+    'transactionBytes': string;
 
     static readonly discriminator: string | undefined = undefined;
 
@@ -24,8 +24,8 @@ export class EstimateGasRequestOnledger {
 
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
         {
-            "name": "outputBytes",
-            "baseName": "outputBytes",
+            "name": "transactionBytes",
+            "baseName": "transactionBytes",
             "type": "string",
             "format": "string"
         }    ];

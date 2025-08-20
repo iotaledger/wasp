@@ -13,17 +13,17 @@ import (
 	"github.com/ethereum/go-ethereum/eth/tracers"
 
 	hivedb "github.com/iotaledger/hive.go/db"
-	"github.com/iotaledger/wasp/packages/chainutil"
-	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/trie"
-	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/v2/packages/chainutil"
+	"github.com/iotaledger/wasp/v2/packages/coin"
+	"github.com/iotaledger/wasp/v2/packages/evm/jsonrpc"
+	"github.com/iotaledger/wasp/v2/packages/hashing"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/parameters"
+	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/trie"
+	"github.com/iotaledger/wasp/v2/packages/vm"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/v2/packages/vm/gas"
 )
 
 // jsonRPCSoloBackend is the implementation of [jsonrpc.ChainBackend] for Solo

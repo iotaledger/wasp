@@ -6,8 +6,8 @@ package distsync
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/gpa"
+	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
 type inputPublishRequest struct {

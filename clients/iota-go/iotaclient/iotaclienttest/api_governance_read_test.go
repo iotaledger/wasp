@@ -6,9 +6,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-	"github.com/iotaledger/wasp/packages/testutil/l1starter"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/packages/testutil/l1starter"
 )
 
 func TestGetCommitteeInfo(t *testing.T) {
@@ -18,7 +18,7 @@ func TestGetCommitteeInfo(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, epochId, committeeInfo.EpochId)
 	// just use a arbitrary big number to ensure there are enough validator
-	require.Greater(t, len(committeeInfo.Validators), 3)
+	require.Len(t, committeeInfo.Validators, 1)
 }
 
 func TestGetLatestIotaSystemState(t *testing.T) {

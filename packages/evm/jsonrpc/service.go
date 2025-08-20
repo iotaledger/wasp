@@ -25,11 +25,11 @@ import (
 	"github.com/samber/lo"
 	"golang.org/x/crypto/sha3"
 
-	"github.com/iotaledger/wasp/packages/evm/evmerrors"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/metrics"
-	"github.com/iotaledger/wasp/packages/parameters"
-	vmerrors "github.com/iotaledger/wasp/packages/vm/core/errors"
+	"github.com/iotaledger/wasp/v2/packages/evm/evmerrors"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/metrics"
+	"github.com/iotaledger/wasp/v2/packages/parameters"
+	vmerrors "github.com/iotaledger/wasp/v2/packages/vm/core/errors"
 )
 
 // EthService contains the implementations for the `eth_*` JSONRPC endpoints.

@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/packages/util/byzquorum"
+	"github.com/iotaledger/wasp/v2/packages/util/byzquorum"
 )
 
 func TestMaxF(t *testing.T) {

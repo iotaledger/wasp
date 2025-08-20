@@ -9,16 +9,17 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/log"
-	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
-	"github.com/iotaledger/wasp/packages/chain/cons/gr"
-	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/state/indexedstore"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/processors"
+	"github.com/iotaledger/wasp/v2/clients"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
+	"github.com/iotaledger/wasp/v2/packages/chain/cons/gr"
+	"github.com/iotaledger/wasp/v2/packages/coin"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/parameters"
+	"github.com/iotaledger/wasp/v2/packages/peering"
+	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/state/indexedstore"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/v2/packages/vm/processors"
 )
 
 type ChainNodeConn interface {
@@ -61,7 +62,7 @@ type NodeConnection interface {
 	// WaitUntilInitiallySynced blocks until the connection is established.
 	WaitUntilInitiallySynced(context.Context) error
 	L1ParamsFetcher() parameters.L1ParamsFetcher
-
+	L1Client() clients.L1Client
 	ConsensusL1InfoProposal(
 		ctx context.Context,
 		anchor *isc.StateAnchor,

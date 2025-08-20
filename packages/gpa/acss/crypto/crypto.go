@@ -9,7 +9,7 @@ import (
 	"go.dedis.ch/kyber/v3/share"
 	"golang.org/x/crypto/chacha20poly1305"
 
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/v2/packages/util/rwutil"
 )
 
 // errors returned by the package

@@ -13,15 +13,15 @@ import (
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
-	"github.com/iotaledger/wasp/packages/isc/coreutil"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/core/errors"
-	"github.com/iotaledger/wasp/packages/vm/core/evm"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/inccounter"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/iotatest"
+	"github.com/iotaledger/wasp/v2/packages/isc/coreutil"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/errors"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/root"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/testcore/contracts/inccounter"
 )
 
 func getName(p reflect.Type) string {

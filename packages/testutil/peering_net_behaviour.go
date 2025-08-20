@@ -13,7 +13,7 @@ import (
 
 	"github.com/iotaledger/hive.go/log"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 )
 
 // PeeringNetBehavior is an interface for all the network behaviors.

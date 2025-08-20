@@ -6,7 +6,7 @@ package cons
 import (
 	"go.dedis.ch/kyber/v3/suites"
 
-	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/v2/packages/gpa"
 )
 
 type msgBLSPartialSig struct {

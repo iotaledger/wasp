@@ -7,10 +7,10 @@ import (
 	"io"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/buffered"
-	"github.com/iotaledger/wasp/packages/trie"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/kv"
+	"github.com/iotaledger/wasp/v2/packages/kv/buffered"
+	"github.com/iotaledger/wasp/v2/packages/trie"
 )
 
 // Store manages the storage of a chain's state.
@@ -40,6 +40,8 @@ type Store interface {
 
 	// SetLatest sets the given trie root to be considered the latest one in the chain.
 	SetLatest(trieRoot trie.Hash) error
+	// ClearLatest unsets the latest trie root, so that the chain has no latest state.
+	ClearLatest() error
 	// LatestBlockIndex returns the index of the latest block, if set (see SetLatest)
 	LatestBlockIndex() (uint32, error)
 	// LatestBlock returns the latest block of the chain, if set (see SetLatest)
@@ -67,11 +69,11 @@ type Store interface {
 
 	// Commit commits the given state, creating a new block and trie root in the DB.
 	// SetLatest must be called manually to consider the new state as the latest one.
-	Commit(StateDraft) Block
+	Commit(StateDraft) (Block, bool, *trie.CommitStats, error)
 
 	// ExtractBlock performs a dry-run of Commit, discarding all changes that would be
 	// made to the DB.
-	ExtractBlock(StateDraft) Block
+	ExtractBlock(StateDraft) (Block, error)
 
 	// Prune deletes the trie with the given root from the DB
 	Prune(trie.Hash) (trie.PruneStats, error)
@@ -84,7 +86,13 @@ type Store interface {
 
 	// RestoreSnapshot restores the block and trie from the given snapshot.
 	// It is not required for the previous trie root to be present in the DB.
-	RestoreSnapshot(trie.Hash, io.Reader) error
+	RestoreSnapshot(trie.Hash, io.Reader, bool) error
+
+	// IsRefcountsEnabled returns true if reference counting is enabled.
+	IsRefcountsEnabled() bool
+
+	// CheckIntegrity verifies the data integrity, for testing or debugging purposes.
+	CheckIntegrity(w io.Writer)
 }
 
 // A Block contains the mutations between the previous and current states,

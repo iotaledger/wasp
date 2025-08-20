@@ -21,23 +21,23 @@ import (
 	"github.com/iotaledger/hive.go/app/shutdown"
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/hive.go/web/websockethub"
-	"github.com/iotaledger/wasp/packages/authentication"
-	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chains"
-	"github.com/iotaledger/wasp/packages/daemon"
-	"github.com/iotaledger/wasp/packages/dkg"
-	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/metrics"
-	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/publisher"
-	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/users"
-	"github.com/iotaledger/wasp/packages/webapi"
-	"github.com/iotaledger/wasp/packages/webapi/apierrors"
-	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
-	"github.com/iotaledger/wasp/packages/webapi/httpserver"
-	"github.com/iotaledger/wasp/packages/webapi/websocket"
+	"github.com/iotaledger/wasp/v2/packages/authentication"
+	"github.com/iotaledger/wasp/v2/packages/chain"
+	"github.com/iotaledger/wasp/v2/packages/chains"
+	"github.com/iotaledger/wasp/v2/packages/daemon"
+	"github.com/iotaledger/wasp/v2/packages/dkg"
+	"github.com/iotaledger/wasp/v2/packages/evm/jsonrpc"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/metrics"
+	"github.com/iotaledger/wasp/v2/packages/peering"
+	"github.com/iotaledger/wasp/v2/packages/publisher"
+	"github.com/iotaledger/wasp/v2/packages/registry"
+	"github.com/iotaledger/wasp/v2/packages/users"
+	"github.com/iotaledger/wasp/v2/packages/webapi"
+	"github.com/iotaledger/wasp/v2/packages/webapi/apierrors"
+	"github.com/iotaledger/wasp/v2/packages/webapi/controllers/controllerutils"
+	"github.com/iotaledger/wasp/v2/packages/webapi/httpserver"
+	"github.com/iotaledger/wasp/v2/packages/webapi/websocket"
 )
 
 func init() {
@@ -292,6 +292,7 @@ func provide(c *dig.Container) error {
 			ParamsWebAPI.AccountDumpsPath,
 			deps.Publisher,
 			deps.NodeConn.L1ParamsFetcher(),
+			deps.NodeConn.L1Client(),
 			jsonrpc.NewParameters(
 				ParamsWebAPI.Limits.Jsonrpc.MaxBlocksInLogsFilterRange,
 				ParamsWebAPI.Limits.Jsonrpc.MaxLogsInResult,

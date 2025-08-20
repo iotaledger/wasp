@@ -4,9 +4,9 @@ import (
 	"testing"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/utils"
-	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/state/statetest"
+	"github.com/iotaledger/wasp/v2/packages/chain/statemanager/gpa/utils"
+	"github.com/iotaledger/wasp/v2/packages/gpa"
+	"github.com/iotaledger/wasp/v2/packages/state/statetest"
 )
 
 func TestMarshalUnmarshalGetBlockMessage(t *testing.T) {

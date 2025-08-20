@@ -4,8 +4,8 @@
 package testutil
 
 import (
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/registry"
 )
 
 // Mock implementation of a ChainRecordRegistryProvider for testing purposes

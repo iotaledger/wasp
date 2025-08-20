@@ -3,8 +3,8 @@ package multiclient
 import (
 	"context"
 
-	"github.com/iotaledger/wasp/clients/apiclient"
-	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/v2/clients/apiclient"
+	"github.com/iotaledger/wasp/v2/packages/registry"
 )
 
 // PutChainRecord calls PutChainRecord in all wasp nodes

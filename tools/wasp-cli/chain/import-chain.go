@@ -9,34 +9,35 @@ import (
 	"github.com/spf13/cobra"
 
 	hivedb "github.com/iotaledger/hive.go/db"
-	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/database"
-	"github.com/iotaledger/wasp/packages/kvstore/rocksdb"
-	"github.com/iotaledger/wasp/packages/origin"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/state/indexedstore"
-	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/packages/vm/core/evm"
-	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
-	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/database"
+	"github.com/iotaledger/wasp/v2/packages/kvstore/rocksdb"
+	"github.com/iotaledger/wasp/v2/packages/origin"
+	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/transaction"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/evm/emulator"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/cliclients"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/config"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/wallet"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/waspcmd"
 )
 
-func openChainAndRead(dbPath string) (transaction.StateMetadata, uint32) {
+func openChainAndRead(dbPath string) (transaction.StateMetadata, uint32, error) {
 	dbConn := lo.Must(rocksdb.OpenDBReadOnly(dbPath))
 	db := database.New(dbPath, rocksdb.New(dbConn), hivedb.EngineRocksDB, false, func() bool {
 		return false
 	})
 
-	store := db.KVStore()
-	rebasedDBStore := indexedstore.New(state.NewStoreWithUniqueWriteMutex(store))
+	rebasedDBStore, err := state.NewStoreReadonly(db.KVStore())
+	if err != nil {
+		return transaction.StateMetadata{}, 0, fmt.Errorf("failed to open read only chain db: %w", err)
+	}
 
 	latestBlock := lo.Must(rebasedDBStore.LatestBlock())
 	latestState := lo.Must(rebasedDBStore.LatestState())
@@ -64,7 +65,7 @@ func openChainAndRead(dbPath string) (transaction.StateMetadata, uint32) {
 		GasFeePolicy:  governanceReader.GetGasFeePolicy(),
 	}
 
-	return anchorStateMetadata, latestBlock.StateIndex()
+	return anchorStateMetadata, latestBlock.StateIndex(), nil
 }
 
 func initImportCmd() *cobra.Command {
@@ -96,7 +97,8 @@ func initImportCmd() *cobra.Command {
 			}
 
 			dbPath := args[0]
-			anchorStateMetadata, blockIndex := openChainAndRead(dbPath)
+			anchorStateMetadata, blockIndex, err := openChainAndRead(dbPath)
+			log.Check(err)
 			anchorStateMetadata.GasCoinObjectID = &result.gasCoinObject
 
 			anchor, err := cliclients.L2Client().StartNewChain(ctx, &iscmoveclient.StartNewChainRequest{

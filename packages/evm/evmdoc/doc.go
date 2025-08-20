@@ -17,12 +17,12 @@
 //
 // Tests are grouped in the following packages:
 //
-//   - [github.com/iotaledger/wasp/packages/vm/core/evm/evmtest]: solo tests
+//   - [github.com/iotaledger/wasp/v2/packages/vm/core/evm/evmtest]: solo tests
 //     for the EVM core contract
-//   - [github.com/iotaledger/wasp/packages/evm/jsonrpc/jsonrpctest]: solo
+//   - [github.com/iotaledger/wasp/v2/packages/evm/jsonrpc/jsonrpctest]: solo
 //     tests for the JSONRPC service
 //   - tools/cluster/tests/evm_jsonrpc_test.go: cluster tests
-//   - [github.com/iotaledger/wasp/packages/evm/evmtest]: common Solidity
+//   - [github.com/iotaledger/wasp/v2/packages/evm/evmtest]: common Solidity
 //     code used in tests
 //
 // # go-ethereum
@@ -189,17 +189,17 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/eth/tracers"
 
-	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chainutil"
-	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/evm"
-	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
-	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
-	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
-	"github.com/iotaledger/wasp/packages/vm/vmimpl"
-	"github.com/iotaledger/wasp/packages/webapi/services"
+	"github.com/iotaledger/wasp/v2/packages/chain"
+	"github.com/iotaledger/wasp/v2/packages/chainutil"
+	"github.com/iotaledger/wasp/v2/packages/evm/jsonrpc"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/vm"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/evm/emulator"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/evm/evmimpl"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/evm/iscmagic"
+	"github.com/iotaledger/wasp/v2/packages/vm/vmimpl"
+	"github.com/iotaledger/wasp/v2/packages/webapi/services"
 )
 
 // dummy variables to keep the imports

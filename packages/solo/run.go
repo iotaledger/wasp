@@ -5,23 +5,24 @@ package solo
 
 import (
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
-	"github.com/iotaledger/wasp/packages/vm/vmimpl"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/packages/hashing"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/parameters/parameterstest"
+	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/vm"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/migrations/allmigrations"
+	"github.com/iotaledger/wasp/v2/packages/vm/vmimpl"
 )
 
 func (ch *Chain) RunOffLedgerRequest(r isc.Request) (
@@ -62,6 +63,21 @@ func (ch *Chain) EstimateGas(req isc.Request) (result *vm.RequestResult) {
 	res := ch.runTaskNoLock([]isc.Request{req}, true)
 	require.Len(ch.Env.T, res.RequestResults, 1, "cannot estimate gas: request was skipped")
 	return res.RequestResults[0]
+}
+
+// EstimateOnLedgerRequest estimates total Gas Fee, which is composed of L1 gas fee (user spent on creating onledger request)
+// and L2 gas fee (wasp gas fee for proccesing request on L2)
+func (ch *Chain) EstimateOnLedgerRequest(dryRunRes *iotajsonrpc.DryRunTransactionBlockResponse) (result *vm.RequestResult, err error) {
+	ch.runVMMutex.Lock()
+	defer ch.runVMMutex.Unlock()
+
+	req, err := isc.ReconstructOnLedgerRequest(dryRunRes)
+	if err != nil {
+		return nil, fmt.Errorf("cant generate fake request: %s", err)
+	}
+	res := ch.runTaskNoLock([]isc.Request{req}, true)
+	require.Len(ch.Env.T, res.RequestResults, 1, "cannot estimate gas: request was skipped")
+	return res.RequestResults[0], nil
 }
 
 func (ch *Chain) runTaskNoLock(reqs []isc.Request, estimateGas bool) *vm.VMTaskResult {
@@ -117,12 +133,8 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request) (
 }
 
 func (ch *Chain) settleStateTransition(stateDraft state.StateDraft) {
-	block := ch.store.Commit(stateDraft)
-	err := ch.store.SetLatest(block.TrieRoot())
-	if err != nil {
-		panic(err)
-	}
-
+	block, _, _ := lo.Must3(ch.store.Commit(stateDraft))
+	lo.Must0(ch.store.SetLatest(block.TrieRoot()))
 	latestState := lo.Must(ch.LatestState())
 
 	ch.Env.Publisher().BlockApplied(ch.ChainID, block, latestState)

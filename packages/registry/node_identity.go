@@ -1,6 +1,6 @@
 package registry
 
-import "github.com/iotaledger/wasp/packages/cryptolib"
+import "github.com/iotaledger/wasp/v2/packages/cryptolib"
 
 type NodeIdentity struct {
 	nodeIdentity *cryptolib.KeyPair

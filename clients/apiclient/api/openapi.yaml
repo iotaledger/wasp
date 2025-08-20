@@ -910,6 +910,9 @@ paths:
       x-codegen-request-body-name: Request
   /v1/chain/estimategas-onledger:
     post:
+      description: Estimates gas usage for a given on-ledger ISC request. To calculate
+        required L1 and L2 gas budgets use values of L1.GasBudget and L2.GasBurned
+        respectively.
       operationId: estimateGasOnledger
       requestBody:
         content:
@@ -923,7 +926,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ReceiptResponse'
+                $ref: '#/components/schemas/OnLedgerEstimationResponse'
           description: ReceiptResponse
       summary: Estimates gas for a given on-ledger ISC request
       tags:
@@ -2696,16 +2699,16 @@ components:
         name: EstimateGasRequestOffledger
     EstimateGasRequestOnledger:
       example:
-        outputBytes: outputBytes
+        transactionBytes: transactionBytes
       properties:
-        outputBytes:
-          description: Serialized Output (Hex)
+        transactionBytes:
+          description: Hexadecimal bytes of transaction to estimate
           format: string
           type: string
           xml:
-            name: Output
+            name: TransactionBytes
       required:
-      - outputBytes
+      - transactionBytes
       type: object
       xml:
         name: EstimateGasRequestOnledger
@@ -3105,6 +3108,53 @@ components:
       type: object
       xml:
         name: IotaObjectJSON
+    L1EstimationResult:
+      example:
+        storageRebate: storageRebate
+        storageFee: storageFee
+        computationFee: computationFee
+        gasFeeCharged: gasFeeCharged
+        gasBudget: gasBudget
+      properties:
+        computationFee:
+          description: Gas cost for computation (uint64 as string)
+          format: string
+          type: string
+          xml:
+            name: ComputationFee
+        gasBudget:
+          format: string
+          type: string
+          xml:
+            name: GasBudget
+        gasFeeCharged:
+          description: "Total gas fee charged: computation fee + storage fee - storage\
+            \ rebate (uint64 as string)"
+          format: string
+          type: string
+          xml:
+            name: GasFeeCharged
+        storageFee:
+          description: Gas cost for storage (uint64 as string)
+          format: string
+          type: string
+          xml:
+            name: StorageFee
+        storageRebate:
+          description: Gas rebate for storage (uint64 as string)
+          format: string
+          type: string
+          xml:
+            name: StorageRebate
+      required:
+      - computationFee
+      - gasBudget
+      - gasFeeCharged
+      - storageFee
+      - storageRebate
+      type: object
+      xml:
+        name: L1EstimationResult
     L1Params:
       example:
         protocol:
@@ -3287,6 +3337,78 @@ components:
       type: object
       xml:
         name: OffLedgerRequest
+    OnLedgerEstimationResponse:
+      example:
+        l1:
+          storageRebate: storageRebate
+          storageFee: storageFee
+          computationFee: computationFee
+          gasFeeCharged: gasFeeCharged
+          gasBudget: gasBudget
+        l2:
+          gasBurnLog:
+          - code: 6
+            gasBurned: 1
+          - code: 6
+            gasBurned: 1
+          request:
+            senderAccount: senderAccount
+            allowanceError: allowanceError
+            assets:
+              coins:
+              - coinType: coinType
+                balance: balance
+              - coinType: coinType
+                balance: balance
+              objects:
+              - id: id
+                type: type
+              - id: id
+                type: type
+            isOffLedger: true
+            requestId: requestId
+            callTarget:
+              contractHName: contractHName
+              functionHName: functionHName
+            gasBudget: gasBudget
+            allowance:
+              coins:
+              - coinType: coinType
+                balance: balance
+              - coinType: coinType
+                balance: balance
+              objects:
+              - id: id
+                type: type
+              - id: id
+                type: type
+            params:
+            - params
+            - params
+            isEVM: true
+          blockIndex: 1
+          rawError:
+            code: code
+            params:
+            - params
+            - params
+          requestIndex: 1
+          storageDepositCharged: storageDepositCharged
+          gasFeeCharged: gasFeeCharged
+          errorMessage: errorMessage
+          gasBudget: gasBudget
+          gasBurned: gasBurned
+      properties:
+        l1:
+          $ref: '#/components/schemas/L1EstimationResult'
+        l2:
+          $ref: '#/components/schemas/ReceiptResponse'
+      required:
+      - l1
+      - l2
+      type: object
+      xml:
+        name: OnLedgerEstimationResponse
     OnLedgerRequest:
       example:
         raw: raw

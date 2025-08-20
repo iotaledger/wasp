@@ -2,9 +2,9 @@
 package testkey
 
 import (
-	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/testutil/testconfig"
+	testcommon "github.com/iotaledger/wasp/v2/clients/iota-go/test_common"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/testutil/testconfig"
 )
 
 func GenKeyAddr(seedOpt ...*cryptolib.Seed) (*cryptolib.KeyPair, *cryptolib.Address) {

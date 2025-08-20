@@ -21,11 +21,11 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	lru "github.com/hashicorp/golang-lru/v2"
 
-	"github.com/iotaledger/wasp/packages/evm/evmutil"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/subrealm"
-	"github.com/iotaledger/wasp/packages/util/panicutil"
-	"github.com/iotaledger/wasp/packages/vm/vmexceptions"
+	"github.com/iotaledger/wasp/v2/packages/evm/evmutil"
+	"github.com/iotaledger/wasp/v2/packages/kv"
+	"github.com/iotaledger/wasp/v2/packages/kv/subrealm"
+	"github.com/iotaledger/wasp/v2/packages/util/panicutil"
+	"github.com/iotaledger/wasp/v2/packages/vm/vmexceptions"
 )
 
 type EVMEmulator struct {

@@ -7,12 +7,13 @@ import (
 
 	log "github.com/iotaledger/hive.go/log"
 
-	"github.com/iotaledger/wasp/packages/authentication"
-	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
-	"github.com/iotaledger/wasp/packages/webapi/interfaces"
-	"github.com/iotaledger/wasp/packages/webapi/models"
-	"github.com/iotaledger/wasp/packages/webapi/params"
-	"github.com/iotaledger/wasp/packages/webapi/routes"
+	"github.com/iotaledger/wasp/v2/clients"
+	"github.com/iotaledger/wasp/v2/packages/authentication"
+	"github.com/iotaledger/wasp/v2/packages/authentication/shared/permissions"
+	"github.com/iotaledger/wasp/v2/packages/webapi/interfaces"
+	"github.com/iotaledger/wasp/v2/packages/webapi/models"
+	"github.com/iotaledger/wasp/v2/packages/webapi/params"
+	"github.com/iotaledger/wasp/v2/packages/webapi/routes"
 )
 
 type Controller struct {
@@ -24,6 +25,7 @@ type Controller struct {
 	committeeService interfaces.CommitteeService
 	offLedgerService interfaces.OffLedgerService
 	registryService  interfaces.RegistryService
+	l1Client         clients.L1Client
 
 	accountDumpsPath string
 }
@@ -36,9 +38,11 @@ func NewChainController(log log.Logger,
 	offLedgerService interfaces.OffLedgerService,
 	registryService interfaces.RegistryService,
 	accountDumpsPath string,
+	l1Client clients.L1Client,
 ) interfaces.APIController {
 	return &Controller{
 		log:              log,
+		l1Client:         l1Client,
 		chainService:     chainService,
 		evmService:       evmService,
 		committeeService: committeeService,
@@ -94,8 +98,10 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 
 	publicAPI.POST("chain/estimategas-onledger", c.estimateGasOnLedger).
 		AddParamBody(mocker.Get(models.EstimateGasRequestOnledger{}), "Request", "Request", true).
-		AddResponse(http.StatusOK, "ReceiptResponse", mocker.Get(models.ReceiptResponse{}), nil).
+		AddResponse(http.StatusOK, "ReceiptResponse", mocker.Get(models.OnLedgerEstimationResponse{}), nil).
 		SetSummary("Estimates gas for a given on-ledger ISC request").
+		SetDescription("Estimates gas usage for a given on-ledger ISC request. " +
+			"To calculate required L1 and L2 gas budgets use values of L1.GasBudget and L2.GasBurned respectively.").
 		SetOperationId("estimateGasOnledger")
 
 	publicAPI.POST("chain/estimategas-offledger", c.estimateGasOffLedger).

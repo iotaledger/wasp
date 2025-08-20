@@ -3,7 +3,7 @@ package inputs
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/v2/packages/gpa"
 )
 
 type StateManagerTimerTick struct {

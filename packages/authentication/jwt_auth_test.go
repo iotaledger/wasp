@@ -11,10 +11,10 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/packages/authentication"
-	"github.com/iotaledger/wasp/packages/authentication/shared"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/users"
+	"github.com/iotaledger/wasp/v2/packages/authentication"
+	"github.com/iotaledger/wasp/v2/packages/authentication/shared"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/users"
 )
 
 func TestGetJWTAuthMiddleware(t *testing.T) {

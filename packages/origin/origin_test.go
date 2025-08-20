@@ -7,25 +7,26 @@ import (
 	"github.com/stretchr/testify/require"
 	"pgregory.net/rapid"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
-	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient/iscmoveclienttest"
-	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/isctest"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kvstore/mapdb"
-	"github.com/iotaledger/wasp/packages/origin"
-	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/testutil/l1starter"
-	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
-	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iscmove"
+	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
+	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient/iscmoveclienttest"
+	"github.com/iotaledger/wasp/v2/packages/coin"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/isc/isctest"
+	"github.com/iotaledger/wasp/v2/packages/kv"
+	"github.com/iotaledger/wasp/v2/packages/kv/dict"
+	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
+	"github.com/iotaledger/wasp/v2/packages/origin"
+	"github.com/iotaledger/wasp/v2/packages/parameters/parameterstest"
+	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/state/statetest"
+	"github.com/iotaledger/wasp/v2/packages/testutil/l1starter"
+	"github.com/iotaledger/wasp/v2/packages/transaction"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/migrations/allmigrations"
+	"github.com/iotaledger/wasp/v2/packages/vm/gas"
 )
 
 func TestMain(m *testing.M) {
@@ -37,7 +38,7 @@ func TestOrigin(t *testing.T) {
 	initParams := origin.DefaultInitParams(isctest.NewRandomAgentID()).Encode()
 	originDepositVal := coin.Value(100)
 	l1commitment := origin.L1Commitment(schemaVersion, initParams, iotago.ObjectID{}, originDepositVal, parameterstest.L1Mock)
-	store := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+	store := statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	initBlock, _ := origin.InitChain(schemaVersion, store, initParams, iotago.ObjectID{}, originDepositVal, parameterstest.L1Mock)
 	latestBlock, err := store.LatestBlock()
 	require.NoError(t, err)
@@ -129,12 +130,12 @@ func TestInitChainByStateMetadataBytes(t *testing.T) {
 
 	var stateMetadata *transaction.StateMetadata
 	{
-		store := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+		store := statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 		_, stateMetadata = origin.InitChain(schemaVersion, store, initParams, iotago.ObjectID{}, originDepositVal, parameterstest.L1Mock)
 	}
 
 	{
-		store := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+		store := statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 		stateMetadataBytes := stateMetadata.Bytes()
 		_, err := origin.InitChainByStateMetadataBytes(store, stateMetadataBytes, originDepositVal, parameterstest.L1Mock)
 		require.NoError(t, err)
@@ -146,7 +147,7 @@ func TestInitChainByStateMetadataBytes(t *testing.T) {
 		stateMetadata.L1Commitment = &state.L1Commitment{}
 		stateMetadataBytes := stateMetadata.Bytes()
 
-		store := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+		store := statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 		_, err := origin.InitChainByStateMetadataBytes(store, stateMetadataBytes, originDepositVal, parameterstest.L1Mock)
 		require.ErrorContains(t, err, "L1Commitment mismatch")
 	}
@@ -178,7 +179,7 @@ func startNewChain(
 	)
 	require.NoError(t, err)
 
-	anchorRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AnchorModuleName, iscmove.AnchorObjectName)
+	anchorRef, err := txnResponse.GetCreatedObjectByName(iscmove.AnchorModuleName, iscmove.AnchorObjectName)
 	require.NoError(t, err)
 	anchor, err := client.GetAnchorFromObjectID(context.Background(), anchorRef.ObjectID)
 	return txnResponse, anchor, err

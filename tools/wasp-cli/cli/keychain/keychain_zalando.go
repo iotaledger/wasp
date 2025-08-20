@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/zalando/go-keyring"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 )
 
 type KeyChainZalando struct{}

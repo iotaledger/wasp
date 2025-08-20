@@ -3,7 +3,7 @@ package chain
 import (
 	"github.com/labstack/echo/v4"
 
-	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
+	"github.com/iotaledger/wasp/v2/packages/webapi/controllers/controllerutils"
 )
 
 func (c *Controller) handleJSONRPC(e echo.Context) error {

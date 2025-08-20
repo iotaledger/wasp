@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/testutil/testmisc"
+	"github.com/iotaledger/wasp/v2/packages/testutil/testmisc"
 
 	websocketserver "github.com/coder/websocket"
 	"github.com/stretchr/testify/require"
@@ -13,9 +13,9 @@ import (
 	appLogger "github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/hive.go/web/websockethub"
 
-	"github.com/iotaledger/wasp/packages/publisher"
-	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/testutil/l1starter"
+	"github.com/iotaledger/wasp/v2/packages/publisher"
+	"github.com/iotaledger/wasp/v2/packages/solo"
+	"github.com/iotaledger/wasp/v2/packages/testutil/l1starter"
 )
 
 func InitWebsocket(ctx context.Context, t *testing.T, eventsToSubscribe []publisher.ISCEventType) (*Service, *websockethub.Hub, *solo.Chain) {

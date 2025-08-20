@@ -13,7 +13,7 @@ import (
 	"go.dedis.ch/kyber/v3/suites"
 	"go.dedis.ch/kyber/v3/util/random"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 )
 
 func dkShare(t *testing.T) (DKShare, suites.Suite, *bn256.Suite, *cryptolib.PrivateKey) {

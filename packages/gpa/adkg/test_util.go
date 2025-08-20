@@ -14,9 +14,9 @@ import (
 	"go.dedis.ch/kyber/v3/suites"
 
 	"github.com/iotaledger/hive.go/log"
-	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/gpa/adkg/nonce"
-	"github.com/iotaledger/wasp/packages/tcrypto"
+	"github.com/iotaledger/wasp/v2/packages/gpa"
+	"github.com/iotaledger/wasp/v2/packages/gpa/adkg/nonce"
+	"github.com/iotaledger/wasp/v2/packages/tcrypto"
 )
 
 // MakeTestDistributedKey is for tests only.

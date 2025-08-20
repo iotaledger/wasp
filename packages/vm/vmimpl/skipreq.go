@@ -6,12 +6,12 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/wasp/packages/evm/evmutil"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/core/evm"
-	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/v2/packages/evm/evmutil"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/evm/evmimpl"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/governance"
 )
 
 // earlyCheckReasonToSkip checks if request must be ignored without even modifying the state

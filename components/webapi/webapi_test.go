@@ -17,8 +17,8 @@ import (
 
 	"github.com/iotaledger/hive.go/log"
 
-	"github.com/iotaledger/wasp/components/webapi"
-	"github.com/iotaledger/wasp/packages/authentication"
+	"github.com/iotaledger/wasp/v2/components/webapi"
+	"github.com/iotaledger/wasp/v2/packages/authentication"
 )
 
 func TestInternalServerErrors(t *testing.T) {

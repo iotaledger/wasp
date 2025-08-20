@@ -3,8 +3,8 @@ package iotasignertest
 import (
 	"crypto/rand"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
-	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/iotatest"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 	"github.com/samber/lo"
 )
 

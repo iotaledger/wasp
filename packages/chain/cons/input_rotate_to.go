@@ -6,8 +6,8 @@ package cons
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/packages/gpa"
 )
 
 // A rotation can be initiated by seting a target committee for the chain/node.

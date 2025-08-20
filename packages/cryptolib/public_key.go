@@ -11,7 +11,7 @@ import (
 
 	"golang.org/x/crypto/blake2b"
 
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/v2/packages/util/rwutil"
 )
 
 type PublicKey struct {

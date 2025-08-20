@@ -5,9 +5,9 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
-	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
+	"github.com/iotaledger/wasp/v2/packages/gpa"
+	"github.com/iotaledger/wasp/v2/packages/state"
 )
 
 // This message is used to inform access nodes on new blocks

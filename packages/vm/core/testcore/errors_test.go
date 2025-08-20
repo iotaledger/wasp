@@ -8,15 +8,15 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/testutil/testdbhash"
-	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
-	"github.com/iotaledger/wasp/packages/vm/core/errors"
-	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
-	"github.com/iotaledger/wasp/packages/vm/core/evm"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/testerrors"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/solo"
+	"github.com/iotaledger/wasp/v2/packages/testutil/testdbhash"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/corecontracts"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/errors"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/errors/coreerrors"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/testcore/contracts/testerrors"
 )
 
 func setupErrorsTest(t *testing.T) *solo.Chain {

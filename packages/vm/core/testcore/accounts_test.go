@@ -7,18 +7,18 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/lo"
-	"github.com/iotaledger/wasp/clients/iota-go/contracts"
-	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/testutil/testmisc"
-	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/evm"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/contracts"
+	"github.com/iotaledger/wasp/v2/packages/coin"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/parameters"
+	"github.com/iotaledger/wasp/v2/packages/solo"
+	"github.com/iotaledger/wasp/v2/packages/testutil/testmisc"
+	"github.com/iotaledger/wasp/v2/packages/vm"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/v2/packages/vm/gas"
 )
 
 const BaseTokensDepositFee = 100
@@ -673,20 +673,30 @@ func TestAccounts_AdjustCommonAccountBaseTokens(t *testing.T) {
 	sender, _ := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	ch := env.NewChain()
 
-	err := ch.DepositBaseTokensToL2(100_000, sender)
+	err := ch.DepositBaseTokensToL2(10*isc.Million, sender)
 	require.NoError(t, err)
 
 	l1Bal1 := lo.Return2(ch.GetLatestAnchorWithBalances()).BaseTokens()
 	l2Total1 := ch.L2TotalAssets().BaseTokens()
 	require.Equal(t, l1Bal1, l2Total1)
 
-	ch.PostRequestOffLedger(solo.NewCallParams(accounts.AdjustCommonAccountBaseTokens.Message(1000, 0)), ch.ChainAdmin)
+	_, err = ch.PostRequestOffLedger(
+		solo.NewCallParams(accounts.AdjustCommonAccountBaseTokens.Message(1_000, 0)).
+			WithMaxAffordableGasBudget(),
+		ch.ChainAdmin,
+	)
+	require.NoError(t, err)
 
 	l1Bal2 := lo.Return2(ch.GetLatestAnchorWithBalances()).BaseTokens()
 	l2Total2 := ch.L2TotalAssets().BaseTokens()
 	require.Equal(t, l1Bal2+1000, l2Total2)
 
-	ch.PostRequestOffLedger(solo.NewCallParams(accounts.AdjustCommonAccountBaseTokens.Message(0, 1000)), ch.ChainAdmin)
+	_, err = ch.PostRequestOffLedger(
+		solo.NewCallParams(accounts.AdjustCommonAccountBaseTokens.Message(0, 1_000)).
+			WithMaxAffordableGasBudget(),
+		ch.ChainAdmin,
+	)
+	require.NoError(t, err)
 
 	l1Bal3 := lo.Return2(ch.GetLatestAnchorWithBalances()).BaseTokens()
 	l2Total3 := ch.L2TotalAssets().BaseTokens()

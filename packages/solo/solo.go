@@ -16,36 +16,37 @@ import (
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/hive.go/log"
-	"github.com/iotaledger/wasp/clients/iota-go/contracts"
-	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/clients/iota-go/iotaclient/iotaclienttest"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
-	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/evm/evmlogger"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kvstore"
-	"github.com/iotaledger/wasp/packages/kvstore/mapdb"
-	"github.com/iotaledger/wasp/packages/origin"
-	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/publisher"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/state/indexedstore"
-	"github.com/iotaledger/wasp/packages/testutil/l1starter"
-	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
-	"github.com/iotaledger/wasp/packages/vm/core/evm"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/core/migrations"
-	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
-	"github.com/iotaledger/wasp/packages/vm/processors"
-	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/contracts"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient/iotaclienttest"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iscmove"
+	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
+	"github.com/iotaledger/wasp/v2/packages/coin"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/evm/evmlogger"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/kv"
+	"github.com/iotaledger/wasp/v2/packages/kvstore"
+	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
+	"github.com/iotaledger/wasp/v2/packages/origin"
+	"github.com/iotaledger/wasp/v2/packages/parameters"
+	"github.com/iotaledger/wasp/v2/packages/publisher"
+	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/state/indexedstore"
+	"github.com/iotaledger/wasp/v2/packages/state/statetest"
+	"github.com/iotaledger/wasp/v2/packages/testutil/l1starter"
+	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/v2/packages/transaction"
+	"github.com/iotaledger/wasp/v2/packages/vm"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/coreprocessors"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/migrations"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/migrations/allmigrations"
+	"github.com/iotaledger/wasp/v2/packages/vm/processors"
+	_ "github.com/iotaledger/wasp/v2/packages/vm/sandbox"
 )
 
 const (
@@ -207,7 +208,7 @@ func (env *Solo) IterateChainLatestStates(
 	slices.SortFunc(chainIDs, func(a, b isc.ChainID) int { return bytes.Compare(a.Bytes(), b.Bytes()) })
 	for _, chID := range chainIDs {
 		ch := env.chains[chID]
-		store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(ch.db))
+		store := indexedstore.New(statetest.NewStoreWithUniqueWriteMutex(ch.db))
 		state, err := store.LatestState()
 		require.NoError(env.T, err)
 		state.IterateSorted(prefix, func(k kv.Key, v []byte) bool {
@@ -285,7 +286,7 @@ func (env *Solo) deployChain(chainAdmin *cryptolib.KeyPair, initCommonAccountBas
 
 	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
 	db := mapdb.NewMapDB()
-	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(db))
+	store := indexedstore.New(statetest.NewStoreWithUniqueWriteMutex(db))
 
 	gasCoinRef := env.makeBaseTokenCoin(anchorOwner, isc.GasCoinTargetValue, nil)
 	env.logger.LogInfof("Chain Originator address: %v\n", anchorOwner)
@@ -407,7 +408,7 @@ func (env *Solo) addChain(chData chainData) *Chain {
 	ch := &Chain{
 		chainData:       chData,
 		Env:             env,
-		store:           indexedstore.New(state.NewStoreWithUniqueWriteMutex(chData.db)),
+		store:           indexedstore.New(statetest.NewStoreWithUniqueWriteMutex(chData.db)),
 		proc:            env.processorConfig,
 		log:             env.logger.NewChildLogger(chData.Name),
 		migrationScheme: chData.migrationScheme,
@@ -651,7 +652,7 @@ func (env *Solo) executePTB(
 	return execRes
 }
 
-func (env *Solo) L1DeployCoinPackage(keyPair *cryptolib.KeyPair) (
+func (env *Solo) L1DeployCoinPackage(keyPair cryptolib.Signer) (
 	packageID *iotago.PackageID,
 	treasuryCap *iotago.ObjectRef,
 ) {
@@ -664,7 +665,7 @@ func (env *Solo) L1DeployCoinPackage(keyPair *cryptolib.KeyPair) (
 }
 
 func (env *Solo) L1MintCoin(
-	keyPair *cryptolib.KeyPair,
+	keyPair cryptolib.Signer,
 	packageID *iotago.PackageID,
 	moduleName iotago.Identifier,
 	typeTag iotago.Identifier,

@@ -9,7 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/iotaledger/wasp/packages/bigint"
+	"github.com/iotaledger/wasp/v2/packages/bigint"
 )
 
 func Signer(chainID *big.Int) types.Signer {

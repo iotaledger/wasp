@@ -3,8 +3,8 @@ package chainclient
 import (
 	"context"
 
-	"github.com/iotaledger/wasp/clients/apiextensions"
-	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/v2/clients/apiextensions"
+	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
 // CallView sends a request to call a view function of a given contract, and returns the result of the call

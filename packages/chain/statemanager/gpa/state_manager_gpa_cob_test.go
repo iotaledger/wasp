@@ -8,15 +8,16 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/log"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/utils"
-	"github.com/iotaledger/wasp/packages/kvstore/mapdb"
-	"github.com/iotaledger/wasp/packages/origin"
-	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/iotaledger/wasp/packages/util/pipe"
-	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/packages/chain/statemanager/gpa/utils"
+	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
+	"github.com/iotaledger/wasp/v2/packages/origin"
+	"github.com/iotaledger/wasp/v2/packages/parameters/parameterstest"
+	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/state/statetest"
+	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/v2/packages/util/pipe"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/migrations/allmigrations"
 )
 
 func initTestChainOfBlocks(t *testing.T) (
@@ -27,7 +28,7 @@ func initTestChainOfBlocks(t *testing.T) (
 ) {
 	bf := utils.NewBlockFactory(t)
 	log := testlogger.NewLogger(t)
-	store := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+	store := statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	smGPA, err := New(bf.GetChainID(), 0, nil, nil, store, mockStateManagerMetrics(), log, NewStateManagerParameters())
 	require.NoError(t, err)
 	sm, ok := smGPA.(*stateManagerGPA)
@@ -65,7 +66,7 @@ func runTestChainOfBlocks(
 
 	for _, block := range blocksToCommit {
 		sd := bf.GetStateDraft(block)
-		block2 := store.Commit(sd)
+		block2, _, _ := lo.Must3(store.Commit(sd))
 		require.True(t, block.Equals(block2))
 		log.LogDebugf("Committed block: %v %s", block.StateIndex(), block.L1Commitment())
 	}

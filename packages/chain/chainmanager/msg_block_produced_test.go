@@ -4,9 +4,10 @@ import (
 	"testing"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/clients/iota-go/iotasigner/iotasignertest"
-	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner/iotasignertest"
+	"github.com/iotaledger/wasp/v2/packages/gpa"
+	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/state/statetest"
 )
 
 func TestMsgBlockProducedSerialization(t *testing.T) {
@@ -14,7 +15,7 @@ func TestMsgBlockProducedSerialization(t *testing.T) {
 	msg := &msgBlockProduced{
 		gpa.BasicMessage{},
 		&randomSignedTransaction,
-		state.RandomBlock(),
+		statetest.RandomBlock(),
 	}
 
 	bcs.TestCodec(t, msg, &msgBlockProduced{
@@ -24,7 +25,7 @@ func TestMsgBlockProducedSerialization(t *testing.T) {
 	msg = &msgBlockProduced{
 		gpa.BasicMessage{},
 		&iotasignertest.TestSignedTransaction,
-		state.TestBlock,
+		statetest.TestBlock(),
 	}
 
 	bcs.TestCodecAndHash(t, msg, "6b906810f98b", &msgBlockProduced{

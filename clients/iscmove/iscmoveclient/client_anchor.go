@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 
-	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/clients/iscmove"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 )
 
 type UpdateAnchorStateMetadataRequest struct {
@@ -85,7 +85,7 @@ func (c *Client) StartNewChain(
 		return nil, fmt.Errorf("start new chain PTB failed: %w", err)
 	}
 
-	anchorRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AnchorModuleName, iscmove.AnchorObjectName)
+	anchorRef, err := txnResponse.GetCreatedObjectByName(iscmove.AnchorModuleName, iscmove.AnchorObjectName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to GetCreatedObjectInfo: %w", err)
 	}

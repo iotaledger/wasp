@@ -3,10 +3,10 @@ package sbtests
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/testutil/testmisc"
-	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
-	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
+	"github.com/iotaledger/wasp/v2/packages/solo"
+	"github.com/iotaledger/wasp/v2/packages/testutil/testmisc"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/errors/coreerrors"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/testcore/sbtests/sbtestsc"
 )
 
 func testPanicCallView(t *testing.T, funName string, gasBudget uint64, panicView string) {

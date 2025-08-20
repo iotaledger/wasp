@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/blocklog"
 )
 
 type ControlAddressesResponse struct {

@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/v2/packages/gpa"
+	"github.com/iotaledger/wasp/v2/packages/testutil/testval"
 )
 
 func TestMsgSigShareSerialization(t *testing.T) {
@@ -26,7 +26,7 @@ func TestMsgSigShareSerialization(t *testing.T) {
 
 	msg = &msgSigShare{
 		gpa.BasicMessage{},
-		testutil.TestBytes(10),
+		testval.TestBytes(10),
 	}
 	bcs.TestCodecAndHash(t, msg, "9a5a2e001fcf")
 }

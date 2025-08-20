@@ -9,12 +9,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/log"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/inputs"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/utils"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/snapshots"
-	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util/timeutil"
+	"github.com/iotaledger/wasp/v2/packages/chain/statemanager/gpa/inputs"
+	"github.com/iotaledger/wasp/v2/packages/chain/statemanager/gpa/utils"
+	"github.com/iotaledger/wasp/v2/packages/chain/statemanager/snapshots"
+	"github.com/iotaledger/wasp/v2/packages/gpa"
+	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/util/timeutil"
 )
 
 var newEmptySnapshotManagerFun = func(_, _ state.Store, _ timeutil.TimeProvider, _ log.Logger) snapshots.SnapshotManager {

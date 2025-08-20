@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/v2/packages/gpa"
+	"github.com/iotaledger/wasp/v2/packages/testutil/testval"
 )
 
 func TestMsgBrachaSerialization(t *testing.T) {
@@ -31,7 +31,7 @@ func TestMsgBrachaSerialization(t *testing.T) {
 		msg := &msgBracha{
 			gpa.BasicMessage{},
 			msgBrachaTypePropose,
-			testutil.TestBytes(10),
+			testval.TestBytes(10),
 		}
 
 		bcs.TestCodecAndHash(t, msg, "46ca7766e199")
@@ -52,7 +52,7 @@ func TestMsgBrachaSerialization(t *testing.T) {
 		msg := &msgBracha{
 			gpa.BasicMessage{},
 			msgBrachaTypeEcho,
-			testutil.TestBytes(10),
+			testval.TestBytes(10),
 		}
 
 		bcs.TestCodecAndHash(t, msg, "13fb21f67718")
@@ -73,7 +73,7 @@ func TestMsgBrachaSerialization(t *testing.T) {
 		msg := &msgBracha{
 			gpa.BasicMessage{},
 			msgBrachaTypeReady,
-			testutil.TestBytes(10),
+			testval.TestBytes(10),
 		}
 
 		bcs.TestCodecAndHash(t, msg, "131d4ae6fdab")

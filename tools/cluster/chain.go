@@ -3,13 +3,13 @@ package cluster
 import (
 	"context"
 
-	"github.com/iotaledger/wasp/clients/apiclient"
-	"github.com/iotaledger/wasp/clients/apiextensions"
-	"github.com/iotaledger/wasp/clients/chainclient"
-	"github.com/iotaledger/wasp/clients/multiclient"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/inccounter"
+	"github.com/iotaledger/wasp/v2/clients/apiclient"
+	"github.com/iotaledger/wasp/v2/clients/apiextensions"
+	"github.com/iotaledger/wasp/v2/clients/chainclient"
+	"github.com/iotaledger/wasp/v2/clients/multiclient"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/testcore/contracts/inccounter"
 )
 
 type Chain struct {

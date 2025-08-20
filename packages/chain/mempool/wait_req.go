@@ -7,7 +7,7 @@ import (
 	"context"
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
-	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
 // WaitReq provides the synchronization between the functions asking for requests

@@ -6,7 +6,7 @@ package gpa
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/util/timeutil"
+	"github.com/iotaledger/wasp/v2/packages/util/timeutil"
 )
 
 type StateManagerParameters struct {

@@ -2,7 +2,7 @@ package pipe
 
 import (
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
-	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/v2/packages/hashing"
 )
 
 // LimitedPriorityHashQueue is a queue, which can prioritize elements,

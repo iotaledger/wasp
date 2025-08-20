@@ -3,7 +3,7 @@ package utils
 import (
 	"errors"
 
-	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/state"
 )
 
 // May be used in tests or in production as a noop WAL.

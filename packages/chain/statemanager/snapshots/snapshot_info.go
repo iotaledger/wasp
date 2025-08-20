@@ -3,8 +3,8 @@ package snapshots
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/trie"
+	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/trie"
 )
 
 type snapshotInfoImpl struct {

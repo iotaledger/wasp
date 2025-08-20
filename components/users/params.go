@@ -3,7 +3,7 @@ package users
 
 import (
 	"github.com/iotaledger/hive.go/app"
-	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
+	"github.com/iotaledger/wasp/v2/packages/authentication/shared/permissions"
 )
 
 const (

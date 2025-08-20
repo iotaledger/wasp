@@ -5,16 +5,16 @@ package cliclients
 import (
 	"context"
 
-	"github.com/iotaledger/wasp/clients"
-	"github.com/iotaledger/wasp/clients/apiclient"
-	"github.com/iotaledger/wasp/clients/apiextensions"
-	"github.com/iotaledger/wasp/clients/chainclient"
-	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/components/app"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
-	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/iotaledger/wasp/v2/clients"
+	"github.com/iotaledger/wasp/v2/clients/apiclient"
+	"github.com/iotaledger/wasp/v2/clients/apiextensions"
+	"github.com/iotaledger/wasp/v2/clients/chainclient"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/components/app"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/config"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/wallet"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
 )
 
 var SkipCheckVersions bool

@@ -1,13 +1,16 @@
 package accounts
 
 import (
-	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
-	"github.com/iotaledger/wasp/packages/vm/core/evm"
+	"github.com/samber/lo"
+
+	"github.com/iotaledger/wasp/v2/packages/coin"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/parameters"
+	"github.com/iotaledger/wasp/v2/packages/vm"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/errors/coreerrors"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/governance"
 )
 
 func CommonAccount() isc.AgentID {
@@ -122,6 +125,38 @@ func adjustCommonAccountBaseTokens(ctx isc.Sandbox, credit, debit coin.Value) {
 		state.CreditToAccount(CommonAccount(), isc.NewCoinBalances().AddBaseTokens(credit))
 	}
 	if debit != 0 {
-		state.DebitFromAccount(CommonAccount(), isc.NewCoinBalances().AddBaseTokens(debit))
+		// deduct in order of priority from common account, then payout, then chain admin
+		for _, account := range []struct {
+			AgentID    isc.AgentID
+			MinBalance coin.Value
+		}{
+			{
+				AgentID:    CommonAccount(),
+				MinBalance: lo.Must(governance.ViewGetGasCoinTargetValue.DecodeOutput(ctx.CallView(governance.ViewGetGasCoinTargetValue.Message()))),
+			},
+			{AgentID: lo.Must(governance.ViewGetPayoutAgentID.DecodeOutput(ctx.CallView(governance.ViewGetPayoutAgentID.Message())))},
+			{AgentID: ctx.Caller()},
+		} {
+			if debit == 0 {
+				break
+			}
+			balance := state.GetBaseTokensBalanceDiscardExtraDecimals(account.AgentID)
+			ctx.Log().Infof("adjustCommonAccountBaseTokens: must debit %s, trying account %s: balance %s, min %s",
+				debit, account.AgentID, balance, account.MinBalance)
+			if balance <= account.MinBalance {
+				continue
+			}
+			availableToDeduct := balance - account.MinBalance
+			deduct := min(availableToDeduct, debit)
+			ctx.Log().Infof("adjustCommonAccountBaseTokens: available to deduct from account %s, deducting %s",
+				availableToDeduct, deduct)
+			if deduct > 0 {
+				state.DebitFromAccount(account.AgentID, isc.NewCoinBalances().AddBaseTokens(deduct))
+				debit -= deduct
+			}
+		}
+		if debit > 0 {
+			ctx.Log().Debugf("adjustCommonAccountBaseTokens: still remaining debit %s, which is ignored", debit)
+		}
 	}
 }

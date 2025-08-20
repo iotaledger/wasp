@@ -1,6 +1,6 @@
 package iotajsonrpc
 
-import "github.com/iotaledger/wasp/clients/iota-go/iotago"
+import "github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 
 type Checkpoint struct {
 	Epoch                      *BigInt                       `json:"epoch"`

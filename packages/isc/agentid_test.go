@@ -6,8 +6,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/util/rwutil"
 )
 
 func TestAgentIDSerialization(t *testing.T) {

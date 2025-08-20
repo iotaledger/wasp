@@ -3,7 +3,7 @@
 
 package distsync
 
-import "github.com/iotaledger/wasp/packages/gpa"
+import "github.com/iotaledger/wasp/v2/packages/gpa"
 
 type inputTimeTick struct{}
 

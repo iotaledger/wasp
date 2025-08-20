@@ -3,7 +3,7 @@ package iotajsonrpc
 import (
 	"encoding/json"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 )
 
 type EventId struct {
@@ -22,10 +22,10 @@ type IotaEvent struct {
 	// Move event type.
 	Type *iotago.StructTag `json:"type"`
 	// Parsed json value of the event
-	ParsedJson interface{} `json:"parsedJson,omitempty"`
+	ParsedJson json.RawMessage `json:"parsedJson,omitempty"`
 	// Base 64 encoded bcs bytes of the move event
 	Bcs         iotago.Base64Data `json:"bcs"`
-	TimestampMs *BigInt           `json:"timestampMs,omitempty"`
+	TimestampMs *BigInt           `json:"timestampMs,omitempty" bcs:"optional"`
 }
 
 type EventPage = Page[IotaEvent, EventId]

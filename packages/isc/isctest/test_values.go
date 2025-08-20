@@ -2,18 +2,18 @@ package isctest
 
 import (
 	"github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/iotatest"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iscmove"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/testutil/testval"
 	"github.com/samber/lo"
 )
 
 var (
-	TestChainID = lo.Must(isc.ChainIDFromBytes(testutil.TestBytes(iotago.AddressLen)))
+	TestChainID = lo.Must(isc.ChainIDFromBytes(testval.TestBytes(iotago.AddressLen)))
 	TestAgentID = isc.NewContractAgentID(isc.Hn("test-contract"))
 )
 

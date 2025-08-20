@@ -6,9 +6,10 @@ import (
 	"github.com/ethereum/go-ethereum"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iscmove"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 )
 
 type OnLedgerRequestData struct {
@@ -50,6 +51,46 @@ func OnLedgerFromMoveRequest(request *iscmove.RefWithObject[iscmove.Request], an
 			GasBudget:    request.Object.GasBudget,
 		},
 	}, nil
+}
+
+func ReconstructOnLedgerRequest(dryRunRes *iotajsonrpc.DryRunTransactionBlockResponse) (OnLedgerRequest, error) {
+	assets, request, sender, err := DecodeDryRunTransaction(dryRunRes)
+	if err != nil {
+		return nil, err
+	}
+
+	gasBudget, err := request.GasBudget.Int64()
+	if err != nil {
+		return nil, err
+	}
+
+	r := &OnLedgerRequestData{
+		requestRef: iotago.ObjectRef{
+			ObjectID: &iotago.ObjectID{},
+			Digest:   &iotago.Digest{},
+			Version:  0,
+		},
+		senderAddress: sender,
+		targetAddress: cryptolib.NewRandomAddress(),
+		assets:        assets,
+		assetsBag: &iscmove.AssetsBagWithBalances{
+			Assets:    *assets.AsISCMove(),
+			AssetsBag: iscmove.AssetsBag{ID: iotago.ObjectID{}, Size: uint64(assets.Size())}, //nolint:gosec
+		},
+		requestMetadata: &RequestMetadata{
+			SenderContract: ContractIdentity{},
+			Message: Message{
+				Target: CallTarget{
+					Contract:   Hname(request.Message.Contract),
+					EntryPoint: Hname(request.Message.Function),
+				},
+				Params: request.Message.Args,
+			},
+			AllowanceBCS: request.AllowanceBCS,
+			GasBudget:    uint64(gasBudget), //nolint:gosec
+		},
+	}
+	return r, nil
 }
 
 func (req *OnLedgerRequestData) Allowance() (*Assets, error) {
