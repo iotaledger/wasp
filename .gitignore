@@ -50,3 +50,5 @@ libiota_sdk.so
 libiota_sdk.dylib
 iota_sdk.dll
 /.testconfig
+tools/gendoc/gendoc
+tools/evm/evmemulator/evmemulator
