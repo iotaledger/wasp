@@ -60,7 +60,7 @@ func activateChain(ctx context.Context, node string, chainName string, chainID i
 		log.Check(err)
 	}
 
-	log.Printf("Chain: %v (%v)\nActivated\n", chainName)
+	log.Printf("Chain: %v (%v)\nActivated\n", chainID, chainName)
 }
 
 func initDeactivateCmd() *cobra.Command {

@@ -34,7 +34,7 @@ func (c *CommitteeService) GetPublicKey() *cryptolib.PublicKey {
 }
 
 func (c *CommitteeService) GetCommitteeInfo() (*dto.ChainNodeInfo, error) {
-	chain, err := c.chainRunner.Get()
+	chain, err := c.chainRunner.Chain()
 	if err != nil {
 		return nil, err
 	}

@@ -116,7 +116,7 @@ func (c *ChainService) SetChainRecord(chainRecord *registry.ChainRecord) error {
 }
 
 func (c *ChainService) GetChain() (chainpkg.Chain, error) {
-	return c.chainRunner.Get()
+	return c.chainRunner.Chain()
 }
 
 func (c *ChainService) GetEVMChainID(blockIndexOrTrieRoot string) (uint16, error) {

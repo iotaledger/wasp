@@ -158,7 +158,7 @@ func AddWaspNode(name, apiURL string) {
 }
 
 func AddChain(name, chainID string) {
-	Set("chainrunner."+name, chainID)
+	Set("chains."+name, chainID)
 }
 
 func WriteConfig() error {
@@ -175,7 +175,7 @@ func WriteConfig() error {
 }
 
 func GetChain(name string) isc.ChainID {
-	configChainID := Config.String("chainrunner." + strings.ToLower(name))
+	configChainID := Config.String("chains." + strings.ToLower(name))
 	if configChainID == "" {
 		log.Fatal(fmt.Sprintf("chain '%s' doesn't exist in config file", name))
 	}

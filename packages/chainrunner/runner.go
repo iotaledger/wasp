@@ -420,9 +420,9 @@ func (c *ChainRunner) Deactivate() error {
 	return nil
 }
 
-// Get returns active chain object or nil if it doesn't exist
+// Chain returns active chain object or nil if it doesn't exist
 // lazy unsubscribing
-func (c *ChainRunner) Get() (chain.Chain, error) {
+func (c *ChainRunner) Chain() (chain.Chain, error) {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 

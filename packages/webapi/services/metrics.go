@@ -30,7 +30,7 @@ func (c *MetricsService) GetNodeMessageMetrics() *dto.NodeMessageMetrics {
 }
 
 func (c *MetricsService) GetChainMessageMetrics() *dto.ChainMessageMetrics {
-	chain, err := c.chainRunner.Get()
+	chain, err := c.chainRunner.Chain()
 	if err != nil {
 		return nil
 	}
@@ -45,7 +45,7 @@ func (c *MetricsService) GetChainMessageMetrics() *dto.ChainMessageMetrics {
 }
 
 func (c *MetricsService) GetChainConsensusWorkflowMetrics() *models.ConsensusWorkflowMetrics {
-	chain, err := c.chainRunner.Get()
+	chain, err := c.chainRunner.Chain()
 	if err != nil {
 		return nil
 	}
@@ -59,7 +59,7 @@ func (c *MetricsService) GetChainConsensusWorkflowMetrics() *models.ConsensusWor
 }
 
 func (c *MetricsService) GetChainConsensusPipeMetrics() *models.ConsensusPipeMetrics {
-	chain, err := c.chainRunner.Get()
+	chain, err := c.chainRunner.Chain()
 	if err != nil {
 		return nil
 	}
