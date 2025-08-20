@@ -42,7 +42,6 @@ type ChainNodeConn interface {
 	// confirmed or an error is detected, or the ctx is canceled.
 	PublishTX(
 		ctx context.Context,
-
 		tx iotasigner.SignedTransaction,
 		callback TxPostHandler,
 	) error
