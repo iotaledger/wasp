@@ -151,7 +151,7 @@ func (c *ChainService) GetChainInfo(blockIndexOrTrieRoot string) (*dto.ChainInfo
 		return nil, err
 	}
 
-	chainInfo := dto.MapChainInfo(ch.ID(), governanceChainInfo, chainRecord.Active)
+	chainInfo := dto.MapChainInfo(governanceChainInfo, chainRecord.Active)
 
 	return chainInfo, nil
 }

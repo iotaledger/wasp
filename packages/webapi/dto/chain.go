@@ -32,10 +32,10 @@ type ChainInfo struct {
 	Metadata PublicChainMetadata
 }
 
-func MapChainInfo(chID isc.ChainID, info *isc.ChainInfo, isActive bool) *ChainInfo {
+func MapChainInfo(info *isc.ChainInfo, isActive bool) *ChainInfo {
 	chainInfo := &ChainInfo{
 		IsActive:     isActive,
-		ChainID:      chID,
+		ChainID:      info.ChainID,
 		ChainAdmin:   info.ChainAdmin,
 		GasFeePolicy: info.GasFeePolicy,
 		GasLimits:    info.GasLimits,
