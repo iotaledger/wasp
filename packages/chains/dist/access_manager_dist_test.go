@@ -9,9 +9,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/v2/packages/chainrunner/accessmanager/dist"
+	"github.com/iotaledger/wasp/v2/packages/chains/accessmanager/dist"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/isc/isctest"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testpeers"
 	"github.com/iotaledger/wasp/v2/packages/util"
@@ -28,6 +30,7 @@ func testBasic(t *testing.T, n int) {
 	_, peerIdentities := testpeers.SetupKeys(uint16(n))
 	nodePubs := testpeers.PublicKeys(peerIdentities)
 	nodeIDs := gpa.NodeIDsFromPublicKeys(nodePubs)
+	chainID := isctest.RandomChainID()
 
 	servers := map[gpa.NodeID][]*cryptolib.PublicKey{}
 	nodes := map[gpa.NodeID]gpa.GPA{}
@@ -35,7 +38,7 @@ func testBasic(t *testing.T, n int) {
 		nidCopy := nid
 		nodes[nid] = dist.NewAccessMgr(
 			gpa.NodeIDFromPublicKey,
-			func(pks []*cryptolib.PublicKey) {
+			func(ci isc.ChainID, pks []*cryptolib.PublicKey) {
 				servers[nidCopy] = pks
 			},
 			func(pk *cryptolib.PublicKey) {},
@@ -46,7 +49,7 @@ func testBasic(t *testing.T, n int) {
 	tc := gpa.NewTestContext(nodes)
 	for _, nid := range nodeIDs {
 		tc.WithInput(nid, dist.NewInputTrustedNodes(nodePubs))
-		tc.WithInput(nid, dist.NewInputAccessNodes(nodePubs))
+		tc.WithInput(nid, dist.NewInputAccessNodes(chainID, nodePubs))
 	}
 	tc.RunAll()
 	for nid := range nodes {

@@ -6,14 +6,16 @@ package dist
 import (
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
+	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
 type inputAccessNodes struct {
+	chainID     isc.ChainID
 	accessNodes []*cryptolib.PublicKey
 }
 
 var _ gpa.Input = &inputAccessNodes{}
 
-func NewInputAccessNodes(accessNodes []*cryptolib.PublicKey) gpa.Input {
-	return &inputAccessNodes{accessNodes: accessNodes}
+func NewInputAccessNodes(chainID isc.ChainID, accessNodes []*cryptolib.PublicKey) gpa.Input {
+	return &inputAccessNodes{chainID: chainID, accessNodes: accessNodes}
 }
