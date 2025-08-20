@@ -1,6 +1,7 @@
 package sbtests
 
 import (
+	"fmt"
 	"math"
 	"testing"
 
@@ -39,6 +40,8 @@ func TestTxWithGasOverLimit(t *testing.T) {
 	receipt := ch.LastReceipt()
 	// assert that the submitted gas budget was limited to the max per call
 	require.Less(t, receipt.GasBurned, req.GasBudget())
+	fmt.Printf("%d %d\n", receipt.GasBurned,
+		ch.GetGasLimits().MaxGasPerRequest)
 	require.GreaterOrEqual(t, receipt.GasBurned, ch.GetGasLimits().MaxGasPerRequest) // should exceed MaxGasPerRequest() by 1 operation
 }
 

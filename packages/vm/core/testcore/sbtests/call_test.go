@@ -16,7 +16,7 @@ func TestGetSet(t *testing.T) {
 	setupTestSandboxSC(t, chain, nil)
 
 	req := solo.NewCallParams(sbtestsc.FuncSetInt.Message("ppp", 314), ScName).
-		WithGasBudget(100_000)
+		WithGasBudget(100_000_000)
 	_, err := chain.PostRequestSync(req.AddBaseTokens(1), nil)
 	require.NoError(t, err)
 

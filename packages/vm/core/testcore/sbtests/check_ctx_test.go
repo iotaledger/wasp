@@ -23,7 +23,7 @@ func TestMainCallsFromFullEP(t *testing.T) {
 		userAgentID,
 		isc.NewContractAgentID(HScName),
 	), ScName).
-		WithGasBudget(10 * gas.LimitsDefault.MinGasPerRequest)
+		WithGasBudget(1000 * gas.LimitsDefault.MinGasPerRequest)
 	_, err := chain.PostRequestSync(req, user)
 	require.NoError(t, err)
 }

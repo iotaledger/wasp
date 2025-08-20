@@ -11,8 +11,8 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/util"
 )
 
-// DefaultGasPerToken declares that each token pays for 100 units of gas
-var DefaultGasPerToken = util.Ratio32{A: 100, B: 1}
+// DefaultGasPerToken declares that each token pays for 10 units of gas
+var DefaultGasPerToken = util.Ratio32{A: 1, B: 10}
 
 type FeePolicy struct {
 	// EVMGasRatio expresses the ratio at which EVM gas is converted to ISC gas

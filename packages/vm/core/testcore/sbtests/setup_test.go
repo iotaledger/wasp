@@ -32,7 +32,7 @@ func setupChain(t *testing.T) (*solo.Solo, *solo.Chain) {
 		GasBurnLogEnabled: true,
 	})
 	chain, _ := env.NewChainExt(nil, 10_000, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
-	err := chain.SendFromL1ToL2AccountBaseTokens(1000, iotaclient.FundsFromFaucetAmount/10, chain.AdminAgentID(), chain.ChainAdmin)
+	err := chain.SendFromL1ToL2AccountBaseTokens(100000, iotaclient.FundsFromFaucetAmount/10, chain.AdminAgentID(), chain.ChainAdmin)
 	require.NoError(t, err)
 	return env, chain
 }
@@ -41,7 +41,7 @@ func setupDeployer(t *testing.T, ch *solo.Chain) (*cryptolib.KeyPair, isc.AgentI
 	user, userAddr := ch.Env.NewKeyPairWithFunds()
 	ch.Env.AssertL1BaseTokens(userAddr, iotaclient.FundsFromFaucetAmount)
 
-	err := ch.DepositBaseTokensToL2(coin.Value(10*gas.LimitsDefault.MinGasPerRequest), user)
+	err := ch.DepositBaseTokensToL2(coin.Value(1000*gas.LimitsDefault.MinGasPerRequest), user)
 	require.NoError(t, err)
 
 	return user, isc.NewAddressAgentID(userAddr)
@@ -50,7 +50,7 @@ func setupDeployer(t *testing.T, ch *solo.Chain) (*cryptolib.KeyPair, isc.AgentI
 func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *cryptolib.KeyPair) isc.AgentID {
 	deployed := isc.NewContractAgentID(HScName)
 	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncDoNothing.Name).
-		WithGasBudget(100_000)
+		WithGasBudget(100_000_00)
 	_, err := chain.PostRequestSync(req, user)
 	require.NoError(t, err)
 	t.Logf("deployed test_sandbox'%s': %s", ScName, HScName)

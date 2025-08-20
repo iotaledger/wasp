@@ -149,17 +149,16 @@ func TestPingBaseTokens1(t *testing.T) {
 	commonBefore := ch.L2CommonAccountAssets()
 	t.Logf("----- BEFORE -----\nUser funds left: %s\nCommon account: %s", userFundsBefore, commonBefore)
 
-	const expectedBack = 1 * isc.Million
+	const expectedBack = 100 * isc.Million
 	ch.Env.AssertL1BaseTokens(userAddr, iotaclient.FundsFromFaucetAmount)
 
 	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncPingAllowanceBack.Name).
 		AddBaseTokens(expectedBack + 500). // add extra base tokens besides allowance in order to estimate the gas fees
 		AddAllowanceBaseTokens(expectedBack).
-		WithGasBudget(100_000)
+		WithGasBudget(100_000_000)
 
 	_, estimate, err := ch.EstimateGasOnLedger(req, user)
 	require.NoError(t, err)
-
 	req.
 		WithFungibleTokens(isc.NewAssets(expectedBack + estimate.GasFeeCharged).Coins).
 		WithGasBudget(estimate.GasBurned)

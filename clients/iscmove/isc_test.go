@@ -51,7 +51,10 @@ func TestIscCodec(t *testing.T) {
 	anchorRef.Object = &iscmovetest.TestAnchor
 	anchorRef.ObjectID = &anchorRef.Object.ID
 	anchorRef.Digest = iotatest.TestDigest
-	bcs.TestCodecAndHash(t, anchorRef, "2ed70074c011")
+
+	// Changelog
+	// <lmoe> 20.08.25 changed 2ed70074c011 to 2750607f6325 to adjust DefaultGasFeePolicy / MinGasPerRequest
+	bcs.TestCodecAndHash(t, anchorRef, "2750607f6325")
 
 	bcs.TestCodecAndHash(t, iscmove.AssetsBagWithBalances{
 		AssetsBag: iscmovetest.TestAssetsBag,
