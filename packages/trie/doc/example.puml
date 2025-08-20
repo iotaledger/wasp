@@ -1,39 +1,85 @@
 @startuml
 top to bottom direction
-package trieStore {
-	map a3c2 {
-		extension => 0x6464 "dd"
-			key => 0x636363646464 "cccddd"
-			**terminal** => **"c"**
-	}
-	map c4cf {
-		extension => 0x6565 "ee"
-			key => 0x636363656565 "ccceee"
-			**terminal** => **hash("c" *  70)**
-	}
-	map a3ac {
-		extension => 0x63636 "cc`"
-			key => 0x6363636 "ccc`"
-			child(4) *--> a3c2
-			child(5) *--> c4cf
-	}
-	map 7e84 {
-		key => 0x63 "b"
-			**terminal** => **"bb"**
-	}
-	map 6174 {
-		key => 0x6 "`"
-			child(3) *--> a3ac
-			child(2) *--> 7e84
-	}
-	map deb0 {
-		key => ""
-			child(6) *--> 6174
-	}
+
+package values {
+    map d25e {
+        value => "c" *  70
+    }
 }
-package valueStore {
-	map valueStore {
-		hash("c" *  70) => "c" *  70
-	}
+
+package nodes {
+    map 534f {
+    }
+
+    map b237 {
+        **terminal** => **"b"**
+    }
+    map 81db {
+        **terminal** => **"a"**
+    }
+    map a00e {
+        1 *--> 81db
+        2 *--> b237
+    }
+    map 7ec3 {
+        6 *--> a00e
+    }
+
+    map bae0 {
+        **terminal** => **"bb"**
+    }
+    map fd3f {
+        1 *--> 81db
+        2 *--> bae0
+    }
+    map 2780 {
+        6 *--> fd3f
+    }
+
+    map fe36 {
+        extension => [6464] "dd"
+        **terminal** => **"c"**
+    }
+    map a218 {
+        extension => [6565] "ee"
+        **terminal** => **d25e**
+    }
+
+    map 9af3 {
+        extension => [63636] "cc"..0x6
+        4 *--> fe36
+        5 *--> a218
+    }
+    map 65a4 {
+        2 *--> bae0
+        3 *--> 9af3
+    }
+    map b8cc {
+        6 *--> 65a4
+    }
 }
+
+package refcounts {
+    map nodeRefcounts {
+        2780 => 1
+        534f => 1
+        65a4 => 1
+        7ec3 => 1
+        81db => 2
+        9af3 => 1
+        a00e => 1
+        a218 => 1
+        b237 => 1
+        b8cc => 1
+        bae0 => 2
+        fd3f => 1
+        fe36 => 1
+    }
+
+    map valueRefcounts {
+        d25e => 1
+    }
+}
+
+a218::terminal --> d25e
 @enduml
