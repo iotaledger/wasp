@@ -74,7 +74,7 @@ var (
 
 var params = &app.ComponentParams{
 	Params: map[string]any{
-		"chains":       ParamsChainRunner, // TODO: fix the name
+		"chain":        ParamsChainRunner,
 		"wal":          ParamsWAL,
 		"validator":    ParamsValidator,
 		"stateManager": ParamsStateManager,

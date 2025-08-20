@@ -7,13 +7,13 @@ import (
 )
 
 type RegistryService struct {
-	chainsProvider              chainrunner.Provider
+	chainRunner                 *chainrunner.ChainRunner
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
 }
 
-func NewRegistryService(chainsProvider chainrunner.Provider, chainRecordRegistryProvider registry.ChainRecordRegistryProvider) interfaces.RegistryService {
+func NewRegistryService(chainRunner *chainrunner.ChainRunner, chainRecordRegistryProvider registry.ChainRecordRegistryProvider) interfaces.RegistryService {
 	return &RegistryService{
-		chainsProvider:              chainsProvider,
+		chainRunner:                 chainRunner,
 		chainRecordRegistryProvider: chainRecordRegistryProvider,
 	}
 }

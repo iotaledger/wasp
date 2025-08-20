@@ -28,20 +28,20 @@ import (
 
 type ChainService struct {
 	log                         log.Logger
-	chainsProvider              chainrunner.Provider
+	chainRunner                 *chainrunner.ChainRunner
 	chainMetricsProvider        *metrics.ChainMetricsProvider
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
 }
 
 func NewChainService(
 	logger log.Logger,
-	chainsProvider chainrunner.Provider,
+	chainRunner *chainrunner.ChainRunner,
 	chainMetricsProvider *metrics.ChainMetricsProvider,
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
 ) interfaces.ChainService {
 	return &ChainService{
 		log:                         logger,
-		chainsProvider:              chainsProvider,
+		chainRunner:                 chainRunner,
 		chainMetricsProvider:        chainMetricsProvider,
 		chainRecordRegistryProvider: chainRecordRegistryProvider,
 	}
@@ -53,7 +53,7 @@ func (c *ChainService) ActivateChain() error {
 		return err
 	}
 
-	return c.chainsProvider().Activate()
+	return c.chainRunner.Activate()
 }
 
 func (c *ChainService) DeactivateChain() error {
@@ -62,7 +62,7 @@ func (c *ChainService) DeactivateChain() error {
 		return err
 	}
 
-	return c.chainsProvider().Deactivate()
+	return c.chainRunner.Deactivate()
 }
 
 func (c *ChainService) SetChainRecord(chainRecord *registry.ChainRecord) error {
@@ -103,11 +103,11 @@ func (c *ChainService) SetChainRecord(chainRecord *registry.ChainRecord) error {
 	c.log.LogInfof("Chainrecord active %v", chainRecord.Active)
 
 	if chainRecord.Active {
-		if err := c.chainsProvider().Activate(); err != nil {
+		if err := c.chainRunner.Activate(); err != nil {
 			return err
 		}
 	} else if storedChainRec != nil {
-		if err := c.chainsProvider().Deactivate(); err != nil {
+		if err := c.chainRunner.Deactivate(); err != nil {
 			return err
 		}
 	}
@@ -116,7 +116,7 @@ func (c *ChainService) SetChainRecord(chainRecord *registry.ChainRecord) error {
 }
 
 func (c *ChainService) GetChain() (chainpkg.Chain, error) {
-	return c.chainsProvider().Get()
+	return c.chainRunner.Get()
 }
 
 func (c *ChainService) GetEVMChainID(blockIndexOrTrieRoot string) (uint16, error) {

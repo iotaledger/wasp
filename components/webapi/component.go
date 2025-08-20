@@ -216,7 +216,7 @@ func provide(c *dig.Container) error {
 		AppConfig                   *configuration.Configuration `name:"appConfig"`
 		ShutdownHandler             *shutdown.ShutdownHandler
 		APICacheTTL                 time.Duration `name:"apiCacheTTL"`
-		Chains                      *chainrunner.ChainRunner
+		ChainRunner                 *chainrunner.ChainRunner
 		ChainMetricsProvider        *metrics.ChainMetricsProvider
 		ChainRecordRegistryProvider registry.ChainRecordRegistryProvider
 		DKShareRegistryProvider     registry.DKShareRegistryProvider
@@ -277,9 +277,7 @@ func provide(c *dig.Container) error {
 			deps.ChainRecordRegistryProvider,
 			deps.DKShareRegistryProvider,
 			deps.NodeIdentityProvider,
-			func() *chainrunner.ChainRunner {
-				return deps.Chains
-			},
+			deps.ChainRunner,
 			func() *dkg.Node {
 				return deps.Node
 			},

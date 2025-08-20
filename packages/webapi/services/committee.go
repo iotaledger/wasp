@@ -16,14 +16,14 @@ import (
 var ErrNotInCommittee = errors.New("this node is not in the committee for the chain")
 
 type CommitteeService struct {
-	chainsProvider          chainrunner.Provider
+	chainRunner             *chainrunner.ChainRunner
 	networkProvider         peering.NetworkProvider
 	dkShareRegistryProvider registry.DKShareRegistryProvider
 }
 
-func NewCommitteeService(chainsProvider chainrunner.Provider, networkProvider peering.NetworkProvider, dkShareRegistryProvider registry.DKShareRegistryProvider) interfaces.CommitteeService {
+func NewCommitteeService(chainRunner *chainrunner.ChainRunner, networkProvider peering.NetworkProvider, dkShareRegistryProvider registry.DKShareRegistryProvider) interfaces.CommitteeService {
 	return &CommitteeService{
-		chainsProvider:          chainsProvider,
+		chainRunner:             chainRunner,
 		networkProvider:         networkProvider,
 		dkShareRegistryProvider: dkShareRegistryProvider,
 	}
@@ -34,7 +34,7 @@ func (c *CommitteeService) GetPublicKey() *cryptolib.PublicKey {
 }
 
 func (c *CommitteeService) GetCommitteeInfo() (*dto.ChainNodeInfo, error) {
-	chain, err := c.chainsProvider().Get()
+	chain, err := c.chainRunner.Get()
 	if err != nil {
 		return nil, err
 	}

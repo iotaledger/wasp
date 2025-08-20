@@ -16,7 +16,7 @@ import (
 type NodeService struct {
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
 	nodeIdentityProvider        registry.NodeIdentityProvider
-	chainsProvider              chainrunner.Provider
+	chainRunner                 *chainrunner.ChainRunner
 	shutdownHandler             *shutdown.ShutdownHandler
 	trustedNetworkManager       peering.TrustedNetworkManager
 	l1ParamsFetcher             parameters.L1ParamsFetcher
@@ -25,7 +25,7 @@ type NodeService struct {
 func NewNodeService(
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
 	nodeIdentityProvider registry.NodeIdentityProvider,
-	chainsProvider chainrunner.Provider,
+	chainRunner *chainrunner.ChainRunner,
 	shutdownHandler *shutdown.ShutdownHandler,
 	trustedNetworkManager peering.TrustedNetworkManager,
 	l1ParamsFetcher parameters.L1ParamsFetcher,
@@ -33,7 +33,7 @@ func NewNodeService(
 	return &NodeService{
 		chainRecordRegistryProvider: chainRecordRegistryProvider,
 		nodeIdentityProvider:        nodeIdentityProvider,
-		chainsProvider:              chainsProvider,
+		chainRunner:                 chainRunner,
 		shutdownHandler:             shutdownHandler,
 		trustedNetworkManager:       trustedNetworkManager,
 		l1ParamsFetcher:             l1ParamsFetcher,
@@ -72,7 +72,7 @@ func (n *NodeService) DeleteAccessNode(peerPubKeyOrName string) error {
 
 func (n *NodeService) NodeOwnerCertificate() []byte {
 	nodeIdentity := n.nodeIdentityProvider.NodeIdentity()
-	return governance.NewNodeOwnershipCertificate(nodeIdentity, n.chainsProvider().ValidatorAddress())
+	return governance.NewNodeOwnershipCertificate(nodeIdentity, n.chainRunner.ValidatorAddress())
 }
 
 func (n *NodeService) ShutdownNode() {

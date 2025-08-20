@@ -11,14 +11,14 @@ import (
 )
 
 type PeeringService struct {
-	chainsProvider        chainrunner.Provider
+	chainRunner           *chainrunner.ChainRunner
 	networkProvider       peering.NetworkProvider
 	trustedNetworkManager peering.TrustedNetworkManager
 }
 
-func NewPeeringService(chainsProvider chainrunner.Provider, networkProvider peering.NetworkProvider, trustedNetworkManager peering.TrustedNetworkManager) *PeeringService {
+func NewPeeringService(chainRunner *chainrunner.ChainRunner, networkProvider peering.NetworkProvider, trustedNetworkManager peering.TrustedNetworkManager) *PeeringService {
 	return &PeeringService{
-		chainsProvider:        chainsProvider,
+		chainRunner:           chainRunner,
 		networkProvider:       networkProvider,
 		trustedNetworkManager: trustedNetworkManager,
 	}

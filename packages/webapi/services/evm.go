@@ -31,7 +31,7 @@ type EVMService struct {
 	websocketContextMutex sync.Mutex
 	websocketContext      *websocketContext
 
-	chainsProvider  chainrunner.Provider
+	chainRunner     *chainrunner.ChainRunner
 	chainService    interfaces.ChainService
 	networkProvider peering.NetworkProvider
 	publisher       *publisher.Publisher
@@ -42,7 +42,7 @@ type EVMService struct {
 }
 
 func NewEVMService(
-	chainsProvider chainrunner.Provider,
+	chainRunner *chainrunner.ChainRunner,
 	chainService interfaces.ChainService,
 	networkProvider peering.NetworkProvider,
 	pub *publisher.Publisher,
@@ -52,7 +52,7 @@ func NewEVMService(
 	log log.Logger,
 ) interfaces.EVMService {
 	return &EVMService{
-		chainsProvider:        chainsProvider,
+		chainRunner:           chainRunner,
 		chainService:          chainService,
 		evmChainServers:       map[isc.ChainID]*chainServer{},
 		evmBackendMutex:       sync.Mutex{},
@@ -91,7 +91,7 @@ func (e *EVMService) getEVMBackend() (*chainServer, error) {
 		jsonrpc.NewEVMChain(
 			backend,
 			e.publisher,
-			e.chainsProvider().IsArchiveNode(),
+			e.chainRunner.IsArchiveNode(),
 			hivedb.EngineRocksDB,
 			e.indexDBPath,
 			e.log.NewChildLogger("EVMChain"),

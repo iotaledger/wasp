@@ -9,13 +9,13 @@ import (
 )
 
 type MetricsService struct {
-	chainProvider        chainrunner.Provider
+	chainRunner          *chainrunner.ChainRunner
 	chainMetricsProvider *metrics.ChainMetricsProvider
 }
 
-func NewMetricsService(chainProvider chainrunner.Provider, chainMetricsProvider *metrics.ChainMetricsProvider) interfaces.MetricsService {
+func NewMetricsService(chainRunner *chainrunner.ChainRunner, chainMetricsProvider *metrics.ChainMetricsProvider) interfaces.MetricsService {
 	return &MetricsService{
-		chainProvider:        chainProvider,
+		chainRunner:          chainRunner,
 		chainMetricsProvider: chainMetricsProvider,
 	}
 }
@@ -30,7 +30,7 @@ func (c *MetricsService) GetNodeMessageMetrics() *dto.NodeMessageMetrics {
 }
 
 func (c *MetricsService) GetChainMessageMetrics() *dto.ChainMessageMetrics {
-	chain, err := c.chainProvider().Get()
+	chain, err := c.chainRunner.Get()
 	if err != nil {
 		return nil
 	}
@@ -45,7 +45,7 @@ func (c *MetricsService) GetChainMessageMetrics() *dto.ChainMessageMetrics {
 }
 
 func (c *MetricsService) GetChainConsensusWorkflowMetrics() *models.ConsensusWorkflowMetrics {
-	chain, err := c.chainProvider().Get()
+	chain, err := c.chainRunner.Get()
 	if err != nil {
 		return nil
 	}
@@ -59,7 +59,7 @@ func (c *MetricsService) GetChainConsensusWorkflowMetrics() *models.ConsensusWor
 }
 
 func (c *MetricsService) GetChainConsensusPipeMetrics() *models.ConsensusPipeMetrics {
-	chain, err := c.chainProvider().Get()
+	chain, err := c.chainRunner.Get()
 	if err != nil {
 		return nil
 	}

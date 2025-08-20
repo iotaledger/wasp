@@ -36,10 +36,6 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/webapi/interfaces"
 )
 
-type Provider func() *ChainRunner // TODO: Use DI instead of that.
-
-type ChainProvider func() chain.Chain
-
 type ChainRunner struct {
 	ctx                        context.Context
 	log                        log.Logger
@@ -210,7 +206,7 @@ func (c *ChainRunner) Run(ctx context.Context) error {
 	defer c.mutex.Unlock()
 
 	if c.ctx != nil {
-		return errors.New("chains already running")
+		return errors.New("chain already running")
 	}
 	c.ctx = ctx
 
