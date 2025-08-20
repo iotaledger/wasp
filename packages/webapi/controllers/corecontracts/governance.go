@@ -12,9 +12,9 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/webapi/params"
 )
 
-func MapGovChainInfoResponse(chID string, chainInfo *isc.ChainInfo) models.GovChainInfoResponse {
+func MapGovChainInfoResponse(chainInfo *isc.ChainInfo) models.GovChainInfoResponse {
 	return models.GovChainInfoResponse{
-		ChainID:      chID,
+		ChainID:      chainInfo.ChainID.String(),
 		ChainAdmin:   chainInfo.ChainAdmin.String(),
 		GasFeePolicy: chainInfo.GasFeePolicy,
 		GasLimits:    chainInfo.GasLimits,
@@ -40,7 +40,7 @@ func (c *Controller) getChainInfo(e echo.Context) error {
 		return c.handleViewCallError(err)
 	}
 
-	chainInfoResponse := MapGovChainInfoResponse(ch.ID().String(), chainInfo)
+	chainInfoResponse := MapGovChainInfoResponse(chainInfo)
 
 	return e.JSON(http.StatusOK, chainInfoResponse)
 }

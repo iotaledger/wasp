@@ -66,6 +66,12 @@ func (c *OffLedgerService) EnqueueOffLedgerRequest(binaryRequest []byte) error {
 		return err
 	}
 
+	// check req is for the correct chain
+	if !asOffLedgerRequest.ChainID().Equals(chain.ID()) {
+		// do not add to cache, it can still be sent to the correct chain
+		return errors.New("request is for a different chain")
+	}
+
 	if err := chain.ReceiveOffLedgerRequest(asOffLedgerRequest, c.networkProvider.Self().PubKey()); err != nil {
 		return fmt.Errorf("tx not added to the mempool: %v", err.Error())
 	}
