@@ -6,7 +6,7 @@ syntax = "proto3";
 
 package iota.grpc.events;
 
-option go_package = "github.com/iotaledger/wasp/clients/iota-go/iotaconn_grpc";
+option go_package = "github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn_grpc";
 
 service EventService {
     rpc StreamEvents (EventStreamRequest) returns (stream Event);

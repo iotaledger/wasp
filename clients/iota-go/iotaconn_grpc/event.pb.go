@@ -1015,7 +1015,7 @@ const file_event_proto_rawDesc = "" +
 	"start_time\x18\x01 \x01(\x04R\tstartTime\x12\x19\n" +
 	"\bend_time\x18\x02 \x01(\x04R\aendTime2_\n" +
 	"\fEventService\x12O\n" +
-	"\fStreamEvents\x12$.iota.grpc.events.EventStreamRequest\x1a\x17.iota.grpc.events.Event0\x01B:Z8github.com/iotaledger/wasp/clients/iota-go/iotaconn_grpcb\x06proto3"
+	"\fStreamEvents\x12$.iota.grpc.events.EventStreamRequest\x1a\x17.iota.grpc.events.Event0\x01B:Z8github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn_grpcb\x06proto3"
 
 var (
 	file_event_proto_rawDescOnce sync.Once

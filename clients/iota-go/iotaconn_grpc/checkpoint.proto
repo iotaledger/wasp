@@ -5,7 +5,7 @@ syntax = "proto3";
 
 package iota.grpc.checkpoint;
 
-option go_package = "github.com/iotaledger/wasp/clients/iota-go/iotaconn_grpc";
+option go_package = "github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn_grpc";
 
 service CheckpointService {
     rpc StreamCheckpoints (CheckpointStreamRequest) returns (stream Checkpoint);

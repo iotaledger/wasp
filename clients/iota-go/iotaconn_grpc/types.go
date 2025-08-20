@@ -1,6 +1,6 @@
 package iotaconn_grpc
 
-import "github.com/iotaledger/wasp/clients/iota-go/iotago"
+import "github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 
 type StructTag struct {
 	Address [32]byte

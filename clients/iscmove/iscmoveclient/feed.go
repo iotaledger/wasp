@@ -8,7 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	"github.com/iotaledger/hive.go/log"
-	"github.com/iotaledger/wasp/clients/iota-go/iotaconn_grpc"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn_grpc"
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
