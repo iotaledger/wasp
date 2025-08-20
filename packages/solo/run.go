@@ -5,6 +5,7 @@ package solo
 
 import (
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/samber/lo"
@@ -62,6 +63,21 @@ func (ch *Chain) EstimateGas(req isc.Request) (result *vm.RequestResult) {
 	res := ch.runTaskNoLock([]isc.Request{req}, true)
 	require.Len(ch.Env.T, res.RequestResults, 1, "cannot estimate gas: request was skipped")
 	return res.RequestResults[0]
+}
+
+// EstimateOnLedgerRequest estimates total Gas Fee, which is composed of L1 gas fee (user spent on creating onledger request)
+// and L2 gas fee (wasp gas fee for proccesing request on L2)
+func (ch *Chain) EstimateOnLedgerRequest(dryRunRes *iotajsonrpc.DryRunTransactionBlockResponse) (result *vm.RequestResult, err error) {
+	ch.runVMMutex.Lock()
+	defer ch.runVMMutex.Unlock()
+
+	req, err := isc.ReconstructOnLedgerRequest(dryRunRes)
+	if err != nil {
+		return nil, fmt.Errorf("cant generate fake request: %s", err)
+	}
+	res := ch.runTaskNoLock([]isc.Request{req}, true)
+	require.Len(ch.Env.T, res.RequestResults, 1, "cannot estimate gas: request was skipped")
+	return res.RequestResults[0], nil
 }
 
 func (ch *Chain) runTaskNoLock(reqs []isc.Request, estimateGas bool) *vm.VMTaskResult {
