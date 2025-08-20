@@ -2,13 +2,10 @@ package dist
 
 import (
 	"github.com/iotaledger/wasp/v2/packages/gpa"
-	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
-type inputChainDisabled struct {
-	chainID isc.ChainID
-}
+type inputChainDisabled struct{}
 
-func NewInputChainDisabled(chainID isc.ChainID) gpa.Input {
-	return &inputChainDisabled{chainID: chainID}
+func NewInputChainDisabled() gpa.Input {
+	return &inputChainDisabled{}
 }
