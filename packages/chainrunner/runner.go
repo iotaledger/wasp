@@ -222,7 +222,7 @@ func (c *ChainRunner) Run(ctx context.Context) error {
 	}).Unhook
 	c.cleanupFunc = unhook
 
-	return c.activateWithoutLocking() //nolint:contextcheck
+	return c.activateFromRegistry() //nolint:contextcheck
 }
 
 func (c *ChainRunner) Close() {
@@ -254,6 +254,22 @@ func (c *ChainRunner) chainServersUpdatedCB(servers []*cryptolib.PublicKey) {
 
 func (c *ChainRunner) chainAccessUpdatedCB(accessNodes []*cryptolib.PublicKey) {
 	c.accessMgr.ChainAccessNodes(accessNodes)
+}
+
+func (c *ChainRunner) activateFromRegistry() error {
+	var innerErr error
+	if err := c.chainRecordRegistryProvider.ForActiveChainRecord(func(chainRecord *registry.ChainRecord) bool {
+		if err := c.activateWithoutLocking(); err != nil {
+			innerErr = fmt.Errorf("cannot activate chain %s: %w", chainRecord.ChainID(), err)
+			return false
+		}
+
+		return true
+	}); err != nil {
+		return err
+	}
+
+	return innerErr
 }
 
 // activateWithoutLocking activates a chain in the node.
