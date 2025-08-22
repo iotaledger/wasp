@@ -29,7 +29,7 @@ func TestInternalServerErrors(t *testing.T) {
 
 	e := webapi.NewEcho(&webapi.ParametersWebAPI{
 		Enabled:     true,
-		BindAddress: ":9999",
+		BindAddress: "0.0.0.0:9999",
 		Auth:        authentication.AuthConfiguration{},
 		Limits: webapi.ParametersWebAPILimits{
 			Timeout:                        time.Minute,
@@ -58,7 +58,7 @@ func TestInternalServerErrors(t *testing.T) {
 	defer e.Shutdown(context.Background())
 
 	// query the endpoint
-	req, err := http.NewRequest(http.MethodGet, "http://localhost:9999/test", http.NoBody)
+	req, err := http.NewRequest(http.MethodGet, "http://127.0.0.1:9999/test", http.NoBody)
 	require.NoError(t, err)
 
 	res, err := http.DefaultClient.Do(req)
