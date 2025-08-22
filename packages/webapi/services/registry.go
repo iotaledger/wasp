@@ -19,5 +19,5 @@ func NewRegistryService(chainRunner *chainrunner.ChainRunner, chainRecordRegistr
 }
 
 func (c *RegistryService) GetChainRecord() (*registry.ChainRecord, error) {
-	return c.chainRecordRegistryProvider.ChainRecord()
+	return c.chainRecordRegistryProvider.ChainRecord(), nil
 }

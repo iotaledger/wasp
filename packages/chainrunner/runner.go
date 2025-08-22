@@ -274,9 +274,9 @@ func (c *ChainRunner) activateWithoutLocking() error { //nolint:funlen
 
 	//
 	// Activate the chain in the persistent store, if it is not activated yet.
-	chainRecord, err := c.chainRecordRegistryProvider.ChainRecord()
-	if err != nil {
-		return fmt.Errorf("chain record does not exist: %w", err)
+	chainRecord := c.chainRecordRegistryProvider.ChainRecord()
+	if chainRecord == nil {
+		return fmt.Errorf("chain record does not exist")
 	}
 	if !chainRecord.Active {
 		if _, err2 := c.chainRecordRegistryProvider.ActivateChainRecord(); err2 != nil {

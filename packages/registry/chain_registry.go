@@ -235,26 +235,18 @@ func (p *ChainRecordRegistryImpl) Events() *ChainRecordRegistryEvents {
 	return p.events
 }
 
-func (p *ChainRecordRegistryImpl) ChainRecord() (*ChainRecord, error) {
+func (p *ChainRecordRegistryImpl) ChainRecord() *ChainRecord {
 	chainRecord, err := p.onChangeMap.Get(p.chainID)
 	if err != nil {
 		// chain record doesn't exist
-		return nil, nil
+		return nil
 	}
 
-	return chainRecord, nil
-}
-
-func (p *ChainRecordRegistryImpl) chainRecords() ([]*ChainRecord, error) {
-	return lo.Values(p.onChangeMap.All()), nil
+	return chainRecord
 }
 
 func (p *ChainRecordRegistryImpl) ForActiveChainRecord(consumer func(*ChainRecord) bool) error {
-	chainRecords, err := p.chainRecords()
-	if err != nil {
-		return err
-	}
-
+	chainRecords := lo.Values(p.onChangeMap.All())
 	if len(chainRecords) > 1 {
 		return fmt.Errorf("multiple chain records found, expected <= 1: %d", len(chainRecords))
 	}

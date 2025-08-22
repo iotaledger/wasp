@@ -47,7 +47,7 @@ func (e *ChainEnv) testEstimateGasOnLedger(t *testing.T) {
 		GasBudget: iotaclient.DefaultGasBudget,
 	})
 	require.NoError(t, err)
-	_, err = e.Clu.MultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, tx, true, 10*time.Second)
+	_, err = e.Clu.MultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), tx, true, 10*time.Second)
 	require.NoError(t, err)
 
 	// Create tx sender with some funds
@@ -234,7 +234,7 @@ func (e *ChainEnv) testEstimateGasOnLedger(t *testing.T) {
 	require.Equal(t, estimatedStorageFee, res.Effects.Data.V1.GasUsed.StorageCost.Int.Uint64())
 	require.LessOrEqual(t, estimatedStorageRebate, res.Effects.Data.V1.GasUsed.StorageRebate.Int.Uint64())
 
-	recs, err := e.Clu.MultiClient().WaitUntilAllRequestsProcessed(context.Background(), e.Chain.ChainID, res, false, 10*time.Second)
+	recs, err := e.Clu.MultiClient().WaitUntilAllRequestsProcessed(context.Background(), res, false, 10*time.Second)
 	require.NoError(t, err, recs)
 	require.Empty(t, recs[0].ErrorMessage, lo.FromPtr(recs[0].ErrorMessage))
 	require.Equal(t, recs[0].GasBurned, estimatedReceipt.L2.GasBurned)
@@ -254,7 +254,7 @@ func (e *ChainEnv) testEstimateGasOnLedger(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, res.Errors)
 	require.Empty(t, res.Effects.Data.V1.Status.Error, res.Effects.Data.V1.Status.Status)
-	recs, _ = e.Clu.MultiClient().WaitUntilAllRequestsProcessed(context.Background(), e.Chain.ChainID, res, false, 10*time.Second)
+	recs, _ = e.Clu.MultiClient().WaitUntilAllRequestsProcessed(context.Background(), res, false, 10*time.Second)
 	require.Equal(t, "gas budget exceeded", lo.FromPtr(recs[0].ErrorMessage))
 }
 
