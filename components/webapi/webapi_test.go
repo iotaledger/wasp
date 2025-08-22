@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"testing"
 	"time"
@@ -46,7 +47,19 @@ func TestInternalServerErrors(t *testing.T) {
 		log.NewLogger(log.WithHandler(logger)),
 	)
 
-	time.Sleep(5 * time.Second)
+	// wait until the server is actually listening
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		conn, err := net.DialTimeout("tcp", "127.0.0.1:9999", 100*time.Millisecond)
+		if err == nil {
+			_ = conn.Close()
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("server did not start: %v", err)
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
 
 	// Add an endpoint that just panics with "foobar" and start the server
 	exceptionText := "foobar"
