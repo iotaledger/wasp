@@ -156,10 +156,12 @@ func (nc *nodeConnection) AttachChainReadOnly(
 		nc.chainsLock.Lock()
 		defer nc.chainsLock.Unlock()
 
-		ncc, err := newNCChain(ctx, nc, chainID, nil, nil, nc.wsURL, nc.httpURL)
-		if err != nil {
-			return nil, err
+		ncc := &ncChain{
+			Logger:  nc.Logger,
+			chainID: chainID,
 		}
+
+		ncc.shutdownWaitGroup.Add(1)
 
 		nc.chainsMap.Set(chainID, ncc)
 		util.ExecuteIfNotNil(onChainConnect)

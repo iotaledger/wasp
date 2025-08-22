@@ -39,23 +39,22 @@ func provide(c *dig.Container) error {
 		Component.LogPanic(err.Error())
 	}
 
-	if err := c.Provide(func() registry.ChainRecordRegistryProvider {
+	type chainRecordRegistryDeps struct {
+		dig.In
+
+		ReadOnlyDBPath string
+	}
+
+	if err := c.Provide(func(deps chainRecordRegistryDeps) registry.ChainRecordRegistryProvider {
 		path := ParamsRegistries.Chains.FilePath
-		if ParamsRegistries.Chains.ReadOnlyFilePath != "" {
-			path = ParamsRegistries.Chains.ReadOnlyFilePath
+		if deps.ReadOnlyDBPath != "" {
+			path = filepath.Join(deps.ReadOnlyDBPath, "chain_registry.json")
 		}
 		chainRecordRegistryProvider, err := registry.NewChainRecordRegistryImpl(path)
 		if err != nil {
 			Component.LogPanic(err.Error())
 		}
 		return chainRecordRegistryProvider
-	}); err != nil {
-		Component.LogPanic(err.Error())
-	}
-
-	if err := c.Provide(func() ReadOnlyPath {
-		path := filepath.Dir(ParamsRegistries.Chains.ReadOnlyFilePath)
-		return ReadOnlyPath(path)
 	}); err != nil {
 		Component.LogPanic(err.Error())
 	}

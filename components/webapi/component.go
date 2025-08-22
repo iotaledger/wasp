@@ -70,6 +70,7 @@ type dependencies struct {
 	WebsocketHub       *websockethub.Hub   `name:"websocketHub"`
 	NodeConnection     chain.NodeConnection
 	WebsocketPublisher *websocket.Service `name:"websocketService"`
+	ReadOnlyDBPath     string
 }
 
 func initConfigParams(c *dig.Container) error {
@@ -319,9 +320,11 @@ func run() error {
 	Component.LogInfof("Starting %s server ...", Component.Name)
 	if err := Component.Daemon().BackgroundWorker(Component.Name, func(ctx context.Context) {
 		Component.LogInfof("Starting %s server ...", Component.Name)
-		if err := deps.NodeConnection.WaitUntilInitiallySynced(ctx); err != nil {
-			Component.LogErrorf("failed to start %s, waiting for L1 node to become sync failed, error: %s", err.Error())
-			return
+		if deps.ReadOnlyDBPath == "" {
+			if err := deps.NodeConnection.WaitUntilInitiallySynced(ctx); err != nil {
+				Component.LogErrorf("failed to start %s, waiting for L1 node to become sync failed, error: %s", err.Error())
+				return
+			}
 		}
 
 		Component.LogInfof("Starting %s server ... done", Component.Name)

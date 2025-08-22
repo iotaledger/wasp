@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/hive.go/app"
 	hiveshutdown "github.com/iotaledger/hive.go/app/shutdown"
 
-	comregistry "github.com/iotaledger/wasp/v2/components/registry"
 	"github.com/iotaledger/wasp/v2/packages/chain"
 	"github.com/iotaledger/wasp/v2/packages/chain/cmtlog"
 	"github.com/iotaledger/wasp/v2/packages/chain/mempool"
@@ -47,7 +46,7 @@ type dependencies struct {
 
 	ShutdownHandler *hiveshutdown.ShutdownHandler
 	Chains          *chains.Chains
-	ReadOnlyPath    comregistry.ReadOnlyPath
+	ReadOnlyDBPath  string
 }
 
 func initConfigParams(c *dig.Container) error {
@@ -158,10 +157,10 @@ func provide(c *dig.Container) error {
 func run() error {
 	err := Component.Daemon().BackgroundWorker(Component.Name, func(ctx context.Context) {
 		var err error
-		if string(deps.ReadOnlyPath) == "" {
+		if deps.ReadOnlyDBPath == "" {
 			err = deps.Chains.Run(ctx)
 		} else {
-			path := filepath.Join(string(deps.ReadOnlyPath), "data")
+			path := filepath.Join(deps.ReadOnlyDBPath, "data")
 			err = deps.Chains.RunReadOnly(ctx, path)
 		}
 		if err != nil {

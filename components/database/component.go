@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"path/filepath"
 
 	"go.uber.org/dig"
 
@@ -40,6 +41,7 @@ func initConfigParams(c *dig.Container) error {
 	type cfgResult struct {
 		dig.Out
 		DatabaseEngine hivedb.Engine `name:"databaseEngine"`
+		ReadOnlyDBPath string
 	}
 
 	if err := c.Provide(func() cfgResult {
@@ -50,6 +52,7 @@ func initConfigParams(c *dig.Container) error {
 
 		return cfgResult{
 			DatabaseEngine: dbEngine,
+			ReadOnlyDBPath: ParamsDatabase.ReadOnlyFilePath,
 		}
 	}); err != nil {
 		Component.LogPanic(err.Error())
@@ -78,10 +81,14 @@ func provide(c *dig.Container) error {
 	}
 
 	if err := c.Provide(func(deps databaseManagerDeps) chainStateDatabaseManagerResult {
+		path := ParamsDatabase.ChainState.Path
+		if ParamsDatabase.ReadOnlyFilePath != "" {
+			path = filepath.Join(ParamsDatabase.ReadOnlyFilePath, "data")
+		}
 		manager, err := database.NewChainStateDatabaseManager(
 			deps.ChainRecordRegistryProvider,
 			database.WithEngine(deps.DatabaseEngine),
-			database.WithPath(ParamsDatabase.ChainState.Path),
+			database.WithPath(path),
 			database.WithCacheSize(ParamsDatabase.ChainState.CacheSize),
 		)
 		if err != nil {
