@@ -28,11 +28,6 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/util"
 )
 
-const (
-	chainsCleanupThresholdRatio = 50.0
-	chainsCleanupThresholdCount = 10
-)
-
 var ErrOperationAborted = errors.New("operation was aborted")
 
 type SingleL1Info struct {

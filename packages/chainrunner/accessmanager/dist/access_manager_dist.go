@@ -100,7 +100,7 @@ func (amd *accessMgrDist) StatusString() string {
 }
 
 // > Notify all the trusted access nodes, that we will not serve the requests anymore.
-func (amd *accessMgrDist) handleInputChainDisabled(input *inputChainDisabled) gpa.OutMessages {
+func (amd *accessMgrDist) handleInputChainDisabled(_ *inputChainDisabled) gpa.OutMessages {
 	if amd.chain == nil {
 		return nil // Already disabled.
 	}

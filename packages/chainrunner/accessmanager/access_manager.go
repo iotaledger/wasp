@@ -179,7 +179,7 @@ func (ami *accessMgrImpl) handleReqChainAccessNodes(recv *reqChainAccessNodes) {
 	ami.sendMessages(ami.dist.Input(dist.NewInputAccessNodes(recv.accessNodes)))
 }
 
-func (ami *accessMgrImpl) handleReqChainDismissed(recv *reqChainDismissed) {
+func (ami *accessMgrImpl) handleReqChainDismissed(_ *reqChainDismissed) {
 	ami.log.LogDebugf("handleReqChainDismissed")
 	ami.sendMessages(ami.dist.Input(dist.NewInputChainDisabled()))
 }

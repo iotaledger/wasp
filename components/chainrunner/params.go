@@ -1,4 +1,4 @@
-// Package chains provides functionality for managing IOTA Smart Contract chain runner,
+// Package chainrunner provides functionality for managing IOTA Smart Contract chain runner,
 // including chain configuration parameters, write-ahead logging, validator settings,
 // state management, and snapshot capabilities.
 package chainrunner
