@@ -4,13 +4,13 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**OutputBytes** | **string** | Serialized Output (Hex) | 
+**TransactionBytes** | **string** | Hexadecimal bytes of transaction to estimate | 
 
 ## Methods
 
 ### NewEstimateGasRequestOnledger
 
-`func NewEstimateGasRequestOnledger(outputBytes string, ) *EstimateGasRequestOnledger`
+`func NewEstimateGasRequestOnledger(transactionBytes string, ) *EstimateGasRequestOnledger`
 
 NewEstimateGasRequestOnledger instantiates a new EstimateGasRequestOnledger object
 This constructor will assign default values to properties that have it defined,
@@ -25,24 +25,24 @@ NewEstimateGasRequestOnledgerWithDefaults instantiates a new EstimateGasRequestO
 This constructor will only assign default values to properties that have it defined,
 but it doesn't guarantee that properties required by API are set
 
-### GetOutputBytes
+### GetTransactionBytes
 
-`func (o *EstimateGasRequestOnledger) GetOutputBytes() string`
+`func (o *EstimateGasRequestOnledger) GetTransactionBytes() string`
 
-GetOutputBytes returns the OutputBytes field if non-nil, zero value otherwise.
+GetTransactionBytes returns the TransactionBytes field if non-nil, zero value otherwise.
 
-### GetOutputBytesOk
+### GetTransactionBytesOk
 
-`func (o *EstimateGasRequestOnledger) GetOutputBytesOk() (*string, bool)`
+`func (o *EstimateGasRequestOnledger) GetTransactionBytesOk() (*string, bool)`
 
-GetOutputBytesOk returns a tuple with the OutputBytes field if it's non-nil, zero value otherwise
+GetTransactionBytesOk returns a tuple with the TransactionBytes field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetOutputBytes
+### SetTransactionBytes
 
-`func (o *EstimateGasRequestOnledger) SetOutputBytes(v string)`
+`func (o *EstimateGasRequestOnledger) SetTransactionBytes(v string)`
 
-SetOutputBytes sets OutputBytes field to given value.
+SetTransactionBytes sets TransactionBytes field to given value.
 
 
 

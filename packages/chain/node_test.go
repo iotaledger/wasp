@@ -284,6 +284,10 @@ type testNodeConn struct {
 	iscPackageID iotago.PackageID
 }
 
+func (tnc *testNodeConn) L1Client() clients.L1Client {
+	return tnc.l1Client
+}
+
 func (tnc *testNodeConn) L1ParamsFetcher() parameters.L1ParamsFetcher {
 	return tnc.l1ParamsFetcher
 }

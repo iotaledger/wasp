@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/log"
+	"github.com/iotaledger/wasp/v2/clients"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/v2/packages/chain/cons/gr"
 	"github.com/iotaledger/wasp/v2/packages/coin"
@@ -60,7 +61,7 @@ type NodeConnection interface {
 	// WaitUntilInitiallySynced blocks until the connection is established.
 	WaitUntilInitiallySynced(context.Context) error
 	L1ParamsFetcher() parameters.L1ParamsFetcher
-
+	L1Client() clients.L1Client
 	ConsensusL1InfoProposal(
 		ctx context.Context,
 		anchor *isc.StateAnchor,

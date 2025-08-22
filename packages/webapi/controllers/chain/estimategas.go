@@ -1,12 +1,18 @@
 package chain
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/labstack/echo/v4"
+	"golang.org/x/net/context"
 
+	"github.com/iotaledger/bcs-go"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/webapi/apierrors"
@@ -16,43 +22,75 @@ import (
 )
 
 func (c *Controller) estimateGasOnLedger(e echo.Context) error {
-	panic("TODO")
-	// controllerutils.SetOperation(e, "estimate_gas_onledger")
-	// ch, err := controllerutils.ChainFromParams(e, c.chainService)
-	// if err != nil {
-	// 	return err
-	// }
+	controllerutils.SetOperation(e, "estimate_gas_onledger")
+	ch, err := c.chainService.GetChain()
+	if err != nil {
+		return err
+	}
 
-	// var estimateGasRequest models.EstimateGasRequestOnledger
-	// if err = e.Bind(&estimateGasRequest); err != nil {
-	// 	return apierrors.InvalidPropertyError("body", err)
-	// }
+	var estimateGasRequest models.EstimateGasRequestOnledger
+	if err = e.Bind(&estimateGasRequest); err != nil {
+		return apierrors.InvalidPropertyError("body", err)
+	}
 
-	// outputBytes, err := cryptolib.DecodeHex(estimateGasRequest.Output)
-	// if err != nil {
-	// 	return apierrors.InvalidPropertyError("Request", err)
-	// }
-	// output, err := util.OutputFromBytes(outputBytes)
-	// if err != nil {
-	// 	return apierrors.InvalidPropertyError("Output", err)
-	// }
+	txBytes, err := hexutil.Decode(estimateGasRequest.TransactionBytes)
+	if err != nil {
+		return apierrors.InvalidPropertyError("transactionBytes", err)
+	}
 
-	// req, err := isc.OnLedgerFromUTXO(
-	// 	output,
-	// 	iotago.OutputID{}, // empty outputID for estimation
-	// )
-	// if err != nil {
-	// 	return apierrors.InvalidPropertyError("Output", err)
-	// }
-	// if !req.TargetAddress().Equals(chainID.AsAddress()) {
-	// 	return apierrors.InvalidPropertyError("Request", errors.New("wrong chainID"))
-	// }
+	txData, err := bcs.Unmarshal[iotago.TransactionData](txBytes)
+	if err != nil {
+		return apierrors.InvalidPropertyError("transactionBytes", fmt.Errorf("failed to unmarshal tx bytes into TransactionData: %w", err))
+	}
 
-	// rec, err := common.EstimateGas(ch, req)
-	// if err != nil {
-	// 	return apierrors.NewHTTPError(http.StatusBadRequest, "VM run error", err)
-	// }
-	// return e.JSON(http.StatusOK, models.MapReceiptResponse(rec))
+	if txData.V1 == nil {
+		return apierrors.InvalidPropertyError("transactionBytes", errors.New("TransactionData V1 is supported"))
+	}
+	if txData.V1.GasData.Price == 0 {
+		return apierrors.InvalidPropertyError("transactionBytes", errors.New("transaction must have a non-zero gas price"))
+	}
+
+	// Unsetting gas coin objects and gas budget for purpose of gas estimation.
+	txData.V1.GasData.Payment = nil
+	txData.V1.GasData.Budget = iotaclient.MaxGasBudget
+
+	txBytes, err = bcs.Marshal(&txData)
+	if err != nil {
+		return fmt.Errorf("failed to marshal tx data into bytes: %w", err)
+	}
+
+	callContext, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	dryRunResponse, err := c.l1Client.DryRunTransaction(callContext, txBytes)
+	if err != nil {
+		return apierrors.NewHTTPError(http.StatusBadRequest, "DryRun error", err)
+	}
+	if dryRunResponse.Effects.Data.V1.Status.Error != "" {
+		return apierrors.NewHTTPError(http.StatusBadRequest, "DryRun status error", fmt.Errorf("%s: %s",
+			dryRunResponse.Effects.Data.V1.Status.Status,
+			dryRunResponse.Effects.Data.V1.Status.Error,
+		))
+	}
+
+	req, err := isc.ReconstructOnLedgerRequest(dryRunResponse)
+	if err != nil {
+		return fmt.Errorf("cant generate fake request: %s", err)
+	}
+
+	rec, err := common.EstimateGas(ch, req)
+	if err != nil {
+		return apierrors.NewHTTPError(http.StatusBadRequest, "VM run error", err)
+	}
+
+	res := rec.DeserializedRequest()
+	fmt.Printf("RequestBytes: %s\n", hexutil.Encode(rec.Request))
+	fmt.Printf("Request data: %v %v", res, res.Message())
+
+	return e.JSON(http.StatusOK, models.OnLedgerEstimationResponse{
+		L1: models.MapL1EstimationResult(&dryRunResponse.Effects.Data.V1.GasUsed),
+		L2: models.MapReceiptResponse(rec),
+	})
 }
 
 func (c *Controller) estimateGasOffLedger(e echo.Context) error {

@@ -21,8 +21,8 @@ var _ MappedNullable = &EstimateGasRequestOnledger{}
 
 // EstimateGasRequestOnledger struct for EstimateGasRequestOnledger
 type EstimateGasRequestOnledger struct {
-	// Serialized Output (Hex)
-	OutputBytes string `json:"outputBytes"`
+	// Hexadecimal bytes of transaction to estimate
+	TransactionBytes string `json:"transactionBytes"`
 }
 
 type _EstimateGasRequestOnledger EstimateGasRequestOnledger
@@ -31,9 +31,9 @@ type _EstimateGasRequestOnledger EstimateGasRequestOnledger
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewEstimateGasRequestOnledger(outputBytes string) *EstimateGasRequestOnledger {
+func NewEstimateGasRequestOnledger(transactionBytes string) *EstimateGasRequestOnledger {
 	this := EstimateGasRequestOnledger{}
-	this.OutputBytes = outputBytes
+	this.TransactionBytes = transactionBytes
 	return &this
 }
 
@@ -45,28 +45,28 @@ func NewEstimateGasRequestOnledgerWithDefaults() *EstimateGasRequestOnledger {
 	return &this
 }
 
-// GetOutputBytes returns the OutputBytes field value
-func (o *EstimateGasRequestOnledger) GetOutputBytes() string {
+// GetTransactionBytes returns the TransactionBytes field value
+func (o *EstimateGasRequestOnledger) GetTransactionBytes() string {
 	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return o.OutputBytes
+	return o.TransactionBytes
 }
 
-// GetOutputBytesOk returns a tuple with the OutputBytes field value
+// GetTransactionBytesOk returns a tuple with the TransactionBytes field value
 // and a boolean to check if the value has been set.
-func (o *EstimateGasRequestOnledger) GetOutputBytesOk() (*string, bool) {
+func (o *EstimateGasRequestOnledger) GetTransactionBytesOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.OutputBytes, true
+	return &o.TransactionBytes, true
 }
 
-// SetOutputBytes sets field value
-func (o *EstimateGasRequestOnledger) SetOutputBytes(v string) {
-	o.OutputBytes = v
+// SetTransactionBytes sets field value
+func (o *EstimateGasRequestOnledger) SetTransactionBytes(v string) {
+	o.TransactionBytes = v
 }
 
 func (o EstimateGasRequestOnledger) MarshalJSON() ([]byte, error) {
@@ -79,7 +79,7 @@ func (o EstimateGasRequestOnledger) MarshalJSON() ([]byte, error) {
 
 func (o EstimateGasRequestOnledger) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["outputBytes"] = o.OutputBytes
+	toSerialize["transactionBytes"] = o.TransactionBytes
 	return toSerialize, nil
 }
 
@@ -88,7 +88,7 @@ func (o *EstimateGasRequestOnledger) UnmarshalJSON(data []byte) (err error) {
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
-		"outputBytes",
+		"transactionBytes",
 	}
 
 	allProperties := make(map[string]interface{})

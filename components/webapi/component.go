@@ -290,6 +290,7 @@ func provide(c *dig.Container) error {
 			ParamsWebAPI.AccountDumpsPath,
 			deps.Publisher,
 			deps.NodeConn.L1ParamsFetcher(),
+			deps.NodeConn.L1Client(),
 			jsonrpc.NewParameters(
 				ParamsWebAPI.Limits.Jsonrpc.MaxBlocksInLogsFilterRange,
 				ParamsWebAPI.Limits.Jsonrpc.MaxLogsInResult,
