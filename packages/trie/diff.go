@@ -4,16 +4,17 @@ import "bytes"
 
 // Diff computes the difference between two given trie roots, returning the collections
 // of nodes that are exclusive to each trie.
-func Diff(store KVStore, root1, root2 Hash) (onlyOn1, onlyOn2 map[Hash]*NodeData) {
+func (tr *TrieR) Diff(root1, root2 Hash) (onlyOn1, onlyOn2 map[Hash]*NodeData) {
 	type nodeData struct {
 		*NodeData
 		key []byte
 	}
 
-	iterateTrie := func(tr *TrieReader) (*nodeData, func(IterateNodesAction) *nodeData) {
+	iterateTrie := func(root Hash) (*nodeData, func(IterateNodesAction) *nodeData) {
 		nodes := make(chan *nodeData, 1)
 		actions := make(chan IterateNodesAction, 1)
 
+		tr := NewTrieRFromRoot(tr.store, root)
 		go func() {
 			defer close(nodes)
 			tr.IterateNodes(func(nodeKey []byte, node *NodeData, depth int) IterateNodesAction {
@@ -36,12 +37,8 @@ func Diff(store KVStore, root1, root2 Hash) (onlyOn1, onlyOn2 map[Hash]*NodeData
 		return firstNode, next
 	}
 
-	tr1, err := NewTrieReader(store, root1)
-	mustNoErr(err)
-	tr2, err := NewTrieReader(store, root2)
-	mustNoErr(err)
-	current1, next1 := iterateTrie(tr1)
-	current2, next2 := iterateTrie(tr2)
+	current1, next1 := iterateTrie(root1)
+	current2, next2 := iterateTrie(root2)
 
 	onlyOn1 = make(map[Hash]*NodeData)
 	onlyOn2 = make(map[Hash]*NodeData)

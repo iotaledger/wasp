@@ -1,56 +1,58 @@
 @startuml
-struct TrieReader {
-  nodeStore: nodeStore
-  root: Hash
+allow_mixing
+
+struct TrieR {
+  store: KVReader
 }
 
-struct nodeStore {
-  trieStore: KVReader
-  valueStore: KVReader
-}
-
-struct nodeData {
+struct NodeData {
   {field} pathExtension: []byte
-  terminal: tcommitment
+  terminal: Tcommitment
   children: [16]Hash
   commitment: Hash
 }
 
-struct tcommitment {
+struct Tcommitment {
   data: []byte
   isValue: bool
 }
 
-note right of tcommitment
+note top of Tcommitment
   data is either:
   - value (if len(value) < 63)
   - hash(value)
-  
+
   serialized as [header|data]
   where header = [isValue (1 bit) | len(data) (7 bits)]
 end note
 
 struct Hash {}
 
-note right of Hash
+note left of Hash
   [20]byte hash
 end note
 
 package db <<Database>> {
-  package valueStore <<Database>> {
+  folder 0 {
+    database trieNodes
   }
-  package trieStore <<Database>> {
+  folder 1 {
+    database trieValues
+  }
+  folder 2 {
+    database nodeRefcounts
+  }
+  folder 3 {
+    database valueRefcounts
   }
 }
 
-TrieReader *-- nodeStore
-TrieReader *-- Hash: root
-nodeData ..> trieStore: "k=commitment\nv=nodeData.Bytes()"
-nodeData ..> valueStore: "(if !terminal.isValue)\nk=hash(terminal.value)\nv=terminal.value"
-nodeData "1" *-- "1" tcommitment: terminal
-nodeData "1" *-- "1" Hash: commitment
-nodeData "1" *-- "16" Hash: children
-nodeStore ..> nodeData: manages
-nodeStore o--> db
-
+NodeData ..> trieNodes: "k=commitment\nv=nodeData.Bytes()"
+NodeData ..> nodeRefcounts
+Tcommitment ..> trieValues: "(if !isValue)\nk=hash(value)\nv=value"
+Tcommitment ..> valueRefcounts
+NodeData "1" *-- "1" Tcommitment: terminal
+NodeData "1" *-- "1" Hash: commitment
+NodeData "1" *-- "16" Hash: children
+TrieR ..> NodeData: manages
 @enduml

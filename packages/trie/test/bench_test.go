@@ -3,13 +3,13 @@ package test
 import (
 	"bytes"
 	"io"
-	"maps"
 	"math/rand/v2"
 	"testing"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/v2/packages/kvstore"
 	"github.com/iotaledger/wasp/v2/packages/trie"
 )
 
@@ -31,12 +31,12 @@ func keyMaker() func() []byte {
 
 func makeTrie(n int) (*InMemoryKVStore, []trie.Hash) {
 	store := NewInMemoryKVStore()
-	roots := []trie.Hash{lo.Must(trie.InitRoot(store, true))}
+	roots := []trie.Hash{lo.Must(trie.NewTrieRW(store).InitRoot(true))}
 	makeKey := keyMaker()
 	values := NewScrambledZipfian(1000, 0)
 
 	for range n {
-		tr := lo.Must(trie.NewTrieUpdatable(store, roots[len(roots)-1]))
+		tr := lo.Must(trie.NewDraft(store, roots[len(roots)-1]))
 		for range 10000 {
 			key := makeKey()
 			value := values.Next()
@@ -56,7 +56,7 @@ func BenchmarkTakeSnapshot(b *testing.B) {
 	// reads/op measures the amount of times the DB is called to fetch data (which is the bottleneck when using RocksDB)
 
 	store, roots := makeTrie(1)
-	r := lo.Must(trie.NewTrieReader(store, roots[len(roots)-1]))
+	r := trie.NewTrieRFromRoot(store, roots[len(roots)-1])
 	store.ResetStats()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -78,7 +78,7 @@ func BenchmarkRestoreSnapshot(b *testing.B) {
 	buf := bytes.NewBuffer(nil)
 	{
 		store, roots := makeTrie(1)
-		r := lo.Must(trie.NewTrieReader(store, roots[len(roots)-1]))
+		r := trie.NewTrieRFromRoot(store, roots[len(roots)-1])
 		err := r.TakeSnapshot(buf)
 		require.NoError(b, err)
 	}
@@ -88,7 +88,7 @@ func BenchmarkRestoreSnapshot(b *testing.B) {
 		newStore := NewInMemoryKVStore()
 		newStore.Stats = stats
 		b.StartTimer()
-		trie.RestoreSnapshot(bytes.NewReader(buf.Bytes()), newStore, true)
+		trie.NewTrieRW(newStore).RestoreSnapshot(bytes.NewReader(buf.Bytes()), true)
 		b.StopTimer()
 		stats = newStore.Stats
 	}
@@ -110,10 +110,10 @@ func BenchmarkPrune(b *testing.B) {
 	stats := InMemoryKVStoreStats{}
 	for i := 0; i < b.N; i++ {
 		storeClone := NewInMemoryKVStore()
-		storeClone.m = maps.Clone(store.m)
+		lo.Must0(kvstore.Copy(store.m, storeClone.m))
 		storeClone.Stats = stats
 		b.StartTimer()
-		_, err := trie.Prune(storeClone, penultimateRoot)
+		_, err := trie.NewTrieRW(storeClone).Prune(penultimateRoot)
 		b.StopTimer()
 		require.NoError(b, err)
 		stats = storeClone.Stats
@@ -137,9 +137,9 @@ func BenchmarkCommit(b *testing.B) {
 	makeKey := keyMaker()
 	values := NewScrambledZipfian(1000, 0)
 
-	root := lo.Must(trie.InitRoot(store, true))
+	root := lo.Must(trie.NewTrieRW(store).InitRoot(true))
 	for i := 0; i < b.N; i++ {
-		tr := lo.Must(trie.NewTrieUpdatable(store, root))
+		tr := lo.Must(trie.NewDraft(store, root))
 		for range 1000 {
 			key := makeKey()
 			value := values.Next()
