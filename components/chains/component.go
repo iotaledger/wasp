@@ -157,12 +157,11 @@ func provide(c *dig.Container) error {
 func run() error {
 	err := Component.Daemon().BackgroundWorker(Component.Name, func(ctx context.Context) {
 		var err error
-		if deps.ReadOnlyDBPath == "" {
-			err = deps.Chains.Run(ctx)
-		} else {
-			path := filepath.Join(deps.ReadOnlyDBPath, "data")
-			err = deps.Chains.RunReadOnly(ctx, path)
+		var path string
+		if deps.ReadOnlyDBPath != "" {
+			path = filepath.Join(deps.ReadOnlyDBPath, "data")
 		}
+		err = deps.Chains.Run(ctx, path)
 		if err != nil {
 			deps.ShutdownHandler.SelfShutdown(fmt.Sprintf("Starting %s failed, error: %s", Component.Name, err.Error()), true)
 			return

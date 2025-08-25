@@ -30,8 +30,6 @@ func init() {
 
 var Component *app.Component
 
-type ReadOnlyPath string
-
 func provide(c *dig.Container) error {
 	if err := c.Provide(func() registry.NodeIdentityProvider {
 		return nodeIdentityRegistry()

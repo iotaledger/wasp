@@ -272,6 +272,7 @@ func New(
 	mempoolSettings mempool.Settings,
 	mempoolBroadcastInterval time.Duration,
 	originDeposit coin.Value,
+	readOnlyPath string,
 ) (Chain, error) {
 	log.LogDebugf("Starting the chain, chainID=%v", chainID)
 	if listener == nil {
@@ -280,8 +281,219 @@ func New(
 	if accessNodesFromNode == nil {
 		accessNodesFromNode = []*cryptolib.PublicKey{}
 	}
+
+	cni, netPeeringID := newChainNodeImplAndPeerID(log, chainID, chainStore, nodeConn, nodeIdentity, processorConfig, blockWAL, listener, net, chainMetrics, shutdownCoordinator, consensusDelay, recoveryTimeout, validatorAgentID, originDeposit)
+
+	if readOnlyPath == "" {
+		cni.chainMetrics.Pipe.TrackPipeLen("node-recvAnchorPipe", cni.recvAnchorPipe.Len)
+		cni.chainMetrics.Pipe.TrackPipeLen("node-recvTxPublishedPipe", cni.recvTxPublishedPipe.Len)
+		cni.chainMetrics.Pipe.TrackPipeLen("node-consOutputPipe", cni.consOutputPipe.Len)
+		cni.chainMetrics.Pipe.TrackPipeLen("node-consRecoverPipe", cni.consRecoverPipe.Len)
+		cni.chainMetrics.Pipe.TrackPipeLen("node-serversUpdatedPipe", cni.serversUpdatedPipe.Len)
+		cni.chainMetrics.Pipe.TrackPipeLen("node-netRecvPipe", cni.netRecvPipe.Len)
+
+		if recoverFromWAL {
+			cni.recoverStoreFromWAL(chainStore, blockWAL)
+		}
+		cni.me = cni.pubKeyAsNodeID(nodeIdentity.GetPublicKey())
+		//
+		// Create sub-components.
+		chainMgr, err := chainmanager.New(
+			cni.me,
+			cni.chainID,
+			cni.chainStore,
+			consensusStateRegistry,
+			dkShareRegistryProvider,
+			cni.pubKeyAsNodeID,
+			func(upd *chainmanager.NeedConsensusMap) {
+				log.LogDebugf("needConsensusCB called with %v", upd)
+				cni.handleNeedConsensus(ctx, upd)
+			},
+			func(upd *chainmanager.NeedPublishTXMap) {
+				log.LogDebugf("needPublishCB called with %v", upd)
+				cni.handleNeedPublishTX(ctx, upd)
+			},
+			func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey) {
+				cni.accessLock.RLock()
+				defer cni.accessLock.RUnlock()
+				return cni.activeAccessNodes, cni.activeCommitteeNodes
+			},
+			func(anchor *isc.StateAnchor) {
+				cni.stateTrackerAct.TrackAliasOutput(anchor, true)
+			},
+			func(block state.Block) {
+				if err := cni.stateMgr.PreliminaryBlock(block); err != nil {
+					cni.log.LogWarnf("Failed to save a preliminary block %v: %v", block.L1Commitment(), err)
+				}
+			},
+			func(dkShare tcrypto.DKShare) {
+				cni.accessLock.Lock()
+				cni.activeCommitteeDKShare = dkShare
+				activeCommitteeNodes := cni.activeCommitteeNodes
+				cni.accessLock.Unlock()
+				var newCommitteeNodes []*cryptolib.PublicKey
+				if dkShare == nil {
+					newCommitteeNodes = []*cryptolib.PublicKey{}
+				} else {
+					newCommitteeNodes = dkShare.GetNodePubKeys()
+				}
+				if !util.Same(newCommitteeNodes, activeCommitteeNodes) {
+					cni.log.LogInfof("Committee nodes updated to %v, was %v", newCommitteeNodes, activeCommitteeNodes)
+					cni.updateAccessNodes(func() {
+						cni.activeCommitteeNodes = newCommitteeNodes
+					})
+				}
+			},
+			deriveAliasOutputByQuorum,
+			pipeliningLimit,
+			postponeRecoveryMilestones,
+			cni.chainMetrics.CmtLog,
+			cni.log.NewChildLogger("CM"),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("cannot create chainMgr: %w", err)
+		}
+
+		peerPubKeys := []*cryptolib.PublicKey{nodeIdentity.GetPublicKey()}
+		peerPubKeys = append(peerPubKeys, cni.accessNodesFromNode...)
+		stateMgr, err := statemanager.New(
+			ctx,
+			cni.chainID,
+			nodeIdentity.GetPublicKey(),
+			peerPubKeys,
+			net,
+			blockWAL,
+			snapshotManager,
+			chainStore,
+			shutdownCoordinator.Nested("StateMgr"),
+			chainMetrics.StateManager,
+			chainMetrics.Pipe,
+			cni.log,
+			smParameters,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("cannot create stateMgr: %w", err)
+		}
+		mempool := mempool.New(
+			ctx,
+			chainID,
+			nodeIdentity,
+			net,
+			cni.log.NewChildLogger("MP"),
+			chainMetrics.Mempool,
+			chainMetrics.Pipe,
+			cni.listener,
+			mempoolSettings,
+			mempoolBroadcastInterval,
+			func() { nodeConn.RefreshOnLedgerRequests(ctx, chainID) },
+		)
+
+		cni.chainMgr = gpa.NewAckHandler(cni.me, chainMgr.AsGPA(), RedeliveryPeriod)
+		cni.stateMgr = stateMgr
+		cni.mempool = mempool
+		cni.stateTrackerAct = NewStateTracker(ctx, stateMgr, cni.handleStateTrackerActCB, chainMetrics.StateManager.SetChainActiveStateWant, chainMetrics.StateManager.SetChainActiveStateHave, cni.log.NewChildLogger("ST.ACT"))
+		cni.stateTrackerCnf = NewStateTracker(ctx, stateMgr, cni.handleStateTrackerCnfCB, chainMetrics.StateManager.SetChainConfirmedStateWant, chainMetrics.StateManager.SetChainConfirmedStateHave, cni.log.NewChildLogger("ST.CNF"))
+		cni.updateAccessNodes(func() {
+			cni.accessNodesFromNode = accessNodesFromNode
+			cni.accessNodesFromACT = []*cryptolib.PublicKey{}
+			cni.accessNodesFromCNF = []*cryptolib.PublicKey{}
+		})
+		cni.updateServerNodes([]*cryptolib.PublicKey{})
+		//
+		// Connect to the peering network.
+		netRecvPipeInCh := cni.netRecvPipe.In()
+		unhook := net.Attach(&netPeeringID, peering.ReceiverChain, func(recv *peering.PeerMessageIn) {
+			if recv.MsgType != msgTypeChainMgr {
+				cni.log.LogWarnf("Unexpected message, type=%v", recv.MsgType)
+				return
+			}
+			netRecvPipeInCh <- recv
+		})
+		//
+		// Attach to the L1.
+		recvRequestCB := func(req isc.OnLedgerRequest) {
+			log.LogDebugf("recvRequestCB[%p], requestID=%v", cni, req.ID())
+			cni.chainMetrics.NodeConn.L1RequestReceived()
+			cni.mempool.ReceiveOnLedgerRequest(req)
+		}
+		recvAnchorPipeInCh := cni.recvAnchorPipe.In()
+		recvAnchorCB := func(anchor *isc.StateAnchor, l1Params *parameters.L1Params) {
+			log.LogDebugf("recvAnchorCB[%p], %v", cni, anchor.GetObjectID())
+			cni.chainMetrics.NodeConn.L1AnchorReceived()
+			recvAnchorPipeInCh <- lo.T2(anchor, l1Params)
+		}
+		err = nodeConn.AttachChain(ctx, chainID, recvRequestCB, recvAnchorCB, onChainConnect, onChainDisconnect, false)
+		if err != nil {
+			return nil, err
+		}
+		//
+		// Run the main thread.
+
+		go cni.run(ctx, unhook)
+		return cni, nil
+	} else {
+		readOnlyPath = filepath.Join(readOnlyPath, chainID.String())
+		readOnlyDB, err := database.NewReadOnlyDatabase(readOnlyPath)
+		if err != nil {
+			return nil, err
+		}
+		readOnlyDBStore, err := state.NewStoreReadonly(readOnlyDB.KVStore())
+		if err != nil {
+			return nil, err
+		}
+		latestState := lo.Must(readOnlyDBStore.LatestState())
+
+		// use a fake PackageID here. PackageID should be unnecessary, because it is a readonly more
+		anchor := isc.NewStateAnchor(&iscmove.AnchorWithRef{
+			ObjectRef: iotago.ObjectRef{ObjectID: chainID.AsAddress().AsIotaAddress()},
+		}, *iotago.MustAddressFromHex("0x123"))
+
+		cni.latestConfirmedState = latestState
+		cni.latestActiveStateAO = &anchor
+
+		// Attach to the L1.
+		err = nodeConn.AttachChain(ctx, chainID, nil, nil, onChainConnect, onChainDisconnect, true)
+		if err != nil {
+			return nil, err
+		}
+
+		// similar to cni.run() just for shutdown
+		go func() {
+			for {
+				if ctx.Err() != nil {
+					if cni.shutdownCoordinator == nil {
+						return
+					}
+					// needs to wait for state mgr and consensusInst
+					cni.shutdownCoordinator.WaitNestedWithLogging(1 * time.Second)
+					cni.shutdownCoordinator.Done()
+					return
+				}
+			}
+		}()
+		return cni, nil
+	}
+}
+
+func newChainNodeImplAndPeerID(
+	log log.Logger,
+	chainID isc.ChainID,
+	chainStore indexedstore.IndexedStore,
+	nodeConn NodeConnection,
+	nodeIdentity *cryptolib.KeyPair,
+	processorConfig *processors.Config,
+	blockWAL utils.BlockWAL,
+	listener ChainListener,
+	net peering.NetworkProvider,
+	chainMetrics *metrics.ChainMetrics,
+	shutdownCoordinator *shutdown.Coordinator,
+	consensusDelay time.Duration,
+	recoveryTimeout time.Duration,
+	validatorAgentID isc.AgentID,
+	originDeposit coin.Value,
+) (*chainNodeImpl, peering.PeeringID) {
 	netPeeringID := peering.HashPeeringIDFromBytes(chainID.Bytes(), []byte("ChainManager")) // ChainID × ChainManager
-	cni := &chainNodeImpl{
+	return &chainNodeImpl{
 		nodeIdentity:           nodeIdentity,
 		chainID:                chainID,
 		chainStore:             chainStore,
@@ -328,249 +540,7 @@ func New(
 		shutdownCoordinator:    shutdownCoordinator,
 		chainMetrics:           chainMetrics,
 		log:                    log,
-	}
-
-	cni.chainMetrics.Pipe.TrackPipeLen("node-recvAnchorPipe", cni.recvAnchorPipe.Len)
-	cni.chainMetrics.Pipe.TrackPipeLen("node-recvTxPublishedPipe", cni.recvTxPublishedPipe.Len)
-	cni.chainMetrics.Pipe.TrackPipeLen("node-consOutputPipe", cni.consOutputPipe.Len)
-	cni.chainMetrics.Pipe.TrackPipeLen("node-consRecoverPipe", cni.consRecoverPipe.Len)
-	cni.chainMetrics.Pipe.TrackPipeLen("node-serversUpdatedPipe", cni.serversUpdatedPipe.Len)
-	cni.chainMetrics.Pipe.TrackPipeLen("node-netRecvPipe", cni.netRecvPipe.Len)
-
-	if recoverFromWAL {
-		cni.recoverStoreFromWAL(chainStore, blockWAL)
-	}
-	cni.me = cni.pubKeyAsNodeID(nodeIdentity.GetPublicKey())
-	//
-	// Create sub-components.
-	chainMgr, err := chainmanager.New(
-		cni.me,
-		cni.chainID,
-		cni.chainStore,
-		consensusStateRegistry,
-		dkShareRegistryProvider,
-		cni.pubKeyAsNodeID,
-		func(upd *chainmanager.NeedConsensusMap) {
-			log.LogDebugf("needConsensusCB called with %v", upd)
-			cni.handleNeedConsensus(ctx, upd)
-		},
-		func(upd *chainmanager.NeedPublishTXMap) {
-			log.LogDebugf("needPublishCB called with %v", upd)
-			cni.handleNeedPublishTX(ctx, upd)
-		},
-		func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey) {
-			cni.accessLock.RLock()
-			defer cni.accessLock.RUnlock()
-			return cni.activeAccessNodes, cni.activeCommitteeNodes
-		},
-		func(anchor *isc.StateAnchor) {
-			cni.stateTrackerAct.TrackAliasOutput(anchor, true)
-		},
-		func(block state.Block) {
-			if err := cni.stateMgr.PreliminaryBlock(block); err != nil {
-				cni.log.LogWarnf("Failed to save a preliminary block %v: %v", block.L1Commitment(), err)
-			}
-		},
-		func(dkShare tcrypto.DKShare) {
-			cni.accessLock.Lock()
-			cni.activeCommitteeDKShare = dkShare
-			activeCommitteeNodes := cni.activeCommitteeNodes
-			cni.accessLock.Unlock()
-			var newCommitteeNodes []*cryptolib.PublicKey
-			if dkShare == nil {
-				newCommitteeNodes = []*cryptolib.PublicKey{}
-			} else {
-				newCommitteeNodes = dkShare.GetNodePubKeys()
-			}
-			if !util.Same(newCommitteeNodes, activeCommitteeNodes) {
-				cni.log.LogInfof("Committee nodes updated to %v, was %v", newCommitteeNodes, activeCommitteeNodes)
-				cni.updateAccessNodes(func() {
-					cni.activeCommitteeNodes = newCommitteeNodes
-				})
-			}
-		},
-		deriveAliasOutputByQuorum,
-		pipeliningLimit,
-		postponeRecoveryMilestones,
-		cni.chainMetrics.CmtLog,
-		cni.log.NewChildLogger("CM"),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("cannot create chainMgr: %w", err)
-	}
-
-	peerPubKeys := []*cryptolib.PublicKey{nodeIdentity.GetPublicKey()}
-	peerPubKeys = append(peerPubKeys, cni.accessNodesFromNode...)
-	stateMgr, err := statemanager.New(
-		ctx,
-		cni.chainID,
-		nodeIdentity.GetPublicKey(),
-		peerPubKeys,
-		net,
-		blockWAL,
-		snapshotManager,
-		chainStore,
-		shutdownCoordinator.Nested("StateMgr"),
-		chainMetrics.StateManager,
-		chainMetrics.Pipe,
-		cni.log,
-		smParameters,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("cannot create stateMgr: %w", err)
-	}
-	mempool := mempool.New(
-		ctx,
-		chainID,
-		nodeIdentity,
-		net,
-		cni.log.NewChildLogger("MP"),
-		chainMetrics.Mempool,
-		chainMetrics.Pipe,
-		cni.listener,
-		mempoolSettings,
-		mempoolBroadcastInterval,
-		func() { nodeConn.RefreshOnLedgerRequests(ctx, chainID) },
-	)
-
-	cni.chainMgr = gpa.NewAckHandler(cni.me, chainMgr.AsGPA(), RedeliveryPeriod)
-	cni.stateMgr = stateMgr
-	cni.mempool = mempool
-	cni.stateTrackerAct = NewStateTracker(ctx, stateMgr, cni.handleStateTrackerActCB, chainMetrics.StateManager.SetChainActiveStateWant, chainMetrics.StateManager.SetChainActiveStateHave, cni.log.NewChildLogger("ST.ACT"))
-	cni.stateTrackerCnf = NewStateTracker(ctx, stateMgr, cni.handleStateTrackerCnfCB, chainMetrics.StateManager.SetChainConfirmedStateWant, chainMetrics.StateManager.SetChainConfirmedStateHave, cni.log.NewChildLogger("ST.CNF"))
-	cni.updateAccessNodes(func() {
-		cni.accessNodesFromNode = accessNodesFromNode
-		cni.accessNodesFromACT = []*cryptolib.PublicKey{}
-		cni.accessNodesFromCNF = []*cryptolib.PublicKey{}
-	})
-	cni.updateServerNodes([]*cryptolib.PublicKey{})
-	//
-	// Connect to the peering network.
-	netRecvPipeInCh := cni.netRecvPipe.In()
-	unhook := net.Attach(&netPeeringID, peering.ReceiverChain, func(recv *peering.PeerMessageIn) {
-		if recv.MsgType != msgTypeChainMgr {
-			cni.log.LogWarnf("Unexpected message, type=%v", recv.MsgType)
-			return
-		}
-		netRecvPipeInCh <- recv
-	})
-	//
-	// Attach to the L1.
-	recvRequestCB := func(req isc.OnLedgerRequest) {
-		log.LogDebugf("recvRequestCB[%p], requestID=%v", cni, req.ID())
-		cni.chainMetrics.NodeConn.L1RequestReceived()
-		cni.mempool.ReceiveOnLedgerRequest(req)
-	}
-	recvAnchorPipeInCh := cni.recvAnchorPipe.In()
-	recvAnchorCB := func(anchor *isc.StateAnchor, l1Params *parameters.L1Params) {
-		log.LogDebugf("recvAnchorCB[%p], %v", cni, anchor.GetObjectID())
-		cni.chainMetrics.NodeConn.L1AnchorReceived()
-		recvAnchorPipeInCh <- lo.T2(anchor, l1Params)
-	}
-	err = nodeConn.AttachChain(ctx, chainID, recvRequestCB, recvAnchorCB, onChainConnect, onChainDisconnect)
-	if err != nil {
-		return nil, err
-	}
-	//
-	// Run the main thread.
-
-	go cni.run(ctx, unhook)
-	return cni, nil
-}
-
-func NewReadOnly(
-	ctx context.Context,
-	readOnlyPath string,
-	log log.Logger,
-	chainID isc.ChainID,
-	chainStore indexedstore.IndexedStore,
-	nodeConn NodeConnection,
-	nodeIdentity *cryptolib.KeyPair,
-	processorConfig *processors.Config,
-	listener ChainListener,
-	net peering.NetworkProvider,
-	shutdownCoordinator *shutdown.Coordinator,
-	onChainConnect func(),
-	onChainDisconnect func(),
-	consensusDelay time.Duration,
-	recoveryTimeout time.Duration,
-	validatorAgentID isc.AgentID,
-) (Chain, error) {
-	log.LogDebugf("Starting the chain, chainID=%v", chainID)
-
-	readOnlyPath = filepath.Join(readOnlyPath, chainID.String())
-	readOnlyDB, err := database.NewReadOnlyDatabase(readOnlyPath)
-	if err != nil {
-		return nil, err
-	}
-	readOnlyDBStore, err := state.NewStoreReadonly(readOnlyDB.KVStore())
-	if err != nil {
-		return nil, err
-	}
-	latestState := lo.Must(readOnlyDBStore.LatestState())
-
-	// XXX use a fake PackageID here. PackageID should be unnecessary, because it is a readonly more
-	anchor := isc.NewStateAnchor(&iscmove.AnchorWithRef{
-		ObjectRef: iotago.ObjectRef{ObjectID: chainID.AsAddress().AsIotaAddress()},
-	}, *iotago.MustAddressFromHex("0x123"))
-
-	netPeeringID := peering.HashPeeringIDFromBytes(chainID.Bytes(), []byte("ChainManager")) // ChainID × ChainManager
-	cni := &chainNodeImpl{
-		nodeIdentity:         nodeIdentity,
-		chainID:              chainID,
-		chainStore:           chainStore,
-		nodeConn:             nodeConn,
-		tangleTime:           time.Time{}, // Zero time, while we haven't received it from the L1.
-		recvAnchorPipe:       pipe.NewInfinitePipe[lo.Tuple2[*isc.StateAnchor, *parameters.L1Params]](),
-		recvTxPublishedPipe:  pipe.NewInfinitePipe[*txPublished](),
-		consensusInsts:       shrinkingmap.New[cryptolib.AddressKey, *shrinkingmap.ShrinkingMap[cmtlog.LogIndex, *consensusInst]](),
-		consOutputPipe:       pipe.NewInfinitePipe[*consOutput](),
-		consRecoverPipe:      pipe.NewInfinitePipe[*consRecover](),
-		publishingTXes:       shrinkingmap.New[hashing.HashValue, context.CancelFunc](),
-		procCache:            processorConfig,
-		configUpdatedCh:      make(chan *configUpdate, 1),
-		serversUpdatedPipe:   pipe.NewInfinitePipe[*serversUpdate](),
-		rotateToPipe:         pipe.NewInfinitePipe[*iotago.Address](),
-		awaitReceiptActCh:    make(chan *awaitReceiptReq, 1),
-		awaitReceiptCnfCh:    make(chan *awaitReceiptReq, 1),
-		consensusDelay:       consensusDelay,
-		recoveryTimeout:      recoveryTimeout,
-		validatorAgentID:     validatorAgentID,
-		listener:             listener,
-		accessLock:           &sync.RWMutex{},
-		activeCommitteeNodes: []*cryptolib.PublicKey{},
-		latestConfirmedState: latestState,
-		latestActiveStateAO:  &anchor,
-		originDeposit:        0,
-		netRecvPipe:          pipe.NewInfinitePipe[*peering.PeerMessageIn](),
-		netPeeringID:         netPeeringID,
-		netPeerPubs:          map[gpa.NodeID]*cryptolib.PublicKey{},
-		net:                  net,
-		shutdownCoordinator:  shutdownCoordinator,
-		log:                  log,
-	}
-
-	// Attach to the L1.
-	err = nodeConn.AttachChainReadOnly(ctx, chainID, onChainConnect, onChainDisconnect)
-	if err != nil {
-		return nil, err
-	}
-
-	// cni.run()
-	go func() {
-		for {
-			if ctx.Err() != nil {
-				if cni.shutdownCoordinator == nil {
-					return
-				}
-				// needs to wait for state mgr and consensusInst
-				cni.shutdownCoordinator.WaitNestedWithLogging(1 * time.Second)
-				cni.shutdownCoordinator.Done()
-				return
-			}
-		}
-	}()
-	return cni, nil
+	}, netPeeringID
 }
 
 func (cni *chainNodeImpl) ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey) error {

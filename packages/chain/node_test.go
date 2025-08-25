@@ -393,6 +393,7 @@ func (tnc *testNodeConn) AttachChain(
 	recvAnchor chain.AnchorHandler,
 	onChainConnect func(),
 	onChainDisconnect func(),
+	readOnly bool,
 ) error {
 	if !tnc.chainID.Empty() {
 		tnc.t.Error("duplicate attach")
@@ -403,15 +404,6 @@ func (tnc *testNodeConn) AttachChain(
 	tnc.recvRequest = recvRequest
 	tnc.attachWG.Done()
 	return nil
-}
-
-func (tnc *testNodeConn) AttachChainReadOnly(
-	ctx context.Context,
-	chainID isc.ChainID,
-	onChainConnect func(),
-	onChainDisconnect func(),
-) error {
-	panic("should not be called")
 }
 
 func (tnc *testNodeConn) Run(ctx context.Context) error {
@@ -603,6 +595,7 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 			},
 			1*time.Second,
 			originDeposit,
+			"",
 		)
 		require.NoError(t, err)
 		te.nodes[i].ServersUpdated(te.peerPubKeys)

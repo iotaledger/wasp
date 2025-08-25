@@ -102,14 +102,25 @@ func (nc *nodeConnection) AttachChain(
 	recvAnchor chain.AnchorHandler,
 	onChainConnect func(),
 	onChainDisconnect func(),
+	readOnly bool,
 ) error {
 	ncc, err := func() (*ncChain, error) {
+		var err error
 		nc.chainsLock.Lock()
 		defer nc.chainsLock.Unlock()
 
-		ncc, err := newNCChain(ctx, nc, chainID, recvRequest, recvAnchor, nc.wsURL, nc.httpURL)
-		if err != nil {
-			return nil, err
+		var ncc *ncChain
+		if !readOnly {
+			ncc, err = newNCChain(ctx, nc, chainID, recvRequest, recvAnchor, nc.wsURL, nc.httpURL)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			ncc = &ncChain{
+				Logger:  nc.Logger,
+				chainID: chainID,
+			}
+			ncc.shutdownWaitGroup.Add(1)
 		}
 
 		nc.chainsMap.Set(chainID, ncc)
@@ -122,55 +133,14 @@ func (nc *nodeConnection) AttachChain(
 		return err
 	}
 
-	if err := ncc.syncChainState(ctx); err != nil {
-		nc.LogError(fmt.Sprintf("synchronizing chain state %s failed: %s", chainID, err.Error()))
-		nc.shutdownHandler.SelfShutdown(
-			fmt.Sprintf("Cannot sync chain %s with L1, %s", ncc.chainID, err.Error()),
-			true)
-	}
-	ncc.subscribeToUpdates(ctx, chainID.AsObjectID())
-
-	// disconnect the chain after the context is done
-	go func() {
-		<-ctx.Done()
-		ncc.WaitUntilStopped()
-
-		nc.chainsLock.Lock()
-		defer nc.chainsLock.Unlock()
-
-		nc.chainsMap.Delete(chainID)
-		util.ExecuteIfNotNil(onChainDisconnect)
-		nc.LogDebugf("chain unregistered: %s = %s, |remaining|=%v", chainID.ShortString(), chainID, nc.chainsMap.Size())
-	}()
-
-	return nil
-}
-
-func (nc *nodeConnection) AttachChainReadOnly(
-	ctx context.Context,
-	chainID isc.ChainID,
-	onChainConnect func(),
-	onChainDisconnect func(),
-) error {
-	ncc, err := func() (*ncChain, error) {
-		nc.chainsLock.Lock()
-		defer nc.chainsLock.Unlock()
-
-		ncc := &ncChain{
-			Logger:  nc.Logger,
-			chainID: chainID,
+	if !readOnly {
+		if err := ncc.syncChainState(ctx); err != nil {
+			nc.LogError(fmt.Sprintf("synchronizing chain state %s failed: %s", chainID, err.Error()))
+			nc.shutdownHandler.SelfShutdown(
+				fmt.Sprintf("Cannot sync chain %s with L1, %s", ncc.chainID, err.Error()),
+				true)
 		}
-
-		ncc.shutdownWaitGroup.Add(1)
-
-		nc.chainsMap.Set(chainID, ncc)
-		util.ExecuteIfNotNil(onChainConnect)
-		nc.LogDebugf("chain registered: %s = %s", chainID.ShortString(), chainID)
-
-		return ncc, nil
-	}()
-	if err != nil {
-		return err
+		ncc.subscribeToUpdates(ctx, chainID.AsObjectID())
 	}
 
 	// disconnect the chain after the context is done

@@ -37,12 +37,7 @@ type ChainNodeConn interface {
 		recvAnchor AnchorHandler,
 		onChainConnect func(),
 		onChainDisconnect func(),
-	) error
-	AttachChainReadOnly(
-		ctx context.Context,
-		chainID isc.ChainID,
-		onChainConnect func(),
-		onChainDisconnect func(),
+		readOnly bool,
 	) error
 	// PublishTX posts the PTB asynchronously and calls the callback when it is
 	// confirmed or an error is detected, or the ctx is canceled.

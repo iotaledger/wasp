@@ -228,57 +228,42 @@ func (c *Chains) initSnapshotsToLoad(configs []string) {
 	}
 }
 
-func (c *Chains) RunReadOnly(ctx context.Context, readOnlyPath string) error {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-
-	if c.ctx != nil {
-		return errors.New("chains already running")
-	}
-	c.ctx = ctx
-
-	var innerErr error
-	if err := c.chainRecordRegistryProvider.ForEachActiveChainRecord(func(chainRecord *registry.ChainRecord) bool { //nolint:contextcheck
-		chainID := chainRecord.ChainID()
-		if err := c.activateWithoutLockingReadOnly(chainID, readOnlyPath); err != nil {
-			innerErr = fmt.Errorf("cannot activate chain %s: %w", chainRecord.ChainID(), err)
-			return false
+func (c *Chains) Run(ctx context.Context, readOnlyPath string) error {
+	if readOnlyPath == "" {
+		if err := c.nodeConnection.WaitUntilInitiallySynced(ctx); err != nil {
+			return fmt.Errorf("waiting for L1 node to become sync failed, error: %w", err)
 		}
 
-		return true
-	}); err != nil {
-		return err
-	}
+		c.mutex.Lock()
+		defer c.mutex.Unlock()
 
-	return innerErr
-}
-
-func (c *Chains) Run(ctx context.Context) error {
-	if err := c.nodeConnection.WaitUntilInitiallySynced(ctx); err != nil {
-		return fmt.Errorf("waiting for L1 node to become sync failed, error: %w", err)
-	}
-
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-
-	if c.ctx != nil {
-		return errors.New("chains already running")
-	}
-	c.ctx = ctx
-
-	c.accessMgr = accessmanager.New(ctx, c.chainServersUpdatedCB, c.nodeIdentityProvider.NodeIdentity(), c.networkProvider, c.log.NewChildLogger("AM"))
-	c.trustedNetworkListenerCancel = c.trustedNetworkManager.TrustedPeersListener(c.trustedPeersUpdatedCB)
-
-	unhook := c.chainRecordRegistryProvider.Events().ChainRecordModified.Hook(func(event *registry.ChainRecordModifiedEvent) {
-		c.mutex.RLock()
-		defer c.mutex.RUnlock()
-		if chain, exists := c.allChains.Get(event.ChainRecord.ChainID()); exists {
-			chain.chain.ConfigUpdated(event.ChainRecord.AccessNodes)
+		if c.ctx != nil {
+			return errors.New("chains already running")
 		}
-	}).Unhook
-	c.cleanupFunc = unhook
+		c.ctx = ctx
 
-	return c.activateAllFromRegistry() //nolint:contextcheck
+		c.accessMgr = accessmanager.New(ctx, c.chainServersUpdatedCB, c.nodeIdentityProvider.NodeIdentity(), c.networkProvider, c.log.NewChildLogger("AM"))
+		c.trustedNetworkListenerCancel = c.trustedNetworkManager.TrustedPeersListener(c.trustedPeersUpdatedCB)
+
+		unhook := c.chainRecordRegistryProvider.Events().ChainRecordModified.Hook(func(event *registry.ChainRecordModifiedEvent) {
+			c.mutex.RLock()
+			defer c.mutex.RUnlock()
+			if chain, exists := c.allChains.Get(event.ChainRecord.ChainID()); exists {
+				chain.chain.ConfigUpdated(event.ChainRecord.AccessNodes)
+			}
+		}).Unhook
+		c.cleanupFunc = unhook
+	} else {
+		c.mutex.Lock()
+		defer c.mutex.Unlock()
+
+		if c.ctx != nil {
+			return errors.New("chains already running")
+		}
+		c.ctx = ctx
+	}
+
+	return c.activateAllFromRegistry(readOnlyPath) //nolint:contextcheck
 }
 
 func (c *Chains) Close() {
@@ -314,82 +299,11 @@ func (c *Chains) chainAccessUpdatedCB(chainID isc.ChainID, accessNodes []*crypto
 	c.accessMgr.ChainAccessNodes(chainID, accessNodes)
 }
 
-func (c *Chains) activateWithoutLockingReadOnly(chainID isc.ChainID, readOnlyPath string) error {
-	if c.ctx == nil {
-		return errors.New("run chains first")
-	}
-	if c.ctx.Err() != nil {
-		return errors.New("node is shutting down")
-	}
-
-	// Check, maybe it is already running.
-	if c.allChains.Has(chainID) {
-		c.log.LogDebugf("Chain %v = %v is already activated", chainID.ShortString(), chainID.String())
-		return nil
-	}
-
-	// Activate the chain in the persistent store, if it is not activated yet.
-	chainRecord, err := c.chainRecordRegistryProvider.ChainRecord(chainID)
-	if err != nil {
-		return fmt.Errorf("cannot get chain record for %v: %w", chainID, err)
-	}
-	if !chainRecord.Active {
-		if _, err2 := c.chainRecordRegistryProvider.ActivateChainRecord(chainID); err2 != nil {
-			return fmt.Errorf("cannot activate chain: %w", err2)
-		}
-	}
-
-	chainKVStore, _, err := c.chainStateStoreProvider(chainID)
-	if err != nil {
-		return fmt.Errorf("error when creating chain KV store: %w", err)
-	}
-
-	chainLog := c.log.NewChildLogger(chainID.ShortString())
-	readOnlyDBStore, err := state.NewStoreReadonly(chainKVStore)
-	if err != nil {
-		return err
-	}
-	chainStore := indexedstore.New(readOnlyDBStore)
-	chainCtx, chainCancel := context.WithCancel(c.ctx)
-	validatorAgentID := accounts.CommonAccount()
-	chainShutdownCoordinator := c.shutdownCoordinator.Nested(fmt.Sprintf("Chain-%s", chainID.AsAddress().String()))
-
-	newChain, err := chain.NewReadOnly(
-		chainCtx,
-		readOnlyPath,
-		chainLog,
-		chainID,
-		chainStore,
-		c.nodeConnection,
-		c.nodeIdentityProvider.NodeIdentity(),
-		c.processorConfig,
-		c.chainListener,
-		c.networkProvider,
-		chainShutdownCoordinator,
-		func() { c.chainMetricsProvider.RegisterChain(chainID) },
-		func() { c.chainMetricsProvider.UnregisterChain(chainID) },
-		c.consensusDelay,
-		c.recoveryTimeout,
-		validatorAgentID,
-	)
-	if err != nil {
-		chainCancel()
-		return fmt.Errorf("Chains.Activate: failed to create chain object: %w", err)
-	}
-	c.allChains.Set(chainID, &activeChain{
-		chain:      newChain,
-		cancelFunc: chainCancel,
-	})
-
-	c.log.LogInfof("activated chain: %v = %s", chainID.ShortString(), chainID.String())
-	return nil
-}
-
-func (c *Chains) activateAllFromRegistry() error {
+func (c *Chains) activateAllFromRegistry(readOnlyPath string) error {
 	var innerErr error
 	if err := c.chainRecordRegistryProvider.ForEachActiveChainRecord(func(chainRecord *registry.ChainRecord) bool {
 		chainID := chainRecord.ChainID()
-		if err := c.activateWithoutLocking(chainID); err != nil {
+		if err := c.activateWithoutLocking(chainID, readOnlyPath); err != nil {
 			innerErr = fmt.Errorf("cannot activate chain %s: %w", chainRecord.ChainID(), err)
 			return false
 		}
@@ -403,7 +317,7 @@ func (c *Chains) activateAllFromRegistry() error {
 }
 
 // activateWithoutLocking activates a chain in the node.
-func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error { //nolint:funlen
+func (c *Chains) activateWithoutLocking(chainID isc.ChainID, readOnlyPath string) error { //nolint:funlen
 	if c.ctx == nil {
 		return errors.New("run chains first")
 	}
@@ -434,66 +348,49 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error { //nolint:fu
 		return fmt.Errorf("error when creating chain KV store: %w", err)
 	}
 
-	chainMetrics := c.chainMetricsProvider.GetChainMetrics(chainID)
-
-	// Initialize WAL
-	chainLog := c.log.NewChildLogger(chainID.ShortString())
-	var chainWAL utils.BlockWAL
-	if c.walEnabled {
-		chainWAL, err = utils.NewBlockWAL(chainLog, c.walFolderPath, chainID, chainMetrics.BlockWAL)
-		if err != nil {
-			panic(fmt.Errorf("cannot create WAL: %w", err))
-		}
-	} else {
-		chainWAL = utils.NewEmptyBlockWAL()
-	}
-
-	stateManagerParameters := gpa.NewStateManagerParameters()
-	stateManagerParameters.BlockCacheMaxSize = c.smBlockCacheMaxSize
-	stateManagerParameters.BlockCacheBlocksInCacheDuration = c.smBlockCacheBlocksInCacheDuration
-	stateManagerParameters.BlockCacheBlockCleaningPeriod = c.smBlockCacheBlockCleaningPeriod
-	stateManagerParameters.StateManagerGetBlockNodeCount = c.smStateManagerGetBlockNodeCount
-	stateManagerParameters.StateManagerGetBlockRetry = c.smStateManagerGetBlockRetry
-	stateManagerParameters.StateManagerRequestCleaningPeriod = c.smStateManagerRequestCleaningPeriod
-	stateManagerParameters.StateManagerStatusLogPeriod = c.smStateManagerStatusLogPeriod
-	stateManagerParameters.StateManagerTimerTickPeriod = c.smStateManagerTimerTickPeriod
-	stateManagerParameters.PruningMinStatesToKeep = c.smPruningMinStatesToKeep
-	stateManagerParameters.PruningMaxStatesToDelete = c.smPruningMaxStatesToDelete
-
-	refcountsEnabled := c.smPruningMinStatesToKeep > 0
-	store, err := state.NewStoreWithMetrics(chainKVStore, refcountsEnabled, writeMutex, chainMetrics.State)
-	if err != nil {
-		panic(fmt.Sprintf("cannot initialize store: %s", err.Error()))
-	}
-	chainStore := indexedstore.New(store)
 	chainCtx, chainCancel := context.WithCancel(c.ctx)
 	validatorAgentID := accounts.CommonAccount()
 	if c.validatorFeeAddr != nil {
 		validatorAgentID = isc.NewAddressAgentID(c.validatorFeeAddr)
 	}
 	chainShutdownCoordinator := c.shutdownCoordinator.Nested(fmt.Sprintf("Chain-%s", chainID.AsAddress().String()))
-	blockHash, ok := c.snapshotsToLoad[chainID.Key()]
-	var snapshotToLoad *state.BlockHash
-	if ok {
-		snapshotToLoad = &blockHash
+
+	chainLog := c.log.NewChildLogger(chainID.ShortString())
+	var chainWAL utils.BlockWAL
+	stateManagerParameters := gpa.NewStateManagerParameters()
+	var chainSnapshotManager snapshots.SnapshotManager
+	var chainStore indexedstore.IndexedStore
+	var chainMetrics *metrics.ChainMetrics
+	if readOnlyPath == "" {
+		chainMetrics = c.chainMetricsProvider.GetChainMetrics(chainID)
+
+		// Initialize WAL
+		if c.walEnabled {
+			chainWAL, err = utils.NewBlockWAL(chainLog, c.walFolderPath, chainID, chainMetrics.BlockWAL)
+			if err != nil {
+				panic(fmt.Errorf("cannot create WAL: %w", err))
+			}
+		} else {
+			chainWAL = utils.NewEmptyBlockWAL()
+		}
+
+		stateManagerParameters = c.setStateManagerParameters(stateManagerParameters)
+
+		refcountsEnabled := c.smPruningMinStatesToKeep > 0
+		store, err2 := state.NewStoreWithMetrics(chainKVStore, refcountsEnabled, writeMutex, chainMetrics.State)
+		if err2 != nil {
+			panic(fmt.Sprintf("cannot initialize store: %s", err.Error()))
+		}
+
+		chainStore = indexedstore.New(store)
+		chainSnapshotManager = c.setSnapshotManager(chainID, chainCtx, chainShutdownCoordinator, chainStore, chainMetrics, chainLog)
 	} else {
-		snapshotToLoad = c.defaultSnapshotToLoad
-	}
-	chainSnapshotManager, err := snapshots.NewSnapshotManager(
-		chainCtx,
-		chainShutdownCoordinator.Nested("SnapMgr"),
-		chainID,
-		snapshotToLoad,
-		c.snapshotPeriod,
-		c.snapshotDelay,
-		c.snapshotFolderPath,
-		c.snapshotNetworkPaths,
-		chainStore,
-		chainMetrics.Snapshots,
-		chainLog,
-	)
-	if err != nil {
-		panic(fmt.Errorf("cannot create Snapshotter: %w", err))
+		readOnlyDBStore, err2 := state.NewStoreReadonly(chainKVStore)
+		if err2 != nil {
+			panic(err2)
+		}
+		store := indexedstore.New(readOnlyDBStore)
+		chainStore = indexedstore.New(store)
 	}
 
 	newChain, err := chain.New(
@@ -526,6 +423,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error { //nolint:fu
 		c.mempoolSettings,
 		c.mempoolBroadcastInterval,
 		0,
+		readOnlyPath,
 	)
 	if err != nil {
 		chainCancel()
@@ -540,12 +438,60 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error { //nolint:fu
 	return nil
 }
 
+func (c *Chains) setStateManagerParameters(stateManagerParameters gpa.StateManagerParameters) gpa.StateManagerParameters {
+	stateManagerParameters.BlockCacheMaxSize = c.smBlockCacheMaxSize
+	stateManagerParameters.BlockCacheBlocksInCacheDuration = c.smBlockCacheBlocksInCacheDuration
+	stateManagerParameters.BlockCacheBlockCleaningPeriod = c.smBlockCacheBlockCleaningPeriod
+	stateManagerParameters.StateManagerGetBlockNodeCount = c.smStateManagerGetBlockNodeCount
+	stateManagerParameters.StateManagerGetBlockRetry = c.smStateManagerGetBlockRetry
+	stateManagerParameters.StateManagerRequestCleaningPeriod = c.smStateManagerRequestCleaningPeriod
+	stateManagerParameters.StateManagerStatusLogPeriod = c.smStateManagerStatusLogPeriod
+	stateManagerParameters.StateManagerTimerTickPeriod = c.smStateManagerTimerTickPeriod
+	stateManagerParameters.PruningMinStatesToKeep = c.smPruningMinStatesToKeep
+	stateManagerParameters.PruningMaxStatesToDelete = c.smPruningMaxStatesToDelete
+	return stateManagerParameters
+}
+
+func (c *Chains) setSnapshotManager(
+	chainID isc.ChainID,
+	chainCtx context.Context,
+	chainShutdownCoordinator *shutdown.Coordinator,
+	chainStore state.Store,
+	chainMetrics *metrics.ChainMetrics,
+	chainLog log.Logger,
+) snapshots.SnapshotManager {
+	blockHash, ok := c.snapshotsToLoad[chainID.Key()]
+	var snapshotToLoad *state.BlockHash
+	if ok {
+		snapshotToLoad = &blockHash
+	} else {
+		snapshotToLoad = c.defaultSnapshotToLoad
+	}
+	chainSnapshotManager, err := snapshots.NewSnapshotManager(
+		chainCtx,
+		chainShutdownCoordinator.Nested("SnapMgr"),
+		chainID,
+		snapshotToLoad,
+		c.snapshotPeriod,
+		c.snapshotDelay,
+		c.snapshotFolderPath,
+		c.snapshotNetworkPaths,
+		chainStore,
+		chainMetrics.Snapshots,
+		chainLog,
+	)
+	if err != nil {
+		panic(fmt.Errorf("cannot create Snapshotter: %w", err))
+	}
+	return chainSnapshotManager
+}
+
 // Activate activates a chain in the node.
 func (c *Chains) Activate(chainID isc.ChainID) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	return c.activateWithoutLocking(chainID)
+	return c.activateWithoutLocking(chainID, "")
 }
 
 // Deactivate a chain in the node.
