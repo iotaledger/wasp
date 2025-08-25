@@ -3,8 +3,11 @@ package models
 
 import (
 	"fmt"
+	"math/big"
 	"reflect"
 
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/vm/gas"
 )
@@ -46,6 +49,46 @@ func MapReceiptResponse(receipt *isc.Receipt) *ReceiptResponse {
 		SDCharged:     receipt.SDCharged.String(),
 		GasBurnLog:    burnRecords,
 	}
+}
+
+type OnLedgerEstimationResponse struct {
+	L1 *L1EstimationResult `json:"l1" swagger:"required"`
+	L2 *ReceiptResponse    `json:"l2" swagger:"required"`
+}
+
+func MapL1EstimationResult(gasSummary *iotajsonrpc.GasCostSummary) *L1EstimationResult {
+	// Total L1 gas = computation cost + storage cost - storage rebate
+	var totalGas big.Int
+	totalGas.Add(&totalGas, gasSummary.ComputationCost.Int)
+	totalGas.Add(&totalGas, gasSummary.StorageCost.Int)
+	totalGas.Sub(&totalGas, gasSummary.StorageRebate.Int)
+
+	gasBudget := totalGas
+	if gasBudget.Cmp(gasSummary.ComputationCost.Int) < 0 {
+		// L1 gas budget must be >= max(computation cost, total cost)
+		// See: https://docs.iota.org/about-iota/tokenomics/gas-in-iota#gas-budgets
+		gasBudget.Set(gasSummary.ComputationCost.Int)
+	}
+	if gasBudget.Cmp(big.NewInt(iotaclient.MinGasBudget)) < 0 {
+		// L1 gas budget must be at least 1,000,000
+		gasBudget.SetInt64(iotaclient.MinGasBudget)
+	}
+
+	return &L1EstimationResult{
+		ComputationFee: gasSummary.ComputationCost.String(),
+		StorageFee:     gasSummary.StorageCost.String(),
+		StorageRebate:  gasSummary.StorageRebate.String(),
+		GasFeeCharged:  totalGas.String(),
+		GasBudget:      gasBudget.String(),
+	}
+}
+
+type L1EstimationResult struct {
+	ComputationFee string `json:"computationFee,omitempty" swagger:"required,desc(Gas cost for computation (uint64 as string))"`
+	StorageFee     string `json:"storageFee,omitempty" swagger:"required,desc(Gas cost for storage (uint64 as string))"`
+	StorageRebate  string `json:"storageRebate,omitempty" swagger:"required,desc(Gas rebate for storage (uint64 as string))"`
+	GasFeeCharged  string `json:"gasFeeCharged,omitempty" swagger:"required,desc(Total gas fee charged: computation fee + storage fee - storage rebate (uint64 as string))"`
+	GasBudget      string `json:"gasBudget,omitempty" swagger:"required,desc(Gas budget required for processing of transaction: max(computation fee, total fee) (uint64 as string))"`
 }
 
 type UnresolvedVMErrorJSON struct {

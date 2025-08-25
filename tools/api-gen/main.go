@@ -59,6 +59,7 @@ func main() {
 		"",
 		nil,
 		nil,
+		nil,
 		jsonrpc.ParametersDefault(),
 	)
 

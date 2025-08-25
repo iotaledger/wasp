@@ -343,8 +343,9 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
 
 # **estimateGasOnledger**
-> ReceiptResponse estimateGasOnledger(request)
+> OnLedgerEstimationResponse estimateGasOnledger(request)
 
+Estimates gas usage for a given on-ledger ISC request. To calculate required L1 and L2 gas budgets use values of L1.GasBudget and L2.GasBurned respectively.
 
 ### Example
 
@@ -359,7 +360,7 @@ const apiInstance = new ChainsApi(configuration);
 const request: ChainsApiEstimateGasOnledgerRequest = {
     // Request
   request: {
-    outputBytes: "outputBytes_example",
+    transactionBytes: "transactionBytes_example",
   },
 };
 
@@ -377,7 +378,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-**ReceiptResponse**
+**OnLedgerEstimationResponse**
 
 ### Authorization
 

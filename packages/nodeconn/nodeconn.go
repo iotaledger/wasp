@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/hive.go/app/shutdown"
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/log"
+	"github.com/iotaledger/wasp/v2/clients"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
@@ -55,7 +56,7 @@ type nodeConnection struct {
 	log.Logger
 
 	iscPackageID        iotago.PackageID
-	httpClient          *iscmoveclient.Client
+	httpClient          clients.L1Client
 	l1ParamsFetcher     parameters.L1ParamsFetcher
 	wsURL               string
 	httpURL             string
@@ -77,7 +78,10 @@ func New(
 	log log.Logger,
 	shutdownHandler *shutdown.ShutdownHandler,
 ) (chain.NodeConnection, error) {
-	httpClient := iscmoveclient.NewHTTPClient(httpURL, "", iotaclient.WaitForEffectsEnabled)
+	httpClient := clients.NewL1Client(clients.L1Config{
+		APIURL:    httpURL,
+		FaucetURL: "",
+	}, iotaclient.WaitForEffectsEnabled)
 
 	return &nodeConnection{
 		Logger:              log,
@@ -85,7 +89,7 @@ func New(
 		wsURL:               wsURL,
 		httpURL:             httpURL,
 		httpClient:          httpClient,
-		l1ParamsFetcher:     parameters.NewL1ParamsFetcher(httpClient.Client, log),
+		l1ParamsFetcher:     parameters.NewL1ParamsFetcher(httpClient.IotaClient(), log),
 		maxNumberOfRequests: maxNumberOfRequests,
 		chainsMap: shrinkingmap.New[isc.ChainID, *ncChain](
 			shrinkingmap.WithShrinkingThresholdRatio(chainsCleanupThresholdRatio),
@@ -242,6 +246,10 @@ func (nc *nodeConnection) WaitUntilInitiallySynced(ctx context.Context) error {
 			return nil
 		}
 	}
+}
+
+func (nc *nodeConnection) L1Client() clients.L1Client {
+	return nc.httpClient
 }
 
 func (nc *nodeConnection) L1ParamsFetcher() parameters.L1ParamsFetcher {

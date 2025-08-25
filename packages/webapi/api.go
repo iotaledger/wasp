@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/hive.go/app/configuration"
 	"github.com/iotaledger/hive.go/app/shutdown"
 	"github.com/iotaledger/hive.go/log"
+	"github.com/iotaledger/wasp/v2/clients"
 	"github.com/iotaledger/wasp/v2/packages/authentication"
 	"github.com/iotaledger/wasp/v2/packages/chains"
 	"github.com/iotaledger/wasp/v2/packages/dkg"
@@ -97,6 +98,7 @@ func Init(
 	accountDumpsPath string,
 	pub *publisher.Publisher,
 	l1ParamsFetcher parameters.L1ParamsFetcher,
+	l1Client clients.L1Client,
 	jsonrpcParams *jsonrpc.Parameters,
 ) {
 	// load mock files to generate correct echo swagger documentation
@@ -118,7 +120,7 @@ func Init(
 	authMiddleware := authentication.AddAuthentication(server, userManager, nodeIdentityProvider, authConfig, mocker)
 
 	controllersToLoad := []interfaces.APIController{
-		chain.NewChainController(logger, chainService, committeeService, evmService, nodeService, offLedgerService, registryService, accountDumpsPath),
+		chain.NewChainController(logger, chainService, committeeService, evmService, nodeService, offLedgerService, registryService, accountDumpsPath, l1Client),
 		apimetrics.NewMetricsController(chainService, metricsService),
 		node.NewNodeController(waspVersion, config, dkgService, nodeService, peeringService),
 		requests.NewRequestsController(chainService, offLedgerService, peeringService),

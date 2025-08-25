@@ -122,12 +122,12 @@ type IotaTransactionBlockKind = serialization.TagJson[TransactionBlockKind]
 
 type TransactionBlockKind struct {
 	// A system transaction that will update epoch information on-chain.
-	ChangeEpoch *IotaChangeEpoch `json:"ChangeEpoch,omitempty"`
+	ChangeEpoch *IotaChangeEpoch `json:"ChangeEpoch,omitempty" bcs:"optional"`
 	// A system transaction used for initializing the initial state of the chain.
-	Genesis *IotaGenesisTransaction `json:"Genesis,omitempty"`
+	Genesis *IotaGenesisTransaction `json:"Genesis,omitempty" bcs:"optional"`
 	// A system transaction marking the start of a series of transactions scheduled as part of a
 	// checkpoint
-	ConsensusCommitPrologue *IotaConsensusCommitPrologue `json:"ConsensusCommitPrologue,omitempty"`
+	ConsensusCommitPrologue *IotaConsensusCommitPrologue `json:"ConsensusCommitPrologue,omitempty" bcs:"optional"`
 	// A series of transactions where the results of one transaction can be used in future
 	// transactions
 	ProgrammableTransaction *IotaProgrammableTransactionBlock `json:"ProgrammableTransaction,omitempty"`
@@ -161,10 +161,16 @@ type IotaConsensusCommitPrologue struct {
 }
 
 type IotaProgrammableTransactionBlock struct {
-	Inputs []interface{} `json:"inputs"`
+	Inputs json.RawMessage `json:"inputs"`
 	// The transactions to be executed sequentially. A failure in any transaction will
 	// result in the failure of the entire programmable transaction block.
-	Commands []interface{} `json:"transactions"`
+	Commands json.RawMessage `json:"transactions"`
+}
+
+type ProgrammableTransactionBlockPureInput struct {
+	Type      string          `json:"type"`
+	Value     json.RawMessage `json:"value"`
+	ValueType string          `json:"valueType"`
 }
 
 type IotaTransactionBlockDataV1 struct {
@@ -240,6 +246,8 @@ type ObjectChange struct {
 		Digest     iotago.ObjectDigest `json:"digest"`
 	} `json:"created,omitempty"`
 }
+
+func (o ObjectChange) IsBcsEnum() {}
 
 func (o ObjectChange) Tag() string {
 	return "type"
@@ -606,7 +614,7 @@ type TransactionBlocksPage = Page[IotaTransactionBlockResponse, iotago.Transacti
 type DryRunTransactionBlockResponse struct {
 	Effects        serialization.TagJson[IotaTransactionBlockEffects] `json:"effects"`
 	Events         []IotaEvent                                        `json:"events"`
-	ObjectChanges  []serialization.TagJson[ObjectChange]              `json:"objectChanges"`
-	BalanceChanges []BalanceChange                                    `json:"balanceChanges"`
+	ObjectChanges  []serialization.TagJson[ObjectChange]              `json:"objectChanges" bcs:"optional"`
+	BalanceChanges []BalanceChange                                    `json:"balanceChanges" bcs:"optional"`
 	Input          serialization.TagJson[IotaTransactionBlockData]    `json:"input"`
 }

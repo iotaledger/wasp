@@ -38,6 +38,7 @@ import { InfoResponse } from '../models/InfoResponse';
 import { Int } from '../models/Int';
 import { IotaCoinInfo } from '../models/IotaCoinInfo';
 import { IotaObjectJSON } from '../models/IotaObjectJSON';
+import { L1EstimationResult } from '../models/L1EstimationResult';
 import { L1Params } from '../models/L1Params';
 import { Limits } from '../models/Limits';
 import { LoginRequest } from '../models/LoginRequest';
@@ -45,6 +46,7 @@ import { LoginResponse } from '../models/LoginResponse';
 import { NodeOwnerCertificateResponse } from '../models/NodeOwnerCertificateResponse';
 import { ObjectType } from '../models/ObjectType';
 import { OffLedgerRequest } from '../models/OffLedgerRequest';
+import { OnLedgerEstimationResponse } from '../models/OnLedgerEstimationResponse';
 import { OnLedgerRequest } from '../models/OnLedgerRequest';
 import { OnLedgerRequestMetricItem } from '../models/OnLedgerRequestMetricItem';
 import { PeeringNodeIdentityResponse } from '../models/PeeringNodeIdentityResponse';
@@ -348,10 +350,11 @@ export class ObservableChainsApi {
     }
 
     /**
+     * Estimates gas usage for a given on-ledger ISC request. To calculate required L1 and L2 gas budgets use values of L1.GasBudget and L2.GasBurned respectively.
      * Estimates gas for a given on-ledger ISC request
      * @param request Request
      */
-    public estimateGasOnledgerWithHttpInfo(request: EstimateGasRequestOnledger, _options?: Configuration): Observable<HttpInfo<ReceiptResponse>> {
+    public estimateGasOnledgerWithHttpInfo(request: EstimateGasRequestOnledger, _options?: Configuration): Observable<HttpInfo<OnLedgerEstimationResponse>> {
         const requestContextPromise = this.requestFactory.estimateGasOnledger(request, _options);
 
         // build promise chain
@@ -371,11 +374,12 @@ export class ObservableChainsApi {
     }
 
     /**
+     * Estimates gas usage for a given on-ledger ISC request. To calculate required L1 and L2 gas budgets use values of L1.GasBudget and L2.GasBurned respectively.
      * Estimates gas for a given on-ledger ISC request
      * @param request Request
      */
-    public estimateGasOnledger(request: EstimateGasRequestOnledger, _options?: Configuration): Observable<ReceiptResponse> {
-        return this.estimateGasOnledgerWithHttpInfo(request, _options).pipe(map((apiResponse: HttpInfo<ReceiptResponse>) => apiResponse.data));
+    public estimateGasOnledger(request: EstimateGasRequestOnledger, _options?: Configuration): Observable<OnLedgerEstimationResponse> {
+        return this.estimateGasOnledgerWithHttpInfo(request, _options).pipe(map((apiResponse: HttpInfo<OnLedgerEstimationResponse>) => apiResponse.data));
     }
 
     /**

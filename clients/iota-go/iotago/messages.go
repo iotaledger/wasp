@@ -49,9 +49,9 @@ type GasData struct {
 
 type TransactionKind struct {
 	ProgrammableTransaction *ProgrammableTransaction
-	ChangeEpoch             *ChangeEpoch
-	Genesis                 *GenesisTransaction
-	ConsensusCommitPrologue *ConsensusCommitPrologue
+	ChangeEpoch             *ChangeEpoch             `bcs:"optional"`
+	Genesis                 *GenesisTransaction      `bcs:"optional"`
+	ConsensusCommitPrologue *ConsensusCommitPrologue `bcs:"optional"`
 }
 
 func (t TransactionKind) IsBcsEnum() {}
