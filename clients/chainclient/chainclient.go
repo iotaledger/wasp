@@ -121,7 +121,7 @@ func (c *Client) postSingleRequest(
 	transferAssets := iscmove.NewAssets(0)
 	if params.Transfer != nil {
 		for coinType, coinbal := range params.Transfer.Coins.Iterate() {
-			transferAssets.SetCoin(iotajsonrpc.CoinType(coinType.String()), iotajsonrpc.CoinValue(coinbal.Uint64()))
+			transferAssets.SetCoin(iotajsonrpc.MustCoinTypeFromString(coinType.String()), iotajsonrpc.CoinValue(coinbal.Uint64()))
 		}
 	}
 	msg := &iscmove.Message{
