@@ -4,6 +4,7 @@ package testkey
 import (
 	testcommon "github.com/iotaledger/wasp/v2/clients/iota-go/test_common"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/testutil/testconfig"
 )
 
 func GenKeyAddr(seedOpt ...*cryptolib.Seed) (*cryptolib.KeyPair, *cryptolib.Address) {
@@ -19,9 +20,7 @@ func GenKeyAddr(seedOpt ...*cryptolib.Seed) (*cryptolib.KeyPair, *cryptolib.Addr
 
 func UseRandomSeed() bool {
 	const useRandomSeedByDefault = true
-	// FIXME
-	// return testconfig.Get("testing", "USE_RANDOM_SEED", useRandomSeedByDefault)
-	return false
+	return testconfig.Get("testing", "USE_RANDOM_SEED", useRandomSeedByDefault)
 }
 
 func NewTestSeed() cryptolib.Seed {

@@ -67,7 +67,6 @@ func SetInitialState(evmPartition kv.KVStore, evmChainID uint16) {
 	emulator.Init(
 		evm.EmulatorStateSubrealm(evmPartition),
 		evmChainID,
-		types.EmptyRootHash,
 		emulator.GasLimits{
 			Block: gas.EVMBlockGasLimit(gasLimits, &gasRatio),
 			Call:  gas.EVMCallGasLimit(gasLimits, &gasRatio),
@@ -120,7 +119,6 @@ func SetInitialStateWithGenesis(evmPartition kv.KVStore, l1Commitment *state.L1C
 	emulator.Init(
 		evm.EmulatorStateSubrealm(evmPartition),
 		evmChainID,
-		types.EmptyRootHash,
 		evmGasLimit,
 		genesis.Timestamp,
 		genesisAlloc,

@@ -126,31 +126,6 @@ func (in *LocalIotaNode) start(ctx context.Context) {
 	in.logf("LocalIotaNode started successfully")
 }
 
-func (in *LocalIotaNode) connectService(ctx context.Context) {
-	var cancel context.CancelFunc
-	var ctxTimeout context.Context
-
-	ctxTimeout, cancel = context.WithTimeout(ctx, 4*time.Minute)
-	defer cancel()
-	// in.config.Host = "http://iota-tools" // FIXME
-	in.config.Host = "http://localhost" // FIXME
-	in.config.Ports.RPC = 9000
-	in.config.Ports.Faucet = 9123
-
-	in.logf("Starting LocalIotaNode... done!")
-	in.waitAllHealthy(ctxTimeout)
-	in.logf("Deploying ISC contracts...")
-
-	packageID, err := in.L1Client().DeployISCContracts(ctxTimeout, ISCPackageOwner)
-	if err != nil {
-		panic(fmt.Errorf("isc contract deployment failed: %w", err))
-	}
-
-	in.iscPackageID = packageID
-
-	in.logf("LocalIotaNode started successfully")
-}
-
 func (in *LocalIotaNode) stop(ctx context.Context) {
 	in.logf("Stopping...")
 	err := in.container.Terminate(ctx, testcontainers.StopTimeout(0))

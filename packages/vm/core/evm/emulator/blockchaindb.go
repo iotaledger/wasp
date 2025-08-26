@@ -173,7 +173,6 @@ func (bc *BlockchainDB) MintBlock(timestamp uint64) {
 		bc.GetReceiptsByBlockNumber(blockNumber),
 		blockNumber,
 		timestamp,
-		common.Hash{},
 	)
 	bc.addBlock(header)
 	bc.prune(header.Number.Uint64())

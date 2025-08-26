@@ -135,8 +135,8 @@ func Init(
 	for addr, account := range alloc {
 		CreateAccount(stateDBSubrealm, addr)
 		if account.Balance != nil {
-			// stateDBSubrealm.AddBalance()
-			// SetBalance(stateDBSubrealm, addr, account.Balance)
+			// For hive tests pre-fund account, this should be ok
+			// panic("balances must be 0 at genesis")
 		}
 		if account.Code != nil {
 			SetCode(stateDBSubrealm, addr, account.Code)
