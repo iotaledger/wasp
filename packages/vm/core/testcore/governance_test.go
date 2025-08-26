@@ -520,7 +520,6 @@ func TestGovernanceGasCoinTargetValue(t *testing.T) {
 }
 
 func TestGovernanceCallsNoBalance(t *testing.T) {
-	t.Skip("TODO")
 	env := solo.New(t)
 	ch := env.NewChain(false)
 

@@ -29,7 +29,6 @@ import (
 )
 
 func TestCruelWorld(t *testing.T) {
-	t.Skip()
 	log := testlogger.NewLogger(t)
 
 	nodeCount := 15

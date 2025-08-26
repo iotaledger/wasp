@@ -48,7 +48,7 @@ func (r *RemoteIotaNode) IsLocal() bool {
 	return false
 }
 
-func (r *RemoteIotaNode) start(ctx context.Context) {
+func (r *RemoteIotaNode) Start(ctx context.Context) {
 	client := r.L1Client()
 
 	err := client.RequestFunds(ctx, *cryptolib.NewAddressFromIota(r.iscPackageOwner.Address()))
