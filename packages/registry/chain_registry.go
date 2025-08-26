@@ -144,7 +144,9 @@ type ChainRecordRegistryEvents struct {
 }
 
 type ChainRecordRegistryImpl struct {
-	chainID isc.ChainID // We only have one chain. Multi-chain code left for backwards compatibility.
+	// We only have one chain. Multi-chain code left for backwards compatibility.
+	// This field is automatically updated inside OnChangeMap's callback.
+	chainID isc.ChainID
 
 	onChangeMap *onchangemap.OnChangeMap[isc.ChainIDKey, isc.ChainID, *ChainRecord]
 
@@ -169,6 +171,10 @@ func NewChainRecordRegistryImpl(filePath string) (*ChainRecordRegistryImpl, erro
 		},
 	}
 
+	// Upon initialization we dont need to store records onto disk, as they just were read from the disk.
+	// But we still do need callback to be called for chain ID to be updated.
+	writeChainRecordsUponUpdate := false
+
 	registry.onChangeMap = onchangemap.NewOnChangeMap(
 		onchangemap.WithChangedCallback[isc.ChainIDKey, isc.ChainID](func(chainRecords []*ChainRecord) error {
 			// Saving chain ID
@@ -180,16 +186,21 @@ func NewChainRecordRegistryImpl(filePath string) (*ChainRecordRegistryImpl, erro
 				registry.chainID = isc.ChainID{}
 			}
 
-			return registry.writeChainRecordsJSON(chainRecords)
+			if writeChainRecordsUponUpdate {
+				return registry.writeChainRecordsJSON(chainRecords)
+			}
+
+			return nil
 		}),
 	)
+	registry.onChangeMap.CallbacksEnabled(true)
 
 	// load chain records on startup
 	if err := registry.loadChainRecordsJSON(); err != nil {
 		return nil, fmt.Errorf("unable to read chain records configuration (%s): %w", filePath, err)
 	}
 
-	registry.onChangeMap.CallbacksEnabled(true)
+	writeChainRecordsUponUpdate = true
 
 	return registry, nil
 }
