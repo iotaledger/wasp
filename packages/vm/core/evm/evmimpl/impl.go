@@ -76,7 +76,7 @@ func SetInitialState(evmPartition kv.KVStore, evmChainID uint16) {
 	)
 }
 
-func SetInitialStateWithGenesis(evmPartition kv.KVStore, l1Commitment *state.L1Commitment, evmChainID uint16, genesis *core.Genesis) {
+func SetInitialStateWithGenesis(evmPartition kv.KVStore, l1Commitment *state.L1Commitment, evmChainID uint16, feePolicy *gas.FeePolicy, genesis *core.Genesis) {
 	// Ethereum genesis block configuration
 	genesisAlloc := types.GenesisAlloc{}
 
@@ -105,7 +105,7 @@ func SetInitialStateWithGenesis(evmPartition kv.KVStore, l1Commitment *state.L1C
 	}
 
 	gasLimits := gas.LimitsDefault
-	gasRatio := gas.DefaultFeePolicy().EVMGasRatio
+	gasRatio := feePolicy.EVMGasRatio
 
 	evmGasLimit := emulator.GasLimits{
 		Block: gas.EVMBlockGasLimit(gasLimits, &gasRatio),

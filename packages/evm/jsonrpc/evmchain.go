@@ -182,7 +182,7 @@ func (e *EVMChain) SendTransaction(tx *types.Transaction) error {
 	e.log.LogDebugf("SendTransaction(tx=%v)", tx)
 	chainID := e.ChainID()
 	if tx.Protected() && tx.ChainId().Uint64() != uint64(chainID) {
-		return errors.New("chain ID mismatch")
+		return fmt.Errorf("chain ID mismatch, expected %d, got %d", chainID, tx.ChainId().Uint64())
 	}
 	signer, err := e.Signer()
 	if err != nil {

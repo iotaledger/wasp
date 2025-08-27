@@ -183,6 +183,7 @@ func InitChainWithGenesis(
 	store state.Store,
 	args isc.CallArguments,
 	gasCoinObjectID iotago.ObjectID,
+	feePolicy *gas.FeePolicy,
 	originDeposit coin.Value,
 	l1Params *parameters.L1Params,
 	genesis *core.Genesis,
@@ -221,8 +222,11 @@ func InitChainWithGenesis(
 	accounts.NewStateWriter(v, accounts.Contract.StateSubrealm(d)).SetInitialState(originDeposit, l1Params.BaseToken)
 	blocklog.NewStateWriter(blocklog.Contract.StateSubrealm(d)).SetInitialState(l1Params)
 	errors.NewStateWriter(errors.Contract.StateSubrealm(d)).SetInitialState()
-	governance.NewStateWriter(governance.Contract.StateSubrealm(d)).SetInitialState(initParams.ChainAdmin, blockKeepAmount)
-	evmimpl.SetInitialStateWithGenesis(evm.Contract.StateSubrealm(d), d.BaseL1Commitment(), initParams.EVMChainID, genesis)
+	govStateWriter := governance.NewStateWriter(governance.Contract.StateSubrealm(d))
+	govStateWriter.SetInitialState(initParams.ChainAdmin, blockKeepAmount)
+	// Override the default fee policy with the provided one
+	govStateWriter.SetGasFeePolicy(feePolicy)
+	evmimpl.SetInitialStateWithGenesis(evm.Contract.StateSubrealm(d), d.BaseL1Commitment(), initParams.EVMChainID, feePolicy, genesis)
 	if initParams.DeployTestContracts {
 		inccounter.SetInitialState(inccounter.Contract.StateSubrealm(d))
 	}
@@ -235,7 +239,7 @@ func InitChainWithGenesis(
 		v,
 		block.L1Commitment(),
 		&gasCoinObjectID,
-		gas.DefaultFeePolicy(),
+		feePolicy,
 		args,
 		originDeposit,
 		"",

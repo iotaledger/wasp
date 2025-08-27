@@ -375,6 +375,7 @@ func (env *Solo) deployChainWithGenesis(
 	initCommonAccountBaseTokens coin.Value,
 	name string,
 	evmChainID uint16,
+	feePolicy *gas.FeePolicy,
 	blockKeepAmount int32,
 	genesis *core.Genesis,
 ) chainData {
@@ -411,6 +412,7 @@ func (env *Solo) deployChainWithGenesis(
 		store,
 		initParams.Encode(),
 		*gasCoinRef.ObjectID,
+		feePolicy,
 		initCommonAccountBaseTokens,
 		env.L1Params(),
 		genesis,
@@ -521,6 +523,7 @@ func (env *Solo) NewChainExtWithGenesis(
 	initCommonAccountBaseTokens coin.Value,
 	name string,
 	evmChainID uint16,
+	feePolicy *gas.FeePolicy,
 	blockKeepAmount int32,
 	genesis *core.Genesis,
 ) (*Chain, *isc.StateAnchor) {
@@ -529,6 +532,7 @@ func (env *Solo) NewChainExtWithGenesis(
 		initCommonAccountBaseTokens,
 		name,
 		evmChainID,
+		feePolicy,
 		blockKeepAmount,
 		genesis,
 	)

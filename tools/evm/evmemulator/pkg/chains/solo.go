@@ -10,11 +10,16 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/solo"
+	"github.com/iotaledger/wasp/v2/packages/util"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/evm/emulator"
+	"github.com/iotaledger/wasp/v2/packages/vm/gas"
 	"github.com/iotaledger/wasp/v2/tools/evm/evmemulator/pkg/log"
 )
 
 const MaxPreFundAmount = 10_000
+
+// hive tests require chain ID to be 1
+const hiveChainID = 1
 
 func InitSolo(genesis *core.Genesis) (*SoloContext, *solo.Chain) {
 	ctx := &SoloContext{}
@@ -22,7 +27,9 @@ func InitSolo(genesis *core.Genesis) (*SoloContext, *solo.Chain) {
 	env := solo.New(ctx, &solo.InitOptions{Debug: log.DebugFlag, PrintStackTrace: log.DebugFlag})
 
 	chainAdmin, _ := env.NewKeyPairWithFunds()
-	chain, _ := env.NewChainExtWithGenesis(chainAdmin, 1*isc.Million, "evmemulator", 1074, emulator.BlockKeepAll, genesis)
+	feePolicy := gas.DefaultFeePolicy()
+	feePolicy.EVMGasRatio = util.Ratio32{A: 1, B: 10_00_000_000}
+	chain, _ := env.NewChainExtWithGenesis(chainAdmin, 1*isc.Million, "evmemulator", hiveChainID, feePolicy, emulator.BlockKeepAll, genesis)
 
 	// prefund the account against genesis
 	for addr, acc := range genesis.Alloc {
