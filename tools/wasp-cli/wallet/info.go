@@ -39,7 +39,7 @@ func initBalanceCmd() *cobra.Command {
 			address := myWallet.Address()
 			balance, err := cliclients.L1Client().GetAllBalances(context.Background(), address.AsIotaAddress())
 			if err != nil {
-				balanceOutput := format.NewWalletBalanceError(myWallet.AddressIndex(), address.String(), err.Error())
+				balanceOutput := format.NewWalletBalanceError(myWallet.AddressIndex(), address.String())
 				formatErr := format.PrintOutput(balanceOutput)
 				if formatErr != nil {
 					log.Printf("Error formatting output: %v", formatErr)

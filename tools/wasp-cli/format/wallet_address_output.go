@@ -7,14 +7,13 @@ import (
 
 // WalletAddressData represents the data structure for wallet address commands
 type WalletAddressData struct {
-	AddressIndex uint32 `json:"address_index"`
+	AddressIndex uint32 `json:"addressIndex"`
 	Address      string `json:"address"`
 }
 
 // WalletAddressOutput represents the output of wallet address commands
 type WalletAddressOutput struct {
-	BaseOutput
-	WalletAddressData WalletAddressData `json:"-"` // Embedded for easy access, but not serialized directly
+	BaseOutput[WalletAddressData]
 }
 
 // NewWalletAddressOutput creates a new wallet address output
@@ -24,14 +23,13 @@ func NewWalletAddressOutput(addressIndex uint32, address string, success bool) *
 		status = "error"
 	}
 
-	walletAddressData := WalletAddressData{
+	data := WalletAddressData{
 		AddressIndex: addressIndex,
 		Address:      address,
 	}
 
 	return &WalletAddressOutput{
-		BaseOutput:        NewBaseOutput("wallet_address", status, walletAddressData),
-		WalletAddressData: walletAddressData,
+		BaseOutput: NewBaseOutput("wallet_address", status, data),
 	}
 }
 
@@ -40,38 +38,11 @@ func NewWalletAddressSuccess(addressIndex uint32, address string) *WalletAddress
 	return NewWalletAddressOutput(addressIndex, address, true)
 }
 
-// NewWalletAddressError creates an error wallet address output
-func NewWalletAddressError(addressIndex uint32, errorMsg string) *WalletAddressOutput {
-	return &WalletAddressOutput{
-		BaseOutput: NewBaseOutput("wallet_address", "error", map[string]interface{}{
-			"address_index": addressIndex,
-			"error":         errorMsg,
-		}),
-		WalletAddressData: WalletAddressData{
-			AddressIndex: addressIndex,
-			Address:      "",
-		},
-	}
-}
-
-// ToJSON returns the wallet address output as JSON
-func (wao *WalletAddressOutput) ToJSON() map[string]interface{} {
-	return map[string]interface{}{
-		"type":      wao.Type,
-		"status":    wao.Status,
-		"timestamp": wao.Timestamp,
-		"data": map[string]interface{}{
-			"address_index": wao.WalletAddressData.AddressIndex,
-			"address":       wao.WalletAddressData.Address,
-		},
-	}
-}
-
 // ToTable returns the wallet address output as table rows
 func (wao *WalletAddressOutput) ToTable() [][]string {
 	return [][]string{
 		{"Address Index", "Address"},
-		{strconv.FormatUint(uint64(wao.WalletAddressData.AddressIndex), 10), wao.WalletAddressData.Address},
+		{strconv.FormatUint(uint64(wao.Data.AddressIndex), 10), wao.Data.Address},
 	}
 }
 
@@ -83,7 +54,7 @@ func (wao *WalletAddressOutput) Validate() error {
 	}
 
 	// For success status, address should be present
-	if wao.Status == "success" && wao.WalletAddressData.Address == "" {
+	if wao.Status == "success" && wao.Data.Address == "" {
 		return fmt.Errorf("address cannot be empty for successful wallet address output")
 	}
 
@@ -92,12 +63,12 @@ func (wao *WalletAddressOutput) Validate() error {
 
 // GetAddress returns the wallet address
 func (wao *WalletAddressOutput) GetAddress() string {
-	return wao.WalletAddressData.Address
+	return wao.Data.Address
 }
 
 // GetAddressIndex returns the address index
 func (wao *WalletAddressOutput) GetAddressIndex() uint32 {
-	return wao.WalletAddressData.AddressIndex
+	return wao.Data.AddressIndex
 }
 
 // IsSuccess returns true if the wallet address retrieval was successful

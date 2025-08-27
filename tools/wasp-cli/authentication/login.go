@@ -36,7 +36,7 @@ func initSetTokenCmd() *cobra.Command {
 			config.SetToken(node, args[0])
 
 			authOutput := format.NewAuthSuccess(node, "manual")
-			authOutput.AuthData.Message = "Token set successfully"
+			authOutput.Data.Message = "Token set successfully"
 			err := format.PrintOutput(authOutput)
 			if err != nil {
 				log.Printf("Error formatting output: %v", err)

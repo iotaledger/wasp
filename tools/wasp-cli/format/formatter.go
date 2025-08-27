@@ -35,22 +35,24 @@ func (f *Formatter) Format(output CommandOutput) (string, error) {
 
 // FormatJSON formats the output as JSON
 func (f *Formatter) FormatJSON(output CommandOutput) (string, error) {
-	jsonData := output.ToJSON()
+	// Use Go's built-in JSON marshaling directly
+	jsonBytes, err := json.Marshal(output)
+	if err != nil {
+		return "", fmt.Errorf("JSON marshaling failed: %w", err)
+	}
+
+	// Convert to map for validation if needed
+	var jsonData map[string]interface{}
+	if err := json.Unmarshal(jsonBytes, &jsonData); err != nil {
+		return "", fmt.Errorf("JSON unmarshaling for validation failed: %w", err)
+	}
 
 	// Validate the JSON structure
 	if err := f.validator.ValidateJSON(jsonData); err != nil {
 		return "", fmt.Errorf("JSON validation failed: %w", err)
 	}
 
-	// Standardize the output format
-	standardized := f.standardizeOutput(jsonData)
-
-	// Marshal to JSON with proper formatting
-	jsonBytes, err := json.Marshal(standardized)
-	if err != nil {
-		return "", fmt.Errorf("failed to marshal JSON: %w", err)
-	}
-
+	// Return the properly marshaled JSON
 	return string(jsonBytes), nil
 }
 
@@ -94,39 +96,6 @@ func (f *Formatter) FormatTable(output CommandOutput) string {
 	return result.String()
 }
 
-// standardizeOutput ensures the JSON output follows the standard format
-func (f *Formatter) standardizeOutput(data map[string]interface{}) map[string]interface{} {
-	// Ensure required fields are present
-	standardized := make(map[string]interface{})
-
-	// Copy all fields
-	for k, v := range data {
-		standardized[k] = v
-	}
-
-	// Ensure type field exists
-	if _, exists := standardized["type"]; !exists {
-		standardized["type"] = "unknown"
-	}
-
-	// Ensure status field exists
-	if _, exists := standardized["status"]; !exists {
-		standardized["status"] = "unknown"
-	}
-
-	// Ensure timestamp field exists
-	if _, exists := standardized["timestamp"]; !exists {
-		standardized["timestamp"] = ""
-	}
-
-	// Ensure data field exists
-	if _, exists := standardized["data"]; !exists {
-		standardized["data"] = map[string]interface{}{}
-	}
-
-	return standardized
-}
-
 // PrintOutput is a convenience function that formats and prints the output
 func (f *Formatter) PrintOutput(output CommandOutput) error {
 	formatted, err := f.Format(output)
@@ -147,17 +116,7 @@ func (f *Formatter) PrintError(commandType, errorMsg string) error {
 // Global formatter instance for convenience
 var defaultFormatter = NewFormatter()
 
-// Format formats output using the default formatter
-func Format(output CommandOutput) (string, error) {
-	return defaultFormatter.Format(output)
-}
-
 // PrintOutput prints output using the default formatter
 func PrintOutput(output CommandOutput) error {
 	return defaultFormatter.PrintOutput(output)
-}
-
-// PrintError prints an error using the default formatter
-func PrintError(commandType, errorMsg string) error {
-	return defaultFormatter.PrintError(commandType, errorMsg)
 }
