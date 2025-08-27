@@ -81,6 +81,12 @@ func (s *StateDB) CreateAccount(addr common.Address) {
 	CreateAccount(s.kv, addr)
 }
 
+func (s *StateDB) GetStateAndCommittedState(addr common.Address, hash common.Hash) (common.Hash, common.Hash) {
+	current := s.GetState(addr, hash)
+	committed := s.GetCommittedState(addr, hash)
+	return current, committed
+}
+
 // CreateContract is used whenever a contract is created. This may be preceded
 // by CreateAccount, but that is not required if it already existed in the
 // state due to funds sent beforehand.
