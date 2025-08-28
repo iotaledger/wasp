@@ -229,8 +229,8 @@ func (v *OutputValidator) validateWalletAddressData(data map[string]interface{})
 	}
 
 	// Check for required fields
-	if _, exists := dataField["address_index"]; !exists {
-		return fmt.Errorf("wallet address data must contain 'address_index' field")
+	if _, exists := dataField["addressIndex"]; !exists {
+		return fmt.Errorf("wallet address data must contain 'addressIndex' field")
 	}
 
 	// For success status, address must be present and non-empty
@@ -253,8 +253,8 @@ func (v *OutputValidator) validateWalletBalanceData(data map[string]interface{})
 	}
 
 	// Check for required fields
-	if _, exists := dataField["address_index"]; !exists {
-		return fmt.Errorf("wallet balance data must contain 'address_index' field")
+	if _, exists := dataField["addressIndex"]; !exists {
+		return fmt.Errorf("wallet balance data must contain 'addressIndex' field")
 	}
 
 	// For success status, address and balances must be present

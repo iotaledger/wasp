@@ -178,16 +178,15 @@ func checkL1BalanceJSON(t *testing.T, out []string, expected int) {
 	for _, balanceItem := range balances {
 		balance, ok := balanceItem.(map[string]interface{})
 		require.True(t, ok, "Each balance item should be an object")
-
-		coinType, ok := balance["coin_type"].(string)
-		require.True(t, ok, "coin_type should be a string")
+		coinType, ok := balance["coinType"].(string)
+		require.True(t, ok, "coinType should be a string")
 
 		// Look for IOTA coin type (matches the regex pattern from original test)
 		if strings.Contains(coinType, "::iota::IOTA") {
-			totalBalanceStr, ok := balance["total_balance"].(string)
-			require.True(t, ok, "total_balance should be a string")
+			totalBalanceStr, ok := balance["totalBalance"].(string)
+			require.True(t, ok, "totalBalance should be a string")
 			totalBalance, err := strconv.ParseUint(totalBalanceStr, 10, 64)
-			require.NoError(t, err, "total_balance should be a valid number string")
+			require.NoError(t, err, "totalBalance should be a valid number string")
 			iotaBalance = totalBalance
 			found = true
 			break
