@@ -402,7 +402,7 @@ func (a *Assets) AsISCMove() *iscmove.Assets {
 	for coinType, amount := range a.Coins.Iterate() {
 		if amount > 0 {
 			r.SetCoin(
-				iotajsonrpc.CoinType(coinType.String()),
+				iotajsonrpc.MustCoinTypeFromString(coinType.String()),
 				iotajsonrpc.CoinValue(amount),
 			)
 		}
