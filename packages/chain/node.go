@@ -68,6 +68,19 @@ const (
 	msgTypeChainMgr byte = iota
 )
 
+// NodeMode represents the operational mode of a chain node
+type NodeMode int
+
+const (
+	OperationalMode NodeMode = iota
+	ReadOnlyMode
+)
+
+// IsReadOnly returns true if the node is in read-only mode
+func (m NodeMode) IsReadOnly() bool {
+	return m == ReadOnlyMode
+}
+
 var (
 	RedeliveryPeriod         = 2 * time.Second
 	PrintStatusPeriod        = 3 * time.Second
@@ -241,7 +254,6 @@ type serversUpdate struct {
 
 var _ Chain = &chainNodeImpl{}
 
-//nolint:funlen
 func New(
 	ctx context.Context,
 	log log.Logger,
@@ -282,196 +294,26 @@ func New(
 		accessNodesFromNode = []*cryptolib.PublicKey{}
 	}
 
+	mode := OperationalMode
+	if readOnlyPath != "" {
+		mode = ReadOnlyMode
+	}
+
 	cni, netPeeringID := newChainNodeImplAndPeerID(log, chainID, chainStore, nodeConn, nodeIdentity, processorConfig, blockWAL, listener, net, chainMetrics, shutdownCoordinator, consensusDelay, recoveryTimeout, validatorAgentID, originDeposit)
 
-	if readOnlyPath == "" {
-		cni.chainMetrics.Pipe.TrackPipeLen("node-recvAnchorPipe", cni.recvAnchorPipe.Len)
-		cni.chainMetrics.Pipe.TrackPipeLen("node-recvTxPublishedPipe", cni.recvTxPublishedPipe.Len)
-		cni.chainMetrics.Pipe.TrackPipeLen("node-consOutputPipe", cni.consOutputPipe.Len)
-		cni.chainMetrics.Pipe.TrackPipeLen("node-consRecoverPipe", cni.consRecoverPipe.Len)
-		cni.chainMetrics.Pipe.TrackPipeLen("node-serversUpdatedPipe", cni.serversUpdatedPipe.Len)
-		cni.chainMetrics.Pipe.TrackPipeLen("node-netRecvPipe", cni.netRecvPipe.Len)
-
-		if recoverFromWAL {
-			cni.recoverStoreFromWAL(chainStore, blockWAL)
-		}
-		cni.me = cni.pubKeyAsNodeID(nodeIdentity.GetPublicKey())
-		//
-		// Create sub-components.
-		chainMgr, err := chainmanager.New(
-			cni.me,
-			cni.chainID,
-			cni.chainStore,
-			consensusStateRegistry,
-			dkShareRegistryProvider,
-			cni.pubKeyAsNodeID,
-			func(upd *chainmanager.NeedConsensusMap) {
-				log.LogDebugf("needConsensusCB called with %v", upd)
-				cni.handleNeedConsensus(ctx, upd)
-			},
-			func(upd *chainmanager.NeedPublishTXMap) {
-				log.LogDebugf("needPublishCB called with %v", upd)
-				cni.handleNeedPublishTX(ctx, upd)
-			},
-			func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey) {
-				cni.accessLock.RLock()
-				defer cni.accessLock.RUnlock()
-				return cni.activeAccessNodes, cni.activeCommitteeNodes
-			},
-			func(anchor *isc.StateAnchor) {
-				cni.stateTrackerAct.TrackAliasOutput(anchor, true)
-			},
-			func(block state.Block) {
-				if err := cni.stateMgr.PreliminaryBlock(block); err != nil {
-					cni.log.LogWarnf("Failed to save a preliminary block %v: %v", block.L1Commitment(), err)
-				}
-			},
-			func(dkShare tcrypto.DKShare) {
-				cni.accessLock.Lock()
-				cni.activeCommitteeDKShare = dkShare
-				activeCommitteeNodes := cni.activeCommitteeNodes
-				cni.accessLock.Unlock()
-				var newCommitteeNodes []*cryptolib.PublicKey
-				if dkShare == nil {
-					newCommitteeNodes = []*cryptolib.PublicKey{}
-				} else {
-					newCommitteeNodes = dkShare.GetNodePubKeys()
-				}
-				if !util.Same(newCommitteeNodes, activeCommitteeNodes) {
-					cni.log.LogInfof("Committee nodes updated to %v, was %v", newCommitteeNodes, activeCommitteeNodes)
-					cni.updateAccessNodes(func() {
-						cni.activeCommitteeNodes = newCommitteeNodes
-					})
-				}
-			},
-			deriveAliasOutputByQuorum,
-			pipeliningLimit,
-			postponeRecoveryMilestones,
-			cni.chainMetrics.CmtLog,
-			cni.log.NewChildLogger("CM"),
+	if mode == OperationalMode {
+		return initializeOperationalChain(
+			ctx, cni, netPeeringID, chainID, chainStore, nodeConn, nodeIdentity,
+			consensusStateRegistry, dkShareRegistryProvider, recoverFromWAL, blockWAL,
+			net, snapshotManager, chainMetrics, shutdownCoordinator, smParameters,
+			mempoolSettings, mempoolBroadcastInterval, accessNodesFromNode,
+			deriveAliasOutputByQuorum, pipeliningLimit, postponeRecoveryMilestones,
+			onChainConnect, onChainDisconnect, log,
 		)
-		if err != nil {
-			return nil, fmt.Errorf("cannot create chainMgr: %w", err)
-		}
-
-		peerPubKeys := []*cryptolib.PublicKey{nodeIdentity.GetPublicKey()}
-		peerPubKeys = append(peerPubKeys, cni.accessNodesFromNode...)
-		stateMgr, err := statemanager.New(
-			ctx,
-			cni.chainID,
-			nodeIdentity.GetPublicKey(),
-			peerPubKeys,
-			net,
-			blockWAL,
-			snapshotManager,
-			chainStore,
-			shutdownCoordinator.Nested("StateMgr"),
-			chainMetrics.StateManager,
-			chainMetrics.Pipe,
-			cni.log,
-			smParameters,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("cannot create stateMgr: %w", err)
-		}
-		mempool := mempool.New(
-			ctx,
-			chainID,
-			nodeIdentity,
-			net,
-			cni.log.NewChildLogger("MP"),
-			chainMetrics.Mempool,
-			chainMetrics.Pipe,
-			cni.listener,
-			mempoolSettings,
-			mempoolBroadcastInterval,
-			func() { nodeConn.RefreshOnLedgerRequests(ctx, chainID) },
-		)
-
-		cni.chainMgr = gpa.NewAckHandler(cni.me, chainMgr.AsGPA(), RedeliveryPeriod)
-		cni.stateMgr = stateMgr
-		cni.mempool = mempool
-		cni.stateTrackerAct = NewStateTracker(ctx, stateMgr, cni.handleStateTrackerActCB, chainMetrics.StateManager.SetChainActiveStateWant, chainMetrics.StateManager.SetChainActiveStateHave, cni.log.NewChildLogger("ST.ACT"))
-		cni.stateTrackerCnf = NewStateTracker(ctx, stateMgr, cni.handleStateTrackerCnfCB, chainMetrics.StateManager.SetChainConfirmedStateWant, chainMetrics.StateManager.SetChainConfirmedStateHave, cni.log.NewChildLogger("ST.CNF"))
-		cni.updateAccessNodes(func() {
-			cni.accessNodesFromNode = accessNodesFromNode
-			cni.accessNodesFromACT = []*cryptolib.PublicKey{}
-			cni.accessNodesFromCNF = []*cryptolib.PublicKey{}
-		})
-		cni.updateServerNodes([]*cryptolib.PublicKey{})
-		//
-		// Connect to the peering network.
-		netRecvPipeInCh := cni.netRecvPipe.In()
-		unhook := net.Attach(&netPeeringID, peering.ReceiverChain, func(recv *peering.PeerMessageIn) {
-			if recv.MsgType != msgTypeChainMgr {
-				cni.log.LogWarnf("Unexpected message, type=%v", recv.MsgType)
-				return
-			}
-			netRecvPipeInCh <- recv
-		})
-		//
-		// Attach to the L1.
-		recvRequestCB := func(req isc.OnLedgerRequest) {
-			log.LogDebugf("recvRequestCB[%p], requestID=%v", cni, req.ID())
-			cni.chainMetrics.NodeConn.L1RequestReceived()
-			cni.mempool.ReceiveOnLedgerRequest(req)
-		}
-		recvAnchorPipeInCh := cni.recvAnchorPipe.In()
-		recvAnchorCB := func(anchor *isc.StateAnchor, l1Params *parameters.L1Params) {
-			log.LogDebugf("recvAnchorCB[%p], %v", cni, anchor.GetObjectID())
-			cni.chainMetrics.NodeConn.L1AnchorReceived()
-			recvAnchorPipeInCh <- lo.T2(anchor, l1Params)
-		}
-		err = nodeConn.AttachChain(ctx, chainID, recvRequestCB, recvAnchorCB, onChainConnect, onChainDisconnect, false)
-		if err != nil {
-			return nil, err
-		}
-		//
-		// Run the main thread.
-
-		go cni.run(ctx, unhook)
-		return cni, nil
 	} else {
-		readOnlyPath = filepath.Join(readOnlyPath, chainID.String())
-		readOnlyDB, err := database.NewReadOnlyDatabase(readOnlyPath)
-		if err != nil {
-			return nil, err
-		}
-		readOnlyDBStore, err := state.NewStoreReadonly(readOnlyDB.KVStore())
-		if err != nil {
-			return nil, err
-		}
-		latestState := lo.Must(readOnlyDBStore.LatestState())
-
-		// use a fake PackageID here. PackageID should be unnecessary, because it is a readonly more
-		anchor := isc.NewStateAnchor(&iscmove.AnchorWithRef{
-			ObjectRef: iotago.ObjectRef{ObjectID: chainID.AsAddress().AsIotaAddress()},
-		}, *iotago.MustAddressFromHex("0x123"))
-
-		cni.latestConfirmedState = latestState
-		cni.latestActiveStateAO = &anchor
-
-		// Attach to the L1.
-		err = nodeConn.AttachChain(ctx, chainID, nil, nil, onChainConnect, onChainDisconnect, true)
-		if err != nil {
-			return nil, err
-		}
-
-		// similar to cni.run() just for shutdown
-		go func() {
-			for {
-				if ctx.Err() != nil {
-					if cni.shutdownCoordinator == nil {
-						return
-					}
-					// needs to wait for state mgr and consensusInst
-					cni.shutdownCoordinator.WaitNestedWithLogging(1 * time.Second)
-					cni.shutdownCoordinator.Done()
-					return
-				}
-			}
-		}()
-		return cni, nil
+		return initializeReadOnlyChain(
+			ctx, cni, chainID, readOnlyPath, nodeConn, onChainConnect, onChainDisconnect,
+		)
 	}
 }
 
@@ -1353,3 +1195,316 @@ func (cws *consensusWorkflowStatusImpl) GetTransactionPostedTime() time.Time    
 func (cws *consensusWorkflowStatusImpl) GetTransactionSeenTime() time.Time      { return time.Time{} }
 func (cws *consensusWorkflowStatusImpl) GetCompletedTime() time.Time            { return time.Time{} }
 func (cws *consensusWorkflowStatusImpl) GetCurrentStateIndex() uint32           { return 0 }
+
+// initializeOperationalChain initializes a chain for full operational mode
+func initializeOperationalChain(
+	ctx context.Context,
+	cni *chainNodeImpl,
+	netPeeringID peering.PeeringID,
+	chainID isc.ChainID,
+	chainStore indexedstore.IndexedStore,
+	nodeConn NodeConnection,
+	nodeIdentity *cryptolib.KeyPair,
+	consensusStateRegistry cmtlog.ConsensusStateRegistry,
+	dkShareRegistryProvider registry.DKShareRegistryProvider,
+	recoverFromWAL bool,
+	blockWAL utils.BlockWAL,
+	net peering.NetworkProvider,
+	snapshotManager snapshots.SnapshotManager,
+	chainMetrics *metrics.ChainMetrics,
+	shutdownCoordinator *shutdown.Coordinator,
+	smParameters smgpa.StateManagerParameters,
+	mempoolSettings mempool.Settings,
+	mempoolBroadcastInterval time.Duration,
+	accessNodesFromNode []*cryptolib.PublicKey,
+	deriveAliasOutputByQuorum bool,
+	pipeliningLimit int,
+	postponeRecoveryMilestones int,
+	onChainConnect func(),
+	onChainDisconnect func(),
+	log log.Logger,
+) (Chain, error) {
+	// Setup metrics tracking
+	cni.chainMetrics.Pipe.TrackPipeLen("node-recvAnchorPipe", cni.recvAnchorPipe.Len)
+	cni.chainMetrics.Pipe.TrackPipeLen("node-recvTxPublishedPipe", cni.recvTxPublishedPipe.Len)
+	cni.chainMetrics.Pipe.TrackPipeLen("node-consOutputPipe", cni.consOutputPipe.Len)
+	cni.chainMetrics.Pipe.TrackPipeLen("node-consRecoverPipe", cni.consRecoverPipe.Len)
+	cni.chainMetrics.Pipe.TrackPipeLen("node-serversUpdatedPipe", cni.serversUpdatedPipe.Len)
+	cni.chainMetrics.Pipe.TrackPipeLen("node-netRecvPipe", cni.netRecvPipe.Len)
+
+	// Recover from WAL if needed
+	if recoverFromWAL {
+		cni.recoverStoreFromWAL(chainStore, blockWAL)
+	}
+	cni.me = cni.pubKeyAsNodeID(nodeIdentity.GetPublicKey())
+
+	// Create chain manager
+	chainMgr, err := createChainManager(ctx, cni, consensusStateRegistry, dkShareRegistryProvider,
+		deriveAliasOutputByQuorum, pipeliningLimit, postponeRecoveryMilestones, log)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create chainMgr: %w", err)
+	}
+
+	// Create state manager
+	stateMgr, err := createStateManager(ctx, cni, chainStore, nodeIdentity, net, blockWAL,
+		snapshotManager, shutdownCoordinator, chainMetrics, smParameters, accessNodesFromNode)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create stateMgr: %w", err)
+	}
+
+	// Create mempool
+	mempool := createMempool(ctx, chainID, nodeIdentity, net, cni, chainMetrics,
+		mempoolSettings, mempoolBroadcastInterval, nodeConn)
+
+	cni.chainMgr = gpa.NewAckHandler(cni.me, chainMgr.AsGPA(), RedeliveryPeriod)
+	cni.stateMgr = stateMgr
+	cni.mempool = mempool
+
+	// Setup state trackers
+	cni.stateTrackerAct = NewStateTracker(ctx, stateMgr, cni.handleStateTrackerActCB,
+		chainMetrics.StateManager.SetChainActiveStateWant,
+		chainMetrics.StateManager.SetChainActiveStateHave,
+		cni.log.NewChildLogger("ST.ACT"))
+	cni.stateTrackerCnf = NewStateTracker(ctx, stateMgr, cni.handleStateTrackerCnfCB,
+		chainMetrics.StateManager.SetChainConfirmedStateWant,
+		chainMetrics.StateManager.SetChainConfirmedStateHave,
+		cni.log.NewChildLogger("ST.CNF"))
+
+	// Setup access nodes
+	cni.updateAccessNodes(func() {
+		cni.accessNodesFromNode = accessNodesFromNode
+		cni.accessNodesFromACT = []*cryptolib.PublicKey{}
+		cni.accessNodesFromCNF = []*cryptolib.PublicKey{}
+	})
+	cni.updateServerNodes([]*cryptolib.PublicKey{})
+
+	// Connect to peering network
+	unhook := setupPeeringNetwork(cni, net, netPeeringID)
+
+	// Attach to L1 and setup callbacks
+	err = setupL1Connection(ctx, cni, nodeConn, chainID, onChainConnect, onChainDisconnect, false, log)
+	if err != nil {
+		return nil, err
+	}
+
+	// Start the main thread
+	go cni.run(ctx, unhook)
+	return cni, nil
+}
+
+// initializeReadOnlyChain initializes a chain for read-only mode
+func initializeReadOnlyChain(
+	ctx context.Context,
+	cni *chainNodeImpl,
+	chainID isc.ChainID,
+	readOnlyPath string,
+	nodeConn NodeConnection,
+	onChainConnect func(),
+	onChainDisconnect func(),
+) (Chain, error) {
+	fullPath := filepath.Join(readOnlyPath, chainID.String())
+
+	// Open readonly database
+	readOnlyDB, err := database.NewReadOnlyDatabase(fullPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open readonly database at %s: %w", fullPath, err)
+	}
+
+	readOnlyDBStore, err := state.NewStoreReadonly(readOnlyDB.KVStore())
+	if err != nil {
+		return nil, fmt.Errorf("failed to create readonly store: %w", err)
+	}
+
+	latestState := lo.Must(readOnlyDBStore.LatestState())
+
+	// Create a minimal state anchor (PackageID is unnecessary for readonly mode)
+	anchor := isc.NewStateAnchor(&iscmove.AnchorWithRef{
+		ObjectRef: iotago.ObjectRef{ObjectID: chainID.AsAddress().AsIotaAddress()},
+	}, *iotago.MustAddressFromHex("0x123"))
+
+	// Set the chain state
+	cni.latestConfirmedState = latestState
+	cni.latestActiveStateAO = &anchor
+
+	// Attach to L1 in readonly mode
+	err = nodeConn.AttachChain(ctx, chainID, nil, nil, onChainConnect, onChainDisconnect, true)
+	if err != nil {
+		return nil, fmt.Errorf("failed to attach chain in readonly mode: %w", err)
+	}
+
+	// Start minimal shutdown handler
+	go cni.runReadOnlyShutdownHandler(ctx)
+	return cni, nil
+}
+
+func createChainManager(
+	ctx context.Context,
+	cni *chainNodeImpl,
+	consensusStateRegistry cmtlog.ConsensusStateRegistry,
+	dkShareRegistryProvider registry.DKShareRegistryProvider,
+	deriveAliasOutputByQuorum bool,
+	pipeliningLimit int,
+	postponeRecoveryMilestones int,
+	log log.Logger,
+) (chainmanager.ChainMgr, error) {
+	return chainmanager.New(
+		cni.me,
+		cni.chainID,
+		cni.chainStore,
+		consensusStateRegistry,
+		dkShareRegistryProvider,
+		cni.pubKeyAsNodeID,
+		func(upd *chainmanager.NeedConsensusMap) {
+			log.LogDebugf("needConsensusCB called with %v", upd)
+			cni.handleNeedConsensus(ctx, upd)
+		},
+		func(upd *chainmanager.NeedPublishTXMap) {
+			log.LogDebugf("needPublishCB called with %v", upd)
+			cni.handleNeedPublishTX(ctx, upd)
+		},
+		func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey) {
+			cni.accessLock.RLock()
+			defer cni.accessLock.RUnlock()
+			return cni.activeAccessNodes, cni.activeCommitteeNodes
+		},
+		func(anchor *isc.StateAnchor) {
+			cni.stateTrackerAct.TrackAliasOutput(anchor, true)
+		},
+		func(block state.Block) {
+			if err := cni.stateMgr.PreliminaryBlock(block); err != nil {
+				cni.log.LogWarnf("Failed to save a preliminary block %v: %v", block.L1Commitment(), err)
+			}
+		},
+		func(dkShare tcrypto.DKShare) {
+			cni.accessLock.Lock()
+			cni.activeCommitteeDKShare = dkShare
+			activeCommitteeNodes := cni.activeCommitteeNodes
+			cni.accessLock.Unlock()
+			var newCommitteeNodes []*cryptolib.PublicKey
+			if dkShare == nil {
+				newCommitteeNodes = []*cryptolib.PublicKey{}
+			} else {
+				newCommitteeNodes = dkShare.GetNodePubKeys()
+			}
+			if !util.Same(newCommitteeNodes, activeCommitteeNodes) {
+				cni.log.LogInfof("Committee nodes updated to %v, was %v", newCommitteeNodes, activeCommitteeNodes)
+				cni.updateAccessNodes(func() {
+					cni.activeCommitteeNodes = newCommitteeNodes
+				})
+			}
+		},
+		deriveAliasOutputByQuorum,
+		pipeliningLimit,
+		postponeRecoveryMilestones,
+		cni.chainMetrics.CmtLog,
+		cni.log.NewChildLogger("CM"),
+	)
+}
+
+func createStateManager(
+	ctx context.Context,
+	cni *chainNodeImpl,
+	chainStore indexedstore.IndexedStore,
+	nodeIdentity *cryptolib.KeyPair,
+	net peering.NetworkProvider,
+	blockWAL utils.BlockWAL,
+	snapshotManager snapshots.SnapshotManager,
+	shutdownCoordinator *shutdown.Coordinator,
+	chainMetrics *metrics.ChainMetrics,
+	smParameters smgpa.StateManagerParameters,
+	accessNodesFromNode []*cryptolib.PublicKey,
+) (statemanager.StateMgr, error) {
+	peerPubKeys := []*cryptolib.PublicKey{nodeIdentity.GetPublicKey()}
+	peerPubKeys = append(peerPubKeys, accessNodesFromNode...)
+
+	return statemanager.New(
+		ctx,
+		cni.chainID,
+		nodeIdentity.GetPublicKey(),
+		peerPubKeys,
+		net,
+		blockWAL,
+		snapshotManager,
+		chainStore,
+		shutdownCoordinator.Nested("StateMgr"),
+		chainMetrics.StateManager,
+		chainMetrics.Pipe,
+		cni.log,
+		smParameters,
+	)
+}
+
+func createMempool(
+	ctx context.Context,
+	chainID isc.ChainID,
+	nodeIdentity *cryptolib.KeyPair,
+	net peering.NetworkProvider,
+	cni *chainNodeImpl,
+	chainMetrics *metrics.ChainMetrics,
+	mempoolSettings mempool.Settings,
+	mempoolBroadcastInterval time.Duration,
+	nodeConn NodeConnection,
+) mempool.Mempool {
+	return mempool.New(
+		ctx,
+		chainID,
+		nodeIdentity,
+		net,
+		cni.log.NewChildLogger("MP"),
+		chainMetrics.Mempool,
+		chainMetrics.Pipe,
+		cni.listener,
+		mempoolSettings,
+		mempoolBroadcastInterval,
+		func() { nodeConn.RefreshOnLedgerRequests(ctx, chainID) },
+	)
+}
+
+func setupPeeringNetwork(cni *chainNodeImpl, net peering.NetworkProvider, netPeeringID peering.PeeringID) context.CancelFunc {
+	netRecvPipeInCh := cni.netRecvPipe.In()
+	return net.Attach(&netPeeringID, peering.ReceiverChain, func(recv *peering.PeerMessageIn) {
+		if recv.MsgType != msgTypeChainMgr {
+			cni.log.LogWarnf("Unexpected message, type=%v", recv.MsgType)
+			return
+		}
+		netRecvPipeInCh <- recv
+	})
+}
+
+func setupL1Connection(
+	ctx context.Context,
+	cni *chainNodeImpl,
+	nodeConn NodeConnection,
+	chainID isc.ChainID,
+	onChainConnect func(),
+	onChainDisconnect func(),
+	readOnly bool,
+	log log.Logger,
+) error {
+	if readOnly {
+		return nodeConn.AttachChain(ctx, chainID, nil, nil, onChainConnect, onChainDisconnect, true)
+	}
+
+	recvRequestCB := func(req isc.OnLedgerRequest) {
+		log.LogDebugf("recvRequestCB[%p], requestID=%v", cni, req.ID())
+		cni.chainMetrics.NodeConn.L1RequestReceived()
+		cni.mempool.ReceiveOnLedgerRequest(req)
+	}
+	recvAnchorPipeInCh := cni.recvAnchorPipe.In()
+	recvAnchorCB := func(anchor *isc.StateAnchor, l1Params *parameters.L1Params) {
+		log.LogDebugf("recvAnchorCB[%p], %v", cni, anchor.GetObjectID())
+		cni.chainMetrics.NodeConn.L1AnchorReceived()
+		recvAnchorPipeInCh <- lo.T2(anchor, l1Params)
+	}
+
+	return nodeConn.AttachChain(ctx, chainID, recvRequestCB, recvAnchorCB, onChainConnect, onChainDisconnect, false)
+}
+
+// runReadOnlyShutdownHandler runs a minimal shutdown handler for readonly chains
+func (cni *chainNodeImpl) runReadOnlyShutdownHandler(ctx context.Context) {
+	<-ctx.Done()
+	if cni.shutdownCoordinator != nil {
+		cni.shutdownCoordinator.WaitNestedWithLogging(1 * time.Second)
+		cni.shutdownCoordinator.Done()
+	}
+}

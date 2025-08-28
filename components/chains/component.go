@@ -3,7 +3,6 @@ package chains
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 	"time"
 
 	"go.uber.org/dig"
@@ -20,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/metrics"
 	"github.com/iotaledger/wasp/v2/packages/peering"
 	"github.com/iotaledger/wasp/v2/packages/publisher"
+	"github.com/iotaledger/wasp/v2/packages/readonly"
 	"github.com/iotaledger/wasp/v2/packages/registry"
 	"github.com/iotaledger/wasp/v2/packages/shutdown"
 	"github.com/iotaledger/wasp/v2/packages/vm/processors"
@@ -158,8 +158,8 @@ func run() error {
 	err := Component.Daemon().BackgroundWorker(Component.Name, func(ctx context.Context) {
 		var err error
 		var path string
-		if deps.ReadOnlyDBPath != "" {
-			path = filepath.Join(deps.ReadOnlyDBPath, "data")
+		if readonly.Enabled(deps.ReadOnlyDBPath) {
+			path = readonly.DataDir(deps.ReadOnlyDBPath)
 		}
 		err = deps.Chains.Run(ctx, path)
 		if err != nil {

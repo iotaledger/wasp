@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"path/filepath"
 
 	"go.uber.org/dig"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/chain"
 	"github.com/iotaledger/wasp/v2/packages/daemon"
 	"github.com/iotaledger/wasp/v2/packages/database"
+	"github.com/iotaledger/wasp/v2/packages/readonly"
 	"github.com/iotaledger/wasp/v2/packages/registry"
 )
 
@@ -83,7 +83,7 @@ func provide(c *dig.Container) error {
 	if err := c.Provide(func(deps databaseManagerDeps) chainStateDatabaseManagerResult {
 		path := ParamsDatabase.ChainState.Path
 		if ParamsDatabase.ReadOnlyFilePath != "" {
-			path = filepath.Join(ParamsDatabase.ReadOnlyFilePath, "data")
+			path = readonly.DataDir(ParamsDatabase.ReadOnlyFilePath)
 		}
 		manager, err := database.NewChainStateDatabaseManager(
 			deps.ChainRecordRegistryProvider,

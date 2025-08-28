@@ -31,6 +31,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/metrics"
 	"github.com/iotaledger/wasp/v2/packages/peering"
 	"github.com/iotaledger/wasp/v2/packages/publisher"
+	"github.com/iotaledger/wasp/v2/packages/readonly"
 	"github.com/iotaledger/wasp/v2/packages/registry"
 	"github.com/iotaledger/wasp/v2/packages/users"
 	"github.com/iotaledger/wasp/v2/packages/webapi"
@@ -320,7 +321,7 @@ func run() error {
 	Component.LogInfof("Starting %s server ...", Component.Name)
 	if err := Component.Daemon().BackgroundWorker(Component.Name, func(ctx context.Context) {
 		Component.LogInfof("Starting %s server ...", Component.Name)
-		if deps.ReadOnlyDBPath == "" {
+		if !readonly.Enabled(deps.ReadOnlyDBPath) {
 			if err := deps.NodeConnection.WaitUntilInitiallySynced(ctx); err != nil {
 				Component.LogErrorf("failed to start %s, waiting for L1 node to become sync failed, error: %s", err.Error())
 				return

@@ -18,7 +18,7 @@ type ParametersDatabase struct {
 
 	// DebugSkipHealthCheck defines whether to ignore the check for corrupted databases.
 	DebugSkipHealthCheck bool   `default:"true" usage:"ignore the check for corrupted databases"`
-	ReadOnlyFilePath     string `default:"" usage:"the path to the read-only database"`
+	ReadOnlyFilePath     string `default:"" usage:"open the database in the given path in read-only mode"`
 }
 
 var ParamsDatabase = &ParametersDatabase{}

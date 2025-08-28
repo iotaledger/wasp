@@ -6,7 +6,6 @@ package registry
 
 import (
 	"path"
-	"path/filepath"
 
 	"go.uber.org/dig"
 
@@ -17,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/chain"
 	"github.com/iotaledger/wasp/v2/packages/chain/cmtlog"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/readonly"
 	"github.com/iotaledger/wasp/v2/packages/registry"
 )
 
@@ -45,8 +45,8 @@ func provide(c *dig.Container) error {
 
 	if err := c.Provide(func(deps chainRecordRegistryDeps) registry.ChainRecordRegistryProvider {
 		path := ParamsRegistries.Chains.FilePath
-		if deps.ReadOnlyDBPath != "" {
-			path = filepath.Join(deps.ReadOnlyDBPath, "chain_registry.json")
+		if readonly.Enabled(deps.ReadOnlyDBPath) {
+			path = readonly.ChainRegistryFile(deps.ReadOnlyDBPath)
 		}
 		chainRecordRegistryProvider, err := registry.NewChainRecordRegistryImpl(path)
 		if err != nil {
