@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/solo"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/testcore/sbtests/sbtestsc"
-	"github.com/iotaledger/wasp/v2/packages/vm/gas"
 )
 
 func TestMainCallsFromFullEP(t *testing.T) {
@@ -22,8 +21,7 @@ func TestMainCallsFromFullEP(t *testing.T) {
 		chain.AdminAgentID(),
 		userAgentID,
 		isc.NewContractAgentID(HScName),
-	), ScName).
-		WithGasBudget(10 * gas.LimitsDefault.MinGasPerRequest)
+	), ScName)
 	_, err := chain.PostRequestSync(req, user)
 	require.NoError(t, err)
 }

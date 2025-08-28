@@ -149,17 +149,15 @@ func TestPingBaseTokens1(t *testing.T) {
 	commonBefore := ch.L2CommonAccountAssets()
 	t.Logf("----- BEFORE -----\nUser funds left: %s\nCommon account: %s", userFundsBefore, commonBefore)
 
-	const expectedBack = 1 * isc.Million
+	expectedBack := solo.BaseTokensForL2Gas
 	ch.Env.AssertL1BaseTokens(userAddr, iotaclient.FundsFromFaucetAmount)
 
 	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncPingAllowanceBack.Name).
-		AddBaseTokens(expectedBack + 500). // add extra base tokens besides allowance in order to estimate the gas fees
-		AddAllowanceBaseTokens(expectedBack).
-		WithGasBudget(100_000)
+		AddBaseTokens(expectedBack * 2). // add extra base tokens besides allowance in order to estimate the gas fees
+		AddAllowanceBaseTokens(expectedBack)
 
 	_, estimate, err := ch.EstimateGasOnLedger(req, user)
 	require.NoError(t, err)
-
 	req.
 		WithFungibleTokens(isc.NewAssets(expectedBack + estimate.GasFeeCharged).Coins).
 		WithGasBudget(estimate.GasBurned)
@@ -223,7 +221,7 @@ func TestNFTOffledgerWithdraw(t *testing.T) {
 	wallet, _ := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromTestNameAndTimestamp(t.Name()))
 
 	obj := ch.Env.L1MintObject(wallet)
-	err := ch.DepositAssetsToL2(isc.NewAssets(100_000).AddObject(obj), wallet)
+	err := ch.DepositAssetsToL2(isc.NewAssets(solo.BaseTokensForL2Gas).AddObject(obj), wallet)
 	require.NoError(t, err)
 
 	wdReq := solo.NewCallParams(accounts.FuncWithdraw.Message()).

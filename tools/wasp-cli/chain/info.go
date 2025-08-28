@@ -94,6 +94,12 @@ func initInfoCmd() *cobra.Command {
 				log.Printf("Common account: %s\n", accounts.CommonAccount())
 				log.Printf("Gas fee: gas units * (%d/%d)\n", chainInfo.GasFeePolicy.GasPerToken.A, chainInfo.GasFeePolicy.GasPerToken.B)
 				log.Printf("Validator fee share: %d%%\n", chainInfo.GasFeePolicy.ValidatorFeeShare)
+
+				log.Printf("\n[Gas Limits]\n")
+				log.Printf("MinGasPerRequest: %d\n", chainInfo.GasLimits.MinGasPerRequest)
+				log.Printf("MaxGasPerRequest: %d\n", chainInfo.GasLimits.MaxGasPerRequest)
+				log.Printf("MaxGasPerBlock: %d\n", chainInfo.GasLimits.MaxGasPerBlock)
+				log.Printf("MaxGasExternalViewCall: %d\n", chainInfo.GasLimits.MaxGasExternalViewCall)
 			}
 
 			log.Printf("\n[Metadata]\n")
