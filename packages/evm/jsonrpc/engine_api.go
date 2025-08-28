@@ -186,7 +186,7 @@ func (e *EngineService) EnqueueTransactions(block *types.Block, blockHash common
 	// Wait for transaction confirmation with 30s timeout
 	blockHash, err := e.waitForTransactionConfirmation(transactions, 30*time.Second)
 	if err != nil {
-		fmt.Println("EnqueueTransactions, waitForTransactionConfirmation err: ", err)
+		fmt.Println("waitForTransactionConfirmation err: ", err)
 		res := e.responseInvalid(err, nil, blockHash)
 		return &res, nil
 	}
