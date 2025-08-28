@@ -59,6 +59,10 @@ type StateDB struct {
 	refund           uint64
 	transientStorage transientStorage        // EIP-1153
 	newContracts     map[common.Address]bool // EIP-6780
+	// originalStorage keeps the pre-transaction value of a storage slot.
+	// It is populated on the first write to a slot during a transaction and
+	// cleared at the beginning of each transaction in Prepare.
+	originalStorage map[common.Address]map[common.Hash]common.Hash
 }
 
 var _ vm.StateDB = &StateDB{}
@@ -70,6 +74,7 @@ func NewStateDB(ctx Context) *StateDB {
 		snapshots:        make(map[int][]*types.Log),
 		transientStorage: newTransientStorage(),
 		newContracts:     make(map[common.Address]bool),
+		originalStorage:  make(map[common.Address]map[common.Hash]common.Hash),
 	}
 }
 
@@ -210,6 +215,11 @@ func (s *StateDB) GetRefund() uint64 {
 }
 
 func (s *StateDB) GetCommittedState(addr common.Address, key common.Hash) common.Hash {
+	if slots, ok := s.originalStorage[addr]; ok {
+		if orig, ok2 := slots[key]; ok2 {
+			return orig
+		}
+	}
 	return s.GetState(addr, key)
 }
 
@@ -227,6 +237,15 @@ func SetState(kv kv.KVStore, addr common.Address, key, value common.Hash) {
 
 func (s *StateDB) SetState(addr common.Address, key, value common.Hash) common.Hash {
 	prev := s.GetState(addr, key)
+	// Capture original value on first mutation in this transaction
+	if slots, ok := s.originalStorage[addr]; ok {
+		if _, exists := slots[key]; !exists {
+			// initialize with prev (pre-write value)
+			slots[key] = prev
+		}
+	} else {
+		s.originalStorage[addr] = map[common.Hash]common.Hash{key: prev}
+	}
 	if prev == value {
 		return prev
 	}
@@ -365,6 +384,8 @@ func (s *StateDB) Prepare(rules params.Rules, sender common.Address, coinbase co
 	s.transientStorage = newTransientStorage()
 	// reset "newContract" flags
 	s.newContracts = make(map[common.Address]bool)
+	// reset original storage (pre-transaction values)
+	s.originalStorage = make(map[common.Address]map[common.Hash]common.Hash)
 }
 
 func (s *StateDB) AccessEvents() *state.AccessEvents {
