@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/hive.go/runtime/ioutils"
 	"github.com/iotaledger/wasp/v2/packages/chaindb"
 	"github.com/iotaledger/wasp/v2/packages/kvstore"
+	"github.com/iotaledger/wasp/v2/packages/kvstore/rocksdb"
 )
 
 var AllowedEngines = []hivedb.Engine{
@@ -114,6 +115,20 @@ func NewDatabase(
 	default:
 		return nil, fmt.Errorf("unknown database engine: %s, supported engines: rocksdb/mapdb", dbEngine)
 	}
+}
+
+func NewReadOnlyDatabase(
+	path string,
+) (*Database, error) {
+	dbConn, err := rocksdb.OpenDBReadOnly(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open read-only RocksDB: %w", err)
+	}
+
+	db := New(path, rocksdb.New(dbConn), hivedb.EngineRocksDB, false, func() bool {
+		return false
+	})
+	return db, nil
 }
 
 type databaseWithHealthTracker struct {

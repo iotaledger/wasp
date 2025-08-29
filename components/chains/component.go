@@ -19,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/metrics"
 	"github.com/iotaledger/wasp/v2/packages/peering"
 	"github.com/iotaledger/wasp/v2/packages/publisher"
+	"github.com/iotaledger/wasp/v2/packages/readonly"
 	"github.com/iotaledger/wasp/v2/packages/registry"
 	"github.com/iotaledger/wasp/v2/packages/shutdown"
 	"github.com/iotaledger/wasp/v2/packages/vm/processors"
@@ -45,6 +46,7 @@ type dependencies struct {
 
 	ShutdownHandler *hiveshutdown.ShutdownHandler
 	Chains          *chains.Chains
+	ReadOnlyDBPath  string
 }
 
 func initConfigParams(c *dig.Container) error {
@@ -154,7 +156,13 @@ func provide(c *dig.Container) error {
 
 func run() error {
 	err := Component.Daemon().BackgroundWorker(Component.Name, func(ctx context.Context) {
-		if err := deps.Chains.Run(ctx); err != nil {
+		var err error
+		var path string
+		if readonly.Enabled(deps.ReadOnlyDBPath) {
+			path = readonly.DataDir(deps.ReadOnlyDBPath)
+		}
+		err = deps.Chains.Run(ctx, path)
+		if err != nil {
 			deps.ShutdownHandler.SelfShutdown(fmt.Sprintf("Starting %s failed, error: %s", Component.Name, err.Error()), true)
 			return
 		}

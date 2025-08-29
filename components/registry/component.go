@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/chain"
 	"github.com/iotaledger/wasp/v2/packages/chain/cmtlog"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/readonly"
 	"github.com/iotaledger/wasp/v2/packages/registry"
 )
 
@@ -36,8 +37,18 @@ func provide(c *dig.Container) error {
 		Component.LogPanic(err.Error())
 	}
 
-	if err := c.Provide(func() registry.ChainRecordRegistryProvider {
-		chainRecordRegistryProvider, err := registry.NewChainRecordRegistryImpl(ParamsRegistries.Chains.FilePath)
+	type chainRecordRegistryDeps struct {
+		dig.In
+
+		ReadOnlyDBPath string
+	}
+
+	if err := c.Provide(func(deps chainRecordRegistryDeps) registry.ChainRecordRegistryProvider {
+		path := ParamsRegistries.Chains.FilePath
+		if readonly.Enabled(deps.ReadOnlyDBPath) {
+			path = readonly.ChainRegistryFile(deps.ReadOnlyDBPath)
+		}
+		chainRecordRegistryProvider, err := registry.NewChainRecordRegistryImpl(path)
 		if err != nil {
 			Component.LogPanic(err.Error())
 		}
