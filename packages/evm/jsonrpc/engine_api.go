@@ -20,7 +20,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 
-	"github.com/iotaledger/wasp/packages/metrics"
+	"github.com/iotaledger/wasp/v2/packages/metrics"
 )
 
 type EngineService struct {
@@ -158,6 +158,14 @@ func (e *EngineService) EnqueueTransactions(block *types.Block, blockHash common
 	var errors []error
 
 	transactions := block.Transactions()
+	// a block with 0 transactions is ok to be accepted
+	if len(transactions) == 0 {
+		return &engine.PayloadStatusV1{
+			Status:          "VALID",
+			LatestValidHash: &common.Hash{},
+			ValidationError: nil,
+		}, nil
+	}
 	wg.Add(len(transactions))
 
 	// Launch goroutines for each transaction
