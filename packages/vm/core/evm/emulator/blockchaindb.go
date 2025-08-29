@@ -64,9 +64,9 @@ func (bc *BlockchainDB) Initialized() bool {
 	return bc.kv.Get(keyChainID) != nil
 }
 
-func (bc *BlockchainDB) Init(chainID uint16, timestamp uint64, trieRoot common.Hash) {
+func (bc *BlockchainDB) Init(chainID uint16, timestamp uint64) {
 	bc.SetChainID(chainID)
-	bc.addBlock(bc.makeHeader(nil, nil, 0, timestamp, trieRoot))
+	bc.addBlock(bc.makeHeader(nil, nil, 0, timestamp))
 }
 
 func (bc *BlockchainDB) SetChainID(chainID uint16) {
@@ -393,10 +393,9 @@ func (bc *BlockchainDB) GetTimestampByBlockNumber(blockNumber uint64) uint64 {
 	return g.Time
 }
 
-func (bc *BlockchainDB) makeHeader(txs []*types.Transaction, receipts []*types.Receipt, blockNumber, timestamp uint64, trieRoot common.Hash) *types.Header {
+func (bc *BlockchainDB) makeHeader(txs []*types.Transaction, receipts []*types.Receipt, blockNumber, timestamp uint64) *types.Header {
 	header := &types.Header{
 		Difficulty:  &big.Int{},
-		Root:        trieRoot,
 		Number:      new(big.Int).SetUint64(blockNumber),
 		GasLimit:    bc.blockGasLimit,
 		Time:        timestamp,

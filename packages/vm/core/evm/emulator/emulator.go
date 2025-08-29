@@ -120,7 +120,6 @@ func BlockchainDBSubrealmR(store kv.KVStoreReader) kv.KVStoreReader {
 func Init(
 	emulatorState kv.KVStore,
 	chainID uint16,
-	trieRoot common.Hash,
 	gasLimits GasLimits,
 	timestamp uint64,
 	alloc types.GenesisAlloc,
@@ -129,7 +128,7 @@ func Init(
 	if bdb.Initialized() {
 		panic("evm state already initialized in kvstore")
 	}
-	bdb.Init(chainID, timestamp, trieRoot)
+	bdb.Init(chainID, timestamp)
 
 	stateDBSubrealm := StateDBSubrealm(emulatorState)
 	for addr, account := range alloc {

@@ -157,6 +157,6 @@ func StartNode(ctx context.Context) (IotaNodeEndpoint, func()) {
 
 func ConnectNode(host string, ctx context.Context) (IotaNodeEndpoint, func()) {
 	in := NewRemoteIotaNode(fmt.Sprintf("%s:9000", host), fmt.Sprintf("%s:9123/gas", host), ISCPackageOwner)
-	in.start(ctx)
+	in.Start(ctx)
 	return in, func() {}
 }
