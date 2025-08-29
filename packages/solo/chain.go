@@ -304,7 +304,7 @@ func (ch *Chain) GetL2FundsFromFaucetWithDepositor(agentID isc.AgentID, deposito
 
 	iterTimes := amount / 5000000000000
 	fmt.Printf("Iteration times for %s: %d\n", agentID.String(), iterTimes)
-	for i := 0; i < int(iterTimes)+2; i++ {
+	for i := uint64(0); i < uint64(iterTimes)+2; i++ {
 		ch.Env.GetFundsFromFaucet(walletAddr)
 	}
 
@@ -335,7 +335,7 @@ func (ch *Chain) GetL2FundsFromFaucet(agentID isc.AgentID, baseTokens ...coin.Va
 	}
 
 	iterTimes := amount / 5000000000000
-	for i := 0; i < int(iterTimes)+2; i++ {
+	for i := uint64(0); i < uint64(iterTimes)+2; i++ {
 		ch.Env.GetFundsFromFaucet(walletAddr)
 	}
 

@@ -92,6 +92,7 @@ func (c *Client) selectProperGasCoinAndBalance(ctx context.Context, req *CreateA
 	return coin, iotaBalance.Uint64(), nil
 }
 
+//nolint:funlen
 func (c *Client) CreateAndSendRequestWithAssets(
 	ctx context.Context,
 	req *CreateAndSendRequestWithAssetsRequest,

@@ -89,6 +89,7 @@ func L1Commitment(
 		gasCoinObjectID,
 		originDeposit,
 		l1Params,
+		nil, nil,
 	)
 	return block.L1Commitment()
 }
@@ -119,73 +120,7 @@ func InitChain(
 	gasCoinObjectID iotago.ObjectID,
 	originDeposit coin.Value,
 	l1Params *parameters.L1Params,
-) (state.Block, *transaction.StateMetadata) {
-	initParams, err := DecodeInitParams(args)
-	if err != nil {
-		panic(err)
-	}
-
-	d := store.NewOriginStateDraft()
-	d.Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.Encode(uint32(0)))
-	d.Set(kv.Key(coreutil.StatePrefixTimestamp), codec.Encode(time.Unix(0, 0)))
-
-	contracts := []*coreutil.ContractInfo{
-		root.Contract,
-		accounts.Contract,
-		blocklog.Contract,
-		errors.Contract,
-		governance.Contract,
-		evm.Contract,
-	}
-	if initParams.DeployTestContracts {
-		contracts = append(contracts, inccounter.Contract)
-		contracts = append(contracts, manyevents.Contract)
-		contracts = append(contracts, testerrors.Contract)
-		contracts = append(contracts, sbtestsc.Contract)
-	}
-
-	var blockKeepAmount int32 = governance.DefaultBlockKeepAmount
-	if initParams.BlockKeepAmount != 0 {
-		blockKeepAmount = initParams.BlockKeepAmount
-	}
-
-	// init the state of each core contract
-	root.NewStateWriter(root.Contract.StateSubrealm(d)).SetInitialState(v, contracts)
-	accounts.NewStateWriter(v, accounts.Contract.StateSubrealm(d)).SetInitialState(originDeposit, l1Params.BaseToken)
-	blocklog.NewStateWriter(blocklog.Contract.StateSubrealm(d)).SetInitialState(l1Params)
-	errors.NewStateWriter(errors.Contract.StateSubrealm(d)).SetInitialState()
-	governance.NewStateWriter(governance.Contract.StateSubrealm(d)).SetInitialState(initParams.ChainAdmin, blockKeepAmount)
-	evmimpl.SetInitialState(evm.Contract.StateSubrealm(d), initParams.EVMChainID)
-	if initParams.DeployTestContracts {
-		inccounter.SetInitialState(inccounter.Contract.StateSubrealm(d))
-	}
-
-	block, _, _, err := store.Commit(d)
-	if err != nil {
-		panic(err)
-	}
-	if err := store.SetLatest(block.TrieRoot()); err != nil {
-		panic(err)
-	}
-	return block, transaction.NewStateMetadata(
-		v,
-		block.L1Commitment(),
-		&gasCoinObjectID,
-		gas.DefaultFeePolicy(),
-		args,
-		originDeposit,
-		"",
-	)
-}
-
-func InitChainWithGenesis(
-	v isc.SchemaVersion,
-	store state.Store,
-	args isc.CallArguments,
-	gasCoinObjectID iotago.ObjectID,
 	feePolicy *gas.FeePolicy,
-	originDeposit coin.Value,
-	l1Params *parameters.L1Params,
 	genesis *core.Genesis,
 ) (state.Block, *transaction.StateMetadata) {
 	initParams, err := DecodeInitParams(args)
@@ -222,16 +157,25 @@ func InitChainWithGenesis(
 	accounts.NewStateWriter(v, accounts.Contract.StateSubrealm(d)).SetInitialState(originDeposit, l1Params.BaseToken)
 	blocklog.NewStateWriter(blocklog.Contract.StateSubrealm(d)).SetInitialState(l1Params)
 	errors.NewStateWriter(errors.Contract.StateSubrealm(d)).SetInitialState()
-	govStateWriter := governance.NewStateWriter(governance.Contract.StateSubrealm(d))
-	govStateWriter.SetInitialState(initParams.ChainAdmin, blockKeepAmount)
-	// Override the default fee policy with the provided one
-	govStateWriter.SetGasFeePolicy(feePolicy)
-	evmimpl.SetInitialStateWithGenesis(evm.Contract.StateSubrealm(d), d.BaseL1Commitment(), initParams.EVMChainID, feePolicy, genesis)
 	if initParams.DeployTestContracts {
 		inccounter.SetInitialState(inccounter.Contract.StateSubrealm(d))
 	}
 
+	if feePolicy == nil && genesis == nil {
+		governance.NewStateWriter(governance.Contract.StateSubrealm(d)).SetInitialState(initParams.ChainAdmin, blockKeepAmount)
+		evmimpl.SetInitialState(evm.Contract.StateSubrealm(d), initParams.EVMChainID)
+	} else {
+		govStateWriter := governance.NewStateWriter(governance.Contract.StateSubrealm(d))
+		govStateWriter.SetInitialState(initParams.ChainAdmin, blockKeepAmount)
+		// Override the default fee policy with the provided one
+		govStateWriter.SetGasFeePolicy(feePolicy)
+		evmimpl.SetInitialStateWithFeePolicyAndGenesis(evm.Contract.StateSubrealm(d), d.BaseL1Commitment(), initParams.EVMChainID, feePolicy, genesis)
+	}
+
 	block, _, _, err := store.Commit(d)
+	if err != nil {
+		panic(err)
+	}
 	if err := store.SetLatest(block.TrieRoot()); err != nil {
 		panic(err)
 	}
@@ -239,7 +183,7 @@ func InitChainWithGenesis(
 		v,
 		block.L1Commitment(),
 		&gasCoinObjectID,
-		feePolicy,
+		gas.DefaultFeePolicy(),
 		args,
 		originDeposit,
 		"",
@@ -263,6 +207,7 @@ func InitChainByStateMetadataBytes(
 		*stateMetadata.GasCoinObjectID,
 		originDeposit,
 		l1Params,
+		nil, nil,
 	)
 	if !originBlock.L1Commitment().Equals(stateMetadata.L1Commitment) {
 		return nil, fmt.Errorf(

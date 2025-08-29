@@ -39,7 +39,7 @@ func TestOrigin(t *testing.T) {
 	originDepositVal := coin.Value(100)
 	l1commitment := origin.L1Commitment(schemaVersion, initParams, iotago.ObjectID{}, originDepositVal, parameterstest.L1Mock)
 	store := statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-	initBlock, _ := origin.InitChain(schemaVersion, store, initParams, iotago.ObjectID{}, originDepositVal, parameterstest.L1Mock)
+	initBlock, _ := origin.InitChain(schemaVersion, store, initParams, iotago.ObjectID{}, originDepositVal, parameterstest.L1Mock, nil, nil)
 	latestBlock, err := store.LatestBlock()
 	require.NoError(t, err)
 	require.True(t, l1commitment.Equals(initBlock.L1Commitment()))
@@ -131,7 +131,7 @@ func TestInitChainByStateMetadataBytes(t *testing.T) {
 	var stateMetadata *transaction.StateMetadata
 	{
 		store := statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-		_, stateMetadata = origin.InitChain(schemaVersion, store, initParams, iotago.ObjectID{}, originDepositVal, parameterstest.L1Mock)
+		_, stateMetadata = origin.InitChain(schemaVersion, store, initParams, iotago.ObjectID{}, originDepositVal, parameterstest.L1Mock, nil, nil)
 	}
 
 	{

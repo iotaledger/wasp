@@ -76,7 +76,7 @@ func testConsBasic(t *testing.T, n, f int) {
 	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(committeeAddress)).Encode()
 	db := mapdb.NewMapDB()
 	store := indexedstore.New(statetest.NewStoreWithUniqueWriteMutex(db))
-	_, stateMetadata := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, iotago.ObjectID{}, 0, parameterstest.L1Mock)
+	_, stateMetadata := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, iotago.ObjectID{}, 0, parameterstest.L1Mock, nil, nil)
 
 	stateAnchor0x := isctest.RandomStateAnchor(isctest.RandomAnchorOption{StateMetadata: stateMetadata})
 	stateAnchor0 := &stateAnchor0x

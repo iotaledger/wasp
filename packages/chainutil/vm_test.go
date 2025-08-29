@@ -50,6 +50,7 @@ func initChain(chainCreator *cryptolib.KeyPair, store state.Store) *isc.StateAnc
 		iotago.ObjectID{},
 		originDeposit,
 		parameterstest.L1Mock,
+		nil, nil,
 	)
 	stateMetadataBytes := stateMetadata.Bytes()
 	anchor := iscmove.Anchor{

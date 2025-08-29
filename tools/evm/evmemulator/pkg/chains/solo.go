@@ -29,7 +29,7 @@ func InitSolo(genesis *core.Genesis) (*SoloContext, *solo.Chain) {
 	chainAdmin, _ := env.NewKeyPairWithFunds()
 	feePolicy := gas.DefaultFeePolicy()
 	feePolicy.EVMGasRatio = util.Ratio32{A: 1, B: 10_00_000_000}
-	chain, _ := env.NewChainExtWithGenesis(chainAdmin, 1*isc.Million, "evmemulator", hiveChainID, feePolicy, emulator.BlockKeepAll, genesis)
+	chain, _ := env.NewChainExt(chainAdmin, 1*isc.Million, "evmemulator", hiveChainID, emulator.BlockKeepAll, feePolicy, genesis)
 
 	// prefund the account against genesis
 	for addr, acc := range genesis.Alloc {

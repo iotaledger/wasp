@@ -234,7 +234,7 @@ func TestBlockchain(t *testing.T) {
 		faucetAddress: faucetSupply,
 	})
 
-	Init(ctx.State(), evm.DefaultChainID, ctx.GasLimits(), ctx.Timestamp(), genesisAlloc)
+	Init(ctx.State(), evm.DefaultChainID, ctx.GasLimits(), ctx.Timestamp(), genesisAlloc, false)
 	ctx.timestamp++
 	emu := NewEVMEmulator(ctx)
 
@@ -308,7 +308,7 @@ func TestBlockchainPersistence(t *testing.T) {
 	genesisAlloc := map[common.Address]types.Account{}
 	ctx := newContext(map[common.Address]*big.Int{})
 
-	Init(ctx.State(), evm.DefaultChainID, ctx.GasLimits(), ctx.Timestamp(), genesisAlloc)
+	Init(ctx.State(), evm.DefaultChainID, ctx.GasLimits(), ctx.Timestamp(), genesisAlloc, false)
 	ctx.timestamp++
 
 	// deploy a contract using one instance of EVMEmulator
@@ -435,7 +435,7 @@ func TestStorageContract(t *testing.T) {
 	genesisAlloc := map[common.Address]types.Account{}
 	ctx := newContext(map[common.Address]*big.Int{})
 
-	Init(ctx.State(), evm.DefaultChainID, ctx.GasLimits(), ctx.Timestamp(), genesisAlloc)
+	Init(ctx.State(), evm.DefaultChainID, ctx.GasLimits(), ctx.Timestamp(), genesisAlloc, false)
 	ctx.timestamp++
 	emu := NewEVMEmulator(ctx)
 
@@ -504,7 +504,7 @@ func TestERC20Contract(t *testing.T) {
 	genesisAlloc := map[common.Address]types.Account{}
 	ctx := newContext(map[common.Address]*big.Int{})
 
-	Init(ctx.State(), evm.DefaultChainID, ctx.GasLimits(), ctx.Timestamp(), genesisAlloc)
+	Init(ctx.State(), evm.DefaultChainID, ctx.GasLimits(), ctx.Timestamp(), genesisAlloc, false)
 	ctx.timestamp++
 	emu := NewEVMEmulator(ctx)
 
@@ -631,7 +631,7 @@ func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction, *context) 
 	genesisAlloc := map[common.Address]types.Account{}
 	ctx := newContext(map[common.Address]*big.Int{})
 
-	Init(ctx.State(), evm.DefaultChainID, ctx.GasLimits(), ctx.Timestamp(), genesisAlloc)
+	Init(ctx.State(), evm.DefaultChainID, ctx.GasLimits(), ctx.Timestamp(), genesisAlloc, false)
 	ctx.timestamp++
 	emu := NewEVMEmulator(ctx)
 

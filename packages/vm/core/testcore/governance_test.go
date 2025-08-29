@@ -29,7 +29,7 @@ func TestGovernanceAccessNodes(t *testing.T) {
 	node1KP, _ := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	node1OwnerKP, node1OwnerAddr := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	chainKP, _ := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
-	chain, _ := env.NewChainExt(chainKP, 0, "chain1", 0, 0)
+	chain, _ := env.NewChainExt(chainKP, 0, "chain1", 0, 0, nil, nil)
 
 	//
 	// Initially the state is empty.

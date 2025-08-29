@@ -29,7 +29,7 @@ func setupChain(t *testing.T) (*solo.Solo, *solo.Chain) {
 		Debug:             false,
 		GasBurnLogEnabled: true,
 	})
-	chain, _ := env.NewChainExt(nil, 10_000, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
+	chain, _ := env.NewChainExt(nil, 10_000, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount, nil, nil)
 	err := chain.SendFromL1ToL2AccountBaseTokens(iotaclient.FundsFromFaucetAmount/10, solo.BaseTokensForL2Gas, chain.AdminAgentID(), chain.ChainAdmin)
 	require.NoError(t, err)
 	return env, chain

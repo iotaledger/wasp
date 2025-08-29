@@ -32,7 +32,7 @@ func TestInitLoad(t *testing.T) {
 	user, userAddr := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	env.AssertL1BaseTokens(userAddr, iotaclient.FundsFromFaucetAmount)
 	var originAmount coin.Value = 10 * isc.Million
-	ch, _ := env.NewChainExt(user, originAmount, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
+	ch, _ := env.NewChainExt(user, originAmount, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount, nil, nil)
 
 	cassets := ch.L2CommonAccountAssets()
 	require.EqualValues(t,
@@ -49,7 +49,7 @@ func TestLedgerBaseConsistency(t *testing.T) {
 		Debug:           true,
 		PrintStackTrace: true,
 	})
-	ch, _ := env.NewChainExt(nil, 0, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
+	ch, _ := env.NewChainExt(nil, 0, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount, nil, nil)
 
 	ch.CheckChain()
 
@@ -71,7 +71,7 @@ func TestLedgerBaseConsistencyWithRequiredTopUpFee(t *testing.T) {
 
 	const initialCommonAccountBalance = isc.GasCoinTargetValue / 2
 
-	ch, _ := env.NewChainExt(nil, initialCommonAccountBalance, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
+	ch, _ := env.NewChainExt(nil, initialCommonAccountBalance, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount, nil, nil)
 	ch.CheckChain()
 
 	// common account has initialCommonAccountBalance
@@ -189,7 +189,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 				Debug:           true,
 				PrintStackTrace: true,
 			})
-			ch, _ := env.NewChainExt(nil, 0, "chain", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
+			ch, _ := env.NewChainExt(nil, 0, "chain", evm.DefaultChainID, governance.DefaultBlockKeepAmount, nil, nil)
 
 			senderKeyPair, senderAddr := ch.ChainAdmin, ch.AdminAddress()
 			if !test.SenderIsOriginator {

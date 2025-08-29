@@ -10,7 +10,6 @@ package jsonrpc
 import (
 	"errors"
 	"fmt"
-	"strconv"
 	"sync"
 	"time"
 
@@ -144,7 +143,7 @@ func (e *EngineService) waitForTransactionConfirmation(transactions []*types.Tra
 	firstBlockNumber := blockNumbers[0]
 	for _, bn := range blockNumbers {
 		if bn != firstBlockNumber {
-			return common.Hash{}, fmt.Errorf("transactions have different block numbers: %s vs %s", firstBlockNumber, bn)
+			return common.Hash{}, fmt.Errorf("transactions have different block numbers: %d vs %d", firstBlockNumber, bn)
 		}
 	}
 
@@ -192,7 +191,7 @@ func (e *EngineService) EnqueueTransactions(block *types.Block, blockHash common
 	}
 
 	// Wait for transaction confirmation with 30s timeout
-	blockHash, err := e.waitForTransactionConfirmation(transactions, 30*time.Second)
+	waspBlockHash, err := e.waitForTransactionConfirmation(transactions, 30*time.Second)
 	if err != nil {
 		fmt.Println("waitForTransactionConfirmation err: ", err)
 		res := e.responseInvalid(err, nil, blockHash)
@@ -200,7 +199,7 @@ func (e *EngineService) EnqueueTransactions(block *types.Block, blockHash common
 	}
 
 	// Success - you can use blockHash as needed
-	_ = blockHash // Use blockHash in your response logic
+	_ = waspBlockHash // Use blockHash in your response logic
 
 	return &engine.PayloadStatusV1{
 		Status:          "VALID",
@@ -217,11 +216,11 @@ func (e *EngineService) newPayload(params engine.ExecutableData, versionedHashes
 	if err != nil {
 		bgu := "nil"
 		if params.BlobGasUsed != nil {
-			bgu = strconv.Itoa(int(*params.BlobGasUsed))
+			bgu = fmt.Sprintf("%d", *params.BlobGasUsed)
 		}
 		ebg := "nil"
 		if params.ExcessBlobGas != nil {
-			ebg = strconv.Itoa(int(*params.ExcessBlobGas))
+			ebg = fmt.Sprintf("%d", *params.ExcessBlobGas)
 		}
 		log.Warn("Invalid NewPayload params",
 			"params.Number", params.Number,
@@ -246,10 +245,9 @@ func (e *EngineService) newPayload(params engine.ExecutableData, versionedHashes
 
 		return e.responseInvalid(err, nil, params.BlockHash), nil
 	}
-	fmt.Printf("BlockByHash requests\n")
 
-	if block := e.evmChain.BlockByHash(block.Hash()); block != nil {
-		log.Warn("Ignoring already known beacon payload", "number", params.Number, "hash", params.BlockHash, "age", common.PrettyAge(time.Unix(int64(block.Time()), 0)))
+	if localBlock := e.evmChain.BlockByHash(block.Hash()); localBlock != nil {
+		log.Warn("Ignoring already known beacon payload", "number", params.Number, "hash", params.BlockHash, "age", common.PrettyAge(time.Unix(int64(localBlock.Time()), 0))) //nolint:gosec
 		return engine.PayloadStatusV1{Status: engine.VALID, LatestValidHash: &params.BlockHash}, nil
 	}
 
@@ -273,27 +271,23 @@ func (e *EngineService) newPayload(params engine.ExecutableData, versionedHashes
 			return api.delayPayloadImport(block), nil
 		}
 	*/
-	fmt.Printf("Before Parent\n")
 
-	parent := e.evmChain.BlockByHash(block.ParentHash())
-	if parent == nil {
-		// Get the latest block to help with debugging
-		latestBlock, err := e.evmChain.BlockByNumber(nil) // nil gets latest block
-		latestHash := "none"
-		latestNumber := "none"
-		if err == nil && latestBlock != nil {
-			latestHash = latestBlock.Hash().Hex()
-			latestNumber = fmt.Sprintf("%d", latestBlock.NumberU64())
-		}
+	//
+	// parent := e.evmChain.BlockByHash(block.ParentHash())
+	// if parent == nil {
+	// 	// Get the latest block to help with debugging
+	// 	latestBlock, err := e.evmChain.BlockByNumber(nil) // nil gets latest block
+	// 	latestHash := "none"
+	// 	latestNumber := "none"
+	// 	if err == nil && latestBlock != nil {
+	// 		latestHash = latestBlock.Hash().Hex()
+	// 		latestNumber = fmt.Sprintf("%d", latestBlock.NumberU64())
+	// 	}
 
-		errorMsg := fmt.Sprintf("parent block not found: parentHash=%s, latestBlock=%s (number %s)",
-			block.ParentHash().Hex(), latestHash, latestNumber)
-		fmt.Printf("Parent validation failed: %s\n", errorMsg)
-
-		fmt.Println("Set parent to the latest block")
-		parent = latestBlock
-	}
-
+	// 	errorMsg := fmt.Sprintf("parent block not found: parentHash=%s, latestBlock=%s (number %s)",
+	// 		block.ParentHash().Hex(), latestHash, latestNumber)
+	// 	fmt.Printf("Parent validation failed: %s\n", errorMsg)
+	// }
 	// if block.Time() <= parent.Time() {
 	// 	fmt.Println("Invalid timestamp", "parent", block.Time(), "block", block.Time())
 	// 	log.Warn("Invalid timestamp", "parent", block.Time(), "block", block.Time())

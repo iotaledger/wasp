@@ -73,10 +73,11 @@ func SetInitialState(evmPartition kv.KVStore, evmChainID uint16) {
 		},
 		0,
 		genesisAlloc,
+		false,
 	)
 }
 
-func SetInitialStateWithGenesis(evmPartition kv.KVStore, l1Commitment *state.L1Commitment, evmChainID uint16, feePolicy *gas.FeePolicy, genesis *core.Genesis) {
+func SetInitialStateWithFeePolicyAndGenesis(evmPartition kv.KVStore, l1Commitment *state.L1Commitment, evmChainID uint16, feePolicy *gas.FeePolicy, genesis *core.Genesis) {
 	// Ethereum genesis block configuration
 	genesisAlloc := types.GenesisAlloc{}
 
@@ -91,7 +92,7 @@ func SetInitialStateWithGenesis(evmPartition kv.KVStore, l1Commitment *state.L1C
 	}
 
 	for addr, acc := range genesis.Alloc {
-		fundVal := int64(0)
+		var fundVal int64
 		if acc.Balance.Int64() > 10000 {
 			fundVal = 10000
 		} else {
@@ -122,6 +123,7 @@ func SetInitialStateWithGenesis(evmPartition kv.KVStore, l1Commitment *state.L1C
 		evmGasLimit,
 		genesis.Timestamp,
 		genesisAlloc,
+		true,
 	)
 }
 

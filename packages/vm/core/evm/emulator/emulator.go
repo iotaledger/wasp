@@ -123,6 +123,7 @@ func Init(
 	gasLimits GasLimits,
 	timestamp uint64,
 	alloc types.GenesisAlloc,
+	isRefund bool,
 ) {
 	bdb := NewBlockchainDB(emulatorState, gasLimits.Block, BlockKeepAll)
 	if bdb.Initialized() {
@@ -133,9 +134,9 @@ func Init(
 	stateDBSubrealm := StateDBSubrealm(emulatorState)
 	for addr, account := range alloc {
 		CreateAccount(stateDBSubrealm, addr)
-		if account.Balance != nil {
-			// For hive tests pre-fund account, this should be ok
-			// panic("balances must be 0 at genesis")
+		if account.Balance != nil && !isRefund {
+			// hive tests would prefund accounts, so this should be ok
+			panic("balances must be 0 at genesis")
 		}
 		if account.Code != nil {
 			SetCode(stateDBSubrealm, addr, account.Code)
