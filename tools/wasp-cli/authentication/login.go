@@ -40,7 +40,6 @@ func initSetTokenCmd() *cobra.Command {
 			err := format.PrintOutput(authOutput)
 
 			log.Check(err, "error formatting output")
-
 		},
 	}
 	waspcmd.WithWaspNodeFlag(cmd, &node)
