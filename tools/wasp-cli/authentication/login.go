@@ -38,9 +38,9 @@ func initSetTokenCmd() *cobra.Command {
 			authOutput := format.NewAuthSuccess(node, "manual")
 			authOutput.Data.Message = "Token set successfully"
 			err := format.PrintOutput(authOutput)
-			if err != nil {
-				log.Printf("Error formatting output: %v", err)
-			}
+
+			log.Check(err, "error formatting output")
+
 		},
 	}
 	waspcmd.WithWaspNodeFlag(cmd, &node)
@@ -76,9 +76,7 @@ func initLoginCmd() *cobra.Command {
 			if username == "" || password == "" {
 				authOutput := format.NewAuthError(node, username, "Invalid credentials provided")
 				err := format.PrintOutput(authOutput)
-				if err != nil {
-					log.Printf("Error formatting output: %v", err)
-				}
+				log.Check(err, "error formatting output")
 				return
 			}
 
@@ -92,9 +90,7 @@ func initLoginCmd() *cobra.Command {
 			if err != nil {
 				authOutput := format.NewAuthError(node, username, err.Error())
 				formatErr := format.PrintOutput(authOutput)
-				if formatErr != nil {
-					log.Printf("Error formatting output: %v", formatErr)
-				}
+				log.Check(formatErr, "error formatting output")
 				return
 			}
 
@@ -102,9 +98,7 @@ func initLoginCmd() *cobra.Command {
 
 			authOutput := format.NewAuthSuccess(node, username)
 			err = format.PrintOutput(authOutput)
-			if err != nil {
-				log.Printf("Error formatting output: %v", err)
-			}
+			log.Check(err, "error formatting output")
 		},
 	}
 	waspcmd.WithWaspNodeFlag(cmd, &node)
