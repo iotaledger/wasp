@@ -269,15 +269,7 @@ func (env *Solo) WithWaitForNextVersion(currentRef *iotago.ObjectRef, cb func())
 	return env.L1Client().WaitForNextVersionForTesting(context.Background(), 30*time.Second, env.logger, currentRef, cb)
 }
 
-func (env *Solo) deployChain(
-	chainAdmin *cryptolib.KeyPair,
-	initCommonAccountBaseTokens coin.Value,
-	name string,
-	evmChainID uint16,
-	blockKeepAmount int32,
-	feePolicy *gas.FeePolicy,
-	genesis *core.Genesis,
-) chainData {
+func (env *Solo) deployChain(chainAdmin *cryptolib.KeyPair, initCommonAccountBaseTokens coin.Value, name string, evmChainID uint16, blockKeepAmount int32, feePolicy *gas.FeePolicy, genesis *core.Genesis) chainData {
 	env.logger.LogDebugf("deploying new chain '%s'", name)
 
 	if chainAdmin == nil {
@@ -305,8 +297,16 @@ func (env *Solo) deployChain(
 
 	var block state.Block
 	var stateMetadata *transaction.StateMetadata
-	block, stateMetadata = origin.InitChain(schemaVersion, store, initParams.Encode(), *gasCoinRef.ObjectID,
-		initCommonAccountBaseTokens, env.L1Params(), feePolicy, genesis)
+	block, stateMetadata = origin.InitChain(
+		schemaVersion,
+		store,
+		initParams.Encode(),
+		*gasCoinRef.ObjectID,
+		initCommonAccountBaseTokens,
+		env.L1Params(),
+		feePolicy,
+		genesis,
+	)
 
 	var initCoin *iotago.ObjectRef
 	if initCommonAccountBaseTokens > 0 {

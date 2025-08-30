@@ -90,6 +90,7 @@ Note: chain data is stored in-memory and will be lost upon termination.
 
 	log.Init(cmd)
 	cmd.PersistentFlags().StringVarP(&cli.ListenAddress, "listen", "l", ":8545", "listen address")
+	cmd.PersistentFlags().StringVar(&cli.EngineListenAddress, "engine-listen", ":8551", "engine (consensus) JSON-RPC listen address")
 	cmd.PersistentFlags().StringVar(
 		&cli.NodeLaunchMode,
 		"node-launch-mode",
@@ -103,6 +104,7 @@ Note: chain data is stored in-memory and will be lost upon termination.
 		"",
 		"path to the genesis JSON file",
 	)
+	cmd.PersistentFlags().BoolVar(&cli.LogBodies, "log-bodies", false, "log JSON-RPC request/response bodies (verbose)")
 
 	err := cmd.Execute()
 	log.Check(err)
@@ -141,7 +143,7 @@ func start(cmd *cobra.Command, args []string) {
 
 	go func() {
 		log.Printf("starting JSONRPC server on %s...\n", cli.ListenAddress)
-		e := server.StartServer(jsonRPCServer, cli.ListenAddress)
+		e := server.StartServer(jsonRPCServer, cli.ListenAddress, cli.LogBodies)
 		err = e.ListenAndServe()
 		log.Check(err)
 	}()
@@ -150,8 +152,8 @@ func start(cmd *cobra.Command, args []string) {
 		metrics.NewChainWebAPIMetricsProvider().CreateForChain(chain.ChainID),
 		jsonrpc.ParametersDefault())
 
-	log.Printf("starting Engine JSONRPC server on %s...\n", cli.ListenAddress)
-	e := server.StartServer(engineAPI, ":8551")
+	log.Printf("starting Engine JSONRPC server on %s...\n", cli.EngineListenAddress)
+	e := server.StartServer(engineAPI, cli.EngineListenAddress, cli.LogBodies)
 	err = e.ListenAndServe()
 	log.Check(err)
 }

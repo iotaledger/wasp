@@ -177,6 +177,12 @@ func EthereumAccountByIndex(i int) (*ecdsa.PrivateKey, common.Address) {
 
 func (ch *Chain) EthereumAccountByIndexWithL2Funds(i int, baseTokens ...coin.Value) (*ecdsa.PrivateKey, common.Address) {
 	key, addr := EthereumAccountByIndex(i)
+	ch.GetL2FundsFromFaucet(isc.NewEthereumAddressAgentID(addr), baseTokens...)
+	return key, addr
+}
+
+func (ch *Chain) EthereumAccountByIndexWithL2FundsRandDepositor(i int, baseTokens ...coin.Value) (*ecdsa.PrivateKey, common.Address) {
+	key, addr := EthereumAccountByIndex(i)
 	randDepositorSeed := []byte("GetL2FundsFromFaucet" + fmt.Sprintf("%d", rand.Int()))
 	ch.GetL2FundsFromFaucetWithDepositor(isc.NewEthereumAddressAgentID(addr), randDepositorSeed, baseTokens...)
 	return key, addr

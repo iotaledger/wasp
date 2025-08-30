@@ -160,8 +160,8 @@ func (e *EngineService) EnqueueTransactions(block *types.Block, blockHash common
 	// a block with 0 transactions is ok to be accepted
 	if len(transactions) == 0 {
 		return &engine.PayloadStatusV1{
-			Status:          "VALID",
-			LatestValidHash: &common.Hash{},
+			Status:          engine.VALID,
+			LatestValidHash: &blockHash,
 			ValidationError: nil,
 		}, nil
 	}
@@ -198,12 +198,9 @@ func (e *EngineService) EnqueueTransactions(block *types.Block, blockHash common
 		return &res, nil
 	}
 
-	// Success - you can use blockHash as needed
-	_ = waspBlockHash // Use blockHash in your response logic
-
 	return &engine.PayloadStatusV1{
-		Status:          "VALID",
-		LatestValidHash: &common.Hash{},
+		Status:          engine.VALID,
+		LatestValidHash: &waspBlockHash,
 		ValidationError: nil,
 	}, nil
 }

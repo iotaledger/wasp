@@ -299,14 +299,14 @@ func (ch *Chain) GetL2FundsFromFaucetWithDepositor(agentID isc.AgentID, deposito
 		amount = ch.Env.L1BaseTokens(walletAddr) / 10
 	}
 
-	// each time the funded amount from faucet is 2000000000*5
+	// each time, the faucet provides 2000000000 * 5 balance
 	iterTimes := amount / (2000000000 * 5)
 	// call faucet for each account at least once
 	for i := uint64(0); i < uint64(iterTimes)+1; i++ {
 		ch.Env.GetFundsFromFaucet(walletAddr)
 	}
 
-	// this only make collosion less likely
+	// make collosion less likely
 	rint := rand.IntN(100) + 1
 	time.Sleep(time.Duration(rint) * 100 * time.Millisecond)
 	err := ch.TransferAllowanceTo(
@@ -330,7 +330,6 @@ func (ch *Chain) GetL2FundsFromFaucet(agentID isc.AgentID, baseTokens ...coin.Va
 	} else {
 		amount = ch.Env.L1BaseTokens(walletAddr) / 10
 	}
-
 	err := ch.TransferAllowanceTo(
 		isc.NewAssets(amount),
 		agentID,

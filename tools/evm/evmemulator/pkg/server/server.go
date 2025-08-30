@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/wasp/v2/tools/evm/evmemulator/pkg/log"
 )
 
-func StartServer(jsonRPCServer *rpc.Server, l1addr string) *http.Server {
+func StartServer(jsonRPCServer *rpc.Server, l1addr string, logBodies bool) *http.Server {
 	mux := http.NewServeMux()
 
 	// WebSocket handler
@@ -18,8 +18,12 @@ func StartServer(jsonRPCServer *rpc.Server, l1addr string) *http.Server {
 		jsonRPCServer.WebsocketHandler([]string{"*"}).ServeHTTP(w, req)
 	})
 
-	// JSON-RPC handler
-	mux.Handle("/", logBodyMiddleware(jsonRPCServer))
+	// JSON-RPC handler (optionally log request/response bodies)
+	if logBodies {
+		mux.Handle("/", logBodyMiddleware(jsonRPCServer))
+	} else {
+		mux.Handle("/", jsonRPCServer)
+	}
 
 	return &http.Server{
 		Addr:    l1addr,
