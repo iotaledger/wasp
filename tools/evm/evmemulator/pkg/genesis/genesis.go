@@ -3,6 +3,7 @@ package genesis
 import (
 	"encoding/json"
 	"io"
+	"math/big"
 	"os"
 
 	"github.com/ethereum/go-ethereum/core"
@@ -27,4 +28,20 @@ func InitGenesis(genesisPath string) (*core.Genesis, error) {
 	}
 
 	return genesis, nil
+}
+
+const MaxPreFundAmount = 10_000
+
+func RegulateGenesisAccountBalance(genesis *core.Genesis) *core.Genesis {
+	for addr, acc := range genesis.Alloc {
+		var newBalance int64
+		if acc.Balance.Int64() > MaxPreFundAmount {
+			newBalance = MaxPreFundAmount
+		} else {
+			newBalance = acc.Balance.Int64()
+		}
+		acc.Balance = big.NewInt(newBalance)
+		genesis.Alloc[addr] = acc
+	}
+	return genesis
 }

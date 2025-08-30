@@ -21,7 +21,6 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/kv"
 	"github.com/iotaledger/wasp/v2/packages/parameters"
-	"github.com/iotaledger/wasp/v2/packages/state"
 	"github.com/iotaledger/wasp/v2/packages/util"
 	"github.com/iotaledger/wasp/v2/packages/util/panicutil"
 	iscvm "github.com/iotaledger/wasp/v2/packages/vm"
@@ -47,83 +46,55 @@ var Processor = evm.Contract.Processor(nil,
 
 // SetInitialState initializes the evm core contract and the Ethereum genesis
 // block on a newly created ISC chain.
-func SetInitialState(evmPartition kv.KVStore, evmChainID uint16) {
-	// Ethereum genesis block configuration
-	genesisAlloc := types.GenesisAlloc{}
-
-	// add the ISC magic contract at address 0x10740000...00
-	genesisAlloc[iscmagic.Address] = types.Account{
-		// Dummy code, because some contracts check the code size before calling
-		// the contract.
-		// The EVM code itself will never get executed; see type [magicContract].
-		Code:    common.Hex2Bytes("600180808053f3"),
-		Storage: map[common.Hash]common.Hash{},
-		Balance: nil,
-	}
-
-	gasLimits := gas.LimitsDefault
-	gasRatio := gas.DefaultFeePolicy().EVMGasRatio
-	// create the Ethereum genesis block
-	emulator.Init(
-		evm.EmulatorStateSubrealm(evmPartition),
-		evmChainID,
-		emulator.GasLimits{
-			Block: gas.EVMBlockGasLimit(gasLimits, &gasRatio),
-			Call:  gas.EVMCallGasLimit(gasLimits, &gasRatio),
+func SetInitialState(
+	evmPartition kv.KVStore,
+	evmChainID uint16,
+	feePolicy *gas.FeePolicy,
+	genesis *core.Genesis,
+) {
+	// Build base alloc with ISC magic contract
+	genesisAlloc := types.GenesisAlloc{
+		iscmagic.Address: types.Account{
+			// Dummy code for size checks; never executed.
+			Code:    common.Hex2Bytes("600180808053f3"),
+			Storage: map[common.Hash]common.Hash{},
+			Balance: nil,
 		},
-		0,
-		genesisAlloc,
-		false,
-	)
-}
-
-func SetInitialStateWithFeePolicyAndGenesis(evmPartition kv.KVStore, l1Commitment *state.L1Commitment, evmChainID uint16, feePolicy *gas.FeePolicy, genesis *core.Genesis) {
-	// Ethereum genesis block configuration
-	genesisAlloc := types.GenesisAlloc{}
-
-	// add the ISC magic contract at address 0x10740000...00
-	genesisAlloc[iscmagic.Address] = types.Account{
-		// Dummy code, because some contracts check the code size before calling
-		// the contract.
-		// The EVM code itself will never get executed; see type [magicContract].
-		Code:    common.Hex2Bytes("600180808053f3"),
-		Storage: map[common.Hash]common.Hash{},
-		Balance: nil,
 	}
 
-	for addr, acc := range genesis.Alloc {
-		var fundVal int64
-		if acc.Balance.Int64() > 10000 {
-			fundVal = 10000
-		} else {
-			fundVal = acc.Balance.Int64()
-		}
-		genesisAlloc[addr] = types.Account{
-			Code:    acc.Code,
-			Storage: acc.Storage,
-			Balance: big.NewInt(fundVal),
-		}
+	// Select gas ratio from fee policy (default if nil)
+	var ratio util.Ratio32
+	if feePolicy != nil {
+		ratio = feePolicy.EVMGasRatio
+	} else {
+		ratio = gas.DefaultFeePolicy().EVMGasRatio
 	}
 
+	// Base gas limits
 	gasLimits := gas.LimitsDefault
-	gasRatio := feePolicy.EVMGasRatio
-
 	evmGasLimit := emulator.GasLimits{
-		Block: gas.EVMBlockGasLimit(gasLimits, &gasRatio),
-		Call:  gas.EVMCallGasLimit(gasLimits, &gasRatio),
-	}
-	if genesis.GasLimit != 0 {
-		evmGasLimit.Block = genesis.GasLimit
+		Block: gas.EVMBlockGasLimit(gasLimits, &ratio),
+		Call:  gas.EVMCallGasLimit(gasLimits, &ratio),
 	}
 
-	// create the Ethereum genesis block
+	// Decide timestamp, gas limit override, and custom flag
+	var ts uint64
+	customGenesis := false
+	if genesis != nil {
+		ts = genesis.Timestamp
+		customGenesis = true
+		if genesis.GasLimit != 0 {
+			evmGasLimit.Block = genesis.GasLimit
+		}
+	}
+
 	emulator.Init(
 		evm.EmulatorStateSubrealm(evmPartition),
 		evmChainID,
 		evmGasLimit,
-		genesis.Timestamp,
+		ts,
 		genesisAlloc,
-		true,
+		customGenesis,
 	)
 }
 

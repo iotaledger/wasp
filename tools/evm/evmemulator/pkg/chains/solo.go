@@ -16,8 +16,6 @@ import (
 	"github.com/iotaledger/wasp/v2/tools/evm/evmemulator/pkg/log"
 )
 
-const MaxPreFundAmount = 10_000
-
 // hive tests require chain ID to be 1
 const hiveChainID = 1
 
@@ -28,22 +26,14 @@ func InitSolo(genesis *core.Genesis) (*SoloContext, *solo.Chain) {
 
 	chainAdmin, _ := env.NewKeyPairWithFunds()
 	feePolicy := gas.DefaultFeePolicy()
+	// hive requires cheaper gas price
 	feePolicy.EVMGasRatio = util.Ratio32{A: 1, B: 10_00_000_000}
 	chain, _ := env.NewChainExt(chainAdmin, 1*isc.Million, "evmemulator", hiveChainID, emulator.BlockKeepAll, feePolicy, genesis)
 
 	// prefund the account against genesis
 	for addr, acc := range genesis.Alloc {
 		randDepositorSeed := []byte("GetL2FundsFromFaucet" + fmt.Sprintf("%d", rand.Int()))
-
-		// limit the amount of the prefund
-		preFundAmount := coin.Value(0)
-		if acc.Balance.Uint64() > MaxPreFundAmount {
-			preFundAmount = MaxPreFundAmount
-		} else {
-			preFundAmount = coin.Value(acc.Balance.Uint64())
-		}
-		acc.Balance = preFundAmount.BigInt()
-		chain.GetL2FundsFromFaucetWithDepositor(isc.NewEthereumAddressAgentID(addr), randDepositorSeed, preFundAmount)
+		chain.GetL2FundsFromFaucetWithDepositor(isc.NewEthereumAddressAgentID(addr), randDepositorSeed, coin.Value(acc.Balance.Uint64()))
 	}
 
 	return ctx, chain

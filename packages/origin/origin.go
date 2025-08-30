@@ -161,16 +161,16 @@ func InitChain(
 		inccounter.SetInitialState(inccounter.Contract.StateSubrealm(d))
 	}
 
-	if feePolicy == nil && genesis == nil {
-		governance.NewStateWriter(governance.Contract.StateSubrealm(d)).SetInitialState(initParams.ChainAdmin, blockKeepAmount)
-		evmimpl.SetInitialState(evm.Contract.StateSubrealm(d), initParams.EVMChainID)
+	if feePolicy == nil {
+		governance.NewStateWriter(governance.Contract.StateSubrealm(d)).
+			SetInitialState(initParams.ChainAdmin, blockKeepAmount)
 	} else {
 		govStateWriter := governance.NewStateWriter(governance.Contract.StateSubrealm(d))
 		govStateWriter.SetInitialState(initParams.ChainAdmin, blockKeepAmount)
 		// Override the default fee policy with the provided one
 		govStateWriter.SetGasFeePolicy(feePolicy)
-		evmimpl.SetInitialStateWithFeePolicyAndGenesis(evm.Contract.StateSubrealm(d), d.BaseL1Commitment(), initParams.EVMChainID, feePolicy, genesis)
 	}
+	evmimpl.SetInitialState(evm.Contract.StateSubrealm(d), initParams.EVMChainID, feePolicy, genesis)
 
 	block, _, _, err := store.Commit(d)
 	if err != nil {

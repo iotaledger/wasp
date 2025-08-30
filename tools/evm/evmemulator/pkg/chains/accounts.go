@@ -14,11 +14,6 @@ func CreateAccounts(chain *solo.Chain) (accounts []*ecdsa.PrivateKey) {
 	header := []string{"private key", "address"}
 	var rows [][]string
 	// FIXME we cant afford prefund that much address
-	// for i := 0; i < len(solo.EthereumAccounts); i++ {
-	// 	pk, addr := chain.EthereumAccountByIndexWithL2Funds(i)
-	// 	accounts = append(accounts, pk)
-	// 	rows = append(rows, []string{hex.EncodeToString(crypto.FromECDSA(pk)), addr.String()})
-	// }
 	pk, addr := chain.EthereumAccountByIndexWithL2Funds(0)
 	accounts = append(accounts, pk)
 	rows = append(rows, []string{hex.EncodeToString(crypto.FromECDSA(pk)), addr.String()})

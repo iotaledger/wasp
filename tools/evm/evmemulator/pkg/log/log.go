@@ -1,5 +1,5 @@
-// Package log provides logging functionality for the wasp-cli tool,
-// supporting various log levels and output formats.
+// Package log provides logging functionality for the evmemulator tool,
+// this package aims to avoid dependency of wasp-cli
 package log
 
 import (

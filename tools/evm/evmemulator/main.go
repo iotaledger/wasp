@@ -121,6 +121,7 @@ func start(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Fatalf("failed to initialize genesis: %v", err)
 	}
+	g = genesis.RegulateGenesisAccountBalance(g)
 
 	log.Printf("Initialize Solo Env\n")
 	initSoloTime := time.Now()

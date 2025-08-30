@@ -286,14 +286,11 @@ func (ch *Chain) L1L2Funds(addr *cryptolib.Address) *L1L2CoinBalances {
 }
 
 func (ch *Chain) GetL2FundsFromFaucetWithDepositor(agentID isc.AgentID, depositorSeed []byte, baseTokens ...coin.Value) {
-	now := time.Now()
 	seed := cryptolib.SeedFromBytes(depositorSeed)
 	walletKey, walletAddr := ch.Env.NewKeyPair(&seed)
 	if ch.Env.L1BaseTokens(walletAddr) == 0 {
 		ch.Env.GetFundsFromFaucet(walletAddr)
 	}
-
-	fmt.Printf("L1 Faucet request took %s\n ", time.Since(now))
 
 	var amount coin.Value
 	if len(baseTokens) > 0 {
@@ -302,9 +299,10 @@ func (ch *Chain) GetL2FundsFromFaucetWithDepositor(agentID isc.AgentID, deposito
 		amount = ch.Env.L1BaseTokens(walletAddr) / 10
 	}
 
-	iterTimes := amount / 5000000000000
-	fmt.Printf("Iteration times for %s: %d\n", agentID.String(), iterTimes)
-	for i := uint64(0); i < uint64(iterTimes)+2; i++ {
+	// each time the funded amount from faucet is 2000000000*5
+	iterTimes := amount / (2000000000 * 5)
+	// call faucet for each account at least once
+	for i := uint64(0); i < uint64(iterTimes)+1; i++ {
 		ch.Env.GetFundsFromFaucet(walletAddr)
 	}
 
@@ -317,7 +315,6 @@ func (ch *Chain) GetL2FundsFromFaucetWithDepositor(agentID isc.AgentID, deposito
 		walletKey,
 	)
 	require.NoError(ch.Env.T, err)
-	fmt.Printf("Total GetL2Funds took: %s\n", time.Since(now))
 }
 
 func (ch *Chain) GetL2FundsFromFaucet(agentID isc.AgentID, baseTokens ...coin.Value) {
@@ -334,14 +331,6 @@ func (ch *Chain) GetL2FundsFromFaucet(agentID isc.AgentID, baseTokens ...coin.Va
 		amount = ch.Env.L1BaseTokens(walletAddr) / 10
 	}
 
-	iterTimes := amount / 5000000000000
-	for i := uint64(0); i < uint64(iterTimes)+2; i++ {
-		ch.Env.GetFundsFromFaucet(walletAddr)
-	}
-
-	// this only make collosion less likely
-	rint := rand.IntN(100) + 1
-	time.Sleep(time.Duration(rint) * 100 * time.Millisecond)
 	err := ch.TransferAllowanceTo(
 		isc.NewAssets(amount),
 		agentID,
