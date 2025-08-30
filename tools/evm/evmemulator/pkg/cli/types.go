@@ -6,6 +6,7 @@ var GenesisJsonPath string
 var NodeLaunchMode string
 var RemoteHost string
 var LogBodies bool
+var IsHive bool
 
 type TNodeLaunchMode string
 

@@ -4,7 +4,6 @@
 package main
 
 import (
-	"os"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -17,55 +16,6 @@ import (
 	"github.com/iotaledger/wasp/v2/tools/evm/evmemulator/pkg/genesis"
 	"github.com/iotaledger/wasp/v2/tools/evm/evmemulator/pkg/server"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
-)
-
-type soloContext struct {
-	cleanup []func()
-}
-
-func (s *soloContext) cleanupAll() {
-	for i := len(s.cleanup) - 1; i >= 0; i-- {
-		s.cleanup[i]()
-	}
-}
-
-func (s *soloContext) Cleanup(f func()) {
-	s.cleanup = append(s.cleanup, f)
-}
-
-func (*soloContext) Errorf(format string, args ...interface{}) {
-	log.Printf("error: "+format, args)
-}
-
-func (*soloContext) FailNow() {
-	os.Exit(1)
-}
-
-func (s *soloContext) Fatalf(format string, args ...any) {
-	log.Printf("fatal: "+format, args)
-	s.FailNow()
-}
-
-func (*soloContext) Helper() {
-}
-
-func (*soloContext) Logf(format string, args ...any) {
-	log.Printf(format, args...)
-}
-
-func (*soloContext) Name() string {
-	return "evmemulator"
-}
-
-var listenAddress string = ":8545"
-var genesisJsonPath string = ""
-var nodeLaunchMode string
-
-type NodeLaunchMode string
-
-const (
-	EnumNodeLaunchModeStandalone    NodeLaunchMode = "standalone"
-	EnumNodeLaunchModeDockerCompose NodeLaunchMode = "docker-compose"
 )
 
 func main() {
@@ -104,6 +54,7 @@ Note: chain data is stored in-memory and will be lost upon termination.
 		"",
 		"path to the genesis JSON file",
 	)
+	cmd.PersistentFlags().BoolVar(&cli.IsHive, "hive", false, "whether running for hive tests")
 	cmd.PersistentFlags().BoolVar(&cli.LogBodies, "log-bodies", false, "log JSON-RPC request/response bodies (verbose)")
 
 	err := cmd.Execute()
