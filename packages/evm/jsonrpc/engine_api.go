@@ -208,9 +208,9 @@ func (e *EngineService) EnqueueTransactions(block *types.Block, blockHash common
 func (e *EngineService) newPayload(params engine.ExecutableData, versionedHashes []common.Hash, beaconRoot *common.Hash, requests [][]byte) (engine.PayloadStatusV1, error) {
 	log.Trace("Engine API request received", "method", "NewPayload", "number", params.Number, "hash", params.BlockHash)
 	block, err := engine.ExecutableDataToBlock(params, versionedHashes, beaconRoot, requests)
-	fmt.Printf("ExecutableDataBlock  err: %v\n", err)
-
 	if err != nil {
+		fmt.Println("ExecutableDataBlock  err: ", err)
+
 		bgu := "nil"
 		if params.BlobGasUsed != nil {
 			bgu = fmt.Sprintf("%d", *params.BlobGasUsed)

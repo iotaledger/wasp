@@ -41,15 +41,11 @@ const (
 // and tolerant to minor variations like "error:" vs "err:".
 var enqueueErrRe = regexp.MustCompile(`(?i)EnqueueTransactions\b[^\[]*?err(?:or)?:\s*(\[[^\]]*\])`)
 
-// Run executes the analysis.
-// - Reads test log, optionally prints cleaned lines, and maps test->container.
-// - Parses simulator log into test entries.
-// - Resolves client logs dir, extracts error arrays for failed tests, and writes summary.
 // Run executes the analysis workflow:
-//  1. Parse test.log to optionally print cleaned lines and map testNumber -> containerID.
-//  2. Parse simulator log to obtain per-test results (status + name).
-//  3. Resolve the client logs directory.
-//  4. Write a joined report including container IDs and (for failures) client error arrays.
+// - Parse test.log; optionally print cleaned lines; build testNumber→containerID map.
+// - Parse simulator log into per-test results (name, status).
+// - Resolve the client logs directory.
+// - Join results; for failures, collect client error arrays; write the summary.
 func Run(testLogPath, simLogPath, clientLogsDirOverride, outPath string, printClean bool) error {
 	// 1) Read and clean test.log lines, printing cleaned lines if requested.
 	//    Collect a mapping testNumber -> containerID from lines containing both.

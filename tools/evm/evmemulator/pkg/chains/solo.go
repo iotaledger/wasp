@@ -13,11 +13,13 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/util"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/evm/emulator"
 	"github.com/iotaledger/wasp/v2/packages/vm/gas"
+	"github.com/iotaledger/wasp/v2/tools/evm/evmemulator/pkg/cli"
 	"github.com/iotaledger/wasp/v2/tools/evm/evmemulator/pkg/log"
 )
 
 // hive tests require chain ID to be 1
 const hiveChainID = 1
+const defaultChainID = 1074
 
 func InitSolo(genesis *core.Genesis) (*SoloContext, *solo.Chain) {
 	ctx := &SoloContext{}
@@ -26,14 +28,22 @@ func InitSolo(genesis *core.Genesis) (*SoloContext, *solo.Chain) {
 
 	chainAdmin, _ := env.NewKeyPairWithFunds()
 	feePolicy := gas.DefaultFeePolicy()
-	// hive requires cheaper gas price
-	feePolicy.EVMGasRatio = util.Ratio32{A: 1, B: 10_00_000_000}
-	chain, _ := env.NewChainExt(chainAdmin, 1*isc.Million, "evmemulator", hiveChainID, emulator.BlockKeepAll, feePolicy, genesis)
 
-	// prefund the account against genesis
-	for addr, acc := range genesis.Alloc {
-		randDepositorSeed := []byte("GetL2FundsFromFaucet" + fmt.Sprintf("%d", rand.Int()))
-		chain.GetL2FundsFromFaucetWithDepositor(isc.NewEthereumAddressAgentID(addr), randDepositorSeed, coin.Value(acc.Balance.Uint64()))
+	var chain *solo.Chain
+	if cli.IsHive {
+		// Hive: cheaper gas and chain ID = 1
+		feePolicy.EVMGasRatio = util.Ratio32{A: 1, B: 10_00_000_000}
+		chain, _ = env.NewChainExt(chainAdmin, 1*isc.Million, "evmemulator", hiveChainID, emulator.BlockKeepAll, feePolicy, genesis)
+
+		// Prefund the accounts defined in genesis via faucet (Hive behavior)
+		for addr, acc := range genesis.Alloc {
+			randDepositorSeed := []byte("GetL2FundsFromFaucet" + fmt.Sprintf("%d", rand.Int()))
+			chain.GetL2FundsFromFaucetWithDepositor(isc.NewEthereumAddressAgentID(addr), randDepositorSeed, coin.Value(acc.Balance.Uint64()))
+		}
+	} else {
+		// Non-Hive: IOTA native — default gas policy and default chain ID
+		chain, _ = env.NewChainExt(chainAdmin, 1*isc.Million, "evmemulator", defaultChainID, emulator.BlockKeepAll, feePolicy, genesis)
+		// No additional prefunding loop for genesis accounts in non-hive mode
 	}
 
 	return ctx, chain
