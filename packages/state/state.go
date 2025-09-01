@@ -14,7 +14,7 @@ import (
 
 // state is the implementation of the State interface
 type state struct {
-	trieReader *trie.TrieReader
+	trieReader *trie.TrieRFromRoot
 	kv.KVStoreReader
 }
 
@@ -32,7 +32,7 @@ func newState(db *storeDB, root trie.Hash) (*state, error) {
 }
 
 func (s *state) TrieRoot() trie.Hash {
-	return s.trieReader.Root()
+	return s.trieReader.Root
 }
 
 func (s *state) GetMerkleProof(key []byte) *trie.MerkleProof {

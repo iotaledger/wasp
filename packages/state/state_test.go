@@ -572,7 +572,7 @@ func TestPruning(t *testing.T) {
 				t.Logf("pruned block %d: %+v %s", p, stats, trieRoot)
 				{
 					_, err := r.cs.Store.StateByTrieRoot(trieRoot)
-					require.ErrorContains(t, err, "does not exist")
+					require.ErrorContains(t, err, "not found")
 				}
 				{
 					_, err := r.cs.Store.BlockByTrieRoot(trieRoot)
