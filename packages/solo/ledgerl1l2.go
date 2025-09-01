@@ -124,15 +124,6 @@ func (ch *Chain) L2TotalBaseTokens() coin.Value {
 	return ch.L2TotalAssets().BaseTokens()
 }
 
-type NewNativeTokenParams struct {
-	ch   *Chain
-	user *cryptolib.KeyPair
-	// sch           iotago.TokenScheme
-	tokenName     string
-	tokenSymbol   string
-	tokenDecimals uint8
-}
-
 // CreateFoundryGasBudgetBaseTokens always takes 100000 base tokens as gas budget and ftokens for the call
 const (
 	DestroyTokensGasBudgetBaseTokens       = 1 * isc.Million
@@ -140,79 +131,6 @@ const (
 	DestroyFoundryGasBudgetBaseTokens      = 1 * isc.Million
 	TransferAllowanceToGasBudgetBaseTokens = 1 * isc.Million
 )
-
-func (ch *Chain) NewNativeTokenParams(maxSupply coin.Value) *NewNativeTokenParams {
-	ret := &NewNativeTokenParams{
-		ch: ch,
-		/*		sch: &iotago.SimpleTokenScheme{
-				MaximumSupply: big.NewInt(int64(maxSupply.Uint64())),
-				MeltedTokens:  big.NewInt(0),
-				MintedTokens:  big.NewInt(0),
-			},*/
-		tokenSymbol:   "TST",
-		tokenName:     "TEST",
-		tokenDecimals: uint8(8),
-	}
-	return ret
-}
-
-func (fp *NewNativeTokenParams) WithUser(user *cryptolib.KeyPair) *NewNativeTokenParams {
-	fp.user = user
-	return fp
-}
-
-func (fp *NewNativeTokenParams) WithTokenName(tokenName string) *NewNativeTokenParams {
-	fp.tokenName = tokenName
-	return fp
-}
-
-func (fp *NewNativeTokenParams) WithTokenSymbol(tokenSymbol string) *NewNativeTokenParams {
-	fp.tokenSymbol = tokenSymbol
-	return fp
-}
-
-func (fp *NewNativeTokenParams) WithTokenDecimals(tokenDecimals uint8) *NewNativeTokenParams {
-	fp.tokenDecimals = tokenDecimals
-	return fp
-}
-
-func (fp *NewNativeTokenParams) CreateFoundry() (uint32, coin.Type, error) {
-	panic("refactor me: 'CreateFoundry'")
-}
-
-func (ch *Chain) DestroyFoundry(sn uint32, user *cryptolib.KeyPair) error {
-	panic("refactor me: 'DestroyFoundry'")
-}
-
-func (ch *Chain) MintTokens(sn uint32, amount coin.Value, user *cryptolib.KeyPair) error {
-	panic("refactor me: 'MintTokens'")
-}
-
-// DestroyTokensOnL2 destroys tokens (identified by foundry SN) on user's on-chain account
-func (ch *Chain) DestroyTokensOnL2(coinType coin.Type, amount coin.Value, user *cryptolib.KeyPair) error {
-	panic("refactor me: 'DestroyTokensOnL2'")
-	// req := NewCallParams(accounts.FuncNativeTokenModifySupply.DestroyTokens(nativeTokenID.FoundrySerialNumber(), amount)).
-	// 	WithAllowance(
-	// 		isc.NewAssets(0, iotago.NativeTokens{&iotago.NativeToken{
-	// 			ID:     nativeTokenID,
-	// 			Amount: amount,
-	// 		}}),
-	// 	).
-	// 	WithGasBudget(DestroyTokensGasBudgetBaseTokens)
-	// _, err := ch.PostRequestSync(req, user)
-	// return err
-}
-
-// DestroyTokensOnL1 sends tokens as ftokens and destroys in the same transaction
-func (ch *Chain) DestroyTokensOnL1(coinType coin.Type, amount coin.Value, user *cryptolib.KeyPair) error {
-	panic("refactor me: 'DestroyTokensOnL1'")
-	// req := NewCallParams(accounts.FuncNativeTokenModifySupply.DestroyTokens(nativeTokenID.FoundrySerialNumber(), amount)).
-	// 	WithMaxAffordableGasBudget().AddBaseTokens(1000)
-	// req.AddNativeTokens(nativeTokenID, amount)
-	// req.AddAllowanceNativeTokens(nativeTokenID, amount)
-	// _, err := ch.PostRequestSync(req, user)
-	// return err
-}
 
 // DepositAssetsToL2 deposits ftokens on user's on-chain account, if user is
 // nil, then chain admin is assigned
@@ -265,12 +183,11 @@ func (ch *Chain) Withdraw(assets *isc.Assets, user *cryptolib.KeyPair) error {
 
 // SendFromL1ToL2Account sends ftokens from L1 address to the target account on L2
 // Sender pays the gas fee
-func (ch *Chain) SendFromL1ToL2Account(totalBaseTokens coin.Value, toSend isc.CoinBalances, target isc.AgentID, user *cryptolib.KeyPair) error {
+func (ch *Chain) SendFromL1ToL2Account(toSend isc.CoinBalances, extraDeposit coin.Value, target isc.AgentID, user *cryptolib.KeyPair) error {
 	require.False(ch.Env.T, toSend.IsEmpty())
-	sumAssets := toSend.Clone().AddBaseTokens(totalBaseTokens)
 	_, err := ch.PostRequestSync(
 		NewCallParams(accounts.FuncTransferAllowanceTo.Message(target)).
-			AddFungibleTokens(sumAssets).
+			AddFungibleTokens(toSend.Clone().AddBaseTokens(extraDeposit)).
 			AddAllowance(toSend.ToAssets()).
 			WithGasBudget(math.MaxUint64),
 		user,
@@ -278,8 +195,8 @@ func (ch *Chain) SendFromL1ToL2Account(totalBaseTokens coin.Value, toSend isc.Co
 	return err
 }
 
-func (ch *Chain) SendFromL1ToL2AccountBaseTokens(totalBaseTokens, baseTokensSend coin.Value, target isc.AgentID, user *cryptolib.KeyPair) error {
-	return ch.SendFromL1ToL2Account(totalBaseTokens, isc.NewCoinBalances().AddBaseTokens(baseTokensSend), target, user)
+func (ch *Chain) SendFromL1ToL2AccountBaseTokens(toSend, extraDeposit coin.Value, target isc.AgentID, user *cryptolib.KeyPair) error {
+	return ch.SendFromL1ToL2Account(isc.NewCoinBalances().AddBaseTokens(toSend), extraDeposit, target, user)
 }
 
 // SendFromL2ToL2Account moves ftokens on L2 from user's account to the target

@@ -7,8 +7,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/v2/clients"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotatest"
 	testcommon "github.com/iotaledger/wasp/v2/clients/iota-go/test_common"
@@ -136,7 +138,11 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 }
 
 func startNewChain(t *testing.T, client *iscmoveclient.Client, signer cryptolib.Signer) *iscmove.AnchorWithRef {
-	iotatest.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(signer), l1starter.Instance().L1Client(), isc.GasCoinTargetValue)
+	return StartNewChainWithPackageIDAndL1Client(t, client, signer, l1starter.ISCPackageID(), l1starter.Instance().L1Client())
+}
+
+func StartNewChainWithPackageIDAndL1Client(t *testing.T, client *iscmoveclient.Client, signer cryptolib.Signer, packageID iotago.PackageID, l1Client clients.L1Client) *iscmove.AnchorWithRef {
+	iotatest.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(signer), l1Client, isc.GasCoinTargetValue)
 
 	coinObjects, err := client.GetCoinObjsForTargetAmount(context.Background(), signer.Address().AsIotaAddress(), isc.GasCoinTargetValue, iotaclient.DefaultGasBudget)
 	require.NoError(t, err)
@@ -155,7 +161,7 @@ func startNewChain(t *testing.T, client *iscmoveclient.Client, signer cryptolib.
 				&iscmoveclient.StartNewChainRequest{
 					Signer:        signer,
 					AnchorOwner:   signer.Address(),
-					PackageID:     l1starter.ISCPackageID(),
+					PackageID:     packageID,
 					StateMetadata: []byte{1, 2, 3, 4},
 					InitCoinRef:   selectedChainGasCoin.Ref(),
 					GasPayments:   []*iotago.ObjectRef{gasCoin.Ref()},

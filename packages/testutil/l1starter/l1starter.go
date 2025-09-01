@@ -93,7 +93,7 @@ func TestMain(m *testing.M) {
 
 	if !testConfig.IsLocal {
 		iotaNode := NewRemoteIotaNode(testConfig.APIURL, testConfig.FaucetURL, ISCPackageOwner)
-		iotaNode.start(context.Background())
+		iotaNode.Start(context.Background())
 
 		node = iotaNode
 		instance.Store(&node)
@@ -116,7 +116,7 @@ func TestMain(m *testing.M) {
 func ClusterStart(config L1EndpointConfig) IotaNodeEndpoint {
 	if !config.IsLocal {
 		iotaNode := NewRemoteIotaNode(config.APIURL, config.FaucetURL, ISCPackageOwner)
-		iotaNode.start(context.Background())
+		iotaNode.Start(context.Background())
 
 		var iotaNodeEndpoint IotaNodeEndpoint = iotaNode
 		instance.Store(&iotaNodeEndpoint)

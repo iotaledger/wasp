@@ -331,7 +331,7 @@ func TestGovernanceL1Metadata(t *testing.T) {
 	ch := env.NewChain()
 
 	// deposit some extra tokens to the common account to accommodate for the SD change
-	ch.SendFromL1ToL2AccountBaseTokens(10*isc.Million, 9*isc.Million, accounts.CommonAccount(), nil)
+	ch.SendFromL1ToL2AccountBaseTokens(solo.BaseTokensForL2Gas, solo.BaseTokensForL2Gas, accounts.CommonAccount(), nil)
 
 	// set max valid size custom metadata
 	publicURLMetadata := "https://iota.org"
@@ -520,7 +520,6 @@ func TestGovernanceGasCoinTargetValue(t *testing.T) {
 }
 
 func TestGovernanceCallsNoBalance(t *testing.T) {
-	t.Skip("TODO")
 	env := solo.New(t)
 	ch := env.NewChain(false)
 
@@ -550,7 +549,7 @@ func TestGovernanceGasPayout(t *testing.T) {
 	ownerBal1 := ch.L2Assets(ch.AdminAgentID())
 	commonBal1 := ch.L2CommonAccountAssets()
 	user1Bal1 := ch.L2Assets(user1AgentID)
-	transferAmt := coin.Value(2000)
+	transferAmt := solo.BaseTokensForL2Gas
 	_, _, vmRes, _, err := ch.PostRequestSyncTx(
 		solo.NewCallParams(accounts.FuncDeposit.Message()).
 			AddBaseTokens(transferAmt),

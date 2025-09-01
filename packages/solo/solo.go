@@ -45,6 +45,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/migrations"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/migrations/allmigrations"
+	"github.com/iotaledger/wasp/v2/packages/vm/gas"
 	"github.com/iotaledger/wasp/v2/packages/vm/processors"
 	_ "github.com/iotaledger/wasp/v2/packages/vm/sandbox"
 )
@@ -233,8 +234,9 @@ func (env *Solo) GetChainByName(name string) *Chain {
 	panic("chain not found")
 }
 
-const (
-	DefaultChainAdminBaseTokens = 50 * isc.Million
+var (
+	BaseTokensForL2Gas          = gas.FeeFromGasWithGasPerToken(gas.LimitsDefault.MaxGasPerRequest, gas.DefaultGasPerToken)
+	DefaultChainAdminBaseTokens = 2 * BaseTokensForL2Gas
 )
 
 // NewChain deploys a new default chain instance.

@@ -21,8 +21,6 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/vm/gas"
 )
 
-const BaseTokensDepositFee = 100
-
 func TestAccounts_Deposit(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{})
 	sender, _ := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
@@ -84,7 +82,7 @@ func TestAccounts_WithdrawEverything(t *testing.T) {
 	ch := env.NewChain()
 
 	// deposit some base tokens to L2
-	baseTokensToDepositToL2 := coin.Value(100_000)
+	baseTokensToDepositToL2 := solo.BaseTokensForL2Gas
 	err := ch.DepositBaseTokensToL2(baseTokensToDepositToL2, sender)
 	require.NoError(t, err)
 
@@ -92,7 +90,7 @@ func TestAccounts_WithdrawEverything(t *testing.T) {
 
 	// construct the request to estimate an withdrawal (leave a few tokens to pay for gas)
 	req := solo.NewCallParams(accounts.FuncWithdraw.Message()).
-		AddAllowance(isc.NewAssets(l2balance - 1000)).
+		AddAllowance(isc.NewAssets(l2balance - solo.BaseTokensForL2Gas/10)).
 		WithMaxAffordableGasBudget()
 
 	_, estimate, err := ch.EstimateGasOffLedger(req, sender)
@@ -161,7 +159,7 @@ func initDepositTest(t *testing.T, initCommonAccountBaseTokens ...coin.Value) *a
 // initWithdrawTest deploys TestCoin, mints 1M tokens and deposits 100 to user's account
 func initWithdrawTest(t *testing.T) *accountsDepositTest {
 	v := initDepositTest(t)
-	v.ch.MustDepositBaseTokensToL2(2*isc.Million, v.user)
+	v.ch.MustDepositBaseTokensToL2(solo.BaseTokensForL2Gas, v.user)
 	coinPackageID, treasuryCap := v.ch.Env.L1DeployCoinPackage(v.user)
 	v.coinType = coin.MustTypeFromString(fmt.Sprintf(
 		"%s::%s::%s",
@@ -182,7 +180,7 @@ func initWithdrawTest(t *testing.T) *accountsDepositTest {
 	// prepare request parameters to withdraw
 	// do not run the request yet
 	v.req = solo.NewCallParams(accounts.FuncWithdraw.Message()).
-		AddBaseTokens(12000).
+		AddBaseTokens(solo.BaseTokensForL2Gas / 10).
 		WithGasBudget(100_000)
 	v.printBalances("BEGIN")
 	return v
@@ -212,121 +210,6 @@ func TestAccounts_WithdrawDepositCoins(t *testing.T) {
 		require.NoError(t, err)
 		v.env.AssertL1Coins(v.userAddr, v.coinType, coinsBefore+coin.Value(100))
 		v.printBalances("END")
-	})
-	t.Run("mint withdraw destroy fail", func(t *testing.T) {
-		t.Skip("TODO")
-		v := initWithdrawTest(t)
-		allSenderAssets := v.ch.L2Assets(v.userAgentID)
-		v.req.AddAllowance(allSenderAssets)
-		_, err := v.ch.PostRequestSync(v.req, v.user)
-		require.NoError(t, err)
-		v.printBalances("AFTER MINT")
-		// should fail because those tokens are not on the user's on chain account
-		err = v.ch.DestroyTokensOnL2(v.coinType, coin.Value(50), v.user)
-		testmisc.RequireErrorToBe(t, err, accounts.ErrNotEnoughFunds)
-		v.env.AssertL1Coins(v.userAddr, v.coinType, coin.Value(100))
-		v.printBalances("AFTER DESTROY")
-	})
-	t.Run("mint withdraw destroy success 1", func(t *testing.T) {
-		t.Skip("TODO")
-		v := initWithdrawTest(t)
-
-		allSenderAssets := v.ch.L2Assets(v.userAgentID)
-		v.req.AddAllowance(allSenderAssets)
-		_, err := v.ch.PostRequestSync(v.req, v.user)
-		require.NoError(t, err)
-		v.printBalances("AFTER MINT")
-		v.ch.AssertL2Coins(v.userAgentID, v.coinType, coin.Value(0))
-
-		err = v.ch.DepositAssetsToL2(isc.NewEmptyAssets().AddCoin(v.coinType, coin.Value(50)), v.user)
-		require.NoError(t, err)
-		v.env.AssertL1Coins(v.userAddr, v.coinType, coin.Value(50))
-		v.ch.AssertL2Coins(v.userAgentID, v.coinType, coin.Value(50))
-		v.ch.AssertL2TotalCoins(v.coinType, coin.Value(50))
-		v.printBalances("AFTER DEPOSIT")
-
-		err = v.ch.DestroyTokensOnL2(v.coinType, coin.Value(49), v.user)
-		require.NoError(t, err)
-		v.ch.AssertL2Coins(v.userAgentID, v.coinType, coin.Value(1))
-		v.env.AssertL1Coins(v.userAddr, v.coinType, coin.Value(50))
-		v.printBalances("AFTER DESTROY")
-
-		// sent the last 50 tokens to an evm account
-		_, someEthereumAddr := solo.NewEthereumAccount()
-		someEthereumAgentID := isc.NewEthereumAddressAgentID(someEthereumAddr)
-
-		err = v.ch.TransferAllowanceTo(isc.NewEmptyAssets().AddCoin(v.coinType, coin.Value(50)),
-			someEthereumAgentID,
-			v.user,
-		)
-		require.NoError(t, err)
-		v.ch.AssertL2Coins(v.userAgentID, v.coinType, coin.Value(1))
-		v.env.AssertL1Coins(v.userAddr, v.coinType, coin.Value(0))
-		v.ch.AssertL2Coins(someEthereumAgentID, v.coinType, coin.Value(50))
-	})
-	t.Run("unwrap use case", func(t *testing.T) {
-		t.Skip("TODO")
-		v := initWithdrawTest(t)
-		allSenderAssets := v.ch.L2Assets(v.userAgentID)
-		v.req.AddAllowance(allSenderAssets)
-		_, err := v.ch.PostRequestSync(v.req, v.user)
-		require.NoError(t, err)
-		v.printBalances("AFTER MINT")
-		v.env.AssertL1Coins(v.userAddr, v.coinType, coin.Value(100))
-		v.ch.AssertL2Coins(v.userAgentID, v.coinType, coin.Value(0))
-
-		err = v.ch.DepositAssetsToL2(isc.NewEmptyAssets().AddCoin(v.coinType, coin.Value(1)), v.user)
-		require.NoError(t, err)
-		v.printBalances("AFTER DEPOSIT 1")
-
-		err = v.ch.DestroyTokensOnL1(v.coinType, coin.Value(49), v.user)
-		require.NoError(t, err)
-		v.printBalances("AFTER DESTROY")
-		v.ch.AssertL2Coins(v.userAgentID, v.coinType, coin.Value(1))
-		v.env.AssertL1Coins(v.userAddr, v.coinType, coin.Value(50))
-	})
-	t.Run("unwrap use case 2", func(t *testing.T) {
-		t.Skip("TODO")
-		v := initWithdrawTest(t)
-		allSenderAssets := v.ch.L2Assets(v.userAgentID)
-		v.req.AddAllowance(allSenderAssets)
-		_, err := v.ch.PostRequestSync(v.req, v.user)
-		require.NoError(t, err)
-		v.printBalances("AFTER MINT")
-		// no tokens on chain
-		v.env.AssertL1Coins(v.userAddr, v.coinType, coin.Value(100))
-		v.ch.AssertL2Coins(v.userAgentID, v.coinType, coin.Value(0))
-
-		// deposit and destroy on the same req (chain currently doesn't have an internal UTXO for this tokenID)
-		err = v.ch.DestroyTokensOnL1(v.coinType, coin.Value(49), v.user)
-		require.NoError(t, err)
-		v.printBalances("AFTER DESTROY")
-		v.ch.AssertL2Coins(v.userAgentID, v.coinType, coin.Value(0))
-		v.env.AssertL1Coins(v.userAddr, v.coinType, coin.Value(51))
-	})
-	t.Run("mint withdraw destroy fail", func(t *testing.T) {
-		t.Skip("TODO")
-		v := initWithdrawTest(t)
-		allSenderAssets := v.ch.L2Assets(v.userAgentID)
-		v.req.AddAllowance(allSenderAssets)
-		_, err := v.ch.PostRequestSync(v.req, v.user)
-		require.NoError(t, err)
-
-		v.printBalances("AFTER MINT")
-		v.env.AssertL1Coins(v.userAddr, v.coinType, coin.Value(100))
-		v.ch.AssertL2Coins(v.userAgentID, v.coinType, coin.Value(0))
-
-		err = v.ch.DepositAssetsToL2(isc.NewEmptyAssets().AddCoin(v.coinType, coin.Value(50)), v.user)
-		require.NoError(t, err)
-		v.env.AssertL1Coins(v.userAddr, v.coinType, coin.Value(50))
-		v.ch.AssertL2Coins(v.userAgentID, v.coinType, coin.Value(50))
-		v.ch.AssertL2TotalCoins(v.coinType, coin.Value(50))
-		v.printBalances("AFTER DEPOSIT")
-
-		err = v.ch.DestroyTokensOnL2(v.coinType, coin.Value(50), v.user)
-		require.NoError(t, err)
-		v.ch.AssertL2Coins(v.userAgentID, v.coinType, coin.Value(0))
-		v.env.AssertL1Coins(v.userAddr, v.coinType, coin.Value(50))
 	})
 
 	t.Run("accounting and pruning", func(t *testing.T) {
@@ -362,7 +245,7 @@ func TestAccounts_TransferAndCheckBaseTokens(t *testing.T) {
 
 	// deposit some base tokens into the common account
 	someUserWallet, _ := v.env.NewKeyPairWithFunds()
-	err := v.ch.SendFromL1ToL2Account(11*isc.Million, isc.NewAssets(10*isc.Million).Coins, accounts.CommonAccount(), someUserWallet)
+	err := v.ch.SendFromL1ToL2Account(isc.NewAssets(10*isc.Million).Coins, solo.BaseTokensForL2Gas, accounts.CommonAccount(), someUserWallet)
 	require.NoError(t, err)
 	commonAccBaseTokens := initialCommonAccountBaseTokens + 10*isc.Million
 	require.EqualValues(t, commonAccBaseTokens, v.ch.L2CommonAccountAssets().BaseTokens())
@@ -373,8 +256,8 @@ func TestAccounts_TransferAndCheckBaseTokens(t *testing.T) {
 func TestAccounts_TransferPartialAssets(t *testing.T) {
 	// setup a chain with some base tokens and native tokens for user1
 	v := initWithdrawTest(t)
-	v.ch.MustDepositBaseTokensToL2(10*isc.Million, v.ch.ChainAdmin)
-	v.ch.MustDepositBaseTokensToL2(10*isc.Million, v.user)
+	v.ch.MustDepositBaseTokensToL2(solo.BaseTokensForL2Gas, v.ch.ChainAdmin)
+	v.ch.MustDepositBaseTokensToL2(solo.BaseTokensForL2Gas, v.user)
 
 	v.ch.AssertL2Coins(v.userAgentID, v.coinType, coin.Value(100))
 	v.ch.AssertL2TotalCoins(v.coinType, coin.Value(100))
@@ -385,12 +268,12 @@ func TestAccounts_TransferPartialAssets(t *testing.T) {
 
 	// deposit 1 base token to "create account" for user2 // TODO maybe remove if account creation is not needed
 	v.ch.AssertL2BaseTokens(user2AgentID, 0)
-	const baseTokensToSend = 3 * isc.Million
-	err := v.ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, baseTokensToSend, user2AgentID, user2)
+	const baseTokensToSend = 3e6
+	err := v.ch.SendFromL1ToL2AccountBaseTokens(baseTokensToSend, solo.BaseTokensForL2Gas, user2AgentID, user2)
 	rec := v.ch.LastReceipt()
 	require.NoError(t, err)
 	v.env.T.Logf("gas fee charged: %d", rec.GasFeeCharged)
-	expectedUser2 := BaseTokensDepositFee + baseTokensToSend - rec.GasFeeCharged
+	expectedUser2 := solo.BaseTokensForL2Gas + baseTokensToSend - rec.GasFeeCharged
 	v.ch.AssertL2BaseTokens(user2AgentID, expectedUser2)
 	// -----------------------------
 	err = v.ch.SendFromL2ToL2Account(
@@ -405,140 +288,6 @@ func TestAccounts_TransferPartialAssets(t *testing.T) {
 	v.ch.AssertL2Coins(user2AgentID, v.coinType, coin.Value(9))
 	v.ch.AssertL2BaseTokens(user2AgentID, expectedUser2+baseTokensToSend)
 	v.ch.AssertL2TotalCoins(v.coinType, coin.Value(100))
-}
-
-func TestAccounts_NFTAccount(t *testing.T) {
-	t.Skip("!!! TODO")
-	// env := solo.New(t, &solo.InitOptions{})
-	// ch := env.NewChain()
-	//
-	// issuerWallet, _ := ch.Env.NewKeyPairWithFunds()
-	// ownerWallet, ownerAddress := ch.Env.NewKeyPairWithFunds()
-	// ownerBalance := ch.Env.L1BaseTokens(ownerAddress)
-	//
-	// nftInfo, err := ch.Env.MintNFTL1(issuerWallet, ownerAddress, []byte("foobar"))
-	// require.NoError(t, err)
-	// nftAddress := nftInfo.Issuer
-	//
-	// // deposit funds on behalf of the NFT
-	// const baseTokensToSend = 10 * isc.Million
-	// req := solo.NewCallParams(accounts.FuncDeposit.Message()).
-	// 	AddBaseTokens(baseTokensToSend).
-	// 	WithMaxAffordableGasBudget().
-	// 	WithSender(nftAddress)
-	//
-	// _, err = ch.PostRequestSync(req, ownerWallet)
-	// require.NoError(t, err)
-	// rec := ch.LastReceipt()
-	//
-	// nftAgentID := isc.NewAddressAgentID(nftAddress)
-	// ch.AssertL2BaseTokens(nftAgentID, baseTokensToSend-rec.GasFeeCharged)
-	// ch.Env.AssertL1BaseTokens(nftAddress, 0)
-	// ch.Env.AssertL1BaseTokens(
-	// 	ownerAddress,
-	// 	ownerBalance+nftInfo.Output.Deposit()-baseTokensToSend,
-	// )
-	// require.True(t, ch.Env.HasL1NFT(ownerAddress, nftInfo.ID))
-	//
-	// // withdraw to the NFT on L1
-	// const baseTokensToWithdrawal = 1 * isc.Million
-	// wdReq := solo.NewCallParams(accounts.FuncWithdraw.Message()).
-	// 	AddAllowanceBaseTokens(baseTokensToWithdrawal).
-	// 	WithMaxAffordableGasBudget()
-	//
-	// // NFT owner on L1 can't move L2 funds owned by the NFT unless the request is sent in behalf of the NFT (NFTID is specified as "Sender")
-	// _, err = ch.PostRequestSync(wdReq, ownerWallet)
-	// require.Error(t, err)
-	//
-	// // NFT owner can withdraw funds owned by the NFT on the chain
-	// _, err = ch.PostRequestSync(wdReq.WithSender(nftAddress), ownerWallet)
-	// require.NoError(t, err)
-	// ch.Env.AssertL1BaseTokens(nftAddress, baseTokensToWithdrawal)
-}
-
-func checkChainNFTData(t *testing.T, ch *solo.Chain, obj isc.IotaObject, owner isc.AgentID) {
-	panic("!!! TODO")
-	// args, err := ch.CallView(accounts.ViewAccountObjects.Message(&owner))
-	// require.NoError(t, err)
-	// nftIDs, err := accounts.ViewAccountObjects.DecodeOutput(args)
-	// require.NoError(t, err)
-	// require.Contains(t, nftIDs, nft.ID)
-	// require.Equal(t, nftBack.Issuer, nft.Issuer)
-	// require.Equal(t, nftBack.Metadata, nft.Metadata)
-	// require.True(t, nftBack.Owner.Equals(owner))
-}
-
-func TestAccounts_TransferNFTAllowance(t *testing.T) {
-	t.Skip("!!! TODO")
-	checkChainNFTData(t, nil, isc.IotaObject{}, nil)
-	// env := solo.New(t, &solo.InitOptions{})
-	// ch := env.NewChain()
-	//
-	// issuerWallet, _ := ch.Env.NewKeyPairWithFunds()
-	// initialOwnerWallet, initialOwnerAddress := ch.Env.NewKeyPairWithFunds()
-	// initialOwnerAgentID := isc.NewAddressAgentID(initialOwnerAddress)
-	//
-	// nft, err := ch.Env.MintNFTL1(issuerWallet, initialOwnerAddress, []byte("foobar"))
-	// require.NoError(t, err)
-	//
-	// // deposit the NFT to the chain to the initial owner's account
-	// _, err = ch.PostRequestSync(
-	// 	solo.NewCallParams(accounts.FuncDeposit.Message()).
-	// 		WithObject(nft.ID).
-	// 		AddBaseTokens(10*isc.Million).
-	// 		WithMaxAffordableGasBudget(),
-	// 	initialOwnerWallet)
-	// require.NoError(t, err)
-	//
-	// require.True(t, ch.HasL2NFT(initialOwnerAgentID, nft.ID))
-	// checkChainNFTData(t, ch, nft, initialOwnerAgentID)
-	//
-	// // send an off-ledger request to transfer the NFT to the another account
-	// finalOwnerWallet, finalOwnerAddress := ch.Env.NewKeyPairWithFunds()
-	// finalOwnerAgentID := isc.NewAddressAgentID(finalOwnerAddress)
-	//
-	// _, err = ch.PostRequestOffLedger(
-	// 	solo.NewCallParams(accounts.FuncTransferAllowanceTo.Message(finalOwnerAgentID)).
-	// 		WithAllowance(isc.NewEmptyAssets().AddObject(nft.ID)).
-	// 		WithMaxAffordableGasBudget(),
-	// 	initialOwnerWallet,
-	// )
-	// require.NoError(t, err)
-	//
-	// require.True(t, ch.HasL2NFT(finalOwnerAgentID, nft.ID))
-	// require.False(t, ch.HasL2NFT(initialOwnerAgentID, nft.ID))
-	// checkChainNFTData(t, ch, nft, finalOwnerAgentID)
-	//
-	// // withdraw to L1
-	// _, err = ch.PostRequestSync(
-	// 	solo.NewCallParams(accounts.FuncWithdraw.Message()).
-	// 		WithAllowance(isc.NewAssets(1*isc.Million).AddObject(nft.ID)).
-	// 		AddBaseTokens(10*isc.Million).
-	// 		WithMaxAffordableGasBudget(),
-	// 	finalOwnerWallet,
-	// )
-	// require.NoError(t, err)
-	//
-	// require.False(t, ch.HasL2NFT(finalOwnerAgentID, nft.ID))
-	// require.True(t, env.HasL1NFT(finalOwnerAddress, nft.ID))
-}
-
-func TestAccounts_DepositNFTWithMinStorageDeposit(t *testing.T) {
-	t.Skip("!!! TODO")
-	// env := solo.New(t, &solo.InitOptions{Debug: true, PrintStackTrace: true})
-	// ch := env.NewChain()
-	//
-	// issuerWallet, issuerAddress := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name())	//
-	// nft, err := env.MintNFTL1(issuerWallet, issuerAddress, []byte("foobar"))
-	// require.NoError(t, err)
-	// req := solo.NewCallParams(accounts.FuncDeposit.Message()).
-	// 	WithObject(nft.ID).
-	// 	WithMaxAffordableGasBudget()
-	// req.AddBaseTokens(ch.EstimateNeededStorageDeposit(req, issuerWallet))
-	// _, err = ch.PostRequestSync(req, issuerWallet)
-	// require.NoError(t, err)
-	//
-	// testdbhash.VerifyContractStateHash(env, accounts.Contract, "", t.Name())
 }
 
 func TestAccounts_DepositRandomContractMinFee(t *testing.T) {

@@ -397,6 +397,7 @@ func (tnc *testNodeConn) AttachChain(
 	recvAnchor chain.AnchorHandler,
 	onChainConnect func(),
 	onChainDisconnect func(),
+	readOnly bool,
 ) error {
 	if !tnc.chainID.Empty() {
 		tnc.t.Error("duplicate attach")
@@ -598,6 +599,7 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 			},
 			1*time.Second,
 			originDeposit,
+			"",
 		)
 		require.NoError(t, err)
 		te.nodes[i].ServersUpdated(te.peerPubKeys)

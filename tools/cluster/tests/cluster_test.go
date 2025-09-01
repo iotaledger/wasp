@@ -6,12 +6,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/v2/clients/apiclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
-	"github.com/iotaledger/wasp/v2/packages/isc"
-	"github.com/stretchr/testify/require"
 )
 
 func TestClusterSingleNode(t *testing.T) {
@@ -114,7 +114,7 @@ func TestClusterRotateChain(t *testing.T) {
 
 	require.Equal(t, balance.BaseTokens, "0", "balance should be 0")
 
-	_, err = chain.Client(newKeyPair).DepositFunds(1 * isc.Million)
+	_, err = chain.Client(newKeyPair).DepositFunds(1e9)
 	require.NoError(t, err)
 
 	time.Sleep(3 * time.Second)
@@ -122,7 +122,7 @@ func TestClusterRotateChain(t *testing.T) {
 	balance, _, err = client.CorecontractsAPI.AccountsGetAccountBalance(context.Background(), newKeyPair.Address().String()).Execute()
 	require.NoError(t, err)
 
-	require.Equal(t, balance.BaseTokens, "999900", "balance should be 1 million minus fee")
+	require.Equal(t, balance.BaseTokens, "999900000", "balance should be 1e9 minus fee")
 
 	info, _, err := client.ChainsAPI.GetCommitteeInfo(context.Background()).Execute()
 	require.NoError(t, err)
