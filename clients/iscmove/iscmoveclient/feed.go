@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
+
 	"github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn_grpc"
@@ -49,6 +51,7 @@ func (g *GRpcClientWrapper) SubscribeEvents(ctx context.Context) (<-chan iscmove
 				if !ok {
 					return
 				}
+				fmt.Println(hexutil.Encode(evt.EventData.Data))
 				reqEvent, err := bcs.Unmarshal[iscmove.RequestEvent](evt.EventData.Data)
 				if err != nil {
 					continue
