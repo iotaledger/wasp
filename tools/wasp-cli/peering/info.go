@@ -5,6 +5,7 @@ package peering
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/spf13/cobra"
 
@@ -35,12 +36,20 @@ func initInfoCmd() *cobra.Command {
 }
 
 type InfoModel struct {
-	PubKey     string
-	PeeringURL string
+	PubKey     string `json:"pubKey"`
+	PeeringURL string `json:"peeringURL"`
 }
 
 func (i *InfoModel) AsText() (string, error) {
 	infoTemplate := `PubKey: {{ .PubKey }}
 PeeringURL: {{ .PeeringURL }}`
 	return log.ParseCLIOutputTemplate(i, infoTemplate)
+}
+
+func (i *InfoModel) AsJSON() (string, error) {
+	jsonBytes, err := json.Marshal(i)
+	if err != nil {
+		return "", err
+	}
+	return string(jsonBytes), nil
 }

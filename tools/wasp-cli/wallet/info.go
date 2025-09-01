@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/wallet"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/format"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
 )
 
@@ -19,26 +20,13 @@ func initAddressCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			myWallet := wallet.Load()
 			address := myWallet.Address()
-			log.PrintCLIOutput(&AddressModel{
-				Address: address.String(),
-				Index:   int(myWallet.AddressIndex()),
-			})
+			addressOutput := format.NewWalletAddressSuccess(myWallet.AddressIndex(), address.String())
+			err := format.PrintOutput(addressOutput)
+			if err != nil {
+				log.Printf("Error formatting output: %v", err)
+			}
 		},
 	}
-}
-
-type AddressModel struct {
-	Index   int
-	Address string
-}
-
-var _ log.CLIOutput = &AddressModel{}
-
-func (a *AddressModel) AsText() (string, error) {
-	addressTemplate := `Address index: {{ .Index }}
-Address: {{ .Address }}
-`
-	return log.ParseCLIOutputTemplate(a, addressTemplate)
 }
 
 func initBalanceCmd() *cobra.Command {
@@ -49,15 +37,21 @@ func initBalanceCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			myWallet := wallet.Load()
 			address := myWallet.Address()
-
 			balance, err := cliclients.L1Client().GetAllBalances(context.Background(), address.AsIotaAddress())
-			log.Check(err)
+			if err != nil {
+				balanceOutput := format.NewWalletBalanceError(myWallet.AddressIndex(), address.String(), err.Error())
+				formatErr := format.PrintOutput(balanceOutput)
+				if formatErr != nil {
+					log.Printf("Error formatting output: %v", formatErr)
+				}
+				return
+			}
 
-			log.PrintCLIOutput(&BalanceModel{
-				Address:      address.String(),
-				AddressIndex: myWallet.AddressIndex(),
-				Balance:      balance,
-			})
+			balanceOutput := format.NewWalletBalanceSuccess(myWallet.AddressIndex(), address.String(), balance)
+			err = format.PrintOutput(balanceOutput)
+			if err != nil {
+				log.Printf("Error formatting output: %v", err)
+			}
 		},
 	}
 }
