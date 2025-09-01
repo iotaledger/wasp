@@ -288,7 +288,7 @@ func (nc *nodeConnection) createChain(
 	if readOnly {
 		ncc = nc.createReadOnlyChain(chainID)
 	} else {
-		ncc, err = newNCChain(ctx, nc, chainID, recvRequest, recvAnchor, nc.wsURL, nc.httpURL)
+		ncc, err = newNCChain(ctx, nc, chainID, recvRequest, recvAnchor, nc.socketURL, nc.httpURL)
 		if err != nil {
 			return nil, err
 		}
