@@ -45,7 +45,6 @@ func TestRequestsFeed(t *testing.T) {
 	log := testlogger.NewLogger(t)
 
 	chainFeed, err := iscmoveclient.NewChainFeed(
-		ctx,
 		remoteNode.ISCPackageID(),
 		*anchor.ObjectID,
 		log,

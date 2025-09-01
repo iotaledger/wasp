@@ -48,17 +48,16 @@ func newNCChain(
 	chainID isc.ChainID,
 	requestHandler chain.RequestHandler,
 	anchorHandler chain.AnchorHandler,
-	wsURL string,
+	socketURL string,
 	httpURL string,
 ) (*ncChain, error) {
 	anchorAddress := chainID.AsAddress().AsIotaAddress()
 
 	feed, err := iscmoveclient.NewChainFeed(
-		ctx,
 		nodeConn.iscPackageID,
 		*anchorAddress,
 		nodeConn.Logger,
-		wsURL,
+		socketURL,
 		httpURL,
 	)
 	if err != nil {

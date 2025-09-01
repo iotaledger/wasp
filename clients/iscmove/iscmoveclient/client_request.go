@@ -262,7 +262,6 @@ func (c *Client) parseRequestAndFetchAssetsBag(ctx context.Context, obj *iotajso
 
 func (c *Client) pullRequests(ctx context.Context, packageID iotago.Address, anchorAddress *iotago.ObjectID, maxAmountOfRequests int) (map[iotago.ObjectID]*iotajsonrpc.IotaObjectData, error) {
 	pulledRequests := make(map[iotago.ObjectID]*iotajsonrpc.IotaObjectData, maxAmountOfRequests)
-
 	query := &iotajsonrpc.IotaObjectResponseQuery{
 		Filter: &iotajsonrpc.IotaObjectDataFilter{
 			StructType: &iotago.StructTag{

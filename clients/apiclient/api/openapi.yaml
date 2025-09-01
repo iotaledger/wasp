@@ -1165,7 +1165,7 @@ paths:
             application/json:
               schema:
                 additionalProperties:
-                  example: "true"
+                  example: info
                   format: string
                   type: string
                 type: object

@@ -58,7 +58,7 @@ type nodeConnection struct {
 	iscPackageID        iotago.PackageID
 	httpClient          clients.L1Client
 	l1ParamsFetcher     parameters.L1ParamsFetcher
-	wsURL               string
+	socketURL           string
 	httpURL             string
 	maxNumberOfRequests int
 	chainsLock          sync.RWMutex
@@ -73,7 +73,7 @@ func New(
 	ctx context.Context,
 	iscPackageID iotago.PackageID,
 	maxNumberOfRequests int,
-	wsURL string,
+	socketURL string,
 	httpURL string,
 	log log.Logger,
 	shutdownHandler *shutdown.ShutdownHandler,
@@ -86,7 +86,7 @@ func New(
 	return &nodeConnection{
 		Logger:              log,
 		iscPackageID:        iscPackageID,
-		wsURL:               wsURL,
+		socketURL:           socketURL,
 		httpURL:             httpURL,
 		httpClient:          httpClient,
 		l1ParamsFetcher:     parameters.NewL1ParamsFetcher(httpClient.IotaClient(), log),
@@ -288,7 +288,7 @@ func (nc *nodeConnection) createChain(
 	if readOnly {
 		ncc = nc.createReadOnlyChain(chainID)
 	} else {
-		ncc, err = newNCChain(ctx, nc, chainID, recvRequest, recvAnchor, nc.wsURL, nc.httpURL)
+		ncc, err = newNCChain(ctx, nc, chainID, recvRequest, recvAnchor, nc.socketURL, nc.httpURL)
 		if err != nil {
 			return nil, err
 		}

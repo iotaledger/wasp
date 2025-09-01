@@ -10,9 +10,14 @@ replace (
 	go.dedis.ch/kyber/v3 => github.com/kape1395/kyber/v3 v3.0.14-0.20230124095845-ec682ff08c93 // branch: dkg-2suites
 )
 
+// This is important,  because go-testcontainers relies on an older version of genproto which has a different project structure
+exclude google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c
+
+require google.golang.org/genproto/googleapis/rpc v0.0.0-20250715232539-7130f93afb79 // indirect
+
 require (
 	github.com/iotaledger/hive.go/app v0.0.0-20250409140545-e1a365dbea74
-	github.com/iotaledger/hive.go/apputils v1.0.0-rc.1.0.20230417125513-e2e89991217f
+	github.com/iotaledger/hive.go/apputils v0.0.0-20250409140545-e1a365dbea74
 	github.com/iotaledger/wasp/v2 v2.0.0-00010101000000-000000000000
 )
 
@@ -201,6 +206,7 @@ require (
 	golang.org/x/text v0.26.0 // indirect
 	golang.org/x/time v0.12.0 // indirect
 	golang.org/x/tools v0.34.0 // indirect
+	google.golang.org/grpc v1.69.2 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

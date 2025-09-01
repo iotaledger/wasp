@@ -273,6 +273,6 @@ type Request struct {
 }
 
 type RequestEvent struct {
-	RequestID iotago.ObjectID
-	Anchor    iotago.Address
+	RequestID iotago.ObjectID `json:"request_id"`
+	Anchor    iotago.Address  `json:"anchor"`
 }
