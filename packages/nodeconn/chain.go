@@ -54,7 +54,6 @@ func newNCChain(
 	anchorAddress := chainID.AsAddress().AsIotaAddress()
 
 	feed, err := iscmoveclient.NewChainFeed(
-		ctx,
 		nodeConn.iscPackageID,
 		*anchorAddress,
 		nodeConn.Logger,

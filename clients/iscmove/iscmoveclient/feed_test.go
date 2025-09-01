@@ -39,7 +39,6 @@ func TestRequestsFeed(t *testing.T) {
 	log := testlogger.NewLogger(t)
 
 	chainFeed, err := iscmoveclient.NewChainFeed(
-		ctx,
 		l1starter.ISCPackageID(),
 		*anchor.ObjectID,
 		log,
