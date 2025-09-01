@@ -111,18 +111,12 @@ func MapChainInfoResponse(chainInfo *dto.ChainInfo, evmChainID uint16) ChainInfo
 			Description:     chainInfo.Metadata.Description,
 			Website:         chainInfo.Metadata.Website,
 		},
+		GasLimits:    chainInfo.GasLimits,
+		GasFeePolicy: chainInfo.GasFeePolicy,
 	}
 
 	if chainInfo.ChainAdmin != nil {
 		chainInfoResponse.ChainAdmin = chainInfo.ChainAdmin.String()
-	}
-
-	if chainInfo.GasFeePolicy != nil {
-		chainInfoResponse.GasFeePolicy = chainInfo.GasFeePolicy
-	}
-
-	if chainInfo.GasLimits != nil {
-		chainInfoResponse.GasLimits = chainInfo.GasLimits
 	}
 
 	mapMetadataUrls(&chainInfoResponse)

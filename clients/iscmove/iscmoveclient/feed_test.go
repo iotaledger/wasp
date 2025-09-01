@@ -4,11 +4,13 @@ import (
 	"context"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 	testcommon "github.com/iotaledger/wasp/v2/clients/iota-go/test_common"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
@@ -106,9 +108,11 @@ func TestRequestsFeed(t *testing.T) {
 			SentAssets:       []iscmoveclient.SentAssets{},
 			StateMetadata:    []byte{1, 2, 3},
 			TopUpAmount:      100,
-			GasPayment:       getCoinsRes.Data[0].Ref(),
-			GasPrice:         iotaclient.DefaultGasPrice,
-			GasBudget:        iotaclient.DefaultGasBudget,
+			GasPayment: lo.MaxBy(getCoinsRes.Data, func(a, b *iotajsonrpc.Coin) bool {
+				return a.Balance.Int.Cmp(b.Balance.Int) >= 0
+			}).Ref(),
+			GasPrice:  iotaclient.DefaultGasPrice,
+			GasBudget: iotaclient.DefaultGasBudget,
 		},
 	)
 	require.NoError(t, err)
