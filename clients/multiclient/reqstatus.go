@@ -70,14 +70,14 @@ func (m *MultiClient) WaitUntilAllRequestsProcessed(ctx context.Context, chainID
 
 	m.Timeout = timeout
 
-	var receipts []*apiclient.ReceiptResponse
-	var err error
-	err = m.Do(func(i int, w *apiclient.APIClient) error {
-		receipts, err = apiextensions.APIWaitUntilAllRequestsProcessed(ctx, w, tx, waitForL1Confirmation, timeout)
+	receipts := make([][]*apiclient.ReceiptResponse, len(m.nodes))
+	err := m.Do(func(i int, w *apiclient.APIClient) error {
+		r, err := apiextensions.APIWaitUntilAllRequestsProcessed(ctx, w, tx, waitForL1Confirmation, timeout)
+		receipts[i] = r
 		return err
 	})
 
-	return receipts, err
+	return receipts[0], err
 }
 
 // WaitUntilAllRequestsProcessedSuccessfully is similar to WaitUntilAllRequestsProcessed
