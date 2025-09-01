@@ -21,8 +21,6 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/vm/gas"
 )
 
-const BaseTokensDepositFee = 100
-
 func TestAccounts_Deposit(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{})
 	sender, _ := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
@@ -84,7 +82,7 @@ func TestAccounts_WithdrawEverything(t *testing.T) {
 	ch := env.NewChain()
 
 	// deposit some base tokens to L2
-	baseTokensToDepositToL2 := coin.Value(100_000)
+	baseTokensToDepositToL2 := solo.BaseTokensForL2Gas
 	err := ch.DepositBaseTokensToL2(baseTokensToDepositToL2, sender)
 	require.NoError(t, err)
 
@@ -92,7 +90,7 @@ func TestAccounts_WithdrawEverything(t *testing.T) {
 
 	// construct the request to estimate an withdrawal (leave a few tokens to pay for gas)
 	req := solo.NewCallParams(accounts.FuncWithdraw.Message()).
-		AddAllowance(isc.NewAssets(l2balance - 1000)).
+		AddAllowance(isc.NewAssets(l2balance - solo.BaseTokensForL2Gas/10)).
 		WithMaxAffordableGasBudget()
 
 	_, estimate, err := ch.EstimateGasOffLedger(req, sender)
@@ -161,7 +159,7 @@ func initDepositTest(t *testing.T, initCommonAccountBaseTokens ...coin.Value) *a
 // initWithdrawTest deploys TestCoin, mints 1M tokens and deposits 100 to user's account
 func initWithdrawTest(t *testing.T) *accountsDepositTest {
 	v := initDepositTest(t)
-	v.ch.MustDepositBaseTokensToL2(2*isc.Million, v.user)
+	v.ch.MustDepositBaseTokensToL2(solo.BaseTokensForL2Gas, v.user)
 	coinPackageID, treasuryCap := v.ch.Env.L1DeployCoinPackage(v.user)
 	v.coinType = coin.MustTypeFromString(fmt.Sprintf(
 		"%s::%s::%s",
@@ -182,7 +180,7 @@ func initWithdrawTest(t *testing.T) *accountsDepositTest {
 	// prepare request parameters to withdraw
 	// do not run the request yet
 	v.req = solo.NewCallParams(accounts.FuncWithdraw.Message()).
-		AddBaseTokens(12000).
+		AddBaseTokens(solo.BaseTokensForL2Gas / 10).
 		WithGasBudget(100_000)
 	v.printBalances("BEGIN")
 	return v
@@ -247,7 +245,7 @@ func TestAccounts_TransferAndCheckBaseTokens(t *testing.T) {
 
 	// deposit some base tokens into the common account
 	someUserWallet, _ := v.env.NewKeyPairWithFunds()
-	err := v.ch.SendFromL1ToL2Account(11*isc.Million, isc.NewAssets(10*isc.Million).Coins, accounts.CommonAccount(), someUserWallet)
+	err := v.ch.SendFromL1ToL2Account(isc.NewAssets(10*isc.Million).Coins, solo.BaseTokensForL2Gas, accounts.CommonAccount(), someUserWallet)
 	require.NoError(t, err)
 	commonAccBaseTokens := initialCommonAccountBaseTokens + 10*isc.Million
 	require.EqualValues(t, commonAccBaseTokens, v.ch.L2CommonAccountAssets().BaseTokens())
@@ -258,8 +256,8 @@ func TestAccounts_TransferAndCheckBaseTokens(t *testing.T) {
 func TestAccounts_TransferPartialAssets(t *testing.T) {
 	// setup a chain with some base tokens and native tokens for user1
 	v := initWithdrawTest(t)
-	v.ch.MustDepositBaseTokensToL2(10*isc.Million, v.ch.ChainAdmin)
-	v.ch.MustDepositBaseTokensToL2(10*isc.Million, v.user)
+	v.ch.MustDepositBaseTokensToL2(solo.BaseTokensForL2Gas, v.ch.ChainAdmin)
+	v.ch.MustDepositBaseTokensToL2(solo.BaseTokensForL2Gas, v.user)
 
 	v.ch.AssertL2Coins(v.userAgentID, v.coinType, coin.Value(100))
 	v.ch.AssertL2TotalCoins(v.coinType, coin.Value(100))
@@ -270,12 +268,12 @@ func TestAccounts_TransferPartialAssets(t *testing.T) {
 
 	// deposit 1 base token to "create account" for user2 // TODO maybe remove if account creation is not needed
 	v.ch.AssertL2BaseTokens(user2AgentID, 0)
-	const baseTokensToSend = 3 * isc.Million
-	err := v.ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, baseTokensToSend, user2AgentID, user2)
+	const baseTokensToSend = 3e6
+	err := v.ch.SendFromL1ToL2AccountBaseTokens(baseTokensToSend, solo.BaseTokensForL2Gas, user2AgentID, user2)
 	rec := v.ch.LastReceipt()
 	require.NoError(t, err)
 	v.env.T.Logf("gas fee charged: %d", rec.GasFeeCharged)
-	expectedUser2 := BaseTokensDepositFee + baseTokensToSend - rec.GasFeeCharged
+	expectedUser2 := solo.BaseTokensForL2Gas + baseTokensToSend - rec.GasFeeCharged
 	v.ch.AssertL2BaseTokens(user2AgentID, expectedUser2)
 	// -----------------------------
 	err = v.ch.SendFromL2ToL2Account(

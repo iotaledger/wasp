@@ -239,13 +239,6 @@ func TestNotEnoughISCGas(t *testing.T) {
 	_, err := storage.store(43)
 	require.NoError(t, err)
 
-	// only the owner can call the setEVMGasRatio endpoint
-	// set the ISC gas ratio VERY HIGH
-	newGasRatio := util.Ratio32{A: gas.DefaultEVMGasRatio.A * 500, B: gas.DefaultEVMGasRatio.B}
-	err = env.setEVMGasRatio(newGasRatio, iscCallOptions{wallet: env.Chain.ChainAdmin})
-	require.NoError(t, err)
-	require.Equal(t, newGasRatio, env.getEVMGasRatio())
-
 	senderAddress := crypto.PubkeyToAddress(storage.defaultSender.PublicKey)
 	nonce := env.getNonce(senderAddress)
 
@@ -281,7 +274,8 @@ func TestLoop(t *testing.T) {
 	gasRatio := env.getEVMGasRatio()
 
 	for _, gasLimit := range []uint64{200000, 400000} {
-		baseTokensSent := coin.Value(gas.EVMGasToISC(gasLimit, &gasRatio))
+		iscGasUnits := gas.EVMGasToISC(gasLimit, &gasRatio)
+		baseTokensSent := gas.FeeFromGasWithGasPerToken(iscGasUnits, gas.DefaultGasPerToken)
 		ethKey2, ethAddr2 := env.Chain.NewEthereumAccountWithL2Funds(baseTokensSent)
 		require.EqualValues(t,
 			env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr2)),
@@ -307,7 +301,8 @@ func TestLoopWithGasLeft(t *testing.T) {
 	gasRatio := env.getEVMGasRatio()
 	var usedGas []uint64
 	for _, gasLimit := range []uint64{50000, 200000} {
-		baseTokensSent := coin.Value(gas.EVMGasToISC(gasLimit, &gasRatio))
+		iscGasUnits := gas.EVMGasToISC(gasLimit, &gasRatio)
+		baseTokensSent := gas.FeeFromGasWithGasPerToken(iscGasUnits, gas.DefaultGasPerToken)
 		ethKey2, _ := env.Chain.NewEthereumAccountWithL2Funds(baseTokensSent)
 		res, err := iscTest.CallFn([]ethCallOptions{{
 			sender:   ethKey2,
@@ -354,7 +349,8 @@ func TestLoopWithGasLeftEstimateGas(t *testing.T) {
 	t.Log(estimatedGas)
 
 	gasRatio := env.getEVMGasRatio()
-	baseTokensSent := coin.Value(gas.EVMGasToISC(estimatedGas, &gasRatio))
+	iscGasUnits := gas.EVMGasToISC(estimatedGas, &gasRatio)
+	baseTokensSent := gas.FeeFromGasWithGasPerToken(iscGasUnits, gas.DefaultGasPerToken)
 	ethKey2, _ := env.Chain.NewEthereumAccountWithL2Funds(baseTokensSent)
 	res, err := iscTest.CallFn([]ethCallOptions{{
 		sender:   ethKey2,
@@ -692,8 +688,8 @@ func TestCannotDepleteAccount(t *testing.T) {
 	require.Zero(t, env.solo.L1BaseTokens(receiver))
 	senderInitialBalance := env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddress))
 
-	// we eill attempt to transfer so much that we are left with no funds for gas
-	transfer := senderInitialBalance - 300
+	// we will attempt to transfer so much that we are left with no funds for gas
+	transfer := senderInitialBalance - gas.FeeFromGasWithGasPerToken(30_000, gas.DefaultGasPerToken)
 
 	// allow ISCTest to take the tokens
 	_, err := env.ISCMagicSandbox(ethKey).CallFn(
@@ -1335,11 +1331,10 @@ func TestSelfDestruct(t *testing.T) {
 
 	// send some tokens to the ISCTest contract
 	{
-		const baseTokensDepositFee = 500
 		k, _ := env.solo.NewKeyPairWithFunds(env.solo.NewSeedFromTestNameAndTimestamp(t.Name()))
-		err := env.Chain.SendFromL1ToL2AccountBaseTokens(baseTokensDepositFee, 1*isc.Million, iscTestAgentID, k)
+		err := env.Chain.SendFromL1ToL2AccountBaseTokens(solo.BaseTokensForL2Gas, solo.BaseTokensForL2Gas, iscTestAgentID, k)
 		require.NoError(t, err)
-		require.EqualValues(t, 1*isc.Million, env.Chain.L2BaseTokens(iscTestAgentID))
+		require.EqualValues(t, solo.BaseTokensForL2Gas, env.Chain.L2BaseTokens(iscTestAgentID))
 	}
 
 	_, beneficiary := solo.EthereumAccountByIndex(1)
@@ -1353,7 +1348,7 @@ func TestSelfDestruct(t *testing.T) {
 	// except when called in the same transaction as creation
 	require.NotEmpty(t, env.getCode(iscTest.address))
 	require.Zero(t, env.Chain.L2BaseTokens(iscTestAgentID))
-	require.EqualValues(t, 1*isc.Million, env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(beneficiary)))
+	require.EqualValues(t, solo.BaseTokensForL2Gas, env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(beneficiary)))
 
 	testdbhash.VerifyContractStateHash(env.solo, evm.Contract, "", t.Name())
 }

@@ -183,12 +183,11 @@ func (ch *Chain) Withdraw(assets *isc.Assets, user *cryptolib.KeyPair) error {
 
 // SendFromL1ToL2Account sends ftokens from L1 address to the target account on L2
 // Sender pays the gas fee
-func (ch *Chain) SendFromL1ToL2Account(totalBaseTokens coin.Value, toSend isc.CoinBalances, target isc.AgentID, user *cryptolib.KeyPair) error {
+func (ch *Chain) SendFromL1ToL2Account(toSend isc.CoinBalances, extraDeposit coin.Value, target isc.AgentID, user *cryptolib.KeyPair) error {
 	require.False(ch.Env.T, toSend.IsEmpty())
-	sumAssets := toSend.Clone().AddBaseTokens(totalBaseTokens)
 	_, err := ch.PostRequestSync(
 		NewCallParams(accounts.FuncTransferAllowanceTo.Message(target)).
-			AddFungibleTokens(sumAssets).
+			AddFungibleTokens(toSend.Clone().AddBaseTokens(extraDeposit)).
 			AddAllowance(toSend.ToAssets()).
 			WithGasBudget(math.MaxUint64),
 		user,
@@ -196,8 +195,8 @@ func (ch *Chain) SendFromL1ToL2Account(totalBaseTokens coin.Value, toSend isc.Co
 	return err
 }
 
-func (ch *Chain) SendFromL1ToL2AccountBaseTokens(totalBaseTokens, baseTokensSend coin.Value, target isc.AgentID, user *cryptolib.KeyPair) error {
-	return ch.SendFromL1ToL2Account(totalBaseTokens, isc.NewCoinBalances().AddBaseTokens(baseTokensSend), target, user)
+func (ch *Chain) SendFromL1ToL2AccountBaseTokens(toSend, extraDeposit coin.Value, target isc.AgentID, user *cryptolib.KeyPair) error {
+	return ch.SendFromL1ToL2Account(isc.NewCoinBalances().AddBaseTokens(toSend), extraDeposit, target, user)
 }
 
 // SendFromL2ToL2Account moves ftokens on L2 from user's account to the target
