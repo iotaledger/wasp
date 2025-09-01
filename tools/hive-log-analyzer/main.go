@@ -6,6 +6,9 @@ import (
 	"path/filepath"
 )
 
+// This program is used for analyzig the result of hive tests
+// running command like './hive --sim ethereum/eest --client wasp-client -docker.pull -sim.parallelism 10 > test.log 2>&1'
+// and provide the path of each files as the following flags request
 func main() {
 	testLogPathFlag := flag.String("testlog", "./workspace/test.log", "Path to test.log with ANSI codes")
 	simLogPathFlag := flag.String("simlog", "", "Path to simulator log (e.g. *-simulator-*.log)")

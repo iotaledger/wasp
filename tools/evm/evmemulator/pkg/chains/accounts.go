@@ -3,7 +3,6 @@ package chains
 import (
 	"crypto/ecdsa"
 	"encoding/hex"
-	"math/rand"
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/iotaledger/wasp/v2/packages/solo"
@@ -18,11 +17,11 @@ func CreateAccounts(chain *solo.Chain) (accounts []*ecdsa.PrivateKey) {
 
 	if cli.IsHive {
 		// Hive logic: create a single account using a random depositor
-		pk, addr := chain.EthereumAccountByIndexWithL2FundsRandDepositor(rand.Int())
+		pk, addr := chain.EthereumAccountByIndexWithL2FundsRandDepositor(0)
 		accounts = append(accounts, pk)
 		rows = append(rows, []string{hex.EncodeToString(crypto.FromECDSA(pk)), addr.String()})
 	} else {
-		// IOTA native logic: create the default set of ethereum accounts with L2 funds
+		// Normal logic: create the default set of ethereum accounts with L2 funds
 		for i := 0; i < len(solo.EthereumAccounts); i++ {
 			pk, addr := chain.EthereumAccountByIndexWithL2Funds(i)
 			accounts = append(accounts, pk)

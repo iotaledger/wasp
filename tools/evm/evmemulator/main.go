@@ -31,7 +31,7 @@ evmemulator does the following:
 
 - Starts an ISC chain in a Solo environment
 - Initializes Ethereum accounts with funds (prints private keys and addresses; 1 account only in Hive mode, 
-	10 acounts in IOTA native mode)
+	10 acounts in normal mode)
 - Starts an Ethereum JSON-RPC server at http://localhost:8545 (websocket: ws://localhost:8545/ws)
 - Starts an Engine (consensus) JSON-RPC server at http://localhost:8551. The Engine RPC server starts only under Hive mode.
 

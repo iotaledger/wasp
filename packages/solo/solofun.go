@@ -72,7 +72,7 @@ func (env *Solo) waitForNewBalance(address *cryptolib.Address, startBalance coin
 
 		count++
 		// wait for random time in case of collision
-		rint := rand.IntN(200)
+		rint := rand.IntN(100)
 		time.Sleep(time.Duration(rint)*50*time.Millisecond + time.Second)
 	}
 	require.FailNow(env.T, "Could not get funds from Faucet")

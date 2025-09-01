@@ -285,6 +285,8 @@ func (ch *Chain) L1L2Funds(addr *cryptolib.Address) *L1L2CoinBalances {
 	}
 }
 
+// GetL2FundsFromFaucetWithDepositor is for multiple concurrent calls scenarios.
+// This function uses given depositorSeed to generate the depositor to call TransferAllowanceTo()
 func (ch *Chain) GetL2FundsFromFaucetWithDepositor(agentID isc.AgentID, depositorSeed []byte, baseTokens ...coin.Value) {
 	seed := cryptolib.SeedFromBytes(depositorSeed)
 	walletKey, walletAddr := ch.Env.NewKeyPair(&seed)
@@ -307,8 +309,8 @@ func (ch *Chain) GetL2FundsFromFaucetWithDepositor(agentID isc.AgentID, deposito
 	}
 
 	// make collosion less likely
-	rint := rand.IntN(100) + 1
-	time.Sleep(time.Duration(rint) * 100 * time.Millisecond)
+	rint := rand.IntN(100)
+	time.Sleep((time.Duration(rint)*50 + 100) * time.Millisecond)
 	err := ch.TransferAllowanceTo(
 		isc.NewAssets(amount),
 		agentID,

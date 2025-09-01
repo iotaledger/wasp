@@ -41,7 +41,7 @@ func InitSolo(genesis *core.Genesis) (*SoloContext, *solo.Chain) {
 			chain.GetL2FundsFromFaucetWithDepositor(isc.NewEthereumAddressAgentID(addr), randDepositorSeed, coin.Value(acc.Balance.Uint64()))
 		}
 	} else {
-		// Non-Hive: IOTA native — default gas policy and default chain ID
+		// Non-Hive: — default gas policy and default chain ID
 		chain, _ = env.NewChainExt(chainAdmin, 1*isc.Million, "evmemulator", defaultChainID, emulator.BlockKeepAll, feePolicy, genesis)
 		// No additional prefunding loop for genesis accounts in non-hive mode
 	}

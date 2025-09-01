@@ -94,15 +94,14 @@ func (e *EngineService) waitForTransactionConfirmation(transactions []*types.Tra
 		go func(tx *types.Transaction) {
 			defer wg.Done()
 
-			// Poll until transaction is confirmed or timeout
 			ticker := time.NewTicker(100 * time.Millisecond)
+			timer := time.NewTimer(timeout)
 			defer ticker.Stop()
-
-			timeoutChan := time.After(timeout)
+			defer timer.Stop()
 
 			for {
 				select {
-				case <-timeoutChan:
+				case <-timer.C:
 					mu.Lock()
 					errors = append(errors, fmt.Errorf("timeout waiting for transaction %s", tx.Hash().Hex()))
 					mu.Unlock()
@@ -112,7 +111,6 @@ func (e *EngineService) waitForTransactionConfirmation(transactions []*types.Tra
 					if err != nil {
 						continue // Keep polling
 					}
-
 					if blockNumber == 0 {
 						continue // Transaction not yet mined
 					}
