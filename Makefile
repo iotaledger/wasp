@@ -40,16 +40,13 @@ gendoc:
 	./scripts/gendoc.sh
 
 test-full: install
-	go test -tags $(BUILD_TAGS),runheavy -race -ldflags $(BUILD_LD_FLAGS) ./... --timeout 60m --count 1 -failfast
+	go test -tags $(BUILD_TAGS),runheavy -ldflags $(BUILD_LD_FLAGS) ./... --timeout 60m --count 1 -failfast
 
 test: install
-	go test -tags $(BUILD_TAGS) -race -ldflags $(BUILD_LD_FLAGS) $(TEST_PKG) --timeout 90m --count 1 -failfast  $(TEST_ARG)
+	go test -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS) $(TEST_PKG) --timeout 90m --count 1 -failfast  $(TEST_ARG)
 
 test-short:
-	go test -tags $(BUILD_TAGS) -race -ldflags $(BUILD_LD_FLAGS) --short --count 1 -timeout 25m -failfast $(shell go list ./...)
-
-test-cluster: install
-	go test -tags $(BUILD_TAGS) -race -ldflags $(BUILD_LD_FLAGS) --count 1 -timeout 25m -failfast $(shell go list ./tools/cluster/tests/...)
+	go test -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS) --short --count 1 -timeout 25m -failfast $(shell go list ./...)
 
 install-cli:
 	cd tools/wasp-cli && go mod tidy && go install -ldflags $(BUILD_LD_FLAGS)

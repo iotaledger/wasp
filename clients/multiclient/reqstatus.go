@@ -20,19 +20,19 @@ func (m *MultiClient) WaitUntilRequestProcessed(ctx context.Context, chainID isc
 
 	m.Timeout = timeout
 
-	receipts := make([]*apiclient.ReceiptResponse, len(m.nodes))
-	err := m.Do(func(i int, w *apiclient.APIClient) error {
-		receipt, _, err := w.ChainsAPI.WaitForRequest(ctx, reqID.String()).
+	var receipt *apiclient.ReceiptResponse
+	var err error
+	err = m.Do(func(i int, w *apiclient.APIClient) error {
+		receipt, _, err = w.ChainsAPI.WaitForRequest(ctx, reqID.String()).
 			WaitForL1Confirmation(waitForL1Confirmation).
 			Execute()
-		receipts[i] = receipt
 		return err
 	})
 	if err != nil {
 		// Add some context info to the error.
 		err = fmt.Errorf("failed WaitUntilRequestProcessed(reqID=%v): %w", reqID, err)
 	}
-	return receipts[0], err
+	return receipt, err
 }
 
 // WaitUntilRequestProcessedSuccessfully is similar to WaitUntilRequestProcessed,
