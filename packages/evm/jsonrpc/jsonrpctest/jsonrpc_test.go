@@ -6,6 +6,7 @@ package jsonrpctest
 import (
 	"context"
 	"crypto/ecdsa"
+	crand "crypto/rand"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -14,15 +15,18 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/consensys/gnark-crypto/ecc/bls12-381/fr"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto/kzg4844"
 	"github.com/ethereum/go-ethereum/eth/tracers"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/holiman/uint256"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
@@ -1363,4 +1367,312 @@ func TestSupportsInterfaceRPCEthCall(t *testing.T) {
 			require.Equal(t, c.expected, decodedBool)
 		})
 	}
+}
+
+// TestEIP1559DynamicFeeTransaction tests EIP-1559 dynamic fee transactions
+func TestEIP1559DynamicFeeTransaction(t *testing.T) {
+	env := newSoloTestEnv(t)
+
+	// Create an account with funds
+	from, fromAddr := env.NewAccountWithL2Funds()
+	env.accountManager.Add(from)
+	_, toAddr := env.NewAccountWithL2Funds()
+
+	// Common setup for both test approaches
+	maxFeePerGas := new(big.Int).Mul(env.MustGetGasPrice(), big.NewInt(2)) // 2x base fee
+	maxPriorityFeePerGas := big.NewInt(1000000000)                         // 1 Gwei tip
+
+	t.Run("native geth type", func(t *testing.T) {
+		// Test using eth_sendRawTransaction with manually constructed DynamicFeeTx
+		dynamicTx := &types.DynamicFeeTx{
+			ChainID:   big.NewInt(int64(env.ChainID)),
+			Nonce:     env.NonceAt(fromAddr),
+			GasFeeCap: maxFeePerGas,
+			GasTipCap: maxPriorityFeePerGas,
+			Gas:       42000,
+			To:        &toAddr,
+			Value:     big.NewInt(2000),
+		}
+
+		signedDynamic, err := types.SignTx(types.NewTx(dynamicTx), env.Signer(), from)
+		require.NoError(t, err)
+
+		dynamicRawBytes, err := signedDynamic.MarshalBinary()
+		require.NoError(t, err)
+
+		var dynamicHash common.Hash
+		err = env.RawClient.Call(&dynamicHash, "eth_sendRawTransaction", hexutil.Bytes(dynamicRawBytes))
+		require.NoError(t, err)
+		require.Equal(t, signedDynamic.Hash(), dynamicHash)
+
+		dynamicReceipt := env.MustTxReceipt(dynamicHash)
+		require.Equal(t, types.ReceiptStatusSuccessful, dynamicReceipt.Status)
+		require.Equal(t, uint8(types.DynamicFeeTxType), dynamicReceipt.Type)
+
+		tx := env.TransactionByHash(dynamicHash)
+		require.NotNil(t, tx)
+		require.Equal(t, uint8(types.DynamicFeeTxType), tx.Type())
+		require.Equal(t, maxFeePerGas, tx.GasFeeCap())
+		require.Equal(t, maxPriorityFeePerGas, tx.GasTipCap())
+		require.NotNil(t, tx.GasPrice())
+		require.Equal(t, uint8(types.DynamicFeeTxType), tx.Type())
+	})
+
+	t.Run("jsonrpc.SendTxArgs", func(t *testing.T) {
+		args := &jsonrpc.SendTxArgs{
+			From:                 fromAddr,
+			To:                   &toAddr,
+			Gas:                  (*hexutil.Uint64)(lo.ToPtr(uint64(42000))),
+			Value:                (*hexutil.Big)(big.NewInt(2000)),
+			MaxFeePerGas:         (*hexutil.Big)(maxFeePerGas),
+			MaxPriorityFeePerGas: (*hexutil.Big)(maxPriorityFeePerGas),
+		}
+
+		txHash := env.MustSendTransaction(args)
+
+		receipt := env.MustTxReceipt(txHash)
+		require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
+		require.Equal(t, uint8(types.DynamicFeeTxType), receipt.Type)
+
+		tx := env.TransactionByHash(txHash)
+		require.NotNil(t, tx)
+		require.Equal(t, uint8(types.DynamicFeeTxType), tx.Type())
+		require.Equal(t, maxFeePerGas, tx.GasFeeCap())
+		require.Equal(t, maxPriorityFeePerGas, tx.GasTipCap())
+		require.NotNil(t, tx.GasPrice())
+		require.Equal(t, uint8(types.DynamicFeeTxType), tx.Type())
+	})
+}
+
+func TestEIP1559DynamicFeeTransactionWithAccessList(t *testing.T) {
+	env := newSoloTestEnv(t)
+
+	from, fromAddr := env.NewAccountWithL2Funds()
+	env.accountManager.Add(from)
+
+	// Deploy a simple storage contract for both test approaches
+	_, contractAddr, contractABI := env.deployStorageContract(from)
+
+	// Common setup for both test approaches
+	storeData, err := contractABI.Pack("store", uint32(456))
+	require.NoError(t, err)
+
+	maxFeePerGas := new(big.Int).Mul(env.MustGetGasPrice(), big.NewInt(2))
+	maxPriorityFeePerGas := big.NewInt(1000000000)
+	accessList := types.AccessList{{Address: contractAddr, StorageKeys: []common.Hash{common.HexToHash("0x0")}}}
+
+	t.Run("native geth type", func(t *testing.T) {
+		dynamicTx := &types.DynamicFeeTx{
+			ChainID:    big.NewInt(int64(env.ChainID)),
+			Nonce:      env.NonceAt(fromAddr),
+			Data:       storeData,
+			GasFeeCap:  maxFeePerGas,
+			GasTipCap:  maxPriorityFeePerGas,
+			Gas:        100000,
+			To:         &contractAddr,
+			Value:      big.NewInt(0),
+			AccessList: accessList,
+		}
+
+		signedDynamic, err := types.SignTx(types.NewTx(dynamicTx), env.Signer(), from)
+		require.NoError(t, err)
+
+		dynamicRawBytes, err := signedDynamic.MarshalBinary()
+		require.NoError(t, err)
+
+		var txHash common.Hash
+		err = env.RawClient.Call(&txHash, "eth_sendRawTransaction", hexutil.Bytes(dynamicRawBytes))
+		require.NoError(t, err)
+		require.Equal(t, signedDynamic.Hash(), txHash)
+
+		receipt := env.MustTxReceipt(txHash)
+		require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
+		require.Equal(t, uint8(types.DynamicFeeTxType), receipt.Type)
+
+		tx := env.TransactionByHash(txHash)
+		require.NotNil(t, tx)
+		require.Equal(t, uint8(types.DynamicFeeTxType), tx.Type())
+		require.Equal(t, maxFeePerGas, tx.GasFeeCap())
+		require.Equal(t, maxPriorityFeePerGas, tx.GasTipCap())
+		require.Equal(t, accessList, tx.AccessList())
+		require.Equal(t, uint8(types.DynamicFeeTxType), tx.Type())
+	})
+
+	t.Run("jsonrpc.SendTxArgs", func(t *testing.T) {
+		args := &jsonrpc.SendTxArgs{
+			From:                 fromAddr,
+			To:                   &contractAddr,
+			Gas:                  (*hexutil.Uint64)(lo.ToPtr(uint64(100000))),
+			Value:                (*hexutil.Big)(big.NewInt(0)),
+			Data:                 (*hexutil.Bytes)(&storeData),
+			MaxFeePerGas:         (*hexutil.Big)(maxFeePerGas),
+			MaxPriorityFeePerGas: (*hexutil.Big)(maxPriorityFeePerGas),
+			AccessList:           accessList,
+		}
+
+		txHash := env.MustSendTransaction(args)
+
+		receipt := env.MustTxReceipt(txHash)
+		require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
+		require.Equal(t, uint8(types.DynamicFeeTxType), receipt.Type)
+
+		// Get transaction details
+		tx := env.TransactionByHash(txHash)
+		require.NotNil(t, tx)
+		require.Equal(t, uint8(types.DynamicFeeTxType), tx.Type())
+		require.Equal(t, maxFeePerGas, tx.GasFeeCap())
+		require.Equal(t, maxPriorityFeePerGas, tx.GasTipCap())
+		require.Equal(t, accessList, tx.AccessList())
+		require.Equal(t, uint8(types.DynamicFeeTxType), tx.Type())
+	})
+}
+
+func TestEIP4844BlobTransaction(t *testing.T) {
+	env := newSoloTestEnv(t)
+
+	from, fromAddr := env.NewAccountWithL2Funds()
+	env.accountManager.Add(from)
+	_, toAddr := env.NewAccountWithL2Funds()
+
+	// Common blob setup for both test approaches
+	data := hexutil.Bytes("some random data attached with blob tx")
+	blob, err := makeCanonicalBlob()
+	require.NoError(t, err)
+	commit, err := kzg4844.BlobToCommitment(blob)
+	require.NoError(t, err)
+
+	// Version-1 sidecars use cell proofs; one blob => 128 proofs.
+	proofs, err := kzg4844.ComputeCellProofs(blob)
+	require.NoError(t, err)
+
+	// Create sidecar and derive versioned blob hash(es).
+	sidecar := types.NewBlobTxSidecar(1, []kzg4844.Blob{*blob}, []kzg4844.Commitment{commit}, proofs)
+	blobHashes := sidecar.BlobHashes()
+
+	maxFeePerGas := new(big.Int).Mul(env.MustGetGasPrice(), big.NewInt(2))
+	maxPriorityFeePerGas := big.NewInt(1000000000)
+	blobFeeCap := maxFeePerGas // Same as maxFeePerGas for simplicity
+
+	t.Run("native geth type", func(t *testing.T) {
+		blobTx := &types.BlobTx{
+			ChainID:    uint256.NewInt(uint64(env.ChainID)),
+			Nonce:      env.NonceAt(fromAddr),
+			Data:       data,
+			GasFeeCap:  uint256.MustFromBig(maxFeePerGas),
+			GasTipCap:  uint256.MustFromBig(maxPriorityFeePerGas),
+			Gas:        42000,
+			To:         toAddr,
+			Value:      uint256.NewInt(2000),
+			BlobFeeCap: uint256.MustFromBig(maxFeePerGas),
+			BlobHashes: blobHashes,
+			Sidecar:    sidecar,
+		}
+
+		signedBlobTx, err := types.SignTx(types.NewTx(blobTx), env.Signer(), from)
+		require.NoError(t, err)
+
+		dynamicRawBytes, err := signedBlobTx.MarshalBinary()
+		require.NoError(t, err)
+
+		var txHash common.Hash
+		err = env.RawClient.Call(&txHash, "eth_sendRawTransaction", hexutil.Bytes(dynamicRawBytes))
+		require.NoError(t, err)
+		require.Equal(t, signedBlobTx.Hash(), txHash)
+
+		receipt := env.MustTxReceipt(txHash)
+		require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
+		require.Equal(t, uint8(types.BlobTxType), receipt.Type)
+
+		tx := env.TransactionByHash(txHash)
+		require.NotNil(t, tx)
+		require.Equal(t, tx.GasFeeCap().Uint64(), maxFeePerGas.Uint64())
+		require.Equal(t, tx.GasTipCap().Uint64(), maxPriorityFeePerGas.Uint64())
+		require.Equal(t, tx.BlobGasFeeCap().Uint64(), blobFeeCap.Uint64())
+		require.Len(t, tx.BlobHashes(), 1)
+		require.Equal(t, blobHashes[0], tx.BlobHashes()[0])
+		require.Equal(t, uint8(types.BlobTxType), tx.Type())
+	})
+
+	t.Run("jsonrpc.SendTxArgs", func(t *testing.T) {
+		args := &jsonrpc.SendTxArgs{
+			From:                 fromAddr,
+			To:                   &toAddr,
+			Gas:                  (*hexutil.Uint64)(lo.ToPtr(uint64(42000))),
+			Value:                (*hexutil.Big)(big.NewInt(2000)),
+			Data:                 &data,
+			MaxFeePerGas:         (*hexutil.Big)(maxFeePerGas),
+			MaxPriorityFeePerGas: (*hexutil.Big)(maxPriorityFeePerGas),
+			BlobFeeCap:           (*hexutil.Big)(blobFeeCap),
+			BlobHashes:           blobHashes,
+			Blobs:                []kzg4844.Blob{*blob},
+			Commitments:          []kzg4844.Commitment{commit},
+			Proofs:               proofs,
+		}
+
+		txHash := env.MustSendTransaction(args)
+
+		receipt := env.MustTxReceipt(txHash)
+		require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
+		require.Equal(t, uint8(types.BlobTxType), receipt.Type)
+
+		tx := env.TransactionByHash(txHash)
+		require.NotNil(t, tx)
+		require.Equal(t, uint8(types.BlobTxType), tx.Type())
+		require.Equal(t, maxFeePerGas, tx.GasFeeCap())
+		require.Equal(t, maxPriorityFeePerGas, tx.GasTipCap())
+		require.Equal(t, blobFeeCap, tx.BlobGasFeeCap())
+		require.Len(t, tx.BlobHashes(), 1)
+		require.Equal(t, blobHashes[0], tx.BlobHashes()[0])
+		require.Equal(t, uint8(types.BlobTxType), tx.Type())
+	})
+}
+
+// makeCanonicalBlob returns a valid EIP-4844 blob for tests.
+func makeCanonicalBlob() (*kzg4844.Blob, error) {
+	const bytesPerFE = 32
+	const elemsPerBlob = 4096 // FIELD_ELEMENTS_PER_BLOB
+
+	var blob kzg4844.Blob
+	for i := range elemsPerBlob {
+		offset := i * bytesPerFE
+		for {
+			var cand [bytesPerFE]byte
+			if _, err := crand.Read(cand[:]); err != nil {
+				return nil, err
+			}
+			var fe fr.Element
+			if err := fe.SetBytesCanonical(cand[:]); err == nil { // big-endian & < modulus
+				copy(blob[offset:offset+bytesPerFE], cand[:])
+				break
+			}
+			// try again if non-canonical
+		}
+	}
+	return &blob, nil
+}
+
+// TestInvalidGasPriceConfiguration tests error handling for invalid gas price configurations
+func TestInvalidGasPriceConfiguration(t *testing.T) {
+	env := newSoloTestEnv(t)
+
+	// Create an account with L2 funds
+	creator, creatorAddress := env.NewAccountWithL2Funds()
+	env.accountManager.Add(creator)
+
+	_, toAddr := env.NewAccountWithL2Funds()
+
+	// Test: Both gasPrice and EIP-1559 fields specified (should fail)
+	args := &jsonrpc.SendTxArgs{
+		From:                 creatorAddress,
+		To:                   &toAddr,
+		Gas:                  (*hexutil.Uint64)(lo.ToPtr(uint64(21000))),
+		GasPrice:             (*hexutil.Big)(env.MustGetGasPrice()),
+		Value:                (*hexutil.Big)(big.NewInt(1000)),
+		MaxFeePerGas:         (*hexutil.Big)(env.MustGetGasPrice()),
+		MaxPriorityFeePerGas: (*hexutil.Big)(big.NewInt(1000000000)),
+	}
+
+	_, err := env.SendTransaction(args)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "both gasPrice and (maxFeePerGas or maxPriorityFeePerGas) specified")
 }

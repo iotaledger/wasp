@@ -13,7 +13,7 @@ import (
 )
 
 func Signer(chainID *big.Int) types.Signer {
-	return types.NewEIP155Signer(chainID)
+	return types.NewPragueSigner(chainID)
 }
 
 func GetSender(tx *types.Transaction) (common.Address, error) {

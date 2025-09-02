@@ -202,9 +202,27 @@ func (e *EVMChain) SendTransaction(tx *types.Transaction) error {
 	}
 
 	gasFeePolicy := e.GasFeePolicy()
-	if err := evmutil.CheckGasPrice(tx.GasPrice(), gasFeePolicy); err != nil {
-		return err
+
+	// Validate gas pricing based on transaction type
+	if tx.Type() == types.LegacyTxType {
+		// For legacy and access list transactions, use the gas price
+		if err := evmutil.CheckGasPrice(tx.GasPrice(), gasFeePolicy); err != nil {
+			return err
+		}
+	} else {
+		// For EIP-1559-family (0x02, 0x03, 0x04) transactions, validate the fee cap
+		if err := evmutil.CheckGasPrice(tx.GasTipCap(), gasFeePolicy); err != nil {
+			return err
+		}
 	}
+
+	// extra check for blob transaction, we use the same min gas fee for blob gas too
+	if tx.Type() == types.BlobTxType {
+		if err := evmutil.CheckGasPrice(tx.BlobGasFeeCap(), gasFeePolicy); err != nil {
+			return err
+		}
+	}
+
 	if err := e.checkEnoughL2FundsForGasBudget(sender, tx, gasFeePolicy); err != nil {
 		return err
 	}
@@ -492,6 +510,11 @@ func (e *EVMChain) EstimateGas(callMsg ethereum.CallMsg, blockNumberOrHash *rpc.
 
 func (e *EVMChain) GasPrice() *big.Int {
 	e.log.LogDebugf("GasPrice()")
+	return e.GasFeePolicy().DefaultGasPriceFullDecimals(parameters.BaseTokenDecimals)
+}
+
+func (e *EVMChain) PriorityFeePerGas() *big.Int {
+	e.log.LogDebugf("PriorityFeePerGas()")
 	return e.GasFeePolicy().DefaultGasPriceFullDecimals(parameters.BaseTokenDecimals)
 }
 
