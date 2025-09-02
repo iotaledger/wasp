@@ -27,11 +27,11 @@ func InitSolo(genesis *core.Genesis) (*SoloContext, *solo.Chain) {
 	env := solo.New(ctx, &solo.InitOptions{Debug: log.DebugFlag, PrintStackTrace: log.DebugFlag})
 
 	chainAdmin, _ := env.NewKeyPairWithFunds()
-	feePolicy := gas.DefaultFeePolicy()
 
 	var chain *solo.Chain
 	if cli.IsHive {
 		// Hive: cheaper gas and chain ID = 1
+		feePolicy := gas.DefaultFeePolicy()
 		feePolicy.EVMGasRatio = util.Ratio32{A: 1, B: 10_00_000_000}
 		chain, _ = env.NewChainExt(chainAdmin, 1*isc.Million, "evmemulator", hiveChainID, emulator.BlockKeepAll, feePolicy, genesis)
 
@@ -42,7 +42,7 @@ func InitSolo(genesis *core.Genesis) (*SoloContext, *solo.Chain) {
 		}
 	} else {
 		// Non-Hive: — default gas policy and default chain ID
-		chain, _ = env.NewChainExt(chainAdmin, 1*isc.Million, "evmemulator", defaultChainID, emulator.BlockKeepAll, feePolicy, genesis)
+		chain, _ = env.NewChainExt(chainAdmin, 1*isc.Million, "evmemulator", defaultChainID, emulator.BlockKeepAll, nil, nil)
 		// No additional prefunding loop for genesis accounts in non-hive mode
 	}
 

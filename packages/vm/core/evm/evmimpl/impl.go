@@ -52,14 +52,17 @@ func SetInitialState(
 	feePolicy *gas.FeePolicy,
 	genesis *core.Genesis,
 ) {
-	// Build base alloc with ISC magic contract
-	genesisAlloc := types.GenesisAlloc{
-		iscmagic.Address: types.Account{
-			// Dummy code for size checks; never executed.
-			Code:    common.Hex2Bytes("600180808053f3"),
-			Storage: map[common.Hash]common.Hash{},
-			Balance: nil,
-		},
+	// Ethereum genesis block configuration
+	genesisAlloc := types.GenesisAlloc{}
+
+	// add the ISC magic contract at address 0x10740000...00
+	genesisAlloc[iscmagic.Address] = types.Account{
+		// Dummy code, because some contracts check the code size before calling
+		// the contract.
+		// The EVM code itself will never get executed; see type [magicContract].
+		Code:    common.Hex2Bytes("600180808053f3"),
+		Storage: map[common.Hash]common.Hash{},
+		Balance: nil,
 	}
 
 	// Select gas ratio from fee policy (default if nil)

@@ -77,7 +77,7 @@ func (cs Coins) PickCoinNoLess(amount uint64) (*Coin, error) {
 
 func (cs Coins) PickMultipleCoinsNoLess(amount uint64) ([]*Coin, error) {
 	if amount == 0 {
-		return nil, errors.New("no coins are given")
+		return nil, nil
 	}
 
 	sum := uint64(0)
