@@ -9,6 +9,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/big"
 	"strconv"
 
 	"fortio.org/safecast"
@@ -20,7 +21,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/eth/protocols/eth"
 	"github.com/ethereum/go-ethereum/eth/tracers"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/samber/lo"
 	"golang.org/x/crypto/sha3"
@@ -224,7 +224,7 @@ func (e *EthService) GetTransactionReceipt(txHash common.Hash) (map[string]any, 
 func (e *EthService) SendRawTransaction(txBytes hexutil.Bytes) (common.Hash, error) {
 	return withMetrics(e.metrics, "eth_sendRawTransaction", func() (common.Hash, error) {
 		tx := new(types.Transaction)
-		if err := rlp.DecodeBytes(txBytes, tx); err != nil {
+		if err := tx.UnmarshalBinary(txBytes); err != nil {
 			return common.Hash{}, err
 		}
 		if err := e.evmChain.SendTransaction(tx); err != nil {
@@ -374,7 +374,13 @@ func (e *EthService) parseTxArgs(args *SendTxArgs) (*types.Transaction, error) {
 	if err != nil {
 		return nil, err
 	}
-	return types.SignTx(args.toTransaction(), signer, account)
+
+	chainID := big.NewInt(int64(e.evmChain.ChainID()))
+	tx, err := args.toTransaction(chainID)
+	if err != nil {
+		return nil, err
+	}
+	return types.SignTx(tx, signer, account)
 }
 
 func (e *EthService) GetLogs(q *RPCFilterQuery) ([]*types.Log, error) {

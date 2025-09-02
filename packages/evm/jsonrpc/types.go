@@ -18,7 +18,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto/kzg4844"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/holiman/uint256"
 
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/evm/evmutil"
@@ -40,6 +42,19 @@ type RPCTransaction struct {
 	V                *hexutil.Big    `json:"v"`
 	R                *hexutil.Big    `json:"r"`
 	S                *hexutil.Big    `json:"s"`
+
+	// Typed-transaction metadata (EIP-2718)
+	Type       hexutil.Uint64   `json:"type"` // 0x0,0x1,0x2,0x3
+	ChainID    *hexutil.Big     `json:"chainId,omitempty"`
+	AccessList types.AccessList `json:"accessList,omitempty"` // 0x1,0x2,0x3 may carry it
+
+	// EIP-1559 caps — must be present (non-nil) for type 0x2 and 0x3
+	MaxFeePerGas         *hexutil.Big `json:"maxFeePerGas,omitempty"`
+	MaxPriorityFeePerGas *hexutil.Big `json:"maxPriorityFeePerGas,omitempty"`
+
+	// EIP-4844 (blob)
+	MaxFeePerBlobGas    *hexutil.Big  `json:"maxFeePerBlobGas,omitempty"`
+	BlobVersionedHashes []common.Hash `json:"blobVersionedHashes,omitempty"`
 }
 
 // RPCMarshalHeader converts the given header to the RPC output .
@@ -136,18 +151,69 @@ func newRPCTransaction(tx *types.Transaction, blockHash common.Hash, blockNumber
 	v, r, s := tx.RawSignatureValues()
 
 	result := &RPCTransaction{
-		From:     from,
-		Gas:      hexutil.Uint64(tx.Gas()),
-		GasPrice: (*hexutil.Big)(tx.GasPrice()),
-		Hash:     tx.Hash(),
-		Input:    hexutil.Bytes(tx.Data()),
-		Nonce:    hexutil.Uint64(tx.Nonce()),
-		To:       tx.To(),
-		Value:    (*hexutil.Big)(tx.Value()),
-		V:        (*hexutil.Big)(v),
-		R:        (*hexutil.Big)(r),
-		S:        (*hexutil.Big)(s),
+		Type:  hexutil.Uint64(tx.Type()),
+		From:  from,
+		Gas:   hexutil.Uint64(tx.Gas()),
+		Hash:  tx.Hash(),
+		Input: hexutil.Bytes(tx.Data()),
+		Nonce: hexutil.Uint64(tx.Nonce()),
+		To:    tx.To(),
+		Value: (*hexutil.Big)(tx.Value()),
+		V:     (*hexutil.Big)(v),
+		R:     (*hexutil.Big)(r),
+		S:     (*hexutil.Big)(s),
 	}
+
+	// if tv := tx.Value(); tv != nil {
+	// 	result.Value = (*hexutil.Big)(tv)
+	// }
+
+	if tx.ChainId() != nil {
+		result.ChainID = (*hexutil.Big)(tx.ChainId())
+	}
+
+	switch tx.Type() {
+	case types.LegacyTxType:
+		// in legacy gasPrice is meaningful
+		if gp := tx.GasPrice(); gp != nil {
+			result.GasPrice = (*hexutil.Big)(gp)
+		}
+
+	case types.AccessListTxType:
+		// include access list and gasPrice
+		if al := tx.AccessList(); al != nil {
+			result.AccessList = al
+		}
+		if gp := tx.GasPrice(); gp != nil {
+			result.GasPrice = (*hexutil.Big)(gp)
+		}
+
+	case types.DynamicFeeTxType:
+		// include access list and both FeePerGas, PriorityFeePerGascaps
+		if al := tx.AccessList(); al != nil {
+			result.AccessList = al
+		}
+		result.MaxFeePerGas = (*hexutil.Big)(tx.GasFeeCap())
+		result.MaxPriorityFeePerGas = (*hexutil.Big)(tx.GasTipCap())
+
+	case types.BlobTxType:
+		// EIP-4844 is EIP-1559 + blob fields
+		if al := tx.AccessList(); al != nil {
+			result.AccessList = al
+		}
+		result.MaxFeePerGas = (*hexutil.Big)(tx.GasFeeCap())
+		result.MaxPriorityFeePerGas = (*hexutil.Big)(tx.GasTipCap())
+
+		// Blob fields always included
+		if bfc := tx.BlobGasFeeCap(); bfc != nil {
+			result.MaxFeePerBlobGas = (*hexutil.Big)(bfc)
+		} else {
+			// ensure non-nil so it doesn't get dropped by omitempty logic
+			result.MaxFeePerBlobGas = (*hexutil.Big)(new(big.Int))
+		}
+		result.BlobVersionedHashes = tx.BlobHashes()
+	}
+
 	if blockHash != (common.Hash{}) {
 		result.BlockHash = &blockHash
 		result.BlockNumber = (*hexutil.Big)(new(big.Int).SetUint64(blockNumber))
@@ -185,7 +251,7 @@ func RPCMarshalReceipt(r *types.Receipt, tx *types.Transaction, effectiveGasPric
 		"logs":              rpcMarshalLogs(r),
 		"logsBloom":         r.Bloom,
 		"status":            hexutil.Uint64(r.Status),
-		"type":              hexutil.Uint64(types.LegacyTxType),
+		"type":              hexutil.Uint64(tx.Type()),
 	}
 
 	// Eth compatibility. Return "null" instead of "0x00000000000000000000000..."
@@ -257,13 +323,43 @@ type SendTxArgs struct {
 	// newer name and should be preferred by clients.
 	Data  *hexutil.Bytes `json:"data"`
 	Input *hexutil.Bytes `json:"input"`
+
+	// EIP-2930 (AccessList) fields
+	AccessList types.AccessList `json:"accessList,omitempty"`
+
+	// EIP-1559 (Dynamic Fee) fields
+	MaxFeePerGas         *hexutil.Big `json:"maxFeePerGas,omitempty"`
+	MaxPriorityFeePerGas *hexutil.Big `json:"maxPriorityFeePerGas,omitempty"`
+
+	BlobFeeCap  *hexutil.Big         `json:"maxFeePerBlobGas,omitempty"`
+	BlobHashes  []common.Hash        `json:"blobVersionedHashes,omitempty"`
+	Blobs       []kzg4844.Blob       `json:"blobs,omitempty"`
+	Commitments []kzg4844.Commitment `json:"commitments,omitempty"`
+	Proofs      []kzg4844.Proof      `json:"proofs,omitempty"`
 }
 
 // setDefaults is a helper function that fills in default values for unspecified tx fields.
 func (args *SendTxArgs) setDefaults(e *EthService) error {
-	if args.GasPrice == nil {
+	// Handle gas pricing: legacy vs EIP-1559
+	hasDynamicFeeFields := args.MaxFeePerGas != nil || args.MaxPriorityFeePerGas != nil
+
+	if args.GasPrice != nil && hasDynamicFeeFields {
+		return errors.New("both gasPrice and (maxFeePerGas or maxPriorityFeePerGas) specified")
+	}
+
+	if hasDynamicFeeFields {
+		// EIP-1559 requires client to supply both fields or use defaults
+		if args.MaxFeePerGas == nil {
+			args.MaxFeePerGas = (*hexutil.Big)(e.evmChain.GasPrice())
+		}
+		if args.MaxPriorityFeePerGas == nil {
+			args.MaxPriorityFeePerGas = (*hexutil.Big)(e.evmChain.PriorityFeePerGas())
+		}
+	} else if args.GasPrice == nil {
+		// No gas pricing specified, default to legacy
 		args.GasPrice = (*hexutil.Big)(e.evmChain.GasPrice())
 	}
+
 	if args.Value == nil {
 		args.Value = new(hexutil.Big)
 	}
@@ -292,17 +388,107 @@ func (args *SendTxArgs) setDefaults(e *EthService) error {
 	return nil
 }
 
-func (args *SendTxArgs) toTransaction() *types.Transaction {
+func (args *SendTxArgs) toTransaction(chainID *big.Int) (*types.Transaction, error) {
 	var input []byte
 	if args.Input != nil {
 		input = *args.Input
 	} else if args.Data != nil {
 		input = *args.Data
 	}
-	if args.To == nil {
-		return types.NewContractCreation(uint64(*args.Nonce), (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input)
+
+	nonce := uint64(*args.Nonce)
+	value := args.Value.ToInt()
+	gas := uint64(*args.Gas)
+
+	// BlobTx (type 0x03)
+	// Build a BlobTx if any blob-specific fields are present.
+	if args.BlobFeeCap != nil || len(args.BlobHashes) > 0 || len(args.Blobs) > 0 ||
+		len(args.Commitments) > 0 || len(args.Proofs) > 0 {
+
+		// blob tx requires non-nil 'To' (blob tx cannot be contract creation).
+		if args.To == nil {
+			return nil, fmt.Errorf("blobTx must contain 'To' field")
+		}
+
+		if len(args.Blobs) > 6 {
+			return nil, fmt.Errorf("exceed the max blob number in a blobTx")
+		}
+
+		// Validate KZG commitments match blobs if both are provided
+		if len(args.Blobs) > 0 && len(args.Commitments) > 0 {
+			if len(args.Blobs) != len(args.Commitments) {
+				return nil, fmt.Errorf("number of blobs must match number of commitments")
+			}
+			for i, blob := range args.Blobs {
+				expectedCommitment, err := kzg4844.BlobToCommitment(&blob)
+				if err != nil {
+					return nil, fmt.Errorf("failed to compute commitment for blob %d: %w", i, err)
+				}
+				if expectedCommitment != args.Commitments[i] {
+					return nil, fmt.Errorf("commitment mismatch for blob %d", i)
+				}
+			}
+		}
+
+		body := &types.BlobTx{
+			ChainID:    uint256.MustFromBig(chainID),
+			Nonce:      nonce,
+			GasTipCap:  uint256.MustFromBig(args.MaxPriorityFeePerGas.ToInt()),
+			GasFeeCap:  uint256.MustFromBig(args.MaxFeePerGas.ToInt()),
+			Gas:        gas,
+			To:         *args.To,
+			Value:      uint256.MustFromBig(value),
+			Data:       input,
+			AccessList: args.AccessList,
+			BlobFeeCap: uint256.MustFromBig(args.BlobFeeCap.ToInt()),
+			BlobHashes: args.BlobHashes,
+		}
+		tx := types.NewTx(body)
+
+		// Attach sidecar if blobs provided (not RLP-encoded; carried alongside).
+		if len(args.Blobs) > 0 {
+			tx = tx.WithBlobTxSidecar(types.NewBlobTxSidecar(1, args.Blobs, args.Commitments, args.Proofs))
+		}
+		return tx, nil
 	}
-	return types.NewTransaction(uint64(*args.Nonce), *args.To, (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input)
+
+	// Dynamic Fee (type 0x02)
+	if args.MaxFeePerGas != nil || args.MaxPriorityFeePerGas != nil {
+		dyn := &types.DynamicFeeTx{
+			ChainID:   chainID,
+			Nonce:     nonce,
+			GasTipCap: args.MaxPriorityFeePerGas.ToInt(),
+			GasFeeCap: args.MaxFeePerGas.ToInt(),
+			Gas:       gas,
+			To:        args.To,
+			Value:     value,
+			Data:      input,
+		}
+		if len(args.AccessList) > 0 {
+			dyn.AccessList = args.AccessList
+		}
+		return types.NewTx(dyn), nil
+	}
+
+	// Access List (type 0x01)
+	if len(args.AccessList) > 0 {
+		return types.NewTx(&types.AccessListTx{
+			ChainID:    chainID,
+			Nonce:      nonce,
+			GasPrice:   args.GasPrice.ToInt(),
+			Gas:        gas,
+			To:         args.To,
+			Value:      value,
+			Data:       input,
+			AccessList: args.AccessList,
+		}), nil
+	}
+
+	// Legacy (type 0x00)
+	if args.To == nil {
+		return types.NewContractCreation(nonce, value, gas, args.GasPrice.ToInt(), input), nil
+	}
+	return types.NewTransaction(nonce, *args.To, value, gas, args.GasPrice.ToInt(), input), nil
 }
 
 type RPCFilterQuery ethereum.FilterQuery
