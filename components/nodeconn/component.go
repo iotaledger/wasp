@@ -52,10 +52,9 @@ func provide(c *dig.Container) error {
 		address := lo.Must(iotago.AddressFromHex(ParamsL1.PackageID))
 
 		nodeConnection, err := nodeconn.New(
-			Component.Daemon().ContextStopped(),
 			*address,
 			chains.ParamsChains.MempoolMaxOnledgerInPool,
-			ParamsL1.WebsocketURL,
+			ParamsL1.SocketURL,
 			ParamsL1.HTTPURL,
 			Component.NewChildLogger("nc"),
 			deps.ShutdownHandler,

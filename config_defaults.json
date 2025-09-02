@@ -18,7 +18,7 @@
     ]
   },
   "l1": {
-    "websocketURL": "ws://localhost:9000",
+    "socketURL": "ws://localhost:9000",
     "httpurl": "http://localhost:9000",
     "packageID": "",
     "maxConnectionAttempts": 30,
@@ -35,7 +35,8 @@
       "path": "waspdb/chains/data",
       "cacheSize": 33554432
     },
-    "debugSkipHealthCheck": true
+    "debugSkipHealthCheck": true,
+    "readOnlyFilePath": ""
   },
   "p2p": {
     "identity": {

@@ -70,7 +70,6 @@ type nodeConnection struct {
 var _ chain.NodeConnection = &nodeConnection{}
 
 func New(
-	ctx context.Context,
 	iscPackageID iotago.PackageID,
 	maxNumberOfRequests int,
 	socketURL string,
@@ -79,8 +78,7 @@ func New(
 	shutdownHandler *shutdown.ShutdownHandler,
 ) (chain.NodeConnection, error) {
 	httpClient := clients.NewL1Client(clients.L1Config{
-		APIURL:    httpURL,
-		FaucetURL: "",
+		APIURL: httpURL,
 	}, iotaclient.WaitForEffectsEnabled)
 
 	return &nodeConnection{

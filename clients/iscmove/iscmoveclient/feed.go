@@ -3,6 +3,7 @@ package iscmoveclient
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -90,13 +91,15 @@ func NewGRpcClientWrapper(log log.Logger, socketURL string, packageID iotago.Pac
 type WebsocketClientWrapper struct {
 	client *Client
 	filter *iotajsonrpc.EventFilter
-
-	wg sync.WaitGroup
+	log    log.Logger
+	wsURL  string
+	wg     sync.WaitGroup
 }
 
-func NewWebSocketClientWrapper(client *Client, packageID iotago.PackageID, anchorID iotago.ObjectID) EventClient {
+func NewWebSocketClientWrapper(log log.Logger, wsURL string, packageID iotago.PackageID, anchorID iotago.ObjectID) EventClient {
 	return &WebsocketClientWrapper{
-		client: client,
+		log:   log,
+		wsURL: wsURL,
 		filter: &iotajsonrpc.EventFilter{
 			And: &iotajsonrpc.AndOrEventFilter{
 				Filter1: &iotajsonrpc.EventFilter{MoveEventType: &iotago.StructTag{
@@ -115,6 +118,13 @@ func NewWebSocketClientWrapper(client *Client, packageID iotago.PackageID, ancho
 
 func (w *WebsocketClientWrapper) SubscribeEvents(ctx context.Context) (<-chan iscmove.RequestEvent, error) {
 	ev := make(chan *iotajsonrpc.IotaEvent, eventBufferSize)
+
+	client, err := NewWebsocketClient(ctx, w.wsURL, "", iotaclient.WaitForEffectsEnabled, w.log)
+	if err != nil {
+		return nil, err
+	}
+
+	w.client = client
 
 	if err := w.client.SubscribeEvent(ctx, w.filter, ev); err != nil {
 		return nil, err
@@ -164,6 +174,16 @@ type ChainFeed struct {
 	log           log.Logger
 }
 
+func selectEventClient(log log.Logger, socketURL string, iscPackageID iotago.PackageID, anchorID iotago.ObjectID) (EventClient, error) {
+	if strings.HasPrefix(socketURL, "grpc://") {
+		return NewGRpcClientWrapper(log, strings.ReplaceAll(socketURL, "grpc://", ""), iscPackageID, anchorID), nil
+	} else if strings.HasPrefix(socketURL, "ws://") || strings.HasPrefix(socketURL, "wss://") {
+		return NewWebSocketClientWrapper(log, socketURL, iscPackageID, anchorID), nil
+	} else {
+		return nil, fmt.Errorf("unsupported socket url: %s (use either grpc:// or ws/wss://)", socketURL)
+	}
+}
+
 func NewChainFeed(
 	iscPackageID iotago.PackageID,
 	anchorAddress iotago.ObjectID,
@@ -171,8 +191,10 @@ func NewChainFeed(
 	socketURL string,
 	httpURL string,
 ) (*ChainFeed, error) {
-
-	var eventClient EventClient = NewGRpcClientWrapper(log, socketURL, iscPackageID, anchorAddress)
+	eventClient, err := selectEventClient(log, socketURL, iscPackageID, anchorAddress)
+	if err != nil {
+		return nil, err
+	}
 
 	httpClient := NewHTTPClient(httpURL, "", iotaclient.WaitForEffectsEnabled)
 
