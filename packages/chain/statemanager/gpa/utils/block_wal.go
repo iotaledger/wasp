@@ -33,7 +33,6 @@ const (
 	constBlockWALTmpFileSuffix = ".tmp"
 )
 
-// Chain ID kept for backward compatibility //nolint:staticcheck
 func NewBlockWAL(log log.Logger, baseDir string, chainID isc.ChainID, metrics *metrics.ChainBlockWALMetrics) (BlockWAL, error) {
 	dir := filepath.Join(baseDir, chainID.String())
 	if err := ioutils.CreateDirectory(dir, 0o777); err != nil {
