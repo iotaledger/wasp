@@ -102,20 +102,24 @@ func trieStore(db kvstore.KVStore) trie.KVStore {
 	return trie.NewHiveKVStoreAdapter(db, []byte{chaindb.PrefixTrie})
 }
 
-func (db *storeDB) trieUpdatable(root trie.Hash) (*trie.TrieUpdatable, error) {
-	return trie.NewTrieUpdatable(trieStore(db), root)
+func (db *storeDB) trieDraft(root trie.Hash) (*trie.Draft, error) {
+	return trie.NewDraft(trieStore(db), root)
 }
 
 func (db *storeDB) initTrie(refcountsEnabled bool) (trie.Hash, error) {
-	return trie.InitRoot(trieStore(db), refcountsEnabled)
+	return trie.NewTrieRW(trieStore(db)).InitRoot(refcountsEnabled)
 }
 
-func (db *storeDB) trieReader(root trie.Hash) (*trie.TrieReader, error) {
+func (db *storeDB) trieReader(root trie.Hash) (*trie.TrieRFromRoot, error) {
 	return trieReader(trieStore(db), root)
 }
 
-func trieReader(trieStore trie.KVStore, root trie.Hash) (*trie.TrieReader, error) {
-	return trie.NewTrieReader(trieStore, root)
+func trieReader(trieStore trie.KVStore, root trie.Hash) (*trie.TrieRFromRoot, error) {
+	tr := trie.NewTrieRFromRoot(trieStore, root)
+	if err := tr.VerifyRoot(); err != nil {
+		return nil, err
+	}
+	return tr, nil
 }
 
 func (db *storeDB) hasBlock(root trie.Hash) bool {
@@ -220,7 +224,7 @@ func (db *storeDB) restoreSnapshot(root trie.Hash, r io.Reader, refcountsEnabled
 	}
 	db.saveBlock(block)
 
-	err = trie.RestoreSnapshot(r, trieStore(db), refcountsEnabled)
+	err = trie.NewTrieRW(trieStore(db)).RestoreSnapshot(r, refcountsEnabled)
 	if err != nil {
 		return err
 	}

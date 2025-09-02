@@ -9,47 +9,96 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/kv/codec"
 )
 
+// Refcounts holds reference counts for nodes and values in memory
 type Refcounts struct {
-	store KVStore
+	Nodes  map[Hash]uint32
+	Values map[string]uint32
 }
 
-func initRefcounts(store KVStore, root *bufferedNode) {
-	enabled, refcounts := NewRefcounts(store)
+func NewRefcounts() *Refcounts {
+	return &Refcounts{
+		Nodes:  make(map[Hash]uint32),
+		Values: make(map[string]uint32),
+	}
+}
+
+func incRefcount[T comparable](m map[T]uint32, k T) uint32 {
+	m[k]++
+	return m[k]
+}
+
+func decRefcount[T comparable](m map[T]uint32, k T) uint32 {
+	n := m[k]
+	if n == 0 {
+		panic(fmt.Sprintf("cannot decrement refcount of %v, already 0", k))
+	}
+	n--
+	m[k] = n
+	return n
+}
+
+func setRefcountIfAbsent[T comparable](m map[T]uint32, k T, n uint32) uint32 {
+	v, ok := m[k]
+	if ok {
+		return v
+	}
+	m[k] = n
+	return n
+}
+
+func (r *Refcounts) incNode(commitment Hash) uint32 {
+	return incRefcount(r.Nodes, commitment)
+}
+
+func (r *Refcounts) incValue(t *Tcommitment) uint32 {
+	return incRefcount(r.Values, string(t.Data))
+}
+
+func (r *Refcounts) decNode(commitment Hash) uint32 {
+	return decRefcount(r.Nodes, commitment)
+}
+
+func (r *Refcounts) decValue(t *Tcommitment) uint32 {
+	return decRefcount(r.Values, string(t.Data))
+}
+
+func (r *Refcounts) setNodeIfAbsent(commitment Hash, n uint32) uint32 {
+	return setRefcountIfAbsent(r.Nodes, commitment, n)
+}
+
+func (r *Refcounts) setValueIfAbsent(t *Tcommitment, n uint32) uint32 {
+	return setRefcountIfAbsent(r.Values, string(t.Data), n)
+}
+
+func (tr *TrieRW) initRefcounts(root *draftNode) {
+	enabled := tr.IsRefcountsEnabled()
 	if enabled {
-		refcounts.inc(root)
+		tr.incRefcounts(root)
 	}
-}
-
-func NewRefcounts(store KVStore) (bool, *Refcounts) {
-	enabled := IsRefcountsEnabled(store)
-	if !enabled {
-		return false, nil
-	}
-	return true, &Refcounts{store: store}
 }
 
 // IsRefcountsEnabled reads the enabled flag from the db.
 // It returns true only after EnableRefcounts is called on an empty DB.
-func IsRefcountsEnabled(store KVStore) bool {
-	return lo.Must(codec.Decode[bool](store.Get([]byte{partitionRefcountsEnabled}), false))
+func (tr *TrieR) IsRefcountsEnabled() bool {
+	return lo.Must(codec.Decode[bool](tr.store.Get(dbKeyRefcountsEnabled()), false))
 }
 
 // UpdateRefcountsFlag enables or disables trie reference counting.
 // Note that the flag can only be set to true on an empty DB.
-func UpdateRefcountsFlag(store KVStore, enable bool) error {
+func (tr *TrieRW) UpdateRefcountsFlag(enable bool) error {
 	if !enable {
 		// flag can be disabled without restrictions
-		store.Set([]byte{partitionRefcountsEnabled}, codec.Encode(false))
+		tr.store.Set([]byte{partitionRefcountsEnabled}, codec.Encode(false))
 		return nil
 	}
-	enabled := IsRefcountsEnabled(store)
+	enabled := tr.IsRefcountsEnabled()
 	if enabled {
 		// already enabled
 		return nil
 	}
 	// flag can be enabled only on an empty store
 	isEmpty := true
-	store.IterateKeys(func(k []byte) bool {
+	tr.store.IterateKeys(nil, func(k []byte) bool {
 		isEmpty = false
 		return false
 	})
@@ -57,7 +106,7 @@ func UpdateRefcountsFlag(store KVStore, enable bool) error {
 		return fmt.Errorf("cannot enable refcounts on a non-empty store")
 	}
 
-	store.Set([]byte{partitionRefcountsEnabled}, codec.Encode(true))
+	tr.store.Set([]byte{partitionRefcountsEnabled}, codec.Encode(true))
 	return nil
 }
 
@@ -67,17 +116,25 @@ func DeleteRefcountsFlag(store KVStore) {
 	store.Del([]byte{partitionRefcountsEnabled})
 }
 
-func (r *Refcounts) GetNode(commitment Hash) uint32 {
-	return r.getRefcount(nodeRefcountKey(commitment[:]))
+func (tr *TrieR) GetNodeRefcount(commitment Hash) uint32 {
+	return tr.getRefcount(dbKeyNodeRefcount(commitment[:]))
 }
 
-func (r *Refcounts) GetValue(commitment []byte) uint32 {
-	return r.getRefcount(valueRefcountKey(commitment))
+func (tr *TrieRW) setNodeRefcount(commitment Hash, n uint32) {
+	tr.setRefcount(dbKeyNodeRefcount(commitment[:]), n)
 }
 
-// inc is called after a commit operation, and increments the refcounts for all affected nodes
-func (r *Refcounts) inc(root *bufferedNode) CommitStats {
-	nodeRefcounts, valueRefcounts := r.fetchBeforeCommit(root)
+func (tr *TrieR) GetValueRefcount(t *Tcommitment) uint32 {
+	return tr.getRefcount(t.dbKeyValueRefcount())
+}
+
+func (tr *TrieRW) setValueRefcount(t *Tcommitment, n uint32) {
+	tr.setRefcount(t.dbKeyValueRefcount(), n)
+}
+
+// incRefcounts is called after a commit operation, and increments the refcounts for all affected nodes
+func (tr *TrieRW) incRefcounts(root *draftNode) CommitStats {
+	refcounts := tr.fetchBeforeCommit(root)
 
 	// increment and write updated refcounts
 	//
@@ -85,34 +142,30 @@ func (r *Refcounts) inc(root *bufferedNode) CommitStats {
 	// already handled by the underlying store
 	stats := CommitStats{}
 	incrementNode := func(commitment Hash) uint32 {
-		refcount := nodeRefcounts[commitment]
-		refcount++
-		nodeRefcounts[commitment] = refcount
-		r.setRefcount(nodeRefcountKey(commitment[:]), refcount)
+		refcount := refcounts.incNode(commitment)
+		tr.setNodeRefcount(commitment, refcount)
 		if refcount == 1 {
 			stats.CreatedNodes++
 		}
 		return refcount
 	}
-	incrementValue := func(data []byte) uint32 {
-		refcount := valueRefcounts[string(data)]
-		refcount++
-		valueRefcounts[string(data)] = refcount
-		r.setRefcount(valueRefcountKey(data), refcount)
+	incrementValue := func(t *Tcommitment) uint32 {
+		refcount := refcounts.incValue(t)
+		tr.setValueRefcount(t, refcount)
 		if refcount == 1 {
 			stats.CreatedValues++
 		}
 		return refcount
 	}
-	root.traversePreOrder(func(node *bufferedNode) IterateNodesAction {
+	root.traversePreOrder(func(node *draftNode) IterateNodesAction {
 		nodeRefcount := incrementNode(node.nodeData.Commitment)
 		if nodeRefcount > 1 {
 			// don't increment its children refcounts
 			return IterateSkipSubtree
 		}
 		// this is a new node, increment its children refcounts
-		if node.terminal != nil && !node.terminal.IsValue {
-			_ = incrementValue(node.terminal.Data)
+		if node.CommitsToExternalValue() {
+			_ = incrementValue(node.terminal)
 		}
 		node.nodeData.iterateChildren(func(i byte, childCommitment Hash) bool {
 			if _, ok := node.uncommittedChildren[i]; !ok {
@@ -129,34 +182,28 @@ func (r *Refcounts) inc(root *bufferedNode) CommitStats {
 
 // fetchBeforeCommit fetches all affected refcounts, using a single call to
 // MultiGet
-func (r *Refcounts) fetchBeforeCommit(root *bufferedNode) (
-	nodeRefcounts map[Hash]uint32,
-	valueRefcounts map[string]uint32,
-) {
+func (tr *TrieR) fetchBeforeCommit(root *draftNode) *Refcounts {
 	type fetch struct {
-		isNode         bool
 		dbKey          []byte
 		nodeCommitment Hash
-		valueData      []byte
+		terminal       *Tcommitment
 	}
 	var toFetch []fetch
 
 	addNode := func(commitment Hash) {
 		toFetch = append(toFetch, fetch{
-			isNode:         true,
-			dbKey:          nodeRefcountKey(commitment[:]),
+			dbKey:          dbKeyNodeRefcount(commitment[:]),
 			nodeCommitment: commitment,
 		})
 	}
-	addValue := func(nodeData []byte) {
+	addValue := func(t *Tcommitment) {
 		toFetch = append(toFetch, fetch{
-			isNode:    false,
-			dbKey:     valueRefcountKey(nodeData),
-			valueData: nodeData,
+			dbKey:    t.dbKeyValueRefcount(),
+			terminal: t,
 		})
 	}
 	visited := make(map[Hash]struct{})
-	root.traversePreOrder(func(node *bufferedNode) IterateNodesAction {
+	root.traversePreOrder(func(node *draftNode) IterateNodesAction {
 		if _, ok := visited[node.nodeData.Commitment]; ok {
 			// this node was already visited, don't fetch twice
 			return IterateSkipSubtree
@@ -164,8 +211,8 @@ func (r *Refcounts) fetchBeforeCommit(root *bufferedNode) (
 		visited[node.nodeData.Commitment] = struct{}{}
 
 		addNode(node.nodeData.Commitment)
-		if node.terminal != nil && !node.terminal.IsValue {
-			addValue(node.terminal.Data)
+		if node.CommitsToExternalValue() {
+			addValue(node.terminal)
 		}
 		// also fetch old nodes referenced by this node
 		node.nodeData.iterateChildren(func(i byte, childCommitment Hash) bool {
@@ -176,73 +223,55 @@ func (r *Refcounts) fetchBeforeCommit(root *bufferedNode) (
 		})
 		return IterateContinue
 	})
-	refCountBytes := r.store.MultiGet(lo.Map(toFetch, func(f fetch, _ int) []byte {
+	refcountBytes := tr.store.MultiGet(lo.Map(toFetch, func(f fetch, _ int) []byte {
 		return f.dbKey
 	}))
-	nodeRefcounts = make(map[Hash]uint32)
-	valueRefcounts = make(map[string]uint32)
+	refcounts := NewRefcounts()
 	for i, f := range toFetch {
-		if f.isNode {
-			nodeRefcounts[f.nodeCommitment] = codec.MustDecode[uint32](refCountBytes[i], 0)
-		} else {
-			valueRefcounts[string(f.valueData)] = codec.MustDecode[uint32](refCountBytes[i], 0)
+		v := codec.MustDecode[uint32](refcountBytes[i], 0)
+		if f.terminal == nil { // this is a node refcount
+			refcounts.setNodeIfAbsent(f.nodeCommitment, v)
+		} else { // this is a value refcount
+			refcounts.setValueIfAbsent(f.terminal, v)
 		}
 	}
-	return nodeRefcounts, valueRefcounts
+	return refcounts
 }
 
-func (r *Refcounts) SetNode(hash Hash, n uint32) {
-	r.setRefcount(nodeRefcountKey(hash[:]), n)
-}
-
-func (r *Refcounts) SetValue(key []byte, n uint32) {
-	r.setRefcount(valueRefcountKey(key), n)
-}
-
-func (r *Refcounts) DebugDump(w io.Writer) (
-	nodeRefcounts map[Hash]uint32,
-	valueRefcounts map[string]uint32,
-) {
-	nodeRefcounts = make(map[Hash]uint32)
-	valueRefcounts = make(map[string]uint32)
-
+func (tr *TrieR) DebugDumpRefcounts(w io.Writer) *Refcounts {
+	refcounts := NewRefcounts()
 	fmt.Fprint(w, "[node refcounts]\n")
-	makeKVStorePartition(r.store, partitionRefcountNodes).IterateKeys(func(k []byte) bool {
-		n := r.getRefcount(nodeRefcountKey(k))
+	tr.store.IterateKeys([]byte{partitionRefcountNodes}, func(k []byte) bool {
+		commitment, err := HashFromBytes(k[1:])
+		assertNoError(err)
+		n := tr.GetNodeRefcount(commitment)
 		fmt.Fprintf(w, "   %x: %d\n", k, n)
-		nodeRefcounts[Hash(k)] = n
+		refcounts.setNodeIfAbsent(commitment, n)
 		return true
 	})
 	fmt.Fprint(w, "[value refcounts]\n")
-	makeKVStorePartition(r.store, partitionRefcountValues).IterateKeys(func(k []byte) bool {
-		n := r.getRefcount(valueRefcountKey(k))
+	tr.store.IterateKeys([]byte{partitionRefcountValues}, func(k []byte) bool {
+		t := &Tcommitment{IsValue: false, Data: k[1:]}
+		n := tr.GetValueRefcount(t)
 		fmt.Fprintf(w, "   %x: %d\n", k, n)
-		valueRefcounts[string(k)] = n
+		refcounts.setValueIfAbsent(t, n)
 		return true
 	})
-	return
+	return refcounts
 }
 
-func nodeRefcountKey(nodeCommitment []byte) []byte {
-	return append([]byte{partitionRefcountNodes}, nodeCommitment...)
-}
-
-func valueRefcountKey(valueCommitment []byte) []byte {
-	return append([]byte{partitionRefcountValues}, valueCommitment...)
-}
-
-func (r *Refcounts) getRefcount(key []byte) uint32 {
-	b := r.store.Get(key)
+func (tr *TrieR) getRefcount(key []byte) uint32 {
+	b := tr.store.Get(key)
 	if b == nil {
 		return 0
 	}
 	return codec.MustDecode[uint32](b)
 }
 
-func (r *Refcounts) setRefcount(key []byte, n uint32) {
+func (tr *TrieRW) setRefcount(key []byte, n uint32) {
 	if n == 0 {
-		r.store.Del(key)
+		tr.store.Del(key)
 	} else {
-		r.store.Set(key, codec.Encode[uint32](n))
+		tr.store.Set(key, codec.Encode[uint32](n))
 	}
 }

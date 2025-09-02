@@ -10,27 +10,27 @@ import (
 
 // trieKVAdapter is a KVStoreReader backed by a TrieReader
 type trieKVAdapter struct {
-	*trie.TrieReader
+	*trie.TrieRFromRoot
 }
 
 var _ kv.KVStoreReader = &trieKVAdapter{}
 
 func (t *trieKVAdapter) Get(key kv.Key) []byte {
-	return t.TrieReader.Get([]byte(key))
+	return t.TrieRFromRoot.Get([]byte(key))
 }
 
 func (t *trieKVAdapter) Has(key kv.Key) bool {
-	return t.TrieReader.Has([]byte(key))
+	return t.TrieRFromRoot.Has([]byte(key))
 }
 
 func (t *trieKVAdapter) Iterate(prefix kv.Key, f func(kv.Key, []byte) bool) {
-	t.TrieReader.Iterator([]byte(prefix)).Iterate(func(k []byte, v []byte) bool {
+	t.TrieRFromRoot.Iterate([]byte(prefix), func(k []byte, v []byte) bool {
 		return f(kv.Key(k), v)
 	})
 }
 
 func (t *trieKVAdapter) IterateKeys(prefix kv.Key, f func(kv.Key) bool) {
-	t.TrieReader.Iterator([]byte(prefix)).IterateKeys(func(k []byte) bool {
+	t.TrieRFromRoot.IterateKeys([]byte(prefix), func(k []byte) bool {
 		return f(kv.Key(k))
 	})
 }

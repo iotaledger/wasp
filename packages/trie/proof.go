@@ -13,7 +13,7 @@ type MerkleProofElement struct {
 	ChildIndex    int
 }
 
-func (tr *TrieReader) MerkleProof(key []byte) *MerkleProof {
+func (tr *TrieRFromRoot) MerkleProof(key []byte) *MerkleProof {
 	unpackedKey := unpackBytes(key)
 	nodePath, ending := tr.nodePath(unpackedKey)
 	ret := &MerkleProof{
@@ -53,4 +53,34 @@ func (tr *TrieReader) MerkleProof(key []byte) *MerkleProof {
 		panic("wrong ending code")
 	}
 	return ret
+}
+
+// pathElement proof element is NodeData together with the index of
+// the next child in the path (except the last one in the proof path)
+// Sequence of pathElement is used to generate proof
+type pathElement struct {
+	NodeData   *NodeData
+	ChildIndex byte
+}
+
+// nodePath returns path PathElement-s along the triePath (the key) with the ending code
+// to determine is it a proof of inclusion or absence
+// Each path element contains index of the subsequent child, except the last one is set to 0
+func (tr *TrieRFromRoot) nodePath(triePath []byte) ([]*pathElement, pathEndingCode) {
+	ret := make([]*pathElement, 0)
+	var endingCode pathEndingCode
+	tr.traversePath(triePath, func(n *NodeData, trieKey []byte, ending pathEndingCode) {
+		elem := &pathElement{
+			NodeData: n,
+		}
+		nextChildIdx := len(trieKey) + len(n.PathExtension)
+		if nextChildIdx < len(triePath) {
+			elem.ChildIndex = triePath[nextChildIdx]
+		}
+		endingCode = ending
+		ret = append(ret, elem)
+	})
+	assertf(len(ret) > 0, "len(ret)>0")
+	ret[len(ret)-1].ChildIndex = 0
+	return ret, endingCode
 }

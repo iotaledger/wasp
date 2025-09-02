@@ -97,34 +97,16 @@ func (nc *nodeConnection) AttachChain(
 	recvAnchor chain.AnchorHandler,
 	onChainConnect func(),
 	onChainDisconnect func(),
+	readOnly bool,
 ) error {
-	ncc, err := func() (*ncChain, error) {
-		nc.chainLock.Lock()
-		defer nc.chainLock.Unlock()
-
-		ncc, err := newNCChain(ctx, nc, chainID, recvRequest, recvAnchor, nc.wsURL, nc.httpURL)
-		if err != nil {
-			return nil, err
-		}
-
-		nc.chainID = chainID
-		nc.chain = ncc
-		util.ExecuteIfNotNil(onChainConnect)
-		nc.LogDebugf("chain registered: %s = %s", chainID.ShortString())
-
-		return ncc, nil
-	}()
+	ncc, err := nc.createChain(ctx, chainID, recvRequest, recvAnchor, readOnly, onChainConnect)
 	if err != nil {
 		return err
 	}
 
-	if err := ncc.syncChainState(ctx); err != nil {
-		nc.LogError(fmt.Sprintf("synchronizing chain state %s failed: %s", chainID, err.Error()))
-		nc.shutdownHandler.SelfShutdown(
-			fmt.Sprintf("Cannot sync chain %s with L1, %s", ncc.chainID, err.Error()),
-			true)
+	if !readOnly {
+		nc.initializeOperationalChain(ctx, ncc, chainID)
 	}
-	ncc.subscribeToUpdates(ctx, chainID.AsObjectID())
 
 	// disconnect the chain after the context is done
 	go func() {
@@ -256,4 +238,57 @@ func (nc *nodeConnection) PublishTX(
 		cb:  callback,
 	}
 	return nil
+}
+
+// createChain creates a new ncChain instance based on the mode (readonly or operational)
+func (nc *nodeConnection) createChain(
+	ctx context.Context,
+	chainID isc.ChainID,
+	recvRequest chain.RequestHandler,
+	recvAnchor chain.AnchorHandler,
+	readOnly bool,
+	onChainConnect func(),
+) (*ncChain, error) {
+	nc.chainLock.Lock()
+	defer nc.chainLock.Unlock()
+
+	var ncc *ncChain
+	var err error
+
+	if readOnly {
+		ncc = nc.createReadOnlyChain(chainID)
+	} else {
+		ncc, err = newNCChain(ctx, nc, chainID, recvRequest, recvAnchor, nc.wsURL, nc.httpURL)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	nc.chainID = chainID
+	nc.chain = ncc
+	util.ExecuteIfNotNil(onChainConnect)
+	nc.LogDebugf("chain registered: %s = %s", chainID.ShortString(), chainID)
+
+	return ncc, nil
+}
+
+// createReadOnlyChain creates a minimal chain instance for read-only operations
+func (nc *nodeConnection) createReadOnlyChain(chainID isc.ChainID) *ncChain {
+	ncc := &ncChain{
+		Logger:  nc.Logger,
+		chainID: chainID,
+	}
+	ncc.shutdownWaitGroup.Add(1)
+	return ncc
+}
+
+// initializeOperationalChain performs initialization steps for operational (non-readonly) chains
+func (nc *nodeConnection) initializeOperationalChain(ctx context.Context, ncc *ncChain, chainID isc.ChainID) {
+	if err := ncc.syncChainState(ctx); err != nil {
+		nc.LogErrorf("synchronizing chain state %s failed: %s", chainID, err.Error())
+		nc.shutdownHandler.SelfShutdown(
+			fmt.Sprintf("Cannot sync chain %s with L1, %s", ncc.chainID, err.Error()),
+			true)
+	}
+	ncc.subscribeToUpdates(ctx, chainID.AsObjectID())
 }

@@ -19,7 +19,8 @@ func trieDiff(ctx context.Context, kvs kvstore.KVStore) {
 
 	start := time.Now()
 
-	onlyOn1, onlyOn2 := trie.Diff(trie.NewHiveKVStoreAdapter(kvs, []byte{chaindb.PrefixTrie}), state1.TrieRoot(), state2.TrieRoot())
+	onlyOn1, onlyOn2 := trie.NewTrieR(trie.NewHiveKVStoreAdapter(kvs, []byte{chaindb.PrefixTrie})).
+		Diff(state1.TrieRoot(), state2.TrieRoot())
 
 	fmt.Printf("Diff between blocks #%d -> #%d\n", blockIndex, blockIndex2)
 	fmt.Printf("only on #%d: %d\n", blockIndex, len(onlyOn1))

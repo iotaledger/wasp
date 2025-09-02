@@ -2,9 +2,16 @@ package trie
 
 import (
 	"encoding/hex"
+	"errors"
 )
 
-// unpack16 src places each 4 bit nibble into separate byte
+var (
+	ErrWrongNibble = errors.New("key16 byte must be less than 0x0F")
+	ErrEmpty       = errors.New("encoded key16 can't be empty")
+	ErrWrongFormat = errors.New("encoded key16 wrong format")
+)
+
+// unpack16 src places each 4 bit nibble into a separate byte
 func unpack16(dst, src []byte) []byte {
 	for _, c := range src {
 		dst = append(dst, c>>4, c&0x0F)
@@ -12,8 +19,8 @@ func unpack16(dst, src []byte) []byte {
 	return dst
 }
 
-// pack16 places to 4 bit nibbles into one byte. I case of odd number of nibbles,
-// the 4 lower bit in the last byte remains 0
+// pack16 places two 4-bit nibbles from src into a single byte in dst.
+// In case of odd number of nibbles, the 4 lower bits in the last byte remains 0.
 func pack16(dst, src []byte) ([]byte, error) {
 	for i := 0; i < len(src); i += 2 {
 		if src[i] > 0x0F {

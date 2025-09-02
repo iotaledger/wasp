@@ -5,7 +5,6 @@ package authentication
 import (
 	"bufio"
 	"context"
-	"fmt"
 	"os"
 	"syscall"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/apiclient"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/config"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/format"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/waspcmd"
 )
@@ -35,7 +35,11 @@ func initSetTokenCmd() *cobra.Command {
 
 			config.SetToken(node, args[0])
 
-			fmt.Printf("Set token for %s", node)
+			authOutput := format.NewAuthSuccess(node, "manual")
+			authOutput.Data.Message = "Token set successfully"
+			err := format.PrintOutput(authOutput)
+
+			log.Check(err, "error formatting output")
 		},
 	}
 	waspcmd.WithWaspNodeFlag(cmd, &node)
@@ -69,7 +73,9 @@ func initLoginCmd() *cobra.Command {
 
 			// If credentials are still empty, exit early.
 			if username == "" || password == "" {
-				log.Printf("Invalid credentials")
+				authOutput := format.NewAuthError(node, username, "Invalid credentials provided")
+				err := format.PrintOutput(authOutput)
+				log.Check(err, "error formatting output")
 				return
 			}
 
@@ -80,12 +86,18 @@ func initLoginCmd() *cobra.Command {
 					Username: username,
 					Password: password,
 				}).Execute()
-
-			log.Check(err)
+			if err != nil {
+				authOutput := format.NewAuthError(node, username, err.Error())
+				formatErr := format.PrintOutput(authOutput)
+				log.Check(formatErr, "error formatting output")
+				return
+			}
 
 			config.SetToken(node, token.Jwt)
 
-			log.Printf("\nSuccessfully authenticated\n")
+			authOutput := format.NewAuthSuccess(node, username)
+			err = format.PrintOutput(authOutput)
+			log.Check(err, "error formatting output")
 		},
 	}
 	waspcmd.WithWaspNodeFlag(cmd, &node)

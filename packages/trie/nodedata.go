@@ -9,10 +9,8 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/util/rwutil"
 )
 
-const (
-	// NumChildren is the maximum amount of children for each trie node
-	NumChildren = 16
-)
+// NumChildren is the maximum amount of children for each trie node
+const NumChildren = 16
 
 func isValidChildIndex(i int) bool {
 	return i >= 0 && i < NumChildren
@@ -59,22 +57,6 @@ func (n *NodeData) ChildrenCount() int {
 		}
 	}
 	return count
-}
-
-// Clone deep copy
-func (n *NodeData) Clone() *NodeData {
-	ret := &NodeData{
-		PathExtension: concat(n.PathExtension),
-	}
-	if n.Terminal != nil {
-		ret.Terminal = n.Terminal.Clone()
-	}
-	ret.Commitment = n.Commitment.Clone()
-	n.iterateChildren(func(i byte, h Hash) bool {
-		ret.Children[i] = &h
-		return true
-	})
-	return ret
 }
 
 func (n *NodeData) String() string {
@@ -158,7 +140,7 @@ func (n *NodeData) Read(r io.Reader) error {
 	}
 	if smallFlags&hasChildrenFlag != 0 {
 		flags := rr.ReadUint16()
-		for i := 0; i < NumChildren; i++ {
+		for i := range NumChildren {
 			ib, err := safecast.Convert[uint8](i)
 			if err != nil {
 				panic(fmt.Sprintf("index %d is too large for uint8", i))
@@ -210,4 +192,8 @@ func (n *NodeData) Write(w io.Writer) error {
 		})
 	}
 	return ww.Err
+}
+
+func (n *NodeData) CommitsToExternalValue() bool {
+	return n.Terminal != nil && !n.Terminal.IsValue
 }
