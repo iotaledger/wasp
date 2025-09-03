@@ -164,10 +164,6 @@ func newRPCTransaction(tx *types.Transaction, blockHash common.Hash, blockNumber
 		S:     (*hexutil.Big)(s),
 	}
 
-	// if tv := tx.Value(); tv != nil {
-	// 	result.Value = (*hexutil.Big)(tv)
-	// }
-
 	if tx.ChainId() != nil {
 		result.ChainID = (*hexutil.Big)(tx.ChainId())
 	}
@@ -389,67 +385,16 @@ func (args *SendTxArgs) setDefaults(e *EthService) error {
 }
 
 func (args *SendTxArgs) toTransaction(chainID *big.Int) (*types.Transaction, error) {
-	var input []byte
-	if args.Input != nil {
-		input = *args.Input
-	} else if args.Data != nil {
-		input = *args.Data
-	}
+	input := args.txInput()
 
 	nonce := uint64(*args.Nonce)
 	value := args.Value.ToInt()
 	gas := uint64(*args.Gas)
 
-	// BlobTx (type 0x03)
-	// Build a BlobTx if any blob-specific fields are present.
+	// BlobTx (type 0x03) — build if any blob-specific fields are present.
 	if args.BlobFeeCap != nil || len(args.BlobHashes) > 0 || len(args.Blobs) > 0 ||
 		len(args.Commitments) > 0 || len(args.Proofs) > 0 {
-
-		// blob tx requires non-nil 'To' (blob tx cannot be contract creation).
-		if args.To == nil {
-			return nil, fmt.Errorf("blobTx must contain 'To' field")
-		}
-
-		if len(args.Blobs) > 6 {
-			return nil, fmt.Errorf("exceed the max blob number in a blobTx")
-		}
-
-		// Validate KZG commitments match blobs if both are provided
-		if len(args.Blobs) > 0 && len(args.Commitments) > 0 {
-			if len(args.Blobs) != len(args.Commitments) {
-				return nil, fmt.Errorf("number of blobs must match number of commitments")
-			}
-			for i, blob := range args.Blobs {
-				expectedCommitment, err := kzg4844.BlobToCommitment(&blob)
-				if err != nil {
-					return nil, fmt.Errorf("failed to compute commitment for blob %d: %w", i, err)
-				}
-				if expectedCommitment != args.Commitments[i] {
-					return nil, fmt.Errorf("commitment mismatch for blob %d", i)
-				}
-			}
-		}
-
-		body := &types.BlobTx{
-			ChainID:    uint256.MustFromBig(chainID),
-			Nonce:      nonce,
-			GasTipCap:  uint256.MustFromBig(args.MaxPriorityFeePerGas.ToInt()),
-			GasFeeCap:  uint256.MustFromBig(args.MaxFeePerGas.ToInt()),
-			Gas:        gas,
-			To:         *args.To,
-			Value:      uint256.MustFromBig(value),
-			Data:       input,
-			AccessList: args.AccessList,
-			BlobFeeCap: uint256.MustFromBig(args.BlobFeeCap.ToInt()),
-			BlobHashes: args.BlobHashes,
-		}
-		tx := types.NewTx(body)
-
-		// Attach sidecar if blobs provided (not RLP-encoded; carried alongside).
-		if len(args.Blobs) > 0 {
-			tx = tx.WithBlobTxSidecar(types.NewBlobTxSidecar(1, args.Blobs, args.Commitments, args.Proofs))
-		}
-		return tx, nil
+		return args.buildBlobTx(chainID, nonce, gas, value, input)
 	}
 
 	// Dynamic Fee (type 0x02)
@@ -489,6 +434,66 @@ func (args *SendTxArgs) toTransaction(chainID *big.Int) (*types.Transaction, err
 		return types.NewContractCreation(nonce, value, gas, args.GasPrice.ToInt(), input), nil
 	}
 	return types.NewTransaction(nonce, *args.To, value, gas, args.GasPrice.ToInt(), input), nil
+}
+
+// txInput returns the effective input/data payload ("input" preferred over "data").
+func (args *SendTxArgs) txInput() []byte {
+	if args.Input != nil {
+		return *args.Input
+	}
+	if args.Data != nil {
+		return *args.Data
+	}
+	return nil
+}
+
+// buildBlobTx encapsulates building and validation logic for EIP-4844 Blob transactions.
+func (args *SendTxArgs) buildBlobTx(chainID *big.Int, nonce uint64, gas uint64, value *big.Int, input []byte) (*types.Transaction, error) {
+	// blob tx requires non-nil 'To' (blob tx cannot be contract creation).
+	if args.To == nil {
+		return nil, fmt.Errorf("blobTx must contain 'To' field")
+	}
+
+	if len(args.Blobs) > 6 {
+		return nil, fmt.Errorf("exceed the max blob number in a blobTx")
+	}
+
+	// Validate KZG commitments match blobs if both are provided
+	if len(args.Blobs) > 0 && len(args.Commitments) > 0 {
+		if len(args.Blobs) != len(args.Commitments) {
+			return nil, fmt.Errorf("number of blobs must match number of commitments")
+		}
+		for i, blob := range args.Blobs {
+			expectedCommitment, err := kzg4844.BlobToCommitment(&blob)
+			if err != nil {
+				return nil, fmt.Errorf("failed to compute commitment for blob %d: %w", i, err)
+			}
+			if expectedCommitment != args.Commitments[i] {
+				return nil, fmt.Errorf("commitment mismatch for blob %d", i)
+			}
+		}
+	}
+
+	body := &types.BlobTx{
+		ChainID:    uint256.MustFromBig(chainID),
+		Nonce:      nonce,
+		GasTipCap:  uint256.MustFromBig(args.MaxPriorityFeePerGas.ToInt()),
+		GasFeeCap:  uint256.MustFromBig(args.MaxFeePerGas.ToInt()),
+		Gas:        gas,
+		To:         *args.To,
+		Value:      uint256.MustFromBig(value),
+		Data:       input,
+		AccessList: args.AccessList,
+		BlobFeeCap: uint256.MustFromBig(args.BlobFeeCap.ToInt()),
+		BlobHashes: args.BlobHashes,
+	}
+	tx := types.NewTx(body)
+
+	// Attach sidecar if blobs provided (not RLP-encoded; carried alongside).
+	if len(args.Blobs) > 0 {
+		tx = tx.WithBlobTxSidecar(types.NewBlobTxSidecar(1, args.Blobs, args.Commitments, args.Proofs))
+	}
+	return tx, nil
 }
 
 type RPCFilterQuery ethereum.FilterQuery
