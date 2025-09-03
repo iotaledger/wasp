@@ -79,7 +79,7 @@ func TestAssetsBagPlaceCoin(t *testing.T) {
 	coinResource, err := iotago.NewResourceType(*getCoinRef.Data.Type)
 	require.NoError(t, err)
 
-	testCointype, err := iotajsonrpc.CoinTypeFromString(coinResource.SubType1.String())
+	testCointype, err := iotajsonrpc.CoinTypeFromString(coinResource.SubTypes[0].String())
 	require.NoError(t, err)
 
 	_, err = PTBTestWrapper(
@@ -125,7 +125,7 @@ func TestAssetsBagPlaceCoinAmount(t *testing.T) {
 	coinResource, err := iotago.NewResourceType(*getCoinRef.Data.Type)
 	require.NoError(t, err)
 
-	testCointype, err := iotajsonrpc.CoinTypeFromString(coinResource.SubType1.String())
+	testCointype, err := iotajsonrpc.CoinTypeFromString(coinResource.SubTypes[0].String())
 	require.NoError(t, err)
 
 	_, err = PTBTestWrapper(
@@ -240,7 +240,7 @@ func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
 
 	coinResource, err := iotago.NewResourceType(*getCoinRef.Data.Type)
 	require.NoError(t, err)
-	testCointype, err := iotajsonrpc.CoinTypeFromString(coinResource.SubType1.String())
+	testCointype, err := iotajsonrpc.CoinTypeFromString(coinResource.SubTypes[0].String())
 	require.NoError(t, err)
 
 	_, err = PTBTestWrapper(
@@ -289,7 +289,7 @@ func TestGetAssetsBagFromAnchorID(t *testing.T) {
 
 	coinResource, err := iotago.NewResourceType(*getCoinRef.Data.Type)
 	require.NoError(t, err)
-	testCointype, err := iotajsonrpc.CoinTypeFromString(coinResource.SubType1.String())
+	testCointype, err := iotajsonrpc.CoinTypeFromString(coinResource.SubTypes[0].String())
 	require.NoError(t, err)
 
 	borrowAnchorAssetsAndPlaceCoin(
@@ -414,7 +414,7 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 
 	coinResource, err := iotago.NewResourceType(*getCoinRef.Data.Type)
 	require.NoError(t, err)
-	testCointype, err := iotajsonrpc.CoinTypeFromString(coinResource.SubType1.String())
+	testCointype, err := iotajsonrpc.CoinTypeFromString(coinResource.SubTypes[0].String())
 	require.NoError(t, err)
 
 	txnResponse, err := newAssetsBag(client, cryptolibSigner)

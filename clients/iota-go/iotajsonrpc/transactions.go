@@ -465,8 +465,8 @@ func (r *IotaTransactionBlockResponse) GetCreatedCoinByType(module string, coinT
 			if err != nil {
 				return nil, fmt.Errorf("invalid resource string: %w", err)
 			}
-			if resource.Module == "coin" && resource.SubType1 != nil {
-				if resource.SubType1.Module == module && resource.SubType1.ObjectName == coinType {
+			if resource.Module == "coin" && len(resource.SubTypes) > 0 {
+				if resource.SubTypes[0].Module == module && resource.SubTypes[0].ObjectName == coinType {
 					if ref != nil {
 						return nil, fmt.Errorf("multiple created coins found for %s::%s: first = %v, second = %v",
 							module, coinType,
@@ -510,8 +510,8 @@ func (r *IotaTransactionBlockResponse) GetMutatedCoinByType(module string, coinT
 			if err != nil {
 				return nil, fmt.Errorf("invalid resource string: %w", err)
 			}
-			if resource.Module == "coin" && resource.SubType1 != nil {
-				if resource.SubType1.Module == module && resource.SubType1.ObjectName == coinType {
+			if resource.Module == "coin" && len(resource.SubTypes) > 0 {
+				if resource.SubTypes[0].Module == module && resource.SubTypes[0].ObjectName == coinType {
 					if ref != nil {
 						return nil, fmt.Errorf("multiple mutated coins found for %s::%s: first = %v, second = %v",
 							module, coinType,

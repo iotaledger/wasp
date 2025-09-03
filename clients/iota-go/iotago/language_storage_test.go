@@ -49,7 +49,7 @@ func TestTypeTagString(t *testing.T) {
 
 func TestStructTagEncoding(t *testing.T) {
 	{
-		s1 := "0x2::foo::bar<0x3::baz::qux<0x4::nested::result, 0x5::funny::other>, bool>"
+		s1 := "0x2::foo::bar<0x3::baz::qux<0x4::nested::result, 0x5::funny::other, 0x6::more::another>, bool>"
 		structTag, err := iotago.StructTagFromString(s1)
 		require.NoError(t, err)
 
