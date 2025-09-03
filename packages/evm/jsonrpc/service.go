@@ -223,15 +223,168 @@ func (e *EthService) GetTransactionReceipt(txHash common.Hash) (map[string]any, 
 
 func (e *EthService) SendRawTransaction(txBytes hexutil.Bytes) (common.Hash, error) {
 	return withMetrics(e.metrics, "eth_sendRawTransaction", func() (common.Hash, error) {
+		// Pre-validation (raw bytes)
+		if err := e.validateTransactionBytes(txBytes); err != nil {
+			return common.Hash{}, err
+		}
+
+		// Decode envelope (handles legacy + typed)
 		tx := new(types.Transaction)
 		if err := tx.UnmarshalBinary(txBytes); err != nil {
 			return common.Hash{}, err
 		}
+
+		// Post-decode validation
+		if err := e.validateTransactionSecurity(tx); err != nil {
+			return common.Hash{}, err
+		}
+
 		if err := e.evmChain.SendTransaction(tx); err != nil {
 			return common.Hash{}, e.resolveError(err)
 		}
 		return tx.Hash(), nil
 	})
+}
+
+func (e *EthService) validateTransactionBytes(txBytes []byte) error {
+	if len(txBytes) == 0 {
+		return errors.New("empty transaction data")
+	}
+
+	// Cap the RPC-submitted envelope (not blobs)
+	const maxRawTxSize = 128 * 1024 // 128 KB, it is a upper bound in geth's legacypool.txMaxSize
+	if len(txBytes) > maxRawTxSize {
+		return fmt.Errorf("transaction size %d exceeds maximum allowed %d bytes", len(txBytes), maxRawTxSize)
+	}
+
+	if err := e.validateTransactionStructure(txBytes); err != nil {
+		return fmt.Errorf("invalid transaction structure: %w", err)
+	}
+	return nil
+}
+
+// EIP-2718 discriminator:
+// - legacy: first byte >= 0xC0 (RLP list prefix)
+// - typed:  0x01..0x7F, payload should begin with an RLP list (for known types)
+func (e *EthService) validateTransactionStructure(txBytes []byte) error {
+	if len(txBytes) == 0 {
+		return errors.New("transaction too short")
+	}
+	b0 := txBytes[0]
+
+	if b0 >= 0xC0 {
+		// Legacy top-level list; let UnmarshalBinary do full checks
+		return nil
+	}
+	if b0 == 0x00 {
+		return errors.New("invalid typed transaction: 0x00 is not a valid type")
+	}
+	if b0 > 0x7F {
+		return errors.New("invalid leading byte")
+	}
+
+	if len(txBytes) < 2 {
+		return errors.New("typed transaction missing payload")
+	}
+	// Known typed payloads are RLP lists; cheap sanity check
+	if txBytes[1] < 0xC0 {
+		return errors.New("typed transaction payload must be an RLP list")
+	}
+	// typed tx that we support
+	switch b0 {
+	case 0x01, // Access List
+		0x02, // Dynamic Fee (EIP-1559)
+		0x03: // Blob (EIP-4844)
+		return nil
+	default:
+		return fmt.Errorf("unsupported transaction type: %d", b0)
+	}
+}
+
+func (e *EthService) validateTransactionSecurity(tx *types.Transaction) error {
+	// Enforce a post-decode cap only for non-blob types. Blob tx include a sidecar in Size().
+	const maxNonBlobTxSize = 128 * 1024 // 128 KB, is the upper bound in geth's legacypool.txMaxSize
+	if tx.Type() != types.BlobTxType && tx.Size() > maxNonBlobTxSize {
+		return fmt.Errorf("transaction size %d exceeds maximum %d bytes", tx.Size(), maxNonBlobTxSize)
+	}
+
+	// Type-specific rules
+	if err := e.validateTransactionType(tx); err != nil {
+		return err
+	}
+
+	// Generic field checks
+	if err := e.validateTransactionFields(tx); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (e *EthService) validateTransactionFields(tx *types.Transaction) error {
+	if tx.Value().Sign() < 0 {
+		return errors.New("transaction value cannot be negative")
+	}
+
+	if chainID := tx.ChainId(); chainID != nil {
+		expectedChainID := new(big.Int).SetUint64(uint64(e.evmChain.ChainID()))
+		if chainID.Cmp(expectedChainID) != 0 {
+			return fmt.Errorf("transaction chain ID %d does not match expected %d", chainID, expectedChainID)
+		}
+	}
+	return nil
+}
+
+func (e *EthService) validateTransactionType(tx *types.Transaction) error {
+	switch tx.Type() {
+	case types.LegacyTxType:
+		if tx.GasPrice() == nil {
+			return errors.New("legacy transaction missing gas price")
+		}
+
+	case types.AccessListTxType:
+		if tx.GasPrice() == nil {
+			return errors.New("access list transaction missing gas price")
+		}
+		if tx.ChainId() == nil {
+			return errors.New("access list transaction missing chain ID")
+		}
+
+	case types.DynamicFeeTxType:
+		if tx.GasFeeCap() == nil || tx.GasTipCap() == nil {
+			return errors.New("dynamic fee transaction missing gas fee caps")
+		}
+		if tx.ChainId() == nil {
+			return errors.New("dynamic fee transaction missing chain ID")
+		}
+
+	case types.BlobTxType:
+		if tx.GasFeeCap() == nil || tx.GasTipCap() == nil {
+			return errors.New("blob transaction missing gas fee caps")
+		}
+		if tx.BlobGasFeeCap() == nil {
+			return errors.New("blob transaction missing blob gas fee cap")
+		}
+		if tx.ChainId() == nil {
+			return errors.New("blob transaction missing chain ID")
+		}
+		if tx.To() == nil {
+			return errors.New("blob transaction cannot be contract creation")
+		}
+		if n := len(tx.BlobHashes()); n == 0 {
+			return errors.New("blob transaction must contain at least one blob")
+		} else if n > 6 {
+			return errors.New("blob transaction cannot contain more than 6 blobs")
+		}
+
+	default:
+		return fmt.Errorf("unsupported transaction type: %d", tx.Type())
+	}
+
+	// Common rule
+	if tx.Gas() == 0 {
+		return errors.New("transaction gas limit cannot be zero")
+	}
+	return nil
 }
 
 func (e *EthService) Call(args *RPCCallArgs, blockNumberOrHash *rpc.BlockNumberOrHash) (hexutil.Bytes, error) {
