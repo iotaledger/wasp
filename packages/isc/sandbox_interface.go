@@ -103,8 +103,6 @@ type Sandbox interface {
 	// If the entry point is full entry point, allowance tokens are available to be moved from the caller's
 	// accounts (if enough). If the entry point is view, 'allowance' has no effect
 	Call(msg Message, allowance *Assets) CallArguments
-	// Event emits an event
-	Event(topic string, payload []byte)
 	// RegisterError registers an error
 	RegisterError(messageFormat string) *VMErrorTemplate
 	// GetEntropy 32 random bytes based on the hash of the current state transaction

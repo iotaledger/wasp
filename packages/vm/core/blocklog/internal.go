@@ -3,12 +3,12 @@ package blocklog
 import (
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/kv"
-	"github.com/iotaledger/wasp/v2/packages/kv/codec"
 	"github.com/iotaledger/wasp/v2/packages/kv/collections"
 )
 
@@ -51,11 +51,9 @@ func (s *StateWriter) SaveRequestReceipt(rec *RequestReceipt, key RequestLookupK
 			return fmt.Errorf("SaveRequestReceipt: %w", err2)
 		}
 	}
-	for i := range lst {
-		if lst[i] == key {
-			// already in list. Not normal
-			return errors.New("SaveRequestReceipt: inconsistency: duplicate lookup key")
-		}
+	if slices.Contains(lst, key) {
+		// already in list. Not normal
+		return errors.New("SaveRequestReceipt: inconsistency: duplicate lookup key")
 	}
 	lst = append(lst, key)
 	lookupTable.SetAt(digest[:], lst.Bytes())
@@ -63,10 +61,6 @@ func (s *StateWriter) SaveRequestReceipt(rec *RequestReceipt, key RequestLookupK
 	data := rec.Bytes()
 	collections.NewMap(s.state, prefixRequestReceipts).SetAt(key.Bytes(), data)
 	return nil
-}
-
-func (s *StateWriter) SaveEvent(eventKey []byte, event *isc.Event) {
-	collections.NewMap(s.state, prefixRequestEvents).SetAt(eventKey, event.Bytes())
 }
 
 func (s *StateReader) mustGetLookupKeyListFromReqID(reqID isc.RequestID) RequestLookupKeyList {
@@ -109,79 +103,6 @@ func (s *StateReader) GetRequestReceipt(reqID isc.RequestID) (*RequestReceipt, e
 		return nil, fmt.Errorf("cannot getCorrectRecordFromLookupKeyList: %w", err)
 	}
 	return record, nil
-}
-
-func (s *StateReader) getRequestEventsInternal(reqID isc.RequestID) ([][]byte, error) {
-	lst := s.mustGetLookupKeyListFromReqID(reqID)
-	record, err := s.getCorrectRecordFromLookupKeyList(lst, reqID)
-	if err != nil {
-		return nil, err
-	}
-	if record == nil {
-		return nil, nil
-	}
-	eventIndex := uint16(0)
-	events := collections.NewMapReadOnly(s.state, prefixRequestEvents)
-	var ret [][]byte
-	for {
-		key := NewEventLookupKey(record.BlockIndex, record.RequestIndex, eventIndex).Bytes()
-		eventData := events.GetAt(key)
-		if eventData == nil {
-			return ret, nil
-		}
-		ret = append(ret, eventData)
-		eventIndex++
-	}
-}
-
-type BlockRange struct {
-	From uint32
-	To   uint32
-}
-
-type EventsForContractQuery struct {
-	Contract   isc.Hname
-	BlockRange *BlockRange
-}
-
-func (s *StateReader) getSmartContractEventsInternal(q EventsForContractQuery) [][]byte {
-	registry := collections.NewArrayReadOnly(s.state, prefixBlockRegistry)
-	latestBlockIndex := registry.Len() - 1
-	adjustedToBlock := q.BlockRange.To
-
-	if adjustedToBlock > latestBlockIndex {
-		adjustedToBlock = latestBlockIndex
-	}
-
-	filteredEvents := make([][]byte, 0)
-	for blockNumber := q.BlockRange.From; blockNumber <= adjustedToBlock; blockNumber++ {
-		eventBlockKey := collections.MapElemKey(prefixRequestEvents, codec.Encode[uint32](blockNumber))
-		s.state.Iterate(eventBlockKey, func(_ kv.Key, value []byte) bool {
-			parsedContractID, _ := isc.ContractIDFromEventBytes(value)
-			if parsedContractID == q.Contract {
-				filteredEvents = append(filteredEvents, value)
-			}
-			return true
-		})
-	}
-
-	return filteredEvents
-}
-
-func (s *StateWriter) pruneEventsByBlockIndex(blockIndex uint32, totalRequests uint16) {
-	events := collections.NewMap(s.state, prefixRequestEvents)
-	for reqIdx := uint16(0); reqIdx < totalRequests; reqIdx++ {
-		eventIndex := uint16(0)
-		for {
-			key := NewEventLookupKey(blockIndex, reqIdx, eventIndex).Bytes()
-			eventData := events.GetAt(key)
-			if eventData == nil {
-				break
-			}
-			events.DelAt(key)
-			eventIndex++
-		}
-	}
 }
 
 func (s *StateReader) getRequestLogRecordsForBlockBin(blockIndex uint32) ([][]byte, bool) {
@@ -294,5 +215,4 @@ func (s *StateWriter) pruneBlock(blockIndex uint32) {
 	registry := collections.NewArray(s.state, prefixBlockRegistry)
 	registry.PruneAt(blockIndex)
 	s.pruneRequestLogRecordsByBlockIndex(blockIndex, blockInfo.TotalRequests)
-	s.pruneEventsByBlockIndex(blockIndex, blockInfo.TotalRequests)
 }

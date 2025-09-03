@@ -187,29 +187,6 @@ func (c *Controller) addBlockLogContractRoutes(api echoswagger.ApiGroup, mocker 
 		AddResponse(http.StatusOK, "The processing result", mocker.Get(models.RequestProcessedResponse{}), nil).
 		SetOperationId("blocklogGetRequestIsProcessed").
 		SetSummary("Get the request processing status")
-
-	api.GET("chain/core/blocklog/events/block/:blockIndex", c.getBlockEvents).
-		AddParamPathNested(blocks{}).
-		AddParamQuery("", params.ParamBlockIndexOrTrieRoot, params.DescriptionBlockIndexOrTrieRoot, false).
-		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The events", mocker.Get(models.EventsResponse{}), nil).
-		SetOperationId("blocklogGetEventsOfBlock").
-		SetSummary("Get events of a block")
-
-	api.GET("chain/core/blocklog/events/block/latest", c.getBlockEvents).
-		AddParamQuery("", params.ParamBlockIndexOrTrieRoot, params.DescriptionBlockIndexOrTrieRoot, false).
-		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The receipts", mocker.Get(models.EventsResponse{}), nil).
-		SetOperationId("blocklogGetEventsOfLatestBlock").
-		SetSummary("Get events of the latest block")
-
-	api.GET("chain/core/blocklog/events/request/:requestID", c.getRequestEvents).
-		AddParamPath("", params.ParamRequestID, params.DescriptionRequestID).
-		AddParamQuery("", params.ParamBlockIndexOrTrieRoot, params.DescriptionBlockIndexOrTrieRoot, false).
-		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The events", mocker.Get(models.EventsResponse{}), nil).
-		SetOperationId("blocklogGetEventsOfRequest").
-		SetSummary("Get events of a request")
 }
 
 func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {

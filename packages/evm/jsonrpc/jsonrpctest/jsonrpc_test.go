@@ -490,7 +490,7 @@ func TestRPCCallNonView(t *testing.T) {
 	require.NoError(t, err)
 	_, _, contractAddress := env.DeployEVMContract(creator, contractABI, evmtest.ISCTestContractBytecode)
 
-	callArguments, err := contractABI.Pack("triggerEvent", "hello")
+	callArguments, err := contractABI.Pack("emitEntropy")
 	require.NoError(t, err)
 
 	_, err = env.Client.CallContract(context.Background(), ethereum.CallMsg{

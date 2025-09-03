@@ -6,10 +6,9 @@
 // - Block registry mapping block indices to block information
 // - Request lookup indices for efficiently finding requests
 // - Request receipts storing the results of request processing
-// - Event storage for block and request-related events
 //
-// This contract provides views for retrieving block information, request IDs, receipts,
-// and events, making it possible to query the chain's historical activity.
+// This contract provides views for retrieving block information, request IDs
+// and receipts, making it possible to query the chain's historical activity.
 package blocklog
 
 import (
@@ -17,6 +16,7 @@ import (
 	"reflect"
 
 	"fortio.org/safecast"
+
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/isc/coreutil"
@@ -48,15 +48,6 @@ var (
 		coreutil.Field[isc.RequestID]("requestID"),
 		coreutil.Field[bool]("isProcessed"),
 	)
-	ViewGetEventsForRequest = coreutil.NewViewEP11(Contract, "getEventsForRequest",
-		coreutil.Field[isc.RequestID]("requestID"),
-		coreutil.Field[[]*isc.Event]("events"),
-	)
-	ViewGetEventsForBlock = coreutil.NewViewEP12(Contract, "getEventsForBlock",
-		coreutil.FieldOptional[uint32]("blockIndex"),
-		coreutil.Field[uint32]("blockIndex"),
-		coreutil.Field[[]*isc.Event]("events"),
-	)
 )
 
 const (
@@ -74,11 +65,6 @@ const (
 	//   RequestLookupKey = blockIndex | requestIndex
 	// Covered in: TestGetEvents
 	prefixRequestReceipts = "c"
-
-	// Map of EventLookupKey => event (pruned)
-	//   EventLookupKey = blockIndex | requestIndex | eventIndex
-	// Covered in: TestGetEvents
-	prefixRequestEvents = "d"
 )
 
 type OutputRequestReceipt struct{}
