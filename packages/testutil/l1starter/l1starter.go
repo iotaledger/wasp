@@ -34,7 +34,7 @@ type Ports struct {
 type Config struct {
 	Host    string
 	Ports   Ports
-	Logger  testcontainers.Logging
+	Logger  testcontainers.LogConsumer
 	TempDir string
 }
 
@@ -42,11 +42,11 @@ type Logger struct {
 	Prefix string
 }
 
-func (l Logger) Printf(s string, args ...interface{}) {
+func (l Logger) Accept(s testcontainers.Log) {
 	if l.Prefix != "" {
-		fmt.Printf(l.Prefix+": "+s, args...)
+		fmt.Print(l.Prefix + ": " + string(s.Content))
 	} else {
-		fmt.Printf(s, args...)
+		fmt.Printf(string(s.Content))
 	}
 }
 

@@ -203,6 +203,6 @@ func (in *LocalIotaNode) waitAllHealthy(ctx context.Context) {
 
 func (in *LocalIotaNode) logf(msg string, args ...any) {
 	if in.config.Logger != nil {
-		in.config.Logger.Printf("Iota Node: "+msg+"\n", args...)
+		in.config.Logger.Accept(testcontainers.Log{Content: []byte("Iota Node: " + fmt.Sprintf(msg, args...) + "\n")})
 	}
 }
