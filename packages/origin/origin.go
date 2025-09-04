@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ethereum/go-ethereum/core"
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/packages/coin"
@@ -89,7 +88,6 @@ func L1Commitment(
 		gasCoinObjectID,
 		originDeposit,
 		l1Params,
-		nil, nil,
 	)
 	return block.L1Commitment()
 }
@@ -120,8 +118,6 @@ func InitChain(
 	gasCoinObjectID iotago.ObjectID,
 	originDeposit coin.Value,
 	l1Params *parameters.L1Params,
-	feePolicy *gas.FeePolicy,
-	genesis *core.Genesis,
 ) (state.Block, *transaction.StateMetadata) {
 	initParams, err := DecodeInitParams(args)
 	if err != nil {
@@ -157,20 +153,11 @@ func InitChain(
 	accounts.NewStateWriter(v, accounts.Contract.StateSubrealm(d)).SetInitialState(originDeposit, l1Params.BaseToken)
 	blocklog.NewStateWriter(blocklog.Contract.StateSubrealm(d)).SetInitialState(l1Params)
 	errors.NewStateWriter(errors.Contract.StateSubrealm(d)).SetInitialState()
+	governance.NewStateWriter(governance.Contract.StateSubrealm(d)).SetInitialState(initParams.ChainAdmin, blockKeepAmount)
+	evmimpl.SetInitialState(evm.Contract.StateSubrealm(d), initParams.EVMChainID)
 	if initParams.DeployTestContracts {
 		inccounter.SetInitialState(inccounter.Contract.StateSubrealm(d))
 	}
-
-	if feePolicy == nil {
-		governance.NewStateWriter(governance.Contract.StateSubrealm(d)).
-			SetInitialState(initParams.ChainAdmin, blockKeepAmount)
-	} else {
-		govStateWriter := governance.NewStateWriter(governance.Contract.StateSubrealm(d))
-		govStateWriter.SetInitialState(initParams.ChainAdmin, blockKeepAmount)
-		// Override the default fee policy with the provided one
-		govStateWriter.SetGasFeePolicy(feePolicy)
-	}
-	evmimpl.SetInitialState(evm.Contract.StateSubrealm(d), initParams.EVMChainID, feePolicy, genesis)
 
 	block, _, _, err := store.Commit(d)
 	if err != nil {
@@ -207,7 +194,6 @@ func InitChainByStateMetadataBytes(
 		*stateMetadata.GasCoinObjectID,
 		originDeposit,
 		l1Params,
-		nil, nil,
 	)
 	if !originBlock.L1Commitment().Equals(stateMetadata.L1Commitment) {
 		return nil, fmt.Errorf(

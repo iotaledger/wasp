@@ -127,7 +127,7 @@ var initArgs = origin.DefaultInitParams(isc.NewAddressAgentID(cryptolib.NewEmpty
 
 func initializedStore(db kvstore.KVStore) state.Store {
 	st := statetest.NewStoreWithUniqueWriteMutex(db)
-	origin.InitChain(allmigrations.LatestSchemaVersion, st, initArgs, iotago.ObjectID{}, 0, parameterstest.L1Mock, nil, nil)
+	origin.InitChain(allmigrations.LatestSchemaVersion, st, initArgs, iotago.ObjectID{}, 0, parameterstest.L1Mock)
 	return st
 }
 
@@ -162,14 +162,14 @@ func TestOriginBlockDeterminism(t *testing.T) {
 		db := mapdb.NewMapDB()
 		st := statetest.NewStoreWithUniqueWriteMutex(db)
 		require.True(t, st.IsEmpty())
-		blockA, _ := origin.InitChain(allmigrations.LatestSchemaVersion, st, initArgs, iotago.ObjectID{}, deposit, parameterstest.L1Mock, nil, nil)
-		blockB, _ := origin.InitChain(allmigrations.LatestSchemaVersion, st, initArgs, iotago.ObjectID{}, deposit, parameterstest.L1Mock, nil, nil)
+		blockA, _ := origin.InitChain(allmigrations.LatestSchemaVersion, st, initArgs, iotago.ObjectID{}, deposit, parameterstest.L1Mock)
+		blockB, _ := origin.InitChain(allmigrations.LatestSchemaVersion, st, initArgs, iotago.ObjectID{}, deposit, parameterstest.L1Mock)
 		require.False(t, st.IsEmpty())
 		require.Equal(t, blockA.L1Commitment(), blockB.L1Commitment())
 		db2 := mapdb.NewMapDB()
 		st2 := statetest.NewStoreWithUniqueWriteMutex(db2)
 		require.True(t, st2.IsEmpty())
-		blockC, _ := origin.InitChain(allmigrations.LatestSchemaVersion, st2, initArgs, iotago.ObjectID{}, deposit, parameterstest.L1Mock, nil, nil)
+		blockC, _ := origin.InitChain(allmigrations.LatestSchemaVersion, st2, initArgs, iotago.ObjectID{}, deposit, parameterstest.L1Mock)
 		require.False(t, st2.IsEmpty())
 		require.Equal(t, blockA.L1Commitment(), blockC.L1Commitment())
 	})

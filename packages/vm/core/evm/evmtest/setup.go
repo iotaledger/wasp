@@ -55,7 +55,7 @@ func InitEVM(t testing.TB) *SoloChainEnv {
 }
 
 func InitEVMWithSolo(t testing.TB, env *solo.Solo) *SoloChainEnv {
-	soloChain, _ := env.NewChainExt(nil, 0, "evmchain", evm.DefaultChainID, governance.DefaultBlockKeepAmount, nil, nil)
+	soloChain, _ := env.NewChainExt(nil, 0, "evmchain", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 	return &SoloChainEnv{
 		t:          t,
 		solo:       env,

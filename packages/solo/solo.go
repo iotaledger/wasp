@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/core"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
@@ -242,7 +241,7 @@ var (
 
 // NewChain deploys a new default chain instance.
 func (env *Solo) NewChain(depositFundsForAdmin ...bool) *Chain {
-	ret, _ := env.NewChainExt(nil, 0, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount, nil, nil)
+	ret, _ := env.NewChainExt(nil, 0, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 	if len(depositFundsForAdmin) == 0 || depositFundsForAdmin[0] {
 		// deposit some tokens for the chain originator
 		err := ret.DepositBaseTokensToL2(DefaultChainAdminBaseTokens, ret.ChainAdmin)
@@ -269,7 +268,7 @@ func (env *Solo) WithWaitForNextVersion(currentRef *iotago.ObjectRef, cb func())
 	return env.L1Client().WaitForNextVersionForTesting(context.Background(), 30*time.Second, env.logger, currentRef, cb)
 }
 
-func (env *Solo) deployChain(chainAdmin *cryptolib.KeyPair, initCommonAccountBaseTokens coin.Value, name string, evmChainID uint16, blockKeepAmount int32, feePolicy *gas.FeePolicy, genesis *core.Genesis) chainData {
+func (env *Solo) deployChain(chainAdmin *cryptolib.KeyPair, initCommonAccountBaseTokens coin.Value, name string, evmChainID uint16, blockKeepAmount int32) chainData {
 	env.logger.LogDebugf("deploying new chain '%s'", name)
 
 	if chainAdmin == nil {
@@ -297,6 +296,7 @@ func (env *Solo) deployChain(chainAdmin *cryptolib.KeyPair, initCommonAccountBas
 
 	var block state.Block
 	var stateMetadata *transaction.StateMetadata
+
 	block, stateMetadata = origin.InitChain(
 		schemaVersion,
 		store,
@@ -304,11 +304,10 @@ func (env *Solo) deployChain(chainAdmin *cryptolib.KeyPair, initCommonAccountBas
 		*gasCoinRef.ObjectID,
 		initCommonAccountBaseTokens,
 		env.L1Params(),
-		feePolicy,
-		genesis,
 	)
 
 	var initCoin *iotago.ObjectRef
+
 	if initCommonAccountBaseTokens > 0 {
 		initCoin = env.makeBaseTokenCoin(
 			anchorOwner,
@@ -390,8 +389,6 @@ func (env *Solo) NewChainExt(
 	name string,
 	evmChainID uint16,
 	blockKeepAmount int32,
-	feePolicy *gas.FeePolicy,
-	genesis *core.Genesis,
 ) (*Chain, *isc.StateAnchor) {
 	chData := env.deployChain(
 		chainOriginator,
@@ -399,8 +396,6 @@ func (env *Solo) NewChainExt(
 		name,
 		evmChainID,
 		blockKeepAmount,
-		feePolicy,
-		genesis,
 	)
 
 	env.chainsMutex.Lock()

@@ -150,7 +150,7 @@ func initDepositTest(t *testing.T, initCommonAccountBaseTokens ...coin.Value) *a
 	if len(initCommonAccountBaseTokens) != 0 {
 		initBaseTokens = initCommonAccountBaseTokens[0]
 	}
-	ret.ch, _ = ret.env.NewChainExt(ret.chainAdmin, initBaseTokens, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount, nil, nil)
+	ret.ch, _ = ret.env.NewChainExt(ret.chainAdmin, initBaseTokens, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 
 	ret.req = solo.NewCallParams(accounts.FuncDeposit.Message())
 	return ret
@@ -218,7 +218,7 @@ func TestAccounts_WithdrawDepositCoins(t *testing.T) {
 
 		// create a new chain (ch2) with active state pruning set to keep only 1 block
 		blockKeepAmount := int32(1)
-		ch2, _ := v.env.NewChainExt(nil, 0, "evmchain", evm.DefaultChainID, blockKeepAmount, nil, nil)
+		ch2, _ := v.env.NewChainExt(nil, 0, "evmchain", evm.DefaultChainID, blockKeepAmount)
 
 		// deposit 1 native token from L1 into ch2
 		err := ch2.DepositAssetsToL2(isc.NewAssets(1*isc.Million).AddCoin(v.coinType, coin.Value(1)), v.user)

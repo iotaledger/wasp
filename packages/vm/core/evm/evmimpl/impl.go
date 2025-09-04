@@ -46,12 +46,7 @@ var Processor = evm.Contract.Processor(nil,
 
 // SetInitialState initializes the evm core contract and the Ethereum genesis
 // block on a newly created ISC chain.
-func SetInitialState(
-	evmPartition kv.KVStore,
-	evmChainID uint16,
-	feePolicy *gas.FeePolicy,
-	genesis *core.Genesis,
-) {
+func SetInitialState(evmPartition kv.KVStore, evmChainID uint16) {
 	// Ethereum genesis block configuration
 	genesisAlloc := types.GenesisAlloc{}
 
@@ -65,39 +60,18 @@ func SetInitialState(
 		Balance: nil,
 	}
 
-	// Select gas ratio from fee policy (default if nil)
-	var ratio util.Ratio32
-	if feePolicy != nil {
-		ratio = feePolicy.EVMGasRatio
-	} else {
-		ratio = gas.DefaultFeePolicy().EVMGasRatio
-	}
-
-	// Base gas limits
 	gasLimits := gas.LimitsDefault
-	evmGasLimit := emulator.GasLimits{
-		Block: gas.EVMBlockGasLimit(gasLimits, &ratio),
-		Call:  gas.EVMCallGasLimit(gasLimits, &ratio),
-	}
-
-	// Decide timestamp, gas limit override, and custom flag
-	var ts uint64
-	customGenesis := false
-	if genesis != nil {
-		ts = genesis.Timestamp
-		customGenesis = true
-		if genesis.GasLimit != 0 {
-			evmGasLimit.Block = genesis.GasLimit
-		}
-	}
-
+	gasRatio := gas.DefaultFeePolicy().EVMGasRatio
+	// create the Ethereum genesis block
 	emulator.Init(
 		evm.EmulatorStateSubrealm(evmPartition),
 		evmChainID,
-		evmGasLimit,
-		ts,
+		emulator.GasLimits{
+			Block: gas.EVMBlockGasLimit(gasLimits, &gasRatio),
+			Call:  gas.EVMCallGasLimit(gasLimits, &gasRatio),
+		},
+		0,
 		genesisAlloc,
-		customGenesis,
 	)
 }
 

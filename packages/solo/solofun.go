@@ -70,7 +70,6 @@ func (env *Solo) waitForNewBalance(address *cryptolib.Address, startBalance coin
 			return
 		}
 
-		count++
 		// wait for random time in case of collision
 		rint := rand.IntN(100)
 		time.Sleep(time.Duration(rint)*50*time.Millisecond + time.Second)
