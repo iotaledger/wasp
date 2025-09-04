@@ -3,11 +3,10 @@ package iscmoveclient
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	"github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/hive.go/log"
@@ -52,7 +51,6 @@ func (g *GRpcClientWrapper) SubscribeEvents(ctx context.Context) (<-chan iscmove
 				if !ok {
 					return
 				}
-				fmt.Println(hexutil.Encode(evt.EventData.Data))
 				reqEvent, err := bcs.Unmarshal[iscmove.RequestEvent](evt.EventData.Data)
 				if err != nil {
 					continue
@@ -304,92 +302,139 @@ func (f *ChainFeed) consumeRequestEvents(ctx context.Context, events <-chan iscm
 	}
 }
 
+func (f *ChainFeed) pollAnchorUpdates(ctx context.Context, anchorCh chan<- *iscmove.AnchorWithRef) []iotajsonrpc.IotaTransactionBlockResponse {
+	if ctx.Err() != nil {
+		f.log.LogErrorf("subscribeToAnchorUpdates: ctx.Err(): %s", ctx.Err())
+		return nil
+	}
+
+	res, err := f.httpClient.QueryTransactionBlocks(ctx, iotaclient.QueryTransactionBlocksRequest{
+		Query: &iotajsonrpc.IotaTransactionBlockResponseQuery{
+			Filter: &iotajsonrpc.TransactionFilter{
+				ChangedObject: &f.anchorAddress,
+			},
+			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+				ShowEffects: true,
+			},
+		}})
+
+	if err != nil {
+		f.log.LogErrorf("subscribeToAnchorUpdates: failed to call QueryTransactionBlocks(): %s", err)
+		return nil
+	}
+
+	if len(res.Data) == 0 {
+		return nil
+	}
+
+	// Always order all Anchor objects by their checkpoint, so [0] is the newest.
+	// For some reason TimestampMS can be nil at times (old objects), so we need these extra checks ..
+	sort.Slice(res.Data, func(i, j int) bool {
+		iTimestamp := res.Data[i].TimestampMs
+		jTimestamp := res.Data[j].TimestampMs
+
+		var iTimestampVal uint64 = 0
+		if iTimestamp != nil {
+			iTimestampVal = iTimestamp.Uint64()
+		}
+
+		var jTimestampVal uint64 = 0
+		if jTimestamp != nil {
+			jTimestampVal = jTimestamp.Uint64()
+		}
+
+		return iTimestampVal > jTimestampVal
+	})
+
+	return res.Data
+}
+
 func (f *ChainFeed) subscribeToAnchorUpdates(
 	ctx context.Context,
 	anchorCh chan<- *iscmove.AnchorWithRef,
 ) {
+	var latestTimeStamp time.Time
+
 	for {
-		changes := make(chan *serialization.TagJson[iotajsonrpc.IotaTransactionBlockEffects])
-		res, err := f.httpClient.QueryTransactionBlocks(ctx, iotaclient.QueryTransactionBlocksRequest{
-			Query: &iotajsonrpc.IotaTransactionBlockResponseQuery{
-				Filter: &iotajsonrpc.TransactionFilter{
-					ChangedObject: &f.anchorAddress,
-				},
-			}})
-
-		if ctx.Err() != nil {
-			f.log.LogErrorf("subscribeToAnchorUpdates: ctx.Err(): %s", ctx.Err())
+		t := time.NewTimer(1 * time.Second)
+		select {
+		case <-t.C:
+			t.Stop()
+			break
+		case <-ctx.Done():
+			t.Stop()
 			return
 		}
 
-		if err != nil {
-			f.log.LogErrorf("subscribeToAnchorUpdates: failed to call SubscribeEvent(): %s", err)
-		} else {
-			for _, v := range res.Data {
-				changes <- v.Effects
-			}
+		anchorUpdates := f.pollAnchorUpdates(ctx, anchorCh)
 
-			f.consumeAnchorUpdates(ctx, changes, anchorCh)
+		if len(anchorUpdates) == 0 {
+			continue
 		}
 
-		time.Sleep(1 * time.Second)
-		if ctx.Err() != nil {
-			f.log.LogErrorf("subscribeToAnchorUpdates: ctx.Err(): %s", ctx.Err())
-			return
+		newestAnchor := anchorUpdates[0]
+
+		// Safeguard in case Timestamp is nil for some reason. It seems to only happen on old/outdated objects, but better safe than sorry.
+		if newestAnchor.TimestampMs == nil {
+			continue
+		}
+
+		txTimestamp := time.UnixMilli(int64(newestAnchor.TimestampMs.Uint64()))
+
+		if txTimestamp.After(latestTimeStamp) && newestAnchor.Effects != nil {
+			f.log.LogInfof("Accepting AnchorTX: %v as its newer than our latest timestamp:[%v], tx:[%v]\n", newestAnchor.Digest, latestTimeStamp, txTimestamp)
+			f.consumeAnchorUpdates(ctx, newestAnchor.Effects, anchorCh)
+			latestTimeStamp = txTimestamp
 		}
 	}
 }
 
 func (f *ChainFeed) consumeAnchorUpdates(
 	ctx context.Context,
-	changes <-chan *serialization.TagJson[iotajsonrpc.IotaTransactionBlockEffects],
+	change *serialization.TagJson[iotajsonrpc.IotaTransactionBlockEffects],
 	anchorCh chan<- *iscmove.AnchorWithRef,
 ) {
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case change, ok := <-changes:
-			if !ok {
-				return
-			}
-			for _, obj := range change.Data.V1.Mutated {
-				if *obj.Reference.ObjectID != f.anchorAddress {
-					continue
-				}
+	select {
+	case <-ctx.Done():
+		return
+	default:
+	}
 
-				f.log.LogDebugf("POLLING ANCHOR %s, %s", f.anchorAddress, time.Now().String())
-
-				r, err := f.httpClient.TryGetPastObject(ctx, iotaclient.TryGetPastObjectRequest{
-					ObjectID: &f.anchorAddress,
-					Version:  obj.Reference.Version,
-					Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true, ShowContent: true},
-				})
-				if err != nil {
-					f.log.LogErrorf("consumeAnchorUpdates: cannot fetch Anchor: %s", err)
-					continue
-				}
-				if r.Data.VersionFound == nil {
-					f.log.LogErrorf("consumeAnchorUpdates: cannot fetch Anchor: version %d not found", obj.Reference.Version)
-					continue
-				}
-
-				var anchor *iscmove.Anchor
-				err = iotaclient.UnmarshalBCS(r.Data.VersionFound.Bcs.Data.MoveObject.BcsBytes, &anchor)
-				if err != nil {
-					f.log.LogErrorf("ID: %s\nAssetBagID: %s\n", anchor.ID, anchor.Assets.Value.ID)
-					f.log.LogErrorf("consumeAnchorUpdates: failed to unmarshal BCS: %s", err)
-					continue
-				}
-
-				anchorCh <- &iscmove.AnchorWithRef{
-					ObjectRef: r.Data.VersionFound.Ref(),
-					Object:    anchor,
-					Owner:     r.Data.VersionFound.Owner.AddressOwner,
-				}
-				f.log.LogDebugf("ANCHOR[%s] SENT TO CHANNEL %s\n", anchor.ID.String(), time.Now().String())
-			}
+	for _, obj := range change.Data.V1.Mutated {
+		if *obj.Reference.ObjectID != f.anchorAddress {
+			continue
 		}
+
+		f.log.LogDebugf("POLLING ANCHOR %s, %s", f.anchorAddress, time.Now().String())
+
+		r, err := f.httpClient.TryGetPastObject(ctx, iotaclient.TryGetPastObjectRequest{
+			ObjectID: &f.anchorAddress,
+			Version:  obj.Reference.Version,
+			Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true, ShowContent: true},
+		})
+		if err != nil {
+			f.log.LogErrorf("consumeAnchorUpdates: cannot fetch Anchor: %s", err)
+			continue
+		}
+		if r.Data.VersionFound == nil {
+			f.log.LogErrorf("consumeAnchorUpdates: cannot fetch Anchor: version %d not found", obj.Reference.Version)
+			continue
+		}
+
+		var anchor *iscmove.Anchor
+		err = iotaclient.UnmarshalBCS(r.Data.VersionFound.Bcs.Data.MoveObject.BcsBytes, &anchor)
+		if err != nil {
+			f.log.LogErrorf("ID: %s\nAssetBagID: %s\n", anchor.ID, anchor.Assets.Value.ID)
+			f.log.LogErrorf("consumeAnchorUpdates: failed to unmarshal BCS: %s", err)
+			continue
+		}
+
+		anchorCh <- &iscmove.AnchorWithRef{
+			ObjectRef: r.Data.VersionFound.Ref(),
+			Object:    anchor,
+			Owner:     r.Data.VersionFound.Owner.AddressOwner,
+		}
+		f.log.LogDebugf("ANCHOR[%s] SENT TO CHANNEL %s\n", anchor.ID.String(), time.Now().String())
 	}
 }
 
