@@ -197,52 +197,385 @@ func (s *StructTag) String() string {
 }
 
 func StructTagFromString(data string) (*StructTag, error) {
-	parts := strings.Split(data, "::")
-	address, module := parts[0], parts[1]
-
-	rest := data[len(address)+len(module)+4:]
-	name := rest
-	if idx := strings.Index(rest, "<"); idx > 0 {
-		name = rest[:idx]
+	parser := &structTagParser{
+		input: []rune(data),
+		pos:   0,
 	}
-	typeParams := []TypeTag{}
+	return parser.parseStructTag()
+}
 
-	if strings.Contains(rest, "<") {
-		typeParamsRawStr := rest[strings.Index(rest, "<")+1 : strings.LastIndex(rest, ">")]
-		typeParamsTokens := splitGenericParameters(typeParamsRawStr, []string{"<", ">"})
-		typeParams = make([]TypeTag, len(typeParamsTokens))
-		for i, token := range typeParamsTokens {
-			param := TypeTag{}
-			if !strings.Contains(token, "::") {
-				typeTag, err := TypeTagFromString(token)
-				if err != nil {
-					return nil, fmt.Errorf("can't parse TypeParams: %w", err)
-				}
-				param = *typeTag
+// Token types for the struct tag parser
+type tokenType int
+
+const (
+	tokenEOF tokenType = iota
+	tokenAddr
+	tokenIdent
+	tokenDoubleColon // ::
+	tokenLessThan    // <
+	tokenGreaterThan // >
+	tokenComma       // ,
+	tokenPrimitive
+)
+
+type token struct {
+	type_ tokenType
+	value string
+	pos   int
+}
+
+type structTagParser struct {
+	input []rune
+	pos   int
+}
+
+func (p *structTagParser) skipWhitespace() {
+	for p.pos < len(p.input) {
+		c := p.input[p.pos]
+		if c == ' ' || c == '\t' {
+			p.pos++
+		} else {
+			break
+		}
+	}
+}
+
+func (p *structTagParser) nextToken() (token, error) {
+	p.skipWhitespace()
+
+	if p.pos >= len(p.input) {
+		return token{tokenEOF, "", p.pos}, nil
+	}
+
+	start := p.pos
+	c := p.input[p.pos]
+
+	// Check for :: first
+	if c == ':' && p.pos+1 < len(p.input) && p.input[p.pos+1] == ':' {
+		p.pos += 2
+		return token{tokenDoubleColon, "::", start}, nil
+	}
+
+	// Single character tokens
+	switch c {
+	case '<':
+		p.pos++
+		return token{tokenLessThan, "<", start}, nil
+	case '>':
+		p.pos++
+		return token{tokenGreaterThan, ">", start}, nil
+	case ',':
+		p.pos++
+		return token{tokenComma, ",", start}, nil
+	}
+
+	// Address: 0x followed by hex digits
+	if c == '0' && p.pos+1 < len(p.input) && (p.input[p.pos+1] == 'x' || p.input[p.pos+1] == 'X') {
+		p.pos += 2 // Skip 0x
+		hexStart := p.pos
+
+		for p.pos < len(p.input) {
+			c := p.input[p.pos]
+			if (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') {
+				p.pos++
 			} else {
-				typeParam, err := StructTagFromString(token)
-				if err != nil {
-					return nil, fmt.Errorf("can't parse StructTag TypeParams: %w", err)
-				}
-				param.Struct = typeParam
+				break
 			}
+		}
 
-			typeParams[i] = param
+		if p.pos == hexStart {
+			return token{}, fmt.Errorf("invalid address at position %d: expected hex digits after 0x", start)
+		}
+
+		hexLen := p.pos - hexStart
+		if hexLen > 64 {
+			return token{}, fmt.Errorf("invalid address at position %d: hex part too long (%d digits, max 64)", start, hexLen)
+		}
+
+		value := string(p.input[start:p.pos])
+		return token{tokenAddr, value, start}, nil
+	}
+
+	// Check for primitives and identifiers
+	if (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' {
+		for p.pos < len(p.input) {
+			c := p.input[p.pos]
+			if (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' {
+				p.pos++
+			} else {
+				break
+			}
+		}
+
+		value := string(p.input[start:p.pos])
+
+		// Check if it's a primitive type
+		switch value {
+		case "bool", "u8", "u16", "u32", "u64", "u128", "u256", "address", "signer":
+			return token{tokenPrimitive, value, start}, nil
+		default:
+			return token{tokenIdent, value, start}, nil
 		}
 	}
 
-	if len(typeParams) == 0 {
-		typeParams = nil
+	return token{}, fmt.Errorf("unexpected character '%c' at position %d", c, start)
+}
+
+func (p *structTagParser) parseStructTagCore() (*StructTag, error) {
+	// Address
+	addrToken, err := p.nextToken()
+	if err != nil {
+		return nil, err
+	}
+	if addrToken.type_ != tokenAddr {
+		return nil, fmt.Errorf("expected address at position %d, got %s", addrToken.pos, addrToken.value)
+	}
+
+	address, err := AddressFromHex(addrToken.value)
+	if err != nil {
+		return nil, fmt.Errorf("invalid address '%s' at position %d: %w", addrToken.value, addrToken.pos, err)
+	}
+
+	// First ::
+	dcolonToken, err := p.nextToken()
+	if err != nil {
+		return nil, err
+	}
+	if dcolonToken.type_ != tokenDoubleColon {
+		return nil, fmt.Errorf("expected '::' at position %d, got '%s'", dcolonToken.pos, dcolonToken.value)
+	}
+
+	// Module identifier
+	moduleToken, err := p.nextToken()
+	if err != nil {
+		return nil, err
+	}
+	if moduleToken.type_ != tokenIdent {
+		return nil, fmt.Errorf("expected module identifier at position %d, got '%s'", moduleToken.pos, moduleToken.value)
+	}
+
+	// Second ::
+	dcolonToken2, err := p.nextToken()
+	if err != nil {
+		return nil, err
+	}
+	if dcolonToken2.type_ != tokenDoubleColon {
+		return nil, fmt.Errorf("expected '::' at position %d, got '%s'", dcolonToken2.pos, dcolonToken2.value)
+	}
+
+	// Name identifier
+	nameToken, err := p.nextToken()
+	if err != nil {
+		return nil, err
+	}
+	if nameToken.type_ != tokenIdent {
+		return nil, fmt.Errorf("expected struct name identifier at position %d, got '%s'", nameToken.pos, nameToken.value)
+	}
+
+	// Optional type parameters
+	var typeParams []TypeTag
+	nextTok, err := p.nextToken()
+	if err != nil {
+		return nil, err
+	}
+
+	if nextTok.type_ == tokenLessThan {
+		typeParams, err = p.parseTypeParams()
+		if err != nil {
+			return nil, err
+		}
+
+		// final >
+		gtToken, err := p.nextToken()
+		if err != nil {
+			return nil, err
+		}
+		if gtToken.type_ != tokenGreaterThan {
+			return nil, fmt.Errorf("expected '>' at position %d, got '%s'", gtToken.pos, gtToken.value)
+		}
+	} else {
+		// Put back the token for the caller to consume
+		p.pos -= len([]rune(nextTok.value))
 	}
 
 	return &StructTag{
-		Address:    MustAddressFromHex(address),
-		Module:     module,
-		Name:       name,
+		Address:    address,
+		Module:     Identifier(moduleToken.value),
+		Name:       Identifier(nameToken.value),
 		TypeParams: typeParams,
 	}, nil
 }
 
+func (p *structTagParser) parseStructTag() (*StructTag, error) {
+	// address
+	addrToken, err := p.nextToken()
+	if err != nil {
+		return nil, err
+	}
+	if addrToken.type_ != tokenAddr {
+		return nil, fmt.Errorf("expected address at position %d, got %s", addrToken.pos, addrToken.value)
+	}
+
+	address, err := AddressFromHex(addrToken.value)
+	if err != nil {
+		return nil, fmt.Errorf("invalid address '%s' at position %d: %w", addrToken.value, addrToken.pos, err)
+	}
+
+	// first ::
+	dcolonToken, err := p.nextToken()
+	if err != nil {
+		return nil, err
+	}
+	if dcolonToken.type_ != tokenDoubleColon {
+		return nil, fmt.Errorf("expected '::' at position %d, got '%s'", dcolonToken.pos, dcolonToken.value)
+	}
+
+	// module identifier
+	moduleToken, err := p.nextToken()
+	if err != nil {
+		return nil, err
+	}
+	if moduleToken.type_ != tokenIdent {
+		return nil, fmt.Errorf("expected module identifier at position %d, got '%s'", moduleToken.pos, moduleToken.value)
+	}
+
+	// second ::
+	dcolonToken2, err := p.nextToken()
+	if err != nil {
+		return nil, err
+	}
+	if dcolonToken2.type_ != tokenDoubleColon {
+		return nil, fmt.Errorf("expected '::' at position %d, got '%s'", dcolonToken2.pos, dcolonToken2.value)
+	}
+
+	// name identifier
+	nameToken, err := p.nextToken()
+	if err != nil {
+		return nil, err
+	}
+	if nameToken.type_ != tokenIdent {
+		return nil, fmt.Errorf("expected struct name identifier at position %d, got '%s'", nameToken.pos, nameToken.value)
+	}
+
+	// optional type parameters
+	var typeParams []TypeTag
+	nextTok, err := p.nextToken()
+	if err != nil {
+		return nil, err
+	}
+
+	switch nextTok.type_ {
+	case tokenLessThan:
+		typeParams, err = p.parseTypeParams()
+		if err != nil {
+			return nil, err
+		}
+
+		// final >
+		gtToken, err := p.nextToken()
+		if err != nil {
+			return nil, err
+		}
+		if gtToken.type_ != tokenGreaterThan {
+			return nil, fmt.Errorf("expected '>' at position %d, got '%s'", gtToken.pos, gtToken.value)
+		}
+
+		// check for eof
+		eofToken, err := p.nextToken()
+		if err != nil {
+			return nil, err
+		}
+		if eofToken.type_ != tokenEOF {
+			return nil, fmt.Errorf("expected end of input at position %d, got '%s'", eofToken.pos, eofToken.value)
+		}
+	case tokenEOF:
+		// No type parameters, which is fine
+	default:
+		return nil, fmt.Errorf("expected '<' or end of input at position %d, got '%s'", nextTok.pos, nextTok.value)
+	}
+
+	return &StructTag{
+		Address:    address,
+		Module:     Identifier(moduleToken.value),
+		Name:       Identifier(nameToken.value),
+		TypeParams: typeParams,
+	}, nil
+}
+
+func (p *structTagParser) parseTypeParams() ([]TypeTag, error) {
+	var typeParams []TypeTag
+
+	for {
+		typeTag, err := p.parseTypeTag()
+		if err != nil {
+			return nil, err
+		}
+		typeParams = append(typeParams, *typeTag)
+
+		// Check for comma or end
+		nextTok, err := p.nextToken()
+		if err != nil {
+			return nil, err
+		}
+
+		switch nextTok.type_ {
+		case tokenComma:
+			continue // Parse next type parameter
+		case tokenGreaterThan:
+			// Put back the > for the caller to consume
+			p.pos -= len(nextTok.value)
+			return typeParams, nil
+		default:
+			return nil, fmt.Errorf("expected ',' or '>' at position %d, got '%s'", nextTok.pos, nextTok.value)
+		}
+	}
+}
+
+func (p *structTagParser) parseTypeTag() (*TypeTag, error) {
+	oldPos := p.pos
+	nextTok, err := p.nextToken()
+	if err != nil {
+		return nil, err
+	}
+
+	if nextTok.type_ == tokenPrimitive {
+		// It's a primitive type
+		switch nextTok.value {
+		case "bool":
+			return &TypeTag{Bool: &serialization.EmptyEnum{}}, nil
+		case "u8":
+			return &TypeTag{U8: &serialization.EmptyEnum{}}, nil
+		case "u16":
+			return &TypeTag{U16: &serialization.EmptyEnum{}}, nil
+		case "u32":
+			return &TypeTag{U32: &serialization.EmptyEnum{}}, nil
+		case "u64":
+			return &TypeTag{U64: &serialization.EmptyEnum{}}, nil
+		case "u128":
+			return &TypeTag{U128: &serialization.EmptyEnum{}}, nil
+		case "u256":
+			return &TypeTag{U256: &serialization.EmptyEnum{}}, nil
+		case "address":
+			return &TypeTag{Address: &serialization.EmptyEnum{}}, nil
+		case "signer":
+			return &TypeTag{Signer: &serialization.EmptyEnum{}}, nil
+		default:
+			return nil, fmt.Errorf("unknown primitive type '%s' at position %d", nextTok.value, nextTok.pos)
+		}
+	} else if nextTok.type_ == tokenAddr {
+		// It's a struct tag - rewind and parse as struct
+		p.pos = oldPos
+		structTag, err := p.parseStructTagCore()
+		if err != nil {
+			return nil, err
+		}
+		return &TypeTag{Struct: structTag}, nil
+	} else {
+		return nil, fmt.Errorf("expected primitive type or address at position %d, got '%s'", nextTok.pos, nextTok.value)
+	}
+}
+
+// splitGenericParameters is kept for backward compatibility with other parsing code
 func splitGenericParameters(str string, genericSeparators []string) []string {
 	var left, right string
 	if genericSeparators != nil {

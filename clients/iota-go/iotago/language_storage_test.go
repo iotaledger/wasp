@@ -1,6 +1,7 @@
 package iotago_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -71,6 +72,11 @@ func TestStructTagEncoding(t *testing.T) {
 		require.Equal(t, iotago.Identifier("funny"), typeParam01.Module)
 		require.Equal(t, iotago.Identifier("other"), typeParam01.Name)
 
+		typeParam02 := structTag.TypeParams[0].Struct.TypeParams[2].Struct
+		require.Equal(t, iotago.MustObjectIDFromHex("0x6"), typeParam02.Address)
+		require.Equal(t, iotago.Identifier("more"), typeParam02.Module)
+		require.Equal(t, iotago.Identifier("another"), typeParam02.Name)
+
 		require.NotNil(t, structTag.TypeParams[1].Bool)
 	}
 
@@ -91,5 +97,203 @@ func TestStructTagEncoding(t *testing.T) {
 		)
 		require.Equal(t, iotago.Identifier("testcoin"), typeParam0.Module)
 		require.Equal(t, iotago.Identifier("TESTCOIN"), typeParam0.Name)
+	}
+}
+
+func TestStructTagParsingEdgeCases(t *testing.T) {
+	tests := []struct {
+		name    string
+		input   string
+		wantErr bool
+		errMsg  string
+	}{
+		// Whitespace tests
+		{
+			name:  "whitespace after <",
+			input: "0x1::module::name< bool>",
+		},
+		{
+			name:  "whitespace before >",
+			input: "0x1::module::name<bool >",
+		},
+		{
+			name:  "whitespace around comma",
+			input: "0x1::module::name<0x2::mod::test , bool>",
+		},
+		{
+			name:  "multiple spaces",
+			input: "0x1::module::name<  bool  ,   u64  >",
+		},
+		{
+			name:  "tabs and spaces",
+			input: "0x1::module::name<\tbool\t,\tu64\t>",
+		},
+
+		// Address format tests
+		{
+			name:  "short address",
+			input: "0x1::module::name",
+		},
+		{
+			name:  "long address",
+			input: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef::module::name",
+		},
+		{
+			name:  "uppercase hex",
+			input: "0x1234ABCD::module::name",
+		},
+		{
+			name:  "mixed case hex",
+			input: "0x1234aBcD::module::name",
+		},
+
+		// Primitive type tests
+		{
+			name:  "all primitive types",
+			input: "0x1::module::name<bool, u8, u16, u32, u64, u128, u256, address, signer>",
+		},
+
+		// Error cases
+		{
+			name:    "missing 0x prefix",
+			input:   "1::module::name",
+			wantErr: true,
+			errMsg:  "unexpected character '1' at position 0",
+		},
+		{
+			name:    "invalid hex",
+			input:   "0xgg::module::name",
+			wantErr: true,
+			errMsg:  `invalid address`,
+		},
+		{
+			name:    "too long address",
+			input:   "0x" + strings.Repeat("1", 65) + "::module::name",
+			wantErr: true,
+			errMsg:  "invalid address",
+		},
+		{
+			name:    "missing double colon",
+			input:   "0x1:module::name",
+			wantErr: true,
+			errMsg:  `unexpected character ':' at position 3`,
+		},
+		{
+			name:    "invalid identifier",
+			input:   "0x1::123::name",
+			wantErr: true,
+			errMsg:  "unexpected character",
+		},
+		{
+			name:    "empty type params",
+			input:   "0x1::module::name<>",
+			wantErr: true,
+			errMsg:  `expected primitive type or address at position 18, got '>'`,
+		},
+		{
+			name:    "unmatched <",
+			input:   "0x1::module::name<bool",
+			wantErr: true,
+			errMsg:  `expected ',' or '>' at position 22, got ''`,
+		},
+		{
+			name:    "unmatched >",
+			input:   "0x1::module::name<bool>>",
+			wantErr: true,
+			errMsg:  "expected end of input",
+		},
+		{
+			name:    "trailing comma",
+			input:   "0x1::module::name<bool,>",
+			wantErr: true,
+			errMsg:  "expected primitive type or address at position 23, got '>'",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := iotago.StructTagFromString(tt.input)
+
+			if tt.wantErr {
+				require.Error(t, err)
+				if tt.errMsg != "" {
+					require.Contains(t, err.Error(), tt.errMsg)
+				}
+			} else {
+				require.NoError(t, err)
+				require.NotNil(t, result)
+			}
+		})
+	}
+}
+
+func TestStructTagRoundTrip(t *testing.T) {
+	tests := []string{
+		"0x1::module::name",
+		"0x2::foo::bar<bool>",
+		"0x3::test::deep<0x4::inner::struct<u64, bool>, u32>",
+		"0x2::foo::bar<0x3::baz::qux<0x4::nested::result, 0x5::funny::other, 0x6::more::another>, bool>",
+		"0xa::very_long_module_name::VeryLongStructName<0xabcd::another::Type>",
+		"0x123::mod::name<bool, u8, u16, u32, u64, u128, u256, address, signer>",
+	}
+
+	for _, input := range tests {
+		t.Run(input, func(t *testing.T) {
+			// Parse the input
+			parsed, err := iotago.StructTagFromString(input)
+			require.NoError(t, err)
+
+			// Convert back to string
+			strResult := parsed.String()
+
+			// Parse again to ensure consistency
+			reparsed, err := iotago.StructTagFromString(strResult)
+			require.NoError(t, err)
+
+			// Compare the structs field by field
+			require.Equal(t, parsed.Address, reparsed.Address)
+			require.Equal(t, parsed.Module, reparsed.Module)
+			require.Equal(t, parsed.Name, reparsed.Name)
+			require.Equal(t, len(parsed.TypeParams), len(reparsed.TypeParams))
+
+			// Deep comparison of type params would be more complex,
+			// but the String() comparison should be sufficient for the round-trip test
+			require.Equal(t, parsed.String(), reparsed.String())
+		})
+	}
+}
+
+func TestStructTagWhitespaceVariations(t *testing.T) {
+	// All these variations should parse to the same canonical form
+	canonical := "0x1::module::name<bool, u64>"
+	variations := []string{
+		"0x1::module::name< bool, u64>",
+		"0x1::module::name<bool , u64>",
+		"0x1::module::name<bool, u64 >",
+		"0x1::module::name< bool , u64 >",
+		"0x1::module::name<  bool  ,  u64  >",
+		"0x1::module::name<\tbool\t,\tu64\t>",
+		"0x1::module::name<\tbool,u64\t>",
+	}
+
+	// Parse canonical form
+	canonicalParsed, err := iotago.StructTagFromString(canonical)
+	require.NoError(t, err)
+	canonicalStr := canonicalParsed.String()
+
+	for _, variation := range variations {
+		t.Run("variation: "+variation, func(t *testing.T) {
+			parsed, err := iotago.StructTagFromString(variation)
+			require.NoError(t, err)
+
+			// Should produce the same canonical string representation
+			require.Equal(t, canonicalStr, parsed.String())
+
+			// Should have the same structure
+			require.Equal(t, canonicalParsed.Address, parsed.Address)
+			require.Equal(t, canonicalParsed.Module, parsed.Module)
+			require.Equal(t, canonicalParsed.Name, parsed.Name)
+			require.Equal(t, len(canonicalParsed.TypeParams), len(parsed.TypeParams))
+		})
 	}
 }
