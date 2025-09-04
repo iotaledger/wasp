@@ -63,27 +63,14 @@ func (env *Solo) NewSeedFromTestNameAndTimestamp(testName string) *cryptolib.See
 	return &seed
 }
 
-func (env *Solo) WaitForNewBalance(address *cryptolib.Address, startBalance coin.Value) {
-	const amountOfRetries = 10
-	currentBalance := env.L1BaseTokens(address)
-
-	if currentBalance > startBalance {
-		return
-	}
-
-	count := 0
-	for {
-		if count == amountOfRetries {
-			panic("Could not get funds from Faucet")
-		}
-
+func (env *Solo) waitForNewBalance(address *cryptolib.Address, startBalance coin.Value) {
+	for range 10 {
 		if env.L1BaseTokens(address) > startBalance {
-			break
+			return
 		}
-
-		count++
-		time.Sleep(1 * time.Second)
+		time.Sleep(100 * time.Millisecond)
 	}
+	require.FailNow(env.T, "Could not get funds from Faucet")
 }
 
 // NewKeyPairWithFunds generates new ed25519 signature scheme
@@ -100,9 +87,8 @@ func (env *Solo) NewKeyPairWithFunds(seed ...*cryptolib.Seed) (*cryptolib.KeyPai
 func (env *Solo) GetFundsFromFaucet(target *cryptolib.Address) {
 	currentBalance := env.L1BaseTokens(target)
 	err := iotaclient.RequestFundsFromFaucet(env.ctx, target.AsIotaAddress(), env.l1Config.IotaFaucetURL)
-	env.WaitForNewBalance(target, currentBalance)
 	require.NoError(env.T, err)
-	require.GreaterOrEqual(env.T, env.L1BaseTokens(target), coin.Value(iotaclient.FundsFromFaucetAmount))
+	env.waitForNewBalance(target, currentBalance)
 }
 
 func (env *Solo) NewKeyPair(seedOpt ...*cryptolib.Seed) (*cryptolib.KeyPair, *cryptolib.Address) {

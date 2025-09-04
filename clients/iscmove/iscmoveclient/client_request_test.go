@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -125,7 +124,6 @@ func TestCreateAndSendRequest(t *testing.T) {
 	var testCoinRef []*iotago.ObjectRef
 	for range 25 + 26 {
 		coinRef, _ := buildDeployMintTestcoin(t, client, cryptolibSigner)
-		time.Sleep(3 * time.Second)
 		testCoinRef = append(testCoinRef, coinRef)
 	}
 
