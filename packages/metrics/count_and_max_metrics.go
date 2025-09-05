@@ -11,7 +11,7 @@ type countAndMaxMetrics struct {
 	max   *prometheus.CounterVec
 
 	// Cannot use float64 directly, because it creates data race.
-	// And unfortunatelly atomic does not support float64 directly.
+	// And unfortunately atomic does not support float64 directly.
 	// We could use sync.Mutex, but atomic would avoid blocking, so less influence on execution.
 	maxValue atomic.Value
 }
