@@ -62,25 +62,12 @@ func WithWaspNodeFlag(cmd *cobra.Command, node *string) {
 	cmd.Flags().StringVar(node, "node", "", "wasp node to execute the command in (ex: wasp-0) (default: the default wasp node)")
 }
 
-// defaultWaspNodeFallbackCore contains the shared logic for both fallback functions
-func defaultWaspNodeFallbackCore(node string) (string, bool) {
-	if node != "" {
-		return node, true
-	}
-	return "", false
-}
-
 // DefaultWaspNodeFallback returns the node name or falls back to the default node
 func DefaultWaspNodeFallback(node string) (string, error) {
-	if result, hasNode := defaultWaspNodeFallbackCore(node); hasNode {
-		return result, nil
+	if node != "" {
+		return node, nil
 	}
-	nodeName, _, err := getDefaultWaspNodeCore()
-	return nodeName, err
-}
 
-// getDefaultWaspNodeCore contains the shared logic for getting the default wasp node
-func getDefaultWaspNodeCore() (string, int, error) {
 	waspSettings := map[string]interface{}{}
 	waspKey := config.Config.Cut("wasp")
 	if waspKey != nil {
@@ -90,13 +77,13 @@ func getDefaultWaspNodeCore() (string, int, error) {
 	nodeCount := len(waspSettings)
 	switch nodeCount {
 	case 0:
-		return "", nodeCount, errors.New("no wasp node configured, you can add a node with `wasp-cli wasp add <name> <api url>`")
+		return "", errors.New("no wasp node configured, you can add a node with `wasp-cli wasp add <name> <api url>`")
 	case 1:
 		for nodeName := range waspSettings {
-			return nodeName, nodeCount, nil
+			return nodeName, nil
 		}
 	default:
-		return "", nodeCount, errors.New("more than 1 wasp node in the configuration, you can specify the target node with `--node=<name>`")
+		return "", errors.New("more than 1 wasp node in the configuration, you can specify the target node with `--node=<name>`")
 	}
-	return "", nodeCount, errors.New("unreachable code")
+	panic("unreachable")
 }
