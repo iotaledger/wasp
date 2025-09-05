@@ -21,13 +21,19 @@ func initListTrustedCmd() *cobra.Command {
 		Use:   "list-trusted",
 		Short: "List trusted wasp nodes.",
 		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultWaspNodeFallback(node)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+			node, err = waspcmd.DefaultWaspNodeFallbackE(node)
+			if err != nil {
+				return err
+			}
 
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 			trustedList, _, err := client.NodeAPI.GetTrustedPeers(ctx).Execute()
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 
 			header := []string{"Name", "PubKey", "PeeringURL", "Trusted"}
 			rows := make([][]string, len(trustedList))
@@ -40,6 +46,7 @@ func initListTrustedCmd() *cobra.Command {
 				}
 			}
 			log.PrintTable(header, rows)
+			return nil
 		},
 	}
 

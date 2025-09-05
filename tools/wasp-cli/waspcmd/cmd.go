@@ -3,6 +3,8 @@
 package waspcmd
 
 import (
+	"errors"
+
 	"github.com/iotaledger/wasp/v2/clients/apiextensions"
 	"github.com/iotaledger/wasp/v2/packages/util"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/config"
@@ -60,28 +62,65 @@ func WithWaspNodeFlag(cmd *cobra.Command, node *string) {
 	cmd.Flags().StringVar(node, "node", "", "wasp node to execute the command in (ex: wasp-0) (default: the default wasp node)")
 }
 
-func DefaultWaspNodeFallback(node string) string {
+// defaultWaspNodeFallbackCore contains the shared logic for both fallback functions
+func defaultWaspNodeFallbackCore(node string) (string, bool) {
 	if node != "" {
-		return node
+		return node, true
+	}
+	return "", false
+}
+
+// DefaultWaspNodeFallback returns the node name or falls back to the default node
+// This function calls log.Fatal and is deprecated in favor of DefaultWaspNodeFallbackE
+func DefaultWaspNodeFallback(node string) string {
+	if result, hasNode := defaultWaspNodeFallbackCore(node); hasNode {
+		return result
 	}
 	return getDefaultWaspNode()
 }
 
-func getDefaultWaspNode() string {
+// DefaultWaspNodeFallbackE returns the node name or falls back to the default node
+// Returns an error instead of calling log.Fatal for proper error handling
+func DefaultWaspNodeFallbackE(node string) (string, error) {
+	if result, hasNode := defaultWaspNodeFallbackCore(node); hasNode {
+		return result, nil
+	}
+	return getDefaultWaspNodeE()
+}
+
+// getDefaultWaspNodeCore contains the shared logic for getting the default wasp node
+func getDefaultWaspNodeCore() (string, int, error) {
 	waspSettings := map[string]interface{}{}
 	waspKey := config.Config.Cut("wasp")
 	if waspKey != nil {
 		waspSettings = waspKey.All()
 	}
-	switch len(waspSettings) {
+
+	nodeCount := len(waspSettings)
+	switch nodeCount {
 	case 0:
-		log.Fatalf("no wasp node configured, you can add a node with `wasp-cli wasp add <name> <api url>`")
+		return "", nodeCount, errors.New("no wasp node configured, you can add a node with `wasp-cli wasp add <name> <api url>`")
 	case 1:
 		for nodeName := range waspSettings {
-			return nodeName
+			return nodeName, nodeCount, nil
 		}
 	default:
-		log.Fatalf("more than 1 wasp node in the configuration, you can specify the target node with `--node=<name>`")
+		return "", nodeCount, errors.New("more than 1 wasp node in the configuration, you can specify the target node with `--node=<name>`")
 	}
-	panic("unreachable")
+	return "", nodeCount, errors.New("unreachable code")
+}
+
+// getDefaultWaspNode calls log.Fatal and is deprecated in favor of getDefaultWaspNodeE
+func getDefaultWaspNode() string {
+	nodeName, _, err := getDefaultWaspNodeCore()
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+	return nodeName
+}
+
+// getDefaultWaspNodeE returns the default wasp node or an error
+func getDefaultWaspNodeE() (string, error) {
+	nodeName, _, err := getDefaultWaspNodeCore()
+	return nodeName, err
 }
