@@ -170,22 +170,6 @@ func WrapRunE(runFunc func(cmd *cobra.Command, args []string) error) func(cmd *c
 	}
 }
 
-// ConvertRunToRunE converts a cobra Run function to RunE with error handling
-func ConvertRunToRunE(runFunc func(cmd *cobra.Command, args []string)) func(cmd *cobra.Command, args []string) error {
-	return func(cmd *cobra.Command, args []string) error {
-		// Capture any panics and convert them to errors
-		defer func() {
-			if r := recover(); r != nil {
-				err := fmt.Errorf("command panicked: %v", r)
-				FormatCommandError(cmd, err)
-			}
-		}()
-
-		runFunc(cmd, args)
-		return nil
-	}
-}
-
 // FormatAndExitWithError formats an error using glazed and exits the program
 // This function is called from main() to handle all command errors consistently
 func FormatAndExitWithError(cmd *cobra.Command, err error) error {

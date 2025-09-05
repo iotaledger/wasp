@@ -150,7 +150,6 @@ func initRequestCmd() *cobra.Command {
 			receipt, _, err := client.ChainsAPI.
 				GetReceipt(ctx, reqID.String()).
 				Execute() //nolint:bodyclose // false positive
-
 			if err != nil {
 				return err
 			}

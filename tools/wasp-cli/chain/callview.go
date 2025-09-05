@@ -39,7 +39,6 @@ func initCallViewCmd() *cobra.Command {
 
 			result, _, err := client.ChainsAPI.CallView(ctx).
 				ContractCallViewRequest(apiextensions.CallViewReq(msg)).Execute() //nolint:bodyclose // false positive
-
 			if err != nil {
 				return err
 			}

@@ -215,7 +215,6 @@ func initDepositCmd() *cobra.Command {
 				receipt, _, err := client.ChainsAPI.
 					GetReceipt(ctx, ref.ObjectID.String()).
 					Execute() //nolint:bodyclose // false positive
-
 				if err != nil {
 					return err
 				}

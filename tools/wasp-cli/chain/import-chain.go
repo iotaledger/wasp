@@ -153,7 +153,6 @@ func initImportCmd() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("failed to execute transfer anchor: %w", err)
 			}
-
 			config.AddChain(chainName, anchor.ObjectID.String())
 
 			fmt.Printf("\nChain has been deployed.\nID: %s\nStateMetadata: %v\n", anchor.ObjectID.String(), anchorStateMetadata)

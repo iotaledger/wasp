@@ -111,7 +111,8 @@ func initDisableFeePolicyCmd() *cobra.Command {
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
 			callGovView := func(viewName string) (isc.CallResults, error) {
-				apiResult, _, err := client.ChainsAPI.CallView(ctx).
+				var apiResult []string
+				apiResult, _, err = client.ChainsAPI.CallView(ctx).
 					ContractCallViewRequest(apiclient.ContractCallViewRequest{
 						ContractName: governance.Contract.Name,
 						FunctionName: viewName,
@@ -119,8 +120,8 @@ func initDisableFeePolicyCmd() *cobra.Command {
 				if err != nil {
 					return nil, err
 				}
-
-				result, err := apiextensions.APIResultToCallArgs(apiResult)
+				var result isc.CallResults
+				result, err = apiextensions.APIResultToCallArgs(apiResult)
 				if err != nil {
 					return nil, err
 				}

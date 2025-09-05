@@ -18,9 +18,8 @@ import (
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/waspcmd"
 )
 
-func initInfoCmd() *cobra.Command {
-	var node string
-	var chain string
+func initInfoCmd() *cobra.Command { //nolint:funlen
+	var node, chain string
 	cmd := &cobra.Command{
 		Use:   "info",
 		Short: "Show information about the chain",

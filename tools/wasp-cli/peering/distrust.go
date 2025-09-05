@@ -32,7 +32,7 @@ func initDistrustCmd() *cobra.Command {
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
 			if peering.CheckPeeringURL(input) != nil {
-				_, err := client.NodeAPI.DistrustPeer(ctx, input).Execute()
+				_, err = client.NodeAPI.DistrustPeer(ctx, input).Execute()
 				if err != nil {
 					return err
 				}

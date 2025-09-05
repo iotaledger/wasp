@@ -2,8 +2,6 @@ package metrics
 
 import (
 	"github.com/spf13/cobra"
-
-	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
 )
 
 func initMetricsCmd() *cobra.Command {

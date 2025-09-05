@@ -58,7 +58,7 @@ func initRootCmd(waspVersion string) *cobra.Command {
 			}
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return cmd.Help() //nolint:errcheck
+			return cmd.Help()
 		},
 	}
 }

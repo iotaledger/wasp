@@ -24,7 +24,6 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/registry"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testpeers"
-	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
 )
 
 func initDisrecCmd() *cobra.Command {

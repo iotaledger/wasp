@@ -38,7 +38,6 @@ func initInfoCmd() *cobra.Command {
 			}
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 			authInfo, _, err := client.AuthAPI.AuthInfo(ctx).Execute()
-
 			if err != nil {
 				return err
 			}

@@ -69,7 +69,8 @@ func initLoginCmd() *cobra.Command {
 
 				log.Printf("Password: ")
 				// int cast is needed for windows
-				passwordBytes, err := term.ReadPassword(int(syscall.Stdin)) //nolint:unconvert
+				var passwordBytes []byte
+				passwordBytes, err = term.ReadPassword(int(syscall.Stdin)) //nolint:unconvert
 				if err != nil {
 					return err
 				}
