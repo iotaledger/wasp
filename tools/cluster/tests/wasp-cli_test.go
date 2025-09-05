@@ -28,19 +28,76 @@ import (
 )
 
 func TestWaspAuth(t *testing.T) {
-	t.Skip("TODO: fix test")
 	w := newWaspCLITest(t, waspClusterOpts{
 		modifyConfig: func(nodeIndex int, configParams cluster.WaspConfigParams) cluster.WaspConfigParams {
 			configParams.AuthScheme = "jwt"
 			return configParams
 		},
 	})
-	_, err := w.Run("chain", "list", "--node=0", "--node=0")
+	_, err := w.Run("chain", "info")
 	require.Error(t, err)
-	out := w.MustRun("auth", "login", "--node=0", "-u=wasp", "-p=wasp")
-	require.Equal(t, "Successfully authenticated", out[1])
-	out = w.MustRun("chain", "list", "--node=0", "--node=0")
-	require.Contains(t, out[0], "Total 0 chain(s)")
+
+	t.Run("table format output", func(t *testing.T) {
+		//t.Skip()
+		out := w.MustRun("auth", "login", "--node=0", "-u=wasp", "-p=wasp")
+		// Check for table output format with SUCCESS status
+		found := false
+		for _, line := range out {
+			if strings.Contains(line, "success") && strings.Contains(line, "wasp") {
+				found = true
+				break
+			}
+			// Check for the table format
+			if strings.Contains(line, "| success") {
+				found = true
+				break
+			}
+		}
+		require.True(t, found, "Expected to find SUCCESS status in table output, got: %v", out)
+	})
+
+	t.Run("json format output", func(t *testing.T) {
+		out := w.MustRun("auth", "login", "--node=0", "-u=wasp", "-p=wasp", "--json")
+
+		// Join all output lines to get the complete JSON
+		jsonOutput := strings.Join(out, "")
+
+		// Parse the JSON output to verify it's valid JSON
+		var authResult map[string]interface{}
+		err := json.Unmarshal([]byte(jsonOutput), &authResult)
+		require.NoError(t, err, "Expected valid JSON output, got: %v", jsonOutput)
+
+		// Verify the standardized JSON structure contains required top-level fields
+		require.Contains(t, authResult, "type", "JSON output should contain 'type' field")
+		require.Contains(t, authResult, "status", "JSON output should contain 'status' field")
+		require.Contains(t, authResult, "timestamp", "JSON output should contain 'timestamp' field")
+		require.Contains(t, authResult, "data", "JSON output should contain 'data' field")
+
+		// Verify top-level field values
+		require.Equal(t, "auth", authResult["type"], "Expected type to be 'auth'")
+		require.Equal(t, "success", authResult["status"], "Expected status to be 'success'")
+		require.NotEmpty(t, authResult["timestamp"], "Timestamp should not be empty")
+
+		// Verify the data structure contains auth-specific fields
+		data, ok := authResult["data"].(map[string]interface{})
+		require.True(t, ok, "Data field should be an object")
+		require.Contains(t, data, "node", "Auth data should contain 'node' field")
+		require.Contains(t, data, "username", "Auth data should contain 'username' field")
+
+		// Verify the auth data values are correct
+		require.Equal(t, "0", data["node"], "Expected node to be '0'")
+		require.Equal(t, "wasp", data["username"], "Expected username to be 'wasp'")
+
+		// Check if the message field exists in data (it's optional)
+		if message, exists := data["message"]; exists {
+			require.NotEmpty(t, message, "Message field should not be empty if present")
+		}
+
+		// Validate timestamp format (should be ISO 8601)
+		timestamp, ok := authResult["timestamp"].(string)
+		require.True(t, ok, "Timestamp should be a string")
+		require.Regexp(t, `^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?$`, timestamp, "Timestamp should be in ISO 8601 format")
+	})
 }
 
 func TestZeroGasFee(t *testing.T) {
@@ -57,7 +114,7 @@ func TestZeroGasFee(t *testing.T) {
 	w.ActivateChainOnAllNodes(chainName, 0)
 
 	w.MustRun("wallet", "address")
-	alternativeAddress := getAddress(w.MustRun("wallet", "address"))
+	alternativeAddress := getAddressFromJSON(w.MustRun("wallet", "address", "--json"))
 	w.MustRun("chain", "deposit", alternativeAddress, "base|2000000", "--node=0")
 	w.MustRun("chain", "balance", alternativeAddress, "--node=0")
 	outs, err := w.Run("chain", "info", "--node=0", "--node=0")
@@ -75,7 +132,7 @@ func TestZeroGasFee(t *testing.T) {
 	})
 
 	t.Run("deposit directly to EVM", func(t *testing.T) {
-		alternativeAddress := getAddress(w.MustRun("wallet", "address", "--address-index=1"))
+		alternativeAddress := getAddressFromJSON(w.MustRun("wallet", "address", "--address-index=1", "--json"))
 		w.MustRun("wallet", "send-funds", "-s", alternativeAddress, "base|1000000")
 		outs := w.MustRun("wallet", "balance", "--address-index=1")
 		_, eth := newEthereumAccount()
@@ -85,15 +142,59 @@ func TestZeroGasFee(t *testing.T) {
 	})
 }
 
-func checkL1Balance(t *testing.T, out []string, expected int) {
+// checkL1BalanceJSON checks the balance using JSON output format
+func checkL1BalanceJSON(t *testing.T, out []string, expected int) {
 	t.Helper()
-	r := regexp.MustCompile(`- 0x[0]{0,63}2+::iota::IOTA: (\d+)`).FindStringSubmatch(strings.Join(out, ""))
-	if r == nil {
-		panic("couldn't check balance")
+
+	// Join all output lines to get the complete JSON
+	jsonOutput := strings.Join(out, "")
+
+	// Parse the JSON output
+	var balanceResult map[string]interface{}
+	err := json.Unmarshal([]byte(jsonOutput), &balanceResult)
+	require.NoError(t, err, "Expected valid JSON output, got: %v", jsonOutput)
+
+	// Verify the JSON structure
+	require.Contains(t, balanceResult, "type", "JSON output should contain 'type' field")
+	require.Contains(t, balanceResult, "status", "JSON output should contain 'status' field")
+	require.Contains(t, balanceResult, "data", "JSON output should contain 'data' field")
+
+	// Verify type and status
+	require.Equal(t, "wallet_balance", balanceResult["type"], "Expected type to be 'wallet_balance'")
+	require.Equal(t, "success", balanceResult["status"], "Expected status to be 'success'")
+
+	// Extract the data section
+	data, ok := balanceResult["data"].(map[string]interface{})
+	require.True(t, ok, "Data field should be an object")
+	require.Contains(t, data, "balances", "Data should contain 'balances' field")
+
+	// Extract balances array
+	balances, ok := data["balances"].([]interface{})
+	require.True(t, ok, "Balances should be an array")
+
+	// Find the IOTA balance
+	var iotaBalance uint64
+	found := false
+	for _, balanceItem := range balances {
+		balance, ok := balanceItem.(map[string]interface{})
+		require.True(t, ok, "Each balance item should be an object")
+		coinType, ok := balance["coinType"].(string)
+		require.True(t, ok, "coinType should be a string")
+
+		// Look for IOTA coin type (matches the regex pattern from original test)
+		if strings.Contains(coinType, "::iota::IOTA") {
+			totalBalanceStr, ok := balance["totalBalance"].(string)
+			require.True(t, ok, "totalBalance should be a string")
+			totalBalance, err := strconv.ParseUint(totalBalanceStr, 10, 64)
+			require.NoError(t, err, "totalBalance should be a valid number string")
+			iotaBalance = totalBalance
+			found = true
+			break
+		}
 	}
-	amount, err := strconv.Atoi(r[1])
-	require.NoError(t, err)
-	require.EqualValues(t, expected, amount)
+
+	require.True(t, found, "IOTA balance not found in response")
+	require.EqualValues(t, expected, iotaBalance, "Expected IOTA balance to be %d, got %d", expected, iotaBalance)
 }
 
 func checkL2Balance(t *testing.T, out []string, expected int) {
@@ -107,23 +208,54 @@ func checkL2Balance(t *testing.T, out []string, expected int) {
 	require.EqualValues(t, expected, amount)
 }
 
-func getAddress(out []string) string {
-	r := regexp.MustCompile(`.*Address:\s+(\w*).*`).FindStringSubmatch(strings.Join(out, ""))
-	if r == nil {
-		panic("couldn't get address")
+// getAddressFromJSON extracts the address from JSON output
+func getAddressFromJSON(out []string) string {
+	// Join all output lines to get the complete JSON
+	jsonOutput := strings.Join(out, "")
+
+	// Parse the JSON output
+	var addressResult map[string]interface{}
+	err := json.Unmarshal([]byte(jsonOutput), &addressResult)
+	if err != nil {
+		panic(fmt.Sprintf("couldn't parse JSON output: %v", err))
 	}
-	return r[1]
+
+	// Verify the JSON structure
+	if addressResult["type"] != "wallet_address" {
+		panic(fmt.Sprintf("expected type 'wallet_address', got: %v", addressResult["type"]))
+	}
+
+	if addressResult["status"] != "success" {
+		panic(fmt.Sprintf("expected status 'success', got: %v", addressResult["status"]))
+	}
+
+	// Extract the data section
+	data, ok := addressResult["data"].(map[string]interface{})
+	if !ok {
+		panic("data field should be an object")
+	}
+
+	// Extract the address
+	address, ok := data["address"].(string)
+	if !ok || address == "" {
+		panic("address field should be a non-empty string")
+	}
+
+	return address
 }
 
 func TestWaspCLISendFunds(t *testing.T) {
 	w := newWaspCLITest(t)
 
-	alternativeAddress := getAddress(w.MustRun("wallet", "address", "--address-index=1"))
+	alternativeAddress := getAddressFromJSON(w.MustRun("wallet", "address", "--address-index=1", "--json"))
 
 	w.MustRun("wallet", "request-funds")
 	w.MustRun("wallet", "send-funds", alternativeAddress, "base|1000")
-	outs := w.MustRun("wallet", "balance", "--address-index=1")
-	checkL1Balance(t, outs, 1000)
+
+	outs := w.MustRun("wallet", "balance", "--address-index=1", "--json")
+	fmt.Println(strings.Join(outs, ""))
+	checkL1BalanceJSON(t, outs, 1000)
+
 }
 
 func TestWaspCLIDeposit(t *testing.T) {
@@ -139,7 +271,7 @@ func TestWaspCLIDeposit(t *testing.T) {
 
 	// fund an alternative address to deposit from (so we can test the fees,
 	// since --address-index=0 is the chain admin / default payoutAddress)
-	alternativeAddress := getAddress(w.MustRun("wallet", "address", "--address-index=1"))
+	alternativeAddress := getAddressFromJSON(w.MustRun("wallet", "address", "--address-index=1", "--json"))
 	w.MustRun("wallet", "send-funds", "-s", alternativeAddress, "base|10000000", "--address-index=1")
 
 	outs = w.MustRun("wallet", "balance")
@@ -382,10 +514,16 @@ func TestWaspCLITrustListImport(t *testing.T) {
 
 	// set cluster2/node0 to trust all nodes from cluster 1
 	for _, nodeIndex := range w.Cluster.Config.AllNodes() {
-		peeringInfoOutput := w.MustRun("peering", "info", fmt.Sprintf("--node=%d", nodeIndex))
-		pubKey := regexp.MustCompile(`PubKey:\s+([[:alnum:]]+)$`).FindStringSubmatch(peeringInfoOutput[0])[1]
-		peeringURL := regexp.MustCompile(`PeeringURL:\s+(.+)$`).FindStringSubmatch(peeringInfoOutput[1])[1]
-		w2.MustRun("peering", "trust", fmt.Sprintf("x%d", nodeIndex), pubKey, peeringURL, "--node=0")
+		peeringInfoOutput := w.MustRun("peering", "info", fmt.Sprintf("--node=%d", nodeIndex), "--json")
+		require.Len(t, peeringInfoOutput, 1, "Expected single line of JSON output")
+
+		var peeringInfo struct {
+			PubKey     string `json:"pubKey"`
+			PeeringURL string `json:"peeringURL"`
+		}
+		require.NoError(t, json.Unmarshal([]byte(peeringInfoOutput[0]), &peeringInfo))
+
+		w2.MustRun("peering", "trust", fmt.Sprintf("x%d", nodeIndex), peeringInfo.PubKey, peeringInfo.PeeringURL, "--node=0")
 	}
 
 	// import the trust from cluster2/node0 to cluster2/node1
@@ -428,8 +566,15 @@ func TestWaspCLICantPeerWithSelf(t *testing.T) {
 		nNodes: 1,
 	})
 
-	peeringInfoOutput := w.MustRun("peering", "info")
-	pubKey := regexp.MustCompile(`PubKey:\s+([[:alnum:]]+)$`).FindStringSubmatch(peeringInfoOutput[0])[1]
+	peeringInfoOutput := w.MustRun("peering", "info", "--json")
+	require.Len(t, peeringInfoOutput, 1, "Expected single line of JSON output")
+
+	var peeringInfo struct {
+		PubKey     string `json:"pubKey"`
+		PeeringURL string `json:"peeringURL"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(peeringInfoOutput[0]), &peeringInfo))
+	pubKey := peeringInfo.PubKey
 
 	require.Panics(
 		t,

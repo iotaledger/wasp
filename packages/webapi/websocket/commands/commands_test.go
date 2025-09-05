@@ -1,6 +1,6 @@
 package commands
 
-// Disabling these tests, because they trigger race detection. It is improssible to use Hive's websocket client
+// Disabling these tests, because they trigger race detection. It is impossible to use Hive's websocket client
 // without triggering race detection.
 
 // import (
@@ -31,10 +31,14 @@ package commands
 // 	manager := NewCommandHandler(log, subscriptionManager)
 // 	hub := websockethub.NewHub(log.NewChildLogger("Hub"), &websocketserver.AcceptOptions{InsecureSkipVerify: true}, 500, 500, 500)
 
-// 	go func() { hub.Run(ctx) }()
-
+// 	ok := make(chan struct{})
+// 	go func() {
+// 		ok <- struct{}{}
+// 		hub.Run(ctx)
+// 	}()
 // 	// Test needs to wait a little until the hub has taken up the supplied context
-// 	time.Sleep(1 * time.Second)
+// 	<-ok
+// 	time.Sleep(100 * time.Millisecond)
 
 // 	return manager, hub, cancel
 // }
@@ -51,7 +55,8 @@ package commands
 // }
 
 // func TestSuccessfulSubscription(t *testing.T) {
-// 	manager, hub, _ := initTest()
+// 	manager, hub, cancel := initTest()
+// 	t.Cleanup(cancel)
 
 // 	client := websockethub.NewClient(hub, nil, func(client *websockethub.Client) {}, func(client *websockethub.Client) {})
 
@@ -67,7 +72,8 @@ package commands
 
 // // TestSuccessfulUnsubscription subscribes, then unsubscribes
 // func TestSuccessfulUnsubscription(t *testing.T) {
-// 	manager, hub, _ := initTest()
+// 	manager, hub, cancel := initTest()
+// 	t.Cleanup(cancel)
 
 // 	client := websockethub.NewClient(hub, nil, func(client *websockethub.Client) {}, func(client *websockethub.Client) {})
 
@@ -112,7 +118,8 @@ package commands
 // }
 
 // func TestFailingSubscriptionDueToInvalidTopic(t *testing.T) {
-// 	manager, hub, _ := initTest()
+// 	manager, hub, cancel := initTest()
+// 	t.Cleanup(cancel)
 
 // 	client := websockethub.NewClient(hub, nil, func(client *websockethub.Client) {}, func(client *websockethub.Client) {})
 // 	err := sendNodeCommand(manager, client, SubscriptionCommand{
@@ -124,7 +131,8 @@ package commands
 // }
 
 // func TestFailingSubscriptionDueToInvalidCommand(t *testing.T) {
-// 	manager, hub, _ := initTest()
+// 	manager, hub, cancel := initTest()
+// 	t.Cleanup(cancel)
 
 // 	client := websockethub.NewClient(hub, nil, func(client *websockethub.Client) {}, func(client *websockethub.Client) {})
 // 	err := sendNodeCommand(manager, client, SubscriptionCommand{})

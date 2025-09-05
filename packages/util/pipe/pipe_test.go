@@ -3,7 +3,6 @@ package pipe
 import (
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -110,7 +109,7 @@ func testDefaultPipeWriteReadLen[E IntConvertible](factory Factory[E], p Pipe[E]
 }
 
 func testPipeWriteReadLen[E IntConvertible](factory Factory[E], p Pipe[E], elementsToWrite, elementsToRead int, result func(index int) int, t *testing.T) {
-	for i := 0; i < elementsToWrite; i++ {
+	for i := range elementsToWrite {
 		p.In() <- factory.Create(i)
 	}
 	fullLength := p.Len()
@@ -118,7 +117,7 @@ func testPipeWriteReadLen[E IntConvertible](factory Factory[E], p Pipe[E], eleme
 	p.Close()
 	closedLength := p.Len()
 	require.Equalf(t, elementsToRead, closedLength, "closed channel length mismatch")
-	for i := 0; i < elementsToRead; i++ {
+	for i := range elementsToRead {
 		val := <-p.Out()
 		require.Equalf(t, factory.Create(result(i)), val, "read %d mismatch", i)
 	}
@@ -208,21 +207,20 @@ func testDefaultPipeConcurrentWriteReadLen[E IntConvertible](factory Factory[E],
 
 func testPipeConcurrentWriteReadLen[E IntConvertible](factory Factory[E], p Pipe[E], elementsToWrite, elementsToRead int, result *func(index int) int, t *testing.T) {
 	var wg sync.WaitGroup
-	written := 0
-	read := 0
-	stop := make(chan bool)
 	wg.Add(2)
 
+	written := 0
 	go func() {
-		for i := 0; i < elementsToWrite; i++ {
+		for i := range elementsToWrite {
 			p.In() <- factory.Create(i)
 			written++
 		}
 		wg.Done()
 	}()
 
+	read := 0
 	go func() {
-		for i := 0; i < elementsToRead; i++ {
+		for i := range elementsToRead {
 			val := <-p.Out()
 			if result != nil {
 				require.Equalf(t, factory.Create((*result)(i)), val, "concurrent read %d mismatch", i)
@@ -232,22 +230,7 @@ func testPipeConcurrentWriteReadLen[E IntConvertible](factory Factory[E], p Pipe
 		wg.Done()
 	}()
 
-	go func() {
-		for {
-			select {
-			case <-stop:
-				return
-			default:
-				length := p.Len()
-				t.Logf("current channel length is %d", length)
-				// no asserts here - the read/write process is asynchronous
-				time.Sleep(10 * time.Millisecond)
-			}
-		}
-	}()
-
 	wg.Wait()
-	stop <- true
 	require.Equalf(t, elementsToWrite, written, "concurrent write elements written mismatch")
 	require.Equalf(t, elementsToRead, read, "concurrent read elements read mismatch")
 }
