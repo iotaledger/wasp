@@ -71,21 +71,12 @@ func defaultWaspNodeFallbackCore(node string) (string, bool) {
 }
 
 // DefaultWaspNodeFallback returns the node name or falls back to the default node
-// This function calls log.Fatal and is deprecated in favor of DefaultWaspNodeFallbackE
-func DefaultWaspNodeFallback(node string) string {
-	if result, hasNode := defaultWaspNodeFallbackCore(node); hasNode {
-		return result
-	}
-	return getDefaultWaspNode()
-}
-
-// DefaultWaspNodeFallbackE returns the node name or falls back to the default node
-// Returns an error instead of calling log.Fatal for proper error handling
-func DefaultWaspNodeFallbackE(node string) (string, error) {
+func DefaultWaspNodeFallback(node string) (string, error) {
 	if result, hasNode := defaultWaspNodeFallbackCore(node); hasNode {
 		return result, nil
 	}
-	return getDefaultWaspNodeE()
+	nodeName, _, err := getDefaultWaspNodeCore()
+	return nodeName, err
 }
 
 // getDefaultWaspNodeCore contains the shared logic for getting the default wasp node
@@ -108,19 +99,4 @@ func getDefaultWaspNodeCore() (string, int, error) {
 		return "", nodeCount, errors.New("more than 1 wasp node in the configuration, you can specify the target node with `--node=<name>`")
 	}
 	return "", nodeCount, errors.New("unreachable code")
-}
-
-// getDefaultWaspNode calls log.Fatal and is deprecated in favor of getDefaultWaspNodeE
-func getDefaultWaspNode() string {
-	nodeName, _, err := getDefaultWaspNodeCore()
-	if err != nil {
-		log.Fatalf(err.Error())
-	}
-	return nodeName
-}
-
-// getDefaultWaspNodeE returns the default wasp node or an error
-func getDefaultWaspNodeE() (string, error) {
-	nodeName, _, err := getDefaultWaspNodeCore()
-	return nodeName, err
 }

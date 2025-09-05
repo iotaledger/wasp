@@ -27,8 +27,12 @@ func initBlockCmd() *cobra.Command {
 		Use:   "block [index]",
 		Short: "Get information about a block given its index, or latest block if missing",
 		Args:  cobra.MaximumNArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultWaspNodeFallback(node)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+			node, err = waspcmd.DefaultWaspNodeFallback(node)
+			if err != nil {
+				return err
+			}
 			chain = defaultChainFallback(chain)
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
@@ -43,6 +47,7 @@ func initBlockCmd() *cobra.Command {
 			logRequestsInBlock(ctx, client, bi.BlockIndex)
 			log.Printf("\n")
 			logEventsInBlock(ctx, client, bi.BlockIndex)
+			return nil
 		},
 	}
 	waspcmd.WithWaspNodeFlag(cmd, &node)
@@ -129,8 +134,12 @@ func initRequestCmd() *cobra.Command {
 		Use:   "request <request-id>",
 		Short: "Get information about a request given its ID",
 		Args:  cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultWaspNodeFallback(node)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+			node, err = waspcmd.DefaultWaspNodeFallback(node)
+			if err != nil {
+				return err
+			}
 			chain = defaultChainFallback(chain)
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
@@ -142,7 +151,9 @@ func initRequestCmd() *cobra.Command {
 				GetReceipt(ctx, reqID.String()).
 				Execute() //nolint:bodyclose // false positive
 
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 
 			log.Printf("Request found in block %d\n\n", receipt.BlockIndex)
 			util.LogReceipt(*receipt)
@@ -150,6 +161,7 @@ func initRequestCmd() *cobra.Command {
 			log.Printf("\n")
 			logEventsInRequest(ctx, client, reqID)
 			log.Printf("\n")
+			return nil
 		},
 	}
 	waspcmd.WithWaspNodeFlag(cmd, &node)

@@ -32,7 +32,7 @@ func initSetTokenCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var err error
-			node, err = waspcmd.DefaultWaspNodeFallbackE(node)
+			node, err = waspcmd.DefaultWaspNodeFallback(node)
 			if err != nil {
 				return err
 			}
@@ -56,7 +56,7 @@ func initLoginCmd() *cobra.Command {
 		// Args:  cobra.ArbitraryArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var err error
-			node, err = waspcmd.DefaultWaspNodeFallbackE(node)
+			node, err = waspcmd.DefaultWaspNodeFallback(node)
 			if err != nil {
 				return err
 			}

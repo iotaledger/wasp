@@ -20,22 +20,30 @@ func initDistrustCmd() *cobra.Command {
 		Use:   "distrust <name|pubKey>",
 		Short: "Remove the specified node from a list of trusted nodes. All related public keys are distrusted, if peeringURL is provided.",
 		Args:  cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			input := args[0]
 
-			node = waspcmd.DefaultWaspNodeFallback(node)
+			var err error
+			node, err = waspcmd.DefaultWaspNodeFallback(node)
+			if err != nil {
+				return err
+			}
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
 			if peering.CheckPeeringURL(input) != nil {
 				_, err := client.NodeAPI.DistrustPeer(ctx, input).Execute()
-				log.Check(err)
+				if err != nil {
+					return err
+				}
 				log.Printf("# Distrusted PubKey: %v\n", input)
-				return
+				return nil
 			}
 
 			trustedList, _, err := client.NodeAPI.GetTrustedPeers(ctx).Execute()
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 
 			for _, t := range trustedList {
 				if t.PublicKey == input {
@@ -48,6 +56,7 @@ func initDistrustCmd() *cobra.Command {
 					}
 				}
 			}
+			return nil
 		},
 	}
 

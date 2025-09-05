@@ -25,13 +25,19 @@ func initExportTrustedJSONCmd() *cobra.Command {
 		Use:   "export-trusted",
 		Short: "List trusted wasp nodes.",
 		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultWaspNodeFallback(node)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+			node, err = waspcmd.DefaultWaspNodeFallback(node)
+			if err != nil {
+				return err
+			}
 
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 			trustedList, _, err := client.NodeAPI.GetTrustedPeers(context.Background()).Execute()
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 
 			var filteredList []apiclient.PeeringNodeIdentityResponse
 
@@ -62,18 +68,20 @@ func initExportTrustedJSONCmd() *cobra.Command {
 			}
 
 			data, err := json.Marshal(filteredList)
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 			if outputFile == "" {
 				log.Printf("%s\n", data)
-				return
+				return nil
 			}
 
 			file, err := os.Create(outputFile)
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
 			_, err = file.Write(data)
-			log.Check(err)
+			return err
 		},
 	}
 
@@ -91,16 +99,24 @@ func initImportTrustedJSONCmd() *cobra.Command {
 		Use:   "import-trusted <file path>",
 		Short: "imports a JSON of trusted peers and makes a node trust them.",
 		Args:  cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultWaspNodeFallback(node)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+			node, err = waspcmd.DefaultWaspNodeFallback(node)
+			if err != nil {
+				return err
+			}
 			bytes := util.ReadFile(args[0])
 			var trustedList []apiclient.PeeringNodeIdentityResponse
-			log.Check(json.Unmarshal(bytes, &trustedList))
+			if err = json.Unmarshal(bytes, &trustedList); err != nil {
+				return err
+			}
 
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 			identity, _, err := client.NodeAPI.GetPeeringIdentity(ctx).Execute()
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 
 			for _, t := range trustedList {
 				if !t.IsTrusted {
@@ -116,8 +132,11 @@ func initImportTrustedJSONCmd() *cobra.Command {
 					PeeringURL: t.PeeringURL,
 					PublicKey:  t.PublicKey,
 				}).Execute()
-				log.Check(err)
+				if err != nil {
+					return err
+				}
 			}
+			return nil
 		},
 	}
 

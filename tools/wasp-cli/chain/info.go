@@ -25,8 +25,12 @@ func initInfoCmd() *cobra.Command {
 		Use:   "info",
 		Short: "Show information about the chain",
 		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultWaspNodeFallback(node)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+			node, err = waspcmd.DefaultWaspNodeFallback(node)
+			if err != nil {
+				return err
+			}
 			chain = defaultChainFallback(chain)
 
 			ctx := context.Background()
@@ -38,15 +42,19 @@ func initInfoCmd() *cobra.Command {
 
 			if res.StatusCode == http.StatusNotFound {
 				fmt.Print("No chain info available. Is the chain deployed and activated?\n")
-				return
+				return nil
 			}
 
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 
 			committeeInfo, _, err := client.ChainsAPI.
 				GetCommitteeInfo(ctx).
 				Execute() //nolint:bodyclose // false positive
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 
 			printNodesRowHdr := []string{"PubKey", "PeeringURL", "Alive", "Committee", "Access", "AccessAPI"}
 			printNodesRowFmt := func(n apiclient.CommitteeNode, isCommitteeNode, isAccessNode bool) []string {
@@ -87,7 +95,9 @@ func initInfoCmd() *cobra.Command {
 				log.Printf("\n")
 
 				contracts, _, err := client.ChainsAPI.GetContracts(ctx).Execute() //nolint:bodyclose // false positive
-				log.Check(err)
+				if err != nil {
+					return err
+				}
 				log.Printf("#Contracts: %d\n", len(contracts))
 
 				log.Printf("Admin: %s\n", chainInfo.ChainAdmin)
@@ -110,6 +120,7 @@ func initInfoCmd() *cobra.Command {
 			log.Printf("Public API: %s\n", chainInfo.PublicURL)
 			log.Printf("EVM Json RPC URL: %s\n", chainInfo.Metadata.EvmJsonRpcURL)
 			log.Printf("EVM WebSocket URL: %s\n", chainInfo.Metadata.EvmWebSocketURL)
+			return nil
 		},
 	}
 	waspcmd.WithWaspNodeFlag(cmd, &node)
