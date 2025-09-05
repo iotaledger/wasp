@@ -28,10 +28,14 @@ func initTest() (*CommandManager, *websockethub.Hub, context.CancelFunc) {
 	manager := NewCommandHandler(log, subscriptionManager)
 	hub := websockethub.NewHub(log.NewChildLogger("Hub"), &websocketserver.AcceptOptions{InsecureSkipVerify: true}, 500, 500, 500)
 
-	go func() { hub.Run(ctx) }()
-
+	ok := make(chan struct{})
+	go func() {
+		ok <- struct{}{}
+		hub.Run(ctx)
+	}()
 	// Test needs to wait a little until the hub has taken up the supplied context
-	time.Sleep(1 * time.Second)
+	<-ok
+	time.Sleep(100 * time.Millisecond)
 
 	return manager, hub, cancel
 }
@@ -48,7 +52,8 @@ func sendNodeCommand(manager *CommandManager, client *websockethub.Client, comma
 }
 
 func TestSuccessfulSubscription(t *testing.T) {
-	manager, hub, _ := initTest()
+	manager, hub, cancel := initTest()
+	t.Cleanup(cancel)
 
 	client := websockethub.NewClient(hub, nil, func(client *websockethub.Client) {}, func(client *websockethub.Client) {})
 
@@ -64,7 +69,8 @@ func TestSuccessfulSubscription(t *testing.T) {
 
 // TestSuccessfulUnsubscription subscribes, then unsubscribes
 func TestSuccessfulUnsubscription(t *testing.T) {
-	manager, hub, _ := initTest()
+	manager, hub, cancel := initTest()
+	t.Cleanup(cancel)
 
 	client := websockethub.NewClient(hub, nil, func(client *websockethub.Client) {}, func(client *websockethub.Client) {})
 
@@ -109,7 +115,8 @@ func TestFailingSubscriptionDueToFailedSend(t *testing.T) {
 }
 
 func TestFailingSubscriptionDueToInvalidTopic(t *testing.T) {
-	manager, hub, _ := initTest()
+	manager, hub, cancel := initTest()
+	t.Cleanup(cancel)
 
 	client := websockethub.NewClient(hub, nil, func(client *websockethub.Client) {}, func(client *websockethub.Client) {})
 	err := sendNodeCommand(manager, client, SubscriptionCommand{
@@ -121,7 +128,8 @@ func TestFailingSubscriptionDueToInvalidTopic(t *testing.T) {
 }
 
 func TestFailingSubscriptionDueToInvalidCommand(t *testing.T) {
-	manager, hub, _ := initTest()
+	manager, hub, cancel := initTest()
+	t.Cleanup(cancel)
 
 	client := websockethub.NewClient(hub, nil, func(client *websockethub.Client) {}, func(client *websockethub.Client) {})
 	err := sendNodeCommand(manager, client, SubscriptionCommand{})
