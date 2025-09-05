@@ -4,11 +4,11 @@ package waspcmd
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/iotaledger/wasp/v2/clients/apiextensions"
 	"github.com/iotaledger/wasp/v2/packages/util"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/config"
-	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
 )
 
@@ -17,8 +17,8 @@ func initWaspNodesCmd() *cobra.Command {
 		Use:   "wasp <command>",
 		Short: "Configure wasp nodes",
 		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			log.Check(cmd.Help())
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmd.Help()
 		},
 	}
 }
@@ -36,18 +36,21 @@ func initAddWaspNodeCmd() *cobra.Command {
 		Use:   "add <name> <api url>",
 		Short: "adds a wasp node",
 		Args:  cobra.ExactArgs(2),
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			nodeName := args[0]
 			nodeURL := args[1]
 
 			if !util.IsSlug(nodeName) {
-				log.Fatalf("invalid node name: %s, must be in slug format, only lowercase and hyphens, example: foo-bar", nodeName)
+				return fmt.Errorf("invalid node name: %s, must be in slug format, only lowercase and hyphens, example: foo-bar", nodeName)
 			}
 
 			_, err := apiextensions.ValidateAbsoluteURL(nodeURL)
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 
 			config.AddWaspNode(nodeName, nodeURL)
+			return nil
 		},
 	}
 

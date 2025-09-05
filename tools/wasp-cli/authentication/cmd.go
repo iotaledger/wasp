@@ -11,8 +11,8 @@ func initAuthCmd() *cobra.Command {
 		Use:   "auth <command>",
 		Short: "Authentication tools",
 		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			log.Check(cmd.Help())
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmd.Help()
 		},
 	}
 }

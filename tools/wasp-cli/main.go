@@ -57,8 +57,8 @@ func initRootCmd(waspVersion string) *cobra.Command {
 				log.Fatalf("The cli will now exit.")
 			}
 		},
-		Run: func(cmd *cobra.Command, args []string) {
-			cmd.Help() //nolint:errcheck
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmd.Help() //nolint:errcheck
 		},
 	}
 }

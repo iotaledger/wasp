@@ -32,8 +32,8 @@ func initDisrecCmd() *cobra.Command {
 		Use:   "disrec <command>",
 		Short: "Disaster recovery utils.",
 		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			log.Check(cmd.Help())
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmd.Help()
 		},
 	}
 }
