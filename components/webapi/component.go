@@ -114,8 +114,8 @@ func NewEcho(params *ParametersWebAPI, metrics *metrics.ChainMetricsProvider, lo
 	// publish metrics to prometheus component (that exposes a separate http server on another port)
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			if strings.HasPrefix(c.Path(), "/chains/") {
-				// ignore metrics for all requests not related to "chains/<chainID>""
+			if strings.HasPrefix(c.Path(), "/chain/") {
+				// ignore metrics for all requests not related to "chain/""
 				return next(c)
 			}
 			start := time.Now()

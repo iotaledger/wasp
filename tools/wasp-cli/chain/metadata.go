@@ -106,7 +106,7 @@ func initMetadataCmd() *cobra.Command {
 	)
 
 	cmd.Flags().BoolVarP(&useCliURL, "use-cli-url", "u", false, "use the configured cli wasp api url as public url (overrides --public-url)")
-	cmd.Flags().Var(&metadataArgs.PublicURL, "public-url", "the url leading to chain metadata f.e. (https://chain.network/v1/chains/:chainID)")
+	cmd.Flags().Var(&metadataArgs.PublicURL, "public-url", "the url leading to chain metadata f.e. (https://chain.network/v1/chain)")
 	cmd.Flags().Var(&metadataArgs.EvmJSONRPCURL, "evm-rpc-url", "the public facing evm json rpc url")
 	cmd.Flags().Var(&metadataArgs.EvmWSURL, "evm-ws-url", "the public facing evm websocket url")
 
