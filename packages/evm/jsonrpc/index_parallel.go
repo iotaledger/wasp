@@ -116,7 +116,7 @@ type blockData struct {
 
 // IndexAllBlocksInParallel is meant to be used by external tooling, not by the EVM Indexer itself
 // It relies on private methods, so it's stored here. Don't ever call this function inside the Indexer itself.
-func (c *Index) IndexAllBlocksInParallel(log log.Logger, store func() indexedstore.IndexedStore, trieRoot trie.Hash, numWorkers int) error {
+func (c *Index) IndexAllBlocksInParallel(log log.Logger, store func() indexedstore.IndexedStore, trieRoot trie.Hash, numWorkers uint8) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 

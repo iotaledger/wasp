@@ -1,15 +1,12 @@
 package chain
 
 import (
-	"errors"
-	"os"
 	"runtime"
 
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 
 	hivedb "github.com/iotaledger/hive.go/db"
-	log2 "github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/v2/packages/database"
 	"github.com/iotaledger/wasp/v2/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/v2/packages/state"
@@ -18,20 +15,20 @@ import (
 )
 
 func initBuildIndex() *cobra.Command {
+
+	var workers uint8
+
 	cmd := &cobra.Command{
 		Use:   "build-index <waspdb path> <indexdb destination path>",
 		Short: "Builds a new EVM JSONRPC index db",
 		Args:  cobra.ExactArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
-			logger := log2.NewLogger()
+			logger := log.HiveLogger()
 
 			waspDbPath := args[0]
-			_, err := os.Stat(waspDbPath)
-			if errors.Is(err, os.ErrNotExist) {
-				logger.LogError("DB path does not exist")
-			}
-
 			db, err := database.NewDatabase(hivedb.EngineRocksDB, waspDbPath, false, database.CacheSizeDefault)
+			log.Check(err)
+
 			waspDbStore := indexedstore.New(lo.Must(state.NewStoreReadonly(db.KVStore())))
 
 			latestIndex, err := waspDbStore.LatestBlockIndex()
@@ -45,8 +42,7 @@ func initBuildIndex() *cobra.Command {
 			block, err := waspDbStore.StateByIndex(latestIndex)
 			log.Check(err)
 
-			numCPU := runtime.NumCPU() - 2
-			logger.LogInfof("Indexing with %d cores.\n", numCPU)
+			logger.LogInfof("Indexing with %d cores.\n", workers)
 
 			// Right now this callback just returns one established instance of a database kvstore
 			// Technically, we can return multiple instances to improve reading times more.
@@ -55,10 +51,11 @@ func initBuildIndex() *cobra.Command {
 				return waspDbStore
 			}
 
-			err = index.IndexAllBlocksInParallel(logger, storeProvider, block.TrieRoot(), numCPU)
+			err = index.IndexAllBlocksInParallel(logger, storeProvider, block.TrieRoot(), workers)
 			log.Check(err)
 		},
 	}
+	cmd.Flags().Uint8Var(&workers, "workers", uint8(runtime.NumCPU()/2), "the amount of parallel block read workers")
 
 	return cmd
 }
