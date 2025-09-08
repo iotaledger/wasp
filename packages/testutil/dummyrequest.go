@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	DefaultChainID = uint16(1074) // IOTA -- get it?
+	DefaultChainID = uint16(1074)
 )
 
 func DummyOffledgerRequest() isc.OffLedgerRequest {

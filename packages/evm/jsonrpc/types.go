@@ -352,7 +352,7 @@ func (args *SendTxArgs) setDefaults(e *EthService) error {
 			args.MaxPriorityFeePerGas = (*hexutil.Big)(e.evmChain.PriorityFeePerGas())
 		}
 	} else if args.GasPrice == nil {
-		// No gas pricing specified, default to legacy
+		// default to legacy
 		args.GasPrice = (*hexutil.Big)(e.evmChain.GasPrice())
 	}
 
