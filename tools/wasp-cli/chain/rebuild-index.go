@@ -15,7 +15,6 @@ import (
 )
 
 func initBuildIndex() *cobra.Command {
-
 	var workers uint8
 
 	cmd := &cobra.Command{
@@ -25,21 +24,21 @@ func initBuildIndex() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			logger := log.HiveLogger()
 
-			waspDbPath := args[0]
-			db, err := database.NewDatabase(hivedb.EngineRocksDB, waspDbPath, false, database.CacheSizeDefault)
+			waspDBPath := args[0]
+			db, err := database.NewDatabase(hivedb.EngineRocksDB, waspDBPath, false, database.CacheSizeDefault)
 			log.Check(err)
 
-			waspDbStore := indexedstore.New(lo.Must(state.NewStoreReadonly(db.KVStore())))
+			waspDBStore := indexedstore.New(lo.Must(state.NewStoreReadonly(db.KVStore())))
 
-			latestIndex, err := waspDbStore.LatestBlockIndex()
+			latestIndex, err := waspDBStore.LatestBlockIndex()
 			log.Check(err)
 
 			logger.LogInfo("Creating index in parallel mode.")
 			logger.LogInfof("Latest block index: %d\n", latestIndex)
 
-			index := jsonrpc.NewIndex(waspDbStore.StateByTrieRoot, hivedb.EngineRocksDB, args[1])
+			index := jsonrpc.NewIndex(waspDBStore.StateByTrieRoot, hivedb.EngineRocksDB, args[1])
 
-			block, err := waspDbStore.StateByIndex(latestIndex)
+			block, err := waspDBStore.StateByIndex(latestIndex)
 			log.Check(err)
 
 			logger.LogInfof("Indexing with %d cores.\n", workers)
@@ -48,7 +47,7 @@ func initBuildIndex() *cobra.Command {
 			// Technically, we can return multiple instances to improve reading times more.
 			// This however adds much more strain to the system, so for now keep it like this.
 			storeProvider := func() indexedstore.IndexedStore {
-				return waspDbStore
+				return waspDBStore
 			}
 
 			err = index.IndexAllBlocksInParallel(logger, storeProvider, block.TrieRoot(), workers)
