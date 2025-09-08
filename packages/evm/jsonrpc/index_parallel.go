@@ -3,7 +3,6 @@ package jsonrpc
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"sort"
 	"sync"
 
@@ -27,8 +26,13 @@ type Checkpoint struct {
 	TrieRoot   trie.Hash
 }
 
+// Our block retention is 10k, so this constant is needed.
+// 9999 due to implementation details. But it catches all 10k.
+const checkpointInterval = 9999
+
 func (c *Index) loadOrCreateCheckpoints(log log.Logger, store indexedstore.IndexedStore, latestBlockIndex, checkpointInterval uint32) ([]Checkpoint, error) {
-	checkpointFilePath := filepath.Join("/tmp/checkpoints.bin")
+	// Building a list of checkpoints first, so the actual build of the index db runs faster.
+	checkpointFilePath := "/tmp/checkpoints.bin"
 
 	var checkpointBlocks []uint32
 
@@ -44,9 +48,6 @@ func (c *Index) loadOrCreateCheckpoints(log log.Logger, store indexedstore.Index
 		}
 
 		blockIdx -= checkpointInterval
-		if blockIdx < 0 {
-			blockIdx = 0
-		}
 	}
 
 	log.LogInfof("Need %d checkpoints at %d block intervals\n", len(checkpointBlocks), checkpointInterval)
@@ -70,13 +71,12 @@ func (c *Index) loadOrCreateCheckpoints(log log.Logger, store indexedstore.Index
 
 	for i := 0; i < len(checkpointBlocks); i++ {
 		startBlock := checkpointBlocks[i]
-		endBlock := uint32(0)
+		var endBlock uint32
 
 		if i+1 == len(checkpointBlocks) {
 			if startBlock > 10000 {
-				endBlock = startBlock - 9999
+				endBlock = startBlock - checkpointInterval
 			} else {
-
 				endBlock = 0
 			}
 		} else {
@@ -92,13 +92,13 @@ func (c *Index) loadOrCreateCheckpoints(log log.Logger, store indexedstore.Index
 
 		checkpoints = append(checkpoints, Checkpoint{
 			StartBlock: startBlock,
-			EndBlock:   uint32(endBlock),
+			EndBlock:   endBlock,
 			TrieRoot:   blockInfo.TrieRoot(),
 		})
 	}
 
 	data := bcs.MustMarshal[[]Checkpoint](&checkpoints)
-	if err := os.WriteFile(checkpointFilePath, data, 0644); err != nil {
+	if err := os.WriteFile(checkpointFilePath, data, 0o600); err != nil {
 		log.LogInfof("Warning: failed to save checkpoints to file: %v\n", err)
 	} else {
 		log.LogInfof("Saved %d checkpoints to file\n", len(checkpoints))
@@ -116,7 +116,7 @@ type blockData struct {
 
 // IndexAllBlocksInParallel is meant to be used by external tooling, not by the EVM Indexer itself
 // It relies on private methods, so it's stored here. Don't ever call this function inside the Indexer itself.
-func (c *Index) IndexAllBlocksInParallel(log log.Logger, store func() indexedstore.IndexedStore, trieRoot trie.Hash, numWorkers uint8) error {
+func (c *Index) IndexAllBlocksInParallel(log log.Logger, store func() indexedstore.IndexedStore, trieRoot trie.Hash, workers uint8) error { //nolint: funlen
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -130,11 +130,6 @@ func (c *Index) IndexAllBlocksInParallel(log log.Logger, store func() indexedsto
 	latestBlockIndex := state.BlockIndex()
 
 	log.LogInfof("Indexing %d blocks \n", latestBlockIndex)
-
-	// Our block retention is 10k, so this constant is needed.
-	// 9999 due to implementation details. But it catches all 10k.
-	const checkpointInterval = 9999
-
 	log.LogInfo("Loading/Creating checkpoints..")
 
 	checkpoints, err := c.loadOrCreateCheckpoints(log, store(), latestBlockIndex, checkpointInterval)
@@ -150,7 +145,7 @@ func (c *Index) IndexAllBlocksInParallel(log log.Logger, store func() indexedsto
 	errChan := make(chan error, len(checkpoints))
 
 	var wg sync.WaitGroup
-	semaphore := make(chan struct{}, numWorkers)
+	semaphore := make(chan struct{}, workers)
 
 	for _, checkpoint := range checkpoints {
 		semaphore <- struct{}{}
@@ -162,14 +157,13 @@ func (c *Index) IndexAllBlocksInParallel(log log.Logger, store func() indexedsto
 
 			log.LogInfof("Processing checkpoint from block %d to %d\n", cp.StartBlock, cp.EndBlock)
 
-			batchResults, err := c.processCheckpoint(log, store, cp)
-			if err != nil {
-				log.LogInfof("Error processing checkpoint %d: %v\n", cp.StartBlock, err)
-				errChan <- fmt.Errorf("processCheckpoint: %w", err)
+			batchResults, err2 := c.processCheckpoint(log, store, cp)
+			if err2 != nil {
+				log.LogInfof("Error processing checkpoint %d: %v\n", cp.StartBlock, err2)
+				errChan <- fmt.Errorf("processCheckpoint: %w", err2)
 			}
 
 			resultChan <- batchResults
-
 		}(checkpoint)
 	}
 
