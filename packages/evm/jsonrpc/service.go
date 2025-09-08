@@ -223,18 +223,15 @@ func (e *EthService) GetTransactionReceipt(txHash common.Hash) (map[string]any, 
 
 func (e *EthService) SendRawTransaction(txBytes hexutil.Bytes) (common.Hash, error) {
 	return withMetrics(e.metrics, "eth_sendRawTransaction", func() (common.Hash, error) {
-		// Pre-validation (raw bytes)
 		if err := e.validateTransactionBytes(txBytes); err != nil {
 			return common.Hash{}, err
 		}
 
-		// Decode envelope (handles legacy + typed)
 		tx := new(types.Transaction)
 		if err := tx.UnmarshalBinary(txBytes); err != nil {
 			return common.Hash{}, err
 		}
 
-		// Post-decode validation
 		if err := e.validateTransactionSecurity(tx); err != nil {
 			return common.Hash{}, err
 		}
@@ -251,7 +248,6 @@ func (e *EthService) validateTransactionBytes(txBytes []byte) error {
 		return errors.New("empty transaction data")
 	}
 
-	// Cap the RPC-submitted envelope (not blobs)
 	const maxRawTxSize = 128 * 1024 // 128 KB, it is a upper bound in geth's legacypool.txMaxSize
 	if len(txBytes) > maxRawTxSize {
 		return fmt.Errorf("transaction size %d exceeds maximum allowed %d bytes", len(txBytes), maxRawTxSize)
@@ -266,6 +262,7 @@ func (e *EthService) validateTransactionBytes(txBytes []byte) error {
 // EIP-2718 discriminator:
 // - legacy: first byte >= 0xC0 (RLP list prefix)
 // - typed:  0x01..0x7F, payload should begin with an RLP list (for known types)
+// see https://eips.ethereum.org/EIPS/eip-2718
 func (e *EthService) validateTransactionStructure(txBytes []byte) error {
 	if len(txBytes) == 0 {
 		return errors.New("transaction too short")
@@ -308,12 +305,10 @@ func (e *EthService) validateTransactionSecurity(tx *types.Transaction) error {
 		return fmt.Errorf("transaction size %d exceeds maximum %d bytes", tx.Size(), maxNonBlobTxSize)
 	}
 
-	// Type-specific rules
 	if err := e.validateTransactionType(tx); err != nil {
 		return err
 	}
 
-	// Generic field checks
 	if err := e.validateTransactionFields(tx); err != nil {
 		return err
 	}
@@ -380,7 +375,6 @@ func (e *EthService) validateTransactionType(tx *types.Transaction) error {
 		return fmt.Errorf("unsupported transaction type: %d", tx.Type())
 	}
 
-	// Common rule
 	if tx.Gas() == 0 {
 		return errors.New("transaction gas limit cannot be zero")
 	}
