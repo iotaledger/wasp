@@ -3,7 +3,7 @@ package services
 import (
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/wasp/v2/packages/chains"
+	"github.com/iotaledger/wasp/v2/packages/chainrunner"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/peering"
 	"github.com/iotaledger/wasp/v2/packages/webapi/dto"
@@ -11,14 +11,14 @@ import (
 )
 
 type PeeringService struct {
-	chainsProvider        chains.Provider
+	chainRunner           *chainrunner.ChainRunner
 	networkProvider       peering.NetworkProvider
 	trustedNetworkManager peering.TrustedNetworkManager
 }
 
-func NewPeeringService(chainsProvider chains.Provider, networkProvider peering.NetworkProvider, trustedNetworkManager peering.TrustedNetworkManager) *PeeringService {
+func NewPeeringService(chainRunner *chainrunner.ChainRunner, networkProvider peering.NetworkProvider, trustedNetworkManager peering.TrustedNetworkManager) *PeeringService {
 	return &PeeringService{
-		chainsProvider:        chainsProvider,
+		chainRunner:           chainRunner,
 		networkProvider:       networkProvider,
 		trustedNetworkManager: trustedNetworkManager,
 	}

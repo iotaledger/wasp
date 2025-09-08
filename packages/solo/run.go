@@ -137,7 +137,7 @@ func (ch *Chain) settleStateTransition(stateDraft state.StateDraft) {
 	lo.Must0(ch.store.SetLatest(block.TrieRoot()))
 	latestState := lo.Must(ch.LatestState())
 
-	ch.Env.Publisher().BlockApplied(ch.ChainID, block, latestState)
+	ch.Env.Publisher().BlockApplied(block, latestState)
 
 	blockReceipts, err := blocklog.RequestReceiptsFromBlock(block)
 	if err != nil {

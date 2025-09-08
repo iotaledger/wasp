@@ -6,7 +6,6 @@ package chain
 import (
 	"github.com/iotaledger/wasp/v2/packages/chain/mempool"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
-	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/kv"
 	"github.com/iotaledger/wasp/v2/packages/state"
 )
@@ -16,8 +15,8 @@ import (
 // All the function MUST NOT BLOCK.
 type ChainListener interface {
 	mempool.ChainListener
-	AccessNodesUpdated(chainID isc.ChainID, accessNodes []*cryptolib.PublicKey)
-	ServerNodesUpdated(chainID isc.ChainID, serverNodes []*cryptolib.PublicKey)
+	AccessNodesUpdated(accessNodes []*cryptolib.PublicKey)
+	ServerNodesUpdated(serverNodes []*cryptolib.PublicKey)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -31,7 +30,7 @@ func NewEmptyChainListener() ChainListener {
 	return &emptyChainListener{}
 }
 
-func (ecl *emptyChainListener) BlockApplied(chainID isc.ChainID, block state.Block, latestState kv.KVStoreReader) {
+func (ecl *emptyChainListener) BlockApplied(block state.Block, latestState kv.KVStoreReader) {
 }
-func (ecl *emptyChainListener) AccessNodesUpdated(isc.ChainID, []*cryptolib.PublicKey) {}
-func (ecl *emptyChainListener) ServerNodesUpdated(isc.ChainID, []*cryptolib.PublicKey) {}
+func (ecl *emptyChainListener) AccessNodesUpdated([]*cryptolib.PublicKey) {}
+func (ecl *emptyChainListener) ServerNodesUpdated([]*cryptolib.PublicKey) {}

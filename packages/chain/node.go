@@ -705,7 +705,7 @@ func (cni *chainNodeImpl) handleNeedPublishTX(ctx context.Context, upd *chainman
 			cni.publishingTXes.Set(txDigest.HashValue(), subCancel)
 			publishStart := time.Now()
 			cni.log.LogDebugf("XXX: PublishTX %s ..., consumed anchor=%v", txDigest, needPublishTx.BaseAnchorRef)
-			if err := cni.nodeConn.PublishTX(subCtx, cni.chainID, *txToPost.Tx, func(_ iotasigner.SignedTransaction, newStateAnchor *isc.StateAnchor, err error) {
+			if err := cni.nodeConn.PublishTX(subCtx, *txToPost.Tx, func(_ iotasigner.SignedTransaction, newStateAnchor *isc.StateAnchor, err error) {
 				cni.log.LogDebugf("XXX: PublishTX %s done, next anchor=%v, err=%v", txDigest, newStateAnchor, err)
 				cni.chainMetrics.NodeConn.TXPublishResult(err == nil, time.Since(publishStart))
 
@@ -896,7 +896,7 @@ func (cni *chainNodeImpl) updateAccessNodes(update func()) {
 	cnSame := util.Same(oldCommitteeNodes, activeCommitteeNodes)
 	if !anSame {
 		cni.log.LogInfof("Access nodes updated, active=%+v", activeAccessNodes)
-		cni.listener.AccessNodesUpdated(cni.chainID, activeAccessNodes)
+		cni.listener.AccessNodesUpdated(activeAccessNodes)
 	}
 	if !anSame || !cnSame {
 		if !cnSame {
@@ -918,7 +918,7 @@ func (cni *chainNodeImpl) updateServerNodes(serverNodes []*cryptolib.PublicKey) 
 		cni.log.LogInfof("Server nodes updated, servers=%+v", serverNodes)
 		cni.mempool.ServerNodesUpdated(activeCommitteeNodes, serverNodes)
 		cni.stateMgr.ChainNodesUpdated(serverNodes, activeAccessNodes, activeCommitteeNodes)
-		cni.listener.ServerNodesUpdated(cni.chainID, serverNodes)
+		cni.listener.ServerNodesUpdated(serverNodes)
 	}
 }
 
@@ -985,7 +985,7 @@ func (cni *chainNodeImpl) LatestAnchor(freshness StateFreshness) (*isc.StateAnch
 }
 
 func (cni *chainNodeImpl) LatestGasCoin(freshness StateFreshness) (*coin.CoinWithRef, error) {
-	return cni.nodeConn.GetGasCoinRef(context.Background(), cni.chainID)
+	return cni.nodeConn.GetGasCoinRef(context.Background())
 }
 
 func (cni *chainNodeImpl) LatestState(freshness StateFreshness) (state.State, error) {
@@ -1456,7 +1456,7 @@ func createMempool(
 		cni.listener,
 		mempoolSettings,
 		mempoolBroadcastInterval,
-		func() { nodeConn.RefreshOnLedgerRequests(ctx, chainID) },
+		func() { nodeConn.RefreshOnLedgerRequests(ctx) },
 	)
 }
 

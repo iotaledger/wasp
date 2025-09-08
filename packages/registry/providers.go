@@ -7,7 +7,6 @@ import (
 	"context"
 
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
-	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/peering"
 	"github.com/iotaledger/wasp/v2/packages/tcrypto"
 )
@@ -24,14 +23,13 @@ type DKShareRegistryProvider interface {
 
 type ChainRecordRegistryProvider interface {
 	Events() *ChainRecordRegistryEvents
-	ChainRecord(chainID isc.ChainID) (*ChainRecord, error)
-	ChainRecords() ([]*ChainRecord, error)
-	ForEachActiveChainRecord(consumer func(*ChainRecord) bool) error
-	AddChainRecord(chainRecord *ChainRecord) error
-	DeleteChainRecord(chainID isc.ChainID) error
-	UpdateChainRecord(chainID isc.ChainID, f func(*ChainRecord) bool) (*ChainRecord, error)
-	ActivateChainRecord(chainID isc.ChainID) (*ChainRecord, error)
-	DeactivateChainRecord(chainID isc.ChainID) (*ChainRecord, error)
+	ChainRecord() *ChainRecord
+	ForActiveChainRecord(consumer func(*ChainRecord) bool) error
+	SetChainRecord(chainRecord *ChainRecord) error
+	DeleteChainRecord() error
+	UpdateChainRecord(f func(*ChainRecord) bool) (*ChainRecord, error)
+	ActivateChainRecord() (*ChainRecord, error)
+	DeactivateChainRecord() (*ChainRecord, error)
 }
 
 type TrustedPeersRegistryProvider interface {

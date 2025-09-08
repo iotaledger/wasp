@@ -34,10 +34,9 @@ type APIController interface {
 }
 
 type ChainService interface {
-	ActivateChain(chainID isc.ChainID) error
+	ActivateChain() error
 	SetChainRecord(chainRecord *registry.ChainRecord) error
-	DeactivateChain(chainID isc.ChainID) error
-	GetAllChainIDs() ([]isc.ChainID, error)
+	DeactivateChain() error
 	GetChain() (chain.Chain, error)
 	GetChainInfo(blockIndexOrTrieRoot string) (*dto.ChainInfo, error)
 	GetContracts(blockIndexOrTrieRoot string) ([]lo.Tuple2[*isc.Hname, *root.ContractRecord], error)
@@ -54,28 +53,28 @@ type EVMService interface {
 
 type MetricsService interface {
 	GetNodeMessageMetrics() *dto.NodeMessageMetrics
-	GetChainMessageMetrics(chainID isc.ChainID) *dto.ChainMessageMetrics
-	GetChainConsensusPipeMetrics(chainID isc.ChainID) *models.ConsensusPipeMetrics
-	GetChainConsensusWorkflowMetrics(chainID isc.ChainID) *models.ConsensusWorkflowMetrics
+	GetChainMessageMetrics() *dto.ChainMessageMetrics
+	GetChainConsensusPipeMetrics() *models.ConsensusPipeMetrics
+	GetChainConsensusWorkflowMetrics() *models.ConsensusWorkflowMetrics
 	GetMaxChainConfirmedStateLag() uint32
 }
 
 var ErrPeerNotFound = errors.New("couldn't find peer")
 
 type NodeService interface {
-	AddAccessNode(chainID isc.ChainID, peer string) error
-	DeleteAccessNode(chainID isc.ChainID, peer string) error
+	AddAccessNode(peer string) error
+	DeleteAccessNode(peer string) error
 	NodeOwnerCertificate() []byte
 	ShutdownNode()
 	L1Params(context.Context) (*parameters.L1Params, error)
 }
 
 type RegistryService interface {
-	GetChainRecordByChainID(chainID isc.ChainID) (*registry.ChainRecord, error)
+	GetChainRecord() (*registry.ChainRecord, error)
 }
 
 type CommitteeService interface {
-	GetCommitteeInfo(chainID isc.ChainID) (*dto.ChainNodeInfo, error)
+	GetCommitteeInfo() (*dto.ChainNodeInfo, error)
 	GetPublicKey() *cryptolib.PublicKey
 }
 
@@ -89,7 +88,7 @@ type PeeringService interface {
 }
 
 type OffLedgerService interface {
-	EnqueueOffLedgerRequest(chainID isc.ChainID, request []byte) error
+	EnqueueOffLedgerRequest(request []byte) error
 	ParseRequest(payload []byte) (isc.Request, error)
 }
 

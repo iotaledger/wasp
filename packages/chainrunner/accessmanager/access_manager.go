@@ -11,10 +11,9 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/log"
-	"github.com/iotaledger/wasp/v2/packages/chains/accessmanager/dist"
+	"github.com/iotaledger/wasp/v2/packages/chainrunner/accessmanager/dist"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
-	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/peering"
 	"github.com/iotaledger/wasp/v2/packages/util"
 	"github.com/iotaledger/wasp/v2/packages/util/pipe"
@@ -22,8 +21,8 @@ import (
 
 type AccessMgr interface {
 	TrustedNodes(trusted []*cryptolib.PublicKey)
-	ChainAccessNodes(chainID isc.ChainID, accessNodes []*cryptolib.PublicKey)
-	ChainDismissed(chainID isc.ChainID)
+	ChainAccessNodes(accessNodes []*cryptolib.PublicKey)
+	ChainDismissed()
 }
 
 type accessMgrImpl struct {
@@ -44,13 +43,10 @@ type reqTrustedNodes struct {
 }
 
 type reqChainAccessNodes struct {
-	chainID     isc.ChainID
 	accessNodes []*cryptolib.PublicKey
 }
 
-type reqChainDismissed struct {
-	chainID isc.ChainID
-}
+type reqChainDismissed struct{}
 
 var _ AccessMgr = &accessMgrImpl{}
 
@@ -66,7 +62,7 @@ const (
 
 func New(
 	ctx context.Context,
-	serversUpdatedCB func(chainID isc.ChainID, servers []*cryptolib.PublicKey),
+	serversUpdatedCB func(servers []*cryptolib.PublicKey),
 	nodeIdentity *cryptolib.KeyPair,
 	net peering.NetworkProvider,
 	log log.Logger,
@@ -109,13 +105,13 @@ func (ami *accessMgrImpl) TrustedNodes(trusted []*cryptolib.PublicKey) {
 }
 
 // Implements the AccessMgr interface.
-func (ami *accessMgrImpl) ChainAccessNodes(chainID isc.ChainID, accessNodes []*cryptolib.PublicKey) {
-	ami.reqChainAccessNodesPipe.In() <- &reqChainAccessNodes{chainID: chainID, accessNodes: accessNodes}
+func (ami *accessMgrImpl) ChainAccessNodes(accessNodes []*cryptolib.PublicKey) {
+	ami.reqChainAccessNodesPipe.In() <- &reqChainAccessNodes{accessNodes: accessNodes}
 }
 
 // Implements the AccessMgr interface.
-func (ami *accessMgrImpl) ChainDismissed(chainID isc.ChainID) {
-	ami.reqChainDismissedPipe.In() <- &reqChainDismissed{chainID: chainID}
+func (ami *accessMgrImpl) ChainDismissed() {
+	ami.reqChainDismissedPipe.In() <- &reqChainDismissed{}
 }
 
 // A callback for amDist.
@@ -179,13 +175,13 @@ func (ami *accessMgrImpl) handleReqTrustedNodes(recv *reqTrustedNodes) {
 }
 
 func (ami *accessMgrImpl) handleReqChainAccessNodes(recv *reqChainAccessNodes) {
-	ami.log.LogDebugf("handleReqChainAccessNodes: chainID=%v, access=%v", recv.chainID, recv.accessNodes)
-	ami.sendMessages(ami.dist.Input(dist.NewInputAccessNodes(recv.chainID, recv.accessNodes)))
+	ami.log.LogDebugf("handleReqChainAccessNodes: access=%v", recv.accessNodes)
+	ami.sendMessages(ami.dist.Input(dist.NewInputAccessNodes(recv.accessNodes)))
 }
 
-func (ami *accessMgrImpl) handleReqChainDismissed(recv *reqChainDismissed) {
-	ami.log.LogDebugf("handleReqChainDismissed: chainID=%v", recv.chainID)
-	ami.sendMessages(ami.dist.Input(dist.NewInputChainDisabled(recv.chainID)))
+func (ami *accessMgrImpl) handleReqChainDismissed(_ *reqChainDismissed) {
+	ami.log.LogDebugf("handleReqChainDismissed")
+	ami.sendMessages(ami.dist.Input(dist.NewInputChainDisabled()))
 }
 
 func (ami *accessMgrImpl) handleDistDebugTick() {

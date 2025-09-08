@@ -13,7 +13,7 @@ import (
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/v2/clients"
 	"github.com/iotaledger/wasp/v2/packages/authentication"
-	"github.com/iotaledger/wasp/v2/packages/chains"
+	"github.com/iotaledger/wasp/v2/packages/chainrunner"
 	"github.com/iotaledger/wasp/v2/packages/dkg"
 	"github.com/iotaledger/wasp/v2/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/v2/packages/metrics"
@@ -87,7 +87,7 @@ func Init(
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	nodeIdentityProvider registry.NodeIdentityProvider,
-	chainsProvider chains.Provider,
+	chainRunner *chainrunner.ChainRunner,
 	dkgNodeProvider dkg.NodeProvider,
 	shutdownHandler *shutdown.ShutdownHandler,
 	chainMetricsProvider *metrics.ChainMetricsProvider,
@@ -105,14 +105,14 @@ func Init(
 	mocker := NewMocker()
 	mocker.LoadMockFiles()
 
-	chainService := services.NewChainService(logger, chainsProvider, chainMetricsProvider, chainRecordRegistryProvider)
-	committeeService := services.NewCommitteeService(chainsProvider, networkProvider, dkShareRegistryProvider)
-	registryService := services.NewRegistryService(chainsProvider, chainRecordRegistryProvider)
+	chainService := services.NewChainService(logger, chainRunner, chainMetricsProvider, chainRecordRegistryProvider)
+	committeeService := services.NewCommitteeService(chainRunner, networkProvider, dkShareRegistryProvider)
+	registryService := services.NewRegistryService(chainRunner, chainRecordRegistryProvider)
 	offLedgerService := services.NewOffLedgerService(chainService, networkProvider, requestCacheTTL)
-	metricsService := services.NewMetricsService(chainsProvider, chainMetricsProvider)
-	peeringService := services.NewPeeringService(chainsProvider, networkProvider, trustedNetworkManager)
-	evmService := services.NewEVMService(chainsProvider, chainService, networkProvider, pub, indexDBPath, chainMetricsProvider, jsonrpcParams, logger.NewChildLogger("EVMService"))
-	nodeService := services.NewNodeService(chainRecordRegistryProvider, nodeIdentityProvider, chainsProvider, shutdownHandler, trustedNetworkManager, l1ParamsFetcher)
+	metricsService := services.NewMetricsService(chainRunner, chainMetricsProvider)
+	peeringService := services.NewPeeringService(chainRunner, networkProvider, trustedNetworkManager)
+	evmService := services.NewEVMService(chainRunner, chainService, networkProvider, pub, indexDBPath, chainMetricsProvider, jsonrpcParams, logger.NewChildLogger("EVMService"))
+	nodeService := services.NewNodeService(chainRecordRegistryProvider, nodeIdentityProvider, chainRunner, shutdownHandler, trustedNetworkManager, l1ParamsFetcher)
 	dkgService := services.NewDKGService(dkShareRegistryProvider, dkgNodeProvider, trustedNetworkManager)
 	userService := services.NewUserService(userManager)
 	// --

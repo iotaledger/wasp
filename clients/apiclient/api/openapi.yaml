@@ -823,7 +823,7 @@ paths:
   /v1/chain/core/governance/chaininfo:
     get:
       description: "If you are using the common API functions, you most likely rather\
-        \ want to use '/v1/chains/:chainID' to get information about a chain."
+        \ want to use '/v1/chain' to get information about a chain."
       operationId: governanceGetChainInfo
       parameters:
       - description: Block index or trie root

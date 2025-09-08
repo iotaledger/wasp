@@ -292,7 +292,7 @@ func (tnc *testNodeConn) L1ParamsFetcher() parameters.L1ParamsFetcher {
 	return tnc.l1ParamsFetcher
 }
 
-func (tnc *testNodeConn) GetGasCoinRef(ctx context.Context, chainID isc.ChainID) (*coin.CoinWithRef, error) {
+func (tnc *testNodeConn) GetGasCoinRef(ctx context.Context) (*coin.CoinWithRef, error) {
 	panic("implement me")
 }
 
@@ -314,15 +314,11 @@ func newTestNodeConn(t *testing.T, l1Client clients.L1Client, iscPackageID iotag
 
 func (tnc *testNodeConn) PublishTX(
 	ctx context.Context,
-	chainID isc.ChainID,
 	tx iotasigner.SignedTransaction,
 	callback chain.TxPostHandler,
 ) error {
 	if tnc.chainID.Empty() {
 		tnc.t.Error("NodeConn::PublishTX before attach.")
-	}
-	if !tnc.chainID.Equals(chainID) {
-		tnc.t.Error("unexpected chain id")
 	}
 
 	txBytes, err := bcs.Marshal(tx.Data)
@@ -371,7 +367,7 @@ func (tnc *testNodeConn) PublishTX(
 
 	tnc.t.Logf("PublishTX, GetTransactionBlock, result=%+v", res)
 
-	anchorInfo, err := res.GetMutatedObjectByID(chainID.AsObjectID())
+	anchorInfo, err := res.GetMutatedObjectByID(tnc.chainID.AsObjectID())
 	if err != nil {
 		return err
 	}
@@ -479,7 +475,7 @@ func (tgi *testNodeConnL1Info) GetGasCoins() []*coin.CoinWithRef  { return tgi.g
 func (tgi *testNodeConnL1Info) GetL1Params() *parameters.L1Params { return tgi.l1params }
 
 // RefreshOnLedgerRequests implements chain.NodeConnection.
-func (tnc *testNodeConn) RefreshOnLedgerRequests(ctx context.Context, chainID isc.ChainID) {
+func (tnc *testNodeConn) RefreshOnLedgerRequests(ctx context.Context) {
 	// noop
 }
 

@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/samber/lo"
@@ -11,7 +12,7 @@ import (
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	chainpkg "github.com/iotaledger/wasp/v2/packages/chain"
-	"github.com/iotaledger/wasp/v2/packages/chains"
+	"github.com/iotaledger/wasp/v2/packages/chainrunner"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/kv"
 	"github.com/iotaledger/wasp/v2/packages/metrics"
@@ -27,54 +28,55 @@ import (
 
 type ChainService struct {
 	log                         log.Logger
-	chainsProvider              chains.Provider
+	chainRunner                 *chainrunner.ChainRunner
 	chainMetricsProvider        *metrics.ChainMetricsProvider
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
 }
 
 func NewChainService(
 	logger log.Logger,
-	chainsProvider chains.Provider,
+	chainRunner *chainrunner.ChainRunner,
 	chainMetricsProvider *metrics.ChainMetricsProvider,
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
 ) interfaces.ChainService {
 	return &ChainService{
 		log:                         logger,
-		chainsProvider:              chainsProvider,
+		chainRunner:                 chainRunner,
 		chainMetricsProvider:        chainMetricsProvider,
 		chainRecordRegistryProvider: chainRecordRegistryProvider,
 	}
 }
 
-func (c *ChainService) ActivateChain(chainID isc.ChainID) error {
-	_, err := c.chainRecordRegistryProvider.ActivateChainRecord(chainID)
+func (c *ChainService) ActivateChain() error {
+	_, err := c.chainRecordRegistryProvider.ActivateChainRecord()
 	if err != nil {
 		return err
 	}
 
-	return c.chainsProvider().Activate(chainID)
+	return c.chainRunner.Activate()
 }
 
-func (c *ChainService) DeactivateChain(chainID isc.ChainID) error {
-	_, err := c.chainRecordRegistryProvider.DeactivateChainRecord(chainID)
+func (c *ChainService) DeactivateChain() error {
+	_, err := c.chainRecordRegistryProvider.DeactivateChainRecord()
 	if err != nil {
 		return err
 	}
 
-	return c.chainsProvider().Deactivate(chainID)
+	return c.chainRunner.Deactivate()
 }
 
 func (c *ChainService) SetChainRecord(chainRecord *registry.ChainRecord) error {
-	storedChainRec, err := c.chainRecordRegistryProvider.ChainRecord(chainRecord.ChainID())
-	if err != nil {
-		return err
-	}
+	storedChainRec := c.chainRecordRegistryProvider.ChainRecord()
 
-	c.log.LogInfof("StoredChainRec %v %v", storedChainRec, err)
+	c.log.LogInfof("StoredChainRec %v", storedChainRec)
 
 	if storedChainRec != nil {
-		_, err = c.chainRecordRegistryProvider.UpdateChainRecord(
-			chainRecord.ChainID(),
+		if storedChainRec.ChainID() != chainRecord.ChainID() {
+			return fmt.Errorf("cannot update chain record with different chain ID: %v != %v",
+				storedChainRec.ChainID().String(), chainRecord.ChainID().String())
+		}
+
+		_, err := c.chainRecordRegistryProvider.UpdateChainRecord(
 			func(rec *registry.ChainRecord) bool {
 				rec.AccessNodes = chainRecord.AccessNodes
 				rec.Active = chainRecord.Active
@@ -87,7 +89,7 @@ func (c *ChainService) SetChainRecord(chainRecord *registry.ChainRecord) error {
 			return err
 		}
 	} else {
-		if err := c.chainRecordRegistryProvider.AddChainRecord(chainRecord); err != nil {
+		if err := c.chainRecordRegistryProvider.SetChainRecord(chainRecord); err != nil {
 			c.log.LogInfof("AddChainRec %v %v", chainRecord, err)
 
 			return err
@@ -98,11 +100,11 @@ func (c *ChainService) SetChainRecord(chainRecord *registry.ChainRecord) error {
 	c.log.LogInfof("Chainrecord active %v", chainRecord.Active)
 
 	if chainRecord.Active {
-		if err := c.chainsProvider().Activate(chainRecord.ChainID()); err != nil {
+		if err := c.chainRunner.Activate(); err != nil {
 			return err
 		}
 	} else if storedChainRec != nil {
-		if err := c.chainsProvider().Deactivate(chainRecord.ChainID()); err != nil {
+		if err := c.chainRunner.Deactivate(); err != nil {
 			return err
 		}
 	}
@@ -111,7 +113,7 @@ func (c *ChainService) SetChainRecord(chainRecord *registry.ChainRecord) error {
 }
 
 func (c *ChainService) GetChain() (chainpkg.Chain, error) {
-	return c.chainsProvider().GetFirst()
+	return c.chainRunner.Chain()
 }
 
 func (c *ChainService) GetEVMChainID(blockIndexOrTrieRoot string) (uint16, error) {
@@ -126,31 +128,13 @@ func (c *ChainService) GetEVMChainID(blockIndexOrTrieRoot string) (uint16, error
 	return evm.ViewGetChainID.DecodeOutput(ret)
 }
 
-func (c *ChainService) GetAllChainIDs() ([]isc.ChainID, error) {
-	records, err := c.chainRecordRegistryProvider.ChainRecords()
-	if err != nil {
-		return nil, err
-	}
-
-	chainIDs := make([]isc.ChainID, 0, len(records))
-
-	for _, chainRecord := range records {
-		chainIDs = append(chainIDs, chainRecord.ChainID())
-	}
-
-	return chainIDs, nil
-}
-
 func (c *ChainService) GetChainInfo(blockIndexOrTrieRoot string) (*dto.ChainInfo, error) {
 	ch, err := c.GetChain()
 	if err != nil {
 		return nil, err
 	}
 
-	chainRecord, err := c.chainRecordRegistryProvider.ChainRecord(ch.ID())
-	if err != nil {
-		return nil, err
-	}
+	chainRecord := c.chainRecordRegistryProvider.ChainRecord()
 
 	governanceChainInfo, err := corecontracts.GetChainInfo(ch, blockIndexOrTrieRoot)
 	if err != nil {
@@ -161,7 +145,7 @@ func (c *ChainService) GetChainInfo(blockIndexOrTrieRoot string) (*dto.ChainInfo
 		return nil, err
 	}
 
-	chainInfo := dto.MapChainInfo(governanceChainInfo, chainRecord.Active)
+	chainInfo := dto.MapChainInfo(governanceChainInfo, chainRecord != nil && chainRecord.Active)
 
 	return chainInfo, nil
 }

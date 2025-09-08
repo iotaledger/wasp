@@ -34,7 +34,6 @@ func NewWebsocketClient(
 	url string,
 	log log.Logger,
 ) (*WebsocketClient, error) {
-
 	c := &WebsocketClient{
 		url:           url,
 		writeQueue:    make(chan *jsonrpcMessage),

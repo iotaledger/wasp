@@ -64,7 +64,7 @@
     "peeringURL": "0.0.0.0:4000",
     "port": 4000
   },
-  "chains": {
+  "chain": {
     "broadcastUpToNPeers": 2,
     "broadcastInterval": "0s",
     "apiCacheTTL": "5m",
@@ -88,7 +88,7 @@
     "mempoolOnLedgerRefreshMinInterval": "10m"
   },
   "snapshots": {
-    "snapshotsToLoad": [],
+    "snapshotToLoad": "",
     "period": 0,
     "delay": 20,
     "localPath": "waspdb/snap",

@@ -83,7 +83,7 @@ func (e *ChainEnv) DepositFunds(amount coin.Value, keyPair *cryptolib.KeyPair) {
 	}
 	tx, err := client.PostRequest(context.Background(), accounts.FuncDeposit.Message(), params)
 	require.NoError(e.t, err)
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, tx, true, 30*time.Second)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), tx, true, 30*time.Second)
 	require.NoError(e.t, err, "Error while WaitUntilAllRequestsProcessedSuccessfully for tx.ID=%v", tx.Digest)
 }
 
@@ -98,7 +98,7 @@ func (e *ChainEnv) TransferFundsTo(assets *isc.Assets, keyPair *cryptolib.KeyPai
 		L2GasBudget: uint64(l2GasFee),
 	})
 	require.NoError(e.t, err)
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, tx, false, 30*time.Second)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), tx, false, 30*time.Second)
 	require.NoError(e.t, err, "Error while WaitUntilAllRequestsProcessedSuccessfully for tx.ID=%v", tx.Digest)
 }
 
@@ -140,7 +140,7 @@ func (e *ChainEnv) DeploySolidityContract(creator *ecdsa.PrivateKey, abiJSON str
 	require.NoError(e.t, err)
 
 	// await tx confirmed
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilEVMRequestProcessedSuccessfully(context.Background(), e.Chain.ChainID, tx.Hash(), false, 30*time.Second)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilEVMRequestProcessedSuccessfully(context.Background(), tx.Hash(), false, 30*time.Second)
 	require.NoError(e.t, err)
 
 	return crypto.CreateAddress(creatorAddress, nonce), contractABI
@@ -229,7 +229,7 @@ func (e *ChainEnv) CallStore(archiveClient, lightClient *ethclient.Client, input
 	require.NoError(e.t, err)
 	// await tx confirmed
 	for i := 0; i < 3; i++ {
-		_, err = e.Clu.MultiClient().WaitUntilEVMRequestProcessedSuccessfully(context.Background(), e.Chain.ChainID, tx.Hash(), false, 30*time.Second)
+		_, err = e.Clu.MultiClient().WaitUntilEVMRequestProcessedSuccessfully(context.Background(), tx.Hash(), false, 30*time.Second)
 		if err == nil {
 			break
 		}

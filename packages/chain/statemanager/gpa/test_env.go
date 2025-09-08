@@ -119,7 +119,6 @@ func (teT *testEnv) addVariedNodes(
 	sms := make(map[gpa.NodeID]gpa.GPA)
 	stores := make(map[gpa.NodeID]state.Store)
 	snapms := make(map[gpa.NodeID]snapshots.SnapshotManager)
-	chainID := teT.bf.GetChainID()
 	for _, nodeID := range nodeIDs {
 		var err error
 		smLog := teT.log.NewChildLogger(nodeID.ShortString())
@@ -129,7 +128,7 @@ func (teT *testEnv) addVariedNodes(
 		snapshotManager := createSnapMFun(nodeID, teT.bf.GetStore(), store, teT.parameters.TimeProvider, smLog)
 		loadedSnapshotStateIndex := snapshotManager.GetLoadedSnapshotStateIndex()
 		stores[nodeID] = store
-		sms[nodeID], err = New(chainID, loadedSnapshotStateIndex, nr, wal, store, mockStateManagerMetrics(), smLog, teT.parameters)
+		sms[nodeID], err = New(loadedSnapshotStateIndex, nr, wal, store, mockStateManagerMetrics(), smLog, teT.parameters)
 		require.NoError(teT.t, err)
 		snapms[nodeID] = snapshotManager
 		origin.InitChain(allmigrations.LatestSchemaVersion, store, teT.bf.GetChainInitParameters(), iotago.ObjectID{}, 0, parameterstest.L1Mock)

@@ -80,7 +80,6 @@ func (r *reqPreliminaryBlock) Respond(err error) {
 
 type stateManager struct {
 	log                  log.Logger
-	chainID              isc.ChainID
 	stateManagerGPA      gpa.GPA
 	nodeRandomiser       utils.NodeRandomiser
 	nodeIDToPubKey       map[gpa.NodeID]*cryptolib.PublicKey
@@ -125,14 +124,13 @@ func New(
 ) (StateMgr, error) {
 	smLog := log.NewChildLogger("SM")
 	nr := utils.NewNodeRandomiserNoInit(gpa.NodeIDFromPublicKey(me), smLog)
-	stateManagerGPA, err := smgpa.New(chainID, snapshotManager.GetLoadedSnapshotStateIndex(), nr, wal, store, metrics, smLog, parameters)
+	stateManagerGPA, err := smgpa.New(snapshotManager.GetLoadedSnapshotStateIndex(), nr, wal, store, metrics, smLog, parameters)
 	if err != nil {
 		smLog.LogErrorf("failed to create state manager GPA: %w", err)
 		return nil, err
 	}
 	result := &stateManager{
 		log:                  smLog,
-		chainID:              chainID,
 		stateManagerGPA:      stateManagerGPA,
 		nodeRandomiser:       nr,
 		inputPipe:            pipe.NewInfinitePipe[gpa.Input](),

@@ -259,7 +259,7 @@ func New(
 		needPublishTX:              shrinkingmap.New[hashing.HashValue, *NeedPublishTX](),
 		needPublishCB:              needPublishCB,
 		dkShareRegistryProvider:    dkShareRegistryProvider,
-		varAccessNodeState:         NewVarAccessNodeState(chainID, log.NewChildLogger("VAS")),
+		varAccessNodeState:         NewVarAccessNodeState(log.NewChildLogger("VAS")),
 		me:                         me,
 		nodeIDFromPubKey:           nodeIDFromPubKey,
 		deriveAOByQuorum:           deriveAOByQuorum,

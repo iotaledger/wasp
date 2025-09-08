@@ -111,7 +111,6 @@ func Test_BasicExchange(t *testing.T) {
 
 	for i := 0; i < 10; i++ {
 		response, err := ledger.Exchange(message)
-
 		if err != nil {
 			fmt.Printf("iteration %d\n", i)
 			t.Fatalf("Error: %s", err.Error())

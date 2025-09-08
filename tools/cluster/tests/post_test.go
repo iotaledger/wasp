@@ -30,7 +30,7 @@ func (e *ChainEnv) testPost1Request(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, reqTx, true, 30*time.Second)
+	receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), reqTx, true, 30*time.Second)
 	require.NoError(t, err)
 	balance2 := e.GetL2Balance(isc.NewAddressAgentID(userAddr), coin.BaseTokenType)
 
@@ -55,7 +55,7 @@ func (e *ChainEnv) testPost3Requests(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		recs, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, tx, true, 30*time.Second)
+		recs, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), tx, true, 30*time.Second)
 		require.NoError(t, err)
 		receipts[i] = recs[0]
 	}
@@ -90,7 +90,7 @@ func (e *ChainEnv) testPost5AsyncRequests(t *testing.T) {
 	}
 
 	for i := 0; i < 5; i++ {
-		receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, tx[i], false, 30*time.Second)
+		receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), tx[i], false, 30*time.Second)
 		require.NoError(t, err)
 
 		gasFeeCharged, err := util.DecodeUint64(receipts[0].GasFeeCharged)

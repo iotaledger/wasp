@@ -61,7 +61,7 @@ func NewChainStateDatabaseManager(chainRecordRegistryProvider registry.ChainReco
 
 	// load all active chain state databases
 	var innerErr error
-	if err := chainRecordRegistryProvider.ForEachActiveChainRecord(func(cr *registry.ChainRecord) bool {
+	if err := chainRecordRegistryProvider.ForActiveChainRecord(func(cr *registry.ChainRecord) bool {
 		_, err := m.createDatabase(cr.ChainID())
 		if err != nil {
 			innerErr = err

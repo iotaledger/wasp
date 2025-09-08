@@ -15,7 +15,7 @@ func TestNewChainStateDatabaseManager(t *testing.T) {
 
 	chainID := isctest.RandomChainID()
 
-	err = chainRecordRegistry.AddChainRecord(registry.NewChainRecord(chainID, false, nil))
+	err = chainRecordRegistry.SetChainRecord(registry.NewChainRecord(chainID, false, nil))
 	require.NoError(t, err)
 
 	modified := false
@@ -28,8 +28,10 @@ func TestNewChainStateDatabaseManager(t *testing.T) {
 	unhook := chainRecordRegistry.Events().ChainRecordModified.Hook(chainRecordModified).Unhook
 	defer unhook()
 
-	_, err = chainRecordRegistry.ActivateChainRecord(chainID)
+	rec, err := chainRecordRegistry.ActivateChainRecord()
 	require.NoError(t, err)
+	require.NotNil(t, rec)
+	require.Equal(t, chainID, rec.ChainID())
 
 	require.True(t, modified)
 	require.True(t, active)

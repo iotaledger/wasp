@@ -55,6 +55,8 @@ func TestInternalServerErrors(t *testing.T) {
 	}()
 	defer e.Shutdown(context.Background())
 
+	time.Sleep(5 * time.Second)
+
 	// query the endpoint
 	req, err := http.NewRequest(http.MethodGet, "http://localhost:9999/test", http.NoBody)
 	require.NoError(t, err)

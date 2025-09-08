@@ -60,7 +60,10 @@ func TestWriteAmplification(t *testing.T) {
 
 	chainRecordRegistry, err := registry.NewChainRecordRegistryImpl("")
 	require.NoError(t, err)
-	chainRecordRegistry.ActivateChainRecord(chainID)
+	rec, err := chainRecordRegistry.ActivateChainRecord()
+	require.NoError(t, err)
+	require.NotNil(t, rec)
+	require.Equal(t, chainID, rec.ChainID())
 
 	tempDir := fmt.Sprintf("/tmp/TestWriteAmplification-%v", time.Now().UnixMilli())
 

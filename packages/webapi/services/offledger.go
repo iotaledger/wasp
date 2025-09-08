@@ -38,7 +38,7 @@ func (c *OffLedgerService) ParseRequest(binaryRequest []byte) (isc.Request, erro
 	return request, nil
 }
 
-func (c *OffLedgerService) EnqueueOffLedgerRequest(chainID isc.ChainID, binaryRequest []byte) error {
+func (c *OffLedgerService) EnqueueOffLedgerRequest(binaryRequest []byte) error {
 	request, err := c.ParseRequest(binaryRequest)
 	if err != nil {
 		return err
@@ -67,7 +67,7 @@ func (c *OffLedgerService) EnqueueOffLedgerRequest(chainID isc.ChainID, binaryRe
 	}
 
 	// check req is for the correct chain
-	if !asOffLedgerRequest.ChainID().Equals(chainID) {
+	if !asOffLedgerRequest.ChainID().Equals(chain.ID()) {
 		// do not add to cache, it can still be sent to the correct chain
 		return errors.New("request is for a different chain")
 	}

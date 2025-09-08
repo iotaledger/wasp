@@ -634,7 +634,7 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
     }
 
     /**
-     * If you are using the common API functions, you most likely rather want to use \'/v1/chains/:chainID\' to get information about a chain.
+     * If you are using the common API functions, you most likely rather want to use \'/v1/chain\' to get information about a chain.
      * Get the chain info
      * @param block Block index or trie root
      */

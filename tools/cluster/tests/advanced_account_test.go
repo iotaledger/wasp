@@ -125,7 +125,7 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 	})
 	require.NoError(t, err)
 
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, tx, true, 30*time.Second)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), tx, true, 30*time.Second)
 	require.NoError(t, err)
 
 	someRandomsAddress := isc.NewEthereumAddressAgentID(common.MaxAddress)

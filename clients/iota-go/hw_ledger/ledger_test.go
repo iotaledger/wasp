@@ -78,7 +78,6 @@ func TestDeployChain(t *testing.T) {
 	require.NoError(t, err)
 
 	fmt.Println(result)
-
 }
 
 func TestSign(t *testing.T) {

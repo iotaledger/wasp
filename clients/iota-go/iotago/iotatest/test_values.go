@@ -35,8 +35,10 @@ func testTransactionData(packageAddr, senderAddr *iotago.Address) *iotago.Transa
 	return &tx
 }
 
-var TestAddress = iotago.AddressFromArray([iotago.AddressLen]byte(testval.TestBytes(iotago.AddressLen)))
-var TestDigest = iotago.MustNewDigest(testval.TestHex(iotago.DigestSize))
+var (
+	TestAddress = iotago.AddressFromArray([iotago.AddressLen]byte(testval.TestBytes(iotago.AddressLen)))
+	TestDigest  = iotago.MustNewDigest(testval.TestHex(iotago.DigestSize))
+)
 
 var TestObjectRef = &iotago.ObjectRef{
 	ObjectID: TestAddress,

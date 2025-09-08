@@ -64,7 +64,7 @@
     "peeringURL": "0.0.0.0:4000",
     "port": 4000
   },
-  "chains": {
+  "chain": {
     "broadcastUpToNPeers": 2,
     "broadcastInterval": "5s",
     "apiCacheTTL": "5m",

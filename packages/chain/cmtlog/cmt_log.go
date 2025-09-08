@@ -60,7 +60,6 @@ type Output = map[LogIndex]*isc.StateAnchor
 
 // Protocol implementation.
 type cmtLogImpl struct {
-	chainID                isc.ChainID            // Chain, for which this log is maintained by this committee.
 	cmtAddr                *cryptolib.Address     // Address of the committee running this chain.
 	consensusStateRegistry ConsensusStateRegistry // Persistent storage.
 	varLogIndex            VarLogIndex            // Calculates the current log index.
@@ -129,7 +128,6 @@ func New(
 	//
 	// Create it.
 	cl := &cmtLogImpl{
-		chainID:                chainID,
 		cmtAddr:                cmtAddr,
 		consensusStateRegistry: consensusStateRegistry,
 		varLogIndex:            nil, // Set bellow.

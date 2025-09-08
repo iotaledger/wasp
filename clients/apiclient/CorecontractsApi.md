@@ -965,7 +965,7 @@ No authorization required
 # **governanceGetChainInfo**
 > GovChainInfoResponse governanceGetChainInfo()
 
-If you are using the common API functions, you most likely rather want to use \'/v1/chains/:chainID\' to get information about a chain.
+If you are using the common API functions, you most likely rather want to use \'/v1/chain\' to get information about a chain.
 
 ### Example
 

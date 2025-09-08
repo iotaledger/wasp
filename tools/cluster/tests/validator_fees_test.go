@@ -55,7 +55,7 @@ func TestValidatorFees(t *testing.T) {
 			chainclient.PostRequestParams{Nonce: 0},
 		)
 		require.NoError(t, err2)
-		_, err2 = clu.MultiClient().WaitUntilRequestProcessedSuccessfully(context.Background(), chain.ChainID, req.ID(), false, 30*time.Second)
+		_, err2 = clu.MultiClient().WaitUntilRequestProcessedSuccessfully(context.Background(), req.ID(), false, 30*time.Second)
 		require.NoError(t, err2)
 	}
 	// send a bunch of requests
@@ -70,7 +70,7 @@ func TestValidatorFees(t *testing.T) {
 			GasBudget: iotaclient.DefaultGasBudget,
 		})
 		require.NoError(t, err)
-		_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chainID, reqTx, false, 30*time.Second)
+		_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), reqTx, false, 30*time.Second)
 		require.NoError(t, err)
 	}
 	for _, validatorKp := range validatorKps {

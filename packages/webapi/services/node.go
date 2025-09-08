@@ -5,8 +5,7 @@ import (
 	"errors"
 
 	"github.com/iotaledger/hive.go/app/shutdown"
-	"github.com/iotaledger/wasp/v2/packages/chains"
-	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/chainrunner"
 	"github.com/iotaledger/wasp/v2/packages/parameters"
 	"github.com/iotaledger/wasp/v2/packages/peering"
 	"github.com/iotaledger/wasp/v2/packages/registry"
@@ -17,7 +16,7 @@ import (
 type NodeService struct {
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
 	nodeIdentityProvider        registry.NodeIdentityProvider
-	chainsProvider              chains.Provider
+	chainRunner                 *chainrunner.ChainRunner
 	shutdownHandler             *shutdown.ShutdownHandler
 	trustedNetworkManager       peering.TrustedNetworkManager
 	l1ParamsFetcher             parameters.L1ParamsFetcher
@@ -26,7 +25,7 @@ type NodeService struct {
 func NewNodeService(
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
 	nodeIdentityProvider registry.NodeIdentityProvider,
-	chainsProvider chains.Provider,
+	chainRunner *chainrunner.ChainRunner,
 	shutdownHandler *shutdown.ShutdownHandler,
 	trustedNetworkManager peering.TrustedNetworkManager,
 	l1ParamsFetcher parameters.L1ParamsFetcher,
@@ -34,20 +33,20 @@ func NewNodeService(
 	return &NodeService{
 		chainRecordRegistryProvider: chainRecordRegistryProvider,
 		nodeIdentityProvider:        nodeIdentityProvider,
-		chainsProvider:              chainsProvider,
+		chainRunner:                 chainRunner,
 		shutdownHandler:             shutdownHandler,
 		trustedNetworkManager:       trustedNetworkManager,
 		l1ParamsFetcher:             l1ParamsFetcher,
 	}
 }
 
-func (n *NodeService) AddAccessNode(chainID isc.ChainID, peerPubKeyOrName string) error {
+func (n *NodeService) AddAccessNode(peerPubKeyOrName string) error {
 	peers, err := n.trustedNetworkManager.TrustedPeersByPubKeyOrName([]string{peerPubKeyOrName})
 	if err != nil {
 		return err
 	}
 
-	if _, err = n.chainRecordRegistryProvider.UpdateChainRecord(chainID, func(rec *registry.ChainRecord) bool {
+	if _, err = n.chainRecordRegistryProvider.UpdateChainRecord(func(rec *registry.ChainRecord) bool {
 		return rec.AddAccessNode(peers[0].PubKey())
 	}); err != nil {
 		return errors.New("error saving chain record")
@@ -56,13 +55,13 @@ func (n *NodeService) AddAccessNode(chainID isc.ChainID, peerPubKeyOrName string
 	return nil
 }
 
-func (n *NodeService) DeleteAccessNode(chainID isc.ChainID, peerPubKeyOrName string) error {
+func (n *NodeService) DeleteAccessNode(peerPubKeyOrName string) error {
 	peers, err := n.trustedNetworkManager.TrustedPeersByPubKeyOrName([]string{peerPubKeyOrName})
 	if err != nil {
 		return err
 	}
 
-	if _, err := n.chainRecordRegistryProvider.UpdateChainRecord(chainID, func(rec *registry.ChainRecord) bool {
+	if _, err := n.chainRecordRegistryProvider.UpdateChainRecord(func(rec *registry.ChainRecord) bool {
 		return rec.RemoveAccessNode(peers[0].PubKey())
 	}); err != nil {
 		return errors.New("error saving chain record")
@@ -73,7 +72,7 @@ func (n *NodeService) DeleteAccessNode(chainID isc.ChainID, peerPubKeyOrName str
 
 func (n *NodeService) NodeOwnerCertificate() []byte {
 	nodeIdentity := n.nodeIdentityProvider.NodeIdentity()
-	return governance.NewNodeOwnershipCertificate(nodeIdentity, n.chainsProvider().ValidatorAddress())
+	return governance.NewNodeOwnershipCertificate(nodeIdentity, n.chainRunner.ValidatorAddress())
 }
 
 func (n *NodeService) ShutdownNode() {

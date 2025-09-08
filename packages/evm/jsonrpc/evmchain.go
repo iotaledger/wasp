@@ -92,9 +92,6 @@ func NewEVMChain(
 	blocksFromPublisher := pipe.NewInfinitePipe[*publisher.BlockWithTrieRoot]()
 
 	pub.Events.NewBlock.Hook(func(ev *publisher.ISCEvent[*publisher.BlockWithTrieRoot]) {
-		if !ev.ChainID.Equals(*e.backend.ISCChainID()) {
-			return
-		}
 		blocksFromPublisher.In() <- ev.Payload
 	})
 

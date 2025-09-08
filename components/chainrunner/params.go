@@ -1,7 +1,7 @@
-// Package chains provides functionality for managing IOTA Smart Contract chains,
+// Package chainrunner provides functionality for managing IOTA Smart Contract chain runner,
 // including chain configuration parameters, write-ahead logging, validator settings,
 // state management, and snapshot capabilities.
-package chains
+package chainrunner
 
 import (
 	"time"
@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/hive.go/app"
 )
 
-type ParametersChains struct {
+type ParametersChainRunner struct {
 	BroadcastUpToNPeers               int           `default:"2" usage:"number of peers an offledger request is broadcasted to"`
 	BroadcastInterval                 time.Duration `default:"0s" usage:"time between re-broadcast of offledger requests; 0 value means that re-broadcasting is disabled"`
 	APICacheTTL                       time.Duration `default:"300s" usage:"time to keep processed offledger requests in api cache"`
@@ -57,15 +57,15 @@ type ParametersStateManager struct {
 }
 
 type ParametersSnapshotManager struct {
-	SnapshotsToLoad []string `default:"" usage:"list of snapshots to load; can be either single block hash of a snapshot (if a single chain has to be configured) or list of '<chainID>:<blockHash>' to configure many chains"`
-	Period          uint32   `default:"0" usage:"how often state snapshots should be made: 1000 meaning \"every 1000th state\", 0 meaning \"making snapshots is disabled\""`
-	Delay           uint32   `default:"20" usage:"how many states should pass before snapshot is produced"`
-	LocalPath       string   `default:"waspdb/snap" usage:"the path to the snapshots folder in this node's disk"`
-	NetworkPaths    []string `default:"" usage:"the list of paths to the remote (http(s)) snapshot locations; each of listed locations must contain 'INDEX' file with list of snapshot files"`
+	SnapshotToLoad string   `default:"" usage:"block hash of a snapshot to load"`
+	Period         uint32   `default:"0" usage:"how often state snapshots should be made: 1000 meaning \"every 1000th state\", 0 meaning \"making snapshots is disabled\""`
+	Delay          uint32   `default:"20" usage:"how many states should pass before snapshot is produced"`
+	LocalPath      string   `default:"waspdb/snap" usage:"the path to the snapshots folder in this node's disk"`
+	NetworkPaths   []string `default:"" usage:"the list of paths to the remote (http(s)) snapshot locations; each of listed locations must contain 'INDEX' file with list of snapshot files"`
 }
 
 var (
-	ParamsChains          = &ParametersChains{}
+	ParamsChainRunner     = &ParametersChainRunner{}
 	ParamsWAL             = &ParametersWAL{}
 	ParamsValidator       = &ParametersValidator{}
 	ParamsStateManager    = &ParametersStateManager{}
@@ -74,7 +74,7 @@ var (
 
 var params = &app.ComponentParams{
 	Params: map[string]any{
-		"chains":       ParamsChains,
+		"chain":        ParamsChainRunner,
 		"wal":          ParamsWAL,
 		"validator":    ParamsValidator,
 		"stateManager": ParamsStateManager,

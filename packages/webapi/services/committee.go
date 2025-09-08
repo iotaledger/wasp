@@ -3,9 +3,8 @@ package services
 import (
 	"errors"
 
-	"github.com/iotaledger/wasp/v2/packages/chains"
+	"github.com/iotaledger/wasp/v2/packages/chainrunner"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
-	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/peering"
 	"github.com/iotaledger/wasp/v2/packages/registry"
 	"github.com/iotaledger/wasp/v2/packages/tcrypto"
@@ -17,14 +16,14 @@ import (
 var ErrNotInCommittee = errors.New("this node is not in the committee for the chain")
 
 type CommitteeService struct {
-	chainsProvider          chains.Provider
+	chainRunner             *chainrunner.ChainRunner
 	networkProvider         peering.NetworkProvider
 	dkShareRegistryProvider registry.DKShareRegistryProvider
 }
 
-func NewCommitteeService(chainsProvider chains.Provider, networkProvider peering.NetworkProvider, dkShareRegistryProvider registry.DKShareRegistryProvider) interfaces.CommitteeService {
+func NewCommitteeService(chainRunner *chainrunner.ChainRunner, networkProvider peering.NetworkProvider, dkShareRegistryProvider registry.DKShareRegistryProvider) interfaces.CommitteeService {
 	return &CommitteeService{
-		chainsProvider:          chainsProvider,
+		chainRunner:             chainRunner,
 		networkProvider:         networkProvider,
 		dkShareRegistryProvider: dkShareRegistryProvider,
 	}
@@ -34,8 +33,8 @@ func (c *CommitteeService) GetPublicKey() *cryptolib.PublicKey {
 	return c.networkProvider.Self().PubKey()
 }
 
-func (c *CommitteeService) GetCommitteeInfo(chainID isc.ChainID) (*dto.ChainNodeInfo, error) {
-	chain, err := c.chainsProvider().Get(chainID)
+func (c *CommitteeService) GetCommitteeInfo() (*dto.ChainNodeInfo, error) {
+	chain, err := c.chainRunner.Chain()
 	if err != nil {
 		return nil, err
 	}

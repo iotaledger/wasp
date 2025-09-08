@@ -144,6 +144,10 @@ type ChainRecordRegistryEvents struct {
 }
 
 type ChainRecordRegistryImpl struct {
+	// We only have one chain. Multi-chain code left for backwards compatibility.
+	// This field is automatically updated inside OnChangeMap's callback.
+	chainID isc.ChainID
+
 	onChangeMap *onchangemap.OnChangeMap[isc.ChainIDKey, isc.ChainID, *ChainRecord]
 
 	events *ChainRecordRegistryEvents
@@ -167,16 +171,36 @@ func NewChainRecordRegistryImpl(filePath string) (*ChainRecordRegistryImpl, erro
 		},
 	}
 
+	// Upon initialization we dont need to store records onto disk, as they just were read from the disk.
+	// But we still do need callback to be called for chain ID to be updated.
+	writeChainRecordsUponUpdate := false
+
 	registry.onChangeMap = onchangemap.NewOnChangeMap(
-		onchangemap.WithChangedCallback[isc.ChainIDKey, isc.ChainID](registry.writeChainRecordsJSON),
+		onchangemap.WithChangedCallback[isc.ChainIDKey, isc.ChainID](func(chainRecords []*ChainRecord) error {
+			// Saving chain ID
+			if len(chainRecords) > 1 {
+				return fmt.Errorf("multiple chain records found, expected <= 1: %d", len(chainRecords))
+			} else if len(chainRecords) != 0 {
+				registry.chainID = chainRecords[0].ID()
+			} else {
+				registry.chainID = isc.ChainID{}
+			}
+
+			if writeChainRecordsUponUpdate {
+				return registry.writeChainRecordsJSON(chainRecords)
+			}
+
+			return nil
+		}),
 	)
+	registry.onChangeMap.CallbacksEnabled(true)
 
 	// load chain records on startup
 	if err := registry.loadChainRecordsJSON(); err != nil {
 		return nil, fmt.Errorf("unable to read chain records configuration (%s): %w", filePath, err)
 	}
 
-	registry.onChangeMap.CallbacksEnabled(true)
+	writeChainRecordsUponUpdate = true
 
 	return registry, nil
 }
@@ -193,7 +217,7 @@ func (p *ChainRecordRegistryImpl) loadChainRecordsJSON() error {
 	}
 
 	for i := range tmpChainRecords.ChainRecords {
-		if err := p.AddChainRecord(tmpChainRecords.ChainRecords[i]); err != nil {
+		if err := p.SetChainRecord(tmpChainRecords.ChainRecords[i]); err != nil {
 			return fmt.Errorf("unable to add ChainRecord to registry: %w", err)
 		}
 	}
@@ -222,24 +246,20 @@ func (p *ChainRecordRegistryImpl) Events() *ChainRecordRegistryEvents {
 	return p.events
 }
 
-func (p *ChainRecordRegistryImpl) ChainRecord(chainID isc.ChainID) (*ChainRecord, error) {
-	chainRecord, err := p.onChangeMap.Get(chainID)
+func (p *ChainRecordRegistryImpl) ChainRecord() *ChainRecord {
+	chainRecord, err := p.onChangeMap.Get(p.chainID)
 	if err != nil {
 		// chain record doesn't exist
-		return nil, nil
+		return nil
 	}
 
-	return chainRecord, nil
+	return chainRecord
 }
 
-func (p *ChainRecordRegistryImpl) ChainRecords() ([]*ChainRecord, error) {
-	return lo.Values(p.onChangeMap.All()), nil
-}
-
-func (p *ChainRecordRegistryImpl) ForEachActiveChainRecord(consumer func(*ChainRecord) bool) error {
-	chainRecords, err := p.ChainRecords()
-	if err != nil {
-		return err
+func (p *ChainRecordRegistryImpl) ForActiveChainRecord(consumer func(*ChainRecord) bool) error {
+	chainRecords := lo.Values(p.onChangeMap.All())
+	if len(chainRecords) > 1 {
+		return fmt.Errorf("multiple chain records found, expected <= 1: %d", len(chainRecords))
 	}
 
 	for _, chainRecord := range chainRecords {
@@ -255,7 +275,7 @@ func (p *ChainRecordRegistryImpl) ForEachActiveChainRecord(consumer func(*ChainR
 	return nil
 }
 
-func (p *ChainRecordRegistryImpl) AddChainRecord(chainRecord *ChainRecord) error {
+func (p *ChainRecordRegistryImpl) SetChainRecord(chainRecord *ChainRecord) error {
 	chains := len(p.onChangeMap.All())
 	// Only allow a single chain
 	if chains != 0 {
@@ -265,19 +285,19 @@ func (p *ChainRecordRegistryImpl) AddChainRecord(chainRecord *ChainRecord) error
 	return p.onChangeMap.Add(chainRecord)
 }
 
-func (p *ChainRecordRegistryImpl) DeleteChainRecord(chainID isc.ChainID) error {
-	return p.onChangeMap.Delete(chainID)
+func (p *ChainRecordRegistryImpl) DeleteChainRecord() error {
+	return p.onChangeMap.Delete(p.chainID)
 }
 
 // UpdateChainRecord modifies a ChainRecord in the Registry.
-func (p *ChainRecordRegistryImpl) UpdateChainRecord(chainID isc.ChainID, callback func(*ChainRecord) bool) (*ChainRecord, error) {
+func (p *ChainRecordRegistryImpl) UpdateChainRecord(callback func(*ChainRecord) bool) (*ChainRecord, error) {
 	var modified bool
 	callbackHook := func(chainRecord *ChainRecord) bool {
 		modified = callback(chainRecord)
 		return modified
 	}
 
-	chainRecord, err := p.onChangeMap.Modify(chainID, callbackHook)
+	chainRecord, err := p.onChangeMap.Modify(p.chainID, callbackHook)
 	if err != nil {
 		return chainRecord, err
 	}
@@ -291,8 +311,8 @@ func (p *ChainRecordRegistryImpl) UpdateChainRecord(chainID isc.ChainID, callbac
 	return chainRecord, nil
 }
 
-func (p *ChainRecordRegistryImpl) ActivateChainRecord(chainID isc.ChainID) (*ChainRecord, error) {
-	return p.UpdateChainRecord(chainID, func(r *ChainRecord) bool {
+func (p *ChainRecordRegistryImpl) ActivateChainRecord() (*ChainRecord, error) {
+	return p.UpdateChainRecord(func(r *ChainRecord) bool {
 		if r.Active {
 			// chain was already active
 			return false
@@ -302,8 +322,8 @@ func (p *ChainRecordRegistryImpl) ActivateChainRecord(chainID isc.ChainID) (*Cha
 	})
 }
 
-func (p *ChainRecordRegistryImpl) DeactivateChainRecord(chainID isc.ChainID) (*ChainRecord, error) {
-	return p.UpdateChainRecord(chainID, func(r *ChainRecord) bool {
+func (p *ChainRecordRegistryImpl) DeactivateChainRecord() (*ChainRecord, error) {
+	return p.UpdateChainRecord(func(r *ChainRecord) bool {
 		if !r.Active {
 			// chain was already disabled
 			return false

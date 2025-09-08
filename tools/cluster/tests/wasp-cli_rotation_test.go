@@ -68,8 +68,8 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 		fmt.Sprintf("--gov-controller=%s", w.WaspCliAddress.String()),
 		"--node=0",
 	)
-	matches := regexp.MustCompile(`.*ChainID:\s*([a-zA-Z0-9_]*)\s+.*`).FindStringSubmatch(strings.Join(out, " "))
-	chainID := matches[1]
+	// matches := regexp.MustCompile(`.*ChainID:\s*([a-zA-Z0-9_]*)\s+.*`).FindStringSubmatch(strings.Join(out, " "))
+	// chainID := matches[1]
 	w.ActivateChainOnAllNodes("chain1", 0)
 
 	// start a new wasp cluster
@@ -120,7 +120,7 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 	}
 
 	// activate the chain on the new nodes
-	w2.MustRun("chain", "add", "chain1", chainID)
+	w2.MustRun("chain", "add", "chain1")
 	for _, idx := range w2.Cluster.AllNodes() {
 		w2.MustRun("chain", "activate", fmt.Sprintf("--node=%d", idx))
 	}

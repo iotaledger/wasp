@@ -51,17 +51,13 @@ func TestSuccessfulEventHandling(t *testing.T) {
 
 	subscriptionManager.Subscribe(1, string(publisher.ISCEventKindNewBlock))
 
-	chainID := isctest.RandomChainID()
-
 	publisherEvent.Hook(func(iscEvent *ISCEvent) {
-		require.Exactly(t, iscEvent.ChainID, chainID.String())
 		cancel()
 	})
 
 	pub.Events.NewBlock.Trigger(&publisher.ISCEvent[*publisher.BlockWithTrieRoot]{
-		Kind:    publisher.ISCEventKindNewBlock,
-		ChainID: chainID,
-		Issuer:  isctest.NewRandomAgentID(),
+		Kind:   publisher.ISCEventKindNewBlock,
+		Issuer: isctest.NewRandomAgentID(),
 		Payload: &publisher.BlockWithTrieRoot{
 			BlockInfo: &blocklog.BlockInfo{},
 			TrieRoot:  trie.Hash{},

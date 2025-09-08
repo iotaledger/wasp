@@ -377,7 +377,7 @@ func testChained(t *testing.T, n, f, b int) {
 			testChainInsts[ii+1].input(nextInput)
 		}
 		testChainInsts[i] = *newTestConsInst(
-			t, chainID, committeeAddress, i, procCache, nodeIDs,
+			t, committeeAddress, i, procCache, nodeIDs,
 			testNodeStates, peerIdentities, dkShareProviders,
 			allRequests[i], doneCB, log,
 		)
@@ -459,7 +459,7 @@ type testConsInst struct {
 
 func newTestConsInst(
 	t *testing.T,
-	chainID isc.ChainID,
+
 	committeeAddress *cryptolib.Address,
 	stateIndex int,
 	procCache *processors.Cache,
@@ -478,7 +478,7 @@ func newTestConsInst(
 		nodeSK := peerIdentities[i].GetPrivateKey()
 		nodeDKShare, err := dkShareRegistryProviders[i].LoadDKShare(committeeAddress)
 		require.NoError(t, err)
-		nodes[nid] = cons.New(chainID, nodeStates[nid], nid, nodeSK, nodeDKShare, procCache, consInstID, gpa.NodeIDFromPublicKey, accounts.CommonAccount(), nodeLog).AsGPA()
+		nodes[nid] = cons.New(nodeStates[nid], nid, nodeSK, nodeDKShare, procCache, consInstID, gpa.NodeIDFromPublicKey, accounts.CommonAccount(), nodeLog).AsGPA()
 	}
 	tci := &testConsInst{
 		t:                                t,

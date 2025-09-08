@@ -52,7 +52,7 @@ func TestPruning(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
-	_, err = chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(context.Background(), chain.ChainID, req.ID(), true, 30*time.Second)
+	_, err = chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(context.Background(), req.ID(), true, 30*time.Second)
 	require.NoError(t, err)
 
 	// let's send 100 EVM requests (wait for each request individually, so that the chain height increases as much as possible)

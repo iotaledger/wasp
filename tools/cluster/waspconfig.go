@@ -92,7 +92,7 @@ var waspConfigTemplate = `
     "peeringURL": "localhost:{{.PeeringPort}}",
     "port": {{.PeeringPort}}
   },
-  "chains": {
+  "chain": {
     "broadcastUpToNPeers": 2,
     "broadcastInterval": "5s",
     "apiCacheTTL": "5m",

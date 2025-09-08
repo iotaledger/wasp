@@ -32,7 +32,7 @@ func (c *Controller) handleOffLedgerRequest(e echo.Context) error {
 		return apierrors.InvalidPropertyError("Request", err)
 	}
 
-	err = c.offLedgerService.EnqueueOffLedgerRequest(ch.ID(), requestDecoded)
+	err = c.offLedgerService.EnqueueOffLedgerRequest(requestDecoded)
 	if err != nil {
 		return apierrors.InvalidOffLedgerRequestError(err)
 	}

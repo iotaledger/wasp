@@ -29,7 +29,7 @@ func initTestChainOfBlocks(t *testing.T) (
 	bf := utils.NewBlockFactory(t)
 	log := testlogger.NewLogger(t)
 	store := statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-	smGPA, err := New(bf.GetChainID(), 0, nil, nil, store, mockStateManagerMetrics(), log, NewStateManagerParameters())
+	smGPA, err := New(0, nil, nil, store, mockStateManagerMetrics(), log, NewStateManagerParameters())
 	require.NoError(t, err)
 	sm, ok := smGPA.(*stateManagerGPA)
 	require.True(t, ok)

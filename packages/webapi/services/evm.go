@@ -10,7 +10,7 @@ import (
 
 	hivedb "github.com/iotaledger/hive.go/db"
 	"github.com/iotaledger/hive.go/log"
-	"github.com/iotaledger/wasp/v2/packages/chains"
+	"github.com/iotaledger/wasp/v2/packages/chainrunner"
 	"github.com/iotaledger/wasp/v2/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/metrics"
@@ -29,9 +29,9 @@ type EVMService struct {
 	evmChainServers map[isc.ChainID]*chainServer
 
 	websocketContextMutex sync.Mutex
-	websocketContexts     map[isc.ChainID]*websocketContext
+	websocketContext      *websocketContext
 
-	chainsProvider  chains.Provider
+	chainRunner     *chainrunner.ChainRunner
 	chainService    interfaces.ChainService
 	networkProvider peering.NetworkProvider
 	publisher       *publisher.Publisher
@@ -42,7 +42,7 @@ type EVMService struct {
 }
 
 func NewEVMService(
-	chainsProvider chains.Provider,
+	chainRunner *chainrunner.ChainRunner,
 	chainService interfaces.ChainService,
 	networkProvider peering.NetworkProvider,
 	pub *publisher.Publisher,
@@ -52,11 +52,10 @@ func NewEVMService(
 	log log.Logger,
 ) interfaces.EVMService {
 	return &EVMService{
-		chainsProvider:        chainsProvider,
+		chainRunner:           chainRunner,
 		chainService:          chainService,
 		evmChainServers:       map[isc.ChainID]*chainServer{},
 		evmBackendMutex:       sync.Mutex{},
-		websocketContexts:     map[isc.ChainID]*websocketContext{},
 		websocketContextMutex: sync.Mutex{},
 		networkProvider:       networkProvider,
 		publisher:             pub,
@@ -92,7 +91,7 @@ func (e *EVMService) getEVMBackend() (*chainServer, error) {
 		jsonrpc.NewEVMChain(
 			backend,
 			e.publisher,
-			e.chainsProvider().IsArchiveNode(),
+			e.chainRunner.IsArchiveNode(),
 			hivedb.EngineRocksDB,
 			e.indexDBPath,
 			e.log.NewChildLogger("EVMChain"),
@@ -124,18 +123,18 @@ func (e *EVMService) HandleJSONRPC(request *http.Request, response *echo.Respons
 	return nil
 }
 
-func (e *EVMService) getWebsocketContext(ctx context.Context, chainID isc.ChainID) *websocketContext {
+func (e *EVMService) getWebsocketContext(ctx context.Context) *websocketContext {
 	e.websocketContextMutex.Lock()
 	defer e.websocketContextMutex.Unlock()
 
-	if e.websocketContexts[chainID] != nil {
-		return e.websocketContexts[chainID]
+	if e.websocketContext != nil {
+		return e.websocketContext
 	}
 
-	e.websocketContexts[chainID] = newWebsocketContext(e.log, e.jsonrpcParams)
-	go e.websocketContexts[chainID].runCleanupTimer(ctx)
+	e.websocketContext = newWebsocketContext(e.log, e.jsonrpcParams)
+	go e.websocketContext.runCleanupTimer(ctx)
 
-	return e.websocketContexts[chainID]
+	return e.websocketContext
 }
 
 func (e *EVMService) HandleWebsocket(ctx context.Context, echoCtx echo.Context) error {
@@ -144,12 +143,7 @@ func (e *EVMService) HandleWebsocket(ctx context.Context, echoCtx echo.Context) 
 		return err
 	}
 
-	ch, err := e.chainService.GetChain()
-	if err != nil {
-		return err
-	}
-
-	wsContext := e.getWebsocketContext(ctx, ch.ID())
+	wsContext := e.getWebsocketContext(ctx)
 	websocketHandler(evmServer, wsContext, echoCtx.RealIP()).ServeHTTP(echoCtx.Response(), echoCtx.Request())
 	return nil
 }

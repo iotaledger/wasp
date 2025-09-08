@@ -23,7 +23,7 @@ import (
 	"github.com/iotaledger/hive.go/web/websockethub"
 	"github.com/iotaledger/wasp/v2/packages/authentication"
 	"github.com/iotaledger/wasp/v2/packages/chain"
-	"github.com/iotaledger/wasp/v2/packages/chains"
+	"github.com/iotaledger/wasp/v2/packages/chainrunner"
 	"github.com/iotaledger/wasp/v2/packages/daemon"
 	"github.com/iotaledger/wasp/v2/packages/dkg"
 	"github.com/iotaledger/wasp/v2/packages/evm/jsonrpc"
@@ -114,8 +114,8 @@ func NewEcho(params *ParametersWebAPI, metrics *metrics.ChainMetricsProvider, lo
 	// publish metrics to prometheus component (that exposes a separate http server on another port)
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			if strings.HasPrefix(c.Path(), "/chains/") {
-				// ignore metrics for all requests not related to "chains/<chainID>""
+			if strings.HasPrefix(c.Path(), "/chain/") {
+				// ignore metrics for all requests not related to "chain/""
 				return next(c)
 			}
 			start := time.Now()
@@ -218,7 +218,7 @@ func provide(c *dig.Container) error {
 		AppConfig                   *configuration.Configuration `name:"appConfig"`
 		ShutdownHandler             *shutdown.ShutdownHandler
 		APICacheTTL                 time.Duration `name:"apiCacheTTL"`
-		Chains                      *chains.Chains
+		ChainRunner                 *chainrunner.ChainRunner
 		ChainMetricsProvider        *metrics.ChainMetricsProvider
 		ChainRecordRegistryProvider registry.ChainRecordRegistryProvider
 		DKShareRegistryProvider     registry.DKShareRegistryProvider
@@ -279,9 +279,7 @@ func provide(c *dig.Container) error {
 			deps.ChainRecordRegistryProvider,
 			deps.DKShareRegistryProvider,
 			deps.NodeIdentityProvider,
-			func() *chains.Chains {
-				return deps.Chains
-			},
+			deps.ChainRunner,
 			func() *dkg.Node {
 				return deps.Node
 			},

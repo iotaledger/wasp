@@ -4,11 +4,9 @@ package transaction
 import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
-	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
 func NewChangeGovControllerTx(
-	chainID isc.ChainID,
 	newGovController iotago.Address,
 	// utxos iotago.OutputSet,
 	wallet cryptolib.Signer,

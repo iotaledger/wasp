@@ -27,7 +27,6 @@ type ISCEvent[T any] struct {
 	Kind      ISCEventType  `json:"kind"`
 	Issuer    isc.AgentID   `json:"issuer"`    // (AgentID) nil means issued by the VM
 	RequestID isc.RequestID `json:"requestID"` // (isc.RequestID)
-	ChainID   isc.ChainID   `json:"chainID"`   // (isc.ChainID)
 	Payload   T             `json:"payload"`
 }
 
@@ -38,7 +37,7 @@ func (e *ISCEvent[T]) String() string {
 		issuerStr = e.Issuer.String()
 	}
 
-	return fmt.Sprintf("%s | %s (%s)", e.ChainID, issuerStr, e.Kind)
+	return fmt.Sprintf("%s (%s)", issuerStr, e.Kind)
 }
 
 type BlockWithTrieRoot struct {
@@ -62,7 +61,6 @@ func triggerEvent[T any](events *Events, event *event.Event1[*ISCEvent[T]], obj 
 		Kind:      obj.Kind,
 		Issuer:    obj.Issuer,
 		RequestID: obj.RequestID,
-		ChainID:   obj.ChainID,
 		Payload:   obj.Payload,
 	})
 }
@@ -70,7 +68,6 @@ func triggerEvent[T any](events *Events, event *event.Event1[*ISCEvent[T]], obj 
 // PublishBlockEvents extracts the events from a block, its returns a chan of ISCEventType, so they can be filtered
 func PublishBlockEvents(blockApplied *blockApplied, events *Events, log log.Logger) {
 	block := blockApplied.block
-	chainID := blockApplied.chainID
 	//
 	// Publish notifications about the state change (new block).
 	blockIndex := block.StateIndex()
@@ -87,7 +84,6 @@ func PublishBlockEvents(blockApplied *blockApplied, events *Events, log log.Logg
 			BlockInfo: blockInfo,
 			TrieRoot:  block.TrieRoot(),
 		},
-		ChainID: chainID,
 	})
 
 	//
@@ -114,7 +110,6 @@ func PublishBlockEvents(blockApplied *blockApplied, events *Events, log log.Logg
 				Issuer:    receipt.Request.SenderAccount(),
 				Payload:   &ReceiptWithError{RequestReceipt: parsedReceipt, Error: vmError},
 				RequestID: receipt.Request.ID(),
-				ChainID:   chainID,
 			})
 		}
 	}
@@ -133,6 +128,5 @@ func PublishBlockEvents(blockApplied *blockApplied, events *Events, log log.Logg
 		Kind:    ISCEventKindBlockEvents,
 		Issuer:  &isc.NilAgentID{},
 		Payload: payload,
-		ChainID: chainID,
 	})
 }
