@@ -23,11 +23,13 @@ import (
 
 // Client allows to interact with a specific chain in the node, for example to send on-ledger or off-ledger requests
 type Client struct {
-	L1Client     clients.L1Client
-	WaspClient   *apiclient.APIClient
-	ChainID      isc.ChainID
-	IscPackageID func() (iotago.PackageID, error)
-	KeyPair      cryptolib.Signer
+	L1Client   clients.L1Client
+	WaspClient *apiclient.APIClient
+	ChainID    isc.ChainID
+	KeyPair    cryptolib.Signer
+
+	iscPackageIDMx sync.Mutex
+	iscPackageID   *iotago.PackageID
 }
 
 // New creates a new chainclient.Client
@@ -44,11 +46,24 @@ func New(
 		KeyPair:    keyPair,
 	}
 
-	c.IscPackageID = sync.OnceValues(func() (iotago.PackageID, error) {
-		return l1Client.GetISCPackageIDForAnchor(context.Background(), chainID.AsObjectID())
-	})
-
 	return c
+}
+
+func (c *Client) ISCPackageID(ctx context.Context) (*iotago.PackageID, error) {
+	c.iscPackageIDMx.Lock()
+	defer c.iscPackageIDMx.Unlock()
+
+	if c.iscPackageID != nil {
+		return c.iscPackageID, nil
+	}
+
+	pkgID, err := c.L1Client.GetISCPackageIDForAnchor(ctx, c.ChainID.AsObjectID())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ISC package ID for anchor: %w", err)
+	}
+	c.iscPackageID = &pkgID
+
+	return c.iscPackageID, nil
 }
 
 type PostRequestParams struct {
@@ -143,7 +158,7 @@ func (c *Client) postSingleRequest(
 		}
 	}
 
-	iscPackageID, err := c.IscPackageID()
+	iscPackageID, err := c.ISCPackageID(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ISC package ID: %w", err)
 	}
@@ -152,7 +167,7 @@ func (c *Client) postSingleRequest(
 		ctx,
 		&iscmoveclient.CreateAndSendRequestWithAssetsRequest{
 			Signer:           c.KeyPair,
-			PackageID:        iscPackageID,
+			PackageID:        *iscPackageID,
 			AnchorAddress:    c.ChainID.AsAddress().AsIotaAddress(),
 			Assets:           transferAssets,
 			Message:          msg,
