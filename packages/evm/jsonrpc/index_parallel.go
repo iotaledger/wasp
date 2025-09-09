@@ -3,6 +3,7 @@ package jsonrpc
 import (
 	"fmt"
 	"os"
+	"path"
 	"sort"
 	"sync"
 
@@ -32,7 +33,7 @@ const checkpointInterval = 9999
 
 func (c *Index) loadOrCreateCheckpoints(log log.Logger, store indexedstore.IndexedStore, latestBlockIndex, checkpointInterval uint32) ([]Checkpoint, error) {
 	// Building a list of checkpoints first, so the actual build of the index db runs faster.
-	checkpointFilePath := "/tmp/checkpoints.bin"
+	checkpointFilePath := path.Join(os.TempDir(), "checkpoints.bin")
 
 	var checkpointBlocks []uint32
 
@@ -60,7 +61,7 @@ func (c *Index) loadOrCreateCheckpoints(log log.Logger, store indexedstore.Index
 			checkpoints = bcs.MustUnmarshal[[]Checkpoint](data)
 
 			if checkpoints[0].StartBlock != latestBlockIndex {
-				panic(fmt.Sprintf("Invalid checkpoint db (Unexpected amount of hashes). Remove '%s' and try again.", checkpointFilePath))
+				log.LogFatalf("Invalid checkpoint db (Unexpected amount of hashes). Remove '%s' and try again.", checkpointFilePath)
 			}
 
 			return checkpoints, nil

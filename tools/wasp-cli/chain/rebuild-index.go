@@ -3,6 +3,7 @@ package chain
 import (
 	"runtime"
 
+	"fortio.org/safecast"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 
@@ -54,7 +55,18 @@ func initBuildIndex() *cobra.Command {
 			log.Check(err)
 		},
 	}
-	cmd.Flags().Uint8Var(&workers, "workers", uint8(runtime.NumCPU()/2), "the amount of parallel block read workers")
+
+	defaultWorkers := (runtime.NumCPU() + 1) / 2
+	if defaultWorkers < 2 {
+		defaultWorkers = 2
+	}
+
+	numWorkers, err := safecast.Convert[uint8](defaultWorkers)
+	if err != nil {
+		numWorkers = 2
+	}
+
+	cmd.Flags().Uint8Var(&workers, "workers", numWorkers, "the amount of parallel block read workers")
 
 	return cmd
 }
