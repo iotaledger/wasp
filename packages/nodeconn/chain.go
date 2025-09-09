@@ -51,11 +51,16 @@ func newNCChain(
 	wsURL string,
 	httpURL string,
 ) (*ncChain, error) {
+	packageID, err := nodeConn.httpClient.GetISCPackageIDForAnchor(ctx, chainID.AsObjectID())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ISC package ID: %w", err)
+	}
+
 	anchorAddress := chainID.AsAddress().AsIotaAddress()
 
 	feed, err := iscmoveclient.NewChainFeed(
 		ctx,
-		nodeConn.iscPackageID,
+		packageID,
 		*anchorAddress,
 		nodeConn.Logger,
 		wsURL,
@@ -76,7 +81,7 @@ func newNCChain(
 	}
 
 	ncc.shutdownWaitGroup.Add(1)
-	go ncc.postTxLoop(ctx)
+	go ncc.postTxLoop(ctx, packageID)
 
 	return ncc, nil
 }
@@ -85,7 +90,7 @@ func (ncc *ncChain) WaitUntilStopped() {
 	ncc.shutdownWaitGroup.Wait()
 }
 
-func (ncc *ncChain) postTxLoop(ctx context.Context) {
+func (ncc *ncChain) postTxLoop(ctx context.Context, packageId iotago.PackageID) {
 	defer ncc.shutdownWaitGroup.Done()
 
 	postTx := func(task publishTxTask) (*isc.StateAnchor, error) {
@@ -147,7 +152,7 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 			return nil, err
 		}
 
-		stateAnchor := isc.NewStateAnchor(anchor, ncc.nodeConn.iscPackageID)
+		stateAnchor := isc.NewStateAnchor(anchor, packageId)
 
 		return &stateAnchor, nil
 	}

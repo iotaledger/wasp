@@ -104,7 +104,6 @@ Add l1 section in `~/.wasp-cli/wasp-cli.json`
   "l1": {
     "apiaddress": "https://api.iota-rebased-alphanet.iota.cafe",
     "faucetaddress": "https://faucet.iota-rebased-alphanet.iota.cafe/gas",
-    "packageid": "0x7b2fd27e09ad438c914fe2199cc78c174da92208384ac4341f61d2a15a588463" 
   }
 ```
 

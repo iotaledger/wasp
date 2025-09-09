@@ -20,7 +20,6 @@
   "l1": {
     "websocketURL": "ws://localhost:9000",
     "httpurl": "http://localhost:9000",
-    "packageID": "",
     "maxConnectionAttempts": 30,
     "targetNetworkName": ""
   },

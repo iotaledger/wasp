@@ -10,6 +10,7 @@ import (
 
 	hivedb "github.com/iotaledger/hive.go/db"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
@@ -70,10 +71,11 @@ func openChainAndRead(dbPath string) (transaction.StateMetadata, uint32, error) 
 
 func initImportCmd() *cobra.Command {
 	var (
-		node      string
-		peers     []string
-		quorum    int
-		chainName string
+		node            string
+		peers           []string
+		quorum          int
+		chainName       string
+		iscPackageIDStr string
 	)
 
 	cmd := &cobra.Command{
@@ -91,6 +93,19 @@ func initImportCmd() *cobra.Command {
 			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 			defer cancel()
 
+			var iscPackageID = &iotago.PackageID{}
+			var err error
+
+			if iscPackageIDStr != "" {
+				iscPackageID, err = iotago.PackageIDFromHex(iscPackageIDStr)
+				log.Check(err)
+			} else {
+				log.Printf("Deploying Move contract...\n")
+				l1Client := cliclients.L1Client()
+				*iscPackageID, err = l1Client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(kp))
+				log.Check(err)
+			}
+
 			result, err := initializeDeploymentWithGasCoin(ctx, kp, node, chainName, peers, quorum)
 			if err != nil {
 				log.Fatal(err)
@@ -102,7 +117,7 @@ func initImportCmd() *cobra.Command {
 			anchorStateMetadata.GasCoinObjectID = &result.gasCoinObject
 
 			anchor, err := cliclients.L2Client().StartNewChain(ctx, &iscmoveclient.StartNewChainRequest{
-				PackageID:     config.GetPackageID(),
+				PackageID:     *iscPackageID,
 				AnchorOwner:   kp.Address(),
 				Signer:        kp,
 				GasPrice:      iotaclient.DefaultGasPrice,
@@ -118,7 +133,7 @@ func initImportCmd() *cobra.Command {
 				Signer:        kp,
 				GasPrice:      iotaclient.DefaultGasPrice,
 				GasBudget:     iotaclient.DefaultGasBudget,
-				PackageID:     config.GetPackageID(),
+				PackageID:     *iscPackageID,
 				AnchorRef:     &anchor.ObjectRef,
 			})
 			log.Check(err)
@@ -158,6 +173,7 @@ func initImportCmd() *cobra.Command {
 	waspcmd.WithPeersFlag(cmd, &peers)
 	cmd.Flags().StringVar(&chainName, "chain", "", "name of the chain")
 	log.Check(cmd.MarkFlagRequired("chain"))
+	cmd.Flags().StringVar(&iscPackageIDStr, "package-id", "", "ISC L1 package ID. If not set, new package will be deployed (see `deploy-move-contract` command)")
 	cmd.Flags().IntVar(&quorum, "quorum", 0, "quorum (default: 3/4s of the number of committee nodes)")
 
 	return cmd

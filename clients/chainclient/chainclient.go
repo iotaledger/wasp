@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"sync"
 
 	"github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/clients"
@@ -25,7 +26,7 @@ type Client struct {
 	L1Client     clients.L1Client
 	WaspClient   *apiclient.APIClient
 	ChainID      isc.ChainID
-	IscPackageID iotago.PackageID
+	IscPackageID func() (iotago.PackageID, error)
 	KeyPair      cryptolib.Signer
 }
 
@@ -34,16 +35,20 @@ func New(
 	l1Client clients.L1Client,
 	waspClient *apiclient.APIClient,
 	chainID isc.ChainID,
-	iscPackageID iotago.PackageID,
 	keyPair cryptolib.Signer,
 ) *Client {
-	return &Client{
-		L1Client:     l1Client,
-		WaspClient:   waspClient,
-		ChainID:      chainID,
-		IscPackageID: iscPackageID,
-		KeyPair:      keyPair,
+	c := &Client{
+		L1Client:   l1Client,
+		WaspClient: waspClient,
+		ChainID:    chainID,
+		KeyPair:    keyPair,
 	}
+
+	c.IscPackageID = sync.OnceValues(func() (iotago.PackageID, error) {
+		return l1Client.GetISCPackageIDForAnchor(context.Background(), chainID.AsObjectID())
+	})
+
+	return c
 }
 
 type PostRequestParams struct {
@@ -137,11 +142,17 @@ func (c *Client) postSingleRequest(
 			return nil, fmt.Errorf("failed to marshal allowance: %w", err)
 		}
 	}
+
+	iscPackageID, err := c.IscPackageID()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ISC package ID: %w", err)
+	}
+
 	return c.L1Client.L2().CreateAndSendRequestWithAssets(
 		ctx,
 		&iscmoveclient.CreateAndSendRequestWithAssetsRequest{
 			Signer:           c.KeyPair,
-			PackageID:        c.IscPackageID,
+			PackageID:        iscPackageID,
 			AnchorAddress:    c.ChainID.AsAddress().AsIotaAddress(),
 			Assets:           transferAssets,
 			Message:          msg,
