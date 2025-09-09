@@ -40,6 +40,10 @@ func (s *hookedStateDB) CreateAccount(addr common.Address) {
 	s.inner.CreateAccount(addr)
 }
 
+func (s *hookedStateDB) GetStateAndCommittedState(addr common.Address, hash common.Hash) (common.Hash, common.Hash) {
+	return s.inner.GetStateAndCommittedState(addr, hash)
+}
+
 func (s *hookedStateDB) CreateContract(addr common.Address) {
 	s.inner.CreateContract(addr)
 }
