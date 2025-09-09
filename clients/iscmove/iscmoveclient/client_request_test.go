@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -126,7 +127,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 		coinRef, _ := buildDeployMintTestcoin(t, client, cryptolibSigner)
 		testCoinRef = append(testCoinRef, coinRef)
 	}
-
+	time.Sleep(3 * time.Second)
 	t.Run("success", func(t *testing.T) {
 		txnResponse, err := newAssetsBag(client, cryptolibSigner)
 		require.NoError(t, err)
