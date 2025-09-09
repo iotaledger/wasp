@@ -69,6 +69,7 @@ func openChainAndRead(dbPath string) (transaction.StateMetadata, uint32, error) 
 	return anchorStateMetadata, latestBlock.StateIndex(), nil
 }
 
+//nolint:funlen
 func initImportCmd() *cobra.Command {
 	var (
 		node            string
@@ -93,7 +94,7 @@ func initImportCmd() *cobra.Command {
 			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 			defer cancel()
 
-			var iscPackageID = &iotago.PackageID{}
+			iscPackageID := &iotago.PackageID{}
 			var err error
 
 			if iscPackageIDStr != "" {

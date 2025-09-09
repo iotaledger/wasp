@@ -202,7 +202,7 @@ func initDeployCmd() *cobra.Command {
 
 			kp := wallet.Load()
 
-			var iscPackageID = &iotago.PackageID{}
+			iscPackageID := &iotago.PackageID{}
 			var err error
 
 			if iscPackageIDStr != "" {
