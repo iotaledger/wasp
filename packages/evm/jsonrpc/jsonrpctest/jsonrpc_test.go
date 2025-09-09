@@ -417,7 +417,7 @@ func TestRPCCall(t *testing.T) {
 	callStore := func(n uint32) {
 		receipt := env.mustSendTransactionAndWait(types.MustSignNewTx(
 			creator,
-			types.NewEIP155Signer(big.NewInt(int64(env.ChainID))),
+			env.Signer(),
 			&types.LegacyTx{
 				Nonce:    env.NonceAt(creatorAddress),
 				To:       &contractAddress,
