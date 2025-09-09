@@ -90,7 +90,7 @@ func (ncc *ncChain) WaitUntilStopped() {
 	ncc.shutdownWaitGroup.Wait()
 }
 
-func (ncc *ncChain) postTxLoop(ctx context.Context, packageId iotago.PackageID) {
+func (ncc *ncChain) postTxLoop(ctx context.Context, packageID iotago.PackageID) {
 	defer ncc.shutdownWaitGroup.Done()
 
 	postTx := func(task publishTxTask) (*isc.StateAnchor, error) {
@@ -152,7 +152,7 @@ func (ncc *ncChain) postTxLoop(ctx context.Context, packageId iotago.PackageID) 
 			return nil, err
 		}
 
-		stateAnchor := isc.NewStateAnchor(anchor, packageId)
+		stateAnchor := isc.NewStateAnchor(anchor, packageID)
 
 		return &stateAnchor, nil
 	}

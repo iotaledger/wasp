@@ -287,7 +287,7 @@ func (c *l1Client) DeployISCContracts(ctx context.Context, signer iotasigner.Sig
 }
 
 func (c *l1Client) GetISCPackageIDForAnchor(ctx context.Context, anchor iotago.ObjectID) (iotago.PackageID, error) {
-	obj, err := c.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: &anchor, Options: &iotajsonrpc.IotaObjectDataOptions{
+	obj, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: &anchor, Options: &iotajsonrpc.IotaObjectDataOptions{
 		ShowDisplay: true,
 		ShowType:    true,
 	}})
