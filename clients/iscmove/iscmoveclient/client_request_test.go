@@ -126,8 +126,9 @@ func TestCreateAndSendRequest(t *testing.T) {
 	for range 25 + 26 {
 		coinRef, _ := buildDeployMintTestcoin(t, client, cryptolibSigner)
 		testCoinRef = append(testCoinRef, coinRef)
+		time.Sleep(3 * time.Second)
+		
 	}
-	time.Sleep(3 * time.Second)
 	t.Run("success", func(t *testing.T) {
 		txnResponse, err := newAssetsBag(client, cryptolibSigner)
 		require.NoError(t, err)
