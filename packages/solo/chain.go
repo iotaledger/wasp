@@ -7,7 +7,9 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
+	"math/rand/v2"
 	"strings"
+	"time"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -281,6 +283,40 @@ func (ch *Chain) L1L2Funds(addr *cryptolib.Address) *L1L2CoinBalances {
 		L1:      ch.Env.L1CoinBalances(addr),
 		L2:      ch.L2Assets(isc.NewAddressAgentID(addr)).Coins,
 	}
+}
+
+// GetL2FundsFromFaucetWithDepositor is for multiple concurrent calls scenarios.
+// This function uses given depositorSeed to generate the depositor to call TransferAllowanceTo()
+func (ch *Chain) GetL2FundsFromFaucetWithDepositor(agentID isc.AgentID, depositorSeed []byte, baseTokens ...coin.Value) {
+	seed := cryptolib.SeedFromBytes(depositorSeed)
+	walletKey, walletAddr := ch.Env.NewKeyPair(&seed)
+	if ch.Env.L1BaseTokens(walletAddr) == 0 {
+		ch.Env.GetFundsFromFaucet(walletAddr)
+	}
+
+	var amount coin.Value
+	if len(baseTokens) > 0 {
+		amount = baseTokens[0]
+	} else {
+		amount = ch.Env.L1BaseTokens(walletAddr) / 10
+	}
+
+	// each time, the faucet provides 2000000000 * 5 balance
+	iterTimes := amount / (2000000000 * 5)
+	// call faucet for each account at least once
+	for i := uint64(0); i < uint64(iterTimes)+1; i++ {
+		ch.Env.GetFundsFromFaucet(walletAddr)
+	}
+
+	// make collosion less likely
+	rint := rand.IntN(100)
+	time.Sleep((time.Duration(rint)*50 + 100) * time.Millisecond)
+	err := ch.TransferAllowanceTo(
+		isc.NewAssets(amount),
+		agentID,
+		walletKey,
+	)
+	require.NoError(ch.Env.T, err)
 }
 
 func (ch *Chain) GetL2FundsFromFaucet(agentID isc.AgentID, baseTokens ...coin.Value) {
