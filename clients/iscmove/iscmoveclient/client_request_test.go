@@ -128,8 +128,8 @@ func TestCreateAndSendRequest(t *testing.T) {
 		time.Sleep(3 * time.Second)
 		testCoinRef = append(testCoinRef, coinRef)
 		time.Sleep(3 * time.Second)
-		
 	}
+
 	t.Run("success", func(t *testing.T) {
 		txnResponse, err := newAssetsBag(client, cryptolibSigner)
 		require.NoError(t, err)
