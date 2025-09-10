@@ -20,20 +20,28 @@ func initConsensusMetricsCmd() *cobra.Command {
 		Use:   "consensus",
 		Short: "Show current value of collected metrics of consensus",
 		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultWaspNodeFallback(node)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+			node, err = waspcmd.DefaultWaspNodeFallback(node)
+			if err != nil {
+				return err
+			}
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
 			workflowStatus, _, err := client.MetricsAPI.
 				GetChainWorkflowMetrics(ctx).
 				Execute()
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 
 			pipeMetrics, _, err := client.MetricsAPI.
 				GetChainPipeMetrics(ctx).
 				Execute()
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 
 			header := []string{"Flag name", "Value", "Last time set"}
 			table := make([][]string, 15)
@@ -52,6 +60,7 @@ func initConsensusMetricsCmd() *cobra.Command {
 			table[13] = makeWorkflowTableRow("Event VM result message pipe size", pipeMetrics.EventVMResultMsgPipeSize, time.Time{})
 			table[14] = makeWorkflowTableRow("Event timer message pipe size", pipeMetrics.EventTimerMsgPipeSize, time.Time{})
 			log.PrintTable(header, table)
+			return nil
 		},
 	}
 	waspcmd.WithWaspNodeFlag(cmd, &node)

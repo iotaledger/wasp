@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	goversion "github.com/hashicorp/go-version"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/format"
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/v2/components/app"
@@ -34,9 +35,10 @@ func initRootCmd(waspVersion string) *cobra.Command {
 		Short:   "wasp-cli is a command line tool for interacting with Wasp and its smart contracts.",
 		Long: `wasp-cli is a command line tool for interacting with Wasp and its smart contracts.
 	NOTE: this is alpha software, only suitable for testing purposes.`,
+		SilenceUsage:  true, // Disable automatic help display on errors
+		SilenceErrors: true, // Disable automatic error display on errors
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			config.Read()
-
 			whitelistedCommands := map[string]struct{}{
 				"init":            {},
 				"wallet-migrate":  {},
@@ -55,8 +57,8 @@ func initRootCmd(waspVersion string) *cobra.Command {
 				log.Fatalf("The cli will now exit.")
 			}
 		},
-		Run: func(cmd *cobra.Command, args []string) {
-			cmd.Help() //nolint:errcheck
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmd.Help()
 		},
 	}
 }
@@ -93,5 +95,12 @@ func init() {
 }
 
 func main() {
-	log.Check(rootCmd.Execute())
+	err := rootCmd.Execute()
+	if err != nil {
+		// Format and display the error using glazed, then exit
+		if formatErr := format.FormatAndExitWithError(rootCmd, err); formatErr != nil {
+			// If glazed formatting fails, fall back to the original log.Check behavior
+			log.Check(err)
+		}
+	}
 }

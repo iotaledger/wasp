@@ -24,14 +24,21 @@ func initNodeconnMetricsCmd() *cobra.Command {
 		Use:   "nodeconn",
 		Short: "Show current value of collected metrics of connection to L1",
 		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultWaspNodeFallback(node)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+			node, err = waspcmd.DefaultWaspNodeFallback(node)
+			if err != nil {
+				return err
+			}
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
 			msgsMetrics, _, err := client.MetricsAPI.GetChainMessageMetrics(ctx).Execute()
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 			printChainMessagesMetrics(msgsMetrics)
+			return nil
 		},
 	}
 	waspcmd.WithWaspNodeFlag(cmd, &node)

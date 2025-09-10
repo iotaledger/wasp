@@ -7,8 +7,6 @@ package peering
 
 import (
 	"github.com/spf13/cobra"
-
-	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
 )
 
 func initPeeringCmd() *cobra.Command {
@@ -16,8 +14,8 @@ func initPeeringCmd() *cobra.Command {
 		Use:   "peering <command>",
 		Short: "Configure peering.",
 		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			log.Check(cmd.Help())
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmd.Help()
 		},
 	}
 }
