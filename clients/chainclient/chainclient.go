@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"sync"
 
 	"github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/clients"
@@ -22,11 +23,13 @@ import (
 
 // Client allows to interact with a specific chain in the node, for example to send on-ledger or off-ledger requests
 type Client struct {
-	L1Client     clients.L1Client
-	WaspClient   *apiclient.APIClient
-	ChainID      isc.ChainID
-	IscPackageID iotago.PackageID
-	KeyPair      cryptolib.Signer
+	L1Client   clients.L1Client
+	WaspClient *apiclient.APIClient
+	ChainID    isc.ChainID
+	KeyPair    cryptolib.Signer
+
+	iscPackageIDMx sync.Mutex
+	iscPackageID   *iotago.PackageID
 }
 
 // New creates a new chainclient.Client
@@ -34,16 +37,33 @@ func New(
 	l1Client clients.L1Client,
 	waspClient *apiclient.APIClient,
 	chainID isc.ChainID,
-	iscPackageID iotago.PackageID,
 	keyPair cryptolib.Signer,
 ) *Client {
-	return &Client{
-		L1Client:     l1Client,
-		WaspClient:   waspClient,
-		ChainID:      chainID,
-		IscPackageID: iscPackageID,
-		KeyPair:      keyPair,
+	c := &Client{
+		L1Client:   l1Client,
+		WaspClient: waspClient,
+		ChainID:    chainID,
+		KeyPair:    keyPair,
 	}
+
+	return c
+}
+
+func (c *Client) ISCPackageID(ctx context.Context) (*iotago.PackageID, error) {
+	c.iscPackageIDMx.Lock()
+	defer c.iscPackageIDMx.Unlock()
+
+	if c.iscPackageID != nil {
+		return c.iscPackageID, nil
+	}
+
+	pkgID, err := c.L1Client.GetISCPackageIDForAnchor(ctx, c.ChainID.AsObjectID())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ISC package ID for anchor: %w", err)
+	}
+	c.iscPackageID = &pkgID
+
+	return c.iscPackageID, nil
 }
 
 type PostRequestParams struct {
@@ -137,11 +157,17 @@ func (c *Client) postSingleRequest(
 			return nil, fmt.Errorf("failed to marshal allowance: %w", err)
 		}
 	}
+
+	iscPackageID, err := c.ISCPackageID(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ISC package ID: %w", err)
+	}
+
 	return c.L1Client.L2().CreateAndSendRequestWithAssets(
 		ctx,
 		&iscmoveclient.CreateAndSendRequestWithAssetsRequest{
 			Signer:           c.KeyPair,
-			PackageID:        c.IscPackageID,
+			PackageID:        *iscPackageID,
 			AnchorAddress:    c.ChainID.AsAddress().AsIotaAddress(),
 			Assets:           transferAssets,
 			Message:          msg,

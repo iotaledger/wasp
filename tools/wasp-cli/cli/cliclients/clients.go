@@ -66,13 +66,10 @@ func L1Client() clients.L1Client {
 }
 
 func ChainClient(waspClient *apiclient.APIClient, chainID isc.ChainID) *chainclient.Client {
-	iscPackageID := config.GetPackageID()
-
 	return chainclient.New(
 		L1Client(),
 		waspClient,
 		chainID,
-		iscPackageID,
 		wallet.Load(),
 	)
 }

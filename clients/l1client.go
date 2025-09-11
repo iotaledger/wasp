@@ -203,6 +203,7 @@ type L1Client interface {
 	L2() L2Client
 	IotaClient() *iotaclient.Client
 	DeployISCContracts(ctx context.Context, signer iotasigner.Signer) (iotago.PackageID, error)
+	GetISCPackageIDForAnchor(ctx context.Context, anchor iotago.ObjectID) (iotago.PackageID, error)
 	FindCoinsForGasPayment(
 		ctx context.Context,
 		owner *iotago.Address,
@@ -282,6 +283,29 @@ func (c *l1Client) DeployISCContracts(ctx context.Context, signer iotasigner.Sig
 		return iotago.PackageID{}, errors.New("publish ISC contracts failed")
 	}
 	packageID := lo.Must(txnResponse.GetPublishedPackageID())
+	return *packageID, nil
+}
+
+func (c *l1Client) GetISCPackageIDForAnchor(ctx context.Context, anchor iotago.ObjectID) (iotago.PackageID, error) {
+	obj, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: &anchor, Options: &iotajsonrpc.IotaObjectDataOptions{
+		ShowDisplay: true,
+		ShowType:    true,
+	}})
+	if err != nil {
+		return iotago.PackageID{}, fmt.Errorf("retrieving anchor object: %w", err)
+	}
+
+	objectType, err := iotago.ObjectTypeFromString(*obj.Data.Type)
+	if err != nil {
+		return iotago.PackageID{}, fmt.Errorf("parsing anchor object type: %w", err)
+	}
+
+	addr := objectType.ResourceType().Address
+	packageID, err := iotago.PackageIDFromHex(addr.String())
+	if err != nil {
+		return iotago.PackageID{}, fmt.Errorf("parsing package ID: %w", err)
+	}
+
 	return *packageID, nil
 }
 
