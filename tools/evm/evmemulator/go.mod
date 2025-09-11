@@ -13,6 +13,7 @@ replace (
 
 require (
 	github.com/ethereum/go-ethereum v1.15.5
+	github.com/iotaledger/hive.go/log v0.0.0-20250409140545-e1a365dbea74
 	github.com/iotaledger/wasp/v2 v2.0.0-00010101000000-000000000000
 	github.com/iotaledger/wasp/v2/tools/wasp-cli v0.0.0-20230923193348-da186f5602e0
 	github.com/spf13/cobra v1.9.1
@@ -72,7 +73,6 @@ require (
 	github.com/iotaledger/hive.go/ds v0.0.0-20250409140545-e1a365dbea74 // indirect
 	github.com/iotaledger/hive.go/ierrors v0.0.0-20250409140545-e1a365dbea74 // indirect
 	github.com/iotaledger/hive.go/lo v0.0.0-20250409140545-e1a365dbea74 // indirect
-	github.com/iotaledger/hive.go/log v0.0.0-20250409140545-e1a365dbea74 // indirect
 	github.com/iotaledger/hive.go/runtime v0.0.0-20250409140545-e1a365dbea74 // indirect
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1.0.20250409140545-e1a365dbea74 // indirect
 	github.com/iotaledger/hive.go/stringify v0.0.0-20250409140545-e1a365dbea74 // indirect

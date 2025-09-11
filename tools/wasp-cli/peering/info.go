@@ -20,15 +20,23 @@ func initInfoCmd() *cobra.Command {
 		Use:   "info",
 		Short: "Node peering info.",
 		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultWaspNodeFallback(node)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+			node, err = waspcmd.DefaultWaspNodeFallback(node)
+			if err != nil {
+				return err
+			}
+
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 			info, _, err := client.NodeAPI.GetPeeringIdentity(ctx).Execute()
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 
 			model := &InfoModel{PubKey: info.PublicKey, PeeringURL: info.PeeringURL}
 			log.PrintCLIOutput(model)
+			return nil
 		},
 	}
 	waspcmd.WithWaspNodeFlag(cmd, &node)

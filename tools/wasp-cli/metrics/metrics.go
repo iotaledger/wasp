@@ -2,8 +2,6 @@ package metrics
 
 import (
 	"github.com/spf13/cobra"
-
-	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
 )
 
 func initMetricsCmd() *cobra.Command {
@@ -11,8 +9,8 @@ func initMetricsCmd() *cobra.Command {
 		Use:   "metrics <component>",
 		Short: "Show current value of collected metrics of some component",
 		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			log.Check(cmd.Help())
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmd.Help()
 		},
 	}
 }

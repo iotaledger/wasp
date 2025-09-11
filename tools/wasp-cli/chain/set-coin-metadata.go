@@ -2,6 +2,7 @@ package chain
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/spf13/cobra"
 
@@ -11,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/parameters"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/cliclients"
-	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/waspcmd"
 )
 
@@ -26,22 +26,30 @@ func initSetCoinMetadataCmd() *cobra.Command {
 		Use:   "set-coin-metadata <coinType>",
 		Short: "Registers coin metadata",
 		Args:  cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultWaspNodeFallback(node)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+			node, err = waspcmd.DefaultWaspNodeFallback(node)
+			if err != nil {
+				return err
+			}
 			chainAliasName = defaultChainFallback(chainAliasName)
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
 			coinType, err := coin.TypeFromString(args[0])
 			if err != nil {
-				log.Fatalf("invalid coin type: %s => %v", coinType, err)
+				return fmt.Errorf("invalid coin type: %s => %v", coinType, err)
 			}
 
 			coinInfo, err := cliclients.L1Client().GetCoinMetadata(ctx, args[0])
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 
 			totalSupply, err := cliclients.L1Client().GetTotalSupply(ctx, args[0])
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 
 			request := accounts.SetCoinMetadata.Message(&parameters.IotaCoinInfo{
 				CoinType:    coinType,
@@ -56,6 +64,7 @@ func initSetCoinMetadataCmd() *cobra.Command {
 			postRequest(ctx, client, chainAliasName, request, chainclient.PostRequestParams{
 				GasBudget: iotaclient.DefaultGasBudget,
 			}, withOffLedger)
+			return nil
 		},
 	}
 

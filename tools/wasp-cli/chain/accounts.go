@@ -32,14 +32,20 @@ func initBalanceCmd() *cobra.Command {
 		Use:   "balance [<agentid>]",
 		Short: "Show the L2 balance of the given L2 account (default: own account, `common`: chain common account)",
 		Args:  cobra.MaximumNArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultWaspNodeFallback(node)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+			node, err = waspcmd.DefaultWaspNodeFallback(node)
+			if err != nil {
+				return err
+			}
 			agentID := util.AgentIDFromArgs(args)
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
 			balance, _, err := client.CorecontractsAPI.AccountsGetAccountBalance(ctx, agentID.String()).Execute() //nolint:bodyclose // false positive
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 
 			header := []string{"token", "amount"}
 			rows := make([][]string, len(balance.Coins)+1)
@@ -54,6 +60,7 @@ func initBalanceCmd() *cobra.Command {
 			}
 
 			log.PrintTable(header, rows)
+			return nil
 		},
 	}
 
@@ -69,8 +76,12 @@ func initAccountObjectsCmd() *cobra.Command {
 		Use:   "objects [<agentid>|common]",
 		Short: "Show non-coin objects owned by a given account (default: own account, `common`: chain common account)",
 		Args:  cobra.MaximumNArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultWaspNodeFallback(node)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+			node, err = waspcmd.DefaultWaspNodeFallback(node)
+			if err != nil {
+				return err
+			}
 			chain = defaultChainFallback(chain)
 			agentID := util.AgentIDFromArgs(args)
 			ctx := context.Background()
@@ -79,11 +90,14 @@ func initAccountObjectsCmd() *cobra.Command {
 			assets, _, err := client.CorecontractsAPI.
 				AccountsGetAccountBalance(ctx, agentID.String()).
 				Execute() //nolint:bodyclose // false positive
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 
 			for _, obj := range assets.Objects {
 				log.Printf("%s: %s\n", obj.Type, obj.Id)
 			}
+			return nil
 		},
 	}
 
@@ -134,8 +148,12 @@ func initDepositCmd() *cobra.Command {
 		Use:   "deposit [<agentid>] <token-id1>|<amount1>, [<token-id2>|<amount2> ...]",
 		Short: "Deposit L1 funds into the given L2 account (default: own account, `common`: chain common account)",
 		Args:  cobra.MinimumNArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultWaspNodeFallback(node)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+			node, err = waspcmd.DefaultWaspNodeFallback(node)
+			if err != nil {
+				return err
+			}
 			chain = defaultChainFallback(chain)
 			chainID := config.GetChain(chain)
 
@@ -146,7 +164,6 @@ func initDepositCmd() *cobra.Command {
 
 			util.TryManageCoinsAmount(ctx)
 			var res *iotajsonrpc.IotaTransactionBlockResponse
-			var err error
 			if strings.Contains(args[0], "|") {
 				// deposit to own agentID
 				tokens := util.ParseFungibleTokens(util.ArgsToFungibleTokensStr(args))
@@ -184,24 +201,30 @@ func initDepositCmd() *cobra.Command {
 					)
 				})
 
-				log.Check(err)
+				if err != nil {
+					return err
+				}
 			}
 
 			if printReceipt {
 				log.Printf("L1 Gas Fee: %d\n", res.Effects.Data.GasFee())
 				ref, err := res.GetCreatedObjectByName("request", "Request")
-				log.Check(err)
+				if err != nil {
+					return err
+				}
 				receipt, _, err := client.ChainsAPI.
 					GetReceipt(ctx, ref.ObjectID.String()).
 					Execute() //nolint:bodyclose // false positive
-
-				log.Check(err)
+				if err != nil {
+					return err
+				}
 				util.LogReceipt(*receipt, 0)
 			}
+			return nil
 		},
 	}
 
-	cmd.Flags().BoolVarP(&printReceipt, "print-receipt", "p", false, "print tx recetip")
+	cmd.Flags().BoolVarP(&printReceipt, "print-receipt", "p", false, "print tx receipt")
 	waspcmd.WithWaspNodeFlag(cmd, &node)
 	withChainFlag(cmd, &chain)
 

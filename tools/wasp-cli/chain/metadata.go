@@ -88,13 +88,18 @@ func initMetadataCmd() *cobra.Command {
 		Use:   "set-metadata",
 		Short: "Updates the metadata urls for a given chain id",
 		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultWaspNodeFallback(node)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+			node, err = waspcmd.DefaultWaspNodeFallback(node)
+			if err != nil {
+				return err
+			}
 			chainAliasName = defaultChainFallback(chainAliasName)
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
 			updateMetadata(ctx, client, node, chainAliasName, withOffLedger, useCliURL, metadataArgs)
+			return nil
 		},
 	}
 
