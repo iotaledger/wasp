@@ -349,21 +349,21 @@ func (tnc *testNodeConn) PublishTX(
 		return err
 	}
 
-	res, err = iotaclient.RetryOnError(ctx, func() (*iotajsonrpc.IotaTransactionBlockResponse, error) {
-		return tnc.l1Client.GetTransactionBlock(ctx, iotaclient.GetTransactionBlockRequest{
-			Digest: &res.Digest,
+	time.Sleep(5 * time.Second)
 
-			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
-				ShowInput:          true,
-				ShowRawInput:       true,
-				ShowEffects:        true,
-				ShowEvents:         true,
-				ShowObjectChanges:  true,
-				ShowBalanceChanges: true,
-				ShowRawEffects:     true,
-			},
-		})
-	}, iotaclient.WaitForEffectsEnabled)
+	res, err = tnc.l1Client.GetTransactionBlock(ctx, iotaclient.GetTransactionBlockRequest{
+		Digest: &res.Digest,
+
+		Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+			ShowInput:          true,
+			ShowRawInput:       true,
+			ShowEffects:        true,
+			ShowEvents:         true,
+			ShowObjectChanges:  true,
+			ShowBalanceChanges: true,
+			ShowRawEffects:     true,
+		},
+	})
 	if err != nil {
 		tnc.t.Logf("GetTransactionBlock, err=%v", err)
 		return err
