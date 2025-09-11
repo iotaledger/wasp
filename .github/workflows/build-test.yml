@@ -72,7 +72,7 @@ jobs:
           args: --timeout 15m0s
           skip-cache: true
 
-      - name: Run  golangci-lint on wasp-cli
+      - name: Run golangci-lint on wasp-cli
         uses: golangci/golangci-lint-action@v7
         with:
           working-directory: tools/wasp-cli

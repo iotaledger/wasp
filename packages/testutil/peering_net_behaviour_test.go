@@ -66,6 +66,8 @@ func TestPeeringNetUnreliable(t *testing.T) {
 		inCh <- &peeringMsg{from: someNode.identity.GetPublicKey()}
 	}
 	time.Sleep(500 * time.Millisecond)
+	stopCh <- true
+
 	//
 	// Validate the results (with some tolerance for randomness).
 	{ // 50% of messages dropped + 50% duplicated -> delivered ~75%
@@ -81,9 +83,7 @@ func TestPeeringNetUnreliable(t *testing.T) {
 		require.Greater(t, avgDuration, int64(50))
 		require.Less(t, avgDuration, int64(100))
 	}
-	//
-	// Stop the test.
-	stopCh <- true
+
 	behavior.Close()
 }
 
@@ -116,6 +116,8 @@ func TestPeeringNetGoodQuality(t *testing.T) {
 		inCh <- &peeringMsg{from: someNode.identity.GetPublicKey()}
 	}
 	time.Sleep(500 * time.Millisecond)
+	stopCh <- true
+
 	//
 	// Validate the results (with some tolerance for randomness).
 	{ // All messages should be delivered.
@@ -129,8 +131,6 @@ func TestPeeringNetGoodQuality(t *testing.T) {
 		avgDuration /= int64(len(durations))
 		require.Less(t, avgDuration, int64(100))
 	}
-	//
-	// Stop the test.
-	stopCh <- true
+
 	behavior.Close()
 }

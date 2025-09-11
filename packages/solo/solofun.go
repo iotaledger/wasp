@@ -3,6 +3,7 @@ package solo
 import (
 	"hash/fnv"
 	"math"
+	"math/rand/v2"
 	"time"
 
 	"fortio.org/safecast"
@@ -63,14 +64,29 @@ func (env *Solo) NewSeedFromTestNameAndTimestamp(testName string) *cryptolib.See
 	return &seed
 }
 
-func (env *Solo) waitForNewBalance(address *cryptolib.Address, startBalance coin.Value) {
-	for range 10 {
-		if env.L1BaseTokens(address) > startBalance {
-			return
-		}
-		time.Sleep(100 * time.Millisecond)
+func (env *Solo) WaitForNewBalance(address *cryptolib.Address, startBalance coin.Value) {
+	const amountOfRetries = 10
+	currentBalance := env.L1BaseTokens(address)
+
+	if currentBalance > startBalance {
+		return
 	}
-	require.FailNow(env.T, "Could not get funds from Faucet")
+
+	count := 0
+	for {
+		if count == amountOfRetries {
+			panic("Could not get funds from Faucet")
+		}
+
+		if env.L1BaseTokens(address) > startBalance {
+			break
+		}
+
+		count++
+		// wait for random time in case of collision
+		rint := rand.IntN(100)
+		time.Sleep(time.Duration(rint)*50*time.Millisecond + time.Second)
+	}
 }
 
 // NewKeyPairWithFunds generates new ed25519 signature scheme
@@ -87,8 +103,10 @@ func (env *Solo) NewKeyPairWithFunds(seed ...*cryptolib.Seed) (*cryptolib.KeyPai
 func (env *Solo) GetFundsFromFaucet(target *cryptolib.Address) {
 	currentBalance := env.L1BaseTokens(target)
 	err := iotaclient.RequestFundsFromFaucet(env.ctx, target.AsIotaAddress(), env.l1Config.IotaFaucetURL)
+	env.WaitForNewBalance(target, currentBalance)
 	require.NoError(env.T, err)
-	env.waitForNewBalance(target, currentBalance)
+	env.WaitForNewBalance(target, currentBalance)
+	require.GreaterOrEqual(env.T, env.L1BaseTokens(target), coin.Value(iotaclient.FundsFromFaucetAmount))
 }
 
 func (env *Solo) NewKeyPair(seedOpt ...*cryptolib.Seed) (*cryptolib.KeyPair, *cryptolib.Address) {

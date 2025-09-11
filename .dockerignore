@@ -28,5 +28,6 @@ tools
 wal
 wasp
 !tools/wasp-cli
+!tools/evm/evmemulator
 wasp-cluster
 waspdb

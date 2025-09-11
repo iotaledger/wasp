@@ -86,8 +86,11 @@ func initImportCmd() *cobra.Command {
 			"It reads the metadata of the wasp chain from a local directory, then recreates the Anchors state metadata, creates a GasCoin and Anchor with equal contents. Then it deploys an new chain on a local wasp instance.\n" +
 			"After the deployment succeeded, you will need to either link or move the wasp chain files into 'waspdb/chains/data/<chainID>' and call 'chain activate'",
 		Args: cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultWaspNodeFallback(node)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			node, err := waspcmd.DefaultWaspNodeFallback(node)
+			if err != nil {
+				return err
+			}
 			chainName = defaultChainFallback(chainName)
 			kp := wallet.Load()
 
@@ -95,8 +98,6 @@ func initImportCmd() *cobra.Command {
 			defer cancel()
 
 			iscPackageID := &iotago.PackageID{}
-			var err error
-
 			if iscPackageIDStr != "" {
 				iscPackageID, err = iotago.PackageIDFromHex(iscPackageIDStr)
 				log.Check(err)
@@ -109,12 +110,14 @@ func initImportCmd() *cobra.Command {
 
 			result, err := initializeDeploymentWithGasCoin(ctx, kp, node, chainName, peers, quorum)
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
 
 			dbPath := args[0]
 			anchorStateMetadata, blockIndex, err := openChainAndRead(dbPath)
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 			anchorStateMetadata.GasCoinObjectID = &result.gasCoinObject
 
 			anchor, err := cliclients.L2Client().StartNewChain(ctx, &iscmoveclient.StartNewChainRequest{
@@ -126,7 +129,9 @@ func initImportCmd() *cobra.Command {
 				StateMetadata: make([]byte, 0),
 				InitCoinRef:   nil,
 			})
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 
 			_, err = cliclients.L2Client().UpdateAnchorStateMetadata(ctx, &iscmoveclient.UpdateAnchorStateMetadataRequest{
 				StateIndex:    blockIndex,
@@ -137,7 +142,9 @@ func initImportCmd() *cobra.Command {
 				PackageID:     *iscPackageID,
 				AnchorRef:     &anchor.ObjectRef,
 			})
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 
 			transferAnchor, err := cliclients.L1Client().TransferObject(ctx, iotaclient.TransferObjectRequest{
 				Signer:    kp.Address().AsIotaAddress(),
@@ -146,8 +153,7 @@ func initImportCmd() *cobra.Command {
 				GasBudget: iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget),
 			})
 			if err != nil {
-				log.Printf("FAILED TO CONSTRUCT -TRANSFER ANCHOR-: err:%v", err)
-				panic("omg")
+				return fmt.Errorf("failed to construct transfer anchor: %w", err)
 			}
 
 			_, err = cliclients.L1Client().SignAndExecuteTransaction(ctx, &iotaclient.SignAndExecuteTransactionRequest{
@@ -158,15 +164,14 @@ func initImportCmd() *cobra.Command {
 				},
 			})
 			if err != nil {
-				log.Printf("FAILED TO EXECUTE -TRANSFER ANCHOR-: err:%v", err)
-				panic("omg")
+				return fmt.Errorf("failed to execute transfer anchor: %w", err)
 			}
-
 			config.AddChain(chainName, anchor.ObjectID.String())
 
 			fmt.Printf("\nChain has been deployed.\nID: %s\nStateMetadata: %v\n", anchor.ObjectID.String(), anchorStateMetadata)
 			fmt.Printf("Create the following path: './waspdb/chains/data/%s' and move or link the chain files into it.\n", anchor.ObjectID.String())
 			fmt.Println("Then call `chain activate` to finalize the deployment.")
+			return nil
 		},
 	}
 

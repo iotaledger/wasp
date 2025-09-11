@@ -4,7 +4,7 @@ ARG GOLANG_IMAGE_TAG=1.24-bullseye
 # Build stage
 FROM golang:${GOLANG_IMAGE_TAG} AS build
 ARG BUILD_TAGS=rocksdb
-ARG BUILD_LD_FLAGS="--X=github.com/iotaledger/wasp/components/app.Version=v0.0.0-testing"
+ARG BUILD_LD_FLAGS="--X=github.com/iotaledger/wasp/v2/components/app.Version=v0.0.0-testing"
 
 LABEL org.label-schema.description="Wasp"
 LABEL org.label-schema.name="iotaledger/wasp"

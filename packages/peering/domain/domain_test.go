@@ -6,6 +6,7 @@ package domain_test
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -89,17 +90,17 @@ func TestRandom(t *testing.T) {
 	//
 	// Listen for messages on all the nodes.
 	var wg sync.WaitGroup
-	var r1, r2 int
+	var r1, r2 atomic.Int32
 	receiver := byte(8)
 	for i := range nodes {
 		ii := i
 		nodes[i].Attach(&peeringID, receiver, func(recv *peering.PeerMessageIn) {
 			t.Logf("%d received", ii)
 			if nodePubKeys[1].Equals(recv.SenderPubKey) {
-				r1++
+				r1.Add(1)
 			}
 			if nodePubKeys[2].Equals(recv.SenderPubKey) {
-				r2++
+				r2.Add(1)
 			}
 			wg.Done()
 		})
@@ -117,8 +118,8 @@ func TestRandom(t *testing.T) {
 		}
 		wg.Wait()
 	}
-	require.EqualValues(t, sendTo*5, r1)
-	require.EqualValues(t, sendTo*5, r2)
+	require.EqualValues(t, int32(sendTo*5), r1.Load())
+	require.EqualValues(t, int32(sendTo*5), r2.Load())
 	d1.Close()
 	d2.Close()
 	require.NoError(t, netCloser.Close())

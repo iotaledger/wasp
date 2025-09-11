@@ -27,8 +27,12 @@ func initRotateCmd() *cobra.Command {
 		Short: "Ask this node to propose rotation address.",
 		Long:  "Empty or missing argument means we cancel attempt to rotate the chain.",
 		Args:  cobra.MaximumNArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultWaspNodeFallback(node)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+			node, err = waspcmd.DefaultWaspNodeFallback(node)
+			if err != nil {
+				return err
+			}
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
@@ -37,15 +41,18 @@ func initRotateCmd() *cobra.Command {
 				rotateToAddress = &args[0]
 			}
 
-			_, err := client.ChainsAPI.RotateChain(ctx).RotateRequest(apiclient.RotateChainRequest{
+			_, err = client.ChainsAPI.RotateChain(ctx).RotateRequest(apiclient.RotateChainRequest{
 				RotateToAddress: rotateToAddress,
 			}).Execute() //nolint:bodyclose // false positive
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 			if rotateToAddress == nil {
 				log.Printf("Will stop proposing chain rotation to another address.\n")
 			} else {
 				log.Printf("Will attempt to rotate to %s\n", *rotateToAddress)
 			}
+			return nil
 		},
 	}
 	waspcmd.WithWaspNodeFlag(cmd, &node)

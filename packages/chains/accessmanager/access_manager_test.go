@@ -6,6 +6,7 @@ package accessmanager_test
 import (
 	"context"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -78,11 +79,14 @@ func testBasic(t *testing.T, n int, reliable bool) {
 	defer peeringNetwork.Close()
 
 	accessMgrs := make([]accessmanager.AccessMgr, len(peerIdentities))
+	var nodeServersMx sync.Mutex
 	nodeServers := make([][]*cryptolib.PublicKey, len(peerIdentities)) // That's the output.
 	for i := range accessMgrs {
 		ii := i
 		serversUpdatedCB := func(chainID isc.ChainID, servers []*cryptolib.PublicKey) {
 			t.Logf("servers updated, ChainID=%v, servers=%+v", chainID, servers)
+			nodeServersMx.Lock()
+			defer nodeServersMx.Unlock()
 			nodeServers[ii] = servers
 		}
 		accessMgrs[i] = accessmanager.New(ctx, serversUpdatedCB, peerIdentities[i], networkProviders[i], log.NewChildLogger(fmt.Sprintf("N#%v", i)))
@@ -105,16 +109,21 @@ func testBasic(t *testing.T, n int, reliable bool) {
 	//
 	// Wait for everyone to get the server nodes.
 	for done := false; !done; {
-		require.NoError(t, ctx.Err(), "timeout: wait for everyone to get the server nodes")
+		func() {
+			require.NoError(t, ctx.Err(), "timeout: wait for everyone to get the server nodes")
 
-		time.Sleep(100 * time.Millisecond)
-		done = true
-		for i := range nodeServers {
-			if !util.Same(nodeServers[i], peerPubKeys) {
-				t.Logf("Wait for node %v", i)
-				done = false
-				break
+			time.Sleep(100 * time.Millisecond)
+			done = true
+			nodeServersMx.Lock()
+			defer nodeServersMx.Unlock()
+
+			for i := range nodeServers {
+				if !util.Same(nodeServers[i], peerPubKeys) {
+					t.Logf("Wait for node %v", i)
+					done = false
+					break
+				}
 			}
-		}
+		}()
 	}
 }

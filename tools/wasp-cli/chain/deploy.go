@@ -196,15 +196,19 @@ func initDeployCmd() *cobra.Command {
 		Use:   "deploy --chain=<name>",
 		Short: "Deploy a new chain",
 		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
+			node, err := waspcmd.DefaultWaspNodeFallback(node)
+			if err != nil {
+				return err
+			}
+
+			chainName = defaultChainFallback(chainName)
 			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 			defer cancel()
 
 			kp := wallet.Load()
 
 			iscPackageID := &iotago.PackageID{}
-			var err error
-
 			if iscPackageIDStr != "" {
 				iscPackageID, err = iotago.PackageIDFromHex(iscPackageIDStr)
 				log.Check(err)
@@ -215,18 +219,16 @@ func initDeployCmd() *cobra.Command {
 				log.Check(err)
 			}
 
-			node = waspcmd.DefaultWaspNodeFallback(node)
-			chainName = defaultChainFallback(chainName)
-
 			result, err := initializeDeploymentWithGasCoin(ctx, kp, node, chainName, peers, quorum)
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
 			stateMetadata := initializeNewChainState(kp.Address(), result.gasCoinObject, result.l1Params)
 			chainID := finalizeChainDeployment(ctx, node, iscPackageID, *result, stateMetadata)
 
 			config.AddChain(chainName, chainID.String())
 			activateChain(ctx, node, chainName, chainID)
+			return nil
 		},
 	}
 

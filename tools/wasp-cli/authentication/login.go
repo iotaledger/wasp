@@ -30,16 +30,18 @@ func initSetTokenCmd() *cobra.Command {
 		Use:   "set-token",
 		Short: "Manually sets a token for a given node",
 		Args:  cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultWaspNodeFallback(node)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+			node, err = waspcmd.DefaultWaspNodeFallback(node)
+			if err != nil {
+				return err
+			}
 
 			config.SetToken(node, args[0])
 
 			authOutput := format.NewAuthSuccess(node, "manual")
 			authOutput.Data.Message = "Token set successfully"
-			err := format.PrintOutput(authOutput)
-
-			log.Check(err, "error formatting output")
+			return format.PrintOutput(authOutput)
 		},
 	}
 	waspcmd.WithWaspNodeFlag(cmd, &node)
@@ -52,8 +54,12 @@ func initLoginCmd() *cobra.Command {
 		Use:   "login",
 		Short: "Authenticate against a Wasp node",
 		// Args:  cobra.ArbitraryArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultWaspNodeFallback(node)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+			node, err = waspcmd.DefaultWaspNodeFallback(node)
+			if err != nil {
+				return err
+			}
 			if username == "" || password == "" {
 				scanner := bufio.NewScanner(os.Stdin)
 
@@ -63,9 +69,10 @@ func initLoginCmd() *cobra.Command {
 
 				log.Printf("Password: ")
 				// int cast is needed for windows
-				passwordBytes, err := term.ReadPassword(int(syscall.Stdin)) //nolint:unconvert
+				var passwordBytes []byte
+				passwordBytes, err = term.ReadPassword(int(syscall.Stdin)) //nolint:unconvert
 				if err != nil {
-					panic(err)
+					return err
 				}
 
 				password = string(passwordBytes)
@@ -74,9 +81,7 @@ func initLoginCmd() *cobra.Command {
 			// If credentials are still empty, exit early.
 			if username == "" || password == "" {
 				authOutput := format.NewAuthError(node, username, "Invalid credentials provided")
-				err := format.PrintOutput(authOutput)
-				log.Check(err, "error formatting output")
-				return
+				return format.PrintOutput(authOutput)
 			}
 
 			ctx := context.Background()
@@ -88,16 +93,13 @@ func initLoginCmd() *cobra.Command {
 				}).Execute()
 			if err != nil {
 				authOutput := format.NewAuthError(node, username, err.Error())
-				formatErr := format.PrintOutput(authOutput)
-				log.Check(formatErr, "error formatting output")
-				return
+				return format.PrintOutput(authOutput)
 			}
 
 			config.SetToken(node, token.Jwt)
 
 			authOutput := format.NewAuthSuccess(node, username)
-			err = format.PrintOutput(authOutput)
-			log.Check(err, "error formatting output")
+			return format.PrintOutput(authOutput)
 		},
 	}
 	waspcmd.WithWaspNodeFlag(cmd, &node)
