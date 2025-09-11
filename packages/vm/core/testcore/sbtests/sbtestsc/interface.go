@@ -12,9 +12,6 @@ var Processor = Contract.Processor(nil,
 	FuncChainAdminView.WithHandler(testChainAdminView),
 	FuncChainAdminFull.WithHandler(testChainAdminFull),
 
-	FuncEventLogGenericData.WithHandler(testEventLogGenericData),
-	FuncEventLogEventData.WithHandler(testEventLogEventData),
-	FuncEventLogDeploy.WithHandler(testEventLogDeploy),
 	FuncSandboxCall.WithHandler(testSandboxCall),
 
 	FuncPanicFullEP.WithHandler(testPanicFullEP),
@@ -53,13 +50,6 @@ var Processor = Contract.Processor(nil,
 )
 
 var (
-	// function eventlog test
-	FuncEventLogGenericData = coreutil.NewEP1(Contract, "testEventLogGenericData",
-		coreutil.FieldOptional[uint64](""),
-	)
-	FuncEventLogEventData = coreutil.NewEP0(Contract, "testEventLogEventData")
-	FuncEventLogDeploy    = coreutil.NewEP0(Contract, "testEventLogDeploy")
-
 	// Function sandbox test
 	FuncChainAdminView = coreutil.NewViewEP01(Contract, "testChainAdminView",
 		coreutil.Field[isc.AgentID](""),

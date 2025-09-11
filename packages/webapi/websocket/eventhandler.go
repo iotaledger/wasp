@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/iotaledger/hive.go/runtime/event"
-	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/publisher"
 	"github.com/iotaledger/wasp/v2/packages/webapi/models"
 )
@@ -48,18 +47,18 @@ func NewEventHandler(pub *publisher.Publisher, publishEvent *event.Event1[*ISCEv
 	}
 }
 
-func batch(callbacks ...func()) func() {
+func unhookBatch(unhookFns ...func()) func() {
 	return func() {
-		for _, callback := range callbacks {
-			if callback != nil {
-				callback()
+		for _, f := range unhookFns {
+			if f != nil {
+				f()
 			}
 		}
 	}
 }
 
 func (p *EventHandler) AttachToEvents() context.CancelFunc {
-	return batch(
+	return unhookBatch(
 		p.publisher.Events.NewBlock.Hook(func(block *publisher.ISCEvent[*publisher.BlockWithTrieRoot]) {
 			if !p.subscriptionValidator.shouldProcessEvent(block.ChainID.String(), block.Kind) {
 				return
@@ -77,15 +76,6 @@ func (p *EventHandler) AttachToEvents() context.CancelFunc {
 
 			receipt := models.MapReceiptResponse(block.Payload.RequestReceipt)
 			iscEvent := MapISCEvent(block, receipt)
-			p.publishEvent.Trigger(iscEvent)
-		}).Unhook,
-
-		p.publisher.Events.BlockEvents.Hook(func(block *publisher.ISCEvent[[]*isc.Event]) {
-			if !p.subscriptionValidator.shouldProcessEvent(block.ChainID.String(), block.Kind) {
-				return
-			}
-
-			iscEvent := MapISCEvent(block, block.Payload)
 			p.publishEvent.Trigger(iscEvent)
 		}).Unhook,
 	)

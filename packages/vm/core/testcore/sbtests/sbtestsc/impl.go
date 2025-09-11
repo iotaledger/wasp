@@ -1,21 +1,9 @@
 package sbtestsc
 
 import (
-	"github.com/samber/lo"
-
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/governance"
 )
-
-// testEventLogGenericData is called several times in log_test.go
-func testEventLogGenericData(ctx isc.Sandbox, inc *uint64) {
-	incV := lo.FromPtrOr(inc, 1)
-	eventCounter(ctx, incV)
-}
-
-func testEventLogEventData(ctx isc.Sandbox) {
-	eventTest(ctx)
-}
 
 func testChainAdminView(ctx isc.SandboxView) isc.AgentID {
 	return ctx.ChainAdmin()
@@ -27,12 +15,6 @@ func testChainAdminFull(ctx isc.Sandbox) isc.AgentID {
 
 func testSandboxCall(ctx isc.SandboxView) isc.CallArguments {
 	return ctx.CallView(governance.ViewGetChainInfo.Message())
-}
-
-func testEventLogDeploy(ctx isc.Sandbox) {
-	// Deploy the same contract with another name
-	panic("TODO: contract deployment")
-	// ctx.DeployContract(Contract.ProgramHash, VarContractNameDeployed, nil)
 }
 
 func testPanicFullEP(ctx isc.Sandbox) {

@@ -66,24 +66,6 @@ func (s *StateReader) GetRequestRecordDataByRequestID(reqID isc.RequestID) (*Req
 	return nil, nil
 }
 
-func (s *StateReader) GetEventsByBlockIndex(blockIndex uint32, totalRequests uint16) [][]byte {
-	var ret [][]byte
-	events := collections.NewMapReadOnly(s.state, prefixRequestEvents)
-	for reqIdx := uint16(0); reqIdx < totalRequests; reqIdx++ {
-		eventIndex := uint16(0)
-		for {
-			key := NewEventLookupKey(blockIndex, reqIdx, eventIndex).Bytes()
-			eventData := events.GetAt(key)
-			if eventData == nil {
-				break
-			}
-			ret = append(ret, eventData)
-			eventIndex++
-		}
-	}
-	return ret
-}
-
 func (s *StateReader) GetBlockInfo(blockIndex uint32) (*BlockInfo, bool) {
 	data := s.getBlockInfoBytes(blockIndex)
 	if data == nil {

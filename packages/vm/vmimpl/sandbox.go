@@ -6,8 +6,6 @@ package vmimpl
 import (
 	"math/big"
 
-	"fortio.org/safecast"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/eth/tracers"
 
 	"github.com/iotaledger/wasp/v2/packages/hashing"
@@ -34,21 +32,6 @@ func NewSandbox(reqctx *requestContext) isc.Sandbox {
 func (s *contractSandbox) Call(msg isc.Message, allowance *isc.Assets) isc.CallArguments {
 	s.Ctx.GasBurn(gas.BurnCodeCallContract)
 	return s.Ctx.Call(msg, allowance)
-}
-
-func (s *contractSandbox) Event(topic string, payload []byte) {
-	totalLen, err := safecast.Convert[uint64](len(topic) + len(payload))
-	if err != nil {
-		panic(err)
-	}
-	s.Ctx.GasBurn(gas.BurnCodeEmitEvent1P, totalLen)
-	hContract := s.reqctx.CurrentContractHname()
-	hex := hexutil.Encode(payload)
-	if len(hex) > 80 {
-		hex = hex[:40] + "..."
-	}
-	s.Log().Infof("event::%s -> %s(%s)", hContract.String(), topic, hex)
-	s.reqctx.mustSaveEvent(hContract, topic, payload)
 }
 
 func (s *contractSandbox) GetEntropy() hashing.HashValue {

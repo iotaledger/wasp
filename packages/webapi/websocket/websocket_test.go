@@ -28,8 +28,6 @@ func InitWebsocket(ctx context.Context, t *testing.T, eventsToSubscribe []publis
 	ws := NewWebsocketService(log.NewChildLogger("Service"), websocketHub, []publisher.ISCEventType{
 		publisher.ISCEventKindNewBlock,
 		publisher.ISCEventKindReceipt,
-		publisher.ISCEventKindBlockEvents,
-		publisher.ISCEventIssuerVM,
 	}, env.Publisher())
 
 	ws.subscriptionManager.Connect(websockethub.ClientID(0))

@@ -2,7 +2,6 @@ package blocklog
 
 import (
 	"encoding/hex"
-	"fmt"
 	"testing"
 	"time"
 
@@ -82,74 +81,6 @@ func TestPruneRequestIndexLookupTable(t *testing.T) {
 
 	// Four requests in total should be removed in digest0, therefore the amount of bytes removed should be len(RequestLookupKey)*requestsToCreate
 	require.Equal(t, len(RequestLookupKey{})*requestsToCreate, digest1Size-digest0Size)
-}
-
-func eventTopic(block uint32, requestIndex uint16, eventIndex uint16) string {
-	topic := fmt.Sprintf("fakeEvent:%d.%d.%d", block, requestIndex, eventIndex)
-	return topic
-}
-
-func createEventLookupKeys(registryArray *collections.Array, eventMap *collections.Map, contractID isc.Hname, maxBlocks uint32, maxRequests uint16, maxEvents uint16) {
-	for blockIndex := uint32(0); blockIndex < maxBlocks; blockIndex++ {
-		for reqIndex := uint16(0); reqIndex < maxRequests; reqIndex++ {
-			for eventIndex := uint16(0); eventIndex < maxEvents; eventIndex++ {
-				key := NewEventLookupKey(blockIndex, reqIndex, eventIndex).Bytes()
-				topic := eventTopic(blockIndex, reqIndex, eventIndex)
-
-				event := isc.Event{
-					Topic:      topic,
-					Payload:    nil,
-					Timestamp:  uint64(time.Now().UnixNano()),
-					ContractID: contractID,
-				}
-
-				eventMap.SetAt(key, event.Bytes())
-			}
-		}
-
-		registryArray.Push([]byte{0})
-	}
-}
-
-func validateEvents(t *testing.T, eventsInBytes [][]byte, maxRequests uint16, maxEvents uint16, blockFrom uint32, blockTo uint32) {
-	require.Len(t, eventsInBytes, int(maxRequests*maxEvents)*int(blockTo-blockFrom+1))
-
-	eventTopics := make([]string, 0)
-	for _, eventBytes := range eventsInBytes {
-		event, err := isc.EventFromBytes(eventBytes)
-		require.NoError(t, err)
-		eventTopics = append(eventTopics, event.Topic)
-	}
-
-	for blockIndex := blockFrom; blockIndex <= blockTo; blockIndex++ {
-		for reqIndex := uint16(0); reqIndex < maxRequests; reqIndex++ {
-			for eventIndex := uint16(0); eventIndex < maxEvents; eventIndex++ {
-				topic := eventTopic(blockIndex, reqIndex, eventIndex)
-				require.True(t, lo.Contains(eventTopics, topic))
-			}
-		}
-	}
-}
-
-func TestGetEventsInternal(t *testing.T) {
-	const maxBlocks = 20
-	const maxRequests = 5
-	const maxEventsPerRequest = 10
-
-	const blockFrom = 5
-	const blockTo = blockFrom + 5
-
-	contractID := isc.Hn("testytest")
-
-	d := dict.Dict{}
-
-	registry := collections.NewArray(d, prefixBlockRegistry)
-
-	eventMap := collections.NewMap(d, prefixRequestEvents)
-	createEventLookupKeys(registry, eventMap, contractID, maxBlocks, maxRequests, maxEventsPerRequest)
-
-	events := NewStateWriter(d).getSmartContractEventsInternal(EventsForContractQuery{contractID, &BlockRange{blockFrom, blockTo}})
-	validateEvents(t, events, maxRequests, maxEventsPerRequest, blockFrom, blockTo)
 }
 
 func TestBlockInfoMarshalling(t *testing.T) {
