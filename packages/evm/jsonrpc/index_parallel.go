@@ -7,6 +7,7 @@ import (
 	"sort"
 	"sync"
 
+	"fortio.org/safecast"
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/iotaledger/bcs-go"
@@ -14,22 +15,21 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/v2/packages/trie"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/governance"
 )
 
 /**
- * This parallel indexer implementation is able to re-index a whole db in parallel
+ * This Index implementation allows re-indexing the EVM JSON index in parallel.
  * It is not meant to be run by our Indexer itself. Rather by external tooling, like the wasp-cli.
  */
+
+const StatusUpdateBlockInterval = 10000
 
 type Checkpoint struct {
 	StartBlock uint32
 	EndBlock   uint32
 	TrieRoot   trie.Hash
 }
-
-// Our block retention is 10k, so this constant is needed.
-// 9999 due to implementation details. But it catches all 10k.
-const checkpointInterval = 9999
 
 func (c *Index) loadOrCreateCheckpoints(log log.Logger, store indexedstore.IndexedStore, latestBlockIndex, checkpointInterval uint32) ([]Checkpoint, error) {
 	// Building a list of checkpoints first, so the actual build of the index db runs faster.
@@ -44,14 +44,14 @@ func (c *Index) loadOrCreateCheckpoints(log log.Logger, store indexedstore.Index
 		}
 
 		// Move to next checkpoint
-		if blockIdx <= checkpointInterval {
+		if blockIdx <= checkpointInterval-1 {
 			break
 		}
 
-		blockIdx -= checkpointInterval
+		blockIdx -= checkpointInterval - 1
 	}
 
-	log.LogInfof("Need %d checkpoints at %d block intervals\n", len(checkpointBlocks), checkpointInterval)
+	log.LogInfof("Need %d checkpoints at %d block intervals\n", len(checkpointBlocks), checkpointInterval-1)
 
 	checkpoints := make([]Checkpoint, 0)
 
@@ -75,8 +75,8 @@ func (c *Index) loadOrCreateCheckpoints(log log.Logger, store indexedstore.Index
 		var endBlock uint32
 
 		if i+1 == len(checkpointBlocks) {
-			if startBlock > 10000 {
-				endBlock = startBlock - checkpointInterval
+			if startBlock > checkpointInterval {
+				endBlock = startBlock - checkpointInterval - 1
 			} else {
 				endBlock = 0
 			}
@@ -128,12 +128,15 @@ func (c *Index) IndexAllBlocksInParallel(log log.Logger, store func() indexedsto
 		return fmt.Errorf("stateByTrieRoot: %w", err)
 	}
 
+	governanceReader := governance.NewStateReaderFromChainState(state)
+	blockKeepAmount := governanceReader.GetBlockKeepAmount()
+
 	latestBlockIndex := state.BlockIndex()
 
 	log.LogInfof("Indexing %d blocks \n", latestBlockIndex)
 	log.LogInfo("Loading/Creating checkpoints..")
 
-	checkpoints, err := c.loadOrCreateCheckpoints(log, store(), latestBlockIndex, checkpointInterval)
+	checkpoints, err := c.loadOrCreateCheckpoints(log, store(), latestBlockIndex, safecast.MustConvert[uint32](blockKeepAmount))
 	if err != nil {
 		return fmt.Errorf("loadOrCreateCheckpoints: %w", err)
 	}
@@ -218,7 +221,7 @@ func (c *Index) processCheckpoint(log log.Logger, store func() indexedstore.Inde
 	blockIdx := cp.StartBlock
 
 	for {
-		if blockIdx%1000 == 0 {
+		if blockIdx%StatusUpdateBlockInterval == 0 {
 			log.LogInfof("Processing block %d\n", blockIdx)
 		}
 
@@ -278,7 +281,7 @@ func (c *Index) writeResultsToIndex(log log.Logger, results []blockData, blockIn
 
 		processed[data.blockIndex] = true
 
-		if data.blockIndex%10000 == 0 {
+		if data.blockIndex%StatusUpdateBlockInterval == 0 {
 			c.setLastBlockIndexed(blockIndexToCache)
 			c.store.Flush()
 		}
