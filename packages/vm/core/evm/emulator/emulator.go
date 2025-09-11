@@ -248,6 +248,7 @@ func (e *EVMEmulator) applyMessage(
 
 	blockContext := core.NewEVMBlockContext(header, e.ChainContext(), nil)
 	blockContext.BaseFee = new(big.Int)
+	blockContext.BlobBaseFee = big.NewInt(0) // same value as GasPrice above
 
 	vmConfig := e.vmConfig
 	vmConfig.Tracer = tracer
