@@ -19,7 +19,7 @@ import (
 
 func postRequest(ctx context.Context, client *apiclient.APIClient, chain string, msg isc.Message, params chainclient.PostRequestParams, offLedger bool) {
 	chainID := config.GetChain(chain)
-	chainClient := cliclients.ChainClient(client, chainID) //nolint:contextcheck
+	chainClient := cliclients.ChainClient(client, chainID)
 
 	if offLedger {
 		util.WithOffLedgerRequest(ctx, client, func() (isc.OffLedgerRequest, error) {

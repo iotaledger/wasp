@@ -197,7 +197,8 @@ func initDeployCmd() *cobra.Command {
 		Short: "Deploy a new chain",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			node, err := waspcmd.DefaultWaspNodeFallback(node)
+			var err error
+			node, err = waspcmd.DefaultWaspNodeFallback(node)
 			if err != nil {
 				return err
 			}

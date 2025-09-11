@@ -87,7 +87,8 @@ func initImportCmd() *cobra.Command {
 			"After the deployment succeeded, you will need to either link or move the wasp chain files into 'waspdb/chains/data/<chainID>' and call 'chain activate'",
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			node, err := waspcmd.DefaultWaspNodeFallback(node)
+			var err error
+			node, err = waspcmd.DefaultWaspNodeFallback(node)
 			if err != nil {
 				return err
 			}

@@ -171,7 +171,7 @@ func initDepositCmd() *cobra.Command {
 				allowance.SetBaseTokens(allowance.BaseTokens())
 
 				res = util.WithSCTransaction(ctx, client, func() (*iotajsonrpc.IotaTransactionBlockResponse, error) {
-					return cliclients.ChainClient(client, chainID).PostRequest(ctx, //nolint:contextcheck
+					return cliclients.ChainClient(client, chainID).PostRequest(ctx,
 						accounts.FuncDeposit.Message(),
 						chainclient.PostRequestParams{
 							Transfer:    tokens,
@@ -189,7 +189,7 @@ func initDepositCmd() *cobra.Command {
 				allowance.SetBaseTokens(allowance.BaseTokens())
 
 				res = util.WithSCTransaction(ctx, client, func() (*iotajsonrpc.IotaTransactionBlockResponse, error) {
-					return cliclients.ChainClient(client, chainID).PostRequest( //nolint:contextcheck
+					return cliclients.ChainClient(client, chainID).PostRequest(
 						ctx,
 						accounts.FuncTransferAllowanceTo.Message(agentID),
 						chainclient.PostRequestParams{
