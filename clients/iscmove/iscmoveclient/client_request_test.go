@@ -174,7 +174,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 			coinResource, assetErr := iotago.NewResourceType(*getCoinRef.Data.Type)
 			require.NoError(t, assetErr)
 
-			testCointype, assetErr := iotajsonrpc.CoinTypeFromString(coinResource.SubType1.String())
+			testCointype, assetErr := iotajsonrpc.CoinTypeFromString(coinResource.SubTypes[0].String())
 			require.NoError(t, assetErr)
 			ref := getCoinRef.Data.Ref()
 			_, assetErr = PTBTestWrapper(
@@ -240,7 +240,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 			coinResource, assetErr := iotago.NewResourceType(*getCoinRef.Data.Type)
 			require.NoError(t, assetErr)
 
-			testCointype, assetErr := iotajsonrpc.CoinTypeFromString(coinResource.SubType1.String())
+			testCointype, assetErr := iotajsonrpc.CoinTypeFromString(coinResource.SubTypes[0].String())
 			require.NoError(t, assetErr)
 			ref := getCoinRef.Data.Ref()
 			_, assetErr = PTBTestWrapper(

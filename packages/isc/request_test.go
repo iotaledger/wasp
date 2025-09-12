@@ -131,7 +131,7 @@ func TestRequestDataSerialization(t *testing.T) {
 		onledgerReq.Object.AssetsBag.AssetsBag = iscmovetest.TestAssetsBag
 		req, err = isc.OnLedgerFromMoveRequest(&onledgerReq, cryptolib.TestAddress)
 		require.NoError(t, err)
-		bcs.TestCodecAndHash(t, isc.Request(req), "5e4b3106e265")
+		bcs.TestCodecAndHash(t, isc.Request(req), "8d6536ddeb04")
 	})
 }
 

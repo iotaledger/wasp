@@ -62,6 +62,6 @@ func TestMsgShareRequestSerialization(t *testing.T) {
 			req,
 		}
 
-		bcs.TestCodecAndHash(t, msg, "113393f61482")
+		bcs.TestCodecAndHash(t, msg, "aac151a3dc18")
 	}
 }
