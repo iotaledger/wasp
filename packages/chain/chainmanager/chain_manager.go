@@ -456,9 +456,15 @@ func (cmi *chainMgrImpl) handleInputConsensusTimeout(input *inputConsensusTimeou
 
 func (cmi *chainMgrImpl) handleInputCanPropose() gpa.OutMessages {
 	cmi.log.LogDebugf("handleInputCanPropose")
-	return cmi.withAllCmtLogs(func(cl gpa.GPA) gpa.OutMessages {
+	outMsgs := cmi.withAllCmtLogs(func(cl gpa.GPA) gpa.OutMessages {
 		return cl.Input(cmtlog.NewInputCanPropose())
 	})
+
+	if !cmi.needConsensus.IsEmpty() {
+		cmi.needConsensusCB(cmi.needConsensus)
+	}
+
+	return outMsgs
 }
 
 // > UPON Reception of CmtLog.NextLI message:
@@ -590,7 +596,7 @@ func (cmi *chainMgrImpl) ensureNeedConsensus(cli *cmtLogInst, outputUntyped gpa.
 		}
 		return true
 	})
-	if mod {
+	if mod && len(cmi.cmtLogs) == 0 {
 		cmi.needConsensusCB(cmi.needConsensus)
 	}
 }
