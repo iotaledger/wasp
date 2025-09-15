@@ -15,13 +15,17 @@ func initAssetsBagCmd() *cobra.Command {
 		Use:   "assetsbag <AssetsBagID>",
 		Short: "Show the content of an AssetsBag",
 		Args:  cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			bagID, err := iotago.ObjectIDFromHex(args[0])
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 
 			ctx := context.Background()
 			assetsBag, err := cliclients.L2Client().GetAssetsBagWithBalances(ctx, bagID)
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 
 			log.Printf("AssetsBag:\n	ID: %s\n	Size: %d\n\n", assetsBag.ID, assetsBag.Size)
 			log.Printf("Balances:\n")
@@ -33,6 +37,7 @@ func initAssetsBagCmd() *cobra.Command {
 			for id, t := range assetsBag.Objects.Iterate() {
 				log.Printf("\t%s: %v\n", id, t)
 			}
+			return nil
 		},
 	}
 }

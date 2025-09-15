@@ -2,6 +2,7 @@ package inspection
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/spf13/cobra"
@@ -18,13 +19,17 @@ func initAnchorCmd() *cobra.Command {
 		Use:   "anchor <AnchorID>",
 		Short: "Show the content of an Anchor",
 		Args:  cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			objectID, err := iotago.ObjectIDFromHex(args[0])
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 
 			ctx := context.Background()
 			anchor, err := cliclients.L2Client().GetAnchorFromObjectID(ctx, objectID)
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 
 			log.Printf("Anchor:\n")
 			log.Printf("\tID: %s\n", anchor.ObjectID)
@@ -35,7 +40,7 @@ func initAnchorCmd() *cobra.Command {
 			log.Printf("\nStateMetadata decoded:\n")
 			metadata, err := transaction.StateMetadataFromBytes(anchor.Object.StateMetadata)
 			if err != nil {
-				log.Fatalf("\tCould not decode state metadata: %v\n", err)
+				return fmt.Errorf("could not decode state metadata: %v", err)
 			}
 
 			log.Printf("\tGasCoinObjectID: %s\n", metadata.GasCoinObjectID)
@@ -47,12 +52,13 @@ func initAnchorCmd() *cobra.Command {
 			log.Printf("\tSchemaVersion: %d\n", metadata.SchemaVersion)
 
 			if anchor.Object.StateIndex != 0 {
-				log.Fatalf("Skipping InitParams, as state index is not 0\n")
+				log.Printf("Skipping InitParams, as state index is not 0\n")
+				return nil
 			}
 
 			initParams, err := origin.DecodeInitParams(metadata.InitParams)
 			if err != nil {
-				log.Fatalf("\tCould not decode Init Params! Params: %s\n", metadata.InitParams.String())
+				return fmt.Errorf("could not decode Init Params! Params: %s", metadata.InitParams.String())
 			}
 
 			log.Printf("\n\tInitParams:\n")
@@ -60,6 +66,7 @@ func initAnchorCmd() *cobra.Command {
 			log.Printf("\t\tBlockKeepAmount: %d\n", initParams.BlockKeepAmount)
 			log.Printf("\t\tDeployTestContracts: %v\n", initParams.DeployTestContracts)
 			log.Printf("\t\tEVM ChainID: %d\n", initParams.EVMChainID)
+			return nil
 		},
 	}
 }
