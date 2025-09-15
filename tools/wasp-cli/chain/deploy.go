@@ -139,12 +139,12 @@ func initializeDeploymentWithGasCoin(ctx context.Context, signer wallets.Wallet,
 
 	client := cliclients.WaspClientWithVersionCheck(ctx, node)
 	_, header, err := client.ChainsAPI.GetChainInfo(ctx).Execute()
-	defer header.Body.Close()
-
 	// We expect a 404 if no chain has been deployed yet. In any other case, show the error.
 	if err != nil && !strings.Contains(err.Error(), strconv.Itoa(http.StatusNotFound)) {
 		return nil, fmt.Errorf("failed to get current chain info: %w", err)
 	}
+
+	defer header.Body.Close()
 
 	// Now check if the response is 404, if not, a Chain has already been deployed. Exit early.
 	if header != nil && header.StatusCode != http.StatusNotFound {

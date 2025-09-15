@@ -1,0 +1,28 @@
+# syntax=docker/dockerfile:1
+ARG GOLANG_IMAGE_TAG=1.24-bullseye
+
+# Build wasp-cli using the existing Dockerfile
+FROM golang:${GOLANG_IMAGE_TAG} AS wasp-cli-builder
+ARG BUILD_LD_FLAGS="--X=github.com/iotaledger/wasp/v2/components/app.Version=v0.0.0-testing"
+
+RUN update-ca-certificates
+RUN mkdir /scratch
+WORKDIR /scratch
+RUN mkdir /app
+
+COPY go.mod go.sum ./
+RUN --mount=type=cache,target=/root/.cache/go-build \
+  --mount=type=cache,target=/root/go/pkg/mod \
+  go mod download
+
+COPY . .
+RUN --mount=type=cache,target=/root/.cache/go-build \
+  --mount=type=cache,target=/root/go/pkg/mod \
+  cd ./tools/wasp-cli && CGO_ENABLED=0 go build -o /app/wasp-cli -a -ldflags=${BUILD_LD_FLAGS} .
+
+# Runtime stage with shell capabilities
+FROM alpine:latest
+RUN apk add --no-cache curl
+COPY --from=wasp-cli-builder /app/wasp-cli /usr/local/bin/wasp-cli
+RUN chmod +x /usr/local/bin/wasp-cli
+WORKDIR /wasp-src
