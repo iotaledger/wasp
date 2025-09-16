@@ -63,31 +63,19 @@ func (f *Formatter) FormatTable(output CommandOutput) string {
 		return ""
 	}
 
-	// Calculate column widths
-	maxWidths := make([]int, len(rows[0]))
-	for _, row := range rows {
-		for i, cell := range row {
-			if len(cell) > maxWidths[i] {
-				maxWidths[i] = len(cell)
-			}
-		}
-	}
-
 	var result strings.Builder
-
-	// Format each row
 	for i, row := range rows {
 		result.WriteString("| ")
-		for j, cell := range row {
-			result.WriteString(fmt.Sprintf("%-*s | ", maxWidths[j], cell))
+		for _, cell := range row {
+			result.WriteString(fmt.Sprintf("%-15s | ", cell))
 		}
 		result.WriteString("\n")
 
 		// Add separator after first row (headers)
 		if i == 0 && len(rows) > 1 {
 			result.WriteString("|")
-			for j := range row {
-				result.WriteString(strings.Repeat("-", maxWidths[j]+2) + "|")
+			for range row {
+				result.WriteString("-----------------|")
 			}
 			result.WriteString("\n")
 		}
