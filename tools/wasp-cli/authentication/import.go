@@ -6,14 +6,13 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/config"
-	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
 )
 
 func initImportCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "import",
 		Short: "Imports all JWT tokens from the config into the OS Keychain",
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			tokens := config.GetAuthTokenForImport()
 
 			fmt.Println("Importing JWT tokens from the config into the OS Keychain.")
@@ -24,11 +23,14 @@ func initImportCmd() *cobra.Command {
 					fmt.Printf("Could not import JWT token for node %q\n", k)
 				} else {
 					err := kc.SetJWTAuthToken(k, v)
-					log.Check(err)
+					if err != nil {
+						return err
+					}
 
 					fmt.Printf("Imported JWT token for node %q\n", k)
 				}
 			}
+			return nil
 		},
 	}
 	return cmd
