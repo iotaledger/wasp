@@ -117,9 +117,8 @@ func initDecodeWALCmd() *cobra.Command {
 				}
 			}
 
-			receipts, err := blocklog.RequestReceiptsFromBlock(block)
 			fmt.Printf("\nRequests:\n\n")
-
+			receipts, err := blocklog.RequestReceiptsFromBlock(block)
 			if err != nil {
 				fmt.Println("Failed to decode receipts")
 				fmt.Println(err)

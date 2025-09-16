@@ -38,14 +38,12 @@ func initInfoCmd() *cobra.Command { //nolint:funlen
 			chainInfo, res, err := client.ChainsAPI.
 				GetChainInfo(ctx).
 				Execute() //nolint:bodyclose // false positive
-
+			if err != nil {
+				return err
+			}
 			if res.StatusCode == http.StatusNotFound {
 				fmt.Print("No chain info available. Is the chain deployed and activated?\n")
 				return nil
-			}
-
-			if err != nil {
-				return err
 			}
 
 			committeeInfo, _, err := client.ChainsAPI.
