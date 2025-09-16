@@ -11,13 +11,19 @@ Run `docker-compose pull` to fetch the dependencies.
 
 Create dedicated volumes:
 ```
-docker volume create --name hornet-nest-db
 docker volume create --name wasp-db
 ```
 
 Run `docker-compose up -d` to start the setup.
 
-After startup, you should be able to see the wasp dashboard on:
+The setup will automatically:
+1. Start the L1 localnet and wait for it to be healthy
+2. Start the Wasp node and wait for it to be ready
+3. Deploy the ISC Move contract to L1
+4. Deploy and activate a chain called "localchain"
+5. Make an initial deposit to the chain
+
+After startup completes, you should be able to see the wasp dashboard on:
 http://localhost/wasp/dashboard/
 
 ### Stopping/Resuming
@@ -28,7 +34,7 @@ You can stop execution with `docker-compose down`.
 
 After `docker compose down`:
 ```
-docker volume rm wasp-db hornet-nest-db
+docker volume rm wasp-db
 ```
 
 You'll need to re-create the volumes to spin the setup up again.
@@ -41,10 +47,9 @@ The nodes will then be reachable under these ports:
   - API: <http://localhost:9090>
   - DASHBOARD: <http://localhost/wasp/dashboard>
 
-- Hornet:
-  - API: <http://localhost/api/routes>
-  - Faucet: <http://localhost/faucet>
-  - Dashboard: <http://localhost/dashboard> (username: admin, password: admin)
+- L1 Localnet:
+  - API: <http://localhost:9000>
+  - Faucet: <http://localhost:9123>
 
 ## Wasp-cli setup
 
@@ -54,8 +59,8 @@ To configure a new wasp-cli you can use the following commands:
 
 ```shell
 wasp-cli init
-wasp-cli set l1.apiaddress http://localhost:14265
-wasp-cli set l1.faucetaddress http://localhost:8091
+wasp-cli set l1.apiaddress http://localhost:9000
+wasp-cli set l1.faucetaddress http://localhost:9123/gas
 wasp-cli wasp add 0 http://localhost:9090
 ```
 
@@ -63,7 +68,7 @@ To create a chain:
 
 ```shell
 wasp-cli request-funds
-wasp-cli chain deploy --chain=testchain
+wasp-cli chain deploy --chain=localchain --node=wasp0
 ```
 
 After a chain has been created, the EVM JSON-RPC can be accessed via:
