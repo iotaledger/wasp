@@ -4,123 +4,106 @@
 package main
 
 import (
-	"crypto/ecdsa"
-	"encoding/hex"
-	"fmt"
-	"net/http"
-	"os"
+	"time"
 
-	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/core"
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/v2/packages/evm/jsonrpc"
-	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/metrics"
-	"github.com/iotaledger/wasp/v2/packages/solo"
 	"github.com/iotaledger/wasp/v2/packages/testutil/l1starter"
-	"github.com/iotaledger/wasp/v2/packages/vm/core/evm/emulator"
+	"github.com/iotaledger/wasp/v2/tools/evm/evmemulator/pkg/chains"
+	"github.com/iotaledger/wasp/v2/tools/evm/evmemulator/pkg/cli"
+	"github.com/iotaledger/wasp/v2/tools/evm/evmemulator/pkg/genesis"
+	"github.com/iotaledger/wasp/v2/tools/evm/evmemulator/pkg/server"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
 )
-
-type soloContext struct {
-	cleanup []func()
-}
-
-func (s *soloContext) cleanupAll() {
-	for i := len(s.cleanup) - 1; i >= 0; i-- {
-		s.cleanup[i]()
-	}
-}
-
-func (s *soloContext) Cleanup(f func()) {
-	s.cleanup = append(s.cleanup, f)
-}
-
-func (*soloContext) Errorf(format string, args ...interface{}) {
-	log.Printf("error: "+format, args)
-}
-
-func (*soloContext) FailNow() {
-	os.Exit(1)
-}
-
-func (s *soloContext) Fatalf(format string, args ...any) {
-	log.Printf("fatal: "+format, args)
-	s.FailNow()
-}
-
-func (*soloContext) Helper() {
-}
-
-func (*soloContext) Logf(format string, args ...any) {
-	log.Printf(format, args...)
-}
-
-func (*soloContext) Name() string {
-	return "evmemulator"
-}
-
-var listenAddress string = ":8545"
 
 func main() {
 	cmd := &cobra.Command{
 		Args:  cobra.NoArgs,
 		Run:   start,
 		Use:   "evmemulator",
-		Short: "evmemulator runs a JSONRPC server with Solo as backend",
-		Long: fmt.Sprintf(`evmemulator runs a JSONRPC server with Solo as backend.
+		Short: "evmemulator runs a JSON-RPC server with Solo as backend",
+		Long: `evmemulator runs a JSON-RPC server with Solo as backend.
 
 evmemulator does the following:
 
 - Starts an ISC chain in a Solo environment
-- Initializes 10 ethereum accounts with funds (private keys and addresses printed after init)
-- Starts a JSONRPC server at http://localhost:8545 (websocket: ws://localhost:8545/ws)
+- Initializes Ethereum accounts with funds (prints private keys and addresses; 1 account only in Hive mode, 
+	10 acounts in normal mode)
+- Starts an Ethereum JSON-RPC server at http://localhost:8545 (websocket: ws://localhost:8545/ws)
+- Starts an Engine (consensus) JSON-RPC server at http://localhost:8551. The Engine RPC server starts only under Hive mode.
 
-You can connect any Ethereum tool (eg Metamask) to this JSON-RPC server and use it for testing Ethereum contracts.
+You can connect any Ethereum tool (e.g., MetaMask) to the JSON-RPC server and use it for testing Ethereum contracts.
 
 Note: chain data is stored in-memory and will be lost upon termination.
 `,
-		),
 	}
 
 	log.Init(cmd)
-	cmd.PersistentFlags().StringVarP(&listenAddress, "listen", "l", ":8545", "listen address")
+	cmd.PersistentFlags().StringVarP(&cli.ListenAddress, "listen", "l", ":8545", "listen address")
+	cmd.PersistentFlags().StringVar(&cli.EngineListenAddress, "engine-listen", ":8551", "engine (consensus) JSON-RPC listen address")
+	cmd.PersistentFlags().StringVar(
+		&cli.NodeLaunchMode,
+		"node-launch-mode",
+		string(cli.EnumNodeLaunchModeStandalone),
+		"How to launch the L1 node: 'standalone' (start container) or 'docker-compose' (wait for external service)",
+	)
+	cmd.PersistentFlags().StringVar(&cli.RemoteHost, "remote-host", "http://localhost", "remote host")
+	cmd.PersistentFlags().StringVar(
+		&cli.GenesisJsonPath,
+		"genesis",
+		"",
+		"path to the genesis JSON file",
+	)
+	cmd.PersistentFlags().BoolVar(&cli.IsHive, "hive", false, "whether running for hive tests")
+	cmd.PersistentFlags().BoolVar(&cli.LogBodies, "log-bodies", true, "log JSON-RPC request/response bodies (verbose)")
 
 	err := cmd.Execute()
 	log.Check(err)
 }
 
-func initSolo() (*soloContext, *solo.Chain) {
-	ctx := &soloContext{}
-
-	env := solo.New(ctx, &solo.InitOptions{Debug: log.DebugFlag, PrintStackTrace: log.DebugFlag})
-
-	chainAdmin, _ := env.NewKeyPairWithFunds()
-	chain, _ := env.NewChainExt(chainAdmin, 1*isc.Million, "evmemulator", 1074, emulator.BlockKeepAll)
-	return ctx, chain
-}
-
-func createAccounts(chain *solo.Chain) (accounts []*ecdsa.PrivateKey) {
-	log.Printf("creating accounts with funds...\n")
-	header := []string{"private key", "address"}
-	var rows [][]string
-	for i := 0; i < len(solo.EthereumAccounts); i++ {
-		pk, addr := chain.EthereumAccountByIndexWithL2Funds(i)
-		accounts = append(accounts, pk)
-		rows = append(rows, []string{hex.EncodeToString(crypto.FromECDSA(pk)), addr.String()})
-	}
-	log.PrintTable(header, rows)
-	return accounts
-}
-
 func start(cmd *cobra.Command, args []string) {
-	cancel := l1starter.TestLocal()
+	var cancel func()
+	if cli.NodeLaunchMode == string(cli.EnumNodeLaunchModeStandalone) {
+		cancel = l1starter.TestLocal()
+	} else if cli.NodeLaunchMode == string(cli.EnumNodeLaunchModeDockerCompose) {
+		cancel = l1starter.TestExternal(cli.RemoteHost)
+	}
 	defer cancel()
 
-	ctx, chain := initSolo()
-	defer ctx.cleanupAll()
+	var g *core.Genesis
+	var err error
+	if cli.IsHive {
+		g, err = genesis.InitGenesis(cli.GenesisJsonPath)
+		if err != nil {
+			log.Fatalf("failed to initialize genesis: %v", err)
+		}
+		// regaulte the prefund amount for each account under hive's scenario
+		g = genesis.RegulateGenesisAccountBalance(g)
+	}
 
-	accounts := createAccounts(chain)
+	log.Printf("Initialize Solo Env\n")
+	initSoloTime := time.Now()
+	ctx, chain := chains.InitSolo(g)
+	defer ctx.CleanupAll()
+	log.Printf("Finish Initializing Solo Env: %s\n", time.Since(initSoloTime))
+
+	accounts := chains.CreateAccounts(chain)
+
+	if cli.IsHive {
+		go func() {
+			engineAPI, err := jsonrpc.NewEngineAPI(chain.EVM(), jsonrpc.NewAccountManager(accounts),
+				metrics.NewChainWebAPIMetricsProvider().CreateForChain(chain.ChainID),
+				jsonrpc.ParametersDefault())
+
+			log.Printf("starting Engine JSONRPC server on %s...\n", cli.EngineListenAddress)
+			e := server.StartServer(engineAPI, cli.EngineListenAddress, cli.LogBodies)
+			err = e.ListenAndServe()
+			log.Check(err)
+		}()
+	}
 
 	jsonRPCServer, err := jsonrpc.NewServer(
 		chain.EVM(),
@@ -129,18 +112,8 @@ func start(cmd *cobra.Command, args []string) {
 		jsonrpc.ParametersDefault(),
 	)
 	log.Check(err)
-
-	mux := http.NewServeMux()
-	mux.Handle("/ws", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		jsonRPCServer.WebsocketHandler([]string{"*"}).ServeHTTP(w, req)
-	}))
-	mux.Handle("/", jsonRPCServer)
-
-	s := &http.Server{
-		Addr:    listenAddress,
-		Handler: mux,
-	}
-	log.Printf("starting JSONRPC server on %s...\n", listenAddress)
-	err = s.ListenAndServe()
+	log.Printf("starting JSON-RPC server on %s...\n", cli.ListenAddress)
+	e := server.StartServer(jsonRPCServer, cli.ListenAddress, cli.LogBodies)
+	err = e.ListenAndServe()
 	log.Check(err)
 }

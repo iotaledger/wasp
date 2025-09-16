@@ -25,6 +25,7 @@ type WebsocketClient struct {
 	log               log.Logger
 	shutdownWaitGroup sync.WaitGroup
 	reconnectMx       sync.Mutex
+	subscriptionMx    sync.Mutex
 	subscriptions     []*subscription
 	pendingCalls      sync.Map
 }
@@ -253,6 +254,9 @@ func (c *WebsocketClient) Subscribe(
 	readCh := make(chan *jsonrpcMessage)
 	c.readers.Store(id, readCh)
 
+	c.subscriptionMx.Lock()
+	defer c.subscriptionMx.Unlock()
+
 	c.subscriptions = append(
 		c.subscriptions, &subscription{
 			method: method,
@@ -393,6 +397,9 @@ func (c *WebsocketClient) recreatePendingCalls() {
 func (c *WebsocketClient) resubscribe(ctx context.Context) {
 	c.log.LogDebugf("resubscribing to %d subscriptions", len(c.subscriptions))
 	defer c.log.LogDebugf("resubscribed")
+
+	c.subscriptionMx.Lock()
+	defer c.subscriptionMx.Unlock()
 
 	for _, sub := range c.subscriptions {
 		c.log.LogDebugf("resubscribing to %s, %+v", sub.method, sub.args)

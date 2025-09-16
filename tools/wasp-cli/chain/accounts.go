@@ -200,10 +200,6 @@ func initDepositCmd() *cobra.Command {
 						},
 					)
 				})
-
-				if err != nil {
-					return err
-				}
 			}
 
 			if printReceipt {

@@ -100,6 +100,10 @@ func (msmT *MockedSnapshotManager) WaitSnapshotCreatedCount(count uint32, sleepT
 	return wait(func() bool { return msmT.snapshotCreatedCount.Load() == count }, sleepTime, maxSleepCount)
 }
 
+func (msmT *MockedSnapshotManager) WaitSnapshotCreateFinalisedCount(count uint32, sleepTime time.Duration, maxSleepCount int) bool {
+	return wait(func() bool { return msmT.snapshotCreateFinalisedCount.Load() == count }, sleepTime, maxSleepCount)
+}
+
 // -------------------------------------
 // Implementations of snapshotManagerCore interface
 // -------------------------------------
@@ -139,7 +143,7 @@ func wait(predicateFun func() bool, sleepTime time.Duration, maxSleepCount int) 
 	if predicateFun() {
 		return true
 	}
-	for range maxSleepCount {
+	for i := 0; i < maxSleepCount; i++ {
 		time.Sleep(sleepTime)
 		if predicateFun() {
 			return true

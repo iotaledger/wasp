@@ -141,8 +141,7 @@ func (k *KeyChainFile) Set(key string, value []byte) error {
 }
 
 func (k *KeyChainFile) SetSeed(seed cryptolib.Seed) error {
-	err := k.Set(seedKey, seed[:])
-	return err
+	return k.Set(seedKey, seed[:])
 }
 
 func (k *KeyChainFile) GetSeed() (*cryptolib.Seed, error) {

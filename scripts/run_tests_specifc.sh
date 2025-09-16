@@ -15,7 +15,7 @@ if [ "$OUTPUT_TO_FILE" = false ] && [ -x "$(command -v richgo)" ]; then
 fi
 
 # enter the specific test you want to run here
-TESTS="^TestNodeConn$ github.com/iotaledger/wasp/tools/cluster/tests"
+TESTS="^TestNodeConn$ github.com/iotaledger/wasp/v2/tools/cluster/tests"
 
 make install
 

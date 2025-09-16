@@ -91,7 +91,7 @@ func TestManyRequests2(t *testing.T) {
 	sum := 0
 	for r, n := range repeats {
 		users[r], userAddr[r] = chain.Env.NewKeyPairWithFunds()
-		for range n {
+		for i := 0; i < n; i++ {
 			_, l1Res, err2 := chain.SendRequest(req, users[r])
 			require.NoError(t, err2)
 			sum++
