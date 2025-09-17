@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/iotaledger/hive.go/log"
@@ -89,7 +90,9 @@ type peeringNode struct {
 	identity   *cryptolib.KeyPair
 	sendCh     chan *peeringMsg
 	recvCh     chan *peeringMsg
+	recvCbsMx  sync.Mutex
 	recvCbs    []*peeringCb
+	closeCh    chan struct{}
 	network    *PeeringNetwork
 	log        log.Logger
 }
@@ -124,6 +127,7 @@ func newPeeringNode(peeringURL string, identity *cryptolib.KeyPair, network *Pee
 		sendCh:     sendCh,
 		recvCh:     recvCh,
 		recvCbs:    recvCbs,
+		closeCh:    make(chan struct{}),
 		network:    network,
 		log:        network.log.NewChildLogger(fmt.Sprintf("loc:%s", peeringURL)),
 	}
@@ -133,18 +137,27 @@ func newPeeringNode(peeringURL string, identity *cryptolib.KeyPair, network *Pee
 }
 
 func (n *peeringNode) recvLoop() {
-	for pm := range n.recvCh {
-		if pm.msg == nil {
-			continue
-		}
+	for {
+		select {
+		case <-n.closeCh:
+			return
+		case pm := <-n.recvCh:
+			if pm.msg == nil {
+				continue
+			}
 
-		msgPeeringID := pm.msg.PeeringID.String()
-		for _, cb := range n.recvCbs {
-			if cb.peeringID.String() == msgPeeringID && cb.receiver == pm.msg.MsgReceiver {
-				cb.callback(&peering.PeerMessageIn{
-					PeerMessageData: pm.msg,
-					SenderPubKey:    pm.from,
-				})
+			n.recvCbsMx.Lock()
+			recvCbs := n.recvCbs
+			n.recvCbsMx.Unlock()
+
+			msgPeeringID := pm.msg.PeeringID.String()
+			for _, cb := range recvCbs {
+				if cb.peeringID.String() == msgPeeringID && cb.receiver == pm.msg.MsgReceiver {
+					cb.callback(&peering.PeerMessageIn{
+						PeerMessageData: pm.msg,
+						SenderPubKey:    pm.from,
+					})
+				}
 			}
 		}
 	}
@@ -158,7 +171,7 @@ func (n *peeringNode) sendMsg(from *cryptolib.PublicKey, msg *peering.PeerMessag
 }
 
 func (n *peeringNode) Close() error {
-	close(n.recvCh)
+	close(n.closeCh)
 	return nil
 }
 
@@ -229,6 +242,9 @@ func (p *peeringNetworkProvider) Attach(
 	receiver byte,
 	callback func(recv *peering.PeerMessageIn),
 ) context.CancelFunc {
+	p.self.recvCbsMx.Lock()
+	defer p.self.recvCbsMx.Unlock()
+
 	p.self.recvCbs = append(p.self.recvCbs, &peeringCb{
 		callback:  callback,
 		destNP:    p,

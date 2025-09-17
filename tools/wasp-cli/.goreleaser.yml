@@ -9,7 +9,7 @@ builds:
   - id: wasp-cli-linux-amd64
     binary: wasp-cli
     ldflags:
-      - -s -w -X=github.com/iotaledger/wasp/components/app.Version={{ .Summary }}
+      - -s -w -X=github.com/iotaledger/wasp/v2/components/app.Version={{ .Summary }}
     main: main.go
     dir: ./tools/wasp-cli
     goos:

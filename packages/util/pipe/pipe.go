@@ -1,11 +1,15 @@
 package pipe
 
+import "sync"
+
 // InfinitePipe provides deserialised sender and receiver: it queues messages
 // sent by the sender and returns them to the receiver whenever it is ready,
 // without blocking the sender process. Depending on the backing queue, the pipe
 // might have other characteristics.
 type InfinitePipe[E any] struct {
+	inputMx   sync.Mutex
 	input     chan E
+	isClosed  bool
 	output    chan E
 	length    chan int
 	buffer    Queue[E]
@@ -71,7 +75,10 @@ func (ch *InfinitePipe[E]) Len() int {
 }
 
 func (ch *InfinitePipe[E]) Close() {
+	ch.inputMx.Lock()
+	defer ch.inputMx.Unlock()
 	close(ch.input)
+	ch.isClosed = true
 }
 
 func (ch *InfinitePipe[E]) Discard() {
@@ -80,12 +87,12 @@ func (ch *InfinitePipe[E]) Discard() {
 }
 
 func (ch *InfinitePipe[E]) TryAdd(e E, log func(msg string, args ...interface{})) {
-	defer func() {
-		if err := recover(); err != nil {
-			log("Attempt to write to a closed channel: %v", e)
-			return
-		}
-	}()
+	ch.inputMx.Lock()
+	defer ch.inputMx.Unlock()
+	if ch.isClosed {
+		log("pipe is closed, cannot add element")
+		return
+	}
 	ch.In() <- e
 }
 

@@ -56,6 +56,18 @@ func ParametersDefault() *Parameters {
 	}
 }
 
+// NewEngineAPI is strictly for Hive EIP testing, and should not be included into our regular RPC endpoint.
+func NewEngineAPI(evmChain *EVMChain, accountManager *AccountManager, metrics *metrics.ChainWebAPIMetrics, params *Parameters) (*rpc.Server, error) {
+	rpcsrv := rpc.NewServer()
+
+	err := rpcsrv.RegisterName("engine", NewEngineService(evmChain, metrics, accountManager, params))
+	if err != nil {
+		return nil, err
+	}
+
+	return rpcsrv, nil
+}
+
 func NewServer(
 	evmChain *EVMChain,
 	accountManager *AccountManager,

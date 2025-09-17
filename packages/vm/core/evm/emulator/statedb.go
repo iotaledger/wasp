@@ -81,6 +81,19 @@ func (s *StateDB) CreateAccount(addr common.Address) {
 	CreateAccount(s.kv, addr)
 }
 
+// GetStateAndCommittedState We can’t implement the “proper” geth-style GetStateAndCommittedState here.
+// In go-ethereum, “current” is the live (dirty) value after in-tx writes, while
+// “committed” is the original value from the backing trie at tx start. Our emulator
+// doesn’t track per-tx “original” values as EIP‑2200/3529 asks for.
+// As a result, current and committed collapse to the same value, so GetCommittedState
+// is effectively GetState. Implementing this properly would require an origin map and
+// journaling integrated with the tx lifecycle.
+func (s *StateDB) GetStateAndCommittedState(addr common.Address, hash common.Hash) (common.Hash, common.Hash) {
+	current := s.GetState(addr, hash)
+	committed := s.GetCommittedState(addr, hash)
+	return current, committed
+}
+
 // CreateContract is used whenever a contract is created. This may be preceded
 // by CreateAccount, but that is not required if it already existed in the
 // state due to funds sent beforehand.

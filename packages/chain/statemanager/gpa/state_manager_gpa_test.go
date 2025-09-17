@@ -523,7 +523,7 @@ func TestSnapshots(t *testing.T) {
 	checkBlocksFun()
 
 	// Time is passing, snapshots are produced and are ready
-	for range 7 {
+	for i := 0; i < 7; i++ {
 		env.sendTimerTickToNodes(timerTickPeriod) // Timer tick is not necessary; it's just a way to advance artificial timer
 	}
 	require.True(env.t, snapM.WaitSnapshotCreatedCount(snapshotCount, 10*time.Millisecond, 1000)) // To allow threads, that "create snapshots", to wake up
