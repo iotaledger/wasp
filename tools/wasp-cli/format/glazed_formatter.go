@@ -1,9 +1,17 @@
+// Package format provides output formatting utilities for the wasp-cli tool.
+//
+// It contains helpers to render data in various human-friendly formats
+// (such as tables and JSON), primarily used by command implementations
+// across the CLI to present information consistently.
 package format
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/go-go-golems/glazed/pkg/middlewares"
@@ -11,111 +19,296 @@ import (
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
 )
 
-// GlazedFormatter provides unified output formatting using glazed
+// GlazedFormatter provides proper glazed-based output formatting
 type GlazedFormatter struct {
-	processor *middlewares.TableProcessor
-	jsonMode  bool
+	jsonMode    bool
+	compactJSON bool
+	tableMode   bool
 }
 
 // NewGlazedFormatter creates a new glazed formatter
 func NewGlazedFormatter() *GlazedFormatter {
 	return &GlazedFormatter{
-		processor: middlewares.NewTableProcessor(),
-		jsonMode:  log.JSONFlag,
+		jsonMode:    log.JSONFlag || log.JSONCompactFlag,
+		compactJSON: log.JSONCompactFlag,
+		tableMode:   log.TableFlag,
 	}
 }
 
-// CommandData represents the standard structure for all command outputs
-type CommandData struct {
-	Type      string                 `json:"type"`
-	Status    string                 `json:"status"`
-	Timestamp time.Time              `json:"timestamp"`
-	Data      map[string]interface{} `json:"data"`
-}
-
-// NewCommandData creates a new command data structure
-func NewCommandData(commandType, status string, data map[string]interface{}) *CommandData {
-	return &CommandData{
-		Type:      commandType,
-		Status:    status,
-		Timestamp: time.Now().UTC(),
-		Data:      data,
+// NewGlazedFormatterWithOptions creates a new glazed formatter with specified options
+func NewGlazedFormatterWithOptions(jsonMode, compactJSON, tableMode bool) *GlazedFormatter {
+	return &GlazedFormatter{
+		jsonMode:    jsonMode,
+		compactJSON: compactJSON,
+		tableMode:   tableMode,
 	}
 }
 
-// Format formats and outputs the command data
-func (gf *GlazedFormatter) Format(commandData *CommandData) error {
-	if gf.jsonMode {
-		return gf.formatJSON(commandData)
+// FormatData formats data using proper glazed methods
+func (gf *GlazedFormatter) FormatData(data map[string]interface{}) error {
+	// Always check the current flag values for dynamic behavior
+	if log.JSONFlag || log.JSONCompactFlag || gf.jsonMode {
+		return gf.formatJSON(data)
 	}
-	return gf.formatTable(commandData)
+	if log.TableFlag || gf.tableMode {
+		return gf.formatTable(data)
+	}
+	return gf.formatSimple(data)
 }
 
-// formatJSON outputs the data as JSON
-func (gf *GlazedFormatter) formatJSON(commandData *CommandData) error {
-	jsonBytes, err := json.MarshalIndent(commandData, "", "  ")
+// formatJSON outputs data as JSON
+func (gf *GlazedFormatter) formatJSON(data map[string]interface{}) error {
+	var jsonBytes []byte
+	var err error
+
+	// Check if compact JSON is requested (either via flag or formatter option)
+	if log.JSONCompactFlag || gf.compactJSON {
+		jsonBytes, err = json.Marshal(data)
+	} else {
+		// Default to pretty-printed JSON
+		jsonBytes, err = json.MarshalIndent(data, "", "  ")
+	}
+
 	if err != nil {
 		return fmt.Errorf("failed to marshal JSON: %w", err)
 	}
-
 	fmt.Println(string(jsonBytes))
 	return nil
 }
 
-// formatTable outputs the data as a table using glazed
-func (gf *GlazedFormatter) formatTable(commandData *CommandData) error {
-	ctx := context.Background()
-
-	// Create a new processor for this output
-	processor := middlewares.NewTableProcessor()
-
-	// Add metadata row
-	metadataRow := types.NewRow(
-		types.MRP("type", commandData.Type),
-		types.MRP("status", commandData.Status),
-		types.MRP("timestamp", commandData.Timestamp.Format(time.RFC3339)),
-	)
-
-	if err := processor.AddRow(ctx, metadataRow); err != nil {
-		return fmt.Errorf("failed to add metadata row: %w", err)
+// formatSimple outputs data as simple key-value pairs (default format)
+func (gf *GlazedFormatter) formatSimple(data map[string]interface{}) error {
+	if len(data) == 0 {
+		return nil
 	}
 
-	// Add data rows
-	for key, value := range commandData.Data {
-		dataRow := types.NewRow(
-			types.MRP("field", key),
-			types.MRP("value", fmt.Sprintf("%v", value)),
-		)
+	// Filter out metadata fields for simple output
+	filteredData := make(map[string]interface{})
+	metadataFields := map[string]bool{
+		"type":      true,
+		"status":    true,
+		"timestamp": true,
+	}
 
-		if err := processor.AddRow(ctx, dataRow); err != nil {
-			return fmt.Errorf("failed to add data row: %w", err)
+	for k, v := range data {
+		if !metadataFields[k] {
+			filteredData[k] = v
 		}
 	}
 
-	// Render the table
-	if err := processor.Close(ctx); err != nil {
-		return fmt.Errorf("failed to render table: %w", err)
+	// Sort keys for consistent output
+	keys := make([]string, 0, len(filteredData))
+	for k := range filteredData {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	// Print key-value pairs
+	for _, key := range keys {
+		value := filteredData[key]
+		fmt.Printf("%s: %v\n", key, value)
 	}
 
 	return nil
 }
 
-// FormatSuccess creates and formats a successful command output
-func (gf *GlazedFormatter) FormatSuccess(commandType string, data map[string]interface{}) error {
-	commandData := NewCommandData(commandType, "success", data)
-	return gf.Format(commandData)
-}
-
-// FormatError creates and formats an error command output
-func (gf *GlazedFormatter) FormatError(commandType string, errorMsg string) error {
-	data := map[string]interface{}{
-		"error": errorMsg,
+// wrapText wraps text to fit within a specified width
+func wrapText(text string, width int) []string {
+	if len(text) <= width {
+		return []string{text}
 	}
-	commandData := NewCommandData(commandType, "error", data)
-	return gf.Format(commandData)
+
+	var lines []string
+	words := strings.Fields(text)
+	if len(words) == 0 {
+		return []string{text}
+	}
+
+	currentLine := words[0]
+	for _, word := range words[1:] {
+		if len(currentLine)+1+len(word) <= width {
+			currentLine += " " + word
+		} else {
+			lines = append(lines, currentLine)
+			currentLine = word
+		}
+	}
+	lines = append(lines, currentLine)
+
+	return lines
 }
 
-// FormatAuthResult formats authentication results using glazed
+// formatTable outputs data as a table using glazed with proper output handling
+func (gf *GlazedFormatter) formatTable(data map[string]interface{}) error {
+	ctx := context.Background()
+
+	// Create a glazed TableProcessor
+	processor := middlewares.NewTableProcessor()
+
+	// Convert data to glazed row
+	row := types.NewRowFromMap(data)
+
+	// Add the row to the processor
+	if err := processor.AddRow(ctx, row); err != nil {
+		return fmt.Errorf("failed to add row: %w", err)
+	}
+
+	// Close the processor
+	if err := processor.Close(ctx); err != nil {
+		return fmt.Errorf("failed to close processor: %w", err)
+	}
+
+	if len(data) == 0 {
+		return nil
+	}
+
+	// Compute columns and widths
+	columns, maxWidths := computeColumnsAndWidths(data)
+
+	// Render table
+	renderTopBorder(columns, maxWidths)
+	renderHeaders(columns, maxWidths)
+	renderHeaderSeparator(columns, maxWidths)
+
+	wrappedColumns, maxRows := computeWrappedColumns(data, columns, maxWidths)
+	renderDataRows(columns, maxWidths, wrappedColumns, maxRows)
+	renderBottomBorder(columns, maxWidths)
+
+	return nil
+}
+
+// computeColumnsAndWidths returns sorted column names and their max widths with limits applied
+func computeColumnsAndWidths(data map[string]interface{}) ([]string, map[string]int) {
+	columns := make([]string, 0, len(data))
+	maxWidths := make(map[string]int)
+
+	for key := range data {
+		columns = append(columns, key)
+		headerWidth := len(key)
+		value := fmt.Sprintf("%v", data[key])
+		dataWidth := len(value)
+
+		w := headerWidth
+		if dataWidth > w {
+			w = dataWidth
+		}
+		if w < 10 {
+			w = 10
+		}
+		if w > 30 {
+			w = 30
+		}
+		maxWidths[key] = w
+	}
+
+	sort.Strings(columns)
+	return columns, maxWidths
+}
+
+func renderTopBorder(columns []string, maxWidths map[string]int) {
+	fmt.Print("┌")
+	for i, col := range columns {
+		if i > 0 {
+			fmt.Print("┬")
+		}
+		fmt.Print(strings.Repeat("─", maxWidths[col]+2))
+	}
+	fmt.Println("┐")
+}
+
+func renderHeaders(columns []string, maxWidths map[string]int) {
+	fmt.Print("│")
+	for i, colName := range columns {
+		if i > 0 {
+			fmt.Print("│")
+		}
+		fmt.Printf(" %-*s ", maxWidths[colName], colName)
+	}
+	fmt.Println("│")
+}
+
+func renderHeaderSeparator(columns []string, maxWidths map[string]int) {
+	fmt.Print("├")
+	for i, col := range columns {
+		if i > 0 {
+			fmt.Print("┼")
+		}
+		fmt.Print(strings.Repeat("─", maxWidths[col]+2))
+	}
+	fmt.Println("┤")
+}
+
+func computeWrappedColumns(data map[string]interface{}, columns []string, maxWidths map[string]int) (map[string][]string, int) {
+	wrappedColumns := make(map[string][]string)
+	maxRows := 1
+	for _, colName := range columns {
+		value := fmt.Sprintf("%v", data[colName])
+		wrapped := wrapText(value, maxWidths[colName])
+		wrappedColumns[colName] = wrapped
+		if len(wrapped) > maxRows {
+			maxRows = len(wrapped)
+		}
+	}
+	return wrappedColumns, maxRows
+}
+
+func renderDataRows(columns []string, maxWidths map[string]int, wrappedColumns map[string][]string, maxRows int) {
+	for row := 0; row < maxRows; row++ {
+		fmt.Print("│")
+		for i, colName := range columns {
+			if i > 0 {
+				fmt.Print("│")
+			}
+			var cellText string
+			if row < len(wrappedColumns[colName]) {
+				cellText = wrappedColumns[colName][row]
+			}
+			fmt.Printf(" %-*s ", maxWidths[colName], cellText)
+		}
+		fmt.Println("│")
+	}
+}
+
+func renderBottomBorder(columns []string, maxWidths map[string]int) {
+	fmt.Print("└")
+	for i, col := range columns {
+		if i > 0 {
+			fmt.Print("┴")
+		}
+		fmt.Print(strings.Repeat("─", maxWidths[col]+2))
+	}
+	fmt.Println("┘")
+}
+
+// FormatSuccess formats successful command output
+func (gf *GlazedFormatter) FormatSuccess(commandType string, data map[string]interface{}) error {
+	outputData := map[string]interface{}{
+		"type":      commandType,
+		"status":    "success",
+		"timestamp": time.Now().UTC().Format(time.RFC3339),
+	}
+
+	// Merge command data
+	for k, v := range data {
+		outputData[k] = v
+	}
+
+	return gf.FormatData(outputData)
+}
+
+// FormatError formats error command output
+func (gf *GlazedFormatter) FormatError(commandType string, errorMsg string) error {
+	outputData := map[string]interface{}{
+		"type":      commandType,
+		"status":    "error",
+		"timestamp": time.Now().UTC().Format(time.RFC3339),
+		"error":     errorMsg,
+	}
+
+	return gf.FormatData(outputData)
+}
+
+// FormatAuthResult formats authentication results
 func (gf *GlazedFormatter) FormatAuthResult(status, node, username, message string) error {
 	data := map[string]interface{}{
 		"node":     node,
@@ -126,11 +319,13 @@ func (gf *GlazedFormatter) FormatAuthResult(status, node, username, message stri
 		data["message"] = message
 	}
 
-	commandData := NewCommandData("auth", status, data)
-	return gf.Format(commandData)
+	if status == "success" {
+		return gf.FormatSuccess("auth", data)
+	}
+	return gf.FormatError("auth", message)
 }
 
-// FormatWalletBalance formats wallet balance results using glazed
+// FormatWalletBalance formats wallet balance results
 func (gf *GlazedFormatter) FormatWalletBalance(addressIndex uint32, address string, balances interface{}) error {
 	data := map[string]interface{}{
 		"address_index": addressIndex,
@@ -138,36 +333,60 @@ func (gf *GlazedFormatter) FormatWalletBalance(addressIndex uint32, address stri
 		"balances":      balances,
 	}
 
-	commandData := NewCommandData("wallet_balance", "success", data)
-	return gf.Format(commandData)
+	return gf.FormatSuccess("wallet_balance", data)
 }
 
-// FormatWalletAddress formats wallet address results using glazed
+// FormatWalletAddress formats wallet address results
 func (gf *GlazedFormatter) FormatWalletAddress(addressIndex uint32, address string) error {
 	data := map[string]interface{}{
 		"address_index": addressIndex,
 		"address":       address,
 	}
 
-	commandData := NewCommandData("wallet_address", "success", data)
-	return gf.Format(commandData)
+	return gf.FormatSuccess("wallet_address", data)
 }
 
-// Global glazed formatter instance
-var defaultGlazedFormatter = NewGlazedFormatter()
+// Global formatter instance
+var defaultFormatter = NewGlazedFormatter()
 
-// FormatOutput formats output using the default glazed formatter
-func FormatOutput(commandType, status string, data map[string]interface{}) error {
-	commandData := NewCommandData(commandType, status, data)
-	return defaultGlazedFormatter.Format(commandData)
-}
-
-// FormatSuccess formats a successful output using the default glazed formatter
+// FormatSuccess formats a successful command output with a given command type and data using the default formatter.
 func FormatSuccess(commandType string, data map[string]interface{}) error {
-	return defaultGlazedFormatter.FormatSuccess(commandType, data)
+	return defaultFormatter.FormatSuccess(commandType, data)
 }
 
-// FormatError formats an error output using the default glazed formatter
+// FormatError formats an error message along with a command type for output handling. It uses the defaultFormatter instance.
 func FormatError(commandType string, errorMsg string) error {
-	return defaultGlazedFormatter.FormatError(commandType, errorMsg)
+	return defaultFormatter.FormatError(commandType, errorMsg)
+}
+
+// FormatAuthResult formats the authentication result with status, node, username, and message for output.
+func FormatAuthResult(status, node, username, message string) error {
+	return defaultFormatter.FormatAuthResult(status, node, username, message)
+}
+
+// FormatWalletBalance formats and outputs wallet balance information for a specific address and index.
+func FormatWalletBalance(addressIndex uint32, address string, balances interface{}) error {
+	return defaultFormatter.FormatWalletBalance(addressIndex, address, balances)
+}
+
+// FormatWalletAddress formats and outputs a wallet address, given its index and address string, using the default formatter.
+func FormatWalletAddress(addressIndex uint32, address string) error {
+	return defaultFormatter.FormatWalletAddress(addressIndex, address)
+}
+
+// FormatAndExitWithError formats an error and exits
+func FormatAndExitWithError(cmd interface{}, err error) error {
+	if err == nil {
+		return nil
+	}
+
+	// Format the error
+	if formatErr := FormatError("application", err.Error()); formatErr != nil {
+		// If formatting fails, just print the error
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+	}
+
+	// Exit with error code
+	os.Exit(1)
+	return nil // Never reached
 }
