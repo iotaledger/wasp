@@ -14,10 +14,9 @@ jobs:
     - name: Set up Go 1.x
       uses: actions/setup-go@v5
       with:
-        go-version: '1.21'
+        go-version: '1.24'
 
     - name: Test
       run: |
         cd clients/iota-go
         go test -v ./...
-

@@ -1,8 +1,8 @@
 module github.com/iotaledger/wasp/v2/tools/gendoc
 
-go 1.23.8
+go 1.24
 
-toolchain go1.24.4
+toolchain go1.24.7
 
 replace (
 	github.com/ethereum/go-ethereum => github.com/iotaledger/go-ethereum v1.16.2-wasp
