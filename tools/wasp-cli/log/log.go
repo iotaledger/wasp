@@ -24,9 +24,11 @@ import (
 )
 
 var (
-	VerboseFlag bool
-	DebugFlag   bool
-	JSONFlag    bool
+	VerboseFlag     bool
+	DebugFlag       bool
+	JSONFlag        bool
+	JSONCompactFlag bool
+	TableFlag       bool
 
 	hiveLogger log.Logger
 )
@@ -34,7 +36,9 @@ var (
 func Init(rootCmd *cobra.Command) {
 	rootCmd.PersistentFlags().BoolVarP(&VerboseFlag, "verbose", "", false, "verbose output")
 	rootCmd.PersistentFlags().BoolVarP(&DebugFlag, "debug", "d", false, "output debug information")
-	rootCmd.PersistentFlags().BoolVarP(&JSONFlag, "json", "j", false, "json output")
+	rootCmd.PersistentFlags().BoolVarP(&JSONFlag, "json", "j", false, "pretty-printed json output")
+	rootCmd.PersistentFlags().BoolVarP(&JSONCompactFlag, "json-compact", "", false, "compact json output (no indentation)")
+	rootCmd.PersistentFlags().BoolVarP(&TableFlag, "table", "t", false, "table output format")
 }
 
 func HiveLogger() log.Logger {

@@ -39,9 +39,7 @@ func initSetTokenCmd() *cobra.Command {
 
 			config.SetToken(node, args[0])
 
-			authOutput := format.NewAuthSuccess(node, "manual")
-			authOutput.Data.Message = "Token set successfully"
-			return format.PrintOutput(authOutput)
+			return format.FormatAuthResult("success", node, "manual", "Token set successfully")
 		},
 	}
 	waspcmd.WithWaspNodeFlag(cmd, &node)
@@ -80,8 +78,7 @@ func initLoginCmd() *cobra.Command {
 
 			// If credentials are still empty, exit early.
 			if username == "" || password == "" {
-				authOutput := format.NewAuthError(node, username, "Invalid credentials provided")
-				return format.PrintOutput(authOutput)
+				return format.FormatAuthResult("error", node, username, "Invalid credentials provided")
 			}
 
 			ctx := context.Background()
@@ -92,14 +89,12 @@ func initLoginCmd() *cobra.Command {
 					Password: password,
 				}).Execute()
 			if err != nil {
-				authOutput := format.NewAuthError(node, username, err.Error())
-				return format.PrintOutput(authOutput)
+				return format.FormatAuthResult("error", node, username, err.Error())
 			}
 
 			config.SetToken(node, token.Jwt)
 
-			authOutput := format.NewAuthSuccess(node, username)
-			return format.PrintOutput(authOutput)
+			return format.FormatAuthResult("success", node, username, "Authentication successful")
 		},
 	}
 	waspcmd.WithWaspNodeFlag(cmd, &node)
