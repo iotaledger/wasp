@@ -137,11 +137,12 @@ type Transaction struct {
 	TransactionDigest *TransactionDigest     `protobuf:"bytes,1,opt,name=transaction_digest,json=transactionDigest,proto3" json:"transaction_digest,omitempty"`
 	TransactionData   *BcsData               `protobuf:"bytes,2,opt,name=transaction_data,json=transactionData,proto3" json:"transaction_data,omitempty"`
 	Effects           *BcsData               `protobuf:"bytes,3,opt,name=effects,proto3" json:"effects,omitempty"`
-	Events            []*BcsData             `protobuf:"bytes,4,rep,name=events,proto3" json:"events,omitempty"`
+	EffectsJson       string                 `protobuf:"bytes,4,opt,name=effects_json,json=effectsJson,proto3" json:"effects_json,omitempty"`
+	Events            []*BcsData             `protobuf:"bytes,5,rep,name=events,proto3" json:"events,omitempty"`
 	// Checkpoint sequence number where this transaction was included
-	Checkpoint uint64 `protobuf:"varint,5,opt,name=checkpoint,proto3" json:"checkpoint,omitempty"`
+	Checkpoint uint64 `protobuf:"varint,6,opt,name=checkpoint,proto3" json:"checkpoint,omitempty"`
 	// Timestamp when the transaction was executed (milliseconds since epoch)
-	TimestampMs   uint64 `protobuf:"varint,6,opt,name=timestamp_ms,json=timestampMs,proto3" json:"timestamp_ms,omitempty"`
+	TimestampMs   uint64 `protobuf:"varint,7,opt,name=timestamp_ms,json=timestampMs,proto3" json:"timestamp_ms,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -195,6 +196,13 @@ func (x *Transaction) GetEffects() *BcsData {
 		return x.Effects
 	}
 	return nil
+}
+
+func (x *Transaction) GetEffectsJson() string {
+	if x != nil {
+		return x.EffectsJson
+	}
+	return ""
 }
 
 func (x *Transaction) GetEvents() []*BcsData {
@@ -729,16 +737,17 @@ const file_transaction_proto_rawDesc = "" +
 	"\n" +
 	"\x11transaction.proto\x12\x16iota.grpc.transactions\x1a\fcommon.proto\"]\n" +
 	"\x18TransactionStreamRequest\x12A\n" +
-	"\x06filter\x18\x01 \x01(\v2).iota.grpc.transactions.TransactionFilterR\x06filter\"\xd2\x02\n" +
+	"\x06filter\x18\x01 \x01(\v2).iota.grpc.transactions.TransactionFilterR\x06filter\"\xf5\x02\n" +
 	"\vTransaction\x12R\n" +
 	"\x12transaction_digest\x18\x01 \x01(\v2#.iota.grpc.common.TransactionDigestR\x11transactionDigest\x12D\n" +
 	"\x10transaction_data\x18\x02 \x01(\v2\x19.iota.grpc.common.BcsDataR\x0ftransactionData\x123\n" +
-	"\aeffects\x18\x03 \x01(\v2\x19.iota.grpc.common.BcsDataR\aeffects\x121\n" +
-	"\x06events\x18\x04 \x03(\v2\x19.iota.grpc.common.BcsDataR\x06events\x12\x1e\n" +
+	"\aeffects\x18\x03 \x01(\v2\x19.iota.grpc.common.BcsDataR\aeffects\x12!\n" +
+	"\feffects_json\x18\x04 \x01(\tR\veffectsJson\x121\n" +
+	"\x06events\x18\x05 \x03(\v2\x19.iota.grpc.common.BcsDataR\x06events\x12\x1e\n" +
 	"\n" +
-	"checkpoint\x18\x05 \x01(\x04R\n" +
+	"checkpoint\x18\x06 \x01(\x04R\n" +
 	"checkpoint\x12!\n" +
-	"\ftimestamp_ms\x18\x06 \x01(\x04R\vtimestampMs\"\x85\a\n" +
+	"\ftimestamp_ms\x18\a \x01(\x04R\vtimestampMs\"\x85\a\n" +
 	"\x11TransactionFilter\x12/\n" +
 	"\x03all\x18\x01 \x01(\v2\x1b.iota.grpc.common.AllFilterH\x00R\x03all\x12J\n" +
 	"\n" +

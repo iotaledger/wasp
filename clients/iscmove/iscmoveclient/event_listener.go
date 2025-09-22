@@ -2,6 +2,7 @@ package iscmoveclient
 
 import (
 	"context"
+	"encoding/json"
 	"sync"
 
 	"github.com/iotaledger/bcs-go"
@@ -46,19 +47,6 @@ func pipeAndMapEvent[S any, D any](
 		}
 	}()
 	return out
-}
-
-func startPush[T any](
-	ctx context.Context,
-	buf int,
-	subscribe func(ctx context.Context, sink chan<- T) error,
-) (<-chan T, error) {
-	ch := make(chan T, buf)
-	if err := subscribe(ctx, ch); err != nil {
-		close(ch)
-		return nil, err
-	}
-	return ch, nil
 }
 
 type EventListener interface {
@@ -114,18 +102,14 @@ func (g *GRpcClientWrapper) SubscribeTransactions(ctx context.Context) (<-chan *
 		// Polling the effects from the API with the digest, as t.Effects currently returns BCS encoded effects which is difficult to parse via BCS.
 		// The next SubscribeTransaction iteration will ship a protobuf encoded Effects type which we can swap in here.
 
-		digest := iotago.TransactionDigest(t.TransactionDigest.Digest)
-		block, err := g.httpClient.GetTransactionBlock(ctx, iotaclient.GetTransactionBlockRequest{
-			Digest: &digest,
-			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
-				ShowEffects: true,
-			},
-		})
+		var effects serialization.TagJson[iotajsonrpc.IotaTransactionBlockEffects]
+
+		err := json.Unmarshal([]byte(t.EffectsJson), &effects)
 		if err != nil {
 			return nil, false
 		}
 
-		return block.Effects, true
+		return &effects, true
 	})
 	return out, nil
 }
@@ -164,6 +148,19 @@ func NewWebSocketClientWrapper(log log.Logger, wsURL string, packageID iotago.Pa
 			ChangedObject: &anchorID,
 		},
 	}
+}
+
+func startPush[T any](
+	ctx context.Context,
+	buf int,
+	subscribe func(ctx context.Context, sink chan<- T) error,
+) (<-chan T, error) {
+	ch := make(chan T, buf)
+	if err := subscribe(ctx, ch); err != nil {
+		close(ch)
+		return nil, err
+	}
+	return ch, nil
 }
 
 func (w *WebsocketClientWrapper) SubscribeEvents(ctx context.Context) (<-chan iscmove.RequestEvent, error) {

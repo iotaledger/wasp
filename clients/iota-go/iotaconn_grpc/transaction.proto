@@ -22,11 +22,12 @@ message Transaction {
     iota.grpc.common.TransactionDigest transaction_digest = 1;
     iota.grpc.common.BcsData transaction_data = 2;
     iota.grpc.common.BcsData effects = 3;
-    repeated iota.grpc.common.BcsData events = 4;
+    string effects_json = 4;
+    repeated iota.grpc.common.BcsData events = 5;
     // Checkpoint sequence number where this transaction was included
-    uint64 checkpoint = 5;
+    uint64 checkpoint = 6;
     // Timestamp when the transaction was executed (milliseconds since epoch)
-    uint64 timestamp_ms = 6;
+    uint64 timestamp_ms = 7;
 }
 
 // Rich transaction filter that supports gRPC transaction filtering
