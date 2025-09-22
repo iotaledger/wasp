@@ -135,16 +135,10 @@ func (x *TransactionStreamRequest) GetFilter() *TransactionFilter {
 type Transaction struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
 	TransactionDigest *TransactionDigest     `protobuf:"bytes,1,opt,name=transaction_digest,json=transactionDigest,proto3" json:"transaction_digest,omitempty"`
-	TransactionData   *BcsData               `protobuf:"bytes,2,opt,name=transaction_data,json=transactionData,proto3" json:"transaction_data,omitempty"`
-	Effects           *BcsData               `protobuf:"bytes,3,opt,name=effects,proto3" json:"effects,omitempty"`
-	EffectsJson       string                 `protobuf:"bytes,4,opt,name=effects_json,json=effectsJson,proto3" json:"effects_json,omitempty"`
-	Events            []*BcsData             `protobuf:"bytes,5,rep,name=events,proto3" json:"events,omitempty"`
-	// Checkpoint sequence number where this transaction was included
-	Checkpoint uint64 `protobuf:"varint,6,opt,name=checkpoint,proto3" json:"checkpoint,omitempty"`
-	// Timestamp when the transaction was executed (milliseconds since epoch)
-	TimestampMs   uint64 `protobuf:"varint,7,opt,name=timestamp_ms,json=timestampMs,proto3" json:"timestamp_ms,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Effects           *BcsData               `protobuf:"bytes,2,opt,name=effects,proto3" json:"effects,omitempty"`
+	EffectsJson       string                 `protobuf:"bytes,3,opt,name=effects_json,json=effectsJson,proto3" json:"effects_json,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *Transaction) Reset() {
@@ -184,13 +178,6 @@ func (x *Transaction) GetTransactionDigest() *TransactionDigest {
 	return nil
 }
 
-func (x *Transaction) GetTransactionData() *BcsData {
-	if x != nil {
-		return x.TransactionData
-	}
-	return nil
-}
-
 func (x *Transaction) GetEffects() *BcsData {
 	if x != nil {
 		return x.Effects
@@ -203,27 +190,6 @@ func (x *Transaction) GetEffectsJson() string {
 		return x.EffectsJson
 	}
 	return ""
-}
-
-func (x *Transaction) GetEvents() []*BcsData {
-	if x != nil {
-		return x.Events
-	}
-	return nil
-}
-
-func (x *Transaction) GetCheckpoint() uint64 {
-	if x != nil {
-		return x.Checkpoint
-	}
-	return 0
-}
-
-func (x *Transaction) GetTimestampMs() uint64 {
-	if x != nil {
-		return x.TimestampMs
-	}
-	return 0
 }
 
 // Rich transaction filter that supports gRPC transaction filtering
@@ -737,17 +703,11 @@ const file_transaction_proto_rawDesc = "" +
 	"\n" +
 	"\x11transaction.proto\x12\x16iota.grpc.transactions\x1a\fcommon.proto\"]\n" +
 	"\x18TransactionStreamRequest\x12A\n" +
-	"\x06filter\x18\x01 \x01(\v2).iota.grpc.transactions.TransactionFilterR\x06filter\"\xf5\x02\n" +
+	"\x06filter\x18\x01 \x01(\v2).iota.grpc.transactions.TransactionFilterR\x06filter\"\xb9\x01\n" +
 	"\vTransaction\x12R\n" +
-	"\x12transaction_digest\x18\x01 \x01(\v2#.iota.grpc.common.TransactionDigestR\x11transactionDigest\x12D\n" +
-	"\x10transaction_data\x18\x02 \x01(\v2\x19.iota.grpc.common.BcsDataR\x0ftransactionData\x123\n" +
-	"\aeffects\x18\x03 \x01(\v2\x19.iota.grpc.common.BcsDataR\aeffects\x12!\n" +
-	"\feffects_json\x18\x04 \x01(\tR\veffectsJson\x121\n" +
-	"\x06events\x18\x05 \x03(\v2\x19.iota.grpc.common.BcsDataR\x06events\x12\x1e\n" +
-	"\n" +
-	"checkpoint\x18\x06 \x01(\x04R\n" +
-	"checkpoint\x12!\n" +
-	"\ftimestamp_ms\x18\a \x01(\x04R\vtimestampMs\"\x85\a\n" +
+	"\x12transaction_digest\x18\x01 \x01(\v2#.iota.grpc.common.TransactionDigestR\x11transactionDigest\x123\n" +
+	"\aeffects\x18\x02 \x01(\v2\x19.iota.grpc.common.BcsDataR\aeffects\x12!\n" +
+	"\feffects_json\x18\x03 \x01(\tR\veffectsJson\"\x85\a\n" +
 	"\x11TransactionFilter\x12/\n" +
 	"\x03all\x18\x01 \x01(\v2\x1b.iota.grpc.common.AllFilterH\x00R\x03all\x12J\n" +
 	"\n" +
@@ -827,33 +787,31 @@ var file_transaction_proto_goTypes = []any{
 var file_transaction_proto_depIdxs = []int32{
 	3,  // 0: iota.grpc.transactions.TransactionStreamRequest.filter:type_name -> iota.grpc.transactions.TransactionFilter
 	10, // 1: iota.grpc.transactions.Transaction.transaction_digest:type_name -> iota.grpc.common.TransactionDigest
-	11, // 2: iota.grpc.transactions.Transaction.transaction_data:type_name -> iota.grpc.common.BcsData
-	11, // 3: iota.grpc.transactions.Transaction.effects:type_name -> iota.grpc.common.BcsData
-	11, // 4: iota.grpc.transactions.Transaction.events:type_name -> iota.grpc.common.BcsData
-	12, // 5: iota.grpc.transactions.TransactionFilter.all:type_name -> iota.grpc.common.AllFilter
-	4,  // 6: iota.grpc.transactions.TransactionFilter.checkpoint:type_name -> iota.grpc.transactions.CheckpointFilter
-	13, // 7: iota.grpc.transactions.TransactionFilter.move_function:type_name -> iota.grpc.common.MoveFunctionFilter
-	5,  // 8: iota.grpc.transactions.TransactionFilter.input_object:type_name -> iota.grpc.transactions.InputObjectFilter
-	6,  // 9: iota.grpc.transactions.TransactionFilter.changed_object:type_name -> iota.grpc.transactions.ChangedObjectFilter
-	14, // 10: iota.grpc.transactions.TransactionFilter.from_address:type_name -> iota.grpc.common.AddressFilter
-	14, // 11: iota.grpc.transactions.TransactionFilter.to_address:type_name -> iota.grpc.common.AddressFilter
-	7,  // 12: iota.grpc.transactions.TransactionFilter.from_and_to_address:type_name -> iota.grpc.transactions.FromAndToAddressFilter
-	14, // 13: iota.grpc.transactions.TransactionFilter.from_or_to_address:type_name -> iota.grpc.common.AddressFilter
-	8,  // 14: iota.grpc.transactions.TransactionFilter.transaction_kind:type_name -> iota.grpc.transactions.TransactionKindFilter
-	9,  // 15: iota.grpc.transactions.TransactionFilter.transaction_kind_in:type_name -> iota.grpc.transactions.TransactionKindInFilter
-	15, // 16: iota.grpc.transactions.InputObjectFilter.object_id:type_name -> iota.grpc.common.Address
-	15, // 17: iota.grpc.transactions.ChangedObjectFilter.object_id:type_name -> iota.grpc.common.Address
-	15, // 18: iota.grpc.transactions.FromAndToAddressFilter.from_address:type_name -> iota.grpc.common.Address
-	15, // 19: iota.grpc.transactions.FromAndToAddressFilter.to_address:type_name -> iota.grpc.common.Address
-	0,  // 20: iota.grpc.transactions.TransactionKindFilter.kind:type_name -> iota.grpc.transactions.TransactionKind
-	0,  // 21: iota.grpc.transactions.TransactionKindInFilter.kinds:type_name -> iota.grpc.transactions.TransactionKind
-	1,  // 22: iota.grpc.transactions.TransactionService.StreamTransactions:input_type -> iota.grpc.transactions.TransactionStreamRequest
-	2,  // 23: iota.grpc.transactions.TransactionService.StreamTransactions:output_type -> iota.grpc.transactions.Transaction
-	23, // [23:24] is the sub-list for method output_type
-	22, // [22:23] is the sub-list for method input_type
-	22, // [22:22] is the sub-list for extension type_name
-	22, // [22:22] is the sub-list for extension extendee
-	0,  // [0:22] is the sub-list for field type_name
+	11, // 2: iota.grpc.transactions.Transaction.effects:type_name -> iota.grpc.common.BcsData
+	12, // 3: iota.grpc.transactions.TransactionFilter.all:type_name -> iota.grpc.common.AllFilter
+	4,  // 4: iota.grpc.transactions.TransactionFilter.checkpoint:type_name -> iota.grpc.transactions.CheckpointFilter
+	13, // 5: iota.grpc.transactions.TransactionFilter.move_function:type_name -> iota.grpc.common.MoveFunctionFilter
+	5,  // 6: iota.grpc.transactions.TransactionFilter.input_object:type_name -> iota.grpc.transactions.InputObjectFilter
+	6,  // 7: iota.grpc.transactions.TransactionFilter.changed_object:type_name -> iota.grpc.transactions.ChangedObjectFilter
+	14, // 8: iota.grpc.transactions.TransactionFilter.from_address:type_name -> iota.grpc.common.AddressFilter
+	14, // 9: iota.grpc.transactions.TransactionFilter.to_address:type_name -> iota.grpc.common.AddressFilter
+	7,  // 10: iota.grpc.transactions.TransactionFilter.from_and_to_address:type_name -> iota.grpc.transactions.FromAndToAddressFilter
+	14, // 11: iota.grpc.transactions.TransactionFilter.from_or_to_address:type_name -> iota.grpc.common.AddressFilter
+	8,  // 12: iota.grpc.transactions.TransactionFilter.transaction_kind:type_name -> iota.grpc.transactions.TransactionKindFilter
+	9,  // 13: iota.grpc.transactions.TransactionFilter.transaction_kind_in:type_name -> iota.grpc.transactions.TransactionKindInFilter
+	15, // 14: iota.grpc.transactions.InputObjectFilter.object_id:type_name -> iota.grpc.common.Address
+	15, // 15: iota.grpc.transactions.ChangedObjectFilter.object_id:type_name -> iota.grpc.common.Address
+	15, // 16: iota.grpc.transactions.FromAndToAddressFilter.from_address:type_name -> iota.grpc.common.Address
+	15, // 17: iota.grpc.transactions.FromAndToAddressFilter.to_address:type_name -> iota.grpc.common.Address
+	0,  // 18: iota.grpc.transactions.TransactionKindFilter.kind:type_name -> iota.grpc.transactions.TransactionKind
+	0,  // 19: iota.grpc.transactions.TransactionKindInFilter.kinds:type_name -> iota.grpc.transactions.TransactionKind
+	1,  // 20: iota.grpc.transactions.TransactionService.StreamTransactions:input_type -> iota.grpc.transactions.TransactionStreamRequest
+	2,  // 21: iota.grpc.transactions.TransactionService.StreamTransactions:output_type -> iota.grpc.transactions.Transaction
+	21, // [21:22] is the sub-list for method output_type
+	20, // [20:21] is the sub-list for method input_type
+	20, // [20:20] is the sub-list for extension type_name
+	20, // [20:20] is the sub-list for extension extendee
+	0,  // [0:20] is the sub-list for field type_name
 }
 
 func init() { file_transaction_proto_init() }

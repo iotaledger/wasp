@@ -7,6 +7,7 @@ import "common.proto";
 
 option go_package = "github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn_grpc";
 
+
 // Transaction subscription service
 service TransactionService {
     rpc StreamTransactions (TransactionStreamRequest) returns (stream Transaction);
@@ -20,14 +21,8 @@ message TransactionStreamRequest {
 // Transaction data structure
 message Transaction {
     iota.grpc.common.TransactionDigest transaction_digest = 1;
-    iota.grpc.common.BcsData transaction_data = 2;
-    iota.grpc.common.BcsData effects = 3;
-    string effects_json = 4;
-    repeated iota.grpc.common.BcsData events = 5;
-    // Checkpoint sequence number where this transaction was included
-    uint64 checkpoint = 6;
-    // Timestamp when the transaction was executed (milliseconds since epoch)
-    uint64 timestamp_ms = 7;
+    iota.grpc.common.BcsData effects = 2;
+    string effects_json = 3;
 }
 
 // Rich transaction filter that supports gRPC transaction filtering
@@ -90,3 +85,4 @@ enum TransactionKind {
     RANDOMNESS_STATE_UPDATE = 5;
     END_OF_EPOCH_TRANSACTION = 6;
 }
+

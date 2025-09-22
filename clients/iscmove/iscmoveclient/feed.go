@@ -102,25 +102,12 @@ func (f *ChainFeed) subscribeToNewRequests(
 	anchorID iotago.ObjectID,
 	requests chan<- *iscmove.RefWithObject[iscmove.Request],
 ) {
-	for {
-		events, err := f.eventClient.SubscribeEvents(ctx)
-		if err != nil {
-			f.log.LogErrorf("subscribeToNewRequests: err: %s", ctx.Err())
-		}
-
-		if ctx.Err() != nil {
-			f.log.LogErrorf("subscribeToNewRequests: ctx.Err(): %s", ctx.Err())
-			return
-		}
-
-		f.consumeRequestEvents(ctx, events, requests, anchorID)
-
-		time.Sleep(1 * time.Second)
-		if ctx.Err() != nil {
-			f.log.LogErrorf("subscribeToNewRequests: ctx.Err(): %s", ctx.Err())
-			return
-		}
+	events, err := f.eventClient.SubscribeEvents(ctx)
+	if err != nil {
+		f.log.LogErrorf("subscribeToNewRequests: err: %s", ctx.Err())
 	}
+
+	f.consumeRequestEvents(ctx, events, requests, anchorID)
 }
 
 func (f *ChainFeed) consumeRequestEvents(ctx context.Context, events <-chan iscmove.RequestEvent, requests chan<- *iscmove.RefWithObject[iscmove.Request], anchorID iotago.ObjectID) {
@@ -157,19 +144,13 @@ func (f *ChainFeed) subscribeToAnchorUpdates(
 	ctx context.Context,
 	anchorCh chan<- *iscmove.AnchorWithRef,
 ) {
-	for {
-		events, err := f.eventClient.SubscribeTransactions(ctx)
-		if err != nil {
-			f.log.LogErrorf("subscribeToNewRequests: err: %s", ctx.Err())
-		}
-
-		if ctx.Err() != nil {
-			f.log.LogErrorf("subscribeToNewRequests: ctx.Err(): %s", ctx.Err())
-			return
-		}
-
-		f.consumeAnchorUpdates(ctx, events, anchorCh)
+	events, err := f.eventClient.SubscribeTransactions(ctx)
+	if err != nil {
+		f.log.LogErrorf("subscribeToNewRequests: err: %s", ctx.Err())
+		return
 	}
+
+	f.consumeAnchorUpdates(ctx, events, anchorCh)
 }
 
 func (f *ChainFeed) consumeAnchorUpdates(

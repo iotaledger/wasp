@@ -139,12 +139,6 @@ func (c *StreamClient[T]) run(ctx context.Context) {
 
 		backoff = c.increaseBackoff(backoff)
 	}
-
-	conn := c.conn
-	c.conn = nil
-	if conn != nil {
-		_ = conn.Close()
-	}
 }
 
 func (c *StreamClient[T]) dial() error {

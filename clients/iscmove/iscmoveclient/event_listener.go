@@ -60,11 +60,13 @@ type GRpcClientWrapper struct {
 	transactionClient *iotaconn_grpc.StreamClient[*iotaconn_grpc.Transaction]
 	httpClient        *Client
 	wg                sync.WaitGroup
+	log               log.Logger
 }
 
 func NewGRpcClientWrapper(log log.Logger, socketURL string, packageID iotago.PackageID, anchorID iotago.ObjectID, httpClient *Client) EventListener {
 	return &GRpcClientWrapper{
 		httpClient: httpClient,
+		log:        log,
 		eventClient: iotaconn_grpc.NewEventStreamClient(socketURL, &iotaconn_grpc.EventFilter{
 			Filter: &iotaconn_grpc.EventFilter_MoveEventType{
 				MoveEventType: &iotaconn_grpc.MoveEventTypeFilter{
@@ -89,6 +91,7 @@ func (g *GRpcClientWrapper) SubscribeEvents(ctx context.Context) (<-chan iscmove
 	out := pipeAndMapEvent(ctx, &g.wg, raw, func(evt *iotaconn_grpc.Event) (iscmove.RequestEvent, bool) {
 		req, err := bcs.Unmarshal[iscmove.RequestEvent](evt.GetEventData().GetData())
 		if err != nil {
+			g.log.LogErrorf("failed to unmarshal event: %v", err)
 			return iscmove.RequestEvent{}, false
 		}
 		return req, true
@@ -99,13 +102,11 @@ func (g *GRpcClientWrapper) SubscribeEvents(ctx context.Context) (<-chan iscmove
 func (g *GRpcClientWrapper) SubscribeTransactions(ctx context.Context) (<-chan *serialization.TagJson[iotajsonrpc.IotaTransactionBlockEffects], error) {
 	raw := g.transactionClient.Start(ctx)
 	out := pipeAndMapEvent(ctx, &g.wg, raw, func(t *iotaconn_grpc.Transaction) (*serialization.TagJson[iotajsonrpc.IotaTransactionBlockEffects], bool) {
-		// Polling the effects from the API with the digest, as t.Effects currently returns BCS encoded effects which is difficult to parse via BCS.
-		// The next SubscribeTransaction iteration will ship a protobuf encoded Effects type which we can swap in here.
-
 		var effects serialization.TagJson[iotajsonrpc.IotaTransactionBlockEffects]
 
 		err := json.Unmarshal([]byte(t.EffectsJson), &effects)
 		if err != nil {
+			g.log.LogErrorf("failed to unmarshal transaction effects: %v", err)
 			return nil, false
 		}
 
@@ -173,12 +174,14 @@ func (w *WebsocketClientWrapper) SubscribeEvents(ctx context.Context) (<-chan is
 		return wsClient.SubscribeEvent(ctx, w.eventFilter, sink)
 	})
 	if err != nil {
+		w.log.LogErrorf("failed to subscribe to events: %v", err)
 		return nil, err
 	}
 
 	out := pipeAndMapEvent(ctx, &w.wg, raw, func(e *iotajsonrpc.IotaEvent) (iscmove.RequestEvent, bool) {
 		req, err := bcs.Unmarshal[iscmove.RequestEvent](e.Bcs)
 		if err != nil {
+			w.log.LogErrorf("failed to unmarshal events: %v", err)
 			return iscmove.RequestEvent{}, false
 		}
 		return req, true
@@ -200,6 +203,7 @@ func (w *WebsocketClientWrapper) SubscribeTransactions(ctx context.Context) (<-c
 		},
 	)
 	if err != nil {
+		w.log.LogErrorf("failed to subscribe to transactions: %v", err)
 		return nil, err
 	}
 
