@@ -5,9 +5,10 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/serialization"
-	"github.com/samber/lo"
 )
 
 type ExecuteTransactionRequestType string
@@ -50,7 +51,7 @@ type IotaTransactionBlockEffectsV1 struct {
 	/** The status of the execution */
 	Status ExecutionStatus `json:"status"`
 	/** The epoch when this transaction was executed */
-	ExecutedEpoch *BigInt        `json:"executedEpoch"`
+	ExecutedEpoch *BigInt        `json:"executedEpoch" bcs:"optional"`
 	GasUsed       GasCostSummary `json:"gasUsed"`
 	/** The version that every modified (mutated or deleted) object had before it was modified by this transaction. **/
 	ModifiedAtVersions []IotaTransactionBlockEffectsModifiedAtVersions `json:"modifiedAtVersions,omitempty"`
@@ -341,7 +342,8 @@ func (r *IotaTransactionBlockResponse) GetCreatedObjectByName(module string, obj
 			}
 			if resource.Contains(nil, module, objectName) {
 				if ref != nil {
-					return nil, fmt.Errorf("multiple created objects found for %s::%s: first = %v, second = %v",
+					return nil, fmt.Errorf(
+						"multiple created objects found for %s::%s: first = %v, second = %v",
 						module, objectName,
 						string(lo.Must(json.Marshal(prevCreatedObj))),
 						string(lo.Must(json.Marshal(change.Data.Created))),
@@ -386,7 +388,8 @@ func (r *IotaTransactionBlockResponse) GetMutatedObjectByName(module string, obj
 			}
 			if resource.Contains(nil, module, objectName) {
 				if ref != nil {
-					return nil, fmt.Errorf("multiple mutated objects found for %s::%s: first = %v, second = %v",
+					return nil, fmt.Errorf(
+						"multiple mutated objects found for %s::%s: first = %v, second = %v",
 						module, objectName,
 						string(lo.Must(json.Marshal(prevMutatedObj))),
 						string(lo.Must(json.Marshal(change.Data.Mutated))),
@@ -424,7 +427,8 @@ func (r *IotaTransactionBlockResponse) GetMutatedObjectByID(objectID iotago.Obje
 		if change.Data.Mutated != nil {
 			if change.Data.Mutated.ObjectID == objectID {
 				if ref != nil {
-					return nil, fmt.Errorf("multiple mutated objects found for %v: first = %v, second = %v",
+					return nil, fmt.Errorf(
+						"multiple mutated objects found for %v: first = %v, second = %v",
 						objectID.String(),
 						string(lo.Must(json.Marshal(prevMutatedObj))),
 						string(lo.Must(json.Marshal(change.Data.Mutated))),
@@ -468,7 +472,8 @@ func (r *IotaTransactionBlockResponse) GetCreatedCoinByType(module string, coinT
 			if resource.Module == "coin" && resource.SubType1 != nil {
 				if resource.SubType1.Module == module && resource.SubType1.ObjectName == coinType {
 					if ref != nil {
-						return nil, fmt.Errorf("multiple created coins found for %s::%s: first = %v, second = %v",
+						return nil, fmt.Errorf(
+							"multiple created coins found for %s::%s: first = %v, second = %v",
 							module, coinType,
 							string(lo.Must(json.Marshal(prevCreatedObj))),
 							string(lo.Must(json.Marshal(change.Data.Created))),
@@ -513,7 +518,8 @@ func (r *IotaTransactionBlockResponse) GetMutatedCoinByType(module string, coinT
 			if resource.Module == "coin" && resource.SubType1 != nil {
 				if resource.SubType1.Module == module && resource.SubType1.ObjectName == coinType {
 					if ref != nil {
-						return nil, fmt.Errorf("multiple mutated coins found for %s::%s: first = %v, second = %v",
+						return nil, fmt.Errorf(
+							"multiple mutated coins found for %s::%s: first = %v, second = %v",
 							module, coinType,
 							string(lo.Must(json.Marshal(prevMutatedObj))),
 							string(lo.Must(json.Marshal(change.Data.Mutated))),

@@ -181,3 +181,47 @@ func sleepCtx(ctx context.Context, d time.Duration) bool {
 		return true
 	}
 }
+
+func NewEventStreamClient(
+	address string,
+	filter *EventFilter,
+	logger log.Logger,
+	opts ...grpc.DialOption,
+) *StreamClient[*Event] {
+	return NewStreamClient[*Event](
+		"event",
+		address,
+		logger,
+		func(ctx context.Context, conn *grpc.ClientConn) (func() (*Event, error), error) {
+			cli := NewEventServiceClient(conn)
+			stream, err := cli.StreamEvents(ctx, &EventStreamRequest{Filter: filter})
+			if err != nil {
+				return nil, err
+			}
+			return stream.Recv, nil
+		},
+		opts...,
+	)
+}
+
+func NewTransactionStreamClient(
+	address string,
+	filter *TransactionFilter,
+	logger log.Logger,
+	opts ...grpc.DialOption,
+) *StreamClient[*Transaction] {
+	return NewStreamClient[*Transaction](
+		"transaction",
+		address,
+		logger,
+		func(ctx context.Context, conn *grpc.ClientConn) (func() (*Transaction, error), error) {
+			cli := NewTransactionServiceClient(conn)
+			stream, err := cli.StreamTransactions(ctx, &TransactionStreamRequest{Filter: filter})
+			if err != nil {
+				return nil, err
+			}
+			return stream.Recv, nil
+		},
+		opts...,
+	)
+}
