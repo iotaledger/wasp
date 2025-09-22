@@ -1,0 +1,91 @@
+// Copyright (c) 2025 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+package iota.grpc.transactions;
+import "common.proto";
+
+option go_package = "github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn_grpc";
+
+// Transaction subscription service
+service TransactionService {
+    rpc StreamTransactions (TransactionStreamRequest) returns (stream Transaction);
+}
+
+// Request to stream transactions with optional filtering
+message TransactionStreamRequest {
+    TransactionFilter filter = 1;
+}
+
+// Transaction data structure
+message Transaction {
+    iota.grpc.common.TransactionDigest transaction_digest = 1;
+    iota.grpc.common.BcsData transaction_data = 2;
+    iota.grpc.common.BcsData effects = 3;
+    repeated iota.grpc.common.BcsData events = 4;
+    // Checkpoint sequence number where this transaction was included
+    uint64 checkpoint = 5;
+    // Timestamp when the transaction was executed (milliseconds since epoch)
+    uint64 timestamp_ms = 6;
+}
+
+// Rich transaction filter that supports gRPC transaction filtering
+message TransactionFilter {
+    oneof filter {
+        iota.grpc.common.AllFilter all = 1;
+        CheckpointFilter checkpoint = 2;
+        iota.grpc.common.MoveFunctionFilter move_function = 3;
+        InputObjectFilter input_object = 4;
+        ChangedObjectFilter changed_object = 5;
+        iota.grpc.common.AddressFilter from_address = 6;
+        iota.grpc.common.AddressFilter to_address = 7;
+        FromAndToAddressFilter from_and_to_address = 8;
+        iota.grpc.common.AddressFilter from_or_to_address = 9;
+        TransactionKindFilter transaction_kind = 10;
+        TransactionKindInFilter transaction_kind_in = 11;
+    }
+}
+
+// Filter by checkpoint sequence number
+message CheckpointFilter {
+    uint64 checkpoint = 1;
+}
+
+// Filter by input object ID
+message InputObjectFilter {
+    iota.grpc.common.Address object_id = 1;
+}
+
+// Filter by changed object ID (created, mutated, unwrapped)
+message ChangedObjectFilter {
+    iota.grpc.common.Address object_id = 1;
+}
+
+
+// Filter by sender and recipient addresses
+message FromAndToAddressFilter {
+    iota.grpc.common.Address from_address = 1;
+    iota.grpc.common.Address to_address = 2;
+}
+
+
+// Filter by transaction kind
+message TransactionKindFilter {
+    TransactionKind kind = 1;
+}
+
+// Filter by transaction kinds (any of the specified kinds)
+message TransactionKindInFilter {
+    repeated TransactionKind kinds = 1;
+}
+
+// Transaction kinds
+enum TransactionKind {
+    SYSTEM_TRANSACTION = 0;
+    PROGRAMMABLE_TRANSACTION = 1;
+    GENESIS = 2;
+    CONSENSUS_COMMIT_PROLOGUE_V1 = 3;
+    AUTHENTICATOR_STATE_UPDATE_V1 = 4;
+    RANDOMNESS_STATE_UPDATE = 5;
+    END_OF_EPOCH_TRANSACTION = 6;
+}

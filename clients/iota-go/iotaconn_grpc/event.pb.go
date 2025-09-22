@@ -283,7 +283,7 @@ func (x *EventFilter) GetAll() *AllFilter {
 	return nil
 }
 
-func (x *EventFilter) GetSender() *SenderFilter {
+func (x *EventFilter) GetSender() *AddressFilter {
 	if x != nil {
 		if x, ok := x.Filter.(*EventFilter_Sender); ok {
 			return x.Sender
@@ -292,7 +292,7 @@ func (x *EventFilter) GetSender() *SenderFilter {
 	return nil
 }
 
-func (x *EventFilter) GetTransaction() *TransactionFilter {
+func (x *EventFilter) GetTransaction() *TransactionDigestFilter {
 	if x != nil {
 		if x, ok := x.Filter.(*EventFilter_Transaction); ok {
 			return x.Transaction
@@ -346,11 +346,11 @@ type EventFilter_All struct {
 }
 
 type EventFilter_Sender struct {
-	Sender *SenderFilter `protobuf:"bytes,2,opt,name=sender,proto3,oneof"`
+	Sender *AddressFilter `protobuf:"bytes,2,opt,name=sender,proto3,oneof"`
 }
 
 type EventFilter_Transaction struct {
-	Transaction *TransactionFilter `protobuf:"bytes,3,opt,name=transaction,proto3,oneof"`
+	Transaction *TransactionDigestFilter `protobuf:"bytes,3,opt,name=transaction,proto3,oneof"`
 }
 
 type EventFilter_MoveModule struct {
@@ -383,300 +383,6 @@ func (*EventFilter_MoveEventModule) isEventFilter_Filter() {}
 
 func (*EventFilter_TimeRange) isEventFilter_Filter() {}
 
-// Match all events (catch-all filter)
-type AllFilter struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *AllFilter) Reset() {
-	*x = AllFilter{}
-	mi := &file_event_proto_msgTypes[4]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *AllFilter) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*AllFilter) ProtoMessage() {}
-
-func (x *AllFilter) ProtoReflect() protoreflect.Message {
-	mi := &file_event_proto_msgTypes[4]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use AllFilter.ProtoReflect.Descriptor instead.
-func (*AllFilter) Descriptor() ([]byte, []int) {
-	return file_event_proto_rawDescGZIP(), []int{4}
-}
-
-// Filter by sender address
-type SenderFilter struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Sender        *Address               `protobuf:"bytes,1,opt,name=sender,proto3" json:"sender,omitempty"` // Sender address
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *SenderFilter) Reset() {
-	*x = SenderFilter{}
-	mi := &file_event_proto_msgTypes[5]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *SenderFilter) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SenderFilter) ProtoMessage() {}
-
-func (x *SenderFilter) ProtoReflect() protoreflect.Message {
-	mi := &file_event_proto_msgTypes[5]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SenderFilter.ProtoReflect.Descriptor instead.
-func (*SenderFilter) Descriptor() ([]byte, []int) {
-	return file_event_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *SenderFilter) GetSender() *Address {
-	if x != nil {
-		return x.Sender
-	}
-	return nil
-}
-
-// Filter by transaction digest
-type TransactionFilter struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	TxDigest      *TransactionDigest     `protobuf:"bytes,1,opt,name=tx_digest,json=txDigest,proto3" json:"tx_digest,omitempty"` // Transaction digest
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *TransactionFilter) Reset() {
-	*x = TransactionFilter{}
-	mi := &file_event_proto_msgTypes[6]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *TransactionFilter) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*TransactionFilter) ProtoMessage() {}
-
-func (x *TransactionFilter) ProtoReflect() protoreflect.Message {
-	mi := &file_event_proto_msgTypes[6]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use TransactionFilter.ProtoReflect.Descriptor instead.
-func (*TransactionFilter) Descriptor() ([]byte, []int) {
-	return file_event_proto_rawDescGZIP(), []int{6}
-}
-
-func (x *TransactionFilter) GetTxDigest() *TransactionDigest {
-	if x != nil {
-		return x.TxDigest
-	}
-	return nil
-}
-
-// Filter by transaction execution module (different from event definition module)
-type MoveModuleFilter struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	PackageId     *Address               `protobuf:"bytes,1,opt,name=package_id,json=packageId,proto3" json:"package_id,omitempty"` // Package ID
-	Module        string                 `protobuf:"bytes,2,opt,name=module,proto3" json:"module,omitempty"`                        // Module name
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *MoveModuleFilter) Reset() {
-	*x = MoveModuleFilter{}
-	mi := &file_event_proto_msgTypes[7]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *MoveModuleFilter) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MoveModuleFilter) ProtoMessage() {}
-
-func (x *MoveModuleFilter) ProtoReflect() protoreflect.Message {
-	mi := &file_event_proto_msgTypes[7]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use MoveModuleFilter.ProtoReflect.Descriptor instead.
-func (*MoveModuleFilter) Descriptor() ([]byte, []int) {
-	return file_event_proto_rawDescGZIP(), []int{7}
-}
-
-func (x *MoveModuleFilter) GetPackageId() *Address {
-	if x != nil {
-		return x.PackageId
-	}
-	return nil
-}
-
-func (x *MoveModuleFilter) GetModule() string {
-	if x != nil {
-		return x.Module
-	}
-	return ""
-}
-
-// Filter by Move event type (package::module::event_name)
-type MoveEventTypeFilter struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	PackageId     *Address               `protobuf:"bytes,1,opt,name=package_id,json=packageId,proto3" json:"package_id,omitempty"` // Package ID
-	Module        string                 `protobuf:"bytes,2,opt,name=module,proto3" json:"module,omitempty"`                        // Module name (e.g., "request")
-	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`                            // Event name (e.g., "RequestEvent")
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *MoveEventTypeFilter) Reset() {
-	*x = MoveEventTypeFilter{}
-	mi := &file_event_proto_msgTypes[8]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *MoveEventTypeFilter) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MoveEventTypeFilter) ProtoMessage() {}
-
-func (x *MoveEventTypeFilter) ProtoReflect() protoreflect.Message {
-	mi := &file_event_proto_msgTypes[8]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use MoveEventTypeFilter.ProtoReflect.Descriptor instead.
-func (*MoveEventTypeFilter) Descriptor() ([]byte, []int) {
-	return file_event_proto_rawDescGZIP(), []int{8}
-}
-
-func (x *MoveEventTypeFilter) GetPackageId() *Address {
-	if x != nil {
-		return x.PackageId
-	}
-	return nil
-}
-
-func (x *MoveEventTypeFilter) GetModule() string {
-	if x != nil {
-		return x.Module
-	}
-	return ""
-}
-
-func (x *MoveEventTypeFilter) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-// Filter by package and module
-type MoveEventModuleFilter struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	PackageId     *Address               `protobuf:"bytes,1,opt,name=package_id,json=packageId,proto3" json:"package_id,omitempty"` // Package ID
-	Module        string                 `protobuf:"bytes,2,opt,name=module,proto3" json:"module,omitempty"`                        // Module name
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *MoveEventModuleFilter) Reset() {
-	*x = MoveEventModuleFilter{}
-	mi := &file_event_proto_msgTypes[9]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *MoveEventModuleFilter) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MoveEventModuleFilter) ProtoMessage() {}
-
-func (x *MoveEventModuleFilter) ProtoReflect() protoreflect.Message {
-	mi := &file_event_proto_msgTypes[9]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use MoveEventModuleFilter.ProtoReflect.Descriptor instead.
-func (*MoveEventModuleFilter) Descriptor() ([]byte, []int) {
-	return file_event_proto_rawDescGZIP(), []int{9}
-}
-
-func (x *MoveEventModuleFilter) GetPackageId() *Address {
-	if x != nil {
-		return x.PackageId
-	}
-	return nil
-}
-
-func (x *MoveEventModuleFilter) GetModule() string {
-	if x != nil {
-		return x.Module
-	}
-	return ""
-}
-
 // Filter by timestamp range
 type TimeRangeFilter struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -688,7 +394,7 @@ type TimeRangeFilter struct {
 
 func (x *TimeRangeFilter) Reset() {
 	*x = TimeRangeFilter{}
-	mi := &file_event_proto_msgTypes[10]
+	mi := &file_event_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -700,7 +406,7 @@ func (x *TimeRangeFilter) String() string {
 func (*TimeRangeFilter) ProtoMessage() {}
 
 func (x *TimeRangeFilter) ProtoReflect() protoreflect.Message {
-	mi := &file_event_proto_msgTypes[10]
+	mi := &file_event_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -713,7 +419,7 @@ func (x *TimeRangeFilter) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TimeRangeFilter.ProtoReflect.Descriptor instead.
 func (*TimeRangeFilter) Descriptor() ([]byte, []int) {
-	return file_event_proto_rawDescGZIP(), []int{10}
+	return file_event_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *TimeRangeFilter) GetStartTime() uint64 {
@@ -752,36 +458,18 @@ const file_event_proto_rawDesc = "" +
 	"\r_timestamp_ms\"h\n" +
 	"\aEventID\x12\x1b\n" +
 	"\tevent_seq\x18\x01 \x01(\x04R\beventSeq\x12@\n" +
-	"\ttx_digest\x18\x02 \x01(\v2#.iota.grpc.common.TransactionDigestR\btxDigest\"\xfe\x03\n" +
+	"\ttx_digest\x18\x02 \x01(\v2#.iota.grpc.common.TransactionDigestR\btxDigest\"\x85\x04\n" +
 	"\vEventFilter\x12/\n" +
-	"\x03all\x18\x01 \x01(\v2\x1b.iota.grpc.events.AllFilterH\x00R\x03all\x128\n" +
-	"\x06sender\x18\x02 \x01(\v2\x1e.iota.grpc.events.SenderFilterH\x00R\x06sender\x12G\n" +
-	"\vtransaction\x18\x03 \x01(\v2#.iota.grpc.events.TransactionFilterH\x00R\vtransaction\x12E\n" +
-	"\vmove_module\x18\x04 \x01(\v2\".iota.grpc.events.MoveModuleFilterH\x00R\n" +
+	"\x03all\x18\x01 \x01(\v2\x1b.iota.grpc.common.AllFilterH\x00R\x03all\x129\n" +
+	"\x06sender\x18\x02 \x01(\v2\x1f.iota.grpc.common.AddressFilterH\x00R\x06sender\x12M\n" +
+	"\vtransaction\x18\x03 \x01(\v2).iota.grpc.common.TransactionDigestFilterH\x00R\vtransaction\x12E\n" +
+	"\vmove_module\x18\x04 \x01(\v2\".iota.grpc.common.MoveModuleFilterH\x00R\n" +
 	"moveModule\x12O\n" +
-	"\x0fmove_event_type\x18\x05 \x01(\v2%.iota.grpc.events.MoveEventTypeFilterH\x00R\rmoveEventType\x12U\n" +
-	"\x11move_event_module\x18\x06 \x01(\v2'.iota.grpc.events.MoveEventModuleFilterH\x00R\x0fmoveEventModule\x12B\n" +
+	"\x0fmove_event_type\x18\x05 \x01(\v2%.iota.grpc.common.MoveEventTypeFilterH\x00R\rmoveEventType\x12U\n" +
+	"\x11move_event_module\x18\x06 \x01(\v2'.iota.grpc.common.MoveEventModuleFilterH\x00R\x0fmoveEventModule\x12B\n" +
 	"\n" +
 	"time_range\x18\a \x01(\v2!.iota.grpc.events.TimeRangeFilterH\x00R\ttimeRangeB\b\n" +
-	"\x06filter\"\v\n" +
-	"\tAllFilter\"A\n" +
-	"\fSenderFilter\x121\n" +
-	"\x06sender\x18\x01 \x01(\v2\x19.iota.grpc.common.AddressR\x06sender\"U\n" +
-	"\x11TransactionFilter\x12@\n" +
-	"\ttx_digest\x18\x01 \x01(\v2#.iota.grpc.common.TransactionDigestR\btxDigest\"d\n" +
-	"\x10MoveModuleFilter\x128\n" +
-	"\n" +
-	"package_id\x18\x01 \x01(\v2\x19.iota.grpc.common.AddressR\tpackageId\x12\x16\n" +
-	"\x06module\x18\x02 \x01(\tR\x06module\"{\n" +
-	"\x13MoveEventTypeFilter\x128\n" +
-	"\n" +
-	"package_id\x18\x01 \x01(\v2\x19.iota.grpc.common.AddressR\tpackageId\x12\x16\n" +
-	"\x06module\x18\x02 \x01(\tR\x06module\x12\x12\n" +
-	"\x04name\x18\x03 \x01(\tR\x04name\"i\n" +
-	"\x15MoveEventModuleFilter\x128\n" +
-	"\n" +
-	"package_id\x18\x01 \x01(\v2\x19.iota.grpc.common.AddressR\tpackageId\x12\x16\n" +
-	"\x06module\x18\x02 \x01(\tR\x06module\"K\n" +
+	"\x06filter\"K\n" +
 	"\x0fTimeRangeFilter\x12\x1d\n" +
 	"\n" +
 	"start_time\x18\x01 \x01(\x04R\tstartTime\x12\x19\n" +
@@ -801,49 +489,44 @@ func file_event_proto_rawDescGZIP() []byte {
 	return file_event_proto_rawDescData
 }
 
-var file_event_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_event_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_event_proto_goTypes = []any{
-	(*EventStreamRequest)(nil),    // 0: iota.grpc.events.EventStreamRequest
-	(*Event)(nil),                 // 1: iota.grpc.events.Event
-	(*EventID)(nil),               // 2: iota.grpc.events.EventID
-	(*EventFilter)(nil),           // 3: iota.grpc.events.EventFilter
-	(*AllFilter)(nil),             // 4: iota.grpc.events.AllFilter
-	(*SenderFilter)(nil),          // 5: iota.grpc.events.SenderFilter
-	(*TransactionFilter)(nil),     // 6: iota.grpc.events.TransactionFilter
-	(*MoveModuleFilter)(nil),      // 7: iota.grpc.events.MoveModuleFilter
-	(*MoveEventTypeFilter)(nil),   // 8: iota.grpc.events.MoveEventTypeFilter
-	(*MoveEventModuleFilter)(nil), // 9: iota.grpc.events.MoveEventModuleFilter
-	(*TimeRangeFilter)(nil),       // 10: iota.grpc.events.TimeRangeFilter
-	(*Address)(nil),               // 11: iota.grpc.common.Address
-	(*BcsData)(nil),               // 12: iota.grpc.common.BcsData
-	(*TransactionDigest)(nil),     // 13: iota.grpc.common.TransactionDigest
+	(*EventStreamRequest)(nil),      // 0: iota.grpc.events.EventStreamRequest
+	(*Event)(nil),                   // 1: iota.grpc.events.Event
+	(*EventID)(nil),                 // 2: iota.grpc.events.EventID
+	(*EventFilter)(nil),             // 3: iota.grpc.events.EventFilter
+	(*TimeRangeFilter)(nil),         // 4: iota.grpc.events.TimeRangeFilter
+	(*Address)(nil),                 // 5: iota.grpc.common.Address
+	(*BcsData)(nil),                 // 6: iota.grpc.common.BcsData
+	(*TransactionDigest)(nil),       // 7: iota.grpc.common.TransactionDigest
+	(*AllFilter)(nil),               // 8: iota.grpc.common.AllFilter
+	(*AddressFilter)(nil),           // 9: iota.grpc.common.AddressFilter
+	(*TransactionDigestFilter)(nil), // 10: iota.grpc.common.TransactionDigestFilter
+	(*MoveModuleFilter)(nil),        // 11: iota.grpc.common.MoveModuleFilter
+	(*MoveEventTypeFilter)(nil),     // 12: iota.grpc.common.MoveEventTypeFilter
+	(*MoveEventModuleFilter)(nil),   // 13: iota.grpc.common.MoveEventModuleFilter
 }
 var file_event_proto_depIdxs = []int32{
 	3,  // 0: iota.grpc.events.EventStreamRequest.filter:type_name -> iota.grpc.events.EventFilter
 	2,  // 1: iota.grpc.events.Event.event_id:type_name -> iota.grpc.events.EventID
-	11, // 2: iota.grpc.events.Event.package_id:type_name -> iota.grpc.common.Address
-	11, // 3: iota.grpc.events.Event.sender:type_name -> iota.grpc.common.Address
-	12, // 4: iota.grpc.events.Event.event_data:type_name -> iota.grpc.common.BcsData
-	13, // 5: iota.grpc.events.EventID.tx_digest:type_name -> iota.grpc.common.TransactionDigest
-	4,  // 6: iota.grpc.events.EventFilter.all:type_name -> iota.grpc.events.AllFilter
-	5,  // 7: iota.grpc.events.EventFilter.sender:type_name -> iota.grpc.events.SenderFilter
-	6,  // 8: iota.grpc.events.EventFilter.transaction:type_name -> iota.grpc.events.TransactionFilter
-	7,  // 9: iota.grpc.events.EventFilter.move_module:type_name -> iota.grpc.events.MoveModuleFilter
-	8,  // 10: iota.grpc.events.EventFilter.move_event_type:type_name -> iota.grpc.events.MoveEventTypeFilter
-	9,  // 11: iota.grpc.events.EventFilter.move_event_module:type_name -> iota.grpc.events.MoveEventModuleFilter
-	10, // 12: iota.grpc.events.EventFilter.time_range:type_name -> iota.grpc.events.TimeRangeFilter
-	11, // 13: iota.grpc.events.SenderFilter.sender:type_name -> iota.grpc.common.Address
-	13, // 14: iota.grpc.events.TransactionFilter.tx_digest:type_name -> iota.grpc.common.TransactionDigest
-	11, // 15: iota.grpc.events.MoveModuleFilter.package_id:type_name -> iota.grpc.common.Address
-	11, // 16: iota.grpc.events.MoveEventTypeFilter.package_id:type_name -> iota.grpc.common.Address
-	11, // 17: iota.grpc.events.MoveEventModuleFilter.package_id:type_name -> iota.grpc.common.Address
-	0,  // 18: iota.grpc.events.EventService.StreamEvents:input_type -> iota.grpc.events.EventStreamRequest
-	1,  // 19: iota.grpc.events.EventService.StreamEvents:output_type -> iota.grpc.events.Event
-	19, // [19:20] is the sub-list for method output_type
-	18, // [18:19] is the sub-list for method input_type
-	18, // [18:18] is the sub-list for extension type_name
-	18, // [18:18] is the sub-list for extension extendee
-	0,  // [0:18] is the sub-list for field type_name
+	5,  // 2: iota.grpc.events.Event.package_id:type_name -> iota.grpc.common.Address
+	5,  // 3: iota.grpc.events.Event.sender:type_name -> iota.grpc.common.Address
+	6,  // 4: iota.grpc.events.Event.event_data:type_name -> iota.grpc.common.BcsData
+	7,  // 5: iota.grpc.events.EventID.tx_digest:type_name -> iota.grpc.common.TransactionDigest
+	8,  // 6: iota.grpc.events.EventFilter.all:type_name -> iota.grpc.common.AllFilter
+	9,  // 7: iota.grpc.events.EventFilter.sender:type_name -> iota.grpc.common.AddressFilter
+	10, // 8: iota.grpc.events.EventFilter.transaction:type_name -> iota.grpc.common.TransactionDigestFilter
+	11, // 9: iota.grpc.events.EventFilter.move_module:type_name -> iota.grpc.common.MoveModuleFilter
+	12, // 10: iota.grpc.events.EventFilter.move_event_type:type_name -> iota.grpc.common.MoveEventTypeFilter
+	13, // 11: iota.grpc.events.EventFilter.move_event_module:type_name -> iota.grpc.common.MoveEventModuleFilter
+	4,  // 12: iota.grpc.events.EventFilter.time_range:type_name -> iota.grpc.events.TimeRangeFilter
+	0,  // 13: iota.grpc.events.EventService.StreamEvents:input_type -> iota.grpc.events.EventStreamRequest
+	1,  // 14: iota.grpc.events.EventService.StreamEvents:output_type -> iota.grpc.events.Event
+	14, // [14:15] is the sub-list for method output_type
+	13, // [13:14] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_event_proto_init() }
@@ -868,7 +551,7 @@ func file_event_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_event_proto_rawDesc), len(file_event_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   11,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

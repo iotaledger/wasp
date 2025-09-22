@@ -159,6 +159,361 @@ func (x *TransactionDigest) GetDigest() []byte {
 	return nil
 }
 
+// Match all events (no filtering)
+type AllFilter struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AllFilter) Reset() {
+	*x = AllFilter{}
+	mi := &file_common_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AllFilter) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AllFilter) ProtoMessage() {}
+
+func (x *AllFilter) ProtoReflect() protoreflect.Message {
+	mi := &file_common_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AllFilter.ProtoReflect.Descriptor instead.
+func (*AllFilter) Descriptor() ([]byte, []int) {
+	return file_common_proto_rawDescGZIP(), []int{3}
+}
+
+// Filter by address (sender, package, etc.)
+type AddressFilter struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Address       *Address               `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AddressFilter) Reset() {
+	*x = AddressFilter{}
+	mi := &file_common_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AddressFilter) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AddressFilter) ProtoMessage() {}
+
+func (x *AddressFilter) ProtoReflect() protoreflect.Message {
+	mi := &file_common_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AddressFilter.ProtoReflect.Descriptor instead.
+func (*AddressFilter) Descriptor() ([]byte, []int) {
+	return file_common_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *AddressFilter) GetAddress() *Address {
+	if x != nil {
+		return x.Address
+	}
+	return nil
+}
+
+// Filter by transaction digest
+type TransactionDigestFilter struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TxDigest      *TransactionDigest     `protobuf:"bytes,1,opt,name=tx_digest,json=txDigest,proto3" json:"tx_digest,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TransactionDigestFilter) Reset() {
+	*x = TransactionDigestFilter{}
+	mi := &file_common_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TransactionDigestFilter) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TransactionDigestFilter) ProtoMessage() {}
+
+func (x *TransactionDigestFilter) ProtoReflect() protoreflect.Message {
+	mi := &file_common_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TransactionDigestFilter.ProtoReflect.Descriptor instead.
+func (*TransactionDigestFilter) Descriptor() ([]byte, []int) {
+	return file_common_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *TransactionDigestFilter) GetTxDigest() *TransactionDigest {
+	if x != nil {
+		return x.TxDigest
+	}
+	return nil
+}
+
+// Filter by Move module (package + module)
+type MoveModuleFilter struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PackageId     *Address               `protobuf:"bytes,1,opt,name=package_id,json=packageId,proto3" json:"package_id,omitempty"` // Package ID
+	Module        string                 `protobuf:"bytes,2,opt,name=module,proto3" json:"module,omitempty"`                        // Module name
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MoveModuleFilter) Reset() {
+	*x = MoveModuleFilter{}
+	mi := &file_common_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MoveModuleFilter) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MoveModuleFilter) ProtoMessage() {}
+
+func (x *MoveModuleFilter) ProtoReflect() protoreflect.Message {
+	mi := &file_common_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MoveModuleFilter.ProtoReflect.Descriptor instead.
+func (*MoveModuleFilter) Descriptor() ([]byte, []int) {
+	return file_common_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *MoveModuleFilter) GetPackageId() *Address {
+	if x != nil {
+		return x.PackageId
+	}
+	return nil
+}
+
+func (x *MoveModuleFilter) GetModule() string {
+	if x != nil {
+		return x.Module
+	}
+	return ""
+}
+
+// Filter by Move event type (package + module + event name)
+type MoveEventTypeFilter struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PackageId     *Address               `protobuf:"bytes,1,opt,name=package_id,json=packageId,proto3" json:"package_id,omitempty"` // Package ID
+	Module        string                 `protobuf:"bytes,2,opt,name=module,proto3" json:"module,omitempty"`                        // Module name
+	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`                            // Event name
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MoveEventTypeFilter) Reset() {
+	*x = MoveEventTypeFilter{}
+	mi := &file_common_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MoveEventTypeFilter) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MoveEventTypeFilter) ProtoMessage() {}
+
+func (x *MoveEventTypeFilter) ProtoReflect() protoreflect.Message {
+	mi := &file_common_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MoveEventTypeFilter.ProtoReflect.Descriptor instead.
+func (*MoveEventTypeFilter) Descriptor() ([]byte, []int) {
+	return file_common_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *MoveEventTypeFilter) GetPackageId() *Address {
+	if x != nil {
+		return x.PackageId
+	}
+	return nil
+}
+
+func (x *MoveEventTypeFilter) GetModule() string {
+	if x != nil {
+		return x.Module
+	}
+	return ""
+}
+
+func (x *MoveEventTypeFilter) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+// Filter by Move event module (package + module for events)
+type MoveEventModuleFilter struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PackageId     *Address               `protobuf:"bytes,1,opt,name=package_id,json=packageId,proto3" json:"package_id,omitempty"` // Package ID
+	Module        string                 `protobuf:"bytes,2,opt,name=module,proto3" json:"module,omitempty"`                        // Module name
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MoveEventModuleFilter) Reset() {
+	*x = MoveEventModuleFilter{}
+	mi := &file_common_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MoveEventModuleFilter) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MoveEventModuleFilter) ProtoMessage() {}
+
+func (x *MoveEventModuleFilter) ProtoReflect() protoreflect.Message {
+	mi := &file_common_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MoveEventModuleFilter.ProtoReflect.Descriptor instead.
+func (*MoveEventModuleFilter) Descriptor() ([]byte, []int) {
+	return file_common_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *MoveEventModuleFilter) GetPackageId() *Address {
+	if x != nil {
+		return x.PackageId
+	}
+	return nil
+}
+
+func (x *MoveEventModuleFilter) GetModule() string {
+	if x != nil {
+		return x.Module
+	}
+	return ""
+}
+
+// Filter by Move function (package + module + function for transactions)
+type MoveFunctionFilter struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PackageId     *Address               `protobuf:"bytes,1,opt,name=package_id,json=packageId,proto3" json:"package_id,omitempty"` // Package ID
+	Module        *string                `protobuf:"bytes,2,opt,name=module,proto3,oneof" json:"module,omitempty"`                  // Module name (optional)
+	Function      *string                `protobuf:"bytes,3,opt,name=function,proto3,oneof" json:"function,omitempty"`              // Function name (optional)
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MoveFunctionFilter) Reset() {
+	*x = MoveFunctionFilter{}
+	mi := &file_common_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MoveFunctionFilter) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MoveFunctionFilter) ProtoMessage() {}
+
+func (x *MoveFunctionFilter) ProtoReflect() protoreflect.Message {
+	mi := &file_common_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MoveFunctionFilter.ProtoReflect.Descriptor instead.
+func (*MoveFunctionFilter) Descriptor() ([]byte, []int) {
+	return file_common_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *MoveFunctionFilter) GetPackageId() *Address {
+	if x != nil {
+		return x.PackageId
+	}
+	return nil
+}
+
+func (x *MoveFunctionFilter) GetModule() string {
+	if x != nil && x.Module != nil {
+		return *x.Module
+	}
+	return ""
+}
+
+func (x *MoveFunctionFilter) GetFunction() string {
+	if x != nil && x.Function != nil {
+		return *x.Function
+	}
+	return ""
+}
+
 var File_common_proto protoreflect.FileDescriptor
 
 const file_common_proto_rawDesc = "" +
@@ -169,7 +524,32 @@ const file_common_proto_rawDesc = "" +
 	"\aAddress\x12\x18\n" +
 	"\aaddress\x18\x01 \x01(\fR\aaddress\"+\n" +
 	"\x11TransactionDigest\x12\x16\n" +
-	"\x06digest\x18\x01 \x01(\fR\x06digestB=Z;github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn_grpcb\x06proto3"
+	"\x06digest\x18\x01 \x01(\fR\x06digest\"\v\n" +
+	"\tAllFilter\"D\n" +
+	"\rAddressFilter\x123\n" +
+	"\aaddress\x18\x01 \x01(\v2\x19.iota.grpc.common.AddressR\aaddress\"[\n" +
+	"\x17TransactionDigestFilter\x12@\n" +
+	"\ttx_digest\x18\x01 \x01(\v2#.iota.grpc.common.TransactionDigestR\btxDigest\"d\n" +
+	"\x10MoveModuleFilter\x128\n" +
+	"\n" +
+	"package_id\x18\x01 \x01(\v2\x19.iota.grpc.common.AddressR\tpackageId\x12\x16\n" +
+	"\x06module\x18\x02 \x01(\tR\x06module\"{\n" +
+	"\x13MoveEventTypeFilter\x128\n" +
+	"\n" +
+	"package_id\x18\x01 \x01(\v2\x19.iota.grpc.common.AddressR\tpackageId\x12\x16\n" +
+	"\x06module\x18\x02 \x01(\tR\x06module\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\"i\n" +
+	"\x15MoveEventModuleFilter\x128\n" +
+	"\n" +
+	"package_id\x18\x01 \x01(\v2\x19.iota.grpc.common.AddressR\tpackageId\x12\x16\n" +
+	"\x06module\x18\x02 \x01(\tR\x06module\"\xa4\x01\n" +
+	"\x12MoveFunctionFilter\x128\n" +
+	"\n" +
+	"package_id\x18\x01 \x01(\v2\x19.iota.grpc.common.AddressR\tpackageId\x12\x1b\n" +
+	"\x06module\x18\x02 \x01(\tH\x00R\x06module\x88\x01\x01\x12\x1f\n" +
+	"\bfunction\x18\x03 \x01(\tH\x01R\bfunction\x88\x01\x01B\t\n" +
+	"\a_moduleB\v\n" +
+	"\t_functionB=Z;github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn_grpcb\x06proto3"
 
 var (
 	file_common_proto_rawDescOnce sync.Once
@@ -183,18 +563,31 @@ func file_common_proto_rawDescGZIP() []byte {
 	return file_common_proto_rawDescData
 }
 
-var file_common_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_common_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_common_proto_goTypes = []any{
-	(*BcsData)(nil),           // 0: iota.grpc.common.BcsData
-	(*Address)(nil),           // 1: iota.grpc.common.Address
-	(*TransactionDigest)(nil), // 2: iota.grpc.common.TransactionDigest
+	(*BcsData)(nil),                 // 0: iota.grpc.common.BcsData
+	(*Address)(nil),                 // 1: iota.grpc.common.Address
+	(*TransactionDigest)(nil),       // 2: iota.grpc.common.TransactionDigest
+	(*AllFilter)(nil),               // 3: iota.grpc.common.AllFilter
+	(*AddressFilter)(nil),           // 4: iota.grpc.common.AddressFilter
+	(*TransactionDigestFilter)(nil), // 5: iota.grpc.common.TransactionDigestFilter
+	(*MoveModuleFilter)(nil),        // 6: iota.grpc.common.MoveModuleFilter
+	(*MoveEventTypeFilter)(nil),     // 7: iota.grpc.common.MoveEventTypeFilter
+	(*MoveEventModuleFilter)(nil),   // 8: iota.grpc.common.MoveEventModuleFilter
+	(*MoveFunctionFilter)(nil),      // 9: iota.grpc.common.MoveFunctionFilter
 }
 var file_common_proto_depIdxs = []int32{
-	0, // [0:0] is the sub-list for method output_type
-	0, // [0:0] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	1, // 0: iota.grpc.common.AddressFilter.address:type_name -> iota.grpc.common.Address
+	2, // 1: iota.grpc.common.TransactionDigestFilter.tx_digest:type_name -> iota.grpc.common.TransactionDigest
+	1, // 2: iota.grpc.common.MoveModuleFilter.package_id:type_name -> iota.grpc.common.Address
+	1, // 3: iota.grpc.common.MoveEventTypeFilter.package_id:type_name -> iota.grpc.common.Address
+	1, // 4: iota.grpc.common.MoveEventModuleFilter.package_id:type_name -> iota.grpc.common.Address
+	1, // 5: iota.grpc.common.MoveFunctionFilter.package_id:type_name -> iota.grpc.common.Address
+	6, // [6:6] is the sub-list for method output_type
+	6, // [6:6] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_common_proto_init() }
@@ -202,13 +595,14 @@ func file_common_proto_init() {
 	if File_common_proto != nil {
 		return
 	}
+	file_common_proto_msgTypes[9].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_common_proto_rawDesc), len(file_common_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

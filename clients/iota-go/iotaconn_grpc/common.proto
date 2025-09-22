@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 syntax = "proto3";
-
 package iota.grpc.common;
+
 option go_package = "github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn_grpc";
 
 // BCS-serialized data container
@@ -19,4 +19,44 @@ message Address {
 // 32-byte Transaction digest
 message TransactionDigest {
     bytes digest = 1;
+}
+
+// Match all events (no filtering)
+message AllFilter {
+}
+
+// Filter by address (sender, package, etc.)
+message AddressFilter {
+    Address address = 1;
+}
+
+// Filter by transaction digest
+message TransactionDigestFilter {
+    TransactionDigest tx_digest = 1;
+}
+
+// Filter by Move module (package + module)
+message MoveModuleFilter {
+    Address package_id = 1;         // Package ID
+    string module = 2;               // Module name
+}
+
+// Filter by Move event type (package + module + event name)
+message MoveEventTypeFilter {
+    Address package_id = 1;         // Package ID
+    string module = 2;               // Module name
+    string name = 3;                 // Event name
+}
+
+// Filter by Move event module (package + module for events)
+message MoveEventModuleFilter {
+    Address package_id = 1;         // Package ID
+    string module = 2;               // Module name
+}
+
+// Filter by Move function (package + module + function for transactions)
+message MoveFunctionFilter {
+    Address package_id = 1;         // Package ID
+    optional string module = 2;     // Module name (optional)
+    optional string function = 3;   // Function name (optional)
 }
