@@ -19,7 +19,7 @@ func adaptDecimals(value *big.Int, fromDecimals, toDecimals uint8) (result *big.
 		exp.Exp(exp, big.NewInt(int64(fromDecimals-toDecimals)), nil)
 		result.DivMod(value, exp, remainder)
 	}
-	return
+	return result, remainder
 }
 
 // EthereumDecimalsToBaseTokenDecimals converts from wei (ethereum) to base tokens.

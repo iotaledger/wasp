@@ -38,7 +38,7 @@ func TestWaspAuth(t *testing.T) {
 	require.Error(t, err)
 
 	t.Run("table format output", func(t *testing.T) {
-		//t.Skip()
+		// t.Skip()
 		out := w.MustRun("auth", "login", "--node=0", "-u=wasp", "-p=wasp")
 		// Check for table output format with SUCCESS status
 		found := false
@@ -255,7 +255,6 @@ func TestWaspCLISendFunds(t *testing.T) {
 	outs := w.MustRun("wallet", "balance", "--address-index=1", "--json")
 	fmt.Println(strings.Join(outs, ""))
 	checkL1BalanceJSON(t, outs, 1000)
-
 }
 
 func TestWaspCLIDeposit(t *testing.T) {

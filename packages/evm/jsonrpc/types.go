@@ -242,7 +242,7 @@ func (c *RPCCallArgs) parse() (ret ethereum.CallMsg) {
 	if c.Input != nil {
 		ret.Data = *c.Input
 	}
-	return
+	return ret
 }
 
 // SendTxArgs represents the arguments to submit a new transaction into the transaction pool.

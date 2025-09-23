@@ -24,7 +24,7 @@ func blake2b160(data []byte) (ret [HashSizeBytes]byte) {
 		panic(err)
 	}
 	copy(ret[:], hash.Sum(nil))
-	return
+	return ret
 }
 
 func assertf(cond bool, format string, args ...interface{}) {

@@ -23,8 +23,7 @@ type Codec[T any] interface {
 func Decode[T any](b []byte, def ...T) (v T, err error) {
 	if b == nil {
 		if len(def) == 0 {
-			err = fmt.Errorf("%T: cannot decode nil bytes", v)
-			return
+			return v, fmt.Errorf("%T: cannot decode nil bytes", v)
 		}
 		return def[0], nil
 	}

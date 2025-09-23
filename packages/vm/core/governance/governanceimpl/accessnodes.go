@@ -134,5 +134,5 @@ func getChainNodes(ctx isc.SandboxView) (
 		accessNodes = append(accessNodes, pubKey)
 		return true
 	})
-	return
+	return candidates, accessNodes
 }
