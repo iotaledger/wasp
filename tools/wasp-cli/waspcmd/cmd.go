@@ -88,5 +88,5 @@ func DefaultWaspNodeFallback(node string) (string, error) {
 	default:
 		return "", errors.New("more than 1 wasp node in the configuration, you can specify the target node with `--node=<name>`")
 	}
-	panic("unreachable")
+	return "", errors.New("unreachable")
 }

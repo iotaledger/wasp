@@ -6,7 +6,6 @@ package codec
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/spf13/cobra"
@@ -68,14 +67,13 @@ func initDecodeCmd() *cobra.Command {
 		Use:   "call-result <type> [<type> ...]",
 		Short: "Decode the output of a contract function call",
 		Args:  cobra.MinimumNArgs(1),
-		Run: func(cmd *cobra.Command, cmdArgs []string) {
+		RunE: func(cmd *cobra.Command, cmdArgs []string) error {
 			callResults := util.ReadCallResultsAsJSON()
 
 			if len(callResults) != len(cmdArgs) {
 				log.Printf("Number of provided result types does not match number of results: types = %v, results = %v\n",
 					len(cmdArgs), len(callResults))
-				os.Exit(1)
-				return
+				return fmt.Errorf("mismatch between number of provided result types (%d) and results (%d)", len(cmdArgs), len(callResults))
 			}
 
 			for i := range cmdArgs {
@@ -83,6 +81,7 @@ func initDecodeCmd() *cobra.Command {
 				val := util.ValueToString(vtype, callResults[i])
 				log.Printf("[%v]: %s\n", i, val)
 			}
+			return nil
 		},
 	}
 }
@@ -92,11 +91,13 @@ func initDecodeWALCmd() *cobra.Command {
 		Use:   "wal <path>",
 		Short: "Parses and dumps a WAL file",
 		Args:  cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Printf("Reading WAL file '%s'\n", args[0])
 
 			block, err := utils.BlockFromFilePath(args[0])
-			log.Check(err)
+			if err != nil {
+				return fmt.Errorf("failed to read WAL file '%s': %w", args[0], err)
+			}
 
 			fmt.Printf("Block Number: %v\n", block.StateIndex())
 			fmt.Printf("L1 Commitment: %v\n", block.L1Commitment().String())
@@ -120,19 +121,19 @@ func initDecodeWALCmd() *cobra.Command {
 			fmt.Printf("\nRequests:\n\n")
 			receipts, err := blocklog.RequestReceiptsFromBlock(block)
 			if err != nil {
-				fmt.Println("Failed to decode receipts")
-				fmt.Println(err)
-			} else {
-				if len(receipts) == 0 {
-					fmt.Printf("No requests\n")
-				} else {
-					for i, receipt := range receipts {
-						fmt.Printf("%v:\n", i)
-						fmt.Printf("%v\n", receipt.String())
-					}
-					fmt.Printf("\n\n")
-				}
+				return fmt.Errorf("failed to decode receipts: %w", err)
 			}
+
+			if len(receipts) == 0 {
+				fmt.Printf("No requests\n")
+			} else {
+				for i, receipt := range receipts {
+					fmt.Printf("%v:\n", i)
+					fmt.Printf("%v\n", receipt.String())
+				}
+				fmt.Printf("\n\n")
+			}
+			return nil
 		},
 	}
 }

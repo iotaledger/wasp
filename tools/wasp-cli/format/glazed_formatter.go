@@ -374,19 +374,17 @@ func FormatWalletAddress(addressIndex uint32, address string) error {
 	return defaultFormatter.FormatWalletAddress(addressIndex, address)
 }
 
-// FormatAndExitWithError formats an error and exits
+// FormatAndExitWithError formats an error for glazed without exiting
 func FormatAndExitWithError(cmd interface{}, err error) error {
 	if err == nil {
 		return nil
 	}
 
-	// Format the error
+	// Try to format the error using glazed
 	if formatErr := FormatError("application", err.Error()); formatErr != nil {
 		// If formatting fails, just print the error
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 	}
 
-	// Exit with error code
-	os.Exit(1)
-	return nil // Never reached
+	return err
 }

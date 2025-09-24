@@ -206,7 +206,10 @@ func initDeployCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			chainName = defaultChainFallback(chainName)
+			chainName, err = defaultChainFallback(chainName)
+			if err != nil {
+				return err
+			}
 			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 			defer cancel()
 

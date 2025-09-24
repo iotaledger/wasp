@@ -18,13 +18,10 @@ func initAddressCmd() *cobra.Command {
 		Use:   "address",
 		Short: "Show the wallet address",
 		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			myWallet := wallet.Load()
 			address := myWallet.Address()
-			err := format.FormatWalletAddress(myWallet.AddressIndex(), address.String())
-			if err != nil {
-				log.Printf("Error formatting output: %v", err)
-			}
+			return format.FormatWalletAddress(myWallet.AddressIndex(), address.String())
 		},
 	}
 }
@@ -34,22 +31,16 @@ func initBalanceCmd() *cobra.Command {
 		Use:   "balance",
 		Short: "Show the wallet balance",
 		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			myWallet := wallet.Load()
 			address := myWallet.Address()
 			balance, err := cliclients.L1Client().GetAllBalances(context.Background(), address.AsIotaAddress())
 			if err != nil {
-				formatErr := format.FormatError("wallet_balance", fmt.Sprintf("Address: %s (index %d), Error: %s", address.String(), myWallet.AddressIndex(), err.Error()))
-				if formatErr != nil {
-					log.Printf("Error formatting output: %v", formatErr)
-				}
-				return
+				// Return the error so it can be formatted by the top-level handler
+				return fmt.Errorf("fetching balance for address %s (index %d): %w", address.String(), myWallet.AddressIndex(), err)
 			}
 
-			err = format.FormatWalletBalance(myWallet.AddressIndex(), address.String(), balance)
-			if err != nil {
-				log.Printf("Error formatting output: %v", err)
-			}
+			return format.FormatWalletBalance(myWallet.AddressIndex(), address.String(), balance)
 		},
 	}
 }

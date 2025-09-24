@@ -5,6 +5,7 @@ package chain
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/spf13/cobra"
 
@@ -78,8 +79,8 @@ func initChangeGovControllerCmd() *cobra.Command {
 		Use:   "change-gov-controller <address> --chain=<chainID>",
 		Short: "Changes the governance controller for a given chain (WARNING: you will lose control over the chain)",
 		Args:  cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			panic("refactor me: l1connection.OutputMap")
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fmt.Errorf("change-gov-controller command is not implemented yet")
 			/*
 				chain := config.GetChain(defaultChainFallback(chain))
 
