@@ -4,7 +4,6 @@ import (
 	"runtime"
 
 	"fortio.org/safecast"
-	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 
 	hivedb "github.com/iotaledger/hive.go/db"
@@ -22,17 +21,25 @@ func initBuildIndex() *cobra.Command {
 		Use:   "build-index <waspdb path> <indexdb destination path>",
 		Short: "Builds a new EVM JSONRPC index db",
 		Args:  cobra.ExactArgs(2),
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			logger := log.HiveLogger()
 
 			waspDBPath := args[0]
 			db, err := database.NewDatabase(hivedb.EngineRocksDB, waspDBPath, false, database.CacheSizeDefault)
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 
-			waspDBStore := indexedstore.New(lo.Must(state.NewStoreReadonly(db.KVStore())))
+			storeRO, err := state.NewStoreReadonly(db.KVStore())
+			if err != nil {
+				return err
+			}
+			waspDBStore := indexedstore.New(storeRO)
 
 			latestIndex, err := waspDBStore.LatestBlockIndex()
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 
 			logger.LogInfo("Creating index in parallel mode.")
 			logger.LogInfof("Latest block index: %d\n", latestIndex)
@@ -40,7 +47,9 @@ func initBuildIndex() *cobra.Command {
 			index := jsonrpc.NewIndex(waspDBStore.StateByTrieRoot, hivedb.EngineRocksDB, args[1])
 
 			block, err := waspDBStore.StateByIndex(latestIndex)
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 
 			logger.LogInfof("Indexing with %d cores.\n", workers)
 
@@ -51,8 +60,10 @@ func initBuildIndex() *cobra.Command {
 				return waspDBStore
 			}
 
-			err = index.IndexAllBlocksInParallel(logger, storeProvider, block.TrieRoot(), workers)
-			log.Check(err)
+			if err := index.IndexAllBlocksInParallel(logger, storeProvider, block.TrieRoot(), workers); err != nil {
+				return err
+			}
+			return nil
 		},
 	}
 

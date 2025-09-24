@@ -143,12 +143,21 @@ func initDecodeMetadataCmd() *cobra.Command {
 		Use:   "metadata <0x...>",
 		Short: "Translates metadata from Hex to a humanly-readable format",
 		Args:  cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			metadata, err := isc.RequestMetadataFromBytes(hexutil.MustDecode(args[0]))
-			log.Check(err)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			bytes, err := hexutil.Decode(args[0])
+			if err != nil {
+				return err
+			}
+			metadata, err := isc.RequestMetadataFromBytes(bytes)
+			if err != nil {
+				return err
+			}
 			jsonBytes, err := json.MarshalIndent(metadata, "", "  ")
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 			log.Printf("%s\n", jsonBytes)
+			return nil
 		},
 	}
 }
@@ -158,10 +167,17 @@ func initDecodeGasFeePolicy() *cobra.Command {
 		Use:   "fee-policy <0x...>",
 		Short: "Translates gas fee policy from Hex to a humanly-readable format",
 		Args:  cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			bytes, err := cryptolib.DecodeHex(args[0])
-			log.Check(err)
-			log.Printf("%v", gas.MustFeePolicyFromBytes(bytes).String())
+			if err != nil {
+				return err
+			}
+			fp, err := gas.FeePolicyFromBytes(bytes)
+			if err != nil {
+				return err
+			}
+			log.Printf("%v", fp.String())
+			return nil
 		},
 	}
 }
@@ -177,18 +193,22 @@ func initEncodeGasFeePolicy() *cobra.Command {
 		Use:   "fee-policy",
 		Short: "Translates metadata from Hex to a humanly-readable format",
 		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			feePolicy := gas.DefaultFeePolicy()
 
 			if gasPerToken != "" {
 				ratio, err := wasputil.Ratio32FromString(gasPerToken)
-				log.Check(err)
+				if err != nil {
+					return err
+				}
 				feePolicy.GasPerToken = ratio
 			}
 
 			if evmGasRatio != "" {
 				ratio, err := wasputil.Ratio32FromString(evmGasRatio)
-				log.Check(err)
+				if err != nil {
+					return err
+				}
 				feePolicy.EVMGasRatio = ratio
 			}
 
@@ -197,6 +217,7 @@ func initEncodeGasFeePolicy() *cobra.Command {
 			}
 
 			log.Printf("%s", cryptolib.EncodeHex(feePolicy.Bytes()))
+			return nil
 		},
 	}
 

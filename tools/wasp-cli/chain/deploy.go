@@ -45,18 +45,21 @@ func initDeployMoveContractCmd() *cobra.Command {
 		Use:   "deploy-move-contract",
 		Short: "Deploy a new move contract and save its package id",
 		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 			defer cancel()
 
 			l1Client := cliclients.L1Client()
 			kp := wallet.Load()
 			packageID, err := l1Client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(kp))
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 
 			config.SetPackageID(packageID)
 
 			log.Printf("Move contract deployed.\nPackageID: %v\n", packageID.String())
+			return nil
 		},
 	}
 
