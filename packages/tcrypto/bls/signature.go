@@ -19,12 +19,11 @@ type Signature [SignatureSize]byte
 func SignatureFromBytes(b []byte) (signature Signature, err error) {
 	reader := bytes.NewReader(b)
 
-	if signature, err = SignatureFromReader(reader); err != nil {
-		err = ierrors.Wrap(err, "failed to parse Signature from Reader")
-
-		return
+	signature, err = SignatureFromReader(reader)
+	if err != nil {
+		return Signature{}, ierrors.Wrap(err, "failed to parse Signature from Reader")
 	}
-	return
+	return signature, nil
 }
 
 // SignatureFromBase58EncodedString creates a Signature from a base58 encoded string.
@@ -32,17 +31,15 @@ func SignatureFromBase58EncodedString(base58EncodedString string) (signature Sig
 	bytes := base58.Decode(base58EncodedString)
 	if len(bytes) == 0 {
 		err = ierrors.Wrapf(ErrBase58DecodeFailed, "error while decoding base58 encoded Signature: %s", base58EncodedString)
-
-		return
+		return Signature{}, err
 	}
 
 	if signature, err = SignatureFromBytes(bytes); err != nil {
 		err = ierrors.Wrap(err, "failed to parse Signature from bytes")
-
-		return
+		return Signature{}, err
 	}
 
-	return
+	return signature, nil
 }
 
 // SignatureFromReader unmarshals a Signature using a MarshalUtil (for easier unmarshalling).
@@ -52,17 +49,17 @@ func SignatureFromReader(reader *bytes.Reader) (signature Signature, err error) 
 	n, err := reader.Read(buffer)
 	if err != nil {
 		err = ierrors.Wrapf(ErrParseBytesFailed, "failed to read signature bytes: %w", err)
-		return
+		return Signature{}, err
 	}
 
 	if n != SignatureSize {
 		err = ierrors.Wrapf(ErrParseBytesFailed, "failed to read Signature length: %d", n)
-		return
+		return Signature{}, err
 	}
 
 	copy(signature[:], buffer)
 
-	return
+	return signature, nil
 }
 
 // Bytes returns a marshaled version of the Signature.
@@ -105,10 +102,10 @@ func SignatureWithPublicKeyFromBytes(b []byte) (signatureWithPublicKey Signature
 
 	if signatureWithPublicKey, err = SignatureWithPublicKeyFromReader(reader); err != nil {
 		err = ierrors.Wrap(err, "failed to parse SignatureWithPublicKey from Reader")
-		return
+		return SignatureWithPublicKey{}, err
 	}
 
-	return
+	return signatureWithPublicKey, nil
 }
 
 // SignatureWithPublicKeyFromBase58EncodedString creates a SignatureWithPublicKey from a base58 encoded string.
@@ -116,34 +113,30 @@ func SignatureWithPublicKeyFromBase58EncodedString(base58EncodedString string) (
 	bytes := base58.Decode(base58EncodedString)
 	if len(bytes) == 0 {
 		err = ierrors.Wrapf(ErrBase58DecodeFailed, "error while decoding base58 encoded SignatureWithPublicKey: %s", base58EncodedString)
-
-		return
+		return SignatureWithPublicKey{}, err
 	}
 
 	if signatureWithPublicKey, err = SignatureWithPublicKeyFromBytes(bytes); err != nil {
 		err = ierrors.Wrap(err, "failed to parse SignatureWithPublicKey from bytes")
-
-		return
+		return SignatureWithPublicKey{}, err
 	}
 
-	return
+	return signatureWithPublicKey, nil
 }
 
 // SignatureWithPublicKeyFromReader unmarshals a SignatureWithPublicKey using a Reader (for easier unmarshalling).
 func SignatureWithPublicKeyFromReader(reader *bytes.Reader) (signatureWithPublicKey SignatureWithPublicKey, err error) {
 	if signatureWithPublicKey.PublicKey, err = PublicKeyFromReader(reader); err != nil {
 		err = ierrors.Wrap(err, "failed to parse PublicKey from Reader")
-
-		return
+		return SignatureWithPublicKey{}, err
 	}
 
 	if signatureWithPublicKey.Signature, err = SignatureFromReader(reader); err != nil {
 		err = ierrors.Wrap(err, "failed to parse Signature from Reader")
-
-		return
+		return SignatureWithPublicKey{}, err
 	}
 
-	return
+	return signatureWithPublicKey, nil
 }
 
 // IsValid returns true if the signature is correct for the given data.

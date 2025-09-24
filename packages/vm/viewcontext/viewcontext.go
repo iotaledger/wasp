@@ -271,7 +271,7 @@ func (ctx *ViewContext) GetBlockProof(blockIndex uint32) (blockInfo *blocklog.Bl
 		key := blocklog.Contract.FullKey(blocklog.BlockInfoKey(blockIndex))
 		proof = ctx.stateReader.GetMerkleProof(key)
 	}, ctx.log, "GetMerkleProof: ")
-	return
+	return blockInfo, proof, err
 }
 
 // GetRootCommitment calculates root commitment from state.

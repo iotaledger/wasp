@@ -18,7 +18,7 @@ func StorageSlot(n uint8) common.Hash {
 // StorageEncodeUint8 encodes an uint8 according to the storage spec.
 func StorageEncodeUint8(n uint8) (ret common.Hash) {
 	ret[len(ret)-1] = n
-	return
+	return ret
 }
 
 // StorageEncodeShortString encodes a short string according to the storage spec.
@@ -37,7 +37,7 @@ func StorageEncodeString(slotNumber uint8, s string) (ret map[common.Hash]common
 	ret = make(map[common.Hash]common.Hash)
 	if len(s) <= 31 {
 		ret[mainSlot] = StorageEncodeShortString(s)
-		return
+		return ret
 	}
 
 	ret[mainSlot] = common.BigToHash(big.NewInt(int64(len(s)*2) + 1))
@@ -59,7 +59,7 @@ func StorageEncodeString(slotNumber uint8, s string) (ret map[common.Hash]common
 		}
 		i++
 	}
-	return
+	return ret
 }
 
 // StorageEncodeBytes encodes a byte array according to the storage spec.
@@ -78,5 +78,5 @@ func StorageEncodeBytes32(b []byte) (ret common.Hash) {
 		panic("expected len(b) == 32")
 	}
 	copy(ret[:], b)
-	return
+	return ret
 }

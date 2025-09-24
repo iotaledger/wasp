@@ -370,10 +370,9 @@ func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) 
 ) {
 	onLedregReq, l1Res, vmRes, anchorTransitionPTBRes, err = ch.PostRequestSyncExt(req, keyPair)
 	if err != nil {
-		return
+		return nil, nil, nil, nil, err
 	}
-	err = ch.ResolveVMError(vmRes.Receipt.Error).AsGoError()
-	return
+	return onLedregReq, l1Res, vmRes, anchorTransitionPTBRes, ch.ResolveVMError(vmRes.Receipt.Error).AsGoError()
 }
 
 // LastReceipt returns the receipt for the latest request processed by the chain, will return nil if the last block is empty

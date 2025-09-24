@@ -19,11 +19,12 @@ type PublicKey struct {
 func PublicKeyFromBytes(b []byte) (publicKey PublicKey, err error) {
 	buffer := bytes.NewReader(b)
 
-	if publicKey, err = PublicKeyFromReader(buffer); err != nil {
+	publicKey, err = PublicKeyFromReader(buffer)
+	if err != nil {
 		err = ierrors.Wrap(err, "failed to parse PublicKey from MarshalUtil")
+		return PublicKey{}, err
 	}
-
-	return
+	return publicKey, nil
 }
 
 // PublicKeyFromBase58EncodedString creates a PublicKey from a base58 encoded string.
@@ -31,17 +32,15 @@ func PublicKeyFromBase58EncodedString(base58String string) (publicKey PublicKey,
 	bytes := base58.Decode(base58String)
 	if len(bytes) == 0 {
 		err = ierrors.Wrapf(ErrBase58DecodeFailed, "error while decoding base58 encoded PublicKey: %s", base58String)
-
-		return
+		return PublicKey{}, err
 	}
 
 	if publicKey, err = PublicKeyFromBytes(bytes); err != nil {
 		err = ierrors.Wrap(err, "failed to parse PublicKey from bytes")
-
-		return
+		return PublicKey{}, err
 	}
 
-	return
+	return publicKey, nil
 }
 
 // PublicKeyFromReader unmarshals a PublicKey using a Reader (for easier unmarshalling).
@@ -51,22 +50,22 @@ func PublicKeyFromReader(reader *bytes.Reader) (publicKey PublicKey, err error) 
 	n, err := reader.Read(publicKeyBytes)
 	if err != nil {
 		err = ierrors.Wrapf(ErrParseBytesFailed, "failed to read PublicKey bytes: %w", err)
-		return
+		return PublicKey{}, err
 	}
 
 	if n != PublicKeySize {
 		err = ierrors.Wrapf(ErrParseBytesFailed, "failed to read PrivateKey length: %d", n)
-		return
+		return PublicKey{}, err
 	}
 
 	publicKey.Point = blsSuite.G2().Point()
 	if err = publicKey.Point.UnmarshalBinary(publicKeyBytes); err != nil {
 		err = ierrors.Wrapf(ErrParseBytesFailed, "failed to unmarshal PublicKey: %w", err)
 
-		return
+		return PublicKey{}, err
 	}
 
-	return
+	return publicKey, nil
 }
 
 // SignatureValid reports whether the signature is valid for the given data.

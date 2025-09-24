@@ -33,17 +33,17 @@ func InitGenesis(genesisPath string) (*core.Genesis, error) {
 const MaxPreFundAmount = 10_000
 
 func RegulateGenesisAccountBalance(genesis *core.Genesis) *core.Genesis {
-    max := big.NewInt(MaxPreFundAmount)
-    for addr, acc := range genesis.Alloc {
-        switch {
-        case acc.Balance == nil:
-            acc.Balance = big.NewInt(0)
-        case acc.Balance.Cmp(max) > 0:
-            acc.Balance = new(big.Int).Set(max)
-        default:
-            acc.Balance = new(big.Int).Set(acc.Balance)
-        }
-        genesis.Alloc[addr] = acc
-    }
-    return genesis
+	max := big.NewInt(MaxPreFundAmount)
+	for addr, acc := range genesis.Alloc {
+		switch {
+		case acc.Balance == nil:
+			acc.Balance = big.NewInt(0)
+		case acc.Balance.Cmp(max) > 0:
+			acc.Balance = new(big.Int).Set(max)
+		default:
+			acc.Balance = new(big.Int).Set(acc.Balance)
+		}
+		genesis.Alloc[addr] = acc
+	}
+	return genesis
 }

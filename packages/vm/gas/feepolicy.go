@@ -45,7 +45,7 @@ func (p *FeePolicy) FeeFromGasBurned(gasUnits uint64, availableTokens coin.Value
 	}
 
 	sendToOwner = fee - sendToValidator
-	return
+	return sendToOwner, sendToValidator
 }
 
 // FeeFromGasWithGasPrice calculates the gas fee using the given evmGasPrice

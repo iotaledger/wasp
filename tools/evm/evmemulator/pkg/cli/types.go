@@ -1,12 +1,14 @@
 package cli
 
-var ListenAddress string
-var EngineListenAddress string
-var GenesisJsonPath string
-var NodeLaunchMode string
-var RemoteHost string
-var LogBodies bool
-var IsHive bool
+var (
+	ListenAddress       string
+	EngineListenAddress string
+	GenesisJsonPath     string
+	NodeLaunchMode      string
+	RemoteHost          string
+	LogBodies           bool
+	IsHive              bool
+)
 
 type TNodeLaunchMode string
 

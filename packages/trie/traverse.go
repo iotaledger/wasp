@@ -111,5 +111,5 @@ func commonPrefix(b1, b2 []byte) (prefix []byte, tail1 []byte, tail2 []byte) {
 	prefix = b1[:i]
 	tail1 = b1[i:]
 	tail2 = b2[i:]
-	return
+	return prefix, tail1, tail2
 }
