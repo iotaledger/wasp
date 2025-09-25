@@ -94,7 +94,10 @@ func initMetadataCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			chainAliasName = defaultChainFallback(chainAliasName)
+			chainAliasName, err = defaultChainFallback(chainAliasName)
+			if err != nil {
+				return err
+			}
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 

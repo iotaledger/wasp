@@ -54,7 +54,10 @@ func initPostRequestCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			chain = defaultChainFallback(chain)
+			chain, err = defaultChainFallback(chain)
+			if err != nil {
+				return err
+			}
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 

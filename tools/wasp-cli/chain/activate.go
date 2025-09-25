@@ -27,7 +27,10 @@ func initActivateCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			chainName = defaultChainFallback(chainName)
+			chainName, err = defaultChainFallback(chainName)
+			if err != nil {
+				return err
+			}
 			chainID := config.GetChain(chainName)
 			ctx := context.Background()
 			activateChain(ctx, node, chainName, chainID)
@@ -75,9 +78,11 @@ func initDeactivateCmd() *cobra.Command {
 		Short: "Deactivates the chain on selected nodes",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			chainName = defaultChainFallback(chainName)
-
 			var err error
+			chainName, err = defaultChainFallback(chainName)
+			if err != nil {
+				return err
+			}
 			node, err = waspcmd.DefaultWaspNodeFallback(node)
 			if err != nil {
 				return err

@@ -4,6 +4,8 @@
 package main
 
 import (
+	"fmt"
+	"os"
 	"strings"
 
 	goversion "github.com/hashicorp/go-version"
@@ -37,7 +39,7 @@ func initRootCmd(waspVersion string) *cobra.Command {
 	NOTE: this is alpha software, only suitable for testing purposes.`,
 		SilenceUsage:  true, // Disable automatic help display on errors
 		SilenceErrors: true, // Disable automatic error display on errors
-		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			config.Read()
 			whitelistedCommands := map[string]struct{}{
 				"init":            {},
@@ -54,8 +56,9 @@ func initRootCmd(waspVersion string) *cobra.Command {
 				log.Printf("Please run `wasp-cli wallet-migrate keychain` to move your seed into the Keychain of your operating system,\n")
 				log.Printf("or switch to alternative wallet providers such as the Ledger with: `wasp-cli wallet-provider sdk_ledger`.\n")
 
-				log.Fatalf("The cli will now exit.")
+				return fmt.Errorf("the cli will now exit")
 			}
+			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Help()
@@ -97,10 +100,11 @@ func init() {
 func main() {
 	err := rootCmd.Execute()
 	if err != nil {
-		// Format and display the error using glazed, then exit
+		// Format and display the error using glazed
 		if formatErr := format.FormatAndExitWithError(rootCmd, err); formatErr != nil {
-			// If glazed formatting fails, fall back to the original log.Check behavior
+			// If glazed formatting fails, fall back to the original log.Check behavior (which exits)
 			log.Check(err)
 		}
+		os.Exit(1)
 	}
 }

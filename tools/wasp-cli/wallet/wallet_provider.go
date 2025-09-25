@@ -12,14 +12,19 @@ func initWalletProviderCmd() *cobra.Command {
 		Use:   "provider (keychain, ledger)",
 		Short: "Get or set wallet provider (keychain, ledger)",
 		Args:  cobra.MaximumNArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {
 				log.Printf("Wallet provider: %s\n", string(wallet.GetWalletProvider()))
-				return
+				return nil
 			}
 
-			log.Check(wallet.SetWalletProvider(wallet.WalletProvider(args[0])))
-			log.Check(config.WriteConfig())
+			if err := wallet.SetWalletProvider(wallet.WalletProvider(args[0])); err != nil {
+				return err
+			}
+			if err := config.WriteConfig(); err != nil {
+				return err
+			}
+			return nil
 		},
 	}
 }
