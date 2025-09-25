@@ -26,9 +26,10 @@ type ChainStateDatabaseManager struct {
 	mutex sync.RWMutex
 
 	// options
-	engine       hivedb.Engine
-	databasePath string
-	cacheSize    uint64
+	engine                hivedb.Engine
+	databasePath          string
+	cacheSize             uint64
+	bloomFilterBitsPerKey float64
 
 	// databases
 	databases map[isc.ChainID]*databaseWithHealthTracker
@@ -49,6 +50,12 @@ func WithPath(databasePath string) options.Option[ChainStateDatabaseManager] {
 func WithCacheSize(cacheSize uint64) options.Option[ChainStateDatabaseManager] {
 	return func(d *ChainStateDatabaseManager) {
 		d.cacheSize = cacheSize
+	}
+}
+
+func WithBloomFilter(bitsPerKey float64) options.Option[ChainStateDatabaseManager] {
+	return func(d *ChainStateDatabaseManager) {
+		d.bloomFilterBitsPerKey = bitsPerKey
 	}
 }
 
@@ -103,6 +110,7 @@ func (m *ChainStateDatabaseManager) createDatabase(chainID isc.ChainID) (*databa
 		path.Join(m.databasePath, chainID.String()),
 		m.engine,
 		m.cacheSize,
+		m.bloomFilterBitsPerKey,
 		StoreVersionChainState,
 		nil,
 	)

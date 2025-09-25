@@ -3,13 +3,14 @@ package rocksdb
 
 // Options holds the options used to instantiate the underlying grocksdb.DB.
 type Options struct {
-	compression    bool
-	fillCache      bool
-	sync           bool
-	disableWAL     bool
-	parallelism    int
-	blockCacheSize uint64
-	custom         []string
+	compression           bool
+	fillCache             bool
+	sync                  bool
+	disableWAL            bool
+	parallelism           int
+	blockCacheSize        uint64
+	bloomFilterBitsPerKey float64
+	custom                []string
 }
 
 // Option is one of the Options.
@@ -54,6 +55,13 @@ func WriteDisableWAL(value bool) Option {
 func BlockCacheSize(size uint64) Option {
 	return func(args *Options) {
 		args.blockCacheSize = size
+	}
+}
+
+// BloomFilterBitsPerKey sets the bloom filter size
+func BloomFilterBitsPerKey(n float64) Option {
+	return func(args *Options) {
+		args.bloomFilterBitsPerKey = n
 	}
 }
 

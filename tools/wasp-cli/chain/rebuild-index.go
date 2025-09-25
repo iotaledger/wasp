@@ -25,7 +25,7 @@ func initBuildIndex() *cobra.Command {
 			logger := log.HiveLogger()
 
 			waspDBPath := args[0]
-			db, err := database.NewDatabase(hivedb.EngineRocksDB, waspDBPath, false, database.CacheSizeDefault)
+			db, err := database.NewReadOnlyDatabase(waspDBPath)
 			if err != nil {
 				return err
 			}

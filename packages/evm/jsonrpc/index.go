@@ -31,12 +31,15 @@ type Index struct {
 	mu sync.RWMutex
 }
 
+// TODO: enable from configuration
+const bloomFilterDisabled = 0
+
 func NewIndex(
 	stateByTrieRoot func(trieRoot trie.Hash) (state.State, error),
 	indexDBEngine hivedb.Engine,
 	indexDBPath string,
 ) *Index {
-	db, err := database.NewDatabase(indexDBEngine, indexDBPath, true, database.CacheSizeDefault)
+	db, err := database.NewDatabase(indexDBEngine, indexDBPath, true, database.CacheSizeDefault, bloomFilterDisabled)
 	if err != nil {
 		panic(err)
 	}

@@ -371,7 +371,7 @@ func (ch *Chain) LatestBlockIndex() uint32 {
 
 // SaveDB saves a RocksDB database with the contents of the chain DB
 func (ch *Chain) SaveDB(path string) {
-	db := lo.Must(database.NewDatabase("rocksdb", path, true, database.CacheSizeDefault))
+	db := lo.Must(database.NewDatabase("rocksdb", path, true, database.CacheSizeDefault, 0))
 	store := db.KVStore()
 	lo.Must0(ch.db.Iterate(nil, func(k []byte, v []byte) bool {
 		lo.Must0(store.Set(k, v))

@@ -13,7 +13,8 @@ type ParametersDatabase struct {
 		// Path defines the path to the chain state databases folder.
 		Path string `default:"waspdb/chains/data" usage:"the path to the chain state databases folder"`
 
-		CacheSize uint64 `default:"33554432" usage:"size of the RocksDB block cache"`
+		CacheSize             uint64  `default:"33554432" usage:"size of the RocksDB block cache"`
+		BloomFilterBitsPerKey float64 `default:"0" usage:"RocksDB bloom filter bits per key"`
 	}
 
 	// DebugSkipHealthCheck defines whether to ignore the check for corrupted databases.

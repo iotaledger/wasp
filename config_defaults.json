@@ -32,7 +32,8 @@
     "engine": "rocksdb",
     "chainState": {
       "path": "waspdb/chains/data",
-      "cacheSize": 33554432
+      "cacheSize": 33554432,
+      "bloomFilterBitsPerKey": 0
     },
     "debugSkipHealthCheck": true,
     "readOnlyFilePath": ""

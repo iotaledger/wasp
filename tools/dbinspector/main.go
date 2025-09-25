@@ -14,13 +14,14 @@ import (
 
 	"fortio.org/safecast"
 
+	"github.com/samber/lo"
+
 	hivedb "github.com/iotaledger/hive.go/db"
 	"github.com/iotaledger/wasp/v2/packages/database"
 	"github.com/iotaledger/wasp/v2/packages/kvstore"
 	"github.com/iotaledger/wasp/v2/packages/kvstore/rocksdb"
 	"github.com/iotaledger/wasp/v2/packages/state"
 	"github.com/iotaledger/wasp/v2/packages/state/indexedstore"
-	"github.com/iotaledger/wasp/v2/packages/state/statetest"
 )
 
 type processFunc func(context.Context, kvstore.KVStore)
@@ -58,7 +59,7 @@ func main() {
 }
 
 func getState(kvs kvstore.KVStore, index int64) state.State {
-	store := indexedstore.New(statetest.NewStoreWithUniqueWriteMutex(kvs))
+	store := indexedstore.New(lo.Must(state.NewStoreReadonly(kvs)))
 	if index < 0 {
 		state, err := store.LatestState()
 		mustNoError(err)

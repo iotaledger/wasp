@@ -90,6 +90,7 @@ func provide(c *dig.Container) error {
 			database.WithEngine(deps.DatabaseEngine),
 			database.WithPath(path),
 			database.WithCacheSize(ParamsDatabase.ChainState.CacheSize),
+			database.WithBloomFilter(ParamsDatabase.ChainState.BloomFilterBitsPerKey),
 		)
 		if err != nil {
 			Component.LogPanic(err.Error())

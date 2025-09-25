@@ -17,7 +17,7 @@ To run tests locally, Docker is required to be installed and started.
 Execute one of the following commands:
 
 ```shell
-go test -short -tags rocksdb ./...
+go test -short ./...
 ```
 
 Or, as an alternative:
@@ -108,4 +108,3 @@ Adjust your VS Code settings as follows:
 3. Add a `golangci` file watcher with a custom command. We recommend using it with the `--fix` parameter.
 
 ![A screenshot that shows how to add a golangci file watcher in GoLand.](/documentation/contributing/golintci-goland-3.png "Click to see the full-sized image.")
-

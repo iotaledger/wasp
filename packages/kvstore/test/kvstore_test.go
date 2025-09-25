@@ -14,6 +14,8 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/kvstore/rocksdb"
 )
 
+var dbImplementations = []string{"mapDB", "rocksdb"}
+
 var testEntries = []*struct {
 	kvstore.Key
 	kvstore.Value
