@@ -41,8 +41,6 @@ wal/
 tests_output.log
 *__debug_bin
 *.blk
-go.work
-go.work.sum
 TMP*
 tmp.*
 sdk/

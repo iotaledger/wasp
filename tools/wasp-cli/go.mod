@@ -20,12 +20,12 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-version v1.7.0
 	github.com/iotaledger/bcs-go v0.0.0-20250716100925-71f848cac593
-	github.com/iotaledger/hive.go/crypto v0.0.0-20250409140545-e1a365dbea74
-	github.com/iotaledger/hive.go/db v0.0.0-20250409140545-e1a365dbea74
-	github.com/iotaledger/hive.go/log v0.0.0-20250409140545-e1a365dbea74
+	github.com/iotaledger/hive.go/crypto v0.0.0-20251001162450-d572d7955f11
+	github.com/iotaledger/hive.go/db v0.0.0-20251001162450-d572d7955f11
+	github.com/iotaledger/hive.go/log v0.0.0-20251001162450-d572d7955f11
 	github.com/iotaledger/wasp/v2 v2.0.0-00010101000000-000000000000
-	github.com/knadh/koanf v1.5.0
-	github.com/knadh/koanf/v2 v2.2.0
+	github.com/knadh/koanf/providers/file v1.2.0
+	github.com/knadh/koanf/v2 v2.3.0
 	github.com/samber/lo v1.49.1
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
@@ -66,10 +66,10 @@ require (
 	github.com/ferranbt/fastssz v0.1.4 // indirect
 	github.com/flynn/noise v1.1.0 // indirect
 	github.com/francoispqt/gojay v1.2.13 // indirect
-	github.com/fsnotify/fsnotify v1.8.0 // indirect
+	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
-	github.com/go-viper/mapstructure/v2 v2.3.0 // indirect
+	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/godbus/dbus v0.0.0-20190726142602-4481cbc300e2 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/gofrs/flock v0.12.1 // indirect
@@ -88,16 +88,16 @@ require (
 	github.com/iancoleman/orderedmap v0.3.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/iotaledger/grocksdb v1.7.5-0.20230220105546-5162e18885c7 // indirect
-	github.com/iotaledger/hive.go/app v0.0.0-20250409140545-e1a365dbea74 // indirect
-	github.com/iotaledger/hive.go/constraints v0.0.0-20250409140545-e1a365dbea74 // indirect
-	github.com/iotaledger/hive.go/ds v0.0.0-20250409140545-e1a365dbea74 // indirect
-	github.com/iotaledger/hive.go/ierrors v0.0.0-20250409140545-e1a365dbea74 // indirect
-	github.com/iotaledger/hive.go/lo v0.0.0-20250409140545-e1a365dbea74 // indirect
+	github.com/iotaledger/hive.go/app v0.0.0-20251001162450-d572d7955f11 // indirect
+	github.com/iotaledger/hive.go/constraints v0.0.0-20251001162450-d572d7955f11 // indirect
+	github.com/iotaledger/hive.go/ds v0.0.0-20251001162450-d572d7955f11 // indirect
+	github.com/iotaledger/hive.go/ierrors v0.0.0-20251001162450-d572d7955f11 // indirect
+	github.com/iotaledger/hive.go/lo v0.0.0-20251001162450-d572d7955f11 // indirect
 	github.com/iotaledger/hive.go/objectstorage v0.0.0-20231018191940-f36386f4e2fa // indirect
-	github.com/iotaledger/hive.go/runtime v0.0.0-20250409140545-e1a365dbea74 // indirect
+	github.com/iotaledger/hive.go/runtime v0.0.0-20251001162450-d572d7955f11 // indirect
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1.0.20250409140545-e1a365dbea74 // indirect
-	github.com/iotaledger/hive.go/stringify v0.0.0-20250409140545-e1a365dbea74 // indirect
-	github.com/iotaledger/hive.go/web v0.0.0-20250409140545-e1a365dbea74 // indirect
+	github.com/iotaledger/hive.go/stringify v0.0.0-20251001162450-d572d7955f11 // indirect
+	github.com/iotaledger/hive.go/web v0.0.0-20251001162450-d572d7955f11 // indirect
 	github.com/ipfs/go-cid v0.5.0 // indirect
 	github.com/ipfs/go-log/v2 v2.6.0 // indirect
 	github.com/itchyny/gojq v0.12.12 // indirect
@@ -106,6 +106,12 @@ require (
 	github.com/jbenet/go-temp-err-catcher v0.1.0 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.10 // indirect
+	github.com/knadh/koanf/maps v0.1.2 // indirect
+	github.com/knadh/koanf/parsers/json v1.0.0 // indirect
+	github.com/knadh/koanf/providers/confmap v1.0.0 // indirect
+	github.com/knadh/koanf/providers/env v1.1.0 // indirect
+	github.com/knadh/koanf/providers/posflag v1.0.1 // indirect
+	github.com/knadh/koanf/providers/structs v1.0.0 // indirect
 	github.com/koron/go-ssdp v0.0.6 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/labstack/echo-contrib v0.17.2 // indirect

@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/iotaledger/hive.go/app"
-	"github.com/iotaledger/hive.go/apputils/config"
+	"github.com/iotaledger/hive.go/app/apputils/config"
 	waspApp "github.com/iotaledger/wasp/v2/components/app"
 )
 
