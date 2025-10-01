@@ -87,7 +87,6 @@ func (e *ChainEnv) testPermissionlessAccessNode(t *testing.T) {
 		e.Clu.L1Client(),
 		accessNodeClient,
 		e.Chain.ChainID,
-		e.Clu.Config.ISCPackageID(),
 		keyPair,
 	)
 	req, err := myClient.PostOffLedgerRequest(context.Background(), accounts.FuncWithdraw.Message(),

@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli"
@@ -20,7 +19,6 @@ import (
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
 	"github.com/knadh/koanf/providers/file"
 	"github.com/knadh/koanf/v2"
-	"github.com/samber/lo"
 )
 
 var (
@@ -187,20 +185,6 @@ func GetChain(name string) isc.ChainID {
 	chainID, err := isc.ChainIDFromString(configChainID)
 	log.Check(err)
 	return chainID
-}
-
-func GetPackageID() iotago.PackageID {
-	configPackageID := Config.String("l1.packageid")
-	if configPackageID == "" {
-		log.Fatal(fmt.Sprintf("package id '%s' doesn't exist in config file", configPackageID))
-	}
-
-	packageIDParsed := lo.Must(iotago.PackageIDFromHex(configPackageID))
-	return *packageIDParsed
-}
-
-func SetPackageID(id iotago.PackageID) {
-	Set("l1.packageid", id.String())
 }
 
 func GetWalletProviderString() string {

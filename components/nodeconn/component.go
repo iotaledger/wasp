@@ -7,12 +7,9 @@ import (
 
 	"go.uber.org/dig"
 
-	"github.com/samber/lo"
-
 	"github.com/iotaledger/hive.go/app"
 	"github.com/iotaledger/hive.go/app/shutdown"
 
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/components/chains"
 	"github.com/iotaledger/wasp/v2/packages/chain"
 	"github.com/iotaledger/wasp/v2/packages/daemon"
@@ -49,11 +46,8 @@ func provide(c *dig.Container) error {
 	}
 
 	if err := c.Provide(func(deps nodeConnectionDeps) chain.NodeConnection {
-		address := lo.Must(iotago.AddressFromHex(ParamsL1.PackageID))
-
 		nodeConnection, err := nodeconn.New(
 			Component.Daemon().ContextStopped(),
-			*address,
 			chains.ParamsChains.MempoolMaxOnledgerInPool,
 			ParamsL1.WebsocketURL,
 			ParamsL1.HttpURL,

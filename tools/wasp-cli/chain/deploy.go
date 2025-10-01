@@ -56,8 +56,6 @@ func initDeployMoveContractCmd() *cobra.Command {
 				return err
 			}
 
-			config.SetPackageID(packageID)
-
 			log.Printf("Move contract deployed.\nPackageID: %v\n", packageID.String())
 			return nil
 		},
@@ -170,15 +168,13 @@ func initializeDeploymentWithGasCoin(ctx context.Context, signer wallets.Wallet,
 	}, nil
 }
 
-func finalizeChainDeployment(ctx context.Context, node string, chainInitResult chainInitResult, stateMetadata *transaction.StateMetadata) isc.ChainID {
-	packageID := config.GetPackageID()
-
+func finalizeChainDeployment(ctx context.Context, node string, packageID *iotago.PackageID, chainInitResult chainInitResult, stateMetadata *transaction.StateMetadata) isc.ChainID {
 	par := apilib.CreateChainParams{
 		Layer1Client:      cliclients.L1Client(),
 		CommitteeAPIHosts: config.NodeAPIURLs([]string{node}),
 		Signer:            wallet.Load(),
 		Textout:           os.Stdout,
-		PackageID:         packageID,
+		PackageID:         *packageID,
 		StateMetadata:     *stateMetadata,
 	}
 
@@ -193,6 +189,7 @@ func initDeployCmd() *cobra.Command {
 		node             string
 		peers            []string
 		quorum           int
+		iscPackageIDStr  string
 		evmChainID       uint16
 		blockKeepAmount  int32
 		govControllerStr string
@@ -218,12 +215,23 @@ func initDeployCmd() *cobra.Command {
 
 			kp := wallet.Load()
 
+			iscPackageID := &iotago.PackageID{}
+			if iscPackageIDStr != "" {
+				iscPackageID, err = iotago.PackageIDFromHex(iscPackageIDStr)
+				log.Check(err)
+			} else {
+				log.Printf("Deploying Move contract...\n")
+				l1Client := cliclients.L1Client()
+				*iscPackageID, err = l1Client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(kp))
+				log.Check(err)
+			}
+
 			result, err := initializeDeploymentWithGasCoin(ctx, kp, node, chainName, peers, quorum)
 			if err != nil {
 				return err
 			}
 			stateMetadata := initializeNewChainState(kp.Address(), result.gasCoinObject, result.l1Params)
-			chainID := finalizeChainDeployment(ctx, node, *result, stateMetadata)
+			chainID := finalizeChainDeployment(ctx, node, iscPackageID, *result, stateMetadata)
 
 			config.AddChain(chainName, chainID.String())
 			activateChain(ctx, node, chainName, chainID)
@@ -233,6 +241,7 @@ func initDeployCmd() *cobra.Command {
 
 	waspcmd.WithWaspNodeFlag(cmd, &node)
 	waspcmd.WithPeersFlag(cmd, &peers)
+	cmd.Flags().StringVar(&iscPackageIDStr, "package-id", "", "ISC L1 package ID. If not set, new package will be deployed (see `deploy-move-contract` command)")
 	cmd.Flags().Uint16VarP(&evmChainID, "evm-chainid", "", evm.DefaultChainID, "ChainID")
 	cmd.Flags().Int32VarP(&blockKeepAmount, "block-keep-amount", "", governance.DefaultBlockKeepAmount, "Amount of blocks to keep in the blocklog (-1 to keep all blocks)")
 	cmd.Flags().StringVar(&chainName, "chain", "", "name of the chain")

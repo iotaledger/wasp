@@ -56,7 +56,6 @@ func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
 	// FIXME make them into parameters
 	w.MustRun("set", "l1.apiaddress", clu.Config.L1APIAddress())
 	w.MustRun("set", "l1.faucetaddress", clu.Config.L1FaucetAddress())
-	w.MustRun("set", "l1.packageid", clu.Config.ISCPackageID().String())
 	for _, node := range clu.Config.AllNodes() {
 		w.MustRun("wasp", "add", fmt.Sprintf("%d", node), clu.Config.APIHost(node))
 	}

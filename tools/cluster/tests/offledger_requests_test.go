@@ -115,7 +115,7 @@ func (e *ChainEnv) newWalletWithL2Funds(waspnode int, waitOnNodes ...int) *chain
 	userAgentID := isc.NewAddressAgentID(userAddress)
 
 	e.NewChainClient(userWallet)
-	chClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(waspnode), e.Chain.ChainID, e.Clu.Config.ISCPackageID(), userWallet)
+	chClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(waspnode), e.Chain.ChainID, userWallet)
 
 	// deposit funds before sending the off-ledger requestargs
 	reqTx, err := chClient.PostRequest(context.Background(), accounts.FuncDeposit.Message(), chainclient.PostRequestParams{

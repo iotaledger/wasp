@@ -16,7 +16,6 @@ import (
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/v2/clients"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
@@ -55,7 +54,6 @@ func (g *SingleL1Info) GetL1Params() *parameters.L1Params {
 type nodeConnection struct {
 	log.Logger
 
-	iscPackageID        iotago.PackageID
 	httpClient          clients.L1Client
 	l1ParamsFetcher     parameters.L1ParamsFetcher
 	wsURL               string
@@ -71,7 +69,6 @@ var _ chain.NodeConnection = &nodeConnection{}
 
 func New(
 	ctx context.Context,
-	iscPackageID iotago.PackageID,
 	maxNumberOfRequests int,
 	wsURL string,
 	httpURL string,
@@ -85,7 +82,6 @@ func New(
 
 	return &nodeConnection{
 		Logger:              log,
-		iscPackageID:        iscPackageID,
 		wsURL:               wsURL,
 		httpURL:             httpURL,
 		httpClient:          httpClient,
