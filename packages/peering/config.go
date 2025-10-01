@@ -4,10 +4,13 @@
 package peering
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net"
+	"net/netip"
 	"strconv"
+	"time"
 )
 
 // CheckPeeringURL verifies if peeringURL is of proper format.
@@ -46,16 +49,25 @@ func CheckMyPeeringURL(myPeeringURL string, configPort int) error {
 	if err != nil {
 		return err
 	}
-	ips, err := net.LookupIP(sHost)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	addrs, err := net.DefaultResolver.LookupIPAddr(ctx, sHost)
 	if err != nil {
 		return err
 	}
-	for _, ip := range ips {
-		if ip.IsLoopback() {
+	myIPSet := make(map[netip.Addr]bool, len(myIPs))
+	for _, s := range myIPs {
+		if a, err := netip.ParseAddr(s); err == nil {
+			myIPSet[a.Unmap()] = true
+		}
+	}
+	for _, a := range addrs {
+		if a.IP.IsLoopback() {
 			return nil
 		}
-		for _, myIP := range myIPs {
-			if ip.String() == myIP {
+		if addr, ok := netip.AddrFromSlice(a.IP); ok {
+			if _, hit := myIPSet[addr.Unmap()]; hit {
 				return nil
 			}
 		}

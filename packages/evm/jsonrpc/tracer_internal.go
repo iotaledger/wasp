@@ -44,10 +44,9 @@ func memoryCopy(m []byte, offset, size int64) (cpy []byte) {
 		cpy = make([]byte, size)
 		copy(cpy, m[offset:offset+size])
 
-		return
+		return cpy
 	}
-
-	return
+	return nil
 }
 
 // MemoryPtr returns a pointer to a slice of memory.

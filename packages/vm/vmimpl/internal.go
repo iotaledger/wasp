@@ -51,7 +51,7 @@ func (reqctx *requestContext) GetBaseTokensBalance(agentID isc.AgentID) (bts coi
 	reqctx.callAccounts(func(s *accounts.StateWriter) {
 		bts, remainder = s.GetBaseTokensBalance(agentID)
 	})
-	return
+	return bts, remainder
 }
 
 func (reqctx *requestContext) GetBaseTokensBalanceDiscardRemainder(agentID isc.AgentID) (bts coin.Value) {
@@ -102,7 +102,7 @@ func (reqctx *requestContext) GetCoinInfo(coinType coin.Type) (coinInfo *paramet
 	reqctx.callAccounts(func(s *accounts.StateWriter) {
 		coinInfo, ok = s.GetCoinInfo(coinType)
 	})
-	return
+	return coinInfo, ok
 }
 
 func (reqctx *requestContext) GetSenderTokenBalanceForFees() coin.Value {

@@ -1,8 +1,6 @@
 package wallet
 
 import (
-	"context"
-
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/util"
@@ -17,18 +15,21 @@ func initRequestFundsCmd() *cobra.Command {
 		Use:   "request-funds",
 		Short: "Request funds from the faucet",
 		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			address := wallet.Load().Address()
-			log.Check(cliclients.L1Client().RequestFunds(context.Background(), *address))
+			if err := cliclients.L1Client().RequestFunds(cmd.Context(), *address); err != nil {
+				return err
+			}
 
 			model := &RequestFundsModel{
 				Address: address.String(),
 				Message: "success",
 			}
 
-			util.TryManageCoinsAmount(context.Background())
+			util.TryManageCoinsAmount(cmd.Context())
 
 			log.PrintCLIOutput(model)
+			return nil
 		},
 	}
 }

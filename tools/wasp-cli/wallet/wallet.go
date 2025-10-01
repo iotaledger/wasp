@@ -21,11 +21,14 @@ func initInitCmd() *cobra.Command {
 		Use:   "init",
 		Short: "Initialize a new wallet",
 		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			wallet.InitWallet(initOverwrite)
 
 			config.SetWalletProviderString(string(wallet.GetWalletProvider()))
-			log.Check(config.WriteConfig())
+			if err := config.WriteConfig(); err != nil {
+				return err
+			}
+			return nil
 		},
 	}
 	cmd.Flags().BoolVar(&initOverwrite, "overwrite", false, "allow overwriting existing seed")

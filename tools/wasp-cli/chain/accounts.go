@@ -82,7 +82,10 @@ func initAccountObjectsCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			chain = defaultChainFallback(chain)
+			chain, err = defaultChainFallback(chain)
+			if err != nil {
+				return err
+			}
 			agentID := util.AgentIDFromArgs(args)
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
@@ -154,7 +157,10 @@ func initDepositCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			chain = defaultChainFallback(chain)
+			chain, err = defaultChainFallback(chain)
+			if err != nil {
+				return err
+			}
 			chainID := config.GetChain(chain)
 
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second*1000)
@@ -200,10 +206,6 @@ func initDepositCmd() *cobra.Command {
 						},
 					)
 				})
-
-				if err != nil {
-					return err
-				}
 			}
 
 			if printReceipt {

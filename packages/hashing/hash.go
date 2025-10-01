@@ -91,7 +91,7 @@ func HashDataBlake2b(data ...[]byte) (ret HashValue) {
 		}
 	}
 	copy(ret[:], h.Sum(nil))
-	return
+	return ret
 }
 
 func hashBlake2b() hash.Hash {
@@ -114,7 +114,7 @@ func HashKeccak(data ...[]byte) (ret HashValue) {
 		}
 	}
 	copy(ret[:], h.Sum(nil))
-	return
+	return ret
 }
 
 func hashKeccak() hash.Hash {
@@ -134,7 +134,7 @@ func HashSha3(data ...[]byte) (ret HashValue) {
 		}
 	}
 	copy(ret[:], h.Sum(nil))
-	return
+	return ret
 }
 
 func hashSha3() hash.Hash {

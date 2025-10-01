@@ -42,7 +42,7 @@ func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
 	})
 
 	// creating a config in a temp dir per test. If not provided, wasp-cli will reuse the config from HOME dir, which could mess up other tests or local configuration.
-	err = os.WriteFile(path.Join(dir, "wasp-cli.json"), []byte("{}"), 0644)
+	err = os.WriteFile(path.Join(dir, "wasp-cli.json"), []byte("{}"), 0o644)
 	require.NoError(t, err)
 
 	w := &WaspCLITest{

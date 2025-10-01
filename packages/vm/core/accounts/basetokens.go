@@ -18,7 +18,7 @@ func (s *StateReader) getBaseTokens(accountKey kv.Key) (baseTokens coin.Value, r
 	}
 	baseTokens = s.getCoinBalance(accountKey, coin.BaseTokenType)
 	remainderWei = s.getWeiRemainder(accountKey)
-	return
+	return baseTokens, remainderWei
 }
 
 func (s *StateReader) getBaseTokensFullDecimals(accountKey kv.Key) *big.Int {

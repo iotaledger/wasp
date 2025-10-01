@@ -48,7 +48,6 @@ func initDistrustCmd() *cobra.Command {
 			for _, t := range trustedList {
 				if t.PublicKey == input {
 					_, err := client.NodeAPI.DistrustPeer(ctx, t.PublicKey).Execute()
-
 					if err != nil {
 						log.Printf("error: failed to distrust %v/%v, reason=%v\n", t.PublicKey, t.PeeringURL, err)
 					} else {

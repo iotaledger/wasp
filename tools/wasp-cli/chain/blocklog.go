@@ -33,20 +33,30 @@ func initBlockCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			chain = defaultChainFallback(chain)
+			chain, err = defaultChainFallback(chain)
+			if err != nil {
+				return err
+			}
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
-			bi := fetchBlockInfo(ctx, client, args)
+			bi, err := fetchBlockInfo(ctx, client, args)
+			if err != nil {
+				return err
+			}
 			log.Printf("Block index: %d\n", bi.BlockIndex)
 			log.Printf("Timestamp: %s\n", bi.Timestamp.UTC().Format(time.RFC3339))
 			log.Printf("Total requests: %d\n", bi.TotalRequests)
 			log.Printf("Successful requests: %d\n", bi.NumSuccessfulRequests)
 			log.Printf("Off-ledger requests: %d\n", bi.NumOffLedgerRequests)
 			log.Printf("\n")
-			logRequestsInBlock(ctx, client, bi.BlockIndex)
+			if err := logRequestsInBlock(ctx, client, bi.BlockIndex); err != nil {
+				return err
+			}
 			log.Printf("\n")
-			logEventsInBlock(ctx, client, bi.BlockIndex)
+			if err := logEventsInBlock(ctx, client, bi.BlockIndex); err != nil {
+				return err
+			}
 			return nil
 		},
 	}
@@ -55,76 +65,87 @@ func initBlockCmd() *cobra.Command {
 	return cmd
 }
 
-func fetchBlockInfo(ctx context.Context, client *apiclient.APIClient, args []string) *apiclient.BlockInfoResponse {
+func fetchBlockInfo(ctx context.Context, client *apiclient.APIClient, args []string) (*apiclient.BlockInfoResponse, error) {
 	if len(args) == 0 {
 		blockInfo, _, err := client.
 			CorecontractsAPI.
 			BlocklogGetLatestBlockInfo(ctx).
 			Execute() //nolint:bodyclose // false positive
-
-		log.Check(err)
-		return blockInfo
+		if err != nil {
+			return nil, err
+		}
+		return blockInfo, nil
 	}
 
 	blockIndexStr := args[0]
 	index, err := strconv.ParseUint(blockIndexStr, 10, 32)
-	log.Check(err)
+	if err != nil {
+		return nil, fmt.Errorf("invalid block index '%s': %w", blockIndexStr, err)
+	}
 
 	blockInfo, _, err := client.
 		CorecontractsAPI.
 		BlocklogGetBlockInfo(ctx, uint32(index)).
 		Block(blockIndexStr).
 		Execute() //nolint:bodyclose // false positive
-
-	log.Check(err)
-	return blockInfo
+	if err != nil {
+		return nil, err
+	}
+	return blockInfo, nil
 }
 
-func logRequestsInBlock(ctx context.Context, client *apiclient.APIClient, index uint32) {
+func logRequestsInBlock(ctx context.Context, client *apiclient.APIClient, index uint32) error {
 	receipts, _, err := client.CorecontractsAPI.
 		BlocklogGetRequestReceiptsOfBlock(ctx, index).
 		Block(fmt.Sprintf("%d", index)).
 		Execute() //nolint:bodyclose // false positive
-
-	log.Check(err)
+	if err != nil {
+		return err
+	}
 
 	for i, receipt := range receipts {
 		r := receipt
 		util.LogReceipt(r, i)
 	}
+	return nil
 }
 
-func logEventsInBlock(ctx context.Context, client *apiclient.APIClient, index uint32) {
+func logEventsInBlock(ctx context.Context, client *apiclient.APIClient, index uint32) error {
 	events, _, err := client.CorecontractsAPI.
 		BlocklogGetEventsOfBlock(ctx, index).
 		Block(fmt.Sprintf("%d", index)).
 		Execute() //nolint:bodyclose // false positive
-
-	log.Check(err)
+	if err != nil {
+		return err
+	}
 	logEvents(events)
+	return nil
 }
 
 func hexLenFromByteLen(length int) int {
 	return (length * 2) + 2
 }
 
-func reqIDFromString(s string) isc.RequestID {
+func reqIDFromString(s string) (isc.RequestID, error) {
 	switch len(s) {
 	case hexLenFromByteLen(iotago.AddressLen):
 		// isc ReqID
 		reqID, err := isc.RequestIDFromString(s)
-		log.Check(err)
-		return reqID
+		if err != nil {
+			return isc.RequestID{}, fmt.Errorf("invalid isc requestID: %w", err)
+		}
+		return reqID, nil
 	case hexLenFromByteLen(common.HashLength):
 		bytes, err := cryptolib.DecodeHex(s)
-		log.Check(err)
+		if err != nil {
+			return isc.RequestID{}, fmt.Errorf("invalid evm tx hash: %w", err)
+		}
 		var txHash common.Hash
 		copy(txHash[:], bytes)
-		return isc.RequestIDFromEVMTxHash(txHash)
+		return isc.RequestIDFromEVMTxHash(txHash), nil
 	default:
-		log.Fatalf("invalid requestID length: %d", len(s))
+		return isc.RequestID{}, fmt.Errorf("invalid requestID length: %d", len(s))
 	}
-	panic("unreachable")
 }
 
 func initRequestCmd() *cobra.Command {
@@ -140,11 +161,17 @@ func initRequestCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			chain = defaultChainFallback(chain)
+			chain, err = defaultChainFallback(chain)
+			if err != nil {
+				return err
+			}
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
-			reqID := reqIDFromString(args[0])
+			reqID, err := reqIDFromString(args[0])
+			if err != nil {
+				return err
+			}
 
 			// TODO add optional block param?
 			receipt, _, err := client.ChainsAPI.
@@ -158,7 +185,9 @@ func initRequestCmd() *cobra.Command {
 			util.LogReceipt(*receipt)
 
 			log.Printf("\n")
-			logEventsInRequest(ctx, client, reqID)
+			if err := logEventsInRequest(ctx, client, reqID); err != nil {
+				return err
+			}
 			log.Printf("\n")
 			return nil
 		},
@@ -168,13 +197,15 @@ func initRequestCmd() *cobra.Command {
 	return cmd
 }
 
-func logEventsInRequest(ctx context.Context, client *apiclient.APIClient, reqID isc.RequestID) {
+func logEventsInRequest(ctx context.Context, client *apiclient.APIClient, reqID isc.RequestID) error {
 	events, _, err := client.CorecontractsAPI.
 		BlocklogGetEventsOfRequest(ctx, reqID.String()).
 		Execute() //nolint:bodyclose // false positive
-
-	log.Check(err)
+	if err != nil {
+		return err
+	}
 	logEvents(events)
+	return nil
 }
 
 func logEvents(ret *apiclient.EventsResponse) {

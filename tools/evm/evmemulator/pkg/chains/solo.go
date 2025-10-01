@@ -19,8 +19,10 @@ import (
 )
 
 // hive tests require chain ID to be 1
-const hiveChainID = 1
-const defaultChainID = 1074
+const (
+	hiveChainID    = 1
+	defaultChainID = 1074
+)
 
 func InitSolo(genesis *core.Genesis) (*SoloContext, *solo.Chain) {
 	ctx := &SoloContext{}

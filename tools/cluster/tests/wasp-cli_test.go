@@ -38,8 +38,8 @@ func TestWaspAuth(t *testing.T) {
 	require.Error(t, err)
 
 	t.Run("table format output", func(t *testing.T) {
-		//t.Skip()
-		out := w.MustRun("auth", "login", "--node=0", "-u=wasp", "-p=wasp")
+		// t.Skip()
+		out := w.MustRun("auth", "login", "--node=0", "-u=wasp", "-p=wasp", "--table")
 		// Check for table output format with SUCCESS status
 		found := false
 		for _, line := range out {
@@ -71,25 +71,22 @@ func TestWaspAuth(t *testing.T) {
 		require.Contains(t, authResult, "type", "JSON output should contain 'type' field")
 		require.Contains(t, authResult, "status", "JSON output should contain 'status' field")
 		require.Contains(t, authResult, "timestamp", "JSON output should contain 'timestamp' field")
-		require.Contains(t, authResult, "data", "JSON output should contain 'data' field")
 
 		// Verify top-level field values
 		require.Equal(t, "auth", authResult["type"], "Expected type to be 'auth'")
 		require.Equal(t, "success", authResult["status"], "Expected status to be 'success'")
 		require.NotEmpty(t, authResult["timestamp"], "Timestamp should not be empty")
 
-		// Verify the data structure contains auth-specific fields
-		data, ok := authResult["data"].(map[string]interface{})
-		require.True(t, ok, "Data field should be an object")
-		require.Contains(t, data, "node", "Auth data should contain 'node' field")
-		require.Contains(t, data, "username", "Auth data should contain 'username' field")
+		// Verify auth-specific fields are at the top level (no data wrapper)
+		require.Contains(t, authResult, "node", "Auth result should contain 'node' field")
+		require.Contains(t, authResult, "username", "Auth result should contain 'username' field")
 
-		// Verify the auth data values are correct
-		require.Equal(t, "0", data["node"], "Expected node to be '0'")
-		require.Equal(t, "wasp", data["username"], "Expected username to be 'wasp'")
+		// Verify the auth values are correct
+		require.Equal(t, "0", authResult["node"], "Expected node to be '0'")
+		require.Equal(t, "wasp", authResult["username"], "Expected username to be 'wasp'")
 
-		// Check if the message field exists in data (it's optional)
-		if message, exists := data["message"]; exists {
+		// Check if the message field exists (it's optional)
+		if message, exists := authResult["message"]; exists {
 			require.NotEmpty(t, message, "Message field should not be empty if present")
 		}
 
@@ -255,7 +252,6 @@ func TestWaspCLISendFunds(t *testing.T) {
 	outs := w.MustRun("wallet", "balance", "--address-index=1", "--json")
 	fmt.Println(strings.Join(outs, ""))
 	checkL1BalanceJSON(t, outs, 1000)
-
 }
 
 func TestWaspCLIDeposit(t *testing.T) {

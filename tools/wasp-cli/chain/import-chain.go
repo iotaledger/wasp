@@ -69,7 +69,98 @@ func openChainAndRead(dbPath string) (transaction.StateMetadata, uint32, error) 
 	return anchorStateMetadata, latestBlock.StateIndex(), nil
 }
 
-//nolint:funlen
+func runImportChain(dbPath string, node string, peers []string, quorum int, chainName string, iscPackageIDStr string) error {
+	var err error
+	// resolve defaults
+	node, err = waspcmd.DefaultWaspNodeFallback(node)
+	if err != nil {
+		return err
+	}
+	chainName, err = defaultChainFallback(chainName)
+	if err != nil {
+		return err
+	}
+	kp := wallet.Load()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+	defer cancel()
+
+	iscPackageID := &iotago.PackageID{}
+	if iscPackageIDStr != "" {
+		iscPackageID, err = iotago.PackageIDFromHex(iscPackageIDStr)
+		log.Check(err)
+	} else {
+		log.Printf("Deploying Move contract...\n")
+		l1Client := cliclients.L1Client()
+		*iscPackageID, err = l1Client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(kp))
+		log.Check(err)
+	}
+
+	result, err := initializeDeploymentWithGasCoin(ctx, kp, node, chainName, peers, quorum)
+	if err != nil {
+		return err
+	}
+
+	anchorStateMetadata, blockIndex, err := openChainAndRead(dbPath)
+	if err != nil {
+		return err
+	}
+	anchorStateMetadata.GasCoinObjectID = &result.gasCoinObject
+
+	anchor, err := cliclients.L2Client().StartNewChain(ctx, &iscmoveclient.StartNewChainRequest{
+		PackageID:     *iscPackageID,
+		AnchorOwner:   kp.Address(),
+		Signer:        kp,
+		GasPrice:      iotaclient.DefaultGasPrice,
+		GasBudget:     iotaclient.DefaultGasBudget,
+		StateMetadata: make([]byte, 0),
+		InitCoinRef:   nil,
+	})
+	if err != nil {
+		return err
+	}
+
+	_, err = cliclients.L2Client().UpdateAnchorStateMetadata(ctx, &iscmoveclient.UpdateAnchorStateMetadataRequest{
+		StateIndex:    blockIndex,
+		StateMetadata: anchorStateMetadata.Bytes(),
+		Signer:        kp,
+		GasPrice:      iotaclient.DefaultGasPrice,
+		GasBudget:     iotaclient.DefaultGasBudget,
+		PackageID:     *iscPackageID,
+		AnchorRef:     &anchor.ObjectRef,
+	})
+	if err != nil {
+		return err
+	}
+
+	transferAnchor, err := cliclients.L1Client().TransferObject(ctx, iotaclient.TransferObjectRequest{
+		Signer:    kp.Address().AsIotaAddress(),
+		ObjectID:  anchor.ObjectID,
+		Recipient: result.committeeAddress.AsIotaAddress(),
+		GasBudget: iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to construct transfer anchor: %w", err)
+	}
+
+	_, err = cliclients.L1Client().SignAndExecuteTransaction(ctx, &iotaclient.SignAndExecuteTransactionRequest{
+		Signer:      cryptolib.SignerToIotaSigner(kp),
+		TxDataBytes: transferAnchor.TxBytes,
+		Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+			ShowObjectChanges: true,
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to execute transfer anchor: %w", err)
+	}
+	config.AddChain(chainName, anchor.ObjectID.String())
+
+	fmt.Printf("\nChain has been deployed.\nID: %s\nStateMetadata: %v\n", anchor.ObjectID.String(), anchorStateMetadata)
+	fmt.Printf("Create the following path: './waspdb/chains/data/%s' and move or link the chain files into it.\n", anchor.ObjectID.String())
+	fmt.Println("Then call `chain activate` to finalize the deployment.")
+	return nil
+}
+
 func initImportCmd() *cobra.Command {
 	var (
 		node            string
@@ -87,92 +178,7 @@ func initImportCmd() *cobra.Command {
 			"After the deployment succeeded, you will need to either link or move the wasp chain files into 'waspdb/chains/data/<chainID>' and call 'chain activate'",
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			var err error
-			node, err = waspcmd.DefaultWaspNodeFallback(node)
-			if err != nil {
-				return err
-			}
-			chainName = defaultChainFallback(chainName)
-			kp := wallet.Load()
-
-			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
-			defer cancel()
-
-			iscPackageID := &iotago.PackageID{}
-			if iscPackageIDStr != "" {
-				iscPackageID, err = iotago.PackageIDFromHex(iscPackageIDStr)
-				log.Check(err)
-			} else {
-				log.Printf("Deploying Move contract...\n")
-				l1Client := cliclients.L1Client()
-				*iscPackageID, err = l1Client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(kp))
-				log.Check(err)
-			}
-
-			result, err := initializeDeploymentWithGasCoin(ctx, kp, node, chainName, peers, quorum)
-			if err != nil {
-				return err
-			}
-
-			dbPath := args[0]
-			anchorStateMetadata, blockIndex, err := openChainAndRead(dbPath)
-			if err != nil {
-				return err
-			}
-			anchorStateMetadata.GasCoinObjectID = &result.gasCoinObject
-
-			anchor, err := cliclients.L2Client().StartNewChain(ctx, &iscmoveclient.StartNewChainRequest{
-				PackageID:     *iscPackageID,
-				AnchorOwner:   kp.Address(),
-				Signer:        kp,
-				GasPrice:      iotaclient.DefaultGasPrice,
-				GasBudget:     iotaclient.DefaultGasBudget,
-				StateMetadata: make([]byte, 0),
-				InitCoinRef:   nil,
-			})
-			if err != nil {
-				return err
-			}
-
-			_, err = cliclients.L2Client().UpdateAnchorStateMetadata(ctx, &iscmoveclient.UpdateAnchorStateMetadataRequest{
-				StateIndex:    blockIndex,
-				StateMetadata: anchorStateMetadata.Bytes(),
-				Signer:        kp,
-				GasPrice:      iotaclient.DefaultGasPrice,
-				GasBudget:     iotaclient.DefaultGasBudget,
-				PackageID:     *iscPackageID,
-				AnchorRef:     &anchor.ObjectRef,
-			})
-			if err != nil {
-				return err
-			}
-
-			transferAnchor, err := cliclients.L1Client().TransferObject(ctx, iotaclient.TransferObjectRequest{
-				Signer:    kp.Address().AsIotaAddress(),
-				ObjectID:  anchor.ObjectID,
-				Recipient: result.committeeAddress.AsIotaAddress(),
-				GasBudget: iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget),
-			})
-			if err != nil {
-				return fmt.Errorf("failed to construct transfer anchor: %w", err)
-			}
-
-			_, err = cliclients.L1Client().SignAndExecuteTransaction(ctx, &iotaclient.SignAndExecuteTransactionRequest{
-				Signer:      cryptolib.SignerToIotaSigner(kp),
-				TxDataBytes: transferAnchor.TxBytes,
-				Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
-					ShowObjectChanges: true,
-				},
-			})
-			if err != nil {
-				return fmt.Errorf("failed to execute transfer anchor: %w", err)
-			}
-			config.AddChain(chainName, anchor.ObjectID.String())
-
-			fmt.Printf("\nChain has been deployed.\nID: %s\nStateMetadata: %v\n", anchor.ObjectID.String(), anchorStateMetadata)
-			fmt.Printf("Create the following path: './waspdb/chains/data/%s' and move or link the chain files into it.\n", anchor.ObjectID.String())
-			fmt.Println("Then call `chain activate` to finalize the deployment.")
-			return nil
+			return runImportChain(args[0], node, peers, quorum, chainName, iscPackageIDStr)
 		},
 	}
 

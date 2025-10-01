@@ -45,16 +45,19 @@ func initDeployMoveContractCmd() *cobra.Command {
 		Use:   "deploy-move-contract",
 		Short: "Deploy a new move contract and save its package id",
 		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 			defer cancel()
 
 			l1Client := cliclients.L1Client()
 			kp := wallet.Load()
 			packageID, err := l1Client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(kp))
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 
 			log.Printf("Move contract deployed.\nPackageID: %v\n", packageID.String())
+			return nil
 		},
 	}
 
@@ -137,8 +140,9 @@ func initializeDeploymentWithGasCoin(ctx context.Context, signer wallets.Wallet,
 
 	client := cliclients.WaspClientWithVersionCheck(ctx, node)
 	_, header, err := client.ChainsAPI.GetChainInfo(ctx).Execute()
-	defer header.Body.Close()
-
+	if header != nil && header.Body != nil {
+		defer header.Body.Close()
+	}
 	// We expect a 404 if no chain has been deployed yet. In any other case, show the error.
 	if err != nil && !strings.Contains(err.Error(), strconv.Itoa(http.StatusNotFound)) {
 		return nil, fmt.Errorf("failed to get current chain info: %w", err)
@@ -202,8 +206,10 @@ func initDeployCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-
-			chainName = defaultChainFallback(chainName)
+			chainName, err = defaultChainFallback(chainName)
+			if err != nil {
+				return err
+			}
 			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 			defer cancel()
 

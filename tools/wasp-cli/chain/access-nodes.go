@@ -6,6 +6,7 @@ package chain
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/spf13/cobra"
 
@@ -29,7 +30,10 @@ func initPermissionlessAccessNodesCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			chain = defaultChainFallback(chain)
+			chain, err = defaultChainFallback(chain)
+			if err != nil {
+				return err
+			}
 
 			action := args[0]
 			node, err = waspcmd.DefaultWaspNodeFallback(node)
@@ -39,31 +43,39 @@ func initPermissionlessAccessNodesCmd() *cobra.Command {
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
-			var executeActionFunc func(peer string)
+			var executeActionFunc func(peer string) error
 
 			switch action {
 			case "add":
-				executeActionFunc = func(peer string) {
+				executeActionFunc = func(peer string) error {
 					_, err := client.ChainsAPI.
 						AddAccessNode(ctx, peer).
 						Execute() //nolint:bodyclose // false positive
-					log.Check(err)
+					if err != nil {
+						return err
+					}
 					log.Printf("added %s as an access node\n", peer)
+					return nil
 				}
 			case "remove":
-				executeActionFunc = func(peer string) {
+				executeActionFunc = func(peer string) error {
 					_, err := client.ChainsAPI.
 						RemoveAccessNode(ctx, peer).
 						Execute() //nolint:bodyclose // false positive
-					log.Check(err)
+					if err != nil {
+						return err
+					}
 					log.Printf("removed %s as an access node\n", peer)
+					return nil
 				}
 			default:
-				log.Fatalf("unknown action: %s", action)
+				return fmt.Errorf("unknown action: %s", action)
 			}
 
 			for _, peer := range peers {
-				executeActionFunc(peer)
+				if err := executeActionFunc(peer); err != nil {
+					return err
+				}
 			}
 			return nil
 		},

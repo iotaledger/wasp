@@ -11,7 +11,7 @@ import (
 
 func AddressToIndexedTopic(addr common.Address) (ret common.Hash) {
 	copy(ret[len(ret)-len(addr):], addr[:])
-	return
+	return ret
 }
 
 func PackUint256(uint256 *big.Int) []byte {

@@ -36,7 +36,7 @@ func (e *migrationsTestEnv) getSchemaVersion() (ret isc.SchemaVersion) {
 	e.vmctx.withStateUpdate(func(chainState kv.KVStore) {
 		ret = root.NewStateReaderFromChainState(chainState).GetSchemaVersion()
 	})
-	return
+	return ret
 }
 
 func (e *migrationsTestEnv) setSchemaVersion(v isc.SchemaVersion) {

@@ -26,7 +26,7 @@ func compressToHashSize(data []byte) (ret []byte) {
 		hash := blake2b160(data)
 		ret = hash[:]
 	}
-	return
+	return ret
 }
 
 // hashVector is used to calculate the hash of a trie node
@@ -59,7 +59,7 @@ func (h Hash) Bytes() []byte {
 
 func (h Hash) Clone() (ret Hash) {
 	copy(ret[:], h[:])
-	return
+	return ret
 }
 
 func (h Hash) Equals(other Hash) bool {
