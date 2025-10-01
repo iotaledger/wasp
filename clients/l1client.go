@@ -300,11 +300,7 @@ func (c *l1Client) GetISCPackageIDForAnchor(ctx context.Context, anchor iotago.O
 		return iotago.PackageID{}, fmt.Errorf("parsing anchor object type: %w", err)
 	}
 
-	addr := objectType.ResourceType().Address
-	packageID, err := iotago.PackageIDFromHex(addr.String())
-	if err != nil {
-		return iotago.PackageID{}, fmt.Errorf("parsing package ID: %w", err)
-	}
+	packageID := objectType.ResourceType().Address
 
 	return *packageID, nil
 }
