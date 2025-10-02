@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"math/rand/v2"
+	"strconv"
 	"testing"
 
 	"github.com/samber/lo"
@@ -12,6 +13,20 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/kvstore"
 	"github.com/iotaledger/wasp/v2/packages/trie"
 )
+
+type valueMaker struct {
+	z *rand.Zipf
+}
+
+func newValueMaker() *valueMaker {
+	return &valueMaker{
+		z: rand.NewZipf(rand.New(rand.NewChaCha8([32]byte{})), 1.1, 1, 1000),
+	}
+}
+
+func (g *valueMaker) Next() string {
+	return strconv.FormatUint(g.z.Uint64(), 10)
+}
 
 func keyMaker() func() []byte {
 	// small alphabet to force keys to have common prefixes
@@ -33,7 +48,7 @@ func makeTrie(n int) (*InMemoryKVStore, []trie.Hash) {
 	store := NewInMemoryKVStore()
 	roots := []trie.Hash{lo.Must(trie.NewTrieRW(store).InitRoot(true))}
 	makeKey := keyMaker()
-	values := NewScrambledZipfian(1000, 0)
+	values := newValueMaker()
 
 	for range n {
 		tr := lo.Must(trie.NewDraft(store, roots[len(roots)-1]))
@@ -58,8 +73,8 @@ func BenchmarkTakeSnapshot(b *testing.B) {
 	store, roots := makeTrie(1)
 	r := trie.NewTrieRFromRoot(store, roots[len(roots)-1])
 	store.ResetStats()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+
+	for b.Loop() {
 		err := r.TakeSnapshot(io.Discard)
 		require.NoError(b, err)
 	}
@@ -74,7 +89,6 @@ func BenchmarkRestoreSnapshot(b *testing.B) {
 	//   56646487 ns/op    13083 kvs/op     7443 reads/op    27590744 B/op    386339 allocs/op
 	// reads/op measures the amount of times the DB is called to fetch data (which is the bottleneck when using RocksDB)
 
-	b.StopTimer()
 	buf := bytes.NewBuffer(nil)
 	{
 		store, roots := makeTrie(1)
@@ -84,7 +98,7 @@ func BenchmarkRestoreSnapshot(b *testing.B) {
 	}
 
 	stats := InMemoryKVStoreStats{}
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		newStore := NewInMemoryKVStore()
 		newStore.Stats = stats
 		b.StartTimer()
@@ -104,11 +118,10 @@ func BenchmarkPrune(b *testing.B) {
 	//   24594662 ns/op    16476 kvs/op     9132 reads/op    19913272 B/op    307635 allocs/op
 	// reads/op measures the amount of times the DB is called to fetch data (which is the bottleneck when using RocksDB)
 
-	b.StopTimer()
 	store, roots := makeTrie(3)
 	penultimateRoot := roots[len(roots)-2]
 	stats := InMemoryKVStoreStats{}
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		storeClone := NewInMemoryKVStore()
 		lo.Must0(kvstore.Copy(store.m, storeClone.m))
 		storeClone.Stats = stats
@@ -129,16 +142,14 @@ func BenchmarkCommit(b *testing.B) {
 	//    9486585 ns/op   4221 kvs/op      2 reads/op   6279097 B/op   108977 allocs/op
 	// reads/op measures the amount of times the DB is called to fetch data (which is the bottleneck when using RocksDB)
 
-	b.StopTimer()
-
 	store := NewInMemoryKVStore()
 	stats := store.Stats
 
 	makeKey := keyMaker()
-	values := NewScrambledZipfian(1000, 0)
+	values := newValueMaker()
 
 	root := lo.Must(trie.NewTrieRW(store).InitRoot(true))
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		tr := lo.Must(trie.NewDraft(store, root))
 		for range 1000 {
 			key := makeKey()
