@@ -25,7 +25,7 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/v2/packages/chain"
-	"github.com/iotaledger/wasp/v2/packages/chain/cons/gr"
+	"github.com/iotaledger/wasp/v2/packages/chain/consensus/consensus_runner"
 	"github.com/iotaledger/wasp/v2/packages/chain/mempool"
 	smgpa "github.com/iotaledger/wasp/v2/packages/chain/statemanager/gpa"
 	"github.com/iotaledger/wasp/v2/packages/chain/statemanager/gpa/utils"
@@ -111,7 +111,7 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 	require.NoError(t, err)
 
 	//
-	// The first AO should be reported by L1/NodeConn to the nodes.
+	// The first Anchor should be reported by L1/NodeConn to the nodes.
 	for _, tnc := range te.nodeConns {
 		tnc.recvAnchor(te.anchor, parameterstest.L1Mock)
 	}
@@ -176,9 +176,9 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 				// TODO: Double-check with the published TX.
 				/*
 					latestTX := te.nodeConns[i].published[len(te.nodeConns[i].published)-1]
-					_, latestAONoID, err := transaction.GetAnchorFromTransaction(latestTX)
+					_, latestAnchorNoID, err := transaction.GetAnchorFromTransaction(latestTX)
 					require.NoError(t, err)
-					latestL1Commitment, err := transaction.L1CommitmentFromAliasOutput(latestAONoID)
+					latestL1Commitment, err := transaction.L1CommitmentFromAnchor(latestAnchorNoID)
 					require.NoError(t, err)
 					st, err := node.GetStateReader().StateByTrieRoot(latestL1Commitment.GetTrieRoot())
 					require.NoError(t, err)
@@ -204,20 +204,20 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 				te.nodes[0].ReceiveOffLedgerRequest(scRequest, scClient.GetPublicKey())
 			}
 		}
-		// Check if LastAliasOutput() works as expected.
-		awaitPredicate(te, ctxTimeout, "LatestAliasOutput", func() bool {
-			confirmedAO, err := node.LatestAnchor(chain.ConfirmedState)
+		// Check if LastAnchor() works as expected.
+		awaitPredicate(te, ctxTimeout, "LatestAnchor", func() bool {
+			confirmedAnchor, err := node.LatestAnchor(chain.ConfirmedState)
 			require.NoError(t, err)
-			activeAO, err := node.LatestAnchor(chain.ActiveState)
+			activeAnchor, err := node.LatestAnchor(chain.ActiveState)
 			require.NoError(t, err)
 			lastPublishedTX := te.nodeConns[i].published[len(te.nodeConns[i].published)-1]
-			lastPublishedAO := isc.NewStateAnchor(lastPublishedTX, te.iscPackageID)
-			if !lastPublishedAO.Equals(confirmedAO) { // In this test we confirm outputs immediately.
-				te.log.LogDebugf("lastPublishedAO(%v) != confirmedAO(%v)", lastPublishedAO, confirmedAO)
+			lastPublishedAnchor := isc.NewStateAnchor(lastPublishedTX, te.iscPackageID)
+			if !lastPublishedAnchor.Equals(confirmedAnchor) { // In this test we confirm outputs immediately.
+				te.log.LogDebugf("lastPublishedAnchor(%v) != confirmedAnchor(%v)", lastPublishedAnchor, confirmedAnchor)
 				return false
 			}
-			if !lastPublishedAO.Equals(activeAO) {
-				te.log.LogDebugf("lastPublishedAO(%v) != activeAO(%v)", lastPublishedAO, activeAO)
+			if !lastPublishedAnchor.Equals(activeAnchor) {
+				te.log.LogDebugf("lastPublishedAnchor(%v) != activeAnchor(%v)", lastPublishedAnchor, activeAnchor)
 				return false
 			}
 			return true
@@ -425,8 +425,8 @@ func (tnc *testNodeConn) WaitUntilInitiallySynced(ctx context.Context) error {
 func (tnc *testNodeConn) ConsensusL1InfoProposal(
 	ctx context.Context,
 	anchor *isc.StateAnchor,
-) <-chan gr.NodeConnL1Info {
-	t := make(chan gr.NodeConnL1Info)
+) <-chan consensus_runner.NodeConnL1Info {
+	t := make(chan consensus_runner.NodeConnL1Info)
 
 	// TODO: Refactor this separate goroutine and place it somewhere connection related instead
 	go func() {
@@ -455,7 +455,7 @@ func (tnc *testNodeConn) ConsensusL1InfoProposal(
 		}
 
 		ref := gasCoin.Data.Ref()
-		var l1Info gr.NodeConnL1Info = &testNodeConnL1Info{
+		var l1Info consensus_runner.NodeConnL1Info = &testNodeConnL1Info{
 			gasCoins: []*coin.CoinWithRef{{
 				Type:  coin.BaseTokenType,
 				Value: coin.Value(moveBalance.Balance),
@@ -497,8 +497,8 @@ type testEnv struct {
 	peeringNetwork   *testutil.PeeringNetwork
 	networkProviders []peering.NetworkProvider
 	tcl              *testchain.TestChainLedger
-	cmtAddress       *cryptolib.Address
-	cmtSigner        cryptolib.Signer
+	committeeAddress *cryptolib.Address
+	committeeSigner  cryptolib.Signer
 	chainID          isc.ChainID
 	anchor           *isc.StateAnchor
 	nodeConns        []*testNodeConn
@@ -538,15 +538,15 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 		testlogger.WithLevel(te.log, log.LevelWarning, false),
 	)
 	te.networkProviders = te.peeringNetwork.NetworkProviders()
-	var dkShareProviders []registry.DKShareRegistryProvider
-	te.cmtAddress, dkShareProviders = testpeers.SetupDkgTrivial(t, n, f, te.peerIdentities, nil)
-	te.cmtSigner = testpeers.NewTestDSSSigner(te.cmtAddress, dkShareProviders, gpa.MakeTestNodeIDs(n), te.peerIdentities, te.log)
+	var distKeyPartProviders []registry.DistKeyPartRegistryProvider
+	te.committeeAddress, distKeyPartProviders = testpeers.SetupDkgTrivial(t, n, f, te.peerIdentities, nil)
+	te.committeeSigner = testpeers.NewTestDSSSigner(te.committeeAddress, distKeyPartProviders, gpa.MakeTestNodeIDs(n), te.peerIdentities, te.log)
 
-	require.NoError(t, node.L1Client().RequestFunds(context.Background(), *te.cmtSigner.Address()))
-	iotatest.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(te.cmtSigner), node.L1Client(), isc.GasCoinTargetValue*10)
+	require.NoError(t, node.L1Client().RequestFunds(context.Background(), *te.committeeSigner.Address()))
+	iotatest.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(te.committeeSigner), node.L1Client(), isc.GasCoinTargetValue*10)
 
 	iscPackageID := node.ISCPackageID()
-	te.tcl = testchain.NewTestChainLedger(t, te.cmtSigner, &iscPackageID, te.l1Client)
+	te.tcl = testchain.NewTestChainLedger(t, te.committeeSigner, &iscPackageID, te.l1Client)
 	var originDeposit coin.Value
 	te.anchor, originDeposit = te.tcl.MakeTxChainOrigin()
 	te.chainID = te.anchor.ChainID()
@@ -569,7 +569,7 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 			te.nodeConns[i],
 			te.peerIdentities[i],
 			coreprocessors.NewConfigWithTestContracts(),
-			dkShareProviders[i],
+			distKeyPartProviders[i],
 			testutil.NewConsensusStateRegistry(),
 			false,
 			utils.NewMockedTestBlockWAL(),

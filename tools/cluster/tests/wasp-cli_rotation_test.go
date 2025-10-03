@@ -41,7 +41,7 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 	// this test starts a chain on cluster of 4 nodes,
 	// adds 1 new node as an access node (this node will be part of the new committee, this way it is synced)
 	// then puts the chain on maintenance mode, stops the cluster
-	// starts a new 4 nodes cluster (including the previous access node), runs the DKG on the new nodes,
+	// starts a new 4 nodes cluster (including the previous access node), runs the DistKeyGeneration on the new nodes,
 	// rotates the chain state controller to the new cluster
 	// stops the maintenance and ensure the chain is up-and-running
 
@@ -174,8 +174,8 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 	// stop the initial cluster
 	w.Cluster.Stop()
 
-	// run DKG on the new cluster, obtain the new state controller address
-	out = w2.MustRun("chain", "rundkg", w2.ArgAllNodesExcept(0), "--node=0")
+	// run DistKeyGeneration on the new cluster, obtain the new state controller address
+	out = w2.MustRun("chain", "rundistKeyGen", w2.ArgAllNodesExcept(0), "--node=0")
 	var newStateControllerAddr string
 	for _, line := range out {
 		matches := regexp.MustCompile(`Address: ([a-zA-Z0-9_]+)`).FindStringSubmatch(line)
@@ -183,7 +183,7 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 			newStateControllerAddr = matches[1]
 		}
 	}
-	t.Logf("DKG generated state controller address: %v", newStateControllerAddr)
+	t.Logf("DistKeyGeneration generated state controller address: %v", newStateControllerAddr)
 
 	// issue a governance rotatation via CLI
 	out = w.MustRun("chain", "rotate", newStateControllerAddr)
@@ -211,9 +211,9 @@ func TestRotateOnOrigin(t *testing.T) {
 	// start a chain on node 0
 	w.MustRun("chain", "deploy", "--chain=chain1", "--node=0")
 	w.ActivateChainOnAllNodes("chain1", 0)
-	dkg := w.MustRun("chain", "rundkg", "--peers", "me")
-	require.Greater(t, len(dkg), 1)
-	rotateAddress := strings.TrimPrefix(dkg[1], "Address: ")
+	distKeyGen := w.MustRun("chain", "rundistKeyGen", "--peers", "me")
+	require.Greater(t, len(distKeyGen), 1)
+	rotateAddress := strings.TrimPrefix(distKeyGen[1], "Address: ")
 
 	blockIndex1 := getBlockIndex(t, w)
 

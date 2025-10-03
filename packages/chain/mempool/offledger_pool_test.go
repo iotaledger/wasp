@@ -8,8 +8,8 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/v2/packages/chain/cmtlog"
-	consGR "github.com/iotaledger/wasp/v2/packages/chain/cons/gr"
+	"github.com/iotaledger/wasp/v2/packages/chain/committeelog"
+	consGR "github.com/iotaledger/wasp/v2/packages/chain/consensus/consensus_runner"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/isc/isctest"
@@ -40,7 +40,7 @@ func TestOffledgerMempoolAccountNonce(t *testing.T) {
 	reqsInPoolForAccount, _ := pool.reqsByAcountOrdered.Get(agentID.String())
 	require.Len(t, reqsInPoolForAccount, 3)
 	// Mark existing requests as proposed.
-	consLogIndex := cmtlog.NilLogIndex()
+	consLogIndex := committeelog.NilLogIndex()
 	consID := consGR.NewConsensusID(cryptolib.NewEmptyAddress(), &consLogIndex)
 	lo.ForEach(pool.orderedByGasPrice, func(e *OrderedPoolEntry, _ int) { e.markProposed(consID) })
 	// Add it again. It should not be replaced, but appended instead.

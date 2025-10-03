@@ -18,7 +18,7 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/v2/packages/chain"
-	consGR "github.com/iotaledger/wasp/v2/packages/chain/cons/gr"
+	consGR "github.com/iotaledger/wasp/v2/packages/chain/consensus/consensus_runner"
 	"github.com/iotaledger/wasp/v2/packages/chain/mempool"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
@@ -79,10 +79,10 @@ func TestMempoolBasic(t *testing.T) {
 
 // Scenario:
 //   - Send an on-ledger/off-ledger requests to different nodes.
-//   - Send BaseAO to all nodes.
+//   - Send BaseAnchor to all nodes.
 //   - Get proposals in all nodes -> all have at least 1 of those reqs.
 //   - Get both requests for all nodes.
-//   - Send next BaseAO on all nodes.
+//   - Send next BaseAnchor on all nodes.
 //   - Get proposals -- all waiting.
 //   - Send a request.
 //   - Get proposals -- all received 1 request.
@@ -565,7 +565,7 @@ type testEnv struct {
 	peeringNetwork   *testutil.PeeringNetwork
 	networkProviders []peering.NetworkProvider
 	tcl              *testchain.TestChainLedger
-	cmtAddress       *cryptolib.Address
+	committeeAddress *cryptolib.Address
 	chainID          isc.ChainID
 	anchor           *isc.StateAnchor
 	mempools         []mempool.Mempool
@@ -601,7 +601,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 		testlogger.WithLevel(te.log, log.LevelWarning, false),
 	)
 	te.networkProviders = te.peeringNetwork.NetworkProviders()
-	te.cmtAddress, _ = testpeers.SetupDkgTrivial(t, n, f, te.peerIdentities, nil)
+	te.committeeAddress, _ = testpeers.SetupDkgTrivial(t, n, f, te.peerIdentities, nil)
 
 	l1client := l1starter.Instance().L1Client()
 

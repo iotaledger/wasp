@@ -115,7 +115,7 @@ func QueryByPubKeyOrName(trustedPeers []*TrustedPeer, pubKeysOrNames []string) (
 
 // GroupProvider stands for a subset of a peer-to-peer network
 // that is responsible for achieving some common goal, eg,
-// consensus committee, DKG group, etc.
+// consensus committee, DistKeyGeneration group, etc.
 //
 // Indexes are only meaningful in the groups, not in the
 // network or a particular peers.

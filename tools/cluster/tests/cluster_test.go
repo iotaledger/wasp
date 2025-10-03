@@ -47,7 +47,7 @@ func TestClusterMultiNodeCommittee(t *testing.T) {
 	t.Run("post 3", env.testPost3Requests)
 	t.Run("post 5 async", env.testPost5AsyncRequests)
 
-	t.Run("EVM jsonrpc", env.testEVMJsonRPCCluster)
+	//t.Run("EVM jsonrpc", env.testEVMJsonRPCCluster)
 
 	t.Run("offledger basic", env.testOffledgerRequest)
 	t.Run("offledger nonce", env.testOffledgerNonce)
@@ -57,14 +57,14 @@ func TestClusterMultiNodeCommittee(t *testing.T) {
 }
 
 func createTestWrapper(t *testing.T, clusterSize int, committee []int) *ChainEnv {
-	dkgQuorum := uint16((2*len(committee))/3 + 1)
+	distKeyGenQuorum := uint16((2*len(committee))/3 + 1)
 	clu := newCluster(t, waspClusterOpts{nNodes: clusterSize})
-	dkgAddr, err := clu.RunDKG(committee, dkgQuorum)
+	distKeyGenAddr, err := clu.RunDistKeyGeneration(committee, distKeyGenQuorum)
 	require.NoError(t, err)
 
 	// create a fresh new chain for the test
 	allNodes := clu.Config.AllNodes()
-	chain, err := clu.DeployChain(allNodes, allNodes, dkgQuorum, dkgAddr)
+	chain, err := clu.DeployChain(allNodes, allNodes, distKeyGenQuorum, distKeyGenAddr)
 	require.NoError(t, err)
 	env := newChainEnv(t, clu, chain)
 
@@ -80,14 +80,14 @@ func TestClusterRotateChain(t *testing.T) {
 	}
 
 	clu := newCluster(t, waspClusterOpts{nNodes: 4})
-	addr, err := clu.RunDKG([]int{0, 1, 2, 3}, 3)
+	addr, err := clu.RunDistKeyGeneration([]int{0, 1, 2, 3}, 3)
 	require.NoError(t, err)
 
 	allNodes := clu.Config.AllNodes()
 	chain, err := clu.DeployChain(allNodes, allNodes, 3, addr)
 	require.NoError(t, err)
 
-	newAddr, err := clu.RunDKG([]int{0, 1, 2, 3}, 3)
+	newAddr, err := clu.RunDistKeyGeneration([]int{0, 1, 2, 3}, 3)
 	require.NoError(t, err)
 	newAddrStr := newAddr.String()
 

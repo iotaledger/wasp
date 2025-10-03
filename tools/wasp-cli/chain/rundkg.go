@@ -20,7 +20,7 @@ import (
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/waspcmd"
 )
 
-func initRunDKGCmd() *cobra.Command {
+func initRunDistKeyGenerationCmd() *cobra.Command {
 	var (
 		node   string
 		peers  []string
@@ -28,8 +28,8 @@ func initRunDKGCmd() *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:   "rundkg --peers=...",
-		Short: "Runs the DKG on specified nodes",
+		Use:   "rundistKeyGen --peers=...",
+		Short: "Runs the DistKeyGeneration on specified nodes",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var err error
@@ -37,7 +37,7 @@ func initRunDKGCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			doDKG(context.Background(), node, peers, quorum)
+			doDistKeyGeneration(context.Background(), node, peers, quorum)
 			return nil
 		},
 	}
@@ -49,7 +49,7 @@ func initRunDKGCmd() *cobra.Command {
 	return cmd
 }
 
-func doDKG(ctx context.Context, node string, peers []string, quorum int) *cryptolib.Address {
+func doDistKeyGeneration(ctx context.Context, node string, peers []string, quorum int) *cryptolib.Address {
 	client := cliclients.WaspClientWithVersionCheck(ctx, node)
 	nodeInfo, _, err := client.NodeAPI.GetPeeringIdentity(ctx).Execute() //nolint:bodyclose // false positive
 	log.Check(err)
@@ -81,7 +81,7 @@ func doDKG(ctx context.Context, node string, peers []string, quorum int) *crypto
 		}
 	}
 	if !thisNodeFound {
-		// TODO: This is temporary, until DKG is fixed to not require the current node in the committee.
+		// TODO: This is temporary, until DistKeyGeneration is fixed to not require the current node in the committee.
 		fmt.Fprintf(os.Stdout, "NOTE: Adding this node as a committee member.\n")
 		filteredPeers = append(filteredPeers, *nodeInfo)
 	}
@@ -101,7 +101,7 @@ func doDKG(ctx context.Context, node string, peers []string, quorum int) *crypto
 		log.Fatal("quorum needs to be at least (2/3)+1 of committee size")
 	}
 
-	committeeAddr, err := apilib.RunDKG(ctx, client, committeePubKeys, uint16(quorum)) //nolint:gosec
+	committeeAddr, err := apilib.RunDistKeyGeneration(ctx, client, committeePubKeys, uint16(quorum)) //nolint:gosec
 	log.Check(err)
 
 	committeeMembersStr := ""
@@ -110,7 +110,7 @@ func doDKG(ctx context.Context, node string, peers []string, quorum int) *crypto
 	}
 
 	fmt.Fprintf(os.Stdout,
-		"DKG successful\nAddress: %s\n* committee size = %v\n* quorum = %v\n* members: %s\n",
+		"DistKeyGeneration successful\nAddress: %s\n* committee size = %v\n* quorum = %v\n* members: %s\n",
 		committeeAddr.String(),
 		len(committeePubKeys),
 		quorum,

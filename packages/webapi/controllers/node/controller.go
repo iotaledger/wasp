@@ -15,20 +15,20 @@ import (
 )
 
 type Controller struct {
-	waspVersion    string
-	config         *configuration.Configuration
-	dkgService     *services.DKGService
-	nodeService    interfaces.NodeService
-	peeringService interfaces.PeeringService
+	waspVersion       string
+	config            *configuration.Configuration
+	distKeyGenService *services.DistKeyGenerationService
+	nodeService       interfaces.NodeService
+	peeringService    interfaces.PeeringService
 }
 
-func NewNodeController(waspVersion string, config *configuration.Configuration, dkgService *services.DKGService, nodeService interfaces.NodeService, peeringService interfaces.PeeringService) interfaces.APIController {
+func NewNodeController(waspVersion string, config *configuration.Configuration, distKeyGenService *services.DistKeyGenerationService, nodeService interfaces.NodeService, peeringService interfaces.PeeringService) interfaces.APIController {
 	return &Controller{
-		waspVersion:    waspVersion,
-		config:         config,
-		dkgService:     dkgService,
-		nodeService:    nodeService,
-		peeringService: peeringService,
+		waspVersion:       waspVersion,
+		config:            config,
+		distKeyGenService: distKeyGenService,
+		nodeService:       nodeService,
+		peeringService:    peeringService,
 	}
 }
 
@@ -73,15 +73,15 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 		SetOperationId("trustPeer")
 
 	adminAPI.POST("node/dks", c.generateDKS, authentication.ValidatePermissions([]string{permissions.Write})).
-		AddParamBody(mocker.Get(models.DKSharesPostRequest{}), "DKSharesPostRequest", "Request parameters", true).
-		AddResponse(http.StatusOK, "DK shares info", mocker.Get(models.DKSharesInfo{}), nil).
+		AddParamBody(mocker.Get(models.DistKeyPartsPostRequest{}), "DistKeyPartsPostRequest", "Request parameters", true).
+		AddResponse(http.StatusOK, "DK shares info", mocker.Get(models.DistKeyPartsInfo{}), nil).
 		SetSummary("Generate a new distributed key").
 		SetOperationId("generateDKS")
 
 	adminAPI.GET("node/dks/:sharedAddress", c.getDKSInfo, authentication.ValidatePermissions([]string{permissions.Read})).
 		AddParamPath("", params.ParamSharedAddress, params.DescriptionSharedAddress).
 		AddResponse(http.StatusNotFound, "Shared address not found", nil, nil).
-		AddResponse(http.StatusOK, "DK shares info", mocker.Get(models.DKSharesInfo{}), nil).
+		AddResponse(http.StatusOK, "DK shares info", mocker.Get(models.DistKeyPartsInfo{}), nil).
 		SetSummary("Get information about the shared address DKS configuration").
 		SetOperationId("getDKSInfo")
 

@@ -6,15 +6,15 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
-type ChainCmtLogMetricsProvider struct {
+type ChainCommitteeLogMetricsProvider struct {
 	logIndexIncReasonConsOut     *prometheus.CounterVec
 	logIndexIncReasonRecover     *prometheus.CounterVec
 	logIndexIncReasonL1RepAnchor *prometheus.CounterVec
 	logIndexIncReasonStarted     *prometheus.CounterVec
 }
 
-func newChainCmtLogMetricsProvider() *ChainCmtLogMetricsProvider {
-	return &ChainCmtLogMetricsProvider{
+func newChainCommitteeLogMetricsProvider() *ChainCommitteeLogMetricsProvider {
+	return &ChainCommitteeLogMetricsProvider{
 		logIndexIncReasonConsOut: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: "iota_wasp",
 			Subsystem: "cmtlog",
@@ -42,7 +42,7 @@ func newChainCmtLogMetricsProvider() *ChainCmtLogMetricsProvider {
 	}
 }
 
-func (p *ChainCmtLogMetricsProvider) register(reg prometheus.Registerer) {
+func (p *ChainCommitteeLogMetricsProvider) register(reg prometheus.Registerer) {
 	reg.MustRegister(
 		p.logIndexIncReasonConsOut,
 		p.logIndexIncReasonRecover,
@@ -51,20 +51,20 @@ func (p *ChainCmtLogMetricsProvider) register(reg prometheus.Registerer) {
 	)
 }
 
-func (p *ChainCmtLogMetricsProvider) createForChain(chainID isc.ChainID) *ChainCmtLogMetrics {
-	return newChainCmtLogMetrics(p, chainID)
+func (p *ChainCommitteeLogMetricsProvider) createForChain(chainID isc.ChainID) *ChainCommitteeLogMetrics {
+	return newChainCommitteeLogMetrics(p, chainID)
 }
 
-type ChainCmtLogMetrics struct {
+type ChainCommitteeLogMetrics struct {
 	consOut     prometheus.Counter
 	recover     prometheus.Counter
 	l1RepAnchor prometheus.Counter
 	started     prometheus.Counter
 }
 
-func newChainCmtLogMetrics(collectors *ChainCmtLogMetricsProvider, chainID isc.ChainID) *ChainCmtLogMetrics {
+func newChainCommitteeLogMetrics(collectors *ChainCommitteeLogMetricsProvider, chainID isc.ChainID) *ChainCommitteeLogMetrics {
 	labels := getChainLabels(chainID)
-	return &ChainCmtLogMetrics{
+	return &ChainCommitteeLogMetrics{
 		consOut:     collectors.logIndexIncReasonConsOut.With(labels),
 		recover:     collectors.logIndexIncReasonRecover.With(labels),
 		l1RepAnchor: collectors.logIndexIncReasonL1RepAnchor.With(labels),
@@ -72,7 +72,7 @@ func newChainCmtLogMetrics(collectors *ChainCmtLogMetricsProvider, chainID isc.C
 	}
 }
 
-func (m *ChainCmtLogMetrics) NextLogIndexCauseConsOut()     { m.consOut.Inc() }
-func (m *ChainCmtLogMetrics) NextLogIndexCauseRecover()     { m.recover.Inc() }
-func (m *ChainCmtLogMetrics) NextLogIndexCauseL1RepAnchor() { m.l1RepAnchor.Inc() }
-func (m *ChainCmtLogMetrics) NextLogIndexCauseStarted()     { m.started.Inc() }
+func (m *ChainCommitteeLogMetrics) NextLogIndexCauseConsOut()     { m.consOut.Inc() }
+func (m *ChainCommitteeLogMetrics) NextLogIndexCauseRecover()     { m.recover.Inc() }
+func (m *ChainCommitteeLogMetrics) NextLogIndexCauseL1RepAnchor() { m.l1RepAnchor.Inc() }
+func (m *ChainCommitteeLogMetrics) NextLogIndexCauseStarted()     { m.started.Inc() }

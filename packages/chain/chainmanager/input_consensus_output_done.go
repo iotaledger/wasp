@@ -6,40 +6,40 @@ package chainmanager
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/v2/packages/chain/cmtlog"
-	"github.com/iotaledger/wasp/v2/packages/chain/cons"
+	"github.com/iotaledger/wasp/v2/packages/chain/committeelog"
+	"github.com/iotaledger/wasp/v2/packages/chain/consensus"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
 type inputConsensusOutputDone struct {
-	committeeAddr   cryptolib.Address
-	logIndex        cmtlog.LogIndex
-	proposedBaseAO  *isc.StateAnchor
-	consensusResult *cons.Result
+	committeeAddr      cryptolib.Address
+	logIndex           committeelog.LogIndex
+	proposedBaseAnchor *isc.StateAnchor
+	consensusResult    *consensus.Result
 }
 
 func NewInputConsensusOutputDone(
 	committeeAddr cryptolib.Address,
-	logIndex cmtlog.LogIndex,
-	proposedBaseAO *isc.StateAnchor,
-	consensusResult *cons.Result,
+	logIndex committeelog.LogIndex,
+	proposedBaseAnchor *isc.StateAnchor,
+	consensusResult *consensus.Result,
 ) gpa.Input {
 	return &inputConsensusOutputDone{
-		committeeAddr:   committeeAddr,
-		logIndex:        logIndex,
-		proposedBaseAO:  proposedBaseAO,
-		consensusResult: consensusResult,
+		committeeAddr:      committeeAddr,
+		logIndex:           logIndex,
+		proposedBaseAnchor: proposedBaseAnchor,
+		consensusResult:    consensusResult,
 	}
 }
 
 func (inp *inputConsensusOutputDone) String() string {
 	return fmt.Sprintf(
-		"{chainMgr.inputConsensusOutputDone, committeeAddr=%v, logIndex=%v, proposedBaseAO=%v, consensusResult=%v}",
+		"{chainMgr.inputConsensusOutputDone, committeeAddr=%v, logIndex=%v, proposedBaseAnchor=%v, consensusResult=%v}",
 		inp.committeeAddr.String(),
 		inp.logIndex,
-		inp.proposedBaseAO.Hash().Hex(),
+		inp.proposedBaseAnchor.Hash().Hex(),
 		inp.consensusResult,
 	)
 }

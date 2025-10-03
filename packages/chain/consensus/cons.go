@@ -1,0 +1,703 @@
+// Package cons implements consensus functionality for IOTA Smart Contracts.
+// A single instance of it.
+//
+// We move all the synchronization logic to separate objects (upon_...). They are
+// responsible for waiting specific data and then triggering the next state action
+// once. This way we hope to solve a lot of race conditions gracefully. The `upon`
+// predicates and the corresponding done functions should not depend on each other.
+// If some data is needed at several places, it should be passed to several predicates.
+package consensus
+
+import (
+	"encoding/binary"
+	"encoding/hex"
+	"fmt"
+	"time"
+
+	"fortio.org/safecast"
+
+	"github.com/minio/blake2b-simd"
+	"github.com/samber/lo"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/suites"
+
+	bcs "github.com/iotaledger/bcs-go"
+	"github.com/iotaledger/hive.go/log"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
+	"github.com/iotaledger/wasp/v2/packages/chain/consensus/batch_proposal"
+	"github.com/iotaledger/wasp/v2/packages/chain/distsign"
+	"github.com/iotaledger/wasp/v2/packages/coin"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/gpa"
+	"github.com/iotaledger/wasp/v2/packages/gpa/batchpropagreement"
+	"github.com/iotaledger/wasp/v2/packages/gpa/cc/blssig"
+	"github.com/iotaledger/wasp/v2/packages/gpa/cc/semi"
+	"github.com/iotaledger/wasp/v2/packages/hashing"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/parameters"
+	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/tcrypto"
+	"github.com/iotaledger/wasp/v2/packages/util"
+	"github.com/iotaledger/wasp/v2/packages/vm"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/migrations/allmigrations"
+	"github.com/iotaledger/wasp/v2/packages/vm/processors"
+	"github.com/iotaledger/wasp/v2/packages/vm/vmtxbuilder"
+)
+
+type Cons interface {
+	AsGPA() gpa.GPA
+}
+
+type OutputStatus byte
+
+func (os OutputStatus) String() string {
+	switch os {
+	case Running:
+		return "Running"
+	case Completed:
+		return "Completed"
+	case Skipped:
+		return "Skipped"
+	default:
+		return fmt.Sprintf("Unexpected-%v", byte(os))
+	}
+}
+
+const (
+	Running   OutputStatus = iota // Instance is still running.
+	Completed                     // Consensus reached, TX is prepared for publication.
+	Skipped                       // Consensus reached, no TX should be posted for this LogIndex.
+)
+
+type Output struct {
+	Status     OutputStatus
+	Terminated bool
+	//
+	// Requests for other components.
+	NeedMempoolProposal       *isc.StateAnchor  // Requests for the mempool are needed for this Base Alias Output.
+	NeedMempoolRequests       []*isc.RequestRef // Request payloads are needed from mempool for this IDs/Hash.
+	NeedStateMgrStateProposal *isc.StateAnchor  // Query for a proposal for Virtual State (it will go to the batch proposal).
+	NeedStateMgrDecidedState  *isc.StateAnchor  // Query for a decided Virtual State to be used by VM.
+	NeedStateMgrSaveBlock     state.StateDraft  // Ask StateMgr to save the produced block.
+	NeedNodeConnL1Info        *isc.StateAnchor  // Ask NodeConn for the L1Info related to this anchor.
+	NeedVMResult              *vm.VMTask        // VM Result is needed for this (agreed) batch.
+	//
+	// Following is the final result.
+	// All the fields are filled, if State == Completed.
+	Result *Result
+}
+
+type Result struct {
+	DecidedAnchor *isc.StateAnchor              // The consumed state anchor.
+	Transaction   *iotasigner.SignedTransaction // The TX for committing the block.
+	Block         state.Block                   // The state diff produced.
+}
+
+func (r *Result) String() string {
+	return fmt.Sprintf(
+		"{cons.Result, txDigest=%s, baseAnchor=%v, outBlockHash=%v}",
+		lo.Must(r.Transaction.Digest()),
+		r.DecidedAnchor,
+		r.Block.Hash(),
+	)
+}
+
+type consensusImpl struct {
+	chainID                   isc.ChainID
+	chainStore                state.Store
+	edSuite                   suites.Suite              // For signatures.
+	blsSuite                  suites.Suite              // For randomness only.
+	distKeyPart               tcrypto.DistibutedKeyPart // The current committee's keys.
+	rotateTo                  *iotago.Address           // If non-nil and differs from the distKeyPart, then rotation is suggested.
+	processorCache            *processors.Config
+	nodeIDs                   []gpa.NodeID
+	me                        gpa.NodeID
+	f                         int
+	asGPA                     gpa.GPA
+	distributedSignature      distsign.DistributedSignature
+	batchProposalAgreement    batchpropagreement.BatchProposalAgreement
+	subMempool                SyncMempool                // Mempool.
+	subStateMgr               SyncStateMgr               // StateMgr.
+	subNodeConn               SyncNodeConn               // Synchronization with the NodeConn.
+	subDistributedSign        SyncDistributedSignature   // Distributed Schnorr Signature.
+	subBatchProposalAgreement SyncBatchProposalAgreement // Asynchronous Common Subset.
+	subRND                    SyncRND                    // Randomness.
+	subVM                     SyncVM                     // Virtual Machine.
+	subTX                     SyncTX                     // Building final TX.
+	term                      *termCondition             // To detect, when this instance can be terminated.
+	msgWrapper                *gpa.MsgWrapper
+	output                    *Output
+	validatorAgentID          isc.AgentID
+	log                       log.Logger
+}
+
+const (
+	subsystemTypeDSS byte = iota
+	subsystemTypeACS
+)
+
+var (
+	_ gpa.GPA = &consensusImpl{}
+	_ Cons    = &consensusImpl{}
+)
+
+func New( //nolint:funlen
+	chainID isc.ChainID,
+	chainStore state.Store,
+	me gpa.NodeID,
+	mySK *cryptolib.PrivateKey,
+	distKeyPart tcrypto.DistibutedKeyPart,
+	rotateTo *iotago.Address,
+	processorCache *processors.Config,
+	instID []byte,
+	nodeIDFromPubKey func(pubKey *cryptolib.PublicKey) gpa.NodeID,
+	validatorAgentID isc.AgentID,
+	log log.Logger,
+) Cons {
+	edSuite := tcrypto.DefaultEd25519Suite()
+	blsSuite := tcrypto.DefaultBLSSuite()
+
+	distKeyPartNodePubKeys := distKeyPart.GetNodePubKeys()
+	nodeIDs := make([]gpa.NodeID, len(distKeyPartNodePubKeys))
+	nodePKs := map[gpa.NodeID]kyber.Point{}
+	for i := range distKeyPartNodePubKeys {
+		var err error
+		nodeIDs[i] = nodeIDFromPubKey(distKeyPartNodePubKeys[i])
+		nodePKs[nodeIDs[i]], err = distKeyPartNodePubKeys[i].AsKyberPoint()
+		if err != nil {
+			panic(fmt.Errorf("cannot convert nodePK[%v] to kyber.Point: %w", i, err))
+		}
+	}
+
+	f := len(distKeyPartNodePubKeys) - int(distKeyPart.GetT())
+	myKyberKeys, err := mySK.AsKyberKeyPair()
+	if err != nil {
+		panic(fmt.Errorf("cannot convert node's SK to kyber.Scalar: %w", err))
+	}
+	longTermDKS := distKeyPart.DSS()
+	acsLog := log.NewChildLogger("ACS")
+	acsCCInstFunc := func(nodeID gpa.NodeID, round int) gpa.GPA {
+		var roundBin [4]byte
+		roundU32, err := safecast.Convert[uint32](round)
+		if err != nil {
+			panic("round overflows uint32")
+		}
+		binary.BigEndian.PutUint32(roundBin[:], roundU32)
+		sid := hashing.HashDataBlake2b(instID, nodeID[:], roundBin[:]).Bytes()
+		realCC := blssig.New(blsSuite, nodeIDs, distKeyPart.BLSCommits(), distKeyPart.BLSPriShare(), int(distKeyPart.BLSThreshold()), me, sid, acsLog)
+		return semi.New(round, realCC)
+	}
+	c := &consensusImpl{
+		chainID:                chainID,
+		chainStore:             chainStore,
+		edSuite:                edSuite,
+		blsSuite:               blsSuite,
+		distKeyPart:            distKeyPart,
+		rotateTo:               rotateTo,
+		processorCache:         processorCache,
+		nodeIDs:                nodeIDs,
+		me:                     me,
+		f:                      f,
+		distributedSignature:   distsign.New(edSuite, nodeIDs, nodePKs, f, me, myKyberKeys.Private, longTermDKS, log.NewChildLogger("DSS")),
+		batchProposalAgreement: batchpropagreement.New(nodeIDs, me, f, acsCCInstFunc, acsLog),
+		output:                 &Output{Status: Running},
+		log:                    log,
+		validatorAgentID:       validatorAgentID,
+	}
+	c.asGPA = gpa.NewOwnHandler(me, c)
+	c.msgWrapper = gpa.NewMsgWrapper(msgTypeWrapped, c.msgWrapperFunc)
+	c.subMempool = NewSyncMempool(
+		c.uponMempoolProposalInputsReady,
+		c.uponMempoolProposalReceived,
+		c.uponMempoolRequestsNeeded,
+		c.uponMempoolRequestsReceived,
+	)
+	c.subStateMgr = NewSyncStateMgr(
+		c.uponStateMgrStateProposalQueryInputsReady,
+		c.uponStateMgrStateProposalReceived,
+		c.uponStateMgrDecidedStateQueryInputsReady,
+		c.uponStateMgrDecidedStateReceived,
+		c.uponStateMgrSaveProducedBlockInputsReady,
+		c.uponStateMgrSaveProducedBlockDone,
+	)
+	c.subNodeConn = NewSyncNodeConn(
+		c.uponNodeConnInputsReady,
+		c.uponNodeConnOutputReady,
+	)
+	c.subDistributedSign = NewSyncDistributedSignature(
+		c.uponDSSInitialInputsReady,
+		c.uponDSSIndexProposalReady,
+		c.uponDSSSigningInputsReceived,
+		c.uponDSSOutputReady,
+	)
+	c.subBatchProposalAgreement = NewSyncBatchProposalAgreement(
+		c.uponBatchProposalAgreementInputsReceived,
+		c.uponBatchProposalAgreementOutputReceived,
+		c.uponBatchProposalAgreementTerminated,
+	)
+	c.subRND = NewSyncRND(
+		int(distKeyPart.BLSThreshold()),
+		c.uponRNDInputsReady,
+		c.uponRNDSigSharesReady,
+	)
+	c.subVM = NewSyncVM(
+		c.uponVMInputsReceived,
+		c.uponVMOutputReceived,
+	)
+	c.subTX = NewSyncTX(
+		c.uponTXInputsReady,
+	)
+	c.term = newTermCondition(
+		c.uponTerminationCondition,
+	)
+	return c
+}
+
+// Used to select a target subsystem for a wrapped message received.
+func (c *consensusImpl) msgWrapperFunc(subsystem byte, index int) (gpa.GPA, error) {
+	if subsystem == subsystemTypeDSS {
+		if index != 0 {
+			return nil, fmt.Errorf("unexpected DSS index: %v", index)
+		}
+		return c.distributedSignature.AsGPA(), nil
+	}
+	if subsystem == subsystemTypeACS {
+		if index != 0 {
+			return nil, fmt.Errorf("unexpected ACS index: %v", index)
+		}
+		return c.batchProposalAgreement.AsGPA(), nil
+	}
+	return nil, fmt.Errorf("unexpected subsystem: %v", subsystem)
+}
+
+func (c *consensusImpl) AsGPA() gpa.GPA {
+	return c.asGPA
+}
+
+func (c *consensusImpl) Input(input gpa.Input) gpa.OutMessages {
+	switch input := input.(type) {
+	case *inputTimeData:
+		// ignore this to filter out ridiculously excessive logging
+	default:
+		c.log.LogDebugf("Input %T: %+v", input, input)
+	}
+
+	switch input := input.(type) {
+	case *inputProposal:
+		c.log.LogInfof("Consensus started, received %v", input.String())
+		return gpa.NoMessages().
+			AddAll(c.subNodeConn.HaveInputAnchor(input.baseAnchor)).
+			AddAll(c.subMempool.BaseAnchorReceived(input.baseAnchor)).
+			AddAll(c.subStateMgr.ProposedBaseAnchorReceived(input.baseAnchor)).
+			AddAll(c.subDistributedSign.InitialInputReceived())
+	case *inputRotateTo:
+		// We can update the rotation address while consensus is running.
+		// New value will be used, if decision has not been made yet.
+		c.rotateTo = input.address
+		return nil
+	case *inputMempoolProposal:
+		return c.subMempool.ProposalReceived(input.requestRefs)
+	case *inputMempoolRequests:
+		return c.subMempool.RequestsReceived(input.requests)
+	case *inputStateMgrProposalConfirmed:
+		return c.subStateMgr.StateProposalConfirmedByStateMgr()
+	case *inputStateMgrDecidedVirtualState:
+		return c.subStateMgr.DecidedVirtualStateReceived(input.chainState)
+	case *inputStateMgrBlockSaved:
+		return c.subStateMgr.BlockSaved(input.block)
+	case *inputTimeData:
+		return c.subBatchProposalAgreement.TimeDataReceived(input.timeData)
+	case *inputL1Info:
+		return c.subNodeConn.HaveL1Info(input.gasCoins, input.l1params)
+	case *inputVMResult:
+		return c.subVM.VMResultReceived(input.task)
+	}
+	panic(fmt.Errorf("unexpected input: %v", input))
+}
+
+// Implements the gpa.GPA interface.
+// Here we route all the messages.
+func (c *consensusImpl) Message(msg gpa.Message) gpa.OutMessages {
+	switch msgT := msg.(type) {
+	case *msgBLSPartialSig:
+		return c.subRND.BLSPartialSigReceived(msgT.Sender(), msgT.partialSig)
+	case *gpa.WrappingMsg:
+		sub, subMsgs, err := c.msgWrapper.DelegateMessage(msgT)
+		if err != nil {
+			c.log.LogWarnf("unexpected wrapped message: %w", err)
+			return nil
+		}
+		msgs := gpa.NoMessages().AddAll(subMsgs)
+		switch msgT.Subsystem() {
+		case subsystemTypeACS:
+			return msgs.AddAll(c.subBatchProposalAgreement.ACSOutputReceived(sub.Output()))
+		case subsystemTypeDSS:
+			return msgs.AddAll(c.subDistributedSign.DistributedSignatureGenerated(sub.Output()))
+		default:
+			c.log.LogWarnf("unexpected subsystem after check: %+v", msg)
+			return nil
+		}
+	}
+	panic(fmt.Errorf("unexpected message: %v", msg))
+}
+
+func (c *consensusImpl) Output() gpa.Output {
+	return c.output // Always non-nil.
+}
+
+func (c *consensusImpl) StatusString() string {
+	// We con't include RND here, maybe that's less important, and visible from the VM status.
+	return fmt.Sprintf("{consImpl⟨%v⟩,%v,%v,%v,%v,%v,%v,%v}",
+		c.output.Status,
+		c.subStateMgr.String(),
+		c.subMempool.String(),
+		c.subNodeConn.String(),
+		c.subDistributedSign.String(),
+		c.subBatchProposalAgreement.String(),
+		c.subVM.String(),
+		c.subTX.String(),
+	)
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Mempool -- MemPool
+
+func (c *consensusImpl) uponMempoolProposalInputsReady(baseAnchor *isc.StateAnchor) gpa.OutMessages {
+	if baseAnchor == nil {
+		// If the base Anchor is nil, we are not going to propose any requests.
+		return c.subMempool.ProposalReceived([]*isc.RequestRef{})
+	}
+	c.output.NeedMempoolProposal = baseAnchor
+	return nil
+}
+
+func (c *consensusImpl) uponMempoolProposalReceived(requestRefs []*isc.RequestRef) gpa.OutMessages {
+	c.output.NeedMempoolProposal = nil
+	msgs := gpa.NoMessages()
+	msgs.AddAll(c.subBatchProposalAgreement.MempoolRequestsReceived(requestRefs))
+	msgs.AddAll(c.subNodeConn.HaveRequests())
+	return msgs
+}
+
+func (c *consensusImpl) uponMempoolRequestsNeeded(requestRefs []*isc.RequestRef) gpa.OutMessages {
+	c.output.NeedMempoolRequests = requestRefs
+	return nil
+}
+
+func (c *consensusImpl) uponMempoolRequestsReceived(requests []isc.Request) gpa.OutMessages {
+	c.output.NeedMempoolRequests = nil
+	return c.subVM.RequestsReceived(requests)
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// StateMgr -- StateManager
+
+func (c *consensusImpl) uponStateMgrStateProposalQueryInputsReady(baseAnchor *isc.StateAnchor) gpa.OutMessages {
+	if baseAnchor == nil {
+		// Don't wait for the state if no base Anchor is known.
+		return c.subStateMgr.StateProposalConfirmedByStateMgr()
+	}
+	c.output.NeedStateMgrStateProposal = baseAnchor
+	return nil
+}
+
+func (c *consensusImpl) uponStateMgrStateProposalReceived(proposedAnchor *isc.StateAnchor) gpa.OutMessages {
+	c.output.NeedStateMgrStateProposal = nil
+	msgs := gpa.NoMessages()
+	msgs.AddAll(c.subBatchProposalAgreement.StateProposalReceived(proposedAnchor))
+	msgs.AddAll(c.subNodeConn.HaveState())
+	return msgs
+}
+
+func (c *consensusImpl) uponStateMgrDecidedStateQueryInputsReady(decidedBaseAnchor *isc.StateAnchor) gpa.OutMessages {
+	c.output.NeedStateMgrDecidedState = decidedBaseAnchor
+	return nil
+}
+
+func (c *consensusImpl) uponStateMgrDecidedStateReceived(chainState state.State) gpa.OutMessages {
+	c.output.NeedStateMgrDecidedState = nil
+	return c.subVM.DecidedStateReceived(chainState)
+}
+
+func (c *consensusImpl) uponStateMgrSaveProducedBlockInputsReady(producedBlock state.StateDraft) gpa.OutMessages {
+	if producedBlock == nil {
+		// Don't have a block to save in the case of self-governed rotation.
+		// So mark it as saved immediately.
+		return c.subStateMgr.BlockSaved(nil)
+	}
+	c.output.NeedStateMgrSaveBlock = producedBlock
+	return nil
+}
+
+func (c *consensusImpl) uponStateMgrSaveProducedBlockDone(block state.Block) gpa.OutMessages {
+	c.output.NeedStateMgrSaveBlock = nil
+	return c.subTX.BlockSaved(block)
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// NodeConn
+
+func (c *consensusImpl) uponNodeConnInputsReady(anchor *isc.StateAnchor) gpa.OutMessages {
+	if anchor == nil {
+		c.log.LogDebugf("ACS got ⊥ as input, no L1 info can be fetched.")
+		return c.subBatchProposalAgreement.L1InfoReceived([]*coin.CoinWithRef{}, nil)
+	}
+	c.output.NeedNodeConnL1Info = anchor
+	return nil
+}
+
+func (c *consensusImpl) uponNodeConnOutputReady(gasCoins []*coin.CoinWithRef, l1params *parameters.L1Params) gpa.OutMessages {
+	c.log.LogDebugf("L1 info received, gasCoins=%v, l1Params=%v", gasCoins, l1params)
+	c.output.NeedNodeConnL1Info = nil
+	return c.subBatchProposalAgreement.L1InfoReceived(gasCoins, l1params)
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// DSS
+
+func (c *consensusImpl) uponDSSInitialInputsReady() gpa.OutMessages {
+	c.log.LogDebugf("uponDSSInitialInputsReady")
+	sub, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeDSS, 0, distsign.NewInputStart())
+	if err != nil {
+		panic(fmt.Errorf("cannot provide input to DSS: %w", err))
+	}
+	return gpa.NoMessages().
+		AddAll(subMsgs).
+		AddAll(c.subDistributedSign.DistributedSignatureGenerated(sub.Output()))
+}
+
+func (c *consensusImpl) uponDSSIndexProposalReady(indexProposal []int) gpa.OutMessages {
+	c.log.LogDebugf("uponDSSIndexProposalReady")
+	return c.subBatchProposalAgreement.DistributedSignatureIndexProposalReceived(indexProposal)
+}
+
+func (c *consensusImpl) uponDSSSigningInputsReceived(decidedIndexProposals map[gpa.NodeID][]int, messageToSign []byte) gpa.OutMessages {
+	c.log.LogDebugf("uponDSSSigningInputsReceived(decidedIndexProposals=%+v, H(messageToSign)=%v)", decidedIndexProposals, hashing.HashDataBlake2b(messageToSign))
+	dssDecidedInput := distsign.NewInputDecided(decidedIndexProposals, messageToSign)
+	subDSS, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeDSS, 0, dssDecidedInput)
+	if err != nil {
+		panic(fmt.Errorf("cannot provide inputs for signing: %w", err))
+	}
+	return gpa.NoMessages().
+		AddAll(subMsgs).
+		AddAll(c.subDistributedSign.DistributedSignatureGenerated(subDSS.Output()))
+}
+
+func (c *consensusImpl) uponDSSOutputReady(signature []byte) gpa.OutMessages {
+	c.log.LogDebugf("uponDSSOutputReady")
+	return c.subTX.SignatureReceived(signature)
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// ACS
+
+func (c *consensusImpl) uponBatchProposalAgreementInputsReceived(
+	baseAnchor *isc.StateAnchor, // Can be nil.
+	requestRefs []*isc.RequestRef,
+	dssIndexProposal []int,
+	timeData time.Time,
+	gasCoins []*coin.CoinWithRef, // Can be nil.
+	l1params *parameters.L1Params, // Can be nil.
+) gpa.OutMessages {
+	rotateTo := c.rotateTo
+	if rotateTo != nil && rotateTo.Equals(*c.distKeyPart.GetAddress().AsIotaAddress()) {
+		// Do not propose to rotate to the existing committee.
+		rotateTo = nil
+	}
+	batchProposal := batch_proposal.New(
+		*c.distKeyPart.GetIndex(),
+		baseAnchor, // Will be NIL in the case of ⊥ proposal.
+		util.NewFixedSizeBitVector(c.distKeyPart.GetN()).SetBits(dssIndexProposal),
+		rotateTo,
+		timeData,
+		c.validatorAgentID,
+		requestRefs, // Will be [] in the case of ⊥ proposal.
+		gasCoins,    // Will be NIL in the case of ⊥ proposal.
+		l1params,    // Will be NIL in the case of ⊥ proposal.
+	)
+	subACS, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeACS, 0, batchProposal.Bytes())
+	if err != nil {
+		panic(fmt.Errorf("cannot provide input to the ACS: %w", err))
+	}
+	return gpa.NoMessages().
+		AddAll(subMsgs).
+		AddAll(c.subBatchProposalAgreement.ACSOutputReceived(subACS.Output()))
+}
+
+func (c *consensusImpl) uponBatchProposalAgreementOutputReceived(outputValues map[gpa.NodeID][]byte) gpa.OutMessages {
+	aggr := batch_proposal.AggregateBatchProposals(outputValues, c.nodeIDs, c.f, c.log)
+	if aggr.ShouldBeSkipped() {
+		// Cannot proceed with such proposals.
+		// Have to retry the consensus after some time with the next log index.
+		c.log.LogInfof("Terminating consensus with status=Skipped, there is no way to aggregate batch proposal.")
+		c.output.Status = Skipped
+		c.term.haveOutputProduced()
+		return nil
+	}
+	bao := aggr.DecidedBaseAnchor()
+	baoID := bao.GetObjectRef()
+	reqs := aggr.DecidedRequestRefs()
+	c.log.LogDebugf("ACS decision: baseAnchor=%v, requests=%v", bao, reqs)
+	if aggr.DecidedRotateTo() != nil {
+		c.log.LogDebugf("Will rotate to %v", aggr.DecidedRotateTo().ToHex())
+		rotationPTB := vmtxbuilder.NewAnchorTransactionBuilder(bao.ISCPackage(), bao, c.distKeyPart.GetAddress())
+		rotationPTB.RotationTransaction(aggr.DecidedRotateTo())
+		rotationPTX := rotationPTB.BuildTransactionEssence(bao.GetStateMetadata(), 0)
+		rotationTXD := c.makeTransactionData(&rotationPTX, aggr)
+		rotationTXB := c.makeTransactionSigningBytes(rotationTXD)
+		c.log.LogDebugf("Rotation TxDataBytes=%s", hex.EncodeToString(c.makeTransactionDataBytes(rotationTXD)))
+		return gpa.NoMessages().
+			AddAll(c.subTX.UnsignedTXReceived(rotationTXD)).
+			AddAll(c.subTX.BlockSaved(nil)).
+			AddAll(c.subTX.AnchorDecided(bao)).
+			AddAll(c.subDistributedSign.MessageToSignReceived(rotationTXB)).
+			AddAll(c.subDistributedSign.DecidedIndexProposalsReceived(aggr.DecidedDSSIndexProposals()))
+	}
+	return gpa.NoMessages().
+		AddAll(c.subMempool.RequestsNeeded(reqs)).
+		AddAll(c.subStateMgr.DecidedVirtualStateNeeded(bao)).
+		AddAll(c.subVM.DecidedBatchProposalsReceived(aggr)).
+		AddAll(c.subRND.CanProceed(baoID.Bytes())).
+		AddAll(c.subDistributedSign.DecidedIndexProposalsReceived(aggr.DecidedDSSIndexProposals()))
+}
+
+func (c *consensusImpl) uponBatchProposalAgreementTerminated() {
+	c.term.haveAcsTerminated()
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// RND
+
+func (c *consensusImpl) uponRNDInputsReady(dataToSign []byte) gpa.OutMessages {
+	sigShare, err := c.distKeyPart.BLSSignShare(dataToSign)
+	if err != nil {
+		panic(fmt.Errorf("cannot sign share for randomness: %w", err))
+	}
+	msgs := gpa.NoMessages()
+	for _, nid := range c.nodeIDs {
+		msgs.Add(newMsgBLSPartialSig(c.blsSuite, nid, sigShare))
+	}
+	return msgs
+}
+
+func (c *consensusImpl) uponRNDSigSharesReady(dataToSign []byte, partialSigs map[gpa.NodeID][]byte) (bool, gpa.OutMessages) {
+	partialSigArray := make([][]byte, 0, len(partialSigs))
+	for nid := range partialSigs {
+		partialSigArray = append(partialSigArray, partialSigs[nid])
+	}
+	sig, err := c.distKeyPart.BLSRecoverMasterSignature(partialSigArray, dataToSign)
+	if err != nil {
+		c.log.LogWarnf("Cannot reconstruct BLS signature from %v/%v sigShares: %v", len(partialSigs), c.distKeyPart.GetN(), err)
+		return false, nil // Continue to wait for other sig shares.
+	}
+	return true, c.subVM.RandomnessReceived(hashing.HashDataBlake2b(sig.Signature.Bytes()))
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// VM
+
+func (c *consensusImpl) uponVMInputsReceived(aggregatedProposals *batch_proposal.AggregatedBatchProposals, chainState state.State, randomness *hashing.HashValue, requests []isc.Request) gpa.OutMessages {
+	decidedBaseAnchor := aggregatedProposals.DecidedBaseAnchor()
+	stateAnchor := isc.NewStateAnchor(decidedBaseAnchor.Anchor(), decidedBaseAnchor.ISCPackage())
+	gasCoins := aggregatedProposals.AggregatedGasCoins()
+	// FIXME we need only one
+	if len(gasCoins) != 1 {
+		panic("FIXME we support only one gas coin now")
+	}
+	gasCoin := gasCoins[0]
+
+	c.output.NeedVMResult = &vm.VMTask{
+		Processors:           c.processorCache,
+		Anchor:               &stateAnchor,
+		GasCoin:              gasCoin,
+		L1Params:             aggregatedProposals.AggregatedL1Params(),
+		Store:                c.chainStore,
+		Requests:             aggregatedProposals.OrderedRequests(requests, *randomness),
+		Timestamp:            aggregatedProposals.AggregatedTime(),
+		Entropy:              *randomness,
+		ValidatorFeeTarget:   aggregatedProposals.ValidatorFeeTarget(*randomness),
+		EstimateGasMode:      false,
+		EnableGasBurnLogging: false,
+		Log:                  c.log.NewChildLogger("VM"),
+		Migrations:           allmigrations.DefaultScheme,
+	}
+	return c.subTX.AnchorDecided(decidedBaseAnchor)
+}
+
+func (c *consensusImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult, aggregatedProposals *batch_proposal.AggregatedBatchProposals) gpa.OutMessages {
+	c.output.NeedVMResult = nil
+	if len(vmResult.RequestResults) == 0 {
+		// No requests were processed, don't have what to do.
+		// Will need to retry the consensus with the next log index some time later.
+		c.log.LogInfof("Terminating consensus with status=Skipped, 0 requests processed.")
+		c.output.Status = Skipped
+		c.term.haveOutputProduced()
+		return nil
+	}
+
+	// Make sure all the fields in the TX are ordered properly.
+	unsignedTX := vmResult.UnsignedTransaction
+	txData := c.makeTransactionData(&unsignedTX, aggregatedProposals)
+	txBytes := c.makeTransactionSigningBytes(txData)
+	c.log.LogDebugf("VM produced TxDataBytes=%s", hex.EncodeToString(c.makeTransactionDataBytes(txData)))
+	return gpa.NoMessages().
+		AddAll(c.subStateMgr.BlockProduced(vmResult.StateDraft)).
+		AddAll(c.subTX.UnsignedTXReceived(txData)).
+		AddAll(c.subDistributedSign.MessageToSignReceived(txBytes))
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// TX
+
+func (c *consensusImpl) makeTransactionData(pt *iotago.ProgrammableTransaction, aggregatedProposals *batch_proposal.AggregatedBatchProposals) *iotago.TransactionData {
+	sender := c.distKeyPart.GetAddress().AsIotaAddress()
+	l1params := aggregatedProposals.AggregatedL1Params()
+	gasPrice := l1params.Protocol.ReferenceGasPrice.Uint64()
+	gasBudget := pt.EstimateGasBudget(gasPrice)
+	gasPaymentCoinRef := aggregatedProposals.AggregatedGasCoins()
+	gasPayment := make([]*iotago.ObjectRef, len(gasPaymentCoinRef))
+	for i, coinRef := range gasPaymentCoinRef {
+		gasPayment[i] = coinRef.Ref
+	}
+
+	tx := iotago.NewProgrammable(sender, *pt, gasPayment, gasBudget, gasPrice)
+	return &tx
+}
+
+func (c *consensusImpl) makeTransactionDataBytes(txData *iotago.TransactionData) []byte {
+	txnBytes, err := bcs.Marshal(txData)
+	if err != nil {
+		panic(fmt.Errorf("uponVMOutputReceived: cannot serialize the tx: %w", err))
+	}
+	return txnBytes
+}
+
+func (c *consensusImpl) makeTransactionSigningBytes(txData *iotago.TransactionData) []byte {
+	txnBytes := c.makeTransactionDataBytes(txData)
+	txnBytes = iotasigner.MessageWithIntent(iotasigner.DefaultIntent(), txnBytes)
+	txnBytesHash := blake2b.Sum256(txnBytes)
+	return txnBytesHash[:]
+}
+
+// Everything is ready for the output TX, produce it.
+func (c *consensusImpl) uponTXInputsReady(decidedAnchor *isc.StateAnchor, unsignedTX *iotago.TransactionData, block state.Block, signature []byte) gpa.OutMessages {
+	suiSignature := cryptolib.NewSignature(c.distKeyPart.GetSharedPublic(), signature).AsIotaSignature()
+	signedTX := iotasigner.NewSignedTransaction(unsignedTX, suiSignature)
+	c.output.Result = &Result{
+		DecidedAnchor: decidedAnchor,
+		Transaction:   signedTX,
+		Block:         block,
+	}
+	c.output.Status = Completed
+	c.log.LogInfof("Terminating consensus with status=Completed")
+	c.term.haveOutputProduced()
+	return nil
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// TERM
+
+func (c *consensusImpl) uponTerminationCondition() {
+	c.output.Terminated = true
+}

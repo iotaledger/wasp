@@ -1,8 +1,8 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// Package adkg implements Asynchronous Distributed Key Generation algorithms
-package adkg
+// Package adistKeyGen implements Asynchronous Distributed Key Generation algorithms
+package adistKeyGen
 
 import (
 	"testing"
@@ -49,7 +49,7 @@ func MakeTestDistributedKey(
 	}
 	tc := gpa.NewTestContext(nodes)
 	//
-	// Run the DKG
+	// Run the DistKeyGeneration
 	inputs := make(map[gpa.NodeID]gpa.Input)
 	for _, nid := range nodeIDs {
 		inputs[nid] = nonce.NewInputStart() // Input is only a signal here.
@@ -79,7 +79,7 @@ func MakeTestDistributedKey(
 		decidedProposals[nid] = intermediateOutputs[nid].Indexes
 	}
 	//
-	// Run the ADKG with agreement already decided.
+	// Run the ADistKeyGeneration with agreement already decided.
 	for _, nid := range nodeIDs {
 		tc.WithInput(nid, nonce.NewInputAgreementResult(decidedProposals))
 	}

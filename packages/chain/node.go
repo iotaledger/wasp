@@ -33,9 +33,9 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/packages/chain/chainmanager"
-	"github.com/iotaledger/wasp/v2/packages/chain/cmtlog"
-	"github.com/iotaledger/wasp/v2/packages/chain/cons"
-	consGR "github.com/iotaledger/wasp/v2/packages/chain/cons/gr"
+	"github.com/iotaledger/wasp/v2/packages/chain/committeelog"
+	"github.com/iotaledger/wasp/v2/packages/chain/consensus"
+	consGR "github.com/iotaledger/wasp/v2/packages/chain/consensus/consensus_runner"
 	"github.com/iotaledger/wasp/v2/packages/chain/mempool"
 	"github.com/iotaledger/wasp/v2/packages/chain/statemanager"
 	smgpa "github.com/iotaledger/wasp/v2/packages/chain/statemanager/gpa"
@@ -149,7 +149,7 @@ type chainNodeImpl struct {
 	stateMgr            statemanager.StateMgr
 	recvAnchorPipe      pipe.Pipe[lo.Tuple2[*isc.StateAnchor, *parameters.L1Params]]
 	recvTxPublishedPipe pipe.Pipe[*txPublished]
-	consensusInsts      *shrinkingmap.ShrinkingMap[cryptolib.AddressKey, *shrinkingmap.ShrinkingMap[cmtlog.LogIndex, *consensusInst]] // Running consensus instances.
+	consensusInsts      *shrinkingmap.ShrinkingMap[cryptolib.AddressKey, *shrinkingmap.ShrinkingMap[committeelog.LogIndex, *consensusInst]] // Running consensus instances.
 	// TODO: Send wantRotate to all the consInst.
 	// Also, if nil, wait for requests.
 	// If non-nil, wait for some delay, then propose empty set of requests.
@@ -172,23 +172,23 @@ type chainNodeImpl struct {
 	validatorAgentID isc.AgentID
 	//
 	// Information for other components.
-	listener               ChainListener          // Object expecting event notifications.
-	accessLock             *sync.RWMutex          // Mutex for accessing informative fields from other threads.
-	activeCommitteeDKShare tcrypto.DKShare        // DKShare of the current active committee.
-	activeCommitteeNodes   []*cryptolib.PublicKey // The nodes acting as a committee for the latest consensus.
-	activeAccessNodes      []*cryptolib.PublicKey // All the nodes authorized for being access nodes (∪{{Self}, accessNodesFromNode, accessNodesFrom{ACT, CNF}}, activeCommitteeNodes}).
-	accessNodesFromNode    []*cryptolib.PublicKey // Access nodes, as configured locally by a user in this node.
-	accessNodesFromCNF     []*cryptolib.PublicKey // Access nodes, as configured in the governance contract (for the active state).
-	accessNodesFromACT     []*cryptolib.PublicKey // Access nodes, as configured in the governance contract (for the confirmed state).
-	serverNodes            []*cryptolib.PublicKey // The nodes we can query (because they consider us an access node).
-	latestConfirmedAO      *isc.StateAnchor       // Confirmed by L1, can be lagging from latestActiveAO.
-	latestConfirmedState   state.State            // State corresponding to latestConfirmedAO, for performance reasons.
-	latestConfirmedStateAO *isc.StateAnchor       // Set only when the corresponding state is retrieved.
-	latestActiveAO         *isc.StateAnchor       // This is the AO the chain is build on.
-	latestActiveState      state.State            // State corresponding to latestActiveAO, for performance reasons.
-	latestActiveStateAO    *isc.StateAnchor       // Set only when the corresponding state is retrieved.
-	originDeposit          coin.Value             // Initial deposit of the chain.
-	rotateTo               *iotago.Address        // Non-nil, if the owner of the node want to rotate the chain to the specified address.
+	listener                   ChainListener             // Object expecting event notifications.
+	accessLock                 *sync.RWMutex             // Mutex for accessing informative fields from other threads.
+	activeCommitteeDistKeyPart tcrypto.DistibutedKeyPart // DistKeyPart of the current active committee.
+	activeCommitteeNodes       []*cryptolib.PublicKey    // The nodes acting as a committee for the latest consensus.
+	activeAccessNodes          []*cryptolib.PublicKey    // All the nodes authorized for being access nodes (∪{{Self}, accessNodesFromNode, accessNodesFrom{ACT, CNF}}, activeCommitteeNodes}).
+	accessNodesFromNode        []*cryptolib.PublicKey    // Access nodes, as configured locally by a user in this node.
+	accessNodesFromCNF         []*cryptolib.PublicKey    // Access nodes, as configured in the governance contract (for the active state).
+	accessNodesFromACT         []*cryptolib.PublicKey    // Access nodes, as configured in the governance contract (for the confirmed state).
+	serverNodes                []*cryptolib.PublicKey    // The nodes we can query (because they consider us an access node).
+	latestConfirmedAnchor      *isc.StateAnchor          // Confirmed by L1, can be lagging from latestActiveAnchor.
+	latestConfirmedState       state.State               // State corresponding to latestConfirmedAnchor, for performance reasons.
+	latestConfirmedStateAnchor *isc.StateAnchor          // Set only when the corresponding state is retrieved.
+	latestActiveAnchor         *isc.StateAnchor          // This is the Anchor the chain is build on.
+	latestActiveState          state.State               // State corresponding to latestActiveAnchor, for performance reasons.
+	latestActiveStateAnchor    *isc.StateAnchor          // Set only when the corresponding state is retrieved.
+	originDeposit              coin.Value                // Initial deposit of the chain.
+	rotateTo                   *iotago.Address           // Non-nil, if the owner of the node want to rotate the chain to the specified address.
 	//
 	// Infrastructure.
 	netRecvPipe         pipe.Pipe[*peering.PeerMessageIn]
@@ -203,7 +203,7 @@ type chainNodeImpl struct {
 type consensusInst struct {
 	request    *chainmanager.NeedConsensus
 	cancelFunc context.CancelFunc
-	consensus  *consGR.ConsGr
+	consensus  *consGR.ConsensusRunner
 	committee  []*cryptolib.PublicKey
 }
 
@@ -236,11 +236,11 @@ func (cr *consRecover) String() string {
 
 // This is event received from the NodeConn as response to PublishTX
 type txPublished struct {
-	committeeAddr   cryptolib.Address
-	logIndex        cmtlog.LogIndex
-	txID            iotago.Digest
-	nextAliasOutput *isc.StateAnchor
-	confirmed       bool
+	committeeAddr cryptolib.Address
+	logIndex      committeelog.LogIndex
+	txID          iotago.Digest
+	nextAnchor    *isc.StateAnchor
+	confirmed     bool
 }
 
 // Represents config update event locally on this node.
@@ -262,8 +262,8 @@ func New(
 	nodeConn NodeConnection,
 	nodeIdentity *cryptolib.KeyPair,
 	processorConfig *processors.Config,
-	dkShareRegistryProvider registry.DKShareRegistryProvider,
-	consensusStateRegistry cmtlog.ConsensusStateRegistry,
+	distKeyPartRegistryProvider registry.DistKeyPartRegistryProvider,
+	consensusStateRegistry committeelog.ConsensusStateRegistry,
 	recoverFromWAL bool,
 	blockWAL utils.BlockWAL,
 	snapshotManager snapshots.SnapshotManager,
@@ -274,7 +274,7 @@ func New(
 	shutdownCoordinator *shutdown.Coordinator,
 	onChainConnect func(),
 	onChainDisconnect func(),
-	deriveAliasOutputByQuorum bool,
+	deriveAnchorByQuorum bool,
 	pipeliningLimit int,
 	postponeRecoveryMilestones int,
 	consensusDelay time.Duration,
@@ -304,10 +304,10 @@ func New(
 	if mode == OperationalMode {
 		return initializeOperationalChain(
 			ctx, cni, netPeeringID, chainID, chainStore, nodeConn, nodeIdentity,
-			consensusStateRegistry, dkShareRegistryProvider, recoverFromWAL, blockWAL,
+			consensusStateRegistry, distKeyPartRegistryProvider, recoverFromWAL, blockWAL,
 			net, snapshotManager, chainMetrics, shutdownCoordinator, smParameters,
 			mempoolSettings, mempoolBroadcastInterval, accessNodesFromNode,
-			deriveAliasOutputByQuorum, pipeliningLimit, postponeRecoveryMilestones,
+			deriveAnchorByQuorum, pipeliningLimit, postponeRecoveryMilestones,
 			onChainConnect, onChainDisconnect, log,
 		)
 	} else {
@@ -336,52 +336,52 @@ func newChainNodeImplAndPeerID(
 ) (*chainNodeImpl, peering.PeeringID) {
 	netPeeringID := peering.HashPeeringIDFromBytes(chainID.Bytes(), []byte("ChainManager")) // ChainID × ChainManager
 	return &chainNodeImpl{
-		nodeIdentity:           nodeIdentity,
-		chainID:                chainID,
-		chainStore:             chainStore,
-		nodeConn:               nodeConn,
-		tangleTime:             time.Time{}, // Zero time, while we haven't received it from the L1.
-		recvAnchorPipe:         pipe.NewInfinitePipe[lo.Tuple2[*isc.StateAnchor, *parameters.L1Params]](),
-		recvTxPublishedPipe:    pipe.NewInfinitePipe[*txPublished](),
-		consensusInsts:         shrinkingmap.New[cryptolib.AddressKey, *shrinkingmap.ShrinkingMap[cmtlog.LogIndex, *consensusInst]](),
-		consOutputPipe:         pipe.NewInfinitePipe[*consOutput](),
-		consRecoverPipe:        pipe.NewInfinitePipe[*consRecover](),
-		publishingTXes:         shrinkingmap.New[hashing.HashValue, context.CancelFunc](),
-		procCache:              processorConfig,
-		configUpdatedCh:        make(chan *configUpdate, 1),
-		serversUpdatedPipe:     pipe.NewInfinitePipe[*serversUpdate](),
-		rotateToPipe:           pipe.NewInfinitePipe[*iotago.Address](),
-		awaitReceiptActCh:      make(chan *awaitReceiptReq, 1),
-		awaitReceiptCnfCh:      make(chan *awaitReceiptReq, 1),
-		stateTrackerAct:        nil, // Set bellow.
-		stateTrackerCnf:        nil, // Set bellow.
-		blockWAL:               blockWAL,
-		consensusDelay:         consensusDelay,
-		recoveryTimeout:        recoveryTimeout,
-		validatorAgentID:       validatorAgentID,
-		listener:               listener,
-		accessLock:             &sync.RWMutex{},
-		activeCommitteeDKShare: nil,
-		activeCommitteeNodes:   []*cryptolib.PublicKey{},
-		activeAccessNodes:      nil, // Set bellow.
-		accessNodesFromNode:    nil, // Set bellow.
-		accessNodesFromACT:     nil, // Set bellow.
-		accessNodesFromCNF:     nil, // Set bellow.
-		serverNodes:            nil, // Set bellow.
-		latestConfirmedAO:      nil,
-		latestConfirmedState:   nil,
-		latestConfirmedStateAO: nil,
-		latestActiveAO:         nil,
-		latestActiveState:      nil,
-		latestActiveStateAO:    nil,
-		originDeposit:          originDeposit,
-		netRecvPipe:            pipe.NewInfinitePipe[*peering.PeerMessageIn](),
-		netPeeringID:           netPeeringID,
-		netPeerPubs:            map[gpa.NodeID]*cryptolib.PublicKey{},
-		net:                    net,
-		shutdownCoordinator:    shutdownCoordinator,
-		chainMetrics:           chainMetrics,
-		log:                    log,
+		nodeIdentity:               nodeIdentity,
+		chainID:                    chainID,
+		chainStore:                 chainStore,
+		nodeConn:                   nodeConn,
+		tangleTime:                 time.Time{}, // Zero time, while we haven't received it from the L1.
+		recvAnchorPipe:             pipe.NewInfinitePipe[lo.Tuple2[*isc.StateAnchor, *parameters.L1Params]](),
+		recvTxPublishedPipe:        pipe.NewInfinitePipe[*txPublished](),
+		consensusInsts:             shrinkingmap.New[cryptolib.AddressKey, *shrinkingmap.ShrinkingMap[committeelog.LogIndex, *consensusInst]](),
+		consOutputPipe:             pipe.NewInfinitePipe[*consOutput](),
+		consRecoverPipe:            pipe.NewInfinitePipe[*consRecover](),
+		publishingTXes:             shrinkingmap.New[hashing.HashValue, context.CancelFunc](),
+		procCache:                  processorConfig,
+		configUpdatedCh:            make(chan *configUpdate, 1),
+		serversUpdatedPipe:         pipe.NewInfinitePipe[*serversUpdate](),
+		rotateToPipe:               pipe.NewInfinitePipe[*iotago.Address](),
+		awaitReceiptActCh:          make(chan *awaitReceiptReq, 1),
+		awaitReceiptCnfCh:          make(chan *awaitReceiptReq, 1),
+		stateTrackerAct:            nil, // Set bellow.
+		stateTrackerCnf:            nil, // Set bellow.
+		blockWAL:                   blockWAL,
+		consensusDelay:             consensusDelay,
+		recoveryTimeout:            recoveryTimeout,
+		validatorAgentID:           validatorAgentID,
+		listener:                   listener,
+		accessLock:                 &sync.RWMutex{},
+		activeCommitteeDistKeyPart: nil,
+		activeCommitteeNodes:       []*cryptolib.PublicKey{},
+		activeAccessNodes:          nil, // Set bellow.
+		accessNodesFromNode:        nil, // Set bellow.
+		accessNodesFromACT:         nil, // Set bellow.
+		accessNodesFromCNF:         nil, // Set bellow.
+		serverNodes:                nil, // Set bellow.
+		latestConfirmedAnchor:      nil,
+		latestConfirmedState:       nil,
+		latestConfirmedStateAnchor: nil,
+		latestActiveAnchor:         nil,
+		latestActiveState:          nil,
+		latestActiveStateAnchor:    nil,
+		originDeposit:              originDeposit,
+		netRecvPipe:                pipe.NewInfinitePipe[*peering.PeerMessageIn](),
+		netPeeringID:               netPeeringID,
+		netPeerPubs:                map[gpa.NodeID]*cryptolib.PublicKey{},
+		net:                        net,
+		shutdownCoordinator:        shutdownCoordinator,
+		chainMetrics:               chainMetrics,
+		log:                        log,
 	}, netPeeringID
 }
 
@@ -524,13 +524,13 @@ func (cni *chainNodeImpl) handleStateTrackerActCB(st state.State, from, till *is
 	cni.log.LogDebugf("handleStateTrackerActCB: till %v from %v", till, from)
 	cni.accessLock.Lock()
 	cni.latestActiveState = st
-	cni.latestActiveStateAO = till
+	cni.latestActiveStateAnchor = till
 	// FIXME cni.gasCoin
-	latestConfirmedAO := cni.latestConfirmedAO
+	latestConfirmedAnchor := cni.latestConfirmedAnchor
 	cni.accessLock.Unlock()
 
 	// Set the state to match the ActiveOrConfirmed state.
-	if latestConfirmedAO == nil || till.GetStateIndex() > latestConfirmedAO.GetStateIndex() {
+	if latestConfirmedAnchor == nil || till.GetStateIndex() > latestConfirmedAnchor.GetStateIndex() {
 		l1Commitment := lo.Must(transaction.L1CommitmentFromAnchor(till))
 		if err := cni.chainStore.SetLatest(l1Commitment.TrieRoot()); err != nil {
 			panic(fmt.Errorf("cannot set L1Commitment=%v as latest: %w", l1Commitment, err))
@@ -557,8 +557,8 @@ func (cni *chainNodeImpl) handleStateTrackerCnfCB(st state.State, from, till *is
 	cni.log.LogDebugf("handleStateTrackerCnfCB: till %v from %v", till, from)
 	cni.accessLock.Lock()
 	cni.latestConfirmedState = st
-	cni.latestConfirmedStateAO = till
-	latestActiveStateAO := cni.latestActiveStateAO
+	cni.latestConfirmedStateAnchor = till
+	latestActiveStateAnchor := cni.latestActiveStateAnchor
 	cni.accessLock.Unlock()
 
 	newAccessNodes := governance.NewStateReaderFromChainState(st).AccessNodes()
@@ -569,7 +569,7 @@ func (cni *chainNodeImpl) handleStateTrackerCnfCB(st state.State, from, till *is
 	}
 
 	// Set the state to match the ActiveOrConfirmed state.
-	if latestActiveStateAO == nil || latestActiveStateAO.GetStateIndex() <= till.GetStateIndex() {
+	if latestActiveStateAnchor == nil || latestActiveStateAnchor.GetStateIndex() <= till.GetStateIndex() {
 		l1Commitment := lo.Must(transaction.L1CommitmentFromAnchor(till))
 		if err := cni.chainStore.SetLatest(l1Commitment.TrieRoot()); err != nil {
 			panic(fmt.Errorf("cannot set L1Commitment=%v as latest: %w", l1Commitment, err))
@@ -593,8 +593,8 @@ func (cni *chainNodeImpl) handleServersUpdated(serverNodes []*cryptolib.PublicKe
 func (cni *chainNodeImpl) handleRotateTo(address *iotago.Address) {
 	cni.log.LogDebugf("handleRotateTo: %v", address)
 	cni.rotateTo = address
-	cni.consensusInsts.ForEach(func(ak cryptolib.AddressKey, sm *shrinkingmap.ShrinkingMap[cmtlog.LogIndex, *consensusInst]) bool {
-		sm.ForEach(func(li cmtlog.LogIndex, ci *consensusInst) bool {
+	cni.consensusInsts.ForEach(func(ak cryptolib.AddressKey, sm *shrinkingmap.ShrinkingMap[committeelog.LogIndex, *consensusInst]) bool {
+		sm.ForEach(func(li committeelog.LogIndex, ci *consensusInst) bool {
 			ci.consensus.RotateTo(address)
 			return true
 		})
@@ -610,7 +610,7 @@ func (cni *chainNodeImpl) handleTxPublished(txPubResult *txPublished) {
 	cni.publishingTXes.Delete(txPubResult.txID.HashValue())
 
 	outMsgs := cni.chainMgr.Input(
-		chainmanager.NewInputChainTxPublishResult(txPubResult.committeeAddr, txPubResult.logIndex, txPubResult.txID, txPubResult.nextAliasOutput, txPubResult.confirmed),
+		chainmanager.NewInputChainTxPublishResult(txPubResult.committeeAddr, txPubResult.logIndex, txPubResult.txID, txPubResult.nextAnchor, txPubResult.confirmed),
 	)
 	cni.sendMessages(outMsgs)
 }
@@ -625,7 +625,7 @@ func (cni *chainNodeImpl) handleStateAnchor(stateAchor *isc.StateAnchor, l1Param
 
 		initBlock, err := origin.InitChainByStateMetadataBytes(cni.chainStore, stateAchor.GetStateMetadata(), sm.InitDeposit, l1Params)
 		if err != nil {
-			cni.log.LogErrorf("Ignoring InitialAO for the chain: %v", err)
+			cni.log.LogErrorf("Ignoring InitialAnchor for the chain: %v", err)
 			return
 		}
 		if err := cni.blockWAL.Write(initBlock); err != nil {
@@ -633,12 +633,12 @@ func (cni *chainNodeImpl) handleStateAnchor(stateAchor *isc.StateAnchor, l1Param
 		}
 	}
 
-	cni.stateTrackerCnf.TrackAliasOutput(stateAchor, true)
-	cni.stateTrackerAct.TrackAliasOutput(stateAchor, false) // ACT state will be equal to CNF or ahead of it.
+	cni.stateTrackerCnf.TrackAnchor(stateAchor, true)
+	cni.stateTrackerAct.TrackAnchor(stateAchor, false) // ACT state will be equal to CNF or ahead of it.
 
 	cni.accessLock.Lock()
-	cni.latestConfirmedAO = stateAchor
-	cni.latestActiveAO = stateAchor
+	cni.latestConfirmedAnchor = stateAchor
+	cni.latestActiveAnchor = stateAchor
 	cni.accessLock.Unlock()
 
 	outMsgs := cni.chainMgr.Input(
@@ -650,8 +650,8 @@ func (cni *chainNodeImpl) handleStateAnchor(stateAchor *isc.StateAnchor, l1Param
 func (cni *chainNodeImpl) handleMilestoneTimestamp(timestamp time.Time) {
 	cni.tangleTime = timestamp
 	cni.mempool.TangleTimeUpdated(timestamp)
-	cni.consensusInsts.ForEach(func(address cryptolib.AddressKey, consensusInstances *shrinkingmap.ShrinkingMap[cmtlog.LogIndex, *consensusInst]) bool {
-		consensusInstances.ForEach(func(li cmtlog.LogIndex, consensusInstance *consensusInst) bool {
+	cni.consensusInsts.ForEach(func(address cryptolib.AddressKey, consensusInstances *shrinkingmap.ShrinkingMap[committeelog.LogIndex, *consensusInst]) bool {
+		consensusInstances.ForEach(func(li committeelog.LogIndex, consensusInstance *consensusInst) bool {
 			if consensusInstance.cancelFunc != nil {
 				consensusInstance.consensus.Time(timestamp)
 			}
@@ -680,16 +680,16 @@ func (cni *chainNodeImpl) handleNeedConsensus(ctx context.Context, upd *chainman
 	})
 	//
 	// Cleanup instances not needed anymore.
-	cni.consensusInsts.ForEach(func(cmtAddr cryptolib.AddressKey, cmtInsts *shrinkingmap.ShrinkingMap[cmtlog.LogIndex, *consensusInst]) bool {
-		cmtInsts.ForEach(func(li cmtlog.LogIndex, ci *consensusInst) bool {
+	cni.consensusInsts.ForEach(func(committeeAddr cryptolib.AddressKey, committeeInsts *shrinkingmap.ShrinkingMap[committeelog.LogIndex, *consensusInst]) bool {
+		committeeInsts.ForEach(func(li committeelog.LogIndex, ci *consensusInst) bool {
 			if ci.request != nil && !upd.Has(chainmanager.MakeConsensusKey(ci.request.CommitteeAddr, li)) {
 				ci.Cancel()
-				cmtInsts.Delete(li)
+				committeeInsts.Delete(li)
 			}
 			return true
 		})
-		if cmtInsts.Size() == 0 {
-			cni.consensusInsts.Delete(cmtAddr)
+		if committeeInsts.Size() == 0 {
+			cni.consensusInsts.Delete(committeeAddr)
 		}
 		return true
 	})
@@ -710,11 +710,11 @@ func (cni *chainNodeImpl) handleNeedPublishTX(ctx context.Context, upd *chainman
 				cni.chainMetrics.NodeConn.TXPublishResult(err == nil, time.Since(publishStart))
 
 				cni.recvTxPublishedPipe.In() <- &txPublished{
-					committeeAddr:   txToPost.CommitteeAddr,
-					logIndex:        txToPost.LogIndex,
-					txID:            *txDigest,
-					nextAliasOutput: newStateAnchor,
-					confirmed:       err == nil,
+					committeeAddr: txToPost.CommitteeAddr,
+					logIndex:      txToPost.LogIndex,
+					txID:          *txDigest,
+					nextAnchor:    newStateAnchor,
+					confirmed:     err == nil,
 				}
 			}); err != nil {
 				cni.log.LogError(err.Error())
@@ -733,14 +733,14 @@ func (cni *chainNodeImpl) handleConsensusOutput(out *consOutput) {
 	cni.log.LogDebugf("handleConsensusOutput, %v", out)
 	var chainMgrInput gpa.Input
 	switch out.output.Status {
-	case cons.Completed:
+	case consensus.Completed:
 		chainMgrInput = chainmanager.NewInputConsensusOutputDone(
 			out.request.CommitteeAddr,
 			out.request.LogIndex,
 			out.request.BaseStateAnchor,
 			out.output.Result,
 		)
-	case cons.Skipped:
+	case consensus.Skipped:
 		chainMgrInput = chainmanager.NewInputConsensusOutputSkip(
 			out.request.CommitteeAddr,
 			out.request.LogIndex,
@@ -770,7 +770,7 @@ func (cni *chainNodeImpl) ensureConsensusInput(ctx context.Context, needConsensu
 			cni.consRecoverPipe.In() <- &consRecover{request: needConsensus}
 		}
 		ci.request = needConsensus
-		cni.stateTrackerAct.TrackAliasOutput(needConsensus.BaseStateAnchor, true)
+		cni.stateTrackerAct.TrackAnchor(needConsensus.BaseStateAnchor, true)
 		ci.consensus.Input(needConsensus.BaseStateAnchor, outputCB, recoverCB)
 	}
 }
@@ -778,10 +778,10 @@ func (cni *chainNodeImpl) ensureConsensusInput(ctx context.Context, needConsensu
 func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus *chainmanager.NeedConsensus) *consensusInst {
 	committeeAddr := needConsensus.CommitteeAddr
 	logIndex := needConsensus.LogIndex
-	dkShare := needConsensus.DKShare
+	distKeyPart := needConsensus.DistKeyPart
 
-	consensusInstances, _ := cni.consensusInsts.GetOrCreate(committeeAddr.Key(), func() *shrinkingmap.ShrinkingMap[cmtlog.LogIndex, *consensusInst] {
-		return shrinkingmap.New[cmtlog.LogIndex, *consensusInst]()
+	consensusInstances, _ := cni.consensusInsts.GetOrCreate(committeeAddr.Key(), func() *shrinkingmap.ShrinkingMap[committeelog.LogIndex, *consensusInst] {
+		return shrinkingmap.New[committeelog.LogIndex, *consensusInst]()
 	})
 
 	addLogIndex := logIndex
@@ -790,7 +790,7 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 			consGrCtx, consGrCancel := context.WithCancel(ctx)
 			logIndexCopy := addLogIndex
 			cgr := consGR.New(
-				consGrCtx, cni.chainID, cni.chainStore, dkShare, &logIndexCopy, cni.nodeIdentity,
+				consGrCtx, cni.chainID, cni.chainStore, distKeyPart, &logIndexCopy, cni.nodeIdentity,
 				cni.procCache, cni.mempool, cni.stateMgr,
 				cni.nodeConn,
 				cni.net,
@@ -804,7 +804,7 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 			consensusInstances.Set(addLogIndex, &consensusInst{
 				cancelFunc: consGrCancel,
 				consensus:  cgr,
-				committee:  dkShare.GetNodePubKeys(),
+				committee:  distKeyPart.GetNodePubKeys(),
 			})
 			if !cni.tangleTime.IsZero() {
 				cgr.Time(cni.tangleTime)
@@ -951,32 +951,32 @@ func (cni *chainNodeImpl) Log() log.Logger {
 
 func (cni *chainNodeImpl) LatestAnchor(freshness StateFreshness) (*isc.StateAnchor, error) {
 	cni.accessLock.RLock()
-	latestActiveAO := cni.latestActiveStateAO
-	latestConfirmedAO := cni.latestConfirmedStateAO
+	latestActiveAnchor := cni.latestActiveStateAnchor
+	latestConfirmedAnchor := cni.latestConfirmedStateAnchor
 	cni.accessLock.RUnlock()
 	switch freshness {
 	case ActiveOrCommittedState:
-		if latestActiveAO != nil {
-			if latestConfirmedAO == nil || latestActiveAO.GetStateIndex() > latestConfirmedAO.GetStateIndex() {
-				cni.log.LogDebugf("LatestAliasOutput(%v) => active = %v", freshness, latestActiveAO)
-				return latestActiveAO, nil
+		if latestActiveAnchor != nil {
+			if latestConfirmedAnchor == nil || latestActiveAnchor.GetStateIndex() > latestConfirmedAnchor.GetStateIndex() {
+				cni.log.LogDebugf("LatestAnchor(%v) => active = %v", freshness, latestActiveAnchor)
+				return latestActiveAnchor, nil
 			}
 		}
-		if latestConfirmedAO != nil {
-			cni.log.LogDebugf("LatestAliasOutput(%v) => confirmed = %v", freshness, latestConfirmedAO)
-			return latestConfirmedAO, nil
+		if latestConfirmedAnchor != nil {
+			cni.log.LogDebugf("LatestAnchor(%v) => confirmed = %v", freshness, latestConfirmedAnchor)
+			return latestConfirmedAnchor, nil
 		}
 		return nil, fmt.Errorf("have no active nor confirmed state")
 	case ConfirmedState:
-		if latestConfirmedAO != nil {
-			cni.log.LogDebugf("LatestAliasOutput(%v) => confirmed = %v", freshness, latestConfirmedAO)
-			return latestConfirmedAO, nil
+		if latestConfirmedAnchor != nil {
+			cni.log.LogDebugf("LatestAnchor(%v) => confirmed = %v", freshness, latestConfirmedAnchor)
+			return latestConfirmedAnchor, nil
 		}
 		return nil, fmt.Errorf("have no confirmed state")
 	case ActiveState:
-		if latestActiveAO != nil {
-			cni.log.LogDebugf("LatestAliasOutput(%v) => active = %v", freshness, latestActiveAO)
-			return latestActiveAO, nil
+		if latestActiveAnchor != nil {
+			cni.log.LogDebugf("LatestAnchor(%v) => active = %v", freshness, latestActiveAnchor)
+			return latestActiveAnchor, nil
 		}
 		return nil, fmt.Errorf("have no active state")
 	default:
@@ -1029,12 +1029,12 @@ func (cni *chainNodeImpl) LatestState(freshness StateFreshness) (state.State, er
 
 func (cni *chainNodeImpl) GetCommitteeInfo() *CommitteeInfo {
 	cni.accessLock.RLock()
-	dkShare := cni.activeCommitteeDKShare
+	distKeyPart := cni.activeCommitteeDistKeyPart
 	cni.accessLock.RUnlock()
-	if dkShare == nil {
+	if distKeyPart == nil {
 		return nil // There is no current committee for now.
 	}
-	committeePubKeys := dkShare.GetNodePubKeys()
+	committeePubKeys := distKeyPart.GetNodePubKeys()
 	netPeerStatus := cni.net.PeerStatus()
 	peerStatus := make([]*PeerStatus, len(committeePubKeys))
 	connectedCount := uint16(0)
@@ -1062,10 +1062,10 @@ func (cni *chainNodeImpl) GetCommitteeInfo() *CommitteeInfo {
 		}
 	}
 	ci := &CommitteeInfo{
-		Address:       dkShare.GetAddress(),
-		Size:          dkShare.GetN(),
-		Quorum:        dkShare.GetT(),
-		QuorumIsAlive: connectedCount >= dkShare.GetT(),
+		Address:       distKeyPart.GetAddress(),
+		Size:          distKeyPart.GetN(),
+		Quorum:        distKeyPart.GetT(),
+		QuorumIsAlive: connectedCount >= distKeyPart.GetT(),
 		PeerStatus:    peerStatus,
 	}
 	return ci
@@ -1073,15 +1073,15 @@ func (cni *chainNodeImpl) GetCommitteeInfo() *CommitteeInfo {
 
 func (cni *chainNodeImpl) GetChainNodes() []peering.PeerStatusProvider {
 	cni.accessLock.RLock()
-	dkShare := cni.activeCommitteeDKShare
+	distKeyPart := cni.activeCommitteeDistKeyPart
 	acNodes := cni.activeAccessNodes
 	srNodes := cni.serverNodes
 	cni.accessLock.RUnlock()
 	allNodeKeys := map[cryptolib.PublicKeyKey]*cryptolib.PublicKey{}
 	//
 	// Add committee nodes.
-	if dkShare != nil {
-		for _, nodePubKey := range dkShare.GetNodePubKeys() {
+	if distKeyPart != nil {
+		for _, nodePubKey := range distKeyPart.GetNodePubKeys() {
 			allNodeKeys[nodePubKey.AsKey()] = nodePubKey
 		}
 	}
@@ -1205,8 +1205,8 @@ func initializeOperationalChain(
 	chainStore indexedstore.IndexedStore,
 	nodeConn NodeConnection,
 	nodeIdentity *cryptolib.KeyPair,
-	consensusStateRegistry cmtlog.ConsensusStateRegistry,
-	dkShareRegistryProvider registry.DKShareRegistryProvider,
+	consensusStateRegistry committeelog.ConsensusStateRegistry,
+	distKeyPartRegistryProvider registry.DistKeyPartRegistryProvider,
 	recoverFromWAL bool,
 	blockWAL utils.BlockWAL,
 	net peering.NetworkProvider,
@@ -1217,7 +1217,7 @@ func initializeOperationalChain(
 	mempoolSettings mempool.Settings,
 	mempoolBroadcastInterval time.Duration,
 	accessNodesFromNode []*cryptolib.PublicKey,
-	deriveAliasOutputByQuorum bool,
+	deriveAnchorByQuorum bool,
 	pipeliningLimit int,
 	postponeRecoveryMilestones int,
 	onChainConnect func(),
@@ -1239,8 +1239,8 @@ func initializeOperationalChain(
 	cni.me = cni.pubKeyAsNodeID(nodeIdentity.GetPublicKey())
 
 	// Create chain manager
-	chainMgr, err := createChainManager(ctx, cni, consensusStateRegistry, dkShareRegistryProvider,
-		deriveAliasOutputByQuorum, pipeliningLimit, postponeRecoveryMilestones, log)
+	chainMgr, err := createChainManager(ctx, cni, consensusStateRegistry, distKeyPartRegistryProvider,
+		deriveAnchorByQuorum, pipeliningLimit, postponeRecoveryMilestones, log)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create chainMgr: %w", err)
 	}
@@ -1324,7 +1324,7 @@ func initializeReadOnlyChain(
 
 	// Set the chain state
 	cni.latestConfirmedState = latestState
-	cni.latestActiveStateAO = &anchor
+	cni.latestActiveStateAnchor = &anchor
 
 	// Attach to L1 in readonly mode
 	err = nodeConn.AttachChain(ctx, chainID, nil, nil, onChainConnect, onChainDisconnect, true)
@@ -1340,9 +1340,9 @@ func initializeReadOnlyChain(
 func createChainManager(
 	ctx context.Context,
 	cni *chainNodeImpl,
-	consensusStateRegistry cmtlog.ConsensusStateRegistry,
-	dkShareRegistryProvider registry.DKShareRegistryProvider,
-	deriveAliasOutputByQuorum bool,
+	consensusStateRegistry committeelog.ConsensusStateRegistry,
+	distKeyPartRegistryProvider registry.DistKeyPartRegistryProvider,
+	deriveAnchorByQuorum bool,
 	pipeliningLimit int,
 	postponeRecoveryMilestones int,
 	log log.Logger,
@@ -1352,7 +1352,7 @@ func createChainManager(
 		cni.chainID,
 		cni.chainStore,
 		consensusStateRegistry,
-		dkShareRegistryProvider,
+		distKeyPartRegistryProvider,
 		cni.pubKeyAsNodeID,
 		func(upd *chainmanager.NeedConsensusMap) {
 			log.LogDebugf("needConsensusCB called with %v", upd)
@@ -1368,23 +1368,23 @@ func createChainManager(
 			return cni.activeAccessNodes, cni.activeCommitteeNodes
 		},
 		func(anchor *isc.StateAnchor) {
-			cni.stateTrackerAct.TrackAliasOutput(anchor, true)
+			cni.stateTrackerAct.TrackAnchor(anchor, true)
 		},
 		func(block state.Block) {
 			if err := cni.stateMgr.PreliminaryBlock(block); err != nil {
 				cni.log.LogWarnf("Failed to save a preliminary block %v: %v", block.L1Commitment(), err)
 			}
 		},
-		func(dkShare tcrypto.DKShare) {
+		func(distKeyPart tcrypto.DistibutedKeyPart) {
 			cni.accessLock.Lock()
-			cni.activeCommitteeDKShare = dkShare
+			cni.activeCommitteeDistKeyPart = distKeyPart
 			activeCommitteeNodes := cni.activeCommitteeNodes
 			cni.accessLock.Unlock()
 			var newCommitteeNodes []*cryptolib.PublicKey
-			if dkShare == nil {
+			if distKeyPart == nil {
 				newCommitteeNodes = []*cryptolib.PublicKey{}
 			} else {
-				newCommitteeNodes = dkShare.GetNodePubKeys()
+				newCommitteeNodes = distKeyPart.GetNodePubKeys()
 			}
 			if !util.Same(newCommitteeNodes, activeCommitteeNodes) {
 				cni.log.LogInfof("Committee nodes updated to %v, was %v", newCommitteeNodes, activeCommitteeNodes)
@@ -1393,10 +1393,10 @@ func createChainManager(
 				})
 			}
 		},
-		deriveAliasOutputByQuorum,
+		deriveAnchorByQuorum,
 		pipeliningLimit,
 		postponeRecoveryMilestones,
-		cni.chainMetrics.CmtLog,
+		cni.chainMetrics.CommitteeLog,
 		cni.log.NewChildLogger("CM"),
 	)
 }

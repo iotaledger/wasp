@@ -15,7 +15,7 @@ import (
 	"github.com/iotaledger/hive.go/runtime/ioutils"
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/packages/chain/cmtlog"
+	"github.com/iotaledger/wasp/v2/packages/chain/committeelog"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/onchangemap"
@@ -57,7 +57,7 @@ func (c *comparableChainCommitteeID) String() string {
 type consensusState struct {
 	identifier *comparableChainCommitteeID
 
-	LogIndex cmtlog.LogIndex
+	LogIndex committeelog.LogIndex
 }
 
 func (c *consensusState) ID() *comparableChainCommitteeID {
@@ -113,7 +113,7 @@ func (c *consensusState) UnmarshalJSON(bytes []byte) error {
 
 	*c = consensusState{
 		identifier: newComparableChainCommitteeID(chainID, committeeAddress),
-		LogIndex:   cmtlog.LogIndex(j.LogIndex),
+		LogIndex:   committeelog.LogIndex(j.LogIndex),
 	}
 
 	return nil
@@ -125,7 +125,7 @@ type ConsensusStateRegistry struct {
 	folderPath string
 }
 
-var _ cmtlog.ConsensusStateRegistry = &ConsensusStateRegistry{}
+var _ committeelog.ConsensusStateRegistry = &ConsensusStateRegistry{}
 
 // NewConsensusStateRegistry creates new instance of the consensus state registry implementation.
 func NewConsensusStateRegistry(folderPath string) (*ConsensusStateRegistry, error) {
@@ -292,14 +292,14 @@ func (p *ConsensusStateRegistry) deleteConsensusStateJSON(state *consensusState)
 	return nil
 }
 
-// Get retrieves the consensus state for the given key. Can return cmtLog.ErrCmtLogStateNotFound.
-func (p *ConsensusStateRegistry) Get(chainID isc.ChainID, committeeAddress *cryptolib.Address) (*cmtlog.State, error) {
+// Get retrieves the consensus state for the given key. Can return cmtLog.ErrCommitteeLogStateNotFound.
+func (p *ConsensusStateRegistry) Get(chainID isc.ChainID, committeeAddress *cryptolib.Address) (*committeelog.State, error) {
 	state, err := p.onChangeMap.Get(newComparableChainCommitteeID(chainID, committeeAddress))
 	if err != nil {
-		return nil, cmtlog.ErrCmtLogStateNotFound
+		return nil, committeelog.ErrCommitteeLogStateNotFound
 	}
 
-	return &cmtlog.State{
+	return &committeelog.State{
 		LogIndex: state.LogIndex,
 	}, nil
 }
@@ -322,7 +322,7 @@ func (p *ConsensusStateRegistry) add(state *consensusState) error {
 	return nil
 }
 
-func (p *ConsensusStateRegistry) Set(chainID isc.ChainID, committeeAddress *cryptolib.Address, state *cmtlog.State) error {
+func (p *ConsensusStateRegistry) Set(chainID isc.ChainID, committeeAddress *cryptolib.Address, state *committeelog.State) error {
 	return p.add(&consensusState{
 		identifier: newComparableChainCommitteeID(chainID, committeeAddress),
 		LogIndex:   state.LogIndex,

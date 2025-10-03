@@ -155,7 +155,7 @@ func initializeDeploymentWithGasCoin(ctx context.Context, signer wallets.Wallet,
 		return nil, fmt.Errorf("a chain has already been deployed")
 	}
 
-	committeeAddr := doDKG(ctx, node, peers, quorum)
+	committeeAddr := doDistKeyGeneration(ctx, node, peers, quorum)
 
 	l1Params, err := parameters.FetchLatest(ctx, l1Client.IotaClient())
 	log.Check(err)

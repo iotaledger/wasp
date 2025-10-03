@@ -21,7 +21,7 @@ func TestMissingRequests(t *testing.T) {
 	clu := newCluster(t, waspClusterOpts{nNodes: 4})
 	cmt := []int{0, 1, 2, 3}
 	threshold := uint16(4)
-	addr, err := clu.RunDKG(cmt, threshold)
+	addr, err := clu.RunDistKeyGeneration(cmt, threshold)
 	require.NoError(t, err)
 
 	chain, err := clu.DeployChain(clu.Config.AllNodes(), cmt, threshold, addr)

@@ -17,16 +17,16 @@ import (
 var ErrNotInCommittee = errors.New("this node is not in the committee for the chain")
 
 type CommitteeService struct {
-	chainsProvider          chains.Provider
-	networkProvider         peering.NetworkProvider
-	dkShareRegistryProvider registry.DKShareRegistryProvider
+	chainsProvider              chains.Provider
+	networkProvider             peering.NetworkProvider
+	distKeyPartRegistryProvider registry.DistKeyPartRegistryProvider
 }
 
-func NewCommitteeService(chainsProvider chains.Provider, networkProvider peering.NetworkProvider, dkShareRegistryProvider registry.DKShareRegistryProvider) interfaces.CommitteeService {
+func NewCommitteeService(chainsProvider chains.Provider, networkProvider peering.NetworkProvider, distKeyPartRegistryProvider registry.DistKeyPartRegistryProvider) interfaces.CommitteeService {
 	return &CommitteeService{
-		chainsProvider:          chainsProvider,
-		networkProvider:         networkProvider,
-		dkShareRegistryProvider: dkShareRegistryProvider,
+		chainsProvider:              chainsProvider,
+		networkProvider:             networkProvider,
+		distKeyPartRegistryProvider: distKeyPartRegistryProvider,
 	}
 }
 
@@ -45,7 +45,7 @@ func (c *CommitteeService) GetCommitteeInfo(chainID isc.ChainID) (*dto.ChainNode
 		return nil, ErrNotInCommittee
 	}
 
-	dkShare, err := c.dkShareRegistryProvider.LoadDKShare(committeeInfo.Address)
+	distKeyPart, err := c.distKeyPartRegistryProvider.LoadDistKeyPart(committeeInfo.Address)
 	if err != nil {
 		return nil, err
 	}
@@ -60,11 +60,11 @@ func (c *CommitteeService) GetCommitteeInfo(chainID isc.ChainID) (*dto.ChainNode
 
 	//
 	// Committee nodes.
-	committeeNodes := c.getCommitteeNodes(dkShare, peeringStatus, candidateNodes, inChainNodes)
+	committeeNodes := c.getCommitteeNodes(distKeyPart, peeringStatus, candidateNodes, inChainNodes)
 
 	//
 	// Access nodes: accepted as access nodes and not included in the committee.
-	accessNodes := c.getAccessNodes(dkShare, chainNodes, peeringStatus, candidateNodes, inChainNodes)
+	accessNodes := c.getAccessNodes(distKeyPart, chainNodes, peeringStatus, candidateNodes, inChainNodes)
 
 	//
 	// Candidate nodes have supplied applications, but are not included
@@ -85,14 +85,14 @@ func (c *CommitteeService) GetCommitteeInfo(chainID isc.ChainID) (*dto.ChainNode
 }
 
 func (c *CommitteeService) getCommitteeNodes(
-	dkShare tcrypto.DKShare,
+	distKeyPart tcrypto.DistibutedKeyPart,
 	peeringStatus map[cryptolib.PublicKeyKey]peering.PeerStatusProvider,
 	candidateNodes map[cryptolib.PublicKeyKey]*governance.AccessNodeInfo,
 	inChainNodes map[cryptolib.PublicKeyKey]bool,
 ) []*dto.ChainNodeStatus {
 	nodes := make([]*dto.ChainNodeStatus, 0)
 
-	for _, cmtNodePubKey := range dkShare.GetNodePubKeys() {
+	for _, cmtNodePubKey := range distKeyPart.GetNodePubKeys() {
 		nodeStatus := c.makeChainNodeStatus(cmtNodePubKey, peeringStatus, candidateNodes)
 
 		nodes = append(nodes, nodeStatus)
@@ -103,7 +103,7 @@ func (c *CommitteeService) getCommitteeNodes(
 }
 
 func (c *CommitteeService) getAccessNodes(
-	dkShare tcrypto.DKShare,
+	distKeyPart tcrypto.DistibutedKeyPart,
 	chainNodes []peering.PeerStatusProvider,
 	peeringStatus map[cryptolib.PublicKeyKey]peering.PeerStatusProvider,
 	candidateNodes map[cryptolib.PublicKeyKey]*governance.AccessNodeInfo,
@@ -114,7 +114,7 @@ func (c *CommitteeService) getAccessNodes(
 	for _, chainNode := range chainNodes {
 		acnPubKey := chainNode.PubKey()
 		skip := false
-		for _, cmtNodePubKey := range dkShare.GetNodePubKeys() {
+		for _, cmtNodePubKey := range distKeyPart.GetNodePubKeys() {
 			if acnPubKey.AsKey() == cmtNodePubKey.AsKey() {
 				skip = true
 				break

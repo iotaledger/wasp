@@ -16,9 +16,9 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 )
 
-// RunDKG runs DKG procedure on specific Wasp hosts: generates new keys and puts corresponding committee records
+// RunDistKeyGeneration runs DistKeyGeneration procedure on specific Wasp hosts: generates new keys and puts corresponding committee records
 // into nodes. In case of success, generated address is returned
-func RunDKG(ctx context.Context, client *apiclient.APIClient, peerPubKeys []string, threshold uint16, timeout ...time.Duration) (*cryptolib.Address, error) {
+func RunDistKeyGeneration(ctx context.Context, client *apiclient.APIClient, peerPubKeys []string, threshold uint16, timeout ...time.Duration) (*cryptolib.Address, error) {
 	to := uint32(60 * 1000)
 	if len(timeout) > 0 {
 		n := timeout[0].Milliseconds()
@@ -31,7 +31,7 @@ func RunDKG(ctx context.Context, client *apiclient.APIClient, peerPubKeys []stri
 		}
 	}
 
-	dkShares, _, err := client.NodeAPI.GenerateDKS(ctx).DKSharesPostRequest(apiclient.DKSharesPostRequest{
+	distKeyParts, _, err := client.NodeAPI.GenerateDKS(ctx).DKSharesPostRequest(apiclient.DKSharesPostRequest{
 		Threshold:      uint32(threshold),
 		TimeoutMS:      to,
 		PeerIdentities: peerPubKeys,
@@ -40,9 +40,9 @@ func RunDKG(ctx context.Context, client *apiclient.APIClient, peerPubKeys []stri
 		return nil, err
 	}
 
-	addr, err := cryptolib.NewAddressFromHexString(dkShares.Address)
+	addr, err := cryptolib.NewAddressFromHexString(distKeyParts.Address)
 	if err != nil {
-		return nil, fmt.Errorf("RunDKG: invalid address returned from DKG: %w", err)
+		return nil, fmt.Errorf("RunDistKeyGeneration: invalid address returned from DistKeyGeneration: %w", err)
 	}
 
 	return addr, nil

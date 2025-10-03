@@ -10,8 +10,8 @@
 // > Association for Computing Machinery, New York, NY, USA, 31–42.
 // > DOI:https://doi.org/10.1145/2976749.2978399
 //
-// We con't use the DKShare here, because in some cases this CC will be used while
-// creating the DKShare.
+// We con't use the DistKeyPart here, because in some cases this CC will be used while
+// creating the DistKeyPart.
 package blssig
 
 import (

@@ -19,7 +19,7 @@ import (
 	"github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/v2/packages/chain"
-	"github.com/iotaledger/wasp/v2/packages/chain/cmtlog"
+	"github.com/iotaledger/wasp/v2/packages/chain/committeelog"
 	"github.com/iotaledger/wasp/v2/packages/chain/mempool"
 	"github.com/iotaledger/wasp/v2/packages/chain/statemanager/gpa"
 	"github.com/iotaledger/wasp/v2/packages/chain/statemanager/gpa/utils"
@@ -87,7 +87,7 @@ type Chains struct {
 	log                        log.Logger
 	nodeConnection             chain.NodeConnection
 	processorConfig            *processors.Config
-	deriveAliasOutputByQuorum  bool
+	deriveAnchorByQuorum       bool
 	pipeliningLimit            int
 	postponeRecoveryMilestones int
 	consensusDelay             time.Duration
@@ -119,9 +119,9 @@ type Chains struct {
 	snapshotNetworkPaths                []string
 
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
-	dkShareRegistryProvider     registry.DKShareRegistryProvider
+	distKeyPartRegistryProvider registry.DistKeyPartRegistryProvider
 	nodeIdentityProvider        registry.NodeIdentityProvider
-	consensusStateRegistry      cmtlog.ConsensusStateRegistry
+	consensusStateRegistry      committeelog.ConsensusStateRegistry
 	chainListener               chain.ChainListener
 
 	mutex     *sync.RWMutex
@@ -149,7 +149,7 @@ func New(
 	nodeConnection chain.NodeConnection,
 	processorConfig *processors.Config,
 	validatorAddrStr string,
-	deriveAliasOutputByQuorum bool,
+	deriveAnchorByQuorum bool,
 	pipeliningLimit int,
 	postponeRecoveryMilestones int,
 	consensusDelay time.Duration,
@@ -176,9 +176,9 @@ func New(
 	snapshotFolderPath string,
 	snapshotNetworkPaths []string,
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
-	dkShareRegistryProvider registry.DKShareRegistryProvider,
+	distKeyPartRegistryProvider registry.DistKeyPartRegistryProvider,
 	nodeIdentityProvider registry.NodeIdentityProvider,
-	consensusStateRegistry cmtlog.ConsensusStateRegistry,
+	consensusStateRegistry committeelog.ConsensusStateRegistry,
 	chainListener chain.ChainListener,
 	mempoolSettings mempool.Settings,
 	mempoolBroadcastInterval time.Duration,
@@ -199,7 +199,7 @@ func New(
 		allChains:                           shrinkingmap.New[isc.ChainID, *activeChain](),
 		nodeConnection:                      nodeConnection,
 		processorConfig:                     processorConfig,
-		deriveAliasOutputByQuorum:           deriveAliasOutputByQuorum,
+		deriveAnchorByQuorum:                deriveAnchorByQuorum,
 		pipeliningLimit:                     pipeliningLimit,
 		consensusDelay:                      consensusDelay,
 		recoveryTimeout:                     recoveryTimeout,
@@ -224,7 +224,7 @@ func New(
 		snapshotFolderPath:                  snapshotFolderPath,
 		snapshotNetworkPaths:                snapshotNetworkPaths,
 		chainRecordRegistryProvider:         chainRecordRegistryProvider,
-		dkShareRegistryProvider:             dkShareRegistryProvider,
+		distKeyPartRegistryProvider:         distKeyPartRegistryProvider,
 		nodeIdentityProvider:                nodeIdentityProvider,
 		chainListener:                       nil, // See bellow.
 		mempoolSettings:                     mempoolSettings,
@@ -427,7 +427,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID, mode ChainMode) err
 		c.nodeConnection,
 		c.nodeIdentityProvider.NodeIdentity(),
 		c.processorConfig,
-		c.dkShareRegistryProvider,
+		c.distKeyPartRegistryProvider,
 		c.consensusStateRegistry,
 		c.walLoadToStore,
 		components.WAL,
@@ -439,7 +439,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID, mode ChainMode) err
 		chainShutdownCoordinator,
 		func() { c.chainMetricsProvider.RegisterChain(chainID) },
 		func() { c.chainMetricsProvider.UnregisterChain(chainID) },
-		c.deriveAliasOutputByQuorum,
+		c.deriveAnchorByQuorum,
 		c.pipeliningLimit,
 		c.postponeRecoveryMilestones,
 		c.consensusDelay,

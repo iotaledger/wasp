@@ -17,9 +17,9 @@ type NodeIdentityProvider interface {
 	NodePublicKey() *cryptolib.PublicKey
 }
 
-type DKShareRegistryProvider interface {
-	SaveDKShare(dkShare tcrypto.DKShare) error
-	LoadDKShare(sharedAddress *cryptolib.Address) (tcrypto.DKShare, error)
+type DistKeyPartRegistryProvider interface {
+	SaveDistKeyPart(distKeyPart tcrypto.DistibutedKeyPart) error
+	LoadDistKeyPart(sharedAddress *cryptolib.Address) (tcrypto.DistibutedKeyPart, error)
 }
 
 type ChainRecordRegistryProvider interface {

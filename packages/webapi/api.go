@@ -14,7 +14,7 @@ import (
 	"github.com/iotaledger/wasp/v2/clients"
 	"github.com/iotaledger/wasp/v2/packages/authentication"
 	"github.com/iotaledger/wasp/v2/packages/chains"
-	"github.com/iotaledger/wasp/v2/packages/dkg"
+	"github.com/iotaledger/wasp/v2/packages/distkeygen"
 	"github.com/iotaledger/wasp/v2/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/v2/packages/metrics"
 	"github.com/iotaledger/wasp/v2/packages/parameters"
@@ -85,10 +85,10 @@ func Init(
 	trustedNetworkManager peering.TrustedNetworkManager,
 	userManager *userspkg.UserManager,
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
-	dkShareRegistryProvider registry.DKShareRegistryProvider,
+	distKeyPartRegistryProvider registry.DistKeyPartRegistryProvider,
 	nodeIdentityProvider registry.NodeIdentityProvider,
 	chainsProvider chains.Provider,
-	dkgNodeProvider dkg.NodeProvider,
+	distKeyGenNodeProvider distkeygen.NodeProvider,
 	shutdownHandler *shutdown.ShutdownHandler,
 	chainMetricsProvider *metrics.ChainMetricsProvider,
 	authConfig authentication.AuthConfiguration,
@@ -106,14 +106,14 @@ func Init(
 	mocker.LoadMockFiles()
 
 	chainService := services.NewChainService(logger, chainsProvider, chainMetricsProvider, chainRecordRegistryProvider)
-	committeeService := services.NewCommitteeService(chainsProvider, networkProvider, dkShareRegistryProvider)
+	committeeService := services.NewCommitteeService(chainsProvider, networkProvider, distKeyPartRegistryProvider)
 	registryService := services.NewRegistryService(chainsProvider, chainRecordRegistryProvider)
 	offLedgerService := services.NewOffLedgerService(chainService, networkProvider, requestCacheTTL)
 	metricsService := services.NewMetricsService(chainsProvider, chainMetricsProvider)
 	peeringService := services.NewPeeringService(chainsProvider, networkProvider, trustedNetworkManager)
 	evmService := services.NewEVMService(chainsProvider, chainService, networkProvider, pub, indexDBPath, chainMetricsProvider, jsonrpcParams, logger.NewChildLogger("EVMService"))
 	nodeService := services.NewNodeService(chainRecordRegistryProvider, nodeIdentityProvider, chainsProvider, shutdownHandler, trustedNetworkManager, l1ParamsFetcher)
-	dkgService := services.NewDKGService(dkShareRegistryProvider, dkgNodeProvider, trustedNetworkManager)
+	distKeyGenService := services.NewDistKeyGenerationService(distKeyPartRegistryProvider, distKeyGenNodeProvider, trustedNetworkManager)
 	userService := services.NewUserService(userManager)
 	// --
 
@@ -122,7 +122,7 @@ func Init(
 	controllersToLoad := []interfaces.APIController{
 		chain.NewChainController(logger, chainService, committeeService, evmService, nodeService, offLedgerService, registryService, accountDumpsPath, l1Client),
 		apimetrics.NewMetricsController(chainService, metricsService),
-		node.NewNodeController(waspVersion, config, dkgService, nodeService, peeringService),
+		node.NewNodeController(waspVersion, config, distKeyGenService, nodeService, peeringService),
 		requests.NewRequestsController(chainService, offLedgerService, peeringService),
 		users.NewUsersController(userService),
 		corecontracts.NewCoreContractsController(chainService),

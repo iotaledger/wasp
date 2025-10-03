@@ -11,25 +11,25 @@
 // if a reorg or a rollback has happened and adjust the request set accordingly.
 // For this to work the mempool has to maintain not only the requests, but also
 // the latest state for which it has provided the proposal. Let's say the mempool
-// has provided proposals for PrevAO (AO≡AliasOutput).
+// has provided proposals for PrevAnchor (Anchor≡Anchor).
 //
-// Upon reception of the proposal query (ConsensusProposalAsync) for NextAO
-// from the consensus, it asks the StateMgr for the virtual state VS(NextAO)
-// corresponding to the NextAO and a list of blocks that has to be reverted.
+// Upon reception of the proposal query (ConsensusProposalAsync) for NextAnchor
+// from the consensus, it asks the StateMgr for the virtual state VS(NextAnchor)
+// corresponding to the NextAnchor and a list of blocks that has to be reverted.
 // The state manager collects this information by finding a common ancestor of
-// the NextAO and PrevAO, say CommonAO = NextAO ⊓ PrevAO. The blocks to be
-// reverted are those in the range (CommonAO, PrevAO].
+// the NextAnchor and PrevAnchor, say CommonAnchor = NextAnchor ⊓ PrevAnchor. The blocks to be
+// reverted are those in the range (CommonAnchor, PrevAnchor].
 //
-// When the mempool gets VS(NextAO) and RevertBlocks = (CommonAO, PrevAO] it
+// When the mempool gets VS(NextAnchor) and RevertBlocks = (CommonAnchor, PrevAnchor] it
 // re-adds the requests from RevertBlocks to the mempool and then drops the
-// requests that are already processed in VS(NextAO). If the RevertBlocks set
+// requests that are already processed in VS(NextAnchor). If the RevertBlocks set
 // is not empty, it has to drop all the on-ledger requests and re-read them from
-// the L1. In the normal execution, we'll have RevertBlocks=∅ and VS(NextAO)
-// will differ from VS(PrevAO) in a single block.
+// the L1. In the normal execution, we'll have RevertBlocks=∅ and VS(NextAnchor)
+// will differ from VS(PrevAnchor) in a single block.
 //
 // The response to the requests decided by the consensus (ConsensusRequestsAsync)
 // should be unconditional and should ignore the current state of the requests.
-// This call should not modify nor the NextAO not the PrevAO. The state will be
+// This call should not modify nor the NextAnchor not the PrevAnchor. The state will be
 // updated later with the proposal query, because then the chain will know, which
 // branch to work on.
 //
@@ -53,7 +53,7 @@ import (
 
 	"github.com/iotaledger/hive.go/log"
 
-	consGR "github.com/iotaledger/wasp/v2/packages/chain/cons/gr"
+	consGR "github.com/iotaledger/wasp/v2/packages/chain/consensus/consensus_runner"
 	"github.com/iotaledger/wasp/v2/packages/chain/mempool/distsync"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
@@ -599,7 +599,7 @@ func (mpi *mempoolImpl) handleConsensusProposal(recv *reqConsensusProposal) {
 
 func (mpi *mempoolImpl) refsToPropose(consensusID consGR.ConsensusID) []*isc.RequestRef {
 	//
-	// The case for matching ChainHeadAnchor and request BaseAO
+	// The case for matching ChainHeadAnchor and request BaseAnchor
 	onLedgerReqs := []*isc.RequestRef{}
 	if !mpi.tangleTime.IsZero() { // Wait for tangle-time to process the on ledger requests.
 		mpi.onLedgerPool.Iterate(func(e *typedPoolEntry[isc.OnLedgerRequest]) bool {

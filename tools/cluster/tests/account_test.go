@@ -28,7 +28,7 @@ func TestBasicAccountsNLow(t *testing.T) {
 		for i := range chainNodes {
 			chainNodes[i] = i
 		}
-		chain, err := clu.DeployChainWithDKG(chainNodes, chainNodes, uint16(t))
+		chain, err := clu.DeployChainWithDistKeyGeneration(chainNodes, chainNodes, uint16(t))
 		require.NoError(tt, err)
 		env := newChainEnv(tt, clu, chain)
 		env.testAccounts()

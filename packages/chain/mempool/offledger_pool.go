@@ -14,7 +14,7 @@ import (
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/log"
 
-	consGR "github.com/iotaledger/wasp/v2/packages/chain/cons/gr"
+	consGR "github.com/iotaledger/wasp/v2/packages/chain/consensus/consensus_runner"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 

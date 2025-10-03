@@ -10,7 +10,7 @@ import (
 
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
-	"github.com/iotaledger/wasp/v2/packages/chain/dss"
+	"github.com/iotaledger/wasp/v2/packages/chain/distsign"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/registry"
@@ -18,72 +18,72 @@ import (
 )
 
 type testDssSigner struct {
-	dkShares []tcrypto.DKShare
-	nodeIDs  []gpa.NodeID
-	nodeKeys []*cryptolib.KeyPair
-	log      log.Logger
+	distKeyParts []tcrypto.DistibutedKeyPart
+	nodeIDs      []gpa.NodeID
+	nodeKeys     []*cryptolib.KeyPair
+	log          log.Logger
 }
 
 func NewTestDSSSigner(
 	addr *cryptolib.Address,
-	reg []registry.DKShareRegistryProvider,
+	reg []registry.DistKeyPartRegistryProvider,
 	nodeIDs []gpa.NodeID,
 	nodeKeys []*cryptolib.KeyPair,
 	log log.Logger,
 ) cryptolib.Signer {
-	dkShares := lo.Map(reg, func(prov registry.DKShareRegistryProvider, index int) tcrypto.DKShare {
-		return lo.Must(prov.LoadDKShare(addr))
+	distKeyParts := lo.Map(reg, func(prov registry.DistKeyPartRegistryProvider, index int) tcrypto.DistibutedKeyPart {
+		return lo.Must(prov.LoadDistKeyPart(addr))
 	})
 
 	return &testDssSigner{
-		dkShares: dkShares,
-		nodeIDs:  nodeIDs,
-		nodeKeys: nodeKeys,
-		log:      log,
+		distKeyParts: distKeyParts,
+		nodeIDs:      nodeIDs,
+		nodeKeys:     nodeKeys,
+		log:          log,
 	}
 }
 
 func (sig *testDssSigner) Address() *cryptolib.Address {
-	return sig.dkShares[0].GetSharedPublic().AsAddress()
+	return sig.distKeyParts[0].GetSharedPublic().AsAddress()
 }
 
 func (sig *testDssSigner) Sign(messageToSign []byte) (*cryptolib.Signature, error) {
 	n := len(sig.nodeIDs)
-	f := n - sig.dkShares[0].DSS().Threshold()
+	f := n - sig.distKeyParts[0].DSS().Threshold()
 	edSuite := tcrypto.DefaultEd25519Suite()
 
 	nodePKs := map[gpa.NodeID]kyber.Point{}
-	for i, pk := range sig.dkShares[0].GetNodePubKeys() {
+	for i, pk := range sig.distKeyParts[0].GetNodePubKeys() {
 		nodePKs[sig.nodeIDs[i]] = lo.Must(pk.AsKyberPoint())
 	}
 
 	//
 	// Setup nodes.
-	dsss := map[gpa.NodeID]dss.DSS{}
+	dsss := map[gpa.NodeID]distsign.DistributedSignature{}
 	gpas := map[gpa.NodeID]gpa.GPA{}
 	for idx, nid := range sig.nodeIDs {
-		dks := sig.dkShares[idx]
+		dks := sig.distKeyParts[idx]
 		privKey := lo.Must(sig.nodeKeys[idx].GetPrivateKey().AsKyberKeyPair()).Private
-		dsss[nid] = dss.New(edSuite, sig.nodeIDs, nodePKs, f, nid, privKey, dks.DSS(), sig.log)
+		dsss[nid] = distsign.New(edSuite, sig.nodeIDs, nodePKs, f, nid, privKey, dks.DSS(), sig.log)
 		gpas[nid] = dsss[nid].AsGPA()
 	}
 	tc := gpa.NewTestContext(gpas)
 	//
-	// Run the DKG
+	// Run the DistKeyGeneration
 	inputs := make(map[gpa.NodeID]gpa.Input)
 	for _, nid := range sig.nodeIDs {
-		inputs[nid] = dss.NewInputStart() // Input is only a signal here.
+		inputs[nid] = distsign.NewInputStart() // Input is only a signal here.
 	}
 	tc.WithInputs(inputs).RunUntil(tc.NumberOfOutputsPredicate(n - f))
 	//
 	// Check the INTERMEDIATE result.
-	intermediateOutputs := map[gpa.NodeID]*dss.Output{}
+	intermediateOutputs := map[gpa.NodeID]*distsign.Output{}
 	for nid := range gpas {
 		nodeOutput := gpas[nid].Output()
 		if nodeOutput == nil {
 			continue
 		}
-		intermediateOutput := nodeOutput.(*dss.Output)
+		intermediateOutput := nodeOutput.(*distsign.Output)
 		intermediateOutputs[nid] = intermediateOutput
 	}
 	//
@@ -93,18 +93,18 @@ func (sig *testDssSigner) Sign(messageToSign []byte) (*cryptolib.Signature, erro
 		decidedProposals[nid] = intermediateOutputs[nid].ProposedIndexes
 	}
 	for nid := range dsss {
-		tc.WithInput(nid, dss.NewInputDecided(decidedProposals, messageToSign))
+		tc.WithInput(nid, distsign.NewInputDecided(decidedProposals, messageToSign))
 	}
 	//
-	// Run the ADKG with agreement already decided.
+	// Run the ADistKeyGeneration with agreement already decided.
 	tc.RunUntil(tc.OutOfMessagesPredicate())
 	//
 	// Check the FINAL result.
 	for _, n := range gpas {
 		o := n.Output()
 		if o != nil {
-			signatureBytes := o.(*dss.Output).Signature
-			signature := cryptolib.NewSignature(sig.dkShares[0].GetSharedPublic(), signatureBytes)
+			signatureBytes := o.(*distsign.Output).Signature
+			signature := cryptolib.NewSignature(sig.distKeyParts[0].GetSharedPublic(), signatureBytes)
 			if !signature.Validate(messageToSign) {
 				return nil, fmt.Errorf("produced an invalid signature")
 			}

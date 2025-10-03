@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/v2/clients"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
-	"github.com/iotaledger/wasp/v2/packages/chain/cons/gr"
+	"github.com/iotaledger/wasp/v2/packages/chain/consensus/consensus_runner"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/parameters"
@@ -67,7 +67,7 @@ type NodeConnection interface {
 	ConsensusL1InfoProposal(
 		ctx context.Context,
 		anchor *isc.StateAnchor,
-	) <-chan gr.NodeConnL1Info
+	) <-chan consensus_runner.NodeConnL1Info
 }
 
 type StateFreshness byte
@@ -94,7 +94,7 @@ func (sf StateFreshness) String() string {
 type ChainCore interface {
 	ID() isc.ChainID
 	// Returns the current latest confirmed alias output and the active one.
-	// The active AO can be ahead of the confirmed one by several blocks.
+	// The active Anchor can be ahead of the confirmed one by several blocks.
 	// Both values can be nil, if the node haven't received an output from
 	// L1 yet (after a restart or a chain activation).
 	LatestAnchor(freshness StateFreshness) (*isc.StateAnchor, error)

@@ -1,13 +1,13 @@
 package testutil
 
 import (
-	"github.com/iotaledger/wasp/v2/packages/chain/cmtlog"
+	"github.com/iotaledger/wasp/v2/packages/chain/committeelog"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
 type mockedConsensusStateRegistry struct {
-	data map[cryptolib.AddressKey]*cmtlog.State
+	data map[cryptolib.AddressKey]*committeelog.State
 }
 
 func (s *mockedConsensusStateRegistry) MarshalJSON() ([]byte, error) {
@@ -18,20 +18,20 @@ func (s *mockedConsensusStateRegistry) UnmarshalJSON(bytes []byte) error {
 	panic("not used in tests")
 }
 
-var _ cmtlog.ConsensusStateRegistry = &mockedConsensusStateRegistry{}
+var _ committeelog.ConsensusStateRegistry = &mockedConsensusStateRegistry{}
 
-func NewConsensusStateRegistry() cmtlog.ConsensusStateRegistry {
-	return &mockedConsensusStateRegistry{data: map[cryptolib.AddressKey]*cmtlog.State{}}
+func NewConsensusStateRegistry() committeelog.ConsensusStateRegistry {
+	return &mockedConsensusStateRegistry{data: map[cryptolib.AddressKey]*committeelog.State{}}
 }
 
-func (s *mockedConsensusStateRegistry) Get(chainID isc.ChainID, cmtAddr *cryptolib.Address) (*cmtlog.State, error) {
+func (s *mockedConsensusStateRegistry) Get(chainID isc.ChainID, cmtAddr *cryptolib.Address) (*committeelog.State, error) {
 	if store, ok := s.data[cmtAddr.Key()]; ok {
 		return store, nil
 	}
-	return nil, cmtlog.ErrCmtLogStateNotFound
+	return nil, committeelog.ErrCommitteeLogStateNotFound
 }
 
-func (s *mockedConsensusStateRegistry) Set(chainID isc.ChainID, cmtAddr *cryptolib.Address, state *cmtlog.State) error {
+func (s *mockedConsensusStateRegistry) Set(chainID isc.ChainID, cmtAddr *cryptolib.Address, state *committeelog.State) error {
 	s.data[cmtAddr.Key()] = state
 	return nil
 }

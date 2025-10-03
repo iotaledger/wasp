@@ -16,7 +16,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 )
 
-func dkShare(t *testing.T) (DKShare, suites.Suite, *bn256.Suite, *cryptolib.PrivateKey) {
+func distKeyPart(t *testing.T) (DistibutedKeyPart, suites.Suite, *bn256.Suite, *cryptolib.PrivateKey) {
 	edSuite, err := suites.Find("Ed25519")
 	require.NoError(t, err)
 	blsSuite := bn256.NewSuite()
@@ -43,7 +43,7 @@ func dkShare(t *testing.T) (DKShare, suites.Suite, *bn256.Suite, *cryptolib.Priv
 	}
 
 	index := uint16(5)
-	dks, err := NewDKShare(
+	dks, err := NewDistKeyPart(
 		index,                                   // index
 		10,                                      // n
 		7,                                       // t
@@ -67,25 +67,25 @@ func dkShare(t *testing.T) (DKShare, suites.Suite, *bn256.Suite, *cryptolib.Priv
 }
 
 func TestMarshalling(t *testing.T) {
-	dks, edSuite, blsSuite, nodePrivKey := dkShare(t)
+	dks, edSuite, blsSuite, nodePrivKey := distKeyPart(t)
 
-	dksBack, err := DKShareFromBytes(dks.Bytes(), edSuite, blsSuite, nodePrivKey)
+	dksBack, err := DistKeyPartFromBytes(dks.Bytes(), edSuite, blsSuite, nodePrivKey)
 	require.NoError(t, err)
 	require.EqualValues(t, dks.Bytes(), dksBack.Bytes())
 }
 
 func TestJSONMarshalling(t *testing.T) {
-	dks, edSuite, blsSuite, nodePrivKey := dkShare(t)
+	dks, edSuite, blsSuite, nodePrivKey := distKeyPart(t)
 
-	jsonDKShare, err := json.Marshal(dks)
+	jsonDistKeyPart, err := json.Marshal(dks)
 	require.NoError(t, err)
 
-	dksBack := &dkShareImpl{
+	dksBack := &distKeyPartImpl{
 		edSuite:     edSuite,
 		blsSuite:    blsSuite,
 		nodePrivKey: nodePrivKey,
 	}
-	err = json.Unmarshal(jsonDKShare, dksBack)
+	err = json.Unmarshal(jsonDistKeyPart, dksBack)
 	require.NoError(t, err)
 
 	require.EqualValues(t, dks.Bytes(), dksBack.Bytes())

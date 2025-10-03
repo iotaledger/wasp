@@ -20,7 +20,7 @@ import (
 type StateTracker interface {
 	//
 	// The main functions provided by this component.
-	TrackAliasOutput(ao *isc.StateAnchor, strict bool)
+	TrackAnchor(ao *isc.StateAnchor, strict bool)
 	AwaitRequestReceipt(query *awaitReceiptReq)
 	//
 	// The following 2 functions are only to move the channel receive loop to the main ChainNode thread.
@@ -34,11 +34,11 @@ type stateTrackerImpl struct {
 	ctx                    context.Context
 	stateMgr               statemanager.StateMgr
 	haveLatestCB           StateTrackerStepCB
-	haveAOState            state.State
-	haveAO                 *isc.StateAnchor   // We have a state ready for this AO.
-	nextAO                 *isc.StateAnchor   // For this state a query was made, but the response not received yet.
-	nextAOCancel           context.CancelFunc // Cancel for a context used to query for the nextAO state.
-	nextAOWaitCh           <-chan *inputs.ChainFetchStateDiffResults
+	haveAnchorState        state.State
+	haveAnchor             *isc.StateAnchor   // We have a state ready for this Anchor.
+	nextAnchor             *isc.StateAnchor   // For this state a query was made, but the response not received yet.
+	nextAnchorCancel       context.CancelFunc // Cancel for a context used to query for the nextAnchor state.
+	nextAnchorWaitCh       <-chan *inputs.ChainFetchStateDiffResults
 	awaitReceipt           AwaitReceipt
 	metricWantStateIndexCB func(uint32)
 	metricHaveStateIndexCB func(uint32)
@@ -59,11 +59,11 @@ func NewStateTracker(
 		ctx:                    ctx,
 		stateMgr:               stateMgr,
 		haveLatestCB:           haveLatestCB,
-		haveAOState:            nil,
-		haveAO:                 nil,
-		nextAO:                 nil,
-		nextAOCancel:           nil,
-		nextAOWaitCh:           nil,
+		haveAnchorState:        nil,
+		haveAnchor:             nil,
+		nextAnchor:             nil,
+		nextAnchorCancel:       nil,
+		nextAnchorWaitCh:       nil,
 		awaitReceipt:           NewAwaitReceipt(AwaitReceiptCleanupEvery, log),
 		metricWantStateIndexCB: metricWantStateIndexCB,
 		metricHaveStateIndexCB: metricHaveStateIndexCB,
@@ -71,28 +71,28 @@ func NewStateTracker(
 	}
 }
 
-func (sti *stateTrackerImpl) TrackAliasOutput(ao *isc.StateAnchor, strict bool) {
+func (sti *stateTrackerImpl) TrackAnchor(ao *isc.StateAnchor, strict bool) {
 	if ao == nil {
-		// We don't have the latest AO while we are still synching.
+		// We don't have the latest Anchor while we are still synching.
 		return
 	}
-	sti.log.LogDebugf("TrackAliasOutput[strict=%v], ao=%v, haveAO=%v, nextAO=%v", strict, ao, sti.haveAO, sti.nextAO)
-	if !strict && sti.haveAO != nil && sti.haveAO.GetStateIndex() >= ao.GetStateIndex() {
+	sti.log.LogDebugf("TrackAnchor[strict=%v], ao=%v, haveAnchor=%v, nextAnchor=%v", strict, ao, sti.haveAnchor, sti.nextAnchor)
+	if !strict && sti.haveAnchor != nil && sti.haveAnchor.GetStateIndex() >= ao.GetStateIndex() {
 		return
 	}
-	if ao.Equals(sti.nextAO) {
+	if ao.Equals(sti.nextAnchor) {
 		return
 	}
 	sti.metricWantStateIndexCB(ao.GetStateIndex())
-	if ao.Equals(sti.haveAO) {
-		sti.nextAO = sti.haveAO // All done, state is already received.
-		sti.cancelQuery()       // Cancel the request, if pending.
+	if ao.Equals(sti.haveAnchor) {
+		sti.nextAnchor = sti.haveAnchor // All done, state is already received.
+		sti.cancelQuery()               // Cancel the request, if pending.
 		return
 	}
-	nextAOCtx, nextAOCancel := context.WithCancel(sti.ctx)
-	sti.nextAO = ao
-	sti.nextAOCancel = nextAOCancel
-	sti.nextAOWaitCh = sti.stateMgr.ChainFetchStateDiff(nextAOCtx, sti.haveAO, sti.nextAO)
+	nextAnchorCtx, nextAnchorCancel := context.WithCancel(sti.ctx)
+	sti.nextAnchor = ao
+	sti.nextAnchorCancel = nextAnchorCancel
+	sti.nextAnchorWaitCh = sti.stateMgr.ChainFetchStateDiff(nextAnchorCtx, sti.haveAnchor, sti.nextAnchor)
 }
 
 func (sti *stateTrackerImpl) AwaitRequestReceipt(query *awaitReceiptReq) {
@@ -102,7 +102,7 @@ func (sti *stateTrackerImpl) AwaitRequestReceipt(query *awaitReceiptReq) {
 
 // To be used in the select loop at the chain node.
 func (sti *stateTrackerImpl) ChainNodeAwaitStateMgrCh() <-chan *inputs.ChainFetchStateDiffResults {
-	return sti.nextAOWaitCh
+	return sti.nextAnchorWaitCh
 }
 
 // This is assumed to be called right after the `ChainNodeAwaitStateMgrCh()`,
@@ -112,20 +112,20 @@ func (sti *stateTrackerImpl) ChainNodeStateMgrResponse(results *inputs.ChainFetc
 	newState := results.GetNewState()
 	sti.log.LogDebugf(
 		"Have latest state for %v, state.BlockIndex=%v, state.trieRoot=%v, previous=%v, |blocksAdded|=%v, |blockRemoved|=%v",
-		sti.nextAO, newState.BlockIndex(), newState.TrieRoot(), sti.haveAO, len(results.GetAdded()), len(results.GetRemoved()),
+		sti.nextAnchor, newState.BlockIndex(), newState.TrieRoot(), sti.haveAnchor, len(results.GetAdded()), len(results.GetRemoved()),
 	)
-	sti.haveLatestCB(newState, sti.haveAO, sti.nextAO, results.GetAdded(), results.GetRemoved())
-	sti.haveAO = sti.nextAO
-	sti.haveAOState = newState
+	sti.haveLatestCB(newState, sti.haveAnchor, sti.nextAnchor, results.GetAdded(), results.GetRemoved())
+	sti.haveAnchor = sti.nextAnchor
+	sti.haveAnchorState = newState
 	sti.metricHaveStateIndexCB(newState.BlockIndex())
 	sti.awaitReceipt.ConsiderState(newState, results.GetAdded())
 }
 
 func (sti *stateTrackerImpl) cancelQuery() {
-	if sti.nextAOCancel == nil {
+	if sti.nextAnchorCancel == nil {
 		return
 	}
-	sti.nextAOCancel()
-	sti.nextAOCancel = nil
-	sti.nextAOWaitCh = nil
+	sti.nextAnchorCancel()
+	sti.nextAnchorCancel = nil
+	sti.nextAnchorWaitCh = nil
 }

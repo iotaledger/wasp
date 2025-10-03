@@ -259,7 +259,7 @@ func setupNativeInccounterTest(t *testing.T, clusterSize int, committee []int, d
 		dirName: dirname,
 	})
 
-	addr, err := clu.RunDKG(committee, quorum)
+	addr, err := clu.RunDistKeyGeneration(committee, quorum)
 	require.NoError(t, err)
 
 	t.Logf("generated state address: %s", addr.String())

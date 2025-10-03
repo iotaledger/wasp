@@ -82,9 +82,9 @@ An alias output is the main building block of a chain in L1. Here we
 only consider its identifier (outputId) and the chain state index it
 represents (stateIdx).
 *)
-AliasOutput == [stateIdx: StateSeq, outputId: OutputId]
-AOConflict  == [ao |-> "conflict"] \* Not enough of agreement in consensus, retry.
-AONull      == [ao |-> "null"]     \* Entry was not decided yet.
+Anchor == [stateIdx: StateSeq, outputId: OutputId]
+AnchorConflict  == [ao |-> "conflict"] \* Not enough of agreement in consensus, retry.
+AnchorNull      == [ao |-> "null"]     \* Entry was not decided yet.
 
 (*
 A set of possible messages.
@@ -95,7 +95,7 @@ Msg == UNION {
     *)
     [
         t: {"L1_TX_POST"},        \* Type of the message.
-        aliasOutput: AliasOutput, \* Alias Output being posted.
+        anchor: Anchor, \* Alias Output being posted.
         baseOutputId: OutputId,   \* Output ID of an alias output being spent in this TX.
         logSN: LogSeq             \* Just for checking, if a node has already sent a message.
     ],
@@ -105,7 +105,7 @@ Msg == UNION {
     *)
     [
         t: {"L1_TX_CONFIRMED", "L1_TX_REJECTED"}, \* Type of the message.
-        aliasOutput: AliasOutput, \* An output that was confirmed/rejected.
+        anchor: Anchor, \* An output that was confirmed/rejected.
         logSN: LogSeq             \* Just for checking, if a node has already sent a message.
     ],
     (*
@@ -116,22 +116,22 @@ Msg == UNION {
         t: {"NODE_PROPOSAL"}, \* Type of the message.
         n: ANode,             \* A node which sent the proposal.
         logSN: LogSeq,        \* The proposal is for this log sequence number.
-        baseAO: AliasOutput   \* The actual proposal.
+        baseAnchor: Anchor   \* The actual proposal.
     ]
 }
 
 (*
 The usual type correctness invariant. Some notes:
 
-  - An entry for the log is AONull, if it is not decided or known yet. Later
-    it either set to a valid AliasOutput, or set to AOConflict, if there is no
-    enough nodes voting for the same AliasOutput to use as an input for the TX.
+  - An entry for the log is AnchorNull, if it is not decided or known yet. Later
+    it either set to a valid Anchor, or set to AnchorConflict, if there is no
+    enough nodes voting for the same Anchor to use as an input for the TX.
 
 *)
 TypeOK ==
-    /\ logConsensus \in [LogSeq -> AliasOutput \cup {AONull, AOConflict}]
-    /\ nodeLog      \in [CNode -> [LogSeq -> AliasOutput \cup {AONull, AOConflict}]]
-    /\ nodeLastOut  \in [CNode -> AliasOutput \cup {AONull}]
+    /\ logConsensus \in [LogSeq -> Anchor \cup {AnchorNull, AnchorConflict}]
+    /\ nodeLog      \in [CNode -> [LogSeq -> Anchor \cup {AnchorNull, AnchorConflict}]]
+    /\ nodeLastOut  \in [CNode -> Anchor \cup {AnchorNull}]
     /\ l1Chain      \in [StateSeq -> OutputId \cup {NullOutputId}]
     /\ l1Spent      \subseteq OutputId
     /\ l1FaultsLeft \in 0..MaxL1Faults
@@ -169,8 +169,8 @@ TX can be confirmed, if its baseOutputId is the last unspent output in the chain
 The proposal message is then consumed, to avoid re-proposals in the case of rejection or reorg.
 *)
 L1Confirm == \E m \in msgs: m.t = "L1_TX_POST" /\
-    LET stateIdx == m.aliasOutput.stateIdx
-        outputId == m.aliasOutput.outputId
+    LET stateIdx == m.anchor.stateIdx
+        outputId == m.anchor.outputId
     IN  /\ IsL1LastUnspent(stateIdx - 1, m.baseOutputId)
         /\ l1Chain[stateIdx - 1] = m.baseOutputId
         /\ l1Chain[stateIdx] = NullOutputId
@@ -178,7 +178,7 @@ L1Confirm == \E m \in msgs: m.t = "L1_TX_POST" /\
         /\ l1Spent' = l1Spent \cup {m.baseOutputId}           \* Previous one is consumed.
         /\ msgs' = (msgs \ {m}) \cup {[
              t           |-> "L1_TX_CONFIRMED",
-             aliasOutput |-> m.aliasOutput,
+             anchor |-> m.anchor,
              logSN       |-> m.logSN
            ]}
         /\ UNCHANGED <<logConsensus, l1FaultsLeft, nodeVars>>
@@ -189,14 +189,14 @@ e.g. because of request expiry or other reason. We model this as
 an environment, so don'n try to consider particular reasoning.
 *)
 L1Reject == L1FaultyStep /\ \E m \in msgs: m.t = "L1_TX_POST" /\
-    LET stateIdx == m.aliasOutput.stateIdx
-        outputId == m.aliasOutput.outputId
+    LET stateIdx == m.anchor.stateIdx
+        outputId == m.anchor.outputId
     IN  /\ IsL1LastUnspent(stateIdx - 1, m.baseOutputId)
         /\ l1Chain[stateIdx - 1] = m.baseOutputId
         /\ l1Chain[stateIdx] = NullOutputId
         /\ msgs' = (msgs \ {m}) \cup {[
              t           |-> "L1_TX_REJECTED",
-             aliasOutput |-> m.aliasOutput,
+             anchor |-> m.anchor,
              logSN       |-> m.logSN
            ]}
         /\ UNCHANGED <<logConsensus, nodeVars, l1Chain, l1Spent>>
@@ -262,8 +262,8 @@ the consensus will be implemented by the ACS or the entire HoneyBadgerBFT.
 Predicate indicating, if the provided Log Sequence Number is the next one to fill.
 *)
 IsNextPendingLogIdx(logSN) == \* logSN \in LogSeq
-    /\ logConsensus[logSN] = AONull
-    /\ \A prev \in LogSeq : (prev < logSN) => (logConsensus[prev] # AONull)
+    /\ logConsensus[logSN] = AnchorNull
+    /\ \A prev \in LogSeq : (prev < logSN) => (logConsensus[prev] # AnchorNull)
 
 (*
 Predicate indicating, if there is enough votes casted for a specific log sequence number.
@@ -276,15 +276,15 @@ HaveEnoughProposals(logSN) == \* logSN \in LogSeq
         /\ m.logSN = logSN
 
 (*
-Predicate indicating, if `baseAO' can be decided for the specified entry in the log.
+Predicate indicating, if `baseAnchor' can be decided for the specified entry in the log.
 There should be N-F votes for the base Alias Output for it to be decided.
 *)
-CanBeDecided(logSN, baseAO) == \* logSN \in LogSeq, baseAO \in AliasOutput
+CanBeDecided(logSN, baseAnchor) == \* logSN \in LogSeq, baseAnchor \in Anchor
     \E q \in QNF : \A qn \in q : \E m \in msgs :
         /\ m.t = "NODE_PROPOSAL"
         /\ m.n = qn
         /\ m.logSN = logSN
-        /\ m.baseAO = baseAO
+        /\ m.baseAnchor = baseAnchor
 
 (*
 A consensus on a value is reached, when it is proposed by N-F nodes.
@@ -294,12 +294,12 @@ If there is no single value proposed by N-F nodes, then the consensus decides on
 ConsensusDecision ==
     \E logSN \in LogSeq:
         /\ IsNextPendingLogIdx(logSN)
-        /\ \/ \E baseAO \in AliasOutput:
-                /\ CanBeDecided(logSN, baseAO)
-                /\ logConsensus' = [logConsensus EXCEPT ![logSN] = baseAO]
+        /\ \/ \E baseAnchor \in Anchor:
+                /\ CanBeDecided(logSN, baseAnchor)
+                /\ logConsensus' = [logConsensus EXCEPT ![logSN] = baseAnchor]
            \/ /\ HaveEnoughProposals(logSN)
-              /\ \A ao \in AliasOutput: ~CanBeDecided(logSN, ao)
-              /\ logConsensus' = [logConsensus EXCEPT ![logSN] = AOConflict]
+              /\ \A ao \in Anchor: ~CanBeDecided(logSN, ao)
+              /\ logConsensus' = [logConsensus EXCEPT ![logSN] = AnchorConflict]
         /\ UNCHANGED <<nodeVars, l1Vars, msgs>>
 
 ConsensusActions == ConsensusDecision
@@ -324,15 +324,15 @@ after some time.
 Predicate indicating if `logSN' is the first pending slot in the node's `n' log.
 *)
 IsNextPendingNodeLogIdx(n, logSN) == \* n \in CNode, logSN \in LogSeq
-    /\ nodeLog[n][logSN] = AONull
-    /\ \A prev \in LogSeq : (prev < logSN) => (nodeLog[n][prev] # AONull)
+    /\ nodeLog[n][logSN] = AnchorNull
+    /\ \A prev \in LogSeq : (prev < logSN) => (nodeLog[n][prev] # AnchorNull)
 
 (*
 This predicate indicates, if `logSN' is the last decided entry in the node `n' log.
 *)
 IsLastDecidedNodeLogSN(n, logSN) ==
-    /\ nodeLog[n][logSN] # AONull
-    /\ \A next \in LogSeq : next > logSN => nodeLog[n][next] = AONull
+    /\ nodeLog[n][logSN] # AnchorNull
+    /\ \A next \in LogSeq : next > logSN => nodeLog[n][next] = AnchorNull
 
 (*
 From time to time, a node receives confirmed and unspent outputs from the L1.
@@ -368,7 +368,7 @@ assumption can be inappropriate in reality. Older/outdated outputs can be
 pushed by some nodes, not to mentioning the byzantine ones.}^'
 *)
 NodeSyncFromL1 ==
-    \E n \in CNode, ao \in AliasOutput :
+    \E n \in CNode, ao \in Anchor :
         /\ IsL1LastUnspent(ao.stateIdx, ao.outputId)
         /\ nodeLastOut' = [nodeLastOut EXCEPT ![n] = ao]
         /\ UNCHANGED <<logConsensus, nodeLog, l1Vars, msgs>>
@@ -382,22 +382,22 @@ That doesn't mean we wait for something from L1. In the success scenario
 we will always propose `nodeLastOut[n]' as an alias output to use as a base.
 This variable set only when a transaction is posted by this node, or a
 confirmed output is received from L1. Thus, we mark this node as already sent
-the proposal, by making `nodeLastOut[n] = AONull' to avoid repeating
+the proposal, by making `nodeLastOut[n] = AnchorNull' to avoid repeating
 consensus with the same output.
 *)
 NodeConsensusProposal ==
     \E n \in CNode, logSN \in LogSeq :
         /\ IsNextPendingNodeLogIdx(n, logSN) \* Consider first undecided log entry.
-        /\ nodeLastOut[n] # AONull           \* Wait until we have opinion on the last Alias UTXO.
+        /\ nodeLastOut[n] # AnchorNull           \* Wait until we have opinion on the last Alias UTXO.
         /\ ~\E m \in msgs :                  \* That's our first proposal.
              m.t = "NODE_PROPOSAL" /\ m.n = n /\ m.logSN = logSN
         /\ msgs' = msgs \cup {[
              t      |-> "NODE_PROPOSAL",
              n      |-> n,
              logSN  |-> logSN,
-             baseAO |-> nodeLastOut[n] \* Propose our currently known last unspent output.
+             baseAnchor |-> nodeLastOut[n] \* Propose our currently known last unspent output.
            ]}
-        /\ nodeLastOut' = [nodeLastOut EXCEPT ![n] = AONull]
+        /\ nodeLastOut' = [nodeLastOut EXCEPT ![n] = AnchorNull]
         /\ UNCHANGED <<logConsensus, nodeLog, l1Vars>>
 
 
@@ -412,8 +412,8 @@ a transaction to L1.
 *)
 NodeConsensusLearned ==
     \E n \in CNode, logSN \in LogSeq :
-        /\ nodeLog[n][logSN] = AONull
-        /\ logConsensus[logSN] # AONull
+        /\ nodeLog[n][logSN] = AnchorNull
+        /\ logConsensus[logSN] # AnchorNull
         /\ nodeLog' = [nodeLog EXCEPT ![n][logSN] = logConsensus[logSN]]
         /\ UNCHANGED <<logConsensus, nodeLastOut, l1Vars, msgs>>
 
@@ -424,22 +424,22 @@ transaction to L1 network. That's the mentioned execution of the RSM.
 NodePostL1ChainTx ==
     \E n \in CNode, logSN \in LogSeq, newFreeOId \in (OutputId \ l1Spent) :
         /\ IsLastDecidedNodeLogSN(n, logSN)  \* Consider latest log entry only.
-        /\ nodeLog[n][logSN] \in AliasOutput \* The conflict case is handled in NodeRecoverConflict.
+        /\ nodeLog[n][logSN] \in Anchor \* The conflict case is handled in NodeRecoverConflict.
         /\ ~\E m \in msgs :                  \* We haven't proposed a TX yet.
              /\ m.t \in {"L1_TX_POST", "L1_TX_CONFIRMED", "L1_TX_REJECTED"}
              /\ m.logSN = logSN
-        /\ LET newAO == [stateIdx |-> nodeLog[n][logSN].stateIdx + 1,
+        /\ LET newAnchor == [stateIdx |-> nodeLog[n][logSN].stateIdx + 1,
                          outputId |-> newFreeOId]
-           IN  /\ newAO.stateIdx \in StateSeq             \* Just to limit the TLC state search.
+           IN  /\ newAnchor.stateIdx \in StateSeq             \* Just to limit the TLC state search.
                /\ newFreeOId # nodeLog[n][logSN].outputId \* Don't reuse the last unspent OId as well.
                /\ msgs' = msgs \cup {[
                     t            |-> "L1_TX_POST",
-                    aliasOutput  |-> newAO,
+                    anchor  |-> newAnchor,
                     baseOutputId |-> nodeLog[n][logSN].outputId,
                     logSN        |-> logSN
                   ]}
-               /\ nodeLastOut' = \* Consider the posted AO as the latest unspent.
-                    [nodeLastOut EXCEPT ![n] = newAO]
+               /\ nodeLastOut' = \* Consider the posted Anchor as the latest unspent.
+                    [nodeLastOut EXCEPT ![n] = newAnchor]
                /\ UNCHANGED <<logConsensus, nodeLog, l1Vars>>
 
 (*
@@ -472,9 +472,9 @@ NodeFairness ==
 `^\center{\textbf{The Specification}}^'
 *)
 Init == \E initId \in OutputId :
-    /\ logConsensus = [ls \in LogSeq |-> AONull]
-    /\ nodeLog      = [n \in CNode |-> [ls \in LogSeq |-> AONull]]
-    /\ nodeLastOut  = [n \in CNode |-> AONull]
+    /\ logConsensus = [ls \in LogSeq |-> AnchorNull]
+    /\ nodeLog      = [n \in CNode |-> [ls \in LogSeq |-> AnchorNull]]
+    /\ nodeLastOut  = [n \in CNode |-> AnchorNull]
     /\ l1Chain      = [idx \in StateSeq |-> IF idx = 0 THEN initId ELSE NullOutputId]
     /\ l1Spent      = {}
     /\ l1FaultsLeft = MaxL1Faults
@@ -505,7 +505,7 @@ ProposalForEachConfirmedIndex ==
     \A stateIdx \in StateSeq:
         (stateIdx > 0 /\ l1Chain[stateIdx] # NullOutputId) => (
             \E n \in CNode, logSN \in LogSeq:
-                /\ nodeLog[n][logSN] \in AliasOutput
+                /\ nodeLog[n][logSN] \in Anchor
                 /\ nodeLog[n][logSN].stateIdx = stateIdx-1
         )
 
@@ -515,7 +515,7 @@ we have to keep deciding on the next transaction to propose. That is, we have to
 the consensus log on all correct nodes.
 *)
 NodeLogsAreFilled ==
-    <> \A n \in CNode, logSN \in LogSeq : nodeLog[n][logSN] # AONull
+    <> \A n \in CNode, logSN \in LogSeq : nodeLog[n][logSN] # AnchorNull
 
 
 (*
@@ -524,7 +524,7 @@ consider reorgs for the initial state (that would mean deletion of a chain).
 *)
 AlwaysDecidesOnTheFirst ==
     <>[](
-        /\ logConsensus[0] # AONull
+        /\ logConsensus[0] # AnchorNull
         /\ logConsensus[0].outputId = l1Chain[0]
         /\ logConsensus[0].stateIdx = 0
     )
@@ -537,7 +537,7 @@ rejected, thus we can't check if `1 \in StateSeq ~> l1Chain[1] # NullOutputId'.
 AlwaysProposeTheSecond ==
     <> \E m \in msgs :
          /\ m.t = "L1_TX_POST"
-         /\ m.aliasOutput.stateIdx = 1
+         /\ m.anchor.stateIdx = 1
          /\ m.baseOutputId = l1Chain[0]
 
 (*

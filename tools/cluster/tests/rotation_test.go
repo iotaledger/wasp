@@ -14,7 +14,7 @@ func TestBasicRotation(t *testing.T) { // FIXME serious error
 	/*
 		env := setupNativeInccounterTest(t, 6, []int{0, 1, 2, 3})
 
-		newCmtAddr, err := env.Clu.RunDKG([]int{2, 3, 4, 5}, 3)
+		newCmtAddr, err := env.Clu.RunDistKeyGeneration([]int{2, 3, 4, 5}, 3)
 		require.NoError(t, err)
 
 		kp, _, err := env.Clu.NewKeyPairWithFunds()
@@ -216,7 +216,7 @@ type testRotationSingleRotation struct {
 }
 
 func newTestRotationSingleRotation(t *testing.T, clu *cluster.Cluster, committee []int, quorum uint16) testRotationSingleRotation {
-	address, err := clu.RunDKG(committee, quorum)
+	address, err := clu.RunDistKeyGeneration(committee, quorum)
 	require.NoError(t, err)
 	return testRotationSingleRotation{
 		Committee: committee,

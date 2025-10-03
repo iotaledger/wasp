@@ -89,7 +89,7 @@ wasp-cli --node=wasp3 peering trust wasp4 0x624a84ab6d22daee77658291b75ad0077a95
 # Works, but no need.
 
 ```bash
-wasp-cli chain rundkg --node wasp1 --peers me,wasp2,wasp3,wasp4
+wasp-cli chain rundistKeyGen --node wasp1 --peers me,wasp2,wasp3,wasp4
 ```
 
 ```
@@ -126,7 +126,7 @@ wasp-cli chain deploy --node=wasp1 --chain chain1 --peers=wasp2,wasp3,wasp4
 
 ```
 NOTE: Adding this node as a committee member.
-DKG successful
+DistKeyGeneration successful
 Address: 0x548301349f252162743491298215b91bd11eedb40a0fc6016f9187550f89e0cb
 * committee size = 4
 * quorum = 3
@@ -205,8 +205,8 @@ wasp-cli chain info --chain=chain1 --node=wasp1
 Create the new committee:
 
 ```bash
-wasp-cli chain rundkg --node wasp1 --peers me,wasp2,wasp3,wasp4
-# DKG successful
+wasp-cli chain rundistKeyGen --node wasp1 --peers me,wasp2,wasp3,wasp4
+# DistKeyGeneration successful
 # Address: 0x919e37c9623b02253629b45d9ca5d6d12b6f0cf927ffa414422f4912d60249bd
 # * committee size = 4
 # * quorum = 3

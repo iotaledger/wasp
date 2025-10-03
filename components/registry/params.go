@@ -8,7 +8,7 @@ type ParametersRegistries struct {
 	Chains struct {
 		FilePath string `default:"waspdb/chains/chain_registry.json" usage:"the path to the chain registry file"`
 	}
-	DKShares struct {
+	DistKeyParts struct {
 		Path string `default:"waspdb/dkshares" usage:"the path to the distributed key shares registries folder"`
 	}
 	TrustedPeers struct {

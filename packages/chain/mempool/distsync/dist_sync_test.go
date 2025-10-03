@@ -20,11 +20,11 @@ import (
 )
 
 func TestBasic(t *testing.T) {
-	t.Run("N=20, cmtN=10, cmtF=3", func(t *testing.T) { testBasic(t, 20, 10, 3) })
+	t.Run("N=20, committeeN=10, committeeF=3", func(t *testing.T) { testBasic(t, 20, 10, 3) })
 }
 
-func testBasic(t *testing.T, n, cmtN, cmtF int) {
-	require.GreaterOrEqual(t, n, cmtN)
+func testBasic(t *testing.T, n, committeeN, committeeF int) {
+	require.GreaterOrEqual(t, n, committeeN)
 	log := testlogger.NewLogger(t)
 	kp := cryptolib.NewKeyPair()
 
@@ -54,25 +54,25 @@ func testBasic(t *testing.T, n, cmtN, cmtF int) {
 		gas.LimitsDefault.MaxGasPerRequest,
 	).Sign(kp)
 	reqRef := isc.RequestRefFromRequest(req)
-	cmtNodes := []gpa.NodeID{} // Random subset of all nodes.
-	for pos, idx := range rand.Perm(cmtN) {
-		if pos >= cmtN {
+	committeeNodes := []gpa.NodeID{} // Random subset of all nodes.
+	for pos, idx := range rand.Perm(committeeN) {
+		if pos >= committeeN {
 			break
 		}
-		cmtNodes = append(cmtNodes, nodeIDs[idx])
+		committeeNodes = append(committeeNodes, nodeIDs[idx])
 	}
 
 	tc := gpa.NewTestContext(nodes)
 	//
 	// Setup the committee for all nodes.
 	for _, nid := range nodeIDs {
-		tc.WithInput(nid, distsync.NewInputServerNodes(cmtNodes, cmtNodes))
+		tc.WithInput(nid, distsync.NewInputServerNodes(committeeNodes, committeeNodes))
 	}
 	//
 	// Send a request to a single node.
 	tc.WithInput(nodeIDs[rand.Intn(n)], distsync.NewInputPublishRequest(req))
 	tc.RunAll()
-	require.GreaterOrEqual(t, len(recv), cmtF+1)
+	require.GreaterOrEqual(t, len(recv), committeeF+1)
 	//
 	// All nodes asks for the req.
 	ctx := context.Background()

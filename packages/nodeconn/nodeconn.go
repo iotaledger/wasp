@@ -21,7 +21,7 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/v2/packages/chain"
-	"github.com/iotaledger/wasp/v2/packages/chain/cons/gr"
+	"github.com/iotaledger/wasp/v2/packages/chain/consensus/consensus_runner"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/parameters"
@@ -152,8 +152,8 @@ func (nc *nodeConnection) GetGasCoinRef(ctx context.Context, chainID isc.ChainID
 func (nc *nodeConnection) ConsensusL1InfoProposal(
 	ctx context.Context,
 	anchor *isc.StateAnchor,
-) <-chan gr.NodeConnL1Info {
-	t := make(chan gr.NodeConnL1Info)
+) <-chan consensus_runner.NodeConnL1Info {
+	t := make(chan consensus_runner.NodeConnL1Info)
 
 	// TODO: Refactor this separate goroutine and place it somewhere connection related instead
 	go func() {
@@ -182,7 +182,7 @@ func (nc *nodeConnection) ConsensusL1InfoProposal(
 		}
 
 		gasCoinRef := gasCoinGetObjectRes.Data.Ref()
-		var coinInfo gr.NodeConnL1Info = &SingleL1Info{
+		var coinInfo consensus_runner.NodeConnL1Info = &SingleL1Info{
 			coin.CoinWithRef{
 				Type:  coin.BaseTokenType,
 				Value: coin.Value(gasCoin.Balance),

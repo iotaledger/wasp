@@ -7,7 +7,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
-	"github.com/iotaledger/wasp/v2/packages/dkg"
+	"github.com/iotaledger/wasp/v2/packages/distkeygen"
 	"github.com/iotaledger/wasp/v2/packages/peering"
 	"github.com/iotaledger/wasp/v2/packages/registry"
 	"github.com/iotaledger/wasp/v2/packages/tcrypto"
@@ -19,21 +19,21 @@ const (
 	stepRetry  = 3 * time.Second // Retry for Initiator -> Peer communication.
 )
 
-type DKGService struct {
-	dkShareRegistryProvider registry.DKShareRegistryProvider
-	dkgNodeProvider         dkg.NodeProvider
-	trustedNetworkManager   peering.TrustedNetworkManager
+type DistKeyGenerationService struct {
+	distKeyPartRegistryProvider registry.DistKeyPartRegistryProvider
+	distKeyGenNodeProvider      distkeygen.NodeProvider
+	trustedNetworkManager       peering.TrustedNetworkManager
 }
 
-func NewDKGService(dkShareRegistryProvider registry.DKShareRegistryProvider, dkgNodeProvider dkg.NodeProvider, trustedNetworkManager peering.TrustedNetworkManager) *DKGService {
-	return &DKGService{
-		dkShareRegistryProvider: dkShareRegistryProvider,
-		dkgNodeProvider:         dkgNodeProvider,
-		trustedNetworkManager:   trustedNetworkManager,
+func NewDistKeyGenerationService(distKeyPartRegistryProvider registry.DistKeyPartRegistryProvider, distKeyGenNodeProvider distkeygen.NodeProvider, trustedNetworkManager peering.TrustedNetworkManager) *DistKeyGenerationService {
+	return &DistKeyGenerationService{
+		distKeyPartRegistryProvider: distKeyPartRegistryProvider,
+		distKeyGenNodeProvider:      distKeyGenNodeProvider,
+		trustedNetworkManager:       trustedNetworkManager,
 	}
 }
 
-func (d *DKGService) GenerateDistributedKey(peerPubKeysOrNames []string, threshold uint16, timeout time.Duration) (*models.DKSharesInfo, error) {
+func (d *DistKeyGenerationService) GenerateDistributedKey(peerPubKeysOrNames []string, threshold uint16, timeout time.Duration) (*models.DistKeyPartsInfo, error) {
 	trustedPeers, err := d.trustedNetworkManager.TrustedPeersByPubKeyOrName(peerPubKeysOrNames)
 	if err != nil {
 		return nil, err
@@ -42,40 +42,40 @@ func (d *DKGService) GenerateDistributedKey(peerPubKeysOrNames []string, thresho
 		return tp.PubKey()
 	})
 
-	dkShare, err := d.dkgNodeProvider().GenerateDistributedKey(peerPubKeys, threshold, roundRetry, stepRetry, timeout)
+	distKeyPart, err := d.distKeyGenNodeProvider().GenerateDistributedKey(peerPubKeys, threshold, roundRetry, stepRetry, timeout)
 	if err != nil {
 		return nil, err
 	}
 
-	dkShareInfo, err := d.createDKModel(dkShare)
+	distKeyPartInfo, err := d.createDKModel(distKeyPart)
 	if err != nil {
 		return nil, err
 	}
 
-	return dkShareInfo, nil
+	return distKeyPartInfo, nil
 }
 
-func (d *DKGService) GetShares(sharedAddress *cryptolib.Address) (*models.DKSharesInfo, error) {
-	dkShare, err := d.dkShareRegistryProvider.LoadDKShare(sharedAddress)
+func (d *DistKeyGenerationService) GetShares(sharedAddress *cryptolib.Address) (*models.DistKeyPartsInfo, error) {
+	distKeyPart, err := d.distKeyPartRegistryProvider.LoadDistKeyPart(sharedAddress)
 	if err != nil {
 		return nil, err
 	}
 
-	dkShareInfo, err := d.createDKModel(dkShare)
+	distKeyPartInfo, err := d.createDKModel(distKeyPart)
 	if err != nil {
 		return nil, err
 	}
 
-	return dkShareInfo, nil
+	return distKeyPartInfo, nil
 }
 
-func (d *DKGService) createDKModel(dkShare tcrypto.DKShare) (*models.DKSharesInfo, error) {
-	publicKey, err := dkShare.DSSSharedPublic().MarshalBinary()
+func (d *DistKeyGenerationService) createDKModel(distKeyPart tcrypto.DistibutedKeyPart) (*models.DistKeyPartsInfo, error) {
+	publicKey, err := distKeyPart.DSSSharedPublic().MarshalBinary()
 	if err != nil {
 		return nil, err
 	}
 
-	dssPublicShares := dkShare.DSSPublicShares()
+	dssPublicShares := distKeyPart.DSSPublicShares()
 	pubKeySharesHex := make([]string, len(dssPublicShares))
 	for i := range dssPublicShares {
 		publicKeyShare, err := dssPublicShares[i].MarshalBinary()
@@ -86,20 +86,20 @@ func (d *DKGService) createDKModel(dkShare tcrypto.DKShare) (*models.DKSharesInf
 		pubKeySharesHex[i] = hexutil.Encode(publicKeyShare)
 	}
 
-	peerIdentities := dkShare.GetNodePubKeys()
+	peerIdentities := distKeyPart.GetNodePubKeys()
 	peerIdentitiesHex := make([]string, len(peerIdentities))
 	for i := range peerIdentities {
 		peerIdentitiesHex[i] = peerIdentities[i].String()
 	}
 
-	dkShareInfo := &models.DKSharesInfo{
-		Address:         dkShare.GetAddress().String(),
+	distKeyPartInfo := &models.DistKeyPartsInfo{
+		Address:         distKeyPart.GetAddress().String(),
 		PeerIdentities:  peerIdentitiesHex,
-		PeerIndex:       dkShare.GetIndex(),
+		PeerIndex:       distKeyPart.GetIndex(),
 		PublicKey:       hexutil.Encode(publicKey),
 		PublicKeyShares: pubKeySharesHex,
-		Threshold:       dkShare.GetT(),
+		Threshold:       distKeyPart.GetT(),
 	}
 
-	return dkShareInfo, nil
+	return distKeyPartInfo, nil
 }

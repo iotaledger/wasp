@@ -25,7 +25,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/chain"
 	"github.com/iotaledger/wasp/v2/packages/chains"
 	"github.com/iotaledger/wasp/v2/packages/daemon"
-	"github.com/iotaledger/wasp/v2/packages/dkg"
+	"github.com/iotaledger/wasp/v2/packages/distkeygen"
 	"github.com/iotaledger/wasp/v2/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/metrics"
@@ -221,11 +221,11 @@ func provide(c *dig.Container) error {
 		Chains                      *chains.Chains
 		ChainMetricsProvider        *metrics.ChainMetricsProvider
 		ChainRecordRegistryProvider registry.ChainRecordRegistryProvider
-		DKShareRegistryProvider     registry.DKShareRegistryProvider
+		DistKeyPartRegistryProvider registry.DistKeyPartRegistryProvider
 		NodeIdentityProvider        registry.NodeIdentityProvider
 		NetworkProvider             peering.NetworkProvider       `name:"networkProvider"`
 		TrustedNetworkManager       peering.TrustedNetworkManager `name:"trustedNetworkManager"`
-		Node                        *dkg.Node
+		Node                        *distkeygen.Node
 		UserManager                 *users.UserManager
 		Publisher                   *publisher.Publisher
 		NodeConn                    chain.NodeConnection
@@ -277,12 +277,12 @@ func provide(c *dig.Container) error {
 			deps.TrustedNetworkManager,
 			deps.UserManager,
 			deps.ChainRecordRegistryProvider,
-			deps.DKShareRegistryProvider,
+			deps.DistKeyPartRegistryProvider,
 			deps.NodeIdentityProvider,
 			func() *chains.Chains {
 				return deps.Chains
 			},
-			func() *dkg.Node {
+			func() *distkeygen.Node {
 				return deps.Node
 			},
 			deps.ShutdownHandler,

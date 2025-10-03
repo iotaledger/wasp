@@ -93,13 +93,13 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...BlockFactoryCallA
 	}
 
 	/*
-	   aliasOutput0ID := iotago.OutputIDFromTransactionIDAndIndex(getRandomTxID(t), 0)
-	   chainID := isc.ChainIDFromAliasID(iotago.AliasIDFromOutputID(aliasOutput0ID))
+	   anchor0ID := iotago.OutputIDFromTransactionIDAndIndex(getRandomTxID(t), 0)
+	   chainID := isc.ChainIDFromAliasID(iotago.AliasIDFromOutputID(anchor0ID))
 	   stateAddress := cryptolib.NewKeyPair().GetPublicKey().AsAddress()
 	   _ = stateAddress
 	   originCommitment := origin.L1Commitment(allmigrations.LatestSchemaVersion, chainInitParams, 0)
 
-	   	aliasOutput0 := &iotago.AliasOutput{
+	   	anchor0 := &iotago.Anchor{
 	   		Amount:        tpkg.TestTokenSupply,
 	   		AliasID:       chainID.AsAliasID(), // NOTE: not very correct: origin output's AliasID should be empty; left here to make mocking transitions easier
 	   		StateMetadata: testutil.DummyStateMetadata(originCommitment).Bytes(),
@@ -114,9 +114,9 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...BlockFactoryCallA
 	   		},
 	   	}
 
-	   aliasOutputs := make(map[state.BlockHash]*isc.StateAnchor)
-	   originOutput := isc.NewAliasOutputWithID(aliasOutput0, aliasOutput0ID)
-	   aliasOutputs[originCommitment.BlockHash()] = originOutput
+	   anchors := make(map[state.BlockHash]*isc.StateAnchor)
+	   originOutput := isc.NewAnchorWithID(anchor0, anchor0ID)
+	   anchors[originCommitment.BlockHash()] = originOutput
 	   chainStore := statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	   origin.InitChain(0, chainStore, chainInitParams, 0)
 
@@ -126,7 +126,7 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...BlockFactoryCallA
 	   		chainID:             chainID,
 	   		chainInitParams:     chainInitParams,
 	   		lastBlockCommitment: originCommitment,
-	   		anchors: 	         aliasOutputs,
+	   		anchors: 	         anchors,
 	   	}
 	*/
 }
