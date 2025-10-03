@@ -5,24 +5,42 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"reflect"
+	"strings"
 	"time"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/v2/clients"
 	"github.com/iotaledger/wasp/v2/clients/bindings/iota_sdk_ffi"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/serialization"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 )
 
+// BindingClient wraps the Rust FFI GraphQL client for IOTA blockchain interaction.
+//
+// IMPORTANT: This client uses the GraphQL API and requires endpoints that support GraphQL.
+// It works with:
+//   - Testnet: iotaconn.TestnetEndpointURL
+//   - Devnet: iotaconn.DevnetEndpointURL
+//   - Custom GraphQL endpoints
+//
+// It does NOT work with:
+//   - Local test nodes (which typically only expose JSON-RPC)
+//   - For local testing, use the regular iotaclient.Client instead
 type BindingClient struct {
 	RpcURL  string
 	qclient *iota_sdk_ffi.GraphQlClient
 }
 
+// NewBindingClient creates a new BindingClient connected to the specified GraphQL endpoint.
+// For standard networks, use iotaconn.TestnetEndpointURL or iotaconn.DevnetEndpointURL.
+// For custom endpoints, the URL should point to a GraphQL-enabled IOTA node.
 func NewBindingClient(rpcUrl string) *BindingClient {
 	var client BindingClient
 
@@ -34,7 +52,12 @@ func NewBindingClient(rpcUrl string) *BindingClient {
 	case iotaconn.DevnetEndpointURL:
 		client.qclient = iota_sdk_ffi.GraphQlClientNewDevnet()
 	default:
-		qclient, err := iota_sdk_ffi.NewGraphQlClient(rpcUrl)
+		// For custom URLs, append /graphql if not already present
+		graphqlUrl := rpcUrl
+		if !strings.HasSuffix(graphqlUrl, "/graphql") {
+			graphqlUrl = rpcUrl + "/graphql"
+		}
+		qclient, err := iota_sdk_ffi.NewGraphQlClient(graphqlUrl)
 		if err != nil {
 			panic(err)
 		}
@@ -77,6 +100,125 @@ func fromFfiDigest(d *iota_sdk_ffi.Digest) (*iotago.Digest, error) {
 	return iotago.NewDigest(d.ToBase58())
 }
 
+func fromFfiOwner(owner *iota_sdk_ffi.Owner) (*iotago.Owner, error) {
+	if owner == nil {
+		return nil, nil
+	}
+
+	result := &iotago.Owner{}
+	if owner.IsAddress() {
+		addr := owner.AsAddress()
+		iotaAddr, err := iotago.AddressFromHex(addr.ToHex())
+		if err != nil {
+			return nil, err
+		}
+		result.AddressOwner = iotaAddr
+	} else if owner.IsObject() {
+		objID := owner.AsObject()
+		iotaAddr, err := iotago.AddressFromHex(objID.ToHex())
+		if err != nil {
+			return nil, err
+		}
+		result.ObjectOwner = iotaAddr
+	} else if owner.IsShared() {
+		version := owner.AsShared()
+		result.Shared = &struct {
+			InitialSharedVersion iotago.SequenceNumber `json:"initial_shared_version"`
+		}{
+			InitialSharedVersion: iotago.SequenceNumber(version),
+		}
+	} else if owner.IsImmutable() {
+		result.Immutable = &serialization.EmptyEnum{}
+	}
+
+	return result, nil
+}
+
+func iotagoOwnerToObjectOwner(owner *iotago.Owner) iotajsonrpc.ObjectOwner {
+	if owner == nil {
+		return iotajsonrpc.ObjectOwner{}
+	}
+
+	ownerInternal := &iotajsonrpc.ObjectOwnerInternal{}
+	if owner.AddressOwner != nil {
+		ownerInternal.AddressOwner = owner.AddressOwner
+	} else if owner.ObjectOwner != nil {
+		ownerInternal.ObjectOwner = owner.ObjectOwner
+	} else if owner.Shared != nil {
+		seq := owner.Shared.InitialSharedVersion
+		ownerInternal.Shared = &struct {
+			InitialSharedVersion *iotago.SequenceNumber `json:"initial_shared_version"`
+		}{
+			InitialSharedVersion: &seq,
+		}
+	}
+
+	return iotajsonrpc.ObjectOwner{ObjectOwnerInternal: ownerInternal}
+}
+
+func toFfiTypeTag(tag *iotago.TypeTag) (*iota_sdk_ffi.TypeTag, error) {
+	if tag == nil {
+		return nil, nil
+	}
+
+	if tag.Bool != nil {
+		return iota_sdk_ffi.TypeTagNewBool(), nil
+	} else if tag.U8 != nil {
+		return iota_sdk_ffi.TypeTagNewU8(), nil
+	} else if tag.U16 != nil {
+		return iota_sdk_ffi.TypeTagNewU16(), nil
+	} else if tag.U32 != nil {
+		return iota_sdk_ffi.TypeTagNewU32(), nil
+	} else if tag.U64 != nil {
+		return iota_sdk_ffi.TypeTagNewU64(), nil
+	} else if tag.U128 != nil {
+		return iota_sdk_ffi.TypeTagNewU128(), nil
+	} else if tag.U256 != nil {
+		return iota_sdk_ffi.TypeTagNewU256(), nil
+	} else if tag.Address != nil {
+		return iota_sdk_ffi.TypeTagNewAddress(), nil
+	} else if tag.Signer != nil {
+		return iota_sdk_ffi.TypeTagNewSigner(), nil
+	} else if tag.Vector != nil {
+		innerTag, err := toFfiTypeTag(tag.Vector)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert vector inner type: %w", err)
+		}
+		return iota_sdk_ffi.TypeTagNewVector(innerTag), nil
+	} else if tag.Struct != nil {
+		// Convert struct tag
+		ffiAddr, err := toFfiAddress(tag.Struct.Address)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert struct address: %w", err)
+		}
+
+		moduleId, err := iota_sdk_ffi.NewIdentifier(string(tag.Struct.Module))
+		if err != nil {
+			return nil, fmt.Errorf("failed to create module identifier: %w", err)
+		}
+
+		nameId, err := iota_sdk_ffi.NewIdentifier(string(tag.Struct.Name))
+		if err != nil {
+			return nil, fmt.Errorf("failed to create name identifier: %w", err)
+		}
+
+		// Convert type parameters recursively
+		var typeParams []*iota_sdk_ffi.TypeTag
+		for _, param := range tag.Struct.TypeParams {
+			ffiParam, err := toFfiTypeTag(&param)
+			if err != nil {
+				return nil, fmt.Errorf("failed to convert type parameter: %w", err)
+			}
+			typeParams = append(typeParams, ffiParam)
+		}
+
+		structTag := iota_sdk_ffi.NewStructTag(ffiAddr, moduleId, nameId, typeParams)
+		return iota_sdk_ffi.TypeTagNewStruct(structTag), nil
+	}
+
+	return nil, fmt.Errorf("unknown TypeTag variant")
+}
+
 func mapFfiObjectToIotaResponse(obj **iota_sdk_ffi.Object) (*iotajsonrpc.IotaObjectResponse, error) {
 	if obj == nil || *obj == nil {
 		return &iotajsonrpc.IotaObjectResponse{}, nil
@@ -111,6 +253,397 @@ func mapFfiObjectToIotaResponse(obj **iota_sdk_ffi.Object) (*iotajsonrpc.IotaObj
 		StorageRebate:       iotajsonrpc.NewBigInt(o.StorageRebate()),
 	}
 	return &iotajsonrpc.IotaObjectResponse{Data: data}, nil
+}
+
+// formatExecutionError formats an ExecutionError with type information
+func formatExecutionError(err iota_sdk_ffi.ExecutionError) string {
+	switch e := err.(type) {
+	case iota_sdk_ffi.ExecutionErrorUnusedValueWithoutDrop:
+		return fmt.Sprintf("UnusedValueWithoutDrop(result: %d, subresult: %d)", e.Result, e.Subresult)
+	case iota_sdk_ffi.ExecutionErrorInsufficientGas:
+		return "InsufficientGas"
+	case iota_sdk_ffi.ExecutionErrorInvalidGasObject:
+		return "InvalidGasObject"
+	case iota_sdk_ffi.ExecutionErrorInvariantViolation:
+		return "InvariantViolation"
+	case iota_sdk_ffi.ExecutionErrorFeatureNotYetSupported:
+		return "FeatureNotYetSupported"
+	case iota_sdk_ffi.ExecutionErrorObjectTooBig:
+		return fmt.Sprintf("ObjectTooBig(size: %d, max: %d)", e.ObjectSize, e.MaxObjectSize)
+	case iota_sdk_ffi.ExecutionErrorPackageTooBig:
+		return fmt.Sprintf("PackageTooBig(size: %d, max: %d)", e.ObjectSize, e.MaxObjectSize)
+	case iota_sdk_ffi.ExecutionErrorMoveAbort:
+		return fmt.Sprintf("MoveAbort(location: %+v, code: %d)", e.Location, e.Code)
+	case iota_sdk_ffi.ExecutionErrorCommandArgument:
+		return fmt.Sprintf("CommandArgument(argument: %d, kind: %+v)", e.Argument, e.Kind)
+	case iota_sdk_ffi.ExecutionErrorTypeArgument:
+		return fmt.Sprintf("TypeArgument(typeArgument: %d, kind: %+v)", e.TypeArgument, e.Kind)
+	case iota_sdk_ffi.ExecutionErrorInvalidPublicFunctionReturnType:
+		return fmt.Sprintf("InvalidPublicFunctionReturnType(index: %d)", e.Index)
+	default:
+		return fmt.Sprintf("%T: %+v", err, err)
+	}
+}
+
+// convertTransactionEffects converts FFI TransactionEffects to IotaTransactionBlockEffects
+func convertTransactionEffects(effects *iota_sdk_ffi.TransactionEffects) (*iotajsonrpc.IotaTransactionBlockEffects, error) {
+	if effects == nil {
+		return nil, nil
+	}
+
+	if !effects.IsV1() {
+		return nil, fmt.Errorf("unsupported TransactionEffects version")
+	}
+
+	v1 := effects.AsV1()
+	// Convert execution status
+	status := iotajsonrpc.ExecutionStatus{}
+	switch s := v1.Status.(type) {
+	case iota_sdk_ffi.ExecutionStatusSuccess:
+		status.Status = "success"
+	case iota_sdk_ffi.ExecutionStatusFailure:
+		status.Status = "failure"
+		// Extract error details from failure with proper type information
+		if s.Error != nil {
+			status.Error = formatExecutionError(s.Error)
+		}
+	default:
+		status.Status = "unknown"
+	}
+
+	// Convert gas cost summary
+	gasUsed := iotajsonrpc.GasCostSummary{
+		ComputationCost:         iotajsonrpc.NewBigInt(v1.GasUsed.ComputationCost),
+		StorageCost:             iotajsonrpc.NewBigInt(v1.GasUsed.StorageCost),
+		StorageRebate:           iotajsonrpc.NewBigInt(v1.GasUsed.StorageRebate),
+		NonRefundableStorageFee: iotajsonrpc.NewBigInt(v1.GasUsed.NonRefundableStorageFee),
+	}
+
+	// Convert transaction digest
+	var txDigest iotago.TransactionDigest
+	if v1.TransactionDigest != nil {
+		d, err := fromFfiDigest(v1.TransactionDigest)
+		if err == nil && d != nil {
+			txDigest = *d
+		}
+	}
+
+	// Convert dependencies
+	var dependencies []iotago.TransactionDigest
+	for _, dep := range v1.Dependencies {
+		if d, err := fromFfiDigest(dep); err == nil && d != nil {
+			dependencies = append(dependencies, *d)
+		}
+	}
+
+	// Convert events digest
+	var eventsDigest *iotago.TransactionEventsDigest
+	if v1.EventsDigest != nil && *v1.EventsDigest != nil {
+		if d, err := fromFfiDigest(*v1.EventsDigest); err == nil && d != nil {
+			eventsDigest = (*iotago.TransactionEventsDigest)(d)
+		}
+	}
+
+	// Convert ChangedObjects to object change fields
+	var created []iotajsonrpc.OwnedObjectRef
+	var mutated []iotajsonrpc.OwnedObjectRef
+	var unwrapped []iotajsonrpc.OwnedObjectRef
+	var deleted []iotajsonrpc.IotaObjectRef
+	var unwrappedThenDeleted []iotajsonrpc.IotaObjectRef
+	var wrapped []iotajsonrpc.IotaObjectRef
+	var gasObject iotajsonrpc.OwnedObjectRef
+
+	for i, changedObj := range v1.ChangedObjects {
+		objID, err := fromFfiObjectID(changedObj.ObjectId)
+		if err != nil || objID == nil {
+			continue
+		}
+
+		// Determine object state changes
+		inputIsMissing := false
+		outputIsMissing := false
+		var outputDigest *iotago.Digest
+		var outputOwner *iotago.Owner
+
+		// Check input state
+		switch changedObj.InputState.(type) {
+		case iota_sdk_ffi.ObjectInMissing:
+			inputIsMissing = true
+		case iota_sdk_ffi.ObjectInData:
+			// Input exists
+		}
+
+		// Check output state
+		switch output := changedObj.OutputState.(type) {
+		case iota_sdk_ffi.ObjectOutMissing:
+			outputIsMissing = true
+		case iota_sdk_ffi.ObjectOutObjectWrite:
+			if d, err := fromFfiDigest(output.Digest); err == nil && d != nil {
+				outputDigest = d
+			}
+			if o, err := fromFfiOwner(output.Owner); err == nil && o != nil {
+				outputOwner = o
+			}
+		case iota_sdk_ffi.ObjectOutPackageWrite:
+			// Package writes are treated similarly to object writes
+			if d, err := fromFfiDigest(output.Digest); err == nil && d != nil {
+				outputDigest = d
+			}
+		}
+
+		// Build object reference
+		objRef := iotajsonrpc.IotaObjectRef{
+			ObjectID: objID,
+			Version:  v1.LamportVersion,
+		}
+		if outputDigest != nil {
+			objRef.Digest = *outputDigest
+		}
+
+		ownedObjRef := iotajsonrpc.OwnedObjectRef{
+			Reference: objRef,
+		}
+		if outputOwner != nil {
+			ownedObjRef.Owner = serialization.TagJson[iotago.Owner]{Data: *outputOwner}
+		}
+
+		// Categorize based on state transitions
+		switch changedObj.IdOperation {
+		case iota_sdk_ffi.IdOperationCreated:
+			created = append(created, ownedObjRef)
+		case iota_sdk_ffi.IdOperationDeleted:
+			if inputIsMissing {
+				unwrappedThenDeleted = append(unwrappedThenDeleted, objRef)
+			} else {
+				deleted = append(deleted, objRef)
+			}
+		case iota_sdk_ffi.IdOperationNone:
+			if inputIsMissing && !outputIsMissing {
+				unwrapped = append(unwrapped, ownedObjRef)
+			} else if !inputIsMissing && outputIsMissing {
+				wrapped = append(wrapped, objRef)
+			} else if !inputIsMissing && !outputIsMissing {
+				mutated = append(mutated, ownedObjRef)
+			}
+		}
+
+		// Check if this is the gas object
+		if v1.GasObjectIndex != nil && *v1.GasObjectIndex == uint32(i) {
+			gasObject = ownedObjRef
+		}
+	}
+
+	// Build the V1 effects
+	effectsV1 := &iotajsonrpc.IotaTransactionBlockEffectsV1{
+		Status:               status,
+		ExecutedEpoch:        iotajsonrpc.NewBigInt(v1.Epoch),
+		GasUsed:              gasUsed,
+		TransactionDigest:    txDigest,
+		Dependencies:         dependencies,
+		EventsDigest:         eventsDigest,
+		Created:              created,
+		Mutated:              mutated,
+		Unwrapped:            unwrapped,
+		Deleted:              deleted,
+		UnwrappedThenDeleted: unwrappedThenDeleted,
+		Wrapped:              wrapped,
+		GasObject:            gasObject,
+	}
+
+	return &iotajsonrpc.IotaTransactionBlockEffects{
+		V1: effectsV1,
+	}, nil
+}
+
+// convertChangedObjectsToObjectChanges converts FFI TransactionEffects ChangedObjects to ObjectChanges
+func convertChangedObjectsToObjectChanges(effects *iota_sdk_ffi.TransactionEffects) ([]serialization.TagJson[iotajsonrpc.ObjectChange], error) {
+	if effects == nil {
+		return nil, nil
+	}
+
+	if !effects.IsV1() {
+		return nil, fmt.Errorf("unsupported TransactionEffects version")
+	}
+
+	v1 := effects.AsV1()
+	var objectChanges []serialization.TagJson[iotajsonrpc.ObjectChange]
+
+	// Note: Sender address is not available in TransactionEffects.
+	// We'll create a zero address as a placeholder.
+	zeroAddr := iotago.Address{}
+	for _, changedObj := range v1.ChangedObjects {
+		objID, err := fromFfiObjectID(changedObj.ObjectId)
+		if err != nil || objID == nil {
+			continue
+		}
+
+		// Determine object state changes
+		inputIsMissing := false
+		outputIsMissing := false
+		isPackageWrite := false
+		var outputDigest *iotago.Digest
+		var outputOwner *iotago.Owner
+		var outputVersion uint64
+
+		// Check input state
+		switch changedObj.InputState.(type) {
+		case iota_sdk_ffi.ObjectInMissing:
+			inputIsMissing = true
+		case iota_sdk_ffi.ObjectInData:
+			// Input exists
+		}
+
+		// Check output state
+		switch output := changedObj.OutputState.(type) {
+		case iota_sdk_ffi.ObjectOutMissing:
+			outputIsMissing = true
+		case iota_sdk_ffi.ObjectOutObjectWrite:
+			if d, err := fromFfiDigest(output.Digest); err == nil && d != nil {
+				outputDigest = d
+			}
+			if o, err := fromFfiOwner(output.Owner); err == nil && o != nil {
+				outputOwner = o
+			}
+		case iota_sdk_ffi.ObjectOutPackageWrite:
+			isPackageWrite = true
+			outputVersion = output.Version
+			if d, err := fromFfiDigest(output.Digest); err == nil && d != nil {
+				outputDigest = d
+			}
+		}
+
+		// Create ObjectChange based on state transitions
+		var change iotajsonrpc.ObjectChange
+
+		switch changedObj.IdOperation {
+		case iota_sdk_ffi.IdOperationCreated:
+			if isPackageWrite && !outputIsMissing && outputDigest != nil {
+				// Package creation -> Published
+				change.Published = &struct {
+					PackageId iotago.ObjectID     `json:"packageId"`
+					Version   *iotajsonrpc.BigInt `json:"version"`
+					Digest    iotago.ObjectDigest `json:"digest"`
+					Nodules   []string            `json:"nodules"`
+				}{
+					PackageId: *objID,
+					Version:   iotajsonrpc.NewBigInt(outputVersion),
+					Digest:    *outputDigest,
+					Nodules:   []string{}, // TODO: Extract module names if available
+				}
+			} else if !outputIsMissing && outputDigest != nil && outputOwner != nil {
+				change.Created = &struct {
+					Sender     iotago.Address          `json:"sender"`
+					Owner      iotajsonrpc.ObjectOwner `json:"owner"`
+					ObjectType string                  `json:"objectType"`
+					ObjectID   iotago.ObjectID         `json:"objectId"`
+					Version    *iotajsonrpc.BigInt     `json:"version"`
+					Digest     iotago.ObjectDigest     `json:"digest"`
+				}{
+					Sender:     zeroAddr,
+					Owner:      iotagoOwnerToObjectOwner(outputOwner),
+					ObjectType: "", // TODO: Get object type if available
+					ObjectID:   *objID,
+					Version:    iotajsonrpc.NewBigInt(v1.LamportVersion),
+					Digest:     *outputDigest,
+				}
+			}
+		case iota_sdk_ffi.IdOperationDeleted:
+			if inputIsMissing {
+				// UnwrappedThenDeleted - not represented in ObjectChange
+				continue
+			} else {
+				change.Deleted = &struct {
+					Sender     iotago.Address      `json:"sender"`
+					ObjectType string              `json:"objectType"`
+					ObjectID   iotago.ObjectID     `json:"objectId"`
+					Version    *iotajsonrpc.BigInt `json:"version"`
+				}{
+					Sender:     zeroAddr,
+					ObjectType: "",
+					ObjectID:   *objID,
+					Version:    iotajsonrpc.NewBigInt(v1.LamportVersion),
+				}
+			}
+		case iota_sdk_ffi.IdOperationNone:
+			if !inputIsMissing && outputIsMissing {
+				change.Wrapped = &struct {
+					Sender     iotago.Address      `json:"sender"`
+					ObjectType string              `json:"objectType"`
+					ObjectID   iotago.ObjectID     `json:"objectId"`
+					Version    *iotajsonrpc.BigInt `json:"version"`
+				}{
+					Sender:     zeroAddr,
+					ObjectType: "",
+					ObjectID:   *objID,
+					Version:    iotajsonrpc.NewBigInt(v1.LamportVersion),
+				}
+			} else if !inputIsMissing && !outputIsMissing && outputDigest != nil && outputOwner != nil {
+				change.Mutated = &struct {
+					Sender          iotago.Address          `json:"sender"`
+					Owner           iotajsonrpc.ObjectOwner `json:"owner"`
+					ObjectType      string                  `json:"objectType"`
+					ObjectID        iotago.ObjectID         `json:"objectId"`
+					Version         *iotajsonrpc.BigInt     `json:"version"`
+					PreviousVersion *iotajsonrpc.BigInt     `json:"previousVersion"`
+					Digest          iotago.ObjectDigest     `json:"digest"`
+				}{
+					Sender:          zeroAddr,
+					Owner:           iotagoOwnerToObjectOwner(outputOwner),
+					ObjectType:      "",
+					ObjectID:        *objID,
+					Version:         iotajsonrpc.NewBigInt(v1.LamportVersion),
+					PreviousVersion: iotajsonrpc.NewBigInt(v1.LamportVersion - 1), // Approximation
+					Digest:          *outputDigest,
+				}
+			}
+		}
+		// Only add non-empty changes
+		if change.Created != nil || change.Deleted != nil || change.Mutated != nil || change.Wrapped != nil || change.Published != nil {
+			objectChanges = append(objectChanges, serialization.TagJson[iotajsonrpc.ObjectChange]{Data: change})
+		}
+	}
+
+	return objectChanges, nil
+}
+
+// convertTransactionEffectsToBalanceChanges converts FFI TransactionEffects to BalanceChanges
+//
+// CURRENT LIMITATION: This function requires FFI enhancement to work properly.
+//
+// The Rust SDK FFI needs to add a method like:
+//   - `TransactionEffects.GetBalanceChanges() -> Vec<BalanceChange>`
+//   - or `DryRunResult.GetBalanceChanges() -> Vec<BalanceChange>`
+//
+// Why the current approach doesn't work:
+//   - For dry runs: Changed objects don't exist on-chain yet, so we can't query their balances
+//   - DryRunResult.Results[] contains BCS-encoded coin data with balances
+//   - BUT it's indexed by TransactionArgument (input/result indices), not ObjectId
+//   - Mapping TransactionArgument -> ObjectId requires complex transaction structure analysis
+//
+// Recommended FFI enhancement:
+//
+//	Add to iota_sdk_ffi.udl:
+//	  interface TransactionEffects {
+//	    sequence<BalanceChange> balance_changes();
+//	  };
+//
+//	This would calculate balance changes server-side where all data is available.
+func (c *BindingClient) convertTransactionEffectsToBalanceChanges(ctx context.Context, effects *iota_sdk_ffi.TransactionEffects, dryRunResult *iota_sdk_ffi.DryRunResult) ([]iotajsonrpc.BalanceChange, error) {
+	// FUNDAMENTAL LIMITATION: Balance changes cannot be calculated without FFI enhancement
+	//
+	// The problem:
+	// 1. For dry runs: Objects don't exist on-chain yet, so we can't query their balances
+	// 2. DryRunResult contains balance data in mutations[], BUT:
+	//    - Mutations are indexed by TransactionArgument (input[0], result[1][0], etc.)
+	//    - ChangedObjects are indexed by ObjectId
+	//    - There's no mapping between TransactionArgument and ObjectId
+	//
+	// The ONLY solution is to add an FFI method that calculates balance changes server-side.
+	// See FFI_BALANCE_CHANGES_ENHANCEMENT.md for the specification.
+	//
+	// Tests will fail until FFI enhancement is implemented in the upstream iota-rust-sdk.
+
+	return []iotajsonrpc.BalanceChange{}, nil
 }
 
 func (c *BindingClient) GetDynamicFieldObject(ctx context.Context, req iotaclient.GetDynamicFieldObjectRequest) (*iotajsonrpc.IotaObjectResponse, error) {
@@ -151,12 +684,88 @@ func (c *BindingClient) GetOwnedObjects(ctx context.Context, req iotaclient.GetO
 }
 
 func (c *BindingClient) QueryEvents(ctx context.Context, req iotaclient.QueryEventsRequest) (*iotajsonrpc.EventPage, error) {
-	ep, err := c.qclient.Events(nil, nil)
+	// Convert the request filter to FFI EventFilter
+	var ffiFilter *iota_sdk_ffi.EventFilter
+	if req.Query != nil {
+		ffiFilter = &iota_sdk_ffi.EventFilter{}
+
+		// Map Transaction digest
+		if req.Query.Transaction != nil {
+			txDigest := req.Query.Transaction.String()
+			ffiFilter.TransactionDigest = &txDigest
+		}
+
+		// Map Sender address
+		if req.Query.Sender != nil {
+			ffiAddr, err := toFfiAddress(req.Query.Sender)
+			if err != nil {
+				return nil, fmt.Errorf("failed to convert sender address: %w", err)
+			}
+			ffiFilter.Sender = &ffiAddr
+		}
+
+		// Map MoveEventType to EventType
+		if req.Query.MoveEventType != nil {
+			eventType := req.Query.MoveEventType.String()
+			ffiFilter.EventType = &eventType
+		}
+
+		// Map MoveModule
+		if req.Query.MoveModule != nil {
+			module := fmt.Sprintf("%s::%s", req.Query.MoveModule.Package.String(), req.Query.MoveModule.Module)
+			ffiFilter.EmittingModule = &module
+		}
+	}
+
+	ep, err := c.qclient.Events(ffiFilter, nil)
 	if err.(*iota_sdk_ffi.SdkFfiError) != nil {
 		return nil, fmt.Errorf("GraphQL Events failed: %w", err)
 	}
-	// Not mapping individual events; return page info only.
-	return &iotajsonrpc.EventPage{HasNextPage: ep.PageInfo.HasNextPage}, nil
+
+	// Map the events to the expected format
+	events := make([]iotajsonrpc.IotaEvent, 0, len(ep.Data))
+	for _, event := range ep.Data {
+		iotaEvent := iotajsonrpc.IotaEvent{
+			ParsedJson: []byte(event.Json),
+		}
+
+		// Map package ID
+		if event.PackageId != nil {
+			pkgID, err := fromFfiObjectID(event.PackageId)
+			if err != nil {
+				return nil, fmt.Errorf("failed to convert package ID: %w", err)
+			}
+			iotaEvent.PackageId = pkgID
+		}
+
+		// Map transaction module
+		iotaEvent.TransactionModule = iotago.Identifier(event.Module)
+
+		// Map sender
+		if event.Sender != nil {
+			sender, err := iotago.AddressFromHex(event.Sender.ToHex())
+			if err != nil {
+				return nil, fmt.Errorf("failed to convert sender address: %w", err)
+			}
+			iotaEvent.Sender = sender
+		}
+
+		// Map type
+		if event.Type != "" {
+			structTag, err := iotago.StructTagFromString(event.Type)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse struct tag: %w", err)
+			}
+			iotaEvent.Type = structTag
+		}
+
+		events = append(events, iotaEvent)
+	}
+
+	return &iotajsonrpc.EventPage{
+		Data:        events,
+		HasNextPage: ep.PageInfo.HasNextPage,
+	}, nil
 }
 
 func (c *BindingClient) QueryTransactionBlocks(ctx context.Context, req iotaclient.QueryTransactionBlocksRequest) (*iotajsonrpc.TransactionBlocksPage, error) {
@@ -176,7 +785,116 @@ func (c *BindingClient) DevInspectTransactionBlock(ctx context.Context, req iota
 }
 
 func (c *BindingClient) DryRunTransaction(ctx context.Context, txDataBytes iotago.Base64Data) (*iotajsonrpc.DryRunTransactionBlockResponse, error) {
-	return nil, errors.New("DryRunTransaction not supported by FFI bindings yet")
+	if len(txDataBytes) == 0 {
+		return nil, fmt.Errorf("transaction data bytes are required")
+	}
+
+	// Unmarshal transaction data
+	txData, err := bcs.Unmarshal[iotago.TransactionData](txDataBytes.Data())
+	if err != nil {
+		return nil, fmt.Errorf("can't unmarshal transaction data: %w", err)
+	}
+
+	// Convert to FFI Transaction
+	tx, err := convertTransactionDataToTransaction(&txData)
+	if err != nil {
+		return nil, fmt.Errorf("can't convert to Transaction: %w", err)
+	}
+
+	// Call DryRunTx
+	skipChecks := false
+	dryRunResult, err := c.qclient.DryRunTx(tx, &skipChecks)
+	if err != nil {
+		if sdkErr, ok := err.(*iota_sdk_ffi.SdkFfiError); ok && sdkErr != nil {
+			return nil, fmt.Errorf("failed to dry run tx: %w", err)
+		}
+	}
+
+	// Build response
+	response := &iotajsonrpc.DryRunTransactionBlockResponse{}
+
+	// Convert effects
+	if dryRunResult.Effects != nil && *dryRunResult.Effects != nil {
+		convertedEffects, err := convertTransactionEffects(*dryRunResult.Effects)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert transaction effects: %w", err)
+		}
+		response.Effects = serialization.TagJson[iotajsonrpc.IotaTransactionBlockEffects]{Data: *convertedEffects}
+
+		// Convert object changes
+		objectChanges, err := convertChangedObjectsToObjectChanges(*dryRunResult.Effects)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert object changes: %w", err)
+		}
+		response.ObjectChanges = objectChanges
+
+		// Convert balance changes
+		balanceChanges, err := c.convertTransactionEffectsToBalanceChanges(ctx, *dryRunResult.Effects, &dryRunResult)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert balance changes: %w", err)
+		}
+		response.BalanceChanges = balanceChanges
+	}
+
+	// TODO: Convert events if needed
+	// response.Events = ...
+	// response.Input = ... (would need conversion from iotago types to iotajsonrpc types)
+
+	return response, nil
+}
+
+// DryRunTransactionRaw performs a dry run and returns the raw FFI types
+//
+// This method exposes the underlying iota_sdk_ffi.DryRunResult directly,
+// allowing you to access all the raw data including:
+// - dryRunResult.Results[] - contains BCS-encoded mutation data with coin balances
+// - dryRunResult.Effects - the transaction effects
+// - dryRunResult.Transaction - the signed transaction
+//
+// This is useful for:
+// 1. Debugging and exploring the raw FFI data structure
+// 2. Implementing custom balance change extraction logic
+// 3. Accessing data not exposed through the standard DryRunTransaction method
+//
+// Example usage:
+//
+//	rawResult, err := client.DryRunTransactionRaw(ctx, txDataBytes)
+//	if err != nil { ... }
+//
+//	// Access raw mutation data
+//	for _, result := range rawResult.Results {
+//	    for _, mutRef := range result.MutatedReferences {
+//	        // mutRef.Bcs contains the BCS-encoded coin data
+//	        // mutRef.Input is the TransactionArgument (e.g., Input{Ix: 0})
+//	    }
+//	}
+func (c *BindingClient) DryRunTransactionRaw(ctx context.Context, txDataBytes iotago.Base64Data) (*iota_sdk_ffi.DryRunResult, error) {
+	if len(txDataBytes) == 0 {
+		return nil, fmt.Errorf("transaction data bytes are required")
+	}
+
+	// Unmarshal transaction data
+	txData, err := bcs.Unmarshal[iotago.TransactionData](txDataBytes.Data())
+	if err != nil {
+		return nil, fmt.Errorf("can't unmarshal transaction data: %w", err)
+	}
+
+	// Convert to FFI Transaction
+	tx, err := convertTransactionDataToTransaction(&txData)
+	if err != nil {
+		return nil, fmt.Errorf("can't convert to Transaction: %w", err)
+	}
+
+	// Call DryRunTx and return the raw result
+	skipChecks := false
+	dryRunResult, err := c.qclient.DryRunTx(tx, &skipChecks)
+	if err != nil {
+		if sdkErr, ok := err.(*iota_sdk_ffi.SdkFfiError); ok && sdkErr != nil {
+			return nil, fmt.Errorf("failed to dry run tx: %w", err)
+		}
+	}
+
+	return &dryRunResult, nil
 }
 
 func (c *BindingClient) ExecuteTransactionBlock(ctx context.Context, req iotaclient.ExecuteTransactionBlockRequest) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
@@ -255,17 +973,16 @@ func (c *BindingClient) BatchTransaction(ctx context.Context, req iotaclient.Bat
 		return nil, fmt.Errorf("signer is required")
 	}
 
-	builder := iota_sdk_ffi.NewTransactionBuilder()
-
 	// Set sender
 	senderAddr, err := toFfiAddress(req.Signer)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert sender address: %w", err)
 	}
-	builder.SetSender(senderAddr)
+
+	builder := iota_sdk_ffi.TransactionBuilderInit(senderAddr, c.qclient)
 
 	// Set gas budget
-	builder.SetGasBudget(req.GasBudget)
+	builder = builder.GasBudget(req.GasBudget)
 
 	// Add gas coins
 	if req.Gas != nil {
@@ -278,19 +995,14 @@ func (c *BindingClient) BatchTransaction(ctx context.Context, req iotaclient.Bat
 			return nil, fmt.Errorf("gas object not found")
 		}
 
-		gasRef := &iotago.ObjectRef{
-			ObjectID: gasObj.Data.ObjectID,
-			Version:  gasObj.Data.Version.Uint64(),
-			Digest:   gasObj.Data.Digest,
-		}
-		gasInput, err := convertObjectRefToUnresolvedInput(gasRef)
+		ffiObjID, err := toFfiObjectID(gasObj.Data.ObjectID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert gas coin: %w", err)
 		}
-		builder.AddGasObjects([]*iota_sdk_ffi.UnresolvedInput{gasInput})
+		builder = builder.Gas(ffiObjID)
 	} else {
 		// Find suitable gas coins
-		err := c.addGasCoinsToBuilder(ctx, builder, req.Signer, req.GasBudget, 0)
+		builder, err = c.addGasCoinsToBuilder(ctx, builder, req.Signer, req.GasBudget, 0)
 		if err != nil {
 			return nil, fmt.Errorf("failed to add gas coins: %w", err)
 		}
@@ -319,7 +1031,7 @@ func (c *BindingClient) BatchTransaction(ctx context.Context, req iotaclient.Bat
 				return nil, fmt.Errorf("MoveCall missing function")
 			}
 
-			// Build Function
+			// Build Function parameters
 			packageAddr, err := iota_sdk_ffi.AddressFromHex(pkg)
 			if err != nil {
 				return nil, fmt.Errorf("failed to convert package address: %w", err)
@@ -335,21 +1047,33 @@ func (c *BindingClient) BatchTransaction(ctx context.Context, req iotaclient.Bat
 				return nil, fmt.Errorf("failed to create function identifier: %w", err)
 			}
 
-			moveFunction := iota_sdk_ffi.Function{
-				Package:  packageAddr,
-				Module:   moduleId,
-				Function: functionId,
-				TypeArgs: []*iota_sdk_ffi.TypeTag{}, // TODO: Handle type args
+			// Parse type arguments if provided
+			var typeArgs []*iota_sdk_ffi.TypeTag
+			if typeArgsParam, ok := txParam["typeArguments"].([]interface{}); ok {
+				for _, typeArgInterface := range typeArgsParam {
+					typeArgStr, ok := typeArgInterface.(string)
+					if !ok {
+						return nil, fmt.Errorf("type argument must be a string")
+					}
+					iotagoTypeTag, err := iotago.TypeTagFromString(typeArgStr)
+					if err != nil {
+						return nil, fmt.Errorf("failed to parse type argument %q: %w", typeArgStr, err)
+					}
+					ffiTypeTag, err := toFfiTypeTag(iotagoTypeTag)
+					if err != nil {
+						return nil, fmt.Errorf("failed to convert type argument %q: %w", typeArgStr, err)
+					}
+					typeArgs = append(typeArgs, ffiTypeTag)
+				}
 			}
 
 			// Convert arguments (simplified - real implementation would be more complex)
-			var args []*iota_sdk_ffi.Argument
+			var args []*iota_sdk_ffi.PtbArgument
 			if argsParam, ok := txParam["arguments"].([]interface{}); ok {
 				for _, arg := range argsParam {
 					switch v := arg.(type) {
 					case string:
-						pureInput := iota_sdk_ffi.UnresolvedInputNewPure([]byte(v))
-						args = append(args, builder.Input(pureInput))
+						args = append(args, iota_sdk_ffi.PtbArgumentString(v))
 					default:
 						// For object references, this would need more complex handling
 						return nil, fmt.Errorf("unsupported argument type in batch transaction")
@@ -357,7 +1081,7 @@ func (c *BindingClient) BatchTransaction(ctx context.Context, req iotaclient.Bat
 				}
 			}
 
-			builder.MoveCall(moveFunction, args)
+			builder = builder.MoveCall(packageAddr, moduleId, functionId, args, typeArgs, nil)
 
 		case "TransferObjects":
 			// Handle transfer objects command (simplified)
@@ -378,7 +1102,7 @@ func (c *BindingClient) BatchTransaction(ctx context.Context, req iotaclient.Bat
 
 	// Finish the transaction to get bytes
 	tx, err := builder.Finish()
-	if err != nil {
+	if err.(*iota_sdk_ffi.SdkFfiError) != nil {
 		return nil, fmt.Errorf("failed to finish transaction: %w", err)
 	}
 
@@ -400,18 +1124,17 @@ func (c *BindingClient) MergeCoins(ctx context.Context, req iotaclient.MergeCoin
 		return nil, fmt.Errorf("signer is required")
 	}
 
-	builder := iota_sdk_ffi.NewTransactionBuilder()
-
 	// Set sender
 	senderAddr, err := toFfiAddress(req.Signer)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert sender address: %w", err)
 	}
-	builder.SetSender(senderAddr)
+
+	builder := iota_sdk_ffi.TransactionBuilderInit(senderAddr, c.qclient)
 
 	// Set gas budget if provided
 	if req.GasBudget != nil {
-		builder.SetGasBudget(req.GasBudget.Uint64())
+		builder = builder.GasBudget(req.GasBudget.Uint64())
 	}
 
 	// Add gas coin if specified, otherwise find suitable gas coins
@@ -425,23 +1148,18 @@ func (c *BindingClient) MergeCoins(ctx context.Context, req iotaclient.MergeCoin
 			return nil, fmt.Errorf("gas object not found")
 		}
 
-		gasRef := &iotago.ObjectRef{
-			ObjectID: gasObj.Data.ObjectID,
-			Version:  gasObj.Data.Version.Uint64(),
-			Digest:   gasObj.Data.Digest,
-		}
-		gasInput, err := convertObjectRefToUnresolvedInput(gasRef)
+		ffiObjID, err := toFfiObjectID(gasObj.Data.ObjectID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert gas coin: %w", err)
 		}
-		builder.AddGasObjects([]*iota_sdk_ffi.UnresolvedInput{gasInput})
+		builder = builder.Gas(ffiObjID)
 	} else {
 		// Find suitable gas coins
 		gasBudget := uint64(1000000) // default gas budget
 		if req.GasBudget != nil {
 			gasBudget = req.GasBudget.Uint64()
 		}
-		err := c.addGasCoinsToBuilder(ctx, builder, req.Signer, gasBudget, 0)
+		builder, err = c.addGasCoinsToBuilder(ctx, builder, req.Signer, gasBudget, 0)
 		if err != nil {
 			return nil, fmt.Errorf("failed to add gas coins: %w", err)
 		}
@@ -456,16 +1174,10 @@ func (c *BindingClient) MergeCoins(ctx context.Context, req iotaclient.MergeCoin
 		return nil, fmt.Errorf("primary coin object not found")
 	}
 
-	primaryRef := &iotago.ObjectRef{
-		ObjectID: primaryObj.Data.ObjectID,
-		Version:  primaryObj.Data.Version.Uint64(),
-		Digest:   primaryObj.Data.Digest,
-	}
-	primaryInput, err := convertObjectRefToUnresolvedInput(primaryRef)
+	primaryObjID, err := toFfiObjectID(primaryObj.Data.ObjectID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert primary coin: %w", err)
 	}
-	primaryArg := builder.Input(primaryInput)
 
 	// Get coin to merge object
 	coinToMergeObj, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: req.CoinToMerge})
@@ -476,23 +1188,17 @@ func (c *BindingClient) MergeCoins(ctx context.Context, req iotaclient.MergeCoin
 		return nil, fmt.Errorf("coin to merge object not found")
 	}
 
-	coinToMergeRef := &iotago.ObjectRef{
-		ObjectID: coinToMergeObj.Data.ObjectID,
-		Version:  coinToMergeObj.Data.Version.Uint64(),
-		Digest:   coinToMergeObj.Data.Digest,
-	}
-	coinToMergeInput, err := convertObjectRefToUnresolvedInput(coinToMergeRef)
+	coinToMergeObjID, err := toFfiObjectID(coinToMergeObj.Data.ObjectID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert coin to merge: %w", err)
 	}
-	coinToMergeArg := builder.Input(coinToMergeInput)
 
 	// Add merge coins command
-	builder.MergeCoins(primaryArg, []*iota_sdk_ffi.Argument{coinToMergeArg})
+	builder = builder.MergeCoins(primaryObjID, []*iota_sdk_ffi.ObjectId{coinToMergeObjID})
 
 	// Finish the transaction to get bytes
 	tx, err := builder.Finish()
-	if err != nil {
+	if err.(*iota_sdk_ffi.SdkFfiError) != nil {
 		return nil, fmt.Errorf("failed to finish transaction: %w", err)
 	}
 
@@ -517,18 +1223,17 @@ func (c *BindingClient) MoveCall(ctx context.Context, req iotaclient.MoveCallReq
 		return nil, fmt.Errorf("package ID is required")
 	}
 
-	builder := iota_sdk_ffi.NewTransactionBuilder()
-
 	// Set sender
 	senderAddr, err := toFfiAddress(req.Signer)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert sender address: %w", err)
 	}
-	builder.SetSender(senderAddr)
+
+	builder := iota_sdk_ffi.TransactionBuilderInit(senderAddr, c.qclient)
 
 	// Set gas budget if provided
 	if req.GasBudget != nil {
-		builder.SetGasBudget(req.GasBudget.Uint64())
+		builder = builder.GasBudget(req.GasBudget.Uint64())
 	}
 
 	// Add gas coins
@@ -542,27 +1247,32 @@ func (c *BindingClient) MoveCall(ctx context.Context, req iotaclient.MoveCallReq
 			return nil, fmt.Errorf("gas object not found")
 		}
 
-		gasRef := &iotago.ObjectRef{
-			ObjectID: gasObj.Data.ObjectID,
-			Version:  gasObj.Data.Version.Uint64(),
-			Digest:   gasObj.Data.Digest,
-		}
-		gasInput, err := convertObjectRefToUnresolvedInput(gasRef)
+		ffiObjID, err := toFfiObjectID(gasObj.Data.ObjectID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert gas coin: %w", err)
 		}
-		builder.AddGasObjects([]*iota_sdk_ffi.UnresolvedInput{gasInput})
+		builder = builder.Gas(ffiObjID)
 	} else {
 		// Find suitable gas coins
 		gasBudget := uint64(1000000) // default gas budget
 		if req.GasBudget != nil {
 			gasBudget = req.GasBudget.Uint64()
 		}
-		err := c.addGasCoinsToBuilder(ctx, builder, req.Signer, gasBudget, 0)
+		builder, err = c.addGasCoinsToBuilder(ctx, builder, req.Signer, gasBudget, 0)
 		if err != nil {
 			return nil, fmt.Errorf("failed to add gas coins: %w", err)
 		}
 	}
+
+	gasPrice, err := c.qclient.ReferenceGasPrice(nil) // Use current epoch
+	if err.(*iota_sdk_ffi.SdkFfiError) != nil {
+		return nil, fmt.Errorf("GraphQL ReferenceGasPrice failed: %w", err)
+	}
+	if gasPrice == nil {
+		tmp := uint64(1000)
+		gasPrice = &tmp
+	}
+	builder = builder.GasPrice(*gasPrice)
 
 	// Build the Function struct
 	packageAddr, err := iota_sdk_ffi.AddressFromHex(req.PackageID.String())
@@ -580,41 +1290,74 @@ func (c *BindingClient) MoveCall(ctx context.Context, req iotaclient.MoveCallReq
 		return nil, fmt.Errorf("failed to create function identifier: %w", err)
 	}
 
-	// TODO: Handle TypeArgs - this would require parsing string types into TypeTag
+	// Parse TypeArgs from strings to TypeTag
 	var typeArgs []*iota_sdk_ffi.TypeTag
-
-	function := iota_sdk_ffi.Function{
-		Package:  packageAddr,
-		Module:   moduleId,
-		Function: functionId,
-		TypeArgs: typeArgs,
+	for _, typeArgStr := range req.TypeArgs {
+		iotagoTypeTag, err := iotago.TypeTagFromString(typeArgStr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse type argument %q: %w", typeArgStr, err)
+		}
+		ffiTypeTag, err := toFfiTypeTag(iotagoTypeTag)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert type argument %q: %w", typeArgStr, err)
+		}
+		typeArgs = append(typeArgs, ffiTypeTag)
 	}
 
 	// Convert arguments
-	var args []*iota_sdk_ffi.Argument
+	var args []*iota_sdk_ffi.PtbArgument
 	for _, arg := range req.Arguments {
+		// Check if arg is a slice/array using reflection
+		argValue := reflect.ValueOf(arg)
+		if argValue.Kind() == reflect.Slice || argValue.Kind() == reflect.Array {
+			// Handle slices and arrays by BCS encoding them
+			// We need to handle the specific types we support
+			switch v := arg.(type) {
+			case []string:
+				// BCS encode each string separately
+				var encodedStrings [][]byte
+				for _, s := range v {
+					bcsBytes, err := bcs.Marshal(&s)
+					if err != nil {
+						return nil, fmt.Errorf("failed to BCS encode string argument: %w", err)
+					}
+					encodedStrings = append(encodedStrings, bcsBytes)
+				}
+				args = append(args, iota_sdk_ffi.PtbArgumentVector(encodedStrings))
+			case []uint64:
+				// BCS encode each uint64 separately
+				var encodedUints [][]byte
+				for _, u := range v {
+					bcsBytes, err := bcs.Marshal(&u)
+					if err != nil {
+						return nil, fmt.Errorf("failed to BCS encode uint64 argument: %w", err)
+					}
+					encodedUints = append(encodedUints, bcsBytes)
+				}
+				args = append(args, iota_sdk_ffi.PtbArgumentVector(encodedUints))
+			case [][]byte:
+				args = append(args, iota_sdk_ffi.PtbArgumentVector(v))
+			default:
+				return nil, fmt.Errorf("unsupported slice/array argument type: %T", arg)
+			}
+			continue
+		}
+
 		switch v := arg.(type) {
 		case string:
 			// Try to parse as address
 			if addr, err := iotago.AddressFromHex(v); err == nil {
-				pureInput := iota_sdk_ffi.UnresolvedInputNewPure(addr.Bytes())
-				args = append(args, builder.Input(pureInput))
+				ffiAddr, err := toFfiAddress(addr)
+				if err != nil {
+					return nil, fmt.Errorf("failed to convert address: %w", err)
+				}
+				args = append(args, iota_sdk_ffi.PtbArgumentAddress(ffiAddr))
 			} else {
-				// Treat as string literal - encode as BCS
-				// For now, treat as raw bytes
-				pureInput := iota_sdk_ffi.UnresolvedInputNewPure([]byte(v))
-				args = append(args, builder.Input(pureInput))
+				// Treat as string literal
+				args = append(args, iota_sdk_ffi.PtbArgumentString(v))
 			}
 		case uint64:
-			// Encode uint64 as BCS bytes
-			// Simple big-endian encoding for now
-			bytes := make([]byte, 8)
-			for i := 7; i >= 0; i-- {
-				bytes[i] = byte(v)
-				v >>= 8
-			}
-			pureInput := iota_sdk_ffi.UnresolvedInputNewPure(bytes)
-			args = append(args, builder.Input(pureInput))
+			args = append(args, iota_sdk_ffi.PtbArgumentU64(v))
 		case *iotago.ObjectID:
 			// Get object and convert to input
 			obj, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: v})
@@ -625,27 +1368,22 @@ func (c *BindingClient) MoveCall(ctx context.Context, req iotaclient.MoveCallReq
 				return nil, fmt.Errorf("argument object not found")
 			}
 
-			objRef := &iotago.ObjectRef{
-				ObjectID: obj.Data.ObjectID,
-				Version:  obj.Data.Version.Uint64(),
-				Digest:   obj.Data.Digest,
-			}
-			objInput, err := convertObjectRefToUnresolvedInput(objRef)
+			ffiObjID, err := toFfiObjectID(obj.Data.ObjectID)
 			if err != nil {
 				return nil, fmt.Errorf("failed to convert argument object: %w", err)
 			}
-			args = append(args, builder.Input(objInput))
+			args = append(args, iota_sdk_ffi.PtbArgumentObjectId(ffiObjID))
 		default:
 			return nil, fmt.Errorf("unsupported argument type: %T", arg)
 		}
 	}
 
 	// Add move call command
-	builder.MoveCall(function, args)
+	builder = builder.MoveCall(packageAddr, moduleId, functionId, args, typeArgs, nil)
 
 	// Finish the transaction to get bytes
 	tx, err := builder.Finish()
-	if err != nil {
+	if err.(*iota_sdk_ffi.SdkFfiError) != nil {
 		return nil, fmt.Errorf("failed to finish transaction: %w", err)
 	}
 
@@ -670,18 +1408,17 @@ func (c *BindingClient) Pay(ctx context.Context, req iotaclient.PayRequest) (*io
 		return nil, fmt.Errorf("recipients and amounts must have same length")
 	}
 
-	builder := iota_sdk_ffi.NewTransactionBuilder()
-
 	// Set sender
 	senderAddr, err := toFfiAddress(req.Signer)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert sender address: %w", err)
 	}
-	builder.SetSender(senderAddr)
+
+	builder := iota_sdk_ffi.TransactionBuilderInit(senderAddr, c.qclient)
 
 	// Set gas budget if provided
 	if req.GasBudget != nil {
-		builder.SetGasBudget(req.GasBudget.Uint64())
+		builder = builder.GasBudget(req.GasBudget.Uint64())
 	}
 
 	// Add gas coins
@@ -695,23 +1432,18 @@ func (c *BindingClient) Pay(ctx context.Context, req iotaclient.PayRequest) (*io
 			return nil, fmt.Errorf("gas object not found")
 		}
 
-		gasRef := &iotago.ObjectRef{
-			ObjectID: gasObj.Data.ObjectID,
-			Version:  gasObj.Data.Version.Uint64(),
-			Digest:   gasObj.Data.Digest,
-		}
-		gasInput, err := convertObjectRefToUnresolvedInput(gasRef)
+		ffiObjID, err := toFfiObjectID(gasObj.Data.ObjectID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert gas coin: %w", err)
 		}
-		builder.AddGasObjects([]*iota_sdk_ffi.UnresolvedInput{gasInput})
+		builder = builder.Gas(ffiObjID)
 	} else {
 		// Find suitable gas coins
 		gasBudget := uint64(1000000) // default gas budget
 		if req.GasBudget != nil {
 			gasBudget = req.GasBudget.Uint64()
 		}
-		err := c.addGasCoinsToBuilder(ctx, builder, req.Signer, gasBudget, 0)
+		builder, err = c.addGasCoinsToBuilder(ctx, builder, req.Signer, gasBudget, 0)
 		if err != nil {
 			return nil, fmt.Errorf("failed to add gas coins: %w", err)
 		}
@@ -731,52 +1463,38 @@ func (c *BindingClient) Pay(ctx context.Context, req iotaclient.PayRequest) (*io
 		return nil, fmt.Errorf("primary coin object not found")
 	}
 
-	primaryCoinRef := &iotago.ObjectRef{
-		ObjectID: primaryCoinObj.Data.ObjectID,
-		Version:  primaryCoinObj.Data.Version.Uint64(),
-		Digest:   primaryCoinObj.Data.Digest,
-	}
-	primaryCoinInput, err := convertObjectRefToUnresolvedInput(primaryCoinRef)
+	primaryCoinObjID, err := toFfiObjectID(primaryCoinObj.Data.ObjectID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert primary coin: %w", err)
 	}
-	primaryCoinArg := builder.Input(primaryCoinInput)
 
-	// Create amount arguments for splitting
-	var amountArgs []*iota_sdk_ffi.Argument
-	for _, amount := range req.Amount {
-		// Encode amount as BCS bytes (little-endian u64)
-		amountVal := amount.Uint64()
-		bytes := make([]byte, 8)
-		for i := 0; i < 8; i++ {
-			bytes[i] = byte(amountVal)
-			amountVal >>= 8
-		}
-		amountInput := iota_sdk_ffi.UnresolvedInputNewPure(bytes)
-		amountArgs = append(amountArgs, builder.Input(amountInput))
+	// Create amounts array for SplitCoins
+	var amounts []uint64
+	splitNames := make([]string, len(req.Amount))
+	for i, amount := range req.Amount {
+		amounts = append(amounts, amount.Uint64())
+		splitNames[i] = fmt.Sprintf("split_%d", i)
 	}
 
 	// Split the primary coin
-	splitResult := builder.SplitCoins(primaryCoinArg, amountArgs)
+	builder = builder.SplitCoins(primaryCoinObjID, amounts, splitNames)
 
 	// Transfer each split result to corresponding recipient
 	for i, recipient := range req.Recipients {
 		// Create recipient argument
-		recipientInput := iota_sdk_ffi.UnresolvedInputNewPure(recipient.Bytes())
-		recipientArg := builder.Input(recipientInput)
-
-		// Get the i-th split coin using nested access
-		coinToTransferPtr := splitResult.GetNestedResult(uint16(i))
-		if coinToTransferPtr == nil || *coinToTransferPtr == nil {
-			return nil, fmt.Errorf("failed to get split coin result %d", i)
+		ffiRecipient, err := toFfiAddress(recipient)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert recipient address: %w", err)
 		}
-		coinToTransfer := *coinToTransferPtr
-		builder.TransferObjects([]*iota_sdk_ffi.Argument{coinToTransfer}, recipientArg)
+
+		// Get the i-th split coin using result reference
+		coinToTransfer := iota_sdk_ffi.PtbArgumentRes(splitNames[i])
+		builder = builder.TransferObjects(ffiRecipient, []*iota_sdk_ffi.PtbArgument{coinToTransfer})
 	}
 
 	// Finish the transaction to get bytes
 	tx, err := builder.Finish()
-	if err != nil {
+	if err.(*iota_sdk_ffi.SdkFfiError) != nil {
 		return nil, fmt.Errorf("failed to finish transaction: %w", err)
 	}
 
@@ -801,18 +1519,17 @@ func (c *BindingClient) PayAllIota(ctx context.Context, req iotaclient.PayAllIot
 		return nil, fmt.Errorf("recipient is required")
 	}
 
-	builder := iota_sdk_ffi.NewTransactionBuilder()
-
 	// Set sender
 	senderAddr, err := toFfiAddress(req.Signer)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert sender address: %w", err)
 	}
-	builder.SetSender(senderAddr)
+
+	builder := iota_sdk_ffi.TransactionBuilderInit(senderAddr, c.qclient)
 
 	// Set gas budget if provided
 	if req.GasBudget != nil {
-		builder.SetGasBudget(req.GasBudget.Uint64())
+		builder = builder.GasBudget(req.GasBudget.Uint64())
 	}
 
 	// For PayAllIota, we use the input coins directly and transfer them all
@@ -821,7 +1538,7 @@ func (c *BindingClient) PayAllIota(ctx context.Context, req iotaclient.PayAllIot
 	}
 
 	// Get all input coin objects and convert to arguments
-	var coinArgs []*iota_sdk_ffi.Argument
+	var coinArgs []*iota_sdk_ffi.PtbArgument
 	for _, coinID := range req.InputCoins {
 		coinObj, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: coinID})
 		if err != nil {
@@ -831,28 +1548,25 @@ func (c *BindingClient) PayAllIota(ctx context.Context, req iotaclient.PayAllIot
 			return nil, fmt.Errorf("coin object not found")
 		}
 
-		coinRef := &iotago.ObjectRef{
-			ObjectID: coinObj.Data.ObjectID,
-			Version:  coinObj.Data.Version.Uint64(),
-			Digest:   coinObj.Data.Digest,
-		}
-		coinInput, err := convertObjectRefToUnresolvedInput(coinRef)
+		ffiObjID, err := toFfiObjectID(coinObj.Data.ObjectID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert coin: %w", err)
 		}
-		coinArgs = append(coinArgs, builder.Input(coinInput))
+		coinArgs = append(coinArgs, iota_sdk_ffi.PtbArgumentObjectId(ffiObjID))
 	}
 
 	// Create recipient argument
-	recipientInput := iota_sdk_ffi.UnresolvedInputNewPure(req.Recipient.Bytes())
-	recipientArg := builder.Input(recipientInput)
+	ffiRecipient, err := toFfiAddress(req.Recipient)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert recipient address: %w", err)
+	}
 
 	// Transfer all coins to recipient
-	builder.TransferObjects(coinArgs, recipientArg)
+	builder = builder.TransferObjects(ffiRecipient, coinArgs)
 
 	// Finish the transaction to get bytes
 	tx, err := builder.Finish()
-	if err != nil {
+	if err.(*iota_sdk_ffi.SdkFfiError) != nil {
 		return nil, fmt.Errorf("failed to finish transaction: %w", err)
 	}
 
@@ -877,18 +1591,17 @@ func (c *BindingClient) PayIota(ctx context.Context, req iotaclient.PayIotaReque
 		return nil, fmt.Errorf("recipients and amounts must have same length")
 	}
 
-	builder := iota_sdk_ffi.NewTransactionBuilder()
-
 	// Set sender
 	senderAddr, err := toFfiAddress(req.Signer)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert sender address: %w", err)
 	}
-	builder.SetSender(senderAddr)
+
+	builder := iota_sdk_ffi.TransactionBuilderInit(senderAddr, c.qclient)
 
 	// Set gas budget if provided
 	if req.GasBudget != nil {
-		builder.SetGasBudget(req.GasBudget.Uint64())
+		builder = builder.GasBudget(req.GasBudget.Uint64())
 	}
 
 	// Add gas coins (auto-selected since PayIota doesn't specify gas coins)
@@ -896,7 +1609,7 @@ func (c *BindingClient) PayIota(ctx context.Context, req iotaclient.PayIotaReque
 	if req.GasBudget != nil {
 		gasBudget = req.GasBudget.Uint64()
 	}
-	err = c.addGasCoinsToBuilder(ctx, builder, req.Signer, gasBudget, 0)
+	builder, err = c.addGasCoinsToBuilder(ctx, builder, req.Signer, gasBudget, 0)
 	if err != nil {
 		return nil, fmt.Errorf("failed to add gas coins: %w", err)
 	}
@@ -915,52 +1628,56 @@ func (c *BindingClient) PayIota(ctx context.Context, req iotaclient.PayIotaReque
 		return nil, fmt.Errorf("primary coin object not found")
 	}
 
-	primaryCoinRef := &iotago.ObjectRef{
-		ObjectID: primaryCoinObj.Data.ObjectID,
-		Version:  primaryCoinObj.Data.Version.Uint64(),
-		Digest:   primaryCoinObj.Data.Digest,
-	}
-	primaryCoinInput, err := convertObjectRefToUnresolvedInput(primaryCoinRef)
+	primaryCoinObjID, err := toFfiObjectID(primaryCoinObj.Data.ObjectID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert primary coin: %w", err)
 	}
-	primaryCoinArg := builder.Input(primaryCoinInput)
 
-	// Create amount arguments for splitting
-	var amountArgs []*iota_sdk_ffi.Argument
-	for _, amount := range req.Amount {
-		// Encode amount as BCS bytes (little-endian u64)
-		amountVal := amount.Uint64()
-		bytes := make([]byte, 8)
-		for i := 0; i < 8; i++ {
-			bytes[i] = byte(amountVal)
-			amountVal >>= 8
-		}
-		amountInput := iota_sdk_ffi.UnresolvedInputNewPure(bytes)
-		amountArgs = append(amountArgs, builder.Input(amountInput))
+	// Create amounts array for SplitCoins
+	var amounts []uint64
+	splitNames := make([]string, len(req.Amount))
+	for i, amount := range req.Amount {
+		amounts = append(amounts, amount.Uint64())
+		splitNames[i] = fmt.Sprintf("split_%d", i)
 	}
 
 	// Split the primary coin
-	splitResult := builder.SplitCoins(primaryCoinArg, amountArgs)
+	builder = builder.SplitCoins(primaryCoinObjID, amounts, splitNames)
 
 	// Transfer each split result to corresponding recipient
 	for i, recipient := range req.Recipients {
 		// Create recipient argument
-		recipientInput := iota_sdk_ffi.UnresolvedInputNewPure(recipient.Bytes())
-		recipientArg := builder.Input(recipientInput)
-
-		// Get the i-th split coin using nested access
-		coinToTransferPtr := splitResult.GetNestedResult(uint16(i))
-		if coinToTransferPtr == nil || *coinToTransferPtr == nil {
-			return nil, fmt.Errorf("failed to get split coin result %d", i)
+		ffiRecipient, err := toFfiAddress(recipient)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert recipient address: %w", err)
 		}
-		coinToTransfer := *coinToTransferPtr
-		builder.TransferObjects([]*iota_sdk_ffi.Argument{coinToTransfer}, recipientArg)
+
+		// Get the i-th split coin using result reference
+		coinToTransfer := iota_sdk_ffi.PtbArgumentRes(splitNames[i])
+		builder = builder.TransferObjects(ffiRecipient, []*iota_sdk_ffi.PtbArgument{coinToTransfer})
+	}
+
+	var gasRefs []iotago.ObjectRef
+	for i, gasCoin := range req.InputCoins {
+		if i == 0 {
+			continue
+		}
+		gasCoinObj, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: gasCoin})
+		if err != nil {
+			return nil, fmt.Errorf("failed to get primary coin object: %w", err)
+		}
+		gasRefs = append(gasRefs, gasCoinObj.Data.Ref())
+		ffiObjectID, err := toFfiObjectID(gasCoin)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert gasCoin to FFI type: %w", err)
+		}
+		builder.Gas(ffiObjectID)
+		break
 	}
 
 	// Finish the transaction to get bytes
 	tx, err := builder.Finish()
-	if err != nil {
+	if err.(*iota_sdk_ffi.SdkFfiError) != nil {
 		return nil, fmt.Errorf("failed to finish transaction: %w", err)
 	}
 
@@ -971,7 +1688,7 @@ func (c *BindingClient) PayIota(ctx context.Context, req iotaclient.PayIotaReque
 
 	// Build TransactionBytes response
 	return &iotajsonrpc.TransactionBytes{
-		Gas:          []iotago.ObjectRef{},
+		Gas:          gasRefs,
 		InputObjects: []iotajsonrpc.InputObjectKind{},
 		TxBytes:      iotago.Base64Data(txBytes),
 	}, nil
@@ -984,19 +1701,16 @@ func (c *BindingClient) Publish(ctx context.Context, req iotaclient.PublishReque
 	if len(req.CompiledModules) == 0 {
 		return nil, fmt.Errorf("compiled modules are required")
 	}
-
-	builder := iota_sdk_ffi.NewTransactionBuilder()
-
-	// Set sender
 	senderAddr, err := toFfiAddress(req.Sender)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert sender address: %w", err)
 	}
-	builder.SetSender(senderAddr)
+
+	builder := iota_sdk_ffi.TransactionBuilderInit(senderAddr, c.qclient)
 
 	// Set gas budget if provided
 	if req.GasBudget != nil {
-		builder.SetGasBudget(req.GasBudget.Uint64())
+		builder = builder.GasBudget(req.GasBudget.Uint64())
 	}
 
 	// Add gas coins
@@ -1009,28 +1723,32 @@ func (c *BindingClient) Publish(ctx context.Context, req iotaclient.PublishReque
 		if gasObj.Data == nil {
 			return nil, fmt.Errorf("gas object not found")
 		}
-
-		gasRef := &iotago.ObjectRef{
-			ObjectID: gasObj.Data.ObjectID,
-			Version:  gasObj.Data.Version.Uint64(),
-			Digest:   gasObj.Data.Digest,
-		}
-		gasInput, err := convertObjectRefToUnresolvedInput(gasRef)
+		ffiObjID, err := toFfiObjectID(gasObj.Data.ObjectID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert gas coin: %w", err)
 		}
-		builder.AddGasObjects([]*iota_sdk_ffi.UnresolvedInput{gasInput})
+		builder = builder.Gas(ffiObjID)
 	} else {
 		// Find suitable gas coins
 		gasBudget := uint64(10000000) // higher default gas budget for publish
 		if req.GasBudget != nil {
 			gasBudget = req.GasBudget.Uint64()
 		}
-		err := c.addGasCoinsToBuilder(ctx, builder, req.Sender, gasBudget, 0)
+		builder, err = c.addGasCoinsToBuilder(ctx, builder, req.Sender, gasBudget, 0)
 		if err != nil {
 			return nil, fmt.Errorf("failed to add gas coins: %w", err)
 		}
 	}
+
+	gasPrice, err := c.qclient.ReferenceGasPrice(nil) // Use current epoch
+	if err.(*iota_sdk_ffi.SdkFfiError) != nil {
+		return nil, fmt.Errorf("GraphQL ReferenceGasPrice failed: %w", err)
+	}
+	if gasPrice == nil {
+		tmp := uint64(1000)
+		gasPrice = &tmp
+	}
+	builder = builder.GasPrice(*gasPrice)
 
 	// Convert compiled modules to byte slices
 	var modules [][]byte
@@ -1049,12 +1767,22 @@ func (c *BindingClient) Publish(ctx context.Context, req iotaclient.PublishReque
 		dependencies = append(dependencies, ffiDepId)
 	}
 
-	// Add publish command
-	builder.Publish(modules, dependencies)
+	// Add publish command with upgrade capability name
+	upgradeCapName := "upgrade_cap"
+	builder = builder.Publish(modules, dependencies, upgradeCapName)
+
+	// Transfer upgrade capability to sender
+	ffiSender, err := toFfiAddress(req.Sender)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert sender: %w", err)
+	}
+	// Get the upgrade capability result by name
+	upgradeCapArg := iota_sdk_ffi.PtbArgumentRes(upgradeCapName)
+	builder = builder.TransferObjects(ffiSender, []*iota_sdk_ffi.PtbArgument{upgradeCapArg})
 
 	// Finish the transaction to get bytes
 	tx, err := builder.Finish()
-	if err != nil {
+	if err.(*iota_sdk_ffi.SdkFfiError) != nil {
 		return nil, fmt.Errorf("failed to finish transaction: %w", err)
 	}
 
@@ -1081,19 +1809,16 @@ func (c *BindingClient) RequestAddStake(ctx context.Context, req iotaclient.Requ
 	if req.Amount == nil {
 		return nil, fmt.Errorf("stake amount is required")
 	}
-
-	builder := iota_sdk_ffi.NewTransactionBuilder()
-
-	// Set sender
 	senderAddr, err := toFfiAddress(req.Signer)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert sender address: %w", err)
 	}
-	builder.SetSender(senderAddr)
+
+	builder := iota_sdk_ffi.TransactionBuilderInit(senderAddr, c.qclient)
 
 	// Set gas budget if provided
 	if req.GasBudget != nil {
-		builder.SetGasBudget(req.GasBudget.Uint64())
+		builder = builder.GasBudget(req.GasBudget.Uint64())
 	}
 
 	// Add gas coins
@@ -1101,29 +1826,36 @@ func (c *BindingClient) RequestAddStake(ctx context.Context, req iotaclient.Requ
 	if req.GasBudget != nil {
 		gasBudget = req.GasBudget.Uint64()
 	}
-	err = c.addGasCoinsToBuilder(ctx, builder, req.Signer, gasBudget, 0)
+
+	// Find gas coins to use for both gas and splitting
+	gasCoins, err := c.FindCoinsForGasPayment(ctx, req.Signer, iotago.ProgrammableTransaction{}, 0, gasBudget)
 	if err != nil {
-		return nil, fmt.Errorf("failed to add gas coins: %w", err)
+		return nil, fmt.Errorf("failed to find gas coins: %w", err)
+	}
+	if len(gasCoins) == 0 {
+		return nil, fmt.Errorf("no gas coins available")
 	}
 
-	// Split gas coin to get stake amount
-	gasArg := builder.Gas()
+	// Add gas coins to builder
+	for _, coin := range gasCoins {
+		ffiObjID, err := toFfiObjectID(coin.ObjectID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert gas coin: %w", err)
+		}
+		builder = builder.Gas(ffiObjID)
+	}
+
+	// Split the first gas coin to get stake amount
+	ffiGasCoinID, err := toFfiObjectID(gasCoins[0].ObjectID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert gas coin for splitting: %w", err)
+	}
 	stakeAmountVal := req.Amount.Uint64()
-	stakeAmountBytes := make([]byte, 8)
-	for i := 0; i < 8; i++ {
-		stakeAmountBytes[i] = byte(stakeAmountVal)
-		stakeAmountVal >>= 8
-	}
-	stakeAmountInput := iota_sdk_ffi.UnresolvedInputNewPure(stakeAmountBytes)
-	stakeAmountArg := builder.Input(stakeAmountInput)
+	splitCoinName := "stake_coin"
+	builder = builder.SplitCoins(ffiGasCoinID, []uint64{stakeAmountVal}, []string{splitCoinName})
 
-	// Split the gas coin to get the stake amount
-	splitResult := builder.SplitCoins(gasArg, []*iota_sdk_ffi.Argument{stakeAmountArg})
-	stakeTokenPtr := splitResult.GetNestedResult(0)
-	if stakeTokenPtr == nil || *stakeTokenPtr == nil {
-		return nil, fmt.Errorf("failed to split coin for stake amount")
-	}
-	stakeTokenArg := *stakeTokenPtr
+	// Reference the split result by name
+	stakeTokenArg := iota_sdk_ffi.PtbArgumentRes(splitCoinName)
 
 	// Build the add stake function call to 0x2::iota_system::request_add_stake
 	systemPackageAddr, err := iota_sdk_ffi.AddressFromHex("0x0000000000000000000000000000000000000000000000000000000000000002")
@@ -1141,24 +1873,20 @@ func (c *BindingClient) RequestAddStake(ctx context.Context, req iotaclient.Requ
 		return nil, fmt.Errorf("failed to create function identifier: %w", err)
 	}
 
-	addStakeFunction := iota_sdk_ffi.Function{
-		Package:  systemPackageAddr,
-		Module:   moduleId,
-		Function: functionId,
-		TypeArgs: []*iota_sdk_ffi.TypeTag{},
-	}
-
 	// Add validator address as argument
-	validatorInput := iota_sdk_ffi.UnresolvedInputNewPure(req.Validator.Bytes())
-	validatorArg := builder.Input(validatorInput)
+	ffiValidator, err := toFfiAddress(req.Validator)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert validator: %w", err)
+	}
+	validatorArg := iota_sdk_ffi.PtbArgumentAddress(ffiValidator)
 
 	// Call the add stake function
-	args := []*iota_sdk_ffi.Argument{stakeTokenArg, validatorArg}
-	builder.MoveCall(addStakeFunction, args)
+	args := []*iota_sdk_ffi.PtbArgument{stakeTokenArg, validatorArg}
+	builder = builder.MoveCall(systemPackageAddr, moduleId, functionId, args, []*iota_sdk_ffi.TypeTag{}, []string{})
 
 	// Finish the transaction to get bytes
 	tx, err := builder.Finish()
-	if err != nil {
+	if err.(*iota_sdk_ffi.SdkFfiError) != nil {
 		return nil, fmt.Errorf("failed to finish transaction: %w", err)
 	}
 
@@ -1182,19 +1910,16 @@ func (c *BindingClient) RequestWithdrawStake(ctx context.Context, req iotaclient
 	if req.StakedIotaID == nil {
 		return nil, fmt.Errorf("staked IOTA ID is required")
 	}
-
-	builder := iota_sdk_ffi.NewTransactionBuilder()
-
-	// Set sender
 	senderAddr, err := toFfiAddress(req.Signer)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert sender address: %w", err)
 	}
-	builder.SetSender(senderAddr)
+
+	builder := iota_sdk_ffi.TransactionBuilderInit(senderAddr, c.qclient)
 
 	// Set gas budget if provided
 	if req.GasBudget != nil {
-		builder.SetGasBudget(req.GasBudget.Uint64())
+		builder = builder.GasBudget(req.GasBudget.Uint64())
 	}
 
 	// Add gas coins
@@ -1202,7 +1927,7 @@ func (c *BindingClient) RequestWithdrawStake(ctx context.Context, req iotaclient
 	if req.GasBudget != nil {
 		gasBudget = req.GasBudget.Uint64()
 	}
-	err = c.addGasCoinsToBuilder(ctx, builder, req.Signer, gasBudget, 0)
+	builder, err = c.addGasCoinsToBuilder(ctx, builder, req.Signer, gasBudget, 0)
 	if err != nil {
 		return nil, fmt.Errorf("failed to add gas coins: %w", err)
 	}
@@ -1221,11 +1946,11 @@ func (c *BindingClient) RequestWithdrawStake(ctx context.Context, req iotaclient
 		Version:  stakedObj.Data.Version.Uint64(),
 		Digest:   stakedObj.Data.Digest,
 	}
-	stakedInput, err := convertObjectRefToUnresolvedInput(stakedRef)
+	ffiStakedID, err := toFfiObjectID(stakedRef.ObjectID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert staked object: %w", err)
 	}
-	stakedArg := builder.Input(stakedInput)
+	stakedArg := iota_sdk_ffi.PtbArgumentObjectId(ffiStakedID)
 
 	// Build the withdraw stake function call to 0x2::iota_system::request_withdraw_stake
 	systemPackageAddr, err := iota_sdk_ffi.AddressFromHex("0x0000000000000000000000000000000000000000000000000000000000000002")
@@ -1243,20 +1968,13 @@ func (c *BindingClient) RequestWithdrawStake(ctx context.Context, req iotaclient
 		return nil, fmt.Errorf("failed to create function identifier: %w", err)
 	}
 
-	withdrawStakeFunction := iota_sdk_ffi.Function{
-		Package:  systemPackageAddr,
-		Module:   moduleId,
-		Function: functionId,
-		TypeArgs: []*iota_sdk_ffi.TypeTag{},
-	}
-
 	// Call the withdraw stake function with staked object
-	args := []*iota_sdk_ffi.Argument{stakedArg}
-	builder.MoveCall(withdrawStakeFunction, args)
+	args := []*iota_sdk_ffi.PtbArgument{stakedArg}
+	builder = builder.MoveCall(systemPackageAddr, moduleId, functionId, args, []*iota_sdk_ffi.TypeTag{}, []string{})
 
 	// Finish the transaction to get bytes
 	tx, err := builder.Finish()
-	if err != nil {
+	if err.(*iota_sdk_ffi.SdkFfiError) != nil {
 		return nil, fmt.Errorf("failed to finish transaction: %w", err)
 	}
 
@@ -1280,19 +1998,16 @@ func (c *BindingClient) SplitCoin(ctx context.Context, req iotaclient.SplitCoinR
 	if req.Coin == nil {
 		return nil, fmt.Errorf("coin is required")
 	}
-
-	builder := iota_sdk_ffi.NewTransactionBuilder()
-
-	// Set sender
 	senderAddr, err := toFfiAddress(req.Signer)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert sender address: %w", err)
 	}
-	builder.SetSender(senderAddr)
+
+	builder := iota_sdk_ffi.TransactionBuilderInit(senderAddr, c.qclient)
 
 	// Set gas budget if provided
 	if req.GasBudget != nil {
-		builder.SetGasBudget(req.GasBudget.Uint64())
+		builder = builder.GasBudget(req.GasBudget.Uint64())
 	}
 
 	// Add gas coins
@@ -1305,24 +2020,18 @@ func (c *BindingClient) SplitCoin(ctx context.Context, req iotaclient.SplitCoinR
 		if gasObj.Data == nil {
 			return nil, fmt.Errorf("gas object not found")
 		}
-
-		gasRef := &iotago.ObjectRef{
-			ObjectID: gasObj.Data.ObjectID,
-			Version:  gasObj.Data.Version.Uint64(),
-			Digest:   gasObj.Data.Digest,
-		}
-		gasInput, err := convertObjectRefToUnresolvedInput(gasRef)
+		ffiObjID, err := toFfiObjectID(gasObj.Data.ObjectID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert gas coin: %w", err)
 		}
-		builder.AddGasObjects([]*iota_sdk_ffi.UnresolvedInput{gasInput})
+		builder = builder.Gas(ffiObjID)
 	} else {
 		// Find suitable gas coins
 		gasBudget := uint64(1000000) // default gas budget
 		if req.GasBudget != nil {
 			gasBudget = req.GasBudget.Uint64()
 		}
-		err := c.addGasCoinsToBuilder(ctx, builder, req.Signer, gasBudget, 0)
+		builder, err = c.addGasCoinsToBuilder(ctx, builder, req.Signer, gasBudget, 0)
 		if err != nil {
 			return nil, fmt.Errorf("failed to add gas coins: %w", err)
 		}
@@ -1342,32 +2051,25 @@ func (c *BindingClient) SplitCoin(ctx context.Context, req iotaclient.SplitCoinR
 		Version:  coinObj.Data.Version.Uint64(),
 		Digest:   coinObj.Data.Digest,
 	}
-	coinInput, err := convertObjectRefToUnresolvedInput(coinRef)
+	ffiCoinID, err := toFfiObjectID(coinRef.ObjectID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert coin: %w", err)
 	}
-	coinArg := builder.Input(coinInput)
 
 	// Create amount arguments for splitting
-	var amountArgs []*iota_sdk_ffi.Argument
-	for _, amount := range req.SplitAmounts {
-		// Encode amount as BCS bytes (little-endian u64)
-		amountVal := amount.Uint64()
-		bytes := make([]byte, 8)
-		for i := 0; i < 8; i++ {
-			bytes[i] = byte(amountVal)
-			amountVal >>= 8
-		}
-		amountInput := iota_sdk_ffi.UnresolvedInputNewPure(bytes)
-		amountArgs = append(amountArgs, builder.Input(amountInput))
+	var amounts []uint64
+	var names []string
+	for i, amount := range req.SplitAmounts {
+		amounts = append(amounts, amount.Uint64())
+		names = append(names, fmt.Sprintf("split_%d", i))
 	}
 
 	// Split the coin
-	builder.SplitCoins(coinArg, amountArgs)
+	builder = builder.SplitCoins(ffiCoinID, amounts, names)
 
 	// Finish the transaction to get bytes
 	tx, err := builder.Finish()
-	if err != nil {
+	if err.(*iota_sdk_ffi.SdkFfiError) != nil {
 		return nil, fmt.Errorf("failed to finish transaction: %w", err)
 	}
 
@@ -1394,19 +2096,16 @@ func (c *BindingClient) SplitCoinEqual(ctx context.Context, req iotaclient.Split
 	if req.SplitCount == nil {
 		return nil, fmt.Errorf("split count is required")
 	}
-
-	builder := iota_sdk_ffi.NewTransactionBuilder()
-
-	// Set sender
 	senderAddr, err := toFfiAddress(req.Signer)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert sender address: %w", err)
 	}
-	builder.SetSender(senderAddr)
+
+	builder := iota_sdk_ffi.TransactionBuilderInit(senderAddr, c.qclient)
 
 	// Set gas budget if provided
 	if req.GasBudget != nil {
-		builder.SetGasBudget(req.GasBudget.Uint64())
+		builder = builder.GasBudget(req.GasBudget.Uint64())
 	}
 
 	// Add gas coins
@@ -1419,24 +2118,18 @@ func (c *BindingClient) SplitCoinEqual(ctx context.Context, req iotaclient.Split
 		if gasObj.Data == nil {
 			return nil, fmt.Errorf("gas object not found")
 		}
-
-		gasRef := &iotago.ObjectRef{
-			ObjectID: gasObj.Data.ObjectID,
-			Version:  gasObj.Data.Version.Uint64(),
-			Digest:   gasObj.Data.Digest,
-		}
-		gasInput, err := convertObjectRefToUnresolvedInput(gasRef)
+		ffiObjID, err := toFfiObjectID(gasObj.Data.ObjectID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert gas coin: %w", err)
 		}
-		builder.AddGasObjects([]*iota_sdk_ffi.UnresolvedInput{gasInput})
+		builder = builder.Gas(ffiObjID)
 	} else {
 		// Find suitable gas coins
 		gasBudget := uint64(1000000) // default gas budget
 		if req.GasBudget != nil {
 			gasBudget = req.GasBudget.Uint64()
 		}
-		err := c.addGasCoinsToBuilder(ctx, builder, req.Signer, gasBudget, 0)
+		builder, err = c.addGasCoinsToBuilder(ctx, builder, req.Signer, gasBudget, 0)
 		if err != nil {
 			return nil, fmt.Errorf("failed to add gas coins: %w", err)
 		}
@@ -1456,11 +2149,10 @@ func (c *BindingClient) SplitCoinEqual(ctx context.Context, req iotaclient.Split
 		Version:  coinObj.Data.Version.Uint64(),
 		Digest:   coinObj.Data.Digest,
 	}
-	coinInput, err := convertObjectRefToUnresolvedInput(coinRef)
+	ffiCoinID, err := toFfiObjectID(coinRef.ObjectID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert coin: %w", err)
 	}
-	coinArg := builder.Input(coinInput)
 
 	// For SplitCoinEqual, we need to get the coin balance and divide by split count
 	// This is a simplification - in a real implementation, you'd want to call a Move function
@@ -1471,25 +2163,20 @@ func (c *BindingClient) SplitCoinEqual(ctx context.Context, req iotaclient.Split
 	}
 
 	// Create count-1 amount arguments (the last piece stays with the original coin)
-	var amountArgs []*iota_sdk_ffi.Argument
+	var amounts []uint64
+	var names []string
 	for i := uint64(0); i < splitCount-1; i++ {
 		// For now, use a default equal amount (this should be calculated from balance/count)
-		amountVal := uint64(1000000) // 1 IOTA per split
-		bytes := make([]byte, 8)
-		for j := 0; j < 8; j++ {
-			bytes[j] = byte(amountVal)
-			amountVal >>= 8
-		}
-		amountInput := iota_sdk_ffi.UnresolvedInputNewPure(bytes)
-		amountArgs = append(amountArgs, builder.Input(amountInput))
+		amounts = append(amounts, 1000000) // 1 IOTA per split
+		names = append(names, fmt.Sprintf("equal_split_%d", i))
 	}
 
 	// Split the coin
-	builder.SplitCoins(coinArg, amountArgs)
+	builder = builder.SplitCoins(ffiCoinID, amounts, names)
 
 	// Finish the transaction to get bytes
 	tx, err := builder.Finish()
-	if err != nil {
+	if err.(*iota_sdk_ffi.SdkFfiError) != nil {
 		return nil, fmt.Errorf("failed to finish transaction: %w", err)
 	}
 
@@ -1516,19 +2203,16 @@ func (c *BindingClient) TransferObject(ctx context.Context, req iotaclient.Trans
 	if req.Recipient == nil {
 		return nil, fmt.Errorf("recipient is required")
 	}
-
-	builder := iota_sdk_ffi.NewTransactionBuilder()
-
-	// Set sender
 	senderAddr, err := toFfiAddress(req.Signer)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert sender address: %w", err)
 	}
-	builder.SetSender(senderAddr)
+
+	builder := iota_sdk_ffi.TransactionBuilderInit(senderAddr, c.qclient)
 
 	// Set gas budget if provided
 	if req.GasBudget != nil {
-		builder.SetGasBudget(req.GasBudget.Uint64())
+		builder = builder.GasBudget(req.GasBudget.Uint64())
 	}
 
 	// Add gas coins
@@ -1541,24 +2225,18 @@ func (c *BindingClient) TransferObject(ctx context.Context, req iotaclient.Trans
 		if gasObj.Data == nil {
 			return nil, fmt.Errorf("gas object not found")
 		}
-
-		gasRef := &iotago.ObjectRef{
-			ObjectID: gasObj.Data.ObjectID,
-			Version:  gasObj.Data.Version.Uint64(),
-			Digest:   gasObj.Data.Digest,
-		}
-		gasInput, err := convertObjectRefToUnresolvedInput(gasRef)
+		ffiObjID, err := toFfiObjectID(gasObj.Data.ObjectID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert gas coin: %w", err)
 		}
-		builder.AddGasObjects([]*iota_sdk_ffi.UnresolvedInput{gasInput})
+		builder = builder.Gas(ffiObjID)
 	} else {
 		// Find suitable gas coins
 		gasBudget := uint64(1000000) // default gas budget
 		if req.GasBudget != nil {
 			gasBudget = req.GasBudget.Uint64()
 		}
-		err := c.addGasCoinsToBuilder(ctx, builder, req.Signer, gasBudget, 0)
+		builder, err = c.addGasCoinsToBuilder(ctx, builder, req.Signer, gasBudget, 0)
 		if err != nil {
 			return nil, fmt.Errorf("failed to add gas coins: %w", err)
 		}
@@ -1578,22 +2256,24 @@ func (c *BindingClient) TransferObject(ctx context.Context, req iotaclient.Trans
 		Version:  objToTransfer.Data.Version.Uint64(),
 		Digest:   objToTransfer.Data.Digest,
 	}
-	objInput, err := convertObjectRefToUnresolvedInput(objRef)
+	ffiObjID, err := toFfiObjectID(objRef.ObjectID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert object: %w", err)
 	}
-	objArg := builder.Input(objInput)
+	objArg := iota_sdk_ffi.PtbArgumentObjectId(ffiObjID)
 
 	// Create recipient argument
-	recipientInput := iota_sdk_ffi.UnresolvedInputNewPure(req.Recipient.Bytes())
-	recipientArg := builder.Input(recipientInput)
+	ffiRecipient, err := toFfiAddress(req.Recipient)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert recipient: %w", err)
+	}
 
 	// Transfer the object
-	builder.TransferObjects([]*iota_sdk_ffi.Argument{objArg}, recipientArg)
+	builder = builder.TransferObjects(ffiRecipient, []*iota_sdk_ffi.PtbArgument{objArg})
 
 	// Finish the transaction to get bytes
 	tx, err := builder.Finish()
-	if err != nil {
+	if err.(*iota_sdk_ffi.SdkFfiError) != nil {
 		return nil, fmt.Errorf("failed to finish transaction: %w", err)
 	}
 
@@ -1620,19 +2300,16 @@ func (c *BindingClient) TransferIota(ctx context.Context, req iotaclient.Transfe
 	if req.Recipient == nil {
 		return nil, fmt.Errorf("recipient is required")
 	}
-
-	builder := iota_sdk_ffi.NewTransactionBuilder()
-
-	// Set sender
 	senderAddr, err := toFfiAddress(req.Signer)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert sender address: %w", err)
 	}
-	builder.SetSender(senderAddr)
+
+	builder := iota_sdk_ffi.TransactionBuilderInit(senderAddr, c.qclient)
 
 	// Set gas budget if provided
 	if req.GasBudget != nil {
-		builder.SetGasBudget(req.GasBudget.Uint64())
+		builder = builder.GasBudget(req.GasBudget.Uint64())
 	}
 
 	// Add gas coins (auto-selected since TransferIota doesn't specify gas coins)
@@ -1640,7 +2317,7 @@ func (c *BindingClient) TransferIota(ctx context.Context, req iotaclient.Transfe
 	if req.GasBudget != nil {
 		gasBudget = req.GasBudget.Uint64()
 	}
-	err = c.addGasCoinsToBuilder(ctx, builder, req.Signer, gasBudget, 0)
+	builder, err = c.addGasCoinsToBuilder(ctx, builder, req.Signer, gasBudget, 0)
 	if err != nil {
 		return nil, fmt.Errorf("failed to add gas coins: %w", err)
 	}
@@ -1659,44 +2336,37 @@ func (c *BindingClient) TransferIota(ctx context.Context, req iotaclient.Transfe
 		Version:  coinObj.Data.Version.Uint64(),
 		Digest:   coinObj.Data.Digest,
 	}
-	coinInput, err := convertObjectRefToUnresolvedInput(coinRef)
+	ffiCoinID, err := toFfiObjectID(coinRef.ObjectID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert coin: %w", err)
 	}
-	coinArg := builder.Input(coinInput)
 
+	var coinArg *iota_sdk_ffi.PtbArgument
 	if req.Amount != nil {
 		// If amount is specified, split the coin first
 		amountVal := req.Amount.Uint64()
-		bytes := make([]byte, 8)
-		for i := 0; i < 8; i++ {
-			bytes[i] = byte(amountVal)
-			amountVal >>= 8
-		}
-		amountInput := iota_sdk_ffi.UnresolvedInputNewPure(bytes)
-		amountArg := builder.Input(amountInput)
+		splitCoinName := "transfer_coin"
+		builder = builder.SplitCoins(ffiCoinID, []uint64{amountVal}, []string{splitCoinName})
 
-		// Split the coin
-		splitResult := builder.SplitCoins(coinArg, []*iota_sdk_ffi.Argument{amountArg})
-
-		// Get the first split result
-		coinToTransferPtr := splitResult.GetNestedResult(0)
-		if coinToTransferPtr == nil || *coinToTransferPtr == nil {
-			return nil, fmt.Errorf("failed to get split coin result")
-		}
-		coinArg = *coinToTransferPtr
+		// Reference the split result by name
+		coinArg = iota_sdk_ffi.PtbArgumentRes(splitCoinName)
+	} else {
+		// Transfer the whole coin
+		coinArg = iota_sdk_ffi.PtbArgumentObjectId(ffiCoinID)
 	}
 
 	// Create recipient argument
-	recipientInput := iota_sdk_ffi.UnresolvedInputNewPure(req.Recipient.Bytes())
-	recipientArg := builder.Input(recipientInput)
+	ffiRecipient, err := toFfiAddress(req.Recipient)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert recipient: %w", err)
+	}
 
 	// Transfer the coin
-	builder.TransferObjects([]*iota_sdk_ffi.Argument{coinArg}, recipientArg)
+	builder = builder.TransferObjects(ffiRecipient, []*iota_sdk_ffi.PtbArgument{coinArg})
 
 	// Finish the transaction to get bytes
 	tx, err := builder.Finish()
-	if err != nil {
+	if err.(*iota_sdk_ffi.SdkFfiError) != nil {
 		return nil, fmt.Errorf("failed to finish transaction: %w", err)
 	}
 
@@ -1747,16 +2417,140 @@ func (c *BindingClient) SignAndExecuteTransaction(ctx context.Context, req *iota
 		return nil, fmt.Errorf("transaction data bytes are required")
 	}
 
-	// The challenge here is that FFI doesn't have a "TransactionFromBytes" method
-	// We need to reconstruct the transaction from bytes, but this is complex without
-	// a deserialization method in the FFI. For now, return an error indicating
-	// this limitation.
+	txData, err := bcs.Unmarshal[iotago.TransactionData](req.TxDataBytes.Data())
+	if err != nil {
+		return nil, fmt.Errorf("can't unmarshal")
+	}
+	tx, err := convertTransactionDataToTransaction(&txData)
+	if err != nil {
+		return nil, fmt.Errorf("can't convert to Transaction: %w", err)
+	}
+	signedDigest, err := req.Signer.Sign(tx.SigningDigest())
+	if err != nil {
+		return nil, fmt.Errorf("can't sign digest: %w", err)
+	}
 
-	// In a real implementation, you would need either:
-	// 1. An FFI method to deserialize transaction bytes back to Transaction
-	// 2. Or use the buildTransactionAndExecute helper with a signer directly
+	// Convert to FFI signature
+	ffiSig, err := iota_sdk_ffi.UserSignatureFromBytes(signedDigest.Bytes())
+	if err != nil {
+		return nil, fmt.Errorf("failed to create FFI signature: %w", err)
+	}
 
-	return nil, fmt.Errorf("SignAndExecuteTransaction not supported by FFI bindings - no transaction deserialization method available. Use individual transaction builder methods instead")
+	txEffects, err := c.qclient.ExecuteTx([]*iota_sdk_ffi.UserSignature{ffiSig}, tx)
+	if err.(*iota_sdk_ffi.SdkFfiError) != nil {
+		return nil, fmt.Errorf("failed to execute tx: %w", err)
+	}
+
+	// Build response
+	digest, _ := fromFfiDigest(tx.Digest())
+	response := &iotajsonrpc.IotaTransactionBlockResponse{
+		Digest: *digest,
+	}
+
+	// If options request effects or object changes, use effects from execution
+	if req.Options != nil && (req.Options.ShowEffects || req.Options.ShowObjectChanges || req.Options.ShowBalanceChanges) {
+		if txEffects == nil || *txEffects == nil {
+			return nil, fmt.Errorf("transaction effects are nil after successful execution")
+		}
+
+		if req.Options.ShowEffects {
+			convertedEffects, err := convertTransactionEffects(*txEffects)
+			if err != nil {
+				return nil, fmt.Errorf("failed to convert transaction effects: %w", err)
+			}
+			response.Effects = &serialization.TagJson[iotajsonrpc.IotaTransactionBlockEffects]{Data: *convertedEffects}
+		}
+		if req.Options.ShowObjectChanges {
+			objectChanges, err := convertChangedObjectsToObjectChanges(*txEffects)
+			if err != nil {
+				return nil, fmt.Errorf("failed to convert object changes: %w", err)
+			}
+			response.ObjectChanges = objectChanges
+		}
+		if req.Options.ShowBalanceChanges {
+			balanceChanges, err := c.convertTransactionEffectsToBalanceChanges(ctx, *txEffects, nil)
+			if err != nil {
+				return nil, fmt.Errorf("failed to convert balance changes: %w", err)
+			}
+			response.BalanceChanges = balanceChanges
+		}
+	}
+
+	return response, nil
+}
+
+// SignAndExecuteTransactionRaw signs and executes a transaction, returning raw FFI types
+//
+// This method exposes the underlying iota_sdk_ffi.TransactionEffects directly,
+// allowing you to access all the raw data from the executed transaction including:
+// - All changed objects with their input/output states
+// - Raw object data for extracting coin balances
+// - Complete transaction effects without conversion overhead
+//
+// Returns:
+// - digest: The transaction digest
+// - effects: The raw transaction effects from FFI
+// - error: Any error that occurred
+//
+// This is useful for:
+// 1. Accessing raw transaction effects data
+// 2. Implementing custom balance change extraction from executed transactions
+// 3. Debugging transaction execution results
+//
+// Example usage:
+//
+//	digest, rawEffects, err := client.SignAndExecuteTransactionRaw(ctx, req)
+//	if err != nil { ... }
+//
+//	// Access changed objects
+//	v1 := rawEffects.AsV1()
+//	for _, changedObj := range v1.ChangedObjects {
+//	    // changedObj contains input/output state and operation type
+//	}
+func (c *BindingClient) SignAndExecuteTransactionRaw(ctx context.Context, req *iotaclient.SignAndExecuteTransactionRequest) (*iotago.TransactionDigest, *iota_sdk_ffi.TransactionEffects, error) {
+	if req == nil {
+		return nil, nil, fmt.Errorf("request is required")
+	}
+	if req.Signer == nil {
+		return nil, nil, fmt.Errorf("signer is required")
+	}
+	if len(req.TxDataBytes) == 0 {
+		return nil, nil, fmt.Errorf("transaction data bytes are required")
+	}
+
+	txData, err := bcs.Unmarshal[iotago.TransactionData](req.TxDataBytes.Data())
+	if err != nil {
+		return nil, nil, fmt.Errorf("can't unmarshal: %w", err)
+	}
+
+	tx, err := convertTransactionDataToTransaction(&txData)
+	if err != nil {
+		return nil, nil, fmt.Errorf("can't convert to Transaction: %w", err)
+	}
+
+	signedDigest, err := req.Signer.Sign(tx.SigningDigest())
+	if err != nil {
+		return nil, nil, fmt.Errorf("can't sign digest: %w", err)
+	}
+
+	// Convert to FFI signature
+	ffiSig, err := iota_sdk_ffi.UserSignatureFromBytes(signedDigest.Bytes())
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create FFI signature: %w", err)
+	}
+
+	// Execute transaction
+	txEffects, err := c.qclient.ExecuteTx([]*iota_sdk_ffi.UserSignature{ffiSig}, tx)
+	if err.(*iota_sdk_ffi.SdkFfiError) != nil {
+		return nil, nil, fmt.Errorf("failed to execute tx: %w", err)
+	}
+
+	if txEffects == nil || *txEffects == nil {
+		return nil, nil, fmt.Errorf("transaction effects are nil after execution")
+	}
+
+	digest, _ := fromFfiDigest(tx.Digest())
+	return digest, *txEffects, nil
 }
 
 func (c *BindingClient) PublishContract(ctx context.Context, signer iotasigner.Signer, modules []*iotago.Base64Data, dependencies []*iotago.Address, gasBudget uint64, options *iotajsonrpc.IotaTransactionBlockResponseOptions) (*iotajsonrpc.IotaTransactionBlockResponse, *iotago.PackageID, error) {
@@ -1767,10 +2561,15 @@ func (c *BindingClient) PublishContract(ctx context.Context, signer iotasigner.S
 		return nil, nil, fmt.Errorf("modules are required")
 	}
 
-	builder := iota_sdk_ffi.NewTransactionBuilder()
+	senderAddr, err := toFfiAddress(signer.Address())
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to convert sender address: %w", err)
+	}
+
+	builder := iota_sdk_ffi.TransactionBuilderInit(senderAddr, c.qclient)
 
 	// Add gas coins
-	err := c.addGasCoinsToBuilder(ctx, builder, signer.Address(), gasBudget, 0)
+	builder, err = c.addGasCoinsToBuilder(ctx, builder, signer.Address(), gasBudget, 0)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to add gas coins: %w", err)
 	}
@@ -1793,23 +2592,35 @@ func (c *BindingClient) PublishContract(ctx context.Context, signer iotasigner.S
 		ffiDeps = append(ffiDeps, ffiDepId)
 	}
 
-	// Add publish command
-	publishResult := builder.Publish(moduleBytes, ffiDeps)
+	// Add publish command with upgrade capability name
+	upgradeCapName := "upgrade_cap"
+	builder = builder.Publish(moduleBytes, ffiDeps, upgradeCapName)
 
 	// Transfer upgrade capability to sender (as per requirements)
-	senderInput := iota_sdk_ffi.UnresolvedInputNewPure(signer.Address().Bytes())
-	senderArg := builder.Input(senderInput)
-	builder.TransferObjects([]*iota_sdk_ffi.Argument{publishResult}, senderArg)
+	ffiSender, err := toFfiAddress(signer.Address())
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to convert sender: %w", err)
+	}
+	// Get the upgrade capability result by name
+	upgradeCapArg := iota_sdk_ffi.PtbArgumentRes(upgradeCapName)
+	builder = builder.TransferObjects(ffiSender, []*iota_sdk_ffi.PtbArgument{upgradeCapArg})
 
-	// Build, sign, and execute
+	// Build, sign, and execute (request ObjectChanges to extract package ID)
+	if options == nil {
+		options = &iotajsonrpc.IotaTransactionBlockResponseOptions{}
+	}
+	options.ShowObjectChanges = true
+
 	response, err := c.buildTransactionAndExecute(ctx, signer, builder, gasBudget, 0, options)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	// TODO: Extract package ID from transaction effects
-	// This would require parsing the transaction effects to find the published package
-	packageID := &iotago.PackageID{}
+	// Extract package ID from transaction response
+	packageID, err := response.GetPublishedPackageID()
+	if err != nil {
+		return response, nil, fmt.Errorf("failed to extract published package ID: %w", err)
+	}
 
 	return response, packageID, nil
 }
@@ -1857,11 +2668,16 @@ func (c *BindingClient) MintToken(ctx context.Context, signer iotasigner.Signer,
 		return nil, fmt.Errorf("treasury cap is required")
 	}
 
-	builder := iota_sdk_ffi.NewTransactionBuilder()
+	senderAddr, err := toFfiAddress(signer.Address())
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert sender address: %w", err)
+	}
+
+	builder := iota_sdk_ffi.TransactionBuilderInit(senderAddr, c.qclient)
 
 	// Add gas coins
 	gasBudget := uint64(5000000) // higher gas budget for mint
-	err := c.addGasCoinsToBuilder(ctx, builder, signer.Address(), gasBudget, 0)
+	builder, err = c.addGasCoinsToBuilder(ctx, builder, signer.Address(), gasBudget, 0)
 	if err != nil {
 		return nil, fmt.Errorf("failed to add gas coins: %w", err)
 	}
@@ -1882,36 +2698,26 @@ func (c *BindingClient) MintToken(ctx context.Context, signer iotasigner.Signer,
 		return nil, fmt.Errorf("failed to create mint function identifier: %w", err)
 	}
 
-	mintFunction := iota_sdk_ffi.Function{
-		Package:  packageAddr,
-		Module:   moduleId,
-		Function: mintFuncId,
-		TypeArgs: []*iota_sdk_ffi.TypeTag{}, // TODO: Add proper type args if needed
-	}
-
 	// Add treasury cap as argument
-	treasuryCapInput, err := convertObjectRefToUnresolvedInput(treasuryCap)
+	ffiTreasuryCapID, err := toFfiObjectID(treasuryCap.ObjectID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert treasury cap: %w", err)
 	}
-	treasuryCapArg := builder.Input(treasuryCapInput)
+	treasuryCapArg := iota_sdk_ffi.PtbArgumentObjectId(ffiTreasuryCapID)
 
 	// Add mint amount as argument
-	amountBytes := make([]byte, 8)
-	for i := 0; i < 8; i++ {
-		amountBytes[i] = byte(mintAmount)
-		mintAmount >>= 8
-	}
-	amountInput := iota_sdk_ffi.UnresolvedInputNewPure(amountBytes)
-	amountArg := builder.Input(amountInput)
+	amountArg := iota_sdk_ffi.PtbArgumentU64(mintAmount)
 
 	// Add recipient (sender) as argument
-	recipientInput := iota_sdk_ffi.UnresolvedInputNewPure(signer.Address().Bytes())
-	recipientArg := builder.Input(recipientInput)
+	ffiRecipient, err := toFfiAddress(signer.Address())
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert recipient: %w", err)
+	}
+	recipientArg := iota_sdk_ffi.PtbArgumentAddress(ffiRecipient)
 
 	// Call the mint function
-	args := []*iota_sdk_ffi.Argument{treasuryCapArg, amountArg, recipientArg}
-	builder.MoveCall(mintFunction, args)
+	args := []*iota_sdk_ffi.PtbArgument{treasuryCapArg, amountArg, recipientArg}
+	builder = builder.MoveCall(packageAddr, moduleId, mintFuncId, args, []*iota_sdk_ffi.TypeTag{}, []string{})
 
 	// Build, sign, and execute
 	response, err := c.buildTransactionAndExecute(ctx, signer, builder, gasBudget, 0, options)
@@ -2004,13 +2810,24 @@ func (c *BindingClient) GetAllBalances(ctx context.Context, owner *iotago.Addres
 		return nil, fmt.Errorf("Failed to get balance: %v", err)
 	}
 
+	// Get coin count
+	coins, err := c.qclient.Coins(addr, nil, nil)
+	if err.(*iota_sdk_ffi.SdkFfiError) != nil {
+		return nil, fmt.Errorf("Failed to get coins: %v", err)
+	}
+
+	coinCount := 0
+	if coins.Data != nil {
+		coinCount = len(coins.Data)
+	}
+
 	// Convert to response format
 	var result []*iotajsonrpc.Balance
 	if balance != nil {
 		balanceResp := &iotajsonrpc.Balance{
 			CoinType:        iotajsonrpc.CoinType(coinType),
 			TotalBalance:    iotajsonrpc.NewBigInt(*balance),
-			CoinObjectCount: iotajsonrpc.NewBigInt(1), // TODO: get actual count
+			CoinObjectCount: iotajsonrpc.NewBigInt(uint64(coinCount)),
 		}
 		result = append(result, balanceResp)
 	}
@@ -2139,11 +2956,17 @@ func (c *BindingClient) GetCoins(ctx context.Context, req iotaclient.GetCoinsReq
 	if err != nil {
 		return nil, err
 	}
-	var coinType *string = req.CoinType
+	var coinType *string
+	if req.CoinType != nil {
+		tmp := fmt.Sprintf("0x2::coin::Coin<%s>", *req.CoinType)
+		coinType = &tmp
+	}
+
 	cps, err := c.qclient.Coins(owner, nil, coinType)
 	if err.(*iota_sdk_ffi.SdkFfiError) != nil {
 		return nil, fmt.Errorf("GraphQL Coins failed: %w", err)
 	}
+
 	out := &iotajsonrpc.CoinPage{}
 	for _, ccoin := range cps.Data {
 		oid, err := fromFfiObjectID(ccoin.Id())
@@ -2290,17 +3113,17 @@ func (c *BindingClient) GetProtocolConfig(ctx context.Context, version *iotajson
 	}
 
 	// Call GraphQL client's ProtocolConfig method
-	config, err := c.qclient.ProtocolConfig(versionUint64)
+	_, err := c.qclient.ProtocolConfig(versionUint64)
 	if err.(*iota_sdk_ffi.SdkFfiError) != nil {
 		return nil, fmt.Errorf("GraphQL ProtocolConfig failed: %w", err)
 	}
 
 	// Convert back to iota-go response format
+	// Note: ProtocolConfig mapping from FFI ProtocolConfigs is complex and involves
+	// mapping many fields between different struct types. This can be implemented
+	// on demand if protocol config details are needed by the application.
+	// For now, return an empty config to satisfy the interface.
 	response := &iotajsonrpc.ProtocolConfig{}
-	if config != nil {
-		// TODO: Map config fields properly
-		// This would require detailed field mapping between ProtocolConfigs types
-	}
 
 	return response, nil
 }
@@ -2319,19 +3142,28 @@ func (c *BindingClient) GetTotalTransactionBlocks(ctx context.Context) (string, 
 
 func (c *BindingClient) GetTransactionBlock(ctx context.Context, req iotaclient.GetTransactionBlockRequest) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	// Convert digest parameter
-	digest := &iota_sdk_ffi.Digest{}
-	// TODO: Convert req.Digest to iota_sdk_ffi.Digest
+	if req.Digest == nil {
+		return nil, fmt.Errorf("digest is required")
+	}
+
+	digest, err := iota_sdk_ffi.DigestFromBase58(req.Digest.String())
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert digest: %w", err)
+	}
 
 	// Call GraphQL client's Transaction method
-	tx, err := c.qclient.Transaction(digest)
+	_, err = c.qclient.Transaction(digest)
 	if err.(*iota_sdk_ffi.SdkFfiError) != nil {
 		return nil, fmt.Errorf("GraphQL Transaction failed: %w", err)
 	}
 
 	// Convert back to iota-go response format
-	response := &iotajsonrpc.IotaTransactionBlockResponse{}
-	if tx != nil {
-		// TODO: Map transaction fields from iota_sdk_ffi.SignedTransaction to iotajsonrpc.IotaTransactionBlockResponse
+	// Note: Mapping SignedTransaction to IotaTransactionBlockResponse requires detailed
+	// field-by-field conversion. The transaction is available but comprehensive mapping
+	// should be implemented based on which fields are actually needed by the application.
+	// For now, return minimal response with digest populated.
+	response := &iotajsonrpc.IotaTransactionBlockResponse{
+		Digest: *req.Digest,
 	}
 
 	return response, nil
@@ -2397,9 +3229,10 @@ func (c *BindingClient) MultiGetTransactionBlocks(ctx context.Context, req iotac
 			resp := &iotajsonrpc.IotaTransactionBlockResponse{
 				Digest: *digest,
 			}
-			if effects != nil {
-				// TODO: Map effects to IotaTransactionBlockEffects
-			}
+			// Note: Mapping FFI TransactionEffects to IotaTransactionBlockEffects
+			// requires detailed field conversion. Can be implemented based on
+			// application needs. Effects are available but not mapped.
+			_ = effects
 			results = append(results, resp)
 		} else {
 			// Minimal response with just digest
@@ -2456,25 +3289,49 @@ func (c *BindingClient) FindCoinsForGasPayment(ctx context.Context, owner *iotag
 		return nil, nil
 	}
 
-	// Get IOTA coins for the owner
+	// Get IOTA coins for the owner with retry logic
+	// Coins may not be immediately available after faucet request or previous transactions
+	// due to indexing delays in the GraphQL endpoint
 	coinType := iotajsonrpc.IotaCoinType.String()
-	coinPage, err := c.GetCoins(ctx, iotaclient.GetCoinsRequest{
-		Owner:    owner,
-		CoinType: &coinType,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get coins: %w", err)
+	var coinPage *iotajsonrpc.CoinPage
+	var err error
+
+	maxRetries := 30
+	var selectedCoins []*iotajsonrpc.Coin
+	for i := 0; i < maxRetries; i++ {
+		coinPage, err = c.GetCoins(ctx, iotaclient.GetCoinsRequest{
+			Owner:    owner,
+			CoinType: &coinType,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to get coins: %w", err)
+		}
+
+		// Filter out coins that are already used as inputs in the transaction
+		// and try to select usable gas coins
+		if len(coinPage.Data) > 0 {
+			selectedCoins, err = iotajsonrpc.PickupCoinsWithFilter(coinPage.Data, gasBudget, func(c *iotajsonrpc.Coin) bool {
+				return !pt.IsInInputObjects(c.CoinObjectID)
+			})
+			// If we successfully found usable coins, break out of retry loop
+			if err == nil && len(selectedCoins) > 0 {
+				break
+			}
+		}
+
+		// Wait before retrying (exponential backoff up to 1 second)
+		if i < maxRetries-1 {
+			waitTime := time.Duration(100*(i+1)) * time.Millisecond
+			if waitTime > time.Second {
+				waitTime = time.Second
+			}
+			time.Sleep(waitTime)
+		}
 	}
 
-	// Filter out coins that are already used as inputs in the transaction
-	// TODO: implement IsInInputObjects logic similar to iota-go
-	availableCoins := coinPage.Data
-
-	// Use PickupCoinsWithFilter to select gas coins
-	totalGasCost := gasPrice * gasBudget
-	selectedCoins, err := iotajsonrpc.PickupCoinsWithFilter(availableCoins, totalGasCost, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to select gas coins: %w", err)
+	// Final check: if still no usable coins after retries
+	if len(selectedCoins) == 0 {
+		return nil, fmt.Errorf("no coins found for address %s after %d retries", owner.String(), maxRetries)
 	}
 
 	// Convert to ObjectRef slice
@@ -2500,43 +3357,39 @@ func (c *BindingClient) WaitForNextVersionForTesting(ctx context.Context, timeou
 
 // Transaction builder helper functions
 
-// // convertObjectRefToUnresolvedInput converts an iotago.ObjectRef to FFI UnresolvedInput
-func convertObjectRefToUnresolvedInput(ref *iotago.ObjectRef) (*iota_sdk_ffi.UnresolvedInput, error) {
-	if ref == nil {
-		return nil, fmt.Errorf("ObjectRef is nil")
-	}
-
-	ffiObjID, err := toFfiObjectID(ref.ObjectID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert ObjectID: %w", err)
-	}
-
-	ffiDigest, err := iota_sdk_ffi.DigestFromBase58(ref.Digest.String())
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert digest: %w", err)
-	}
-
-	return iota_sdk_ffi.UnresolvedInputNewOwned(ffiObjID, ref.Version, ffiDigest), nil
-}
+// convertObjectRefToUnresolvedInput converts an iotago.ObjectRef to FFI UnresolvedInput
+// NOTE: Commented out because UnresolvedInput is no longer available in the new FFI API
+// func convertObjectRefToUnresolvedInput(ref *iotago.ObjectRef) (*iota_sdk_ffi.UnresolvedInput, error) {
+// 	if ref == nil {
+// 		return nil, fmt.Errorf("ObjectRef is nil")
+// 	}
+//
+// 	ffiObjID, err := toFfiObjectID(ref.ObjectID)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("failed to convert ObjectID: %w", err)
+// 	}
+//
+// 	ffiDigest, err := iota_sdk_ffi.DigestFromBase58(ref.Digest.String())
+// 	if err != nil {
+// 		return nil, fmt.Errorf("failed to convert digest: %w", err)
+// 	}
+//
+// 	return iota_sdk_ffi.UnresolvedInputNewOwned(ffiObjID, ref.Version, ffiDigest), nil
+// }
 
 // buildTransactionAndExecute builds, signs, and executes a transaction
 func (c *BindingClient) buildTransactionAndExecute(ctx context.Context, signer iotasigner.Signer, builder *iota_sdk_ffi.TransactionBuilder, gasBudget uint64, gasPrice uint64, options *iotajsonrpc.IotaTransactionBlockResponseOptions) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	// Set gas budget and price
-	builder.SetGasBudget(gasBudget)
+	builder = builder.GasBudget(gasBudget)
 	if gasPrice > 0 {
-		builder.SetGasPrice(gasPrice)
+		builder = builder.GasPrice(gasPrice)
 	}
 
-	// Set sender
-	senderAddr, err := toFfiAddress(signer.Address())
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert sender address: %w", err)
-	}
-	builder.SetSender(senderAddr)
+	// Note: Sender is already set during TransactionBuilderInit
 
 	// Finish the transaction
 	tx, err := builder.Finish()
-	if err != nil {
+	if err.(*iota_sdk_ffi.SdkFfiError) != nil {
 		return nil, fmt.Errorf("failed to finish transaction: %w", err)
 	}
 
@@ -2557,7 +3410,7 @@ func (c *BindingClient) buildTransactionAndExecute(ctx context.Context, signer i
 	}
 
 	// Execute transaction
-	effects, err := c.qclient.ExecuteTx([]*iota_sdk_ffi.UserSignature{ffiSig}, tx)
+	txEffects, err := c.qclient.ExecuteTx([]*iota_sdk_ffi.UserSignature{ffiSig}, tx)
 	if err.(*iota_sdk_ffi.SdkFfiError) != nil {
 		return nil, fmt.Errorf("ExecuteTx failed: %w", err)
 	}
@@ -2568,13 +3421,25 @@ func (c *BindingClient) buildTransactionAndExecute(ctx context.Context, signer i
 		Digest: *digest,
 	}
 
-	// If options request effects, add them
-	if options != nil && options.ShowEffects && effects != nil {
-		// Fetch full effects
-		txEffects, err := c.qclient.TransactionEffects(tx.Digest())
-		if err.(*iota_sdk_ffi.SdkFfiError) != nil && txEffects != nil {
-			// TODO: Map effects to IotaTransactionBlockEffects
-			// This would require detailed field mapping
+	// If options request effects or object changes, use effects from execution
+	if options != nil && (options.ShowEffects || options.ShowObjectChanges) {
+		if txEffects == nil || *txEffects == nil {
+			return nil, fmt.Errorf("transaction effects are nil after successful execution")
+		}
+
+		if options.ShowEffects {
+			convertedEffects, err := convertTransactionEffects(*txEffects)
+			if err != nil {
+				return nil, fmt.Errorf("failed to convert transaction effects: %w", err)
+			}
+			response.Effects = &serialization.TagJson[iotajsonrpc.IotaTransactionBlockEffects]{Data: *convertedEffects}
+		}
+		if options.ShowObjectChanges {
+			objectChanges, err := convertChangedObjectsToObjectChanges(*txEffects)
+			if err != nil {
+				return nil, fmt.Errorf("failed to convert object changes: %w", err)
+			}
+			response.ObjectChanges = objectChanges
 		}
 	}
 
@@ -2582,24 +3447,442 @@ func (c *BindingClient) buildTransactionAndExecute(ctx context.Context, signer i
 }
 
 // addGasCoinsToBuilder adds gas coins to the transaction builder
-func (c *BindingClient) addGasCoinsToBuilder(ctx context.Context, builder *iota_sdk_ffi.TransactionBuilder, owner *iotago.Address, gasBudget, gasPrice uint64) error {
+func (c *BindingClient) addGasCoinsToBuilder(ctx context.Context, builder *iota_sdk_ffi.TransactionBuilder, owner *iotago.Address, gasBudget, gasPrice uint64) (*iota_sdk_ffi.TransactionBuilder, error) {
 	// Find gas coins
 	gasCoins, err := c.FindCoinsForGasPayment(ctx, owner, iotago.ProgrammableTransaction{}, gasPrice, gasBudget)
 	if err != nil {
-		return fmt.Errorf("failed to find gas coins: %w", err)
+		return nil, fmt.Errorf("failed to find gas coins: %w", err)
 	}
 
-	// Convert to UnresolvedInput
-	var gasInputs []*iota_sdk_ffi.UnresolvedInput
+	// Add gas objects to builder using the new fluent API
 	for _, coin := range gasCoins {
-		unresolvedInput, err := convertObjectRefToUnresolvedInput(coin)
+		ffiObjID, err := toFfiObjectID(coin.ObjectID)
 		if err != nil {
-			return fmt.Errorf("failed to convert gas coin: %w", err)
+			return nil, fmt.Errorf("failed to convert gas coin: %w", err)
 		}
-		gasInputs = append(gasInputs, unresolvedInput)
+		builder = builder.Gas(ffiObjID)
+	}
+	return builder, nil
+}
+
+// convertTransactionDataToTransaction converts iotago.TransactionData to iota_sdk_ffi.Transaction
+// This is useful when you have a TransactionData structure and need to create an FFI Transaction
+func convertTransactionDataToTransaction(td *iotago.TransactionData) (*iota_sdk_ffi.Transaction, error) {
+	if td == nil {
+		return nil, fmt.Errorf("TransactionData is nil")
+	}
+	if td.V1 == nil {
+		return nil, fmt.Errorf("TransactionData.V1 is nil")
 	}
 
-	// Add gas objects to builder
-	builder.AddGasObjects(gasInputs)
-	return nil
+	v1 := td.V1
+
+	// Convert TransactionKind
+	kind, err := convertTransactionKind(&v1.Kind)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert TransactionKind: %w", err)
+	}
+
+	// Convert Sender
+	sender, err := toFfiAddress(&v1.Sender)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert sender address: %w", err)
+	}
+
+	// Convert GasData to GasPayment
+	gasPayment, err := convertGasDataToGasPayment(&v1.GasData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert GasData: %w", err)
+	}
+
+	// Convert Expiration
+	expiration, err := convertTransactionExpiration(&v1.Expiration)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert expiration: %w", err)
+	}
+
+	return iota_sdk_ffi.NewTransaction(kind, sender, gasPayment, expiration), nil
+}
+
+// convertGasDataToGasPayment converts iotago.GasData to iota_sdk_ffi.GasPayment
+func convertGasDataToGasPayment(gasData *iotago.GasData) (iota_sdk_ffi.GasPayment, error) {
+	if gasData == nil {
+		return iota_sdk_ffi.GasPayment{}, fmt.Errorf("GasData is nil")
+	}
+
+	// Convert payment ObjectRefs to ObjectReferences
+	objects := make([]iota_sdk_ffi.ObjectReference, len(gasData.Payment))
+	for i, ref := range gasData.Payment {
+		objRef, err := convertObjectRefToObjectReference(ref)
+		if err != nil {
+			return iota_sdk_ffi.GasPayment{}, fmt.Errorf("failed to convert payment object %d: %w", i, err)
+		}
+		objects[i] = objRef
+	}
+
+	// Convert owner address
+	owner, err := toFfiAddress(gasData.Owner)
+	if err != nil {
+		return iota_sdk_ffi.GasPayment{}, fmt.Errorf("failed to convert owner address: %w", err)
+	}
+
+	return iota_sdk_ffi.GasPayment{
+		Objects: objects,
+		Owner:   owner,
+		Price:   gasData.Price,
+		Budget:  gasData.Budget,
+	}, nil
+}
+
+// convertObjectRefToObjectReference converts iotago.ObjectRef to iota_sdk_ffi.ObjectReference
+func convertObjectRefToObjectReference(ref *iotago.ObjectRef) (iota_sdk_ffi.ObjectReference, error) {
+	if ref == nil {
+		return iota_sdk_ffi.ObjectReference{}, fmt.Errorf("ObjectRef is nil")
+	}
+
+	ffiObjID, err := toFfiObjectID(ref.ObjectID)
+	if err != nil {
+		return iota_sdk_ffi.ObjectReference{}, fmt.Errorf("failed to convert ObjectID: %w", err)
+	}
+
+	ffiDigest, err := iota_sdk_ffi.DigestFromBase58(ref.Digest.String())
+	if err != nil {
+		return iota_sdk_ffi.ObjectReference{}, fmt.Errorf("failed to convert digest: %w", err)
+	}
+
+	return iota_sdk_ffi.ObjectReference{
+		ObjectId: ffiObjID,
+		Version:  uint64(ref.Version),
+		Digest:   ffiDigest,
+	}, nil
+}
+
+// convertTransactionExpiration converts iotago.TransactionExpiration to iota_sdk_ffi.TransactionExpiration
+func convertTransactionExpiration(exp *iotago.TransactionExpiration) (iota_sdk_ffi.TransactionExpiration, error) {
+	if exp == nil {
+		return iota_sdk_ffi.TransactionExpirationNone{}, nil
+	}
+
+	if exp.None != nil {
+		return iota_sdk_ffi.TransactionExpirationNone{}, nil
+	}
+
+	if exp.Epoch != nil {
+		return iota_sdk_ffi.TransactionExpirationEpoch{
+			Field0: *exp.Epoch,
+		}, nil
+	}
+
+	return iota_sdk_ffi.TransactionExpirationNone{}, nil
+}
+
+// convertTransactionKind converts iotago.TransactionKind to iota_sdk_ffi.TransactionKind
+func convertTransactionKind(kind *iotago.TransactionKind) (*iota_sdk_ffi.TransactionKind, error) {
+	if kind == nil {
+		return nil, fmt.Errorf("TransactionKind is nil")
+	}
+
+	if kind.ProgrammableTransaction != nil {
+		pt, err := convertProgrammableTransaction(kind.ProgrammableTransaction)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert ProgrammableTransaction: %w", err)
+		}
+		return iota_sdk_ffi.TransactionKindNewProgrammableTransaction(pt), nil
+	}
+
+	if kind.ChangeEpoch != nil {
+		// Note: ChangeEpoch conversion would require additional implementation
+		return nil, fmt.Errorf("ChangeEpoch conversion not implemented")
+	}
+
+	if kind.Genesis != nil {
+		// Note: Genesis conversion would require additional implementation
+		return nil, fmt.Errorf("Genesis conversion not implemented")
+	}
+
+	if kind.ConsensusCommitPrologue != nil {
+		// Note: ConsensusCommitPrologue conversion would require additional implementation
+		return nil, fmt.Errorf("ConsensusCommitPrologue conversion not implemented")
+	}
+
+	return nil, fmt.Errorf("unknown TransactionKind variant")
+}
+
+// convertProgrammableTransaction converts iotago.ProgrammableTransaction to iota_sdk_ffi.ProgrammableTransaction
+func convertProgrammableTransaction(pt *iotago.ProgrammableTransaction) (*iota_sdk_ffi.ProgrammableTransaction, error) {
+	if pt == nil {
+		return nil, fmt.Errorf("ProgrammableTransaction is nil")
+	}
+
+	// Convert Inputs
+	inputs := make([]*iota_sdk_ffi.Input, len(pt.Inputs))
+	for i, input := range pt.Inputs {
+		ffiInput, err := convertCallArg(&input)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert input %d: %w", i, err)
+		}
+		inputs[i] = ffiInput
+	}
+
+	// Convert Commands
+	commands := make([]*iota_sdk_ffi.Command, len(pt.Commands))
+	for i, cmd := range pt.Commands {
+		ffiCmd, err := convertCommand(&cmd)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert command %d: %w", i, err)
+		}
+		commands[i] = ffiCmd
+	}
+
+	return iota_sdk_ffi.NewProgrammableTransaction(inputs, commands), nil
+}
+
+// convertCallArg converts iotago.CallArg to iota_sdk_ffi.Input
+func convertCallArg(arg *iotago.CallArg) (*iota_sdk_ffi.Input, error) {
+	if arg == nil {
+		return nil, fmt.Errorf("CallArg is nil")
+	}
+
+	// Handle Pure variant
+	if arg.Pure != nil {
+		return iota_sdk_ffi.InputNewPure(*arg.Pure), nil
+	}
+
+	// Handle Object variant
+	if arg.Object != nil {
+		return convertObjectArgToInput(arg.Object)
+	}
+
+	return nil, fmt.Errorf("unknown CallArg variant")
+}
+
+// convertObjectArgToInput converts iotago.ObjectArg to iota_sdk_ffi.Input
+func convertObjectArgToInput(obj *iotago.ObjectArg) (*iota_sdk_ffi.Input, error) {
+	if obj == nil {
+		return nil, fmt.Errorf("ObjectArg is nil")
+	}
+
+	if obj.ImmOrOwnedObject != nil {
+		objRef, err := convertObjectRefToObjectReference(obj.ImmOrOwnedObject)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert ImmOrOwnedObject: %w", err)
+		}
+		return iota_sdk_ffi.InputNewImmutableOrOwned(objRef), nil
+	}
+
+	if obj.SharedObject != nil {
+		objID, err := toFfiObjectID(obj.SharedObject.Id)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert SharedObject Id: %w", err)
+		}
+		return iota_sdk_ffi.InputNewShared(objID, uint64(obj.SharedObject.InitialSharedVersion), obj.SharedObject.Mutable), nil
+	}
+
+	if obj.Receiving != nil {
+		objRef, err := convertObjectRefToObjectReference(obj.Receiving)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert Receiving: %w", err)
+		}
+		return iota_sdk_ffi.InputNewReceiving(objRef), nil
+	}
+
+	return nil, fmt.Errorf("unknown ObjectArg variant")
+}
+
+// convertCommand converts iotago.Command to iota_sdk_ffi.Command
+func convertCommand(cmd *iotago.Command) (*iota_sdk_ffi.Command, error) {
+	if cmd == nil {
+		return nil, fmt.Errorf("Command is nil")
+	}
+
+	// Note: Full command conversion would require implementing all command variants.
+	// This is a placeholder that shows the pattern. Add cases as needed:
+
+	if cmd.Publish != nil {
+		// Convert Publish
+		return convertPublishCommand(cmd.Publish)
+	}
+
+	if cmd.MoveCall != nil {
+		// Convert MoveCall
+		return convertMoveCallCommand(cmd.MoveCall)
+	}
+
+	if cmd.TransferObjects != nil {
+		// Convert TransferObjects
+		return convertTransferObjectsCommand(cmd.TransferObjects)
+	}
+
+	if cmd.SplitCoins != nil {
+		// Convert SplitCoins
+		return convertSplitCoinsCommand(cmd.SplitCoins)
+	}
+
+	if cmd.MergeCoins != nil {
+		// Convert MergeCoins
+		return convertMergeCoinsCommand(cmd.MergeCoins)
+	}
+
+	// Add other command types as needed (MakeMoveVec, Publish, Upgrade, etc.)
+	return nil, fmt.Errorf("command conversion not fully implemented for this command type")
+}
+
+// convertPublishCommand converts iotago.ProgrammablePublish to iota_sdk_ffi.Command
+func convertPublishCommand(pub *iotago.ProgrammablePublish) (*iota_sdk_ffi.Command, error) {
+	if pub == nil {
+		return nil, fmt.Errorf("ProgrammablePublish is nil")
+	}
+
+	// Convert dependencies
+	dependencies := make([]*iota_sdk_ffi.ObjectId, len(pub.Dependencies))
+	for i, dep := range pub.Dependencies {
+		ffiDep, err := toFfiObjectID(dep)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert dependency %d: %w", i, err)
+		}
+		dependencies[i] = ffiDep
+	}
+
+	publish := iota_sdk_ffi.NewPublish(pub.Modules, dependencies)
+	return iota_sdk_ffi.CommandNewPublish(publish), nil
+}
+
+// convertMoveCallCommand converts iotago.ProgrammableMoveCall to iota_sdk_ffi.Command
+func convertMoveCallCommand(mc *iotago.ProgrammableMoveCall) (*iota_sdk_ffi.Command, error) {
+	if mc == nil {
+		return nil, fmt.Errorf("ProgrammableMoveCall is nil")
+	}
+
+	packageID, err := toFfiObjectID(mc.Package)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert package ID: %w", err)
+	}
+
+	module, err := iota_sdk_ffi.NewIdentifier(mc.Module)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert module identifier: %w", err)
+	}
+
+	function, err := iota_sdk_ffi.NewIdentifier(mc.Function)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert function identifier: %w", err)
+	}
+
+	typeArgs := make([]*iota_sdk_ffi.TypeTag, len(mc.TypeArguments))
+	for i, typeArg := range mc.TypeArguments {
+		ffiTypeTag, err := toFfiTypeTag(&typeArg)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert type argument %d: %w", i, err)
+		}
+		typeArgs[i] = ffiTypeTag
+	}
+
+	arguments := make([]*iota_sdk_ffi.Argument, len(mc.Arguments))
+	for i, arg := range mc.Arguments {
+		ffiArg, err := convertArgument(&arg)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert argument %d: %w", i, err)
+		}
+		arguments[i] = ffiArg
+	}
+
+	moveCall := iota_sdk_ffi.NewMoveCall(packageID, module, function, typeArgs, arguments)
+	return iota_sdk_ffi.CommandNewMoveCall(moveCall), nil
+}
+
+// convertArgument converts iotago.Argument to iota_sdk_ffi.Argument
+func convertArgument(arg *iotago.Argument) (*iota_sdk_ffi.Argument, error) {
+	if arg == nil {
+		return nil, fmt.Errorf("Argument is nil")
+	}
+
+	if arg.GasCoin != nil {
+		return iota_sdk_ffi.ArgumentNewGas(), nil
+	}
+
+	if arg.Input != nil {
+		return iota_sdk_ffi.ArgumentNewInput(uint16(*arg.Input)), nil
+	}
+
+	if arg.Result != nil {
+		return iota_sdk_ffi.ArgumentNewResult(uint16(*arg.Result)), nil
+	}
+
+	if arg.NestedResult != nil {
+		return iota_sdk_ffi.ArgumentNewNestedResult(arg.NestedResult.Cmd, arg.NestedResult.Result), nil
+	}
+
+	return nil, fmt.Errorf("unknown Argument variant")
+}
+
+// convertTransferObjectsCommand converts iotago.ProgrammableTransferObjects to iota_sdk_ffi.Command
+func convertTransferObjectsCommand(to *iotago.ProgrammableTransferObjects) (*iota_sdk_ffi.Command, error) {
+	if to == nil {
+		return nil, fmt.Errorf("ProgrammableTransferObjects is nil")
+	}
+
+	objects := make([]*iota_sdk_ffi.Argument, len(to.Objects))
+	for i, obj := range to.Objects {
+		ffiArg, err := convertArgument(&obj)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert object %d: %w", i, err)
+		}
+		objects[i] = ffiArg
+	}
+
+	address, err := convertArgument(&to.Address)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert address: %w", err)
+	}
+
+	transferObjects := iota_sdk_ffi.NewTransferObjects(objects, address)
+	return iota_sdk_ffi.CommandNewTransferObjects(transferObjects), nil
+}
+
+// convertSplitCoinsCommand converts iotago.ProgrammableSplitCoins to iota_sdk_ffi.Command
+func convertSplitCoinsCommand(sc *iotago.ProgrammableSplitCoins) (*iota_sdk_ffi.Command, error) {
+	if sc == nil {
+		return nil, fmt.Errorf("ProgrammableSplitCoins is nil")
+	}
+
+	coin, err := convertArgument(&sc.Coin)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert coin: %w", err)
+	}
+
+	amounts := make([]*iota_sdk_ffi.Argument, len(sc.Amounts))
+	for i, amount := range sc.Amounts {
+		ffiArg, err := convertArgument(&amount)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert amount %d: %w", i, err)
+		}
+		amounts[i] = ffiArg
+	}
+
+	splitCoins := iota_sdk_ffi.NewSplitCoins(coin, amounts)
+	return iota_sdk_ffi.CommandNewSplitCoins(splitCoins), nil
+}
+
+// convertMergeCoinsCommand converts iotago.ProgrammableMergeCoins to iota_sdk_ffi.Command
+func convertMergeCoinsCommand(mc *iotago.ProgrammableMergeCoins) (*iota_sdk_ffi.Command, error) {
+	if mc == nil {
+		return nil, fmt.Errorf("ProgrammableMergeCoins is nil")
+	}
+
+	destination, err := convertArgument(&mc.Destination)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert destination: %w", err)
+	}
+
+	sources := make([]*iota_sdk_ffi.Argument, len(mc.Sources))
+	for i, source := range mc.Sources {
+		ffiArg, err := convertArgument(&source)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert source %d: %w", i, err)
+		}
+		sources[i] = ffiArg
+	}
+
+	mergeCoins := iota_sdk_ffi.NewMergeCoins(destination, sources)
+	return iota_sdk_ffi.CommandNewMergeCoins(mergeCoins), nil
 }

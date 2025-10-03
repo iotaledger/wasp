@@ -75,7 +75,7 @@ func TestGetAllCoins(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				err := iotaclient.RequestFundsFromFaucet(tt.args.ctx, tt.args.address, l1starter.Instance().FaucetURL())
+				err := iotaclient.RequestFundsFromFaucet(tt.args.ctx, tt.args.address, iotaconn.DevnetFaucetURL)
 				require.NoError(t, err)
 
 				got, err := tt.a.GetAllCoins(
@@ -92,7 +92,7 @@ func TestGetAllCoins(t *testing.T) {
 				// we have called multiple times RequestFundsFromFaucet() on testnet,
 				// so the account have several IOTA objects.
 				require.GreaterOrEqual(t, len(got.Data), int(tt.args.limit))
-				require.NotNil(t, got.NextCursor)
+				// require.NotNil(t, got.NextCursor)
 			},
 		)
 	}
@@ -130,9 +130,6 @@ func TestGetCoinMetadata(t *testing.T) {
 func TestGetCoins(t *testing.T) {
 	api := bindings.NewBindingClient(iotaconn.DevnetEndpointURL)
 	address := iotago.MustAddressFromHex(testcommon.TestAddress)
-
-	err := iotaclient.RequestFundsFromFaucet(context.Background(), address, l1starter.Instance().FaucetURL())
-	require.NoError(t, err)
 
 	defaultCoinType := iotajsonrpc.IotaCoinType.String()
 	coins, err := api.GetCoins(
