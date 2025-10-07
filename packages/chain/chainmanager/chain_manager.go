@@ -664,7 +664,6 @@ func (cmi *ChainMgrImpl) ensureCmtLog(committeeAddr cryptolib.Address) (*cmtLogI
 		nodeIDs,
 		dkShare.DSS().MaxFaulty(),
 		cmi.consensusStateRegistry,
-		cmi.nodeIDFromPubKey,
 		cmi.deriveAOByQuorum,
 		cmi.pipeliningLimit,
 		cmi.metrics,

@@ -75,12 +75,10 @@ type CmtLogImpl struct {
 func New(
 	me gpa.NodeID,
 	chainID isc.ChainID,
-	//dkShare tcrypto.DKShare,
 	cmtAddr *cryptolib.Address,
 	nodeIDs []gpa.NodeID,
 	dssMaxFaulty int,
 	consensusStateRegistry ConsensusStateRegistry,
-	nodeIDFromPubKey func(pubKey *cryptolib.PublicKey) gpa.NodeID,
 	deriveAOByQuorum bool,
 	pipeliningLimit int,
 	cclMetrics *metrics.ChainCmtLogMetrics,
