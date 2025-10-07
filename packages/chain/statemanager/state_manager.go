@@ -10,7 +10,7 @@ import (
 
 	"github.com/iotaledger/hive.go/log"
 
-	consGR "github.com/iotaledger/wasp/v2/packages/chain/cons/gr"
+	consGR "github.com/iotaledger/wasp/v2/packages/chain/consensus/consensusrunner"
 	smgpa "github.com/iotaledger/wasp/v2/packages/chain/statemanager/gpa"
 	"github.com/iotaledger/wasp/v2/packages/chain/statemanager/gpa/inputs"
 	gpautils "github.com/iotaledger/wasp/v2/packages/chain/statemanager/gpa/utils"

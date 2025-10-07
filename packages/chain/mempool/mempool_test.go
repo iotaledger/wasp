@@ -18,7 +18,7 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/v2/packages/chain"
-	consGR "github.com/iotaledger/wasp/v2/packages/chain/cons/gr"
+	consGR "github.com/iotaledger/wasp/v2/packages/chain/consensus/consensusrunner"
 	"github.com/iotaledger/wasp/v2/packages/chain/mempool"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
