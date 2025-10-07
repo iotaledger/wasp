@@ -197,7 +197,6 @@ type ChainMgrImpl struct {
 	latestActiveCmt            *cryptolib.Address                                      // The latest active committee.
 	latestConfirmedAO          *isc.StateAnchor                                        // The latest confirmed AO (follows Active AO).
 	activeNodesCB              func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey) // All the nodes authorized for being access nodes (for the ActiveAO).
-	trackActiveStateCB         func(ao *isc.StateAnchor)                               // We will call this to set new AO for the active state.
 	savePreliminaryBlockCB     func(block state.Block)                                 // We will call this, when a preliminary block matching the tx signatures is received.
 	committeeUpdatedCB         func(dkShare tcrypto.DKShare)                           // Will be called, when a committee changes.
 	needConsensus              *NeedConsensusMap                                       // Query for a consensus.
@@ -226,7 +225,6 @@ func New(
 	needConsensusCB func(upd *NeedConsensusMap),
 	needPublishCB func(upd *NeedPublishTXMap),
 	activeNodesCB func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey),
-	trackActiveStateCB func(ao *isc.StateAnchor),
 	savePreliminaryBlockCB func(block state.Block),
 	committeeUpdatedCB func(dkShare tcrypto.DKShare),
 	deriveAOByQuorum bool, // TODO: Review, some of them are outdated.
@@ -241,7 +239,6 @@ func New(
 		cmtLogs:                    map[cryptolib.AddressKey]*cmtLogInst{},
 		consensusStateRegistry:     consensusStateRegistry,
 		activeNodesCB:              activeNodesCB,
-		trackActiveStateCB:         trackActiveStateCB,
 		savePreliminaryBlockCB:     savePreliminaryBlockCB,
 		committeeUpdatedCB:         committeeUpdatedCB,
 		needConsensus:              shrinkingmap.New[NeedConsensusKey, *NeedConsensus](),
@@ -282,10 +279,10 @@ func New(
 // }
 
 // Implements the gpa.GPA interface.
-func (cmi *ChainMgrImpl) Message(msg gpa.Message) gpa.OutMessages {
+func (cmi *ChainMgrImpl) Message(msg gpa.Message) (_ gpa.OutMessages, updatedVSATip *isc.StateAnchor) {
 	switch msg := msg.(type) {
 	case *msgCmtLog:
-		return cmi.HandleMsgCmtLog(msg)
+		return cmi.HandleMsgCmtLog(msg), nil
 	case *msgBlockProduced:
 		return cmi.HandleMsgBlockProduced(msg)
 	}
@@ -301,7 +298,7 @@ func (cmi *ChainMgrImpl) Message(msg gpa.Message) gpa.OutMessages {
 // >     	     Send Suspend to Last Active CmtLog; HandleCmtLogOutput(LatestActiveCmt)
 // >         Set LatestActiveCmt <- NIL
 // >         Set NeedConsensus <- NIL
-func (cmi *ChainMgrImpl) HandleInputAnchorConfirmed(input *inputAnchorConfirmed) gpa.OutMessages {
+func (cmi *ChainMgrImpl) HandleInputAnchorConfirmed(input *inputAnchorConfirmed) (gpa.OutMessages, *isc.StateAnchor) {
 	cmi.log.LogDebugf("handleInputAnchorConfirmed: %+v", input)
 	//
 	// >     Set LatestConfirmedAO <- ConfirmedAO
@@ -321,16 +318,13 @@ func (cmi *ChainMgrImpl) HandleInputAnchorConfirmed(input *inputAnchorConfirmed)
 			cmi.latestActiveCmt = nil
 		}
 		cmi.needConsensus.Clear()
-		if vsaUpdated && vsaTip != nil {
-			cmi.log.LogDebugf("⊢ going to track %v as an access node on confirmed block.", vsaTip)
-			cmi.trackActiveStateCB(vsaTip)
-		}
+		updatedVSATip := lo.Ternary(vsaUpdated && vsaTip != nil, vsaTip, nil)
 		cmi.log.LogDebugf("This node is not in the committee for aliasOutput: %v", input.anchor)
-		return msgs
+		return msgs, updatedVSATip
 	}
 	if err != nil {
 		cmi.log.LogWarnf("Failed to get CmtLog: %v", err)
-		return msgs
+		return msgs, nil
 	}
 	// >     IF this node is in the committee THEN
 	// >         Pass it to the corresponding CmtLog; HandleCmtLogOutput.
@@ -338,7 +332,7 @@ func (cmi *ChainMgrImpl) HandleInputAnchorConfirmed(input *inputAnchorConfirmed)
 		committeeLog,
 		committeeLog.HandleInputAnchorConfirmed(cmtlog.NewInputAnchorConfirmed(input.anchor)),
 	))
-	return msgs
+	return msgs, nil
 }
 
 // > UPON Reception of PublishResult:
@@ -454,7 +448,7 @@ func (cmi *ChainMgrImpl) HandleMsgCmtLog(msg *msgCmtLog) gpa.OutMessages {
 	})
 }
 
-func (cmi *ChainMgrImpl) HandleMsgBlockProduced(msg *msgBlockProduced) gpa.OutMessages {
+func (cmi *ChainMgrImpl) HandleMsgBlockProduced(msg *msgBlockProduced) (_ gpa.OutMessages, updatedVSATip *isc.StateAnchor) {
 	cmi.log.LogDebugf("handleMsgBlockProduced: %+v", msg)
 	vsaTip, vsaUpdated, l1Commitment := cmi.varAccessNodeState.BlockProduced(msg.tx)
 	//
@@ -470,10 +464,9 @@ func (cmi *ChainMgrImpl) HandleMsgBlockProduced(msg *msgBlockProduced) gpa.OutMe
 	//
 	// Update the active state, if needed.
 	if vsaUpdated && vsaTip != nil && cmi.latestActiveCmt == nil {
-		cmi.log.LogDebugf("⊢ going to track %v as an access node on unconfirmed block.", vsaTip)
-		cmi.trackActiveStateCB(vsaTip)
+		updatedVSATip = vsaTip
 	}
-	return nil
+	return nil, updatedVSATip
 }
 
 // > PROCEDURE HandleCmtLogOutput(cmt):

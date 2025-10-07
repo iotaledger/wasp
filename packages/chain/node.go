@@ -641,9 +641,15 @@ func (cni *chainNodeImpl) handleStateAnchor(stateAchor *isc.StateAnchor, l1Param
 	cni.latestActiveAO = stateAchor
 	cni.accessLock.Unlock()
 
-	outMsgs := cni.chainMgr.HandleInputAnchorConfirmed(
+	outMsgs, updatedVSATip := cni.chainMgr.HandleInputAnchorConfirmed(
 		chainmanager.NewInputAnchorConfirmed(stateAchor.Owner(), stateAchor),
 	)
+
+	if updatedVSATip != nil {
+		cni.log.LogDebugf("⊢ going to track %v as an access node on confirmed block.", updatedVSATip)
+		cni.stateTrackerAct.TrackAliasOutput(updatedVSATip, true)
+	}
+
 	cni.sendMessages(outMsgs)
 }
 
@@ -668,7 +674,14 @@ func (cni *chainNodeImpl) handleNetMessage(recv *peering.PeerMessageIn) {
 		return
 	}
 	msg.SetSender(cni.pubKeyAsNodeID(recv.SenderPubKey))
-	cni.sendMessages(cni.chainMgr.Message(msg))
+	outMsgs, updatedVSATip := cni.chainMgr.Message(msg)
+
+	if updatedVSATip != nil {
+		cni.log.LogDebugf("⊢ going to track %v as an access node on unconfirmed block.", updatedVSATip)
+		cni.stateTrackerAct.TrackAliasOutput(updatedVSATip, true)
+	}
+
+	cni.sendMessages(outMsgs)
 }
 
 func (cni *chainNodeImpl) handleNeedConsensus(ctx context.Context, upd *chainmanager.NeedConsensusMap) {
@@ -1366,9 +1379,6 @@ func createChainManager(
 			cni.accessLock.RLock()
 			defer cni.accessLock.RUnlock()
 			return cni.activeAccessNodes, cni.activeCommitteeNodes
-		},
-		func(anchor *isc.StateAnchor) {
-			cni.stateTrackerAct.TrackAliasOutput(anchor, true)
 		},
 		func(block state.Block) {
 			if err := cni.stateMgr.PreliminaryBlock(block); err != nil {
