@@ -205,7 +205,6 @@ type ChainMgrImpl struct {
 	needPublishCB              func(upd *NeedPublishTXMap)                             // A callback.
 	dkShareRegistryProvider    registry.DKShareRegistryProvider                        // Source for DKShares.
 	varAccessNodeState         VarAccessNodeState
-	output                     *Output
 	me                         gpa.NodeID
 	nodeIDFromPubKey           func(pubKey *cryptolib.PublicKey) gpa.NodeID
 	deriveAOByQuorum           bool // Config parameter.
@@ -255,28 +254,8 @@ func New(
 		postponeRecoveryMilestones: postponeRecoveryMilestones,
 		log:                        log,
 	}
-	cmi.output = &Output{cmi: cmi}
 	return cmi, nil
 }
-
-// Implements the gpa.GPA interface.
-// func (cmi *ChainMgrImpl) Input(input gpa.Input) gpa.OutMessages {
-// 	switch input := input.(type) {
-// 	case *inputAnchorConfirmed:
-// 		return cmi.handleInputAnchorConfirmed(input)
-// 	case *inputChainTxPublishResult:
-// 		return cmi.handleInputChainTxPublishResult(input)
-// 	case *inputConsensusOutputDone:
-// 		return cmi.handleInputConsensusOutputDone(input)
-// 	case *inputConsensusOutputSkip:
-// 		return cmi.handleInputConsensusOutputSkip(input)
-// 	case *inputConsensusTimeout:
-// 		return cmi.handleInputConsensusTimeout(input)
-// 	case *inputCanPropose:
-// 		return cmi.handleInputCanPropose()
-// 	}
-// 	panic(fmt.Errorf("unexpected input %T: %+v", input, input))
-// }
 
 // Implements the gpa.GPA interface.
 func (cmi *ChainMgrImpl) Message(msg gpa.Message) (_ gpa.OutMessages, updatedVSATip *isc.StateAnchor) {
@@ -570,11 +549,6 @@ func (cmi *ChainMgrImpl) ensureNeedConsensus(cli *cmtLogInst, outputUntyped gpa.
 	if mod {
 		cmi.needConsensusCB(cmi.needConsensus)
 	}
-}
-
-// Implements the gpa.GPA interface.
-func (cmi *ChainMgrImpl) Output() gpa.Output {
-	return cmi.output
 }
 
 // Implements the gpa.GPA interface.
