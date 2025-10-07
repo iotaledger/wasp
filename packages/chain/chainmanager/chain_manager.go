@@ -649,10 +649,20 @@ func (cmi *ChainMgrImpl) ensureCmtLog(committeeAddr cryptolib.Address) (*cmtLogI
 		return nil, fmt.Errorf("ensureCmtLog cannot load DKShare for committeeAddress=%v: %w", committeeAddr, err)
 	}
 
+	cmtAddr := dkShare.GetSharedPublic().AsAddress()
+
+	nodePKs := dkShare.GetNodePubKeys()
+	nodeIDs := make([]gpa.NodeID, len(nodePKs))
+	for i := range nodeIDs {
+		nodeIDs[i] = cmi.nodeIDFromPubKey(nodePKs[i])
+	}
+
 	clInst, err := cmtlog.New(
 		cmi.me,
 		cmi.chainID,
-		dkShare,
+		cmtAddr,
+		nodeIDs,
+		dkShare.DSS().MaxFaulty(),
 		cmi.consensusStateRegistry,
 		cmi.nodeIDFromPubKey,
 		cmi.deriveAOByQuorum,
