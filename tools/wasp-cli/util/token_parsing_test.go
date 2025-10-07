@@ -19,8 +19,8 @@ func TestTokenParsing(t *testing.T) {
 		fmt.Sprintf("%v|1074", fakeCoin),
 	}
 
-	assets := ParseFungibleTokens(coinStr)
-
+	assets, err := ParseFungibleTokens(coinStr)
+	require.NoError(t, err)
 	require.Equal(t, assets.BaseTokens().Uint64(), uint64(2000))
 	require.Equal(t, assets.CoinBalance(fakeCoin).Uint64(), uint64(1074))
 }

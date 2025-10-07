@@ -105,7 +105,10 @@ func initImportTrustedJSONCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			bytes := util.ReadFile(args[0])
+			bytes, err := util.ReadFile(args[0])
+			if err != nil {
+				return err
+			}
 			var trustedList []apiclient.PeeringNodeIdentityResponse
 			if err = json.Unmarshal(bytes, &trustedList); err != nil {
 				return err

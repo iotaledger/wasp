@@ -63,7 +63,10 @@ func initPostRequestCmd() *cobra.Command {
 
 			cname := args[0]
 			fname := args[1]
-			params := util.EncodeParams(args[2:])
+			params, err := util.EncodeParams(args[2:])
+			if err != nil {
+				return err
+			}
 			msg := isc.NewMessage(isc.Hn(cname), isc.Hn(fname), params)
 
 			// allowanceTokens := util.ParseFungibleTokens(postRequestParams.allowance)

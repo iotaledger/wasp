@@ -32,7 +32,7 @@ func initSendFundsCmd() *cobra.Command { //nolint:funlen
 				return err
 			}
 
-			tokens := util.ParseFungibleTokens(util.ArgsToFungibleTokensStr(args[1:]))
+			tokens, err := util.ParseFungibleTokens(util.ArgsToFungibleTokensStr(args[1:]))
 			if err != nil {
 				return err
 			}

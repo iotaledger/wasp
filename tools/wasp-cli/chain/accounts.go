@@ -38,7 +38,10 @@ func initBalanceCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			agentID := util.AgentIDFromArgs(args)
+			agentID, err := util.AgentIDFromArgs(args)
+			if err != nil {
+				return err
+			}
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
@@ -86,7 +89,10 @@ func initAccountObjectsCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			agentID := util.AgentIDFromArgs(args)
+			agentID, err := util.AgentIDFromArgs(args)
+			if err != nil {
+				return err
+			}
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
@@ -172,7 +178,11 @@ func initDepositCmd() *cobra.Command {
 			var res *iotajsonrpc.IotaTransactionBlockResponse
 			if strings.Contains(args[0], "|") {
 				// deposit to own agentID
-				tokens := util.ParseFungibleTokens(util.ArgsToFungibleTokensStr(args))
+				var tokens *isc.Assets
+				tokens, err = util.ParseFungibleTokens(util.ArgsToFungibleTokensStr(args))
+				if err != nil {
+					return err
+				}
 				allowance := tokens.Clone()
 				allowance.SetBaseTokens(allowance.BaseTokens())
 
@@ -189,8 +199,15 @@ func initDepositCmd() *cobra.Command {
 				})
 			} else {
 				// deposit to some other agentID
-				agentID := util.AgentIDFromString(args[0])
-				tokens := util.ParseFungibleTokens(util.ArgsToFungibleTokensStr(args[1:]))
+				var agentID isc.AgentID
+				agentID, err = util.AgentIDFromString(args[0])
+				if err != nil {
+					return err
+				}
+				tokens, err := util.ParseFungibleTokens(util.ArgsToFungibleTokensStr(args[1:]))
+				if err != nil {
+					return err
+				}
 				allowance := tokens.Clone()
 				allowance.SetBaseTokens(allowance.BaseTokens())
 

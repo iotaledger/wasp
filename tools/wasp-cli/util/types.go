@@ -10,8 +10,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/samber/lo"
-
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 
 	"github.com/iotaledger/wasp/v2/packages/coin"
@@ -23,221 +21,300 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/v2/packages/webapi/models"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/wallet"
-	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
 )
 
 //nolint:funlen,gocyclo
-func ValueFromString(vtype, s string) []byte {
+func ValueFromString(vtype, s string) ([]byte, error) {
 	switch strings.ToLower(vtype) {
 	case "address":
 		addr, err := cryptolib.NewAddressFromHexString(s)
-		log.Check(err)
-
-		return codec.Encode(addr)
+		if err != nil {
+			return nil, err
+		}
+		return codec.Encode(addr), nil
 	case "agentid":
-		return codec.Encode(AgentIDFromString(s))
+		agentID, err := AgentIDFromString(s)
+		if err != nil {
+			return nil, err
+		}
+		return codec.Encode(agentID), nil
 	case "bigint":
 		n, ok := new(big.Int).SetString(s, 10)
 		if !ok {
-			log.Fatal("error converting to bigint")
+			return nil, fmt.Errorf("error converting to bigint")
 		}
-
-		return codec.Encode(n)
+		return codec.Encode(n), nil
 	case "bool":
 		b, err := strconv.ParseBool(s)
-		log.Check(err)
-		return codec.Encode(b)
+		if err != nil {
+			return nil, err
+		}
+		return codec.Encode(b), nil
 	case "bytes", "hex":
 		b, err := cryptolib.DecodeHex(s)
-		log.Check(err)
-		return codec.Encode(b)
+		if err != nil {
+			return nil, err
+		}
+		return codec.Encode(b), nil
 	case "chainid":
 		chainid, err := isc.ChainIDFromString(s)
-		log.Check(err)
-		return codec.Encode(chainid)
+		if err != nil {
+			return nil, err
+		}
+		return codec.Encode(chainid), nil
 	case "dict":
 		d := dict.Dict{}
 		err := d.UnmarshalJSON([]byte(s))
-		log.Check(err)
-		return codec.Encode(d)
+		if err != nil {
+			return nil, err
+		}
+		return codec.Encode(d), nil
 	case "file":
 		return ReadFile(s)
 	case "hash":
 		hash, err := hashing.HashValueFromHex(s)
-		log.Check(err)
-		return codec.Encode(hash)
+		if err != nil {
+			return nil, err
+		}
+		return codec.Encode(hash), nil
 	case "hname":
 		hn, err := isc.HnameFromString(s)
-		log.Check(err)
-		return codec.Encode(hn)
+		if err != nil {
+			return nil, err
+		}
+		return codec.Encode(hn), nil
 	case "int8":
 		n, err := strconv.ParseInt(s, 10, 8)
-		log.Check(err)
-		return codec.Encode[int8](int8(n))
+		if err != nil {
+			return nil, err
+		}
+		return codec.Encode[int8](int8(n)), nil
 	case "int16":
 		n, err := strconv.ParseInt(s, 10, 16)
-		log.Check(err)
-		return codec.Encode[int16](int16(n))
+		if err != nil {
+			return nil, err
+		}
+		return codec.Encode[int16](int16(n)), nil
 	case "int32":
 		n, err := strconv.ParseInt(s, 10, 32)
-		log.Check(err)
-		return codec.Encode[int32](int32(n))
+		if err != nil {
+			return nil, err
+		}
+		return codec.Encode[int32](int32(n)), nil
 	case "int64", "int":
 		n, err := strconv.ParseInt(s, 10, 64)
-		log.Check(err)
-		return codec.Encode[int64](n)
+		if err != nil {
+			return nil, err
+		}
+		return codec.Encode[int64](n), nil
 	case "objectid":
 		nidBytes, err := cryptolib.DecodeHex(s)
-		log.Check(err)
+		if err != nil {
+			return nil, err
+		}
 		if len(nidBytes) != iotago.AddressLen {
-			log.Fatal("invalid objectid length")
+			return nil, fmt.Errorf("invalid objectid length")
 		}
 		nid := [iotago.AddressLen]byte(nidBytes)
-		return codec.Encode[iotago.ObjectID](nid)
+		return codec.Encode[iotago.ObjectID](nid), nil
 	case "requestid":
 		rid, err := isc.RequestIDFromString(s)
-		log.Check(err)
-		return codec.Encode(rid)
+		if err != nil {
+			return nil, err
+		}
+		return codec.Encode(rid), nil
 	case "string":
-		return codec.Encode(s)
+		return codec.Encode(s), nil
 	case "tokenid":
 		tidBytes, err := cryptolib.DecodeHex(s)
-		log.Check(err)
-		if len(tidBytes) != iotago.AddressLen {
-			log.Fatal("invalid tokenid length")
+		if err != nil {
+			return nil, err
 		}
-
+		if len(tidBytes) != iotago.AddressLen {
+			return nil, fmt.Errorf("invalid tokenid length")
+		}
 		tid := [iotago.AddressLen]byte(tidBytes)
-
-		return codec.Encode(tid)
+		return codec.Encode(tid), nil
 	case "uint8":
 		n, err := strconv.ParseUint(s, 10, 8)
-		log.Check(err)
-		return codec.Encode[uint8](uint8(n))
+		if err != nil {
+			return nil, err
+		}
+		return codec.Encode[uint8](uint8(n)), nil
 	case "uint16":
 		n, err := strconv.ParseUint(s, 10, 16)
-		log.Check(err)
-		return codec.Encode[uint16](uint16(n))
+		if err != nil {
+			return nil, err
+		}
+		return codec.Encode[uint16](uint16(n)), nil
 	case "uint32":
 		n, err := strconv.ParseUint(s, 10, 32)
-		log.Check(err)
-		return codec.Encode[uint32](uint32(n))
+		if err != nil {
+			return nil, err
+		}
+		return codec.Encode[uint32](uint32(n)), nil
 	case "uint64":
 		n, err := strconv.ParseUint(s, 10, 64)
-		log.Check(err)
-		return codec.Encode[uint64](n)
+		if err != nil {
+			return nil, err
+		}
+		return codec.Encode[uint64](n), nil
 	}
-	log.Fatalf("ValueFromString: No handler for type %s", vtype)
-	return nil
+	return nil, fmt.Errorf("ValueFromString: No handler for type %s", vtype)
 }
 
 //nolint:funlen,gocyclo
-func ValueToString(vtype string, v []byte) string {
+func ValueToString(vtype string, v []byte) (string, error) {
 	switch strings.ToLower(vtype) {
 	case "address":
 		addr, err := codec.Decode[*cryptolib.Address](v)
-		log.Check(err)
-		return addr.String()
+		if err != nil {
+			return "", err
+		}
+		return addr.String(), nil
 	case "coinbalances":
 		cbs, err := codec.Decode[*isc.CoinBalances](v)
-		log.Check(err)
-		return cbs.String()
+		if err != nil {
+			return "", err
+		}
+		return cbs.String(), nil
 	case "assets":
 		assets, err := codec.Decode[*isc.Assets](v)
-		log.Check(err)
-		return assets.String()
+		if err != nil {
+			return "", err
+		}
+		return assets.String(), nil
 	case "agentid":
 		aid, err := codec.Decode[isc.AgentID](v)
-		log.Check(err)
-		return aid.String()
+		if err != nil {
+			return "", err
+		}
+		return aid.String(), nil
 	case "bigint":
 		n, err := codec.Decode[*big.Int](v)
-		log.Check(err)
-		return n.String()
+		if err != nil {
+			return "", err
+		}
+		return n.String(), nil
 	case "bool":
 		b, err := codec.Decode[bool](v)
-		log.Check(err)
-		if b {
-			return "true"
+		if err != nil {
+			return "", err
 		}
-		return "false"
+		if b {
+			return "true", nil
+		}
+		return "false", nil
 	case "bytes", "hex":
 		b, err := codec.Decode[[]byte](v)
-		log.Check(err)
-		return cryptolib.EncodeHex(b)
+		if err != nil {
+			return "", err
+		}
+		return cryptolib.EncodeHex(b), nil
 	case "chainid":
 		cid, err := codec.Decode[isc.ChainID](v)
-		log.Check(err)
-		return cid.String()
+		if err != nil {
+			return "", err
+		}
+		return cid.String(), nil
 	case "dict":
 		d, err := codec.Decode[dict.Dict](v)
-		log.Check(err)
+		if err != nil {
+			return "", err
+		}
 		s, err := d.MarshalJSON()
-		log.Check(err)
-		return string(s)
+		if err != nil {
+			return "", err
+		}
+		return string(s), nil
 	case "hash":
 		hash, err := codec.Decode[hashing.HashValue](v)
-		log.Check(err)
-		return hash.String()
+		if err != nil {
+			return "", err
+		}
+		return hash.String(), nil
 	case "hname":
 		hn, err := codec.Decode[isc.Hname](v)
-		log.Check(err)
-		return hn.String()
+		if err != nil {
+			return "", err
+		}
+		return hn.String(), nil
 	case "int8":
 		n, err := codec.Decode[int8](v)
-		log.Check(err)
-		return fmt.Sprintf("%d", n)
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("%d", n), nil
 	case "int16":
 		n, err := codec.Decode[int16](v)
-		log.Check(err)
-		return fmt.Sprintf("%d", n)
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("%d", n), nil
 	case "int32":
 		n, err := codec.Decode[int32](v)
-		log.Check(err)
-		return fmt.Sprintf("%d", n)
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("%d", n), nil
 	case "int64", "int":
 		n, err := codec.Decode[int64](v)
-		log.Check(err)
-		return fmt.Sprintf("%d", n)
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("%d", n), nil
 	case "objectid":
 		nid, err := codec.Decode[iotago.ObjectID](v)
-		log.Check(err)
-		return nid.String()
+		if err != nil {
+			return "", err
+		}
+		return nid.String(), nil
 	case "requestid":
 		rid, err := codec.Decode[isc.RequestID](v)
-		log.Check(err)
-		return rid.String()
+		if err != nil {
+			return "", err
+		}
+		return rid.String(), nil
 	case "string":
-		return fmt.Sprintf("%q", string(v))
+		return fmt.Sprintf("%q", string(v)), nil
 	case "tokenid":
 		tid, err := codec.Decode[coin.Type](v)
-		log.Check(err)
-		return tid.String()
+		if err != nil {
+			return "", err
+		}
+		return tid.String(), nil
 	case "uint8":
 		n, err := codec.Decode[uint8](v)
-		log.Check(err)
-		return fmt.Sprintf("%d", n)
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("%d", n), nil
 	case "uint16":
 		n, err := codec.Decode[uint16](v)
-		log.Check(err)
-		return fmt.Sprintf("%d", n)
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("%d", n), nil
 	case "uint32":
 		n, err := codec.Decode[uint32](v)
-		log.Check(err)
-		return fmt.Sprintf("%d", n)
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("%d", n), nil
 	case "uint64":
 		n, err := codec.Decode[uint64](v)
-		log.Check(err)
-		return fmt.Sprintf("%d", n)
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("%d", n), nil
 	}
 
-	log.Fatalf("ValueToString: No handler for type %s", vtype)
-	return ""
+	return "", fmt.Errorf("ValueToString: No handler for type %s", vtype)
 }
 
-func EncodeParams(params []string) isc.CallArguments {
+func EncodeParams(params []string) (isc.CallArguments, error) {
 	if len(params)%2 != 0 {
-		log.Fatal("Params format: <type> <value> ...")
+		return nil, fmt.Errorf("params format: '<type> <value> ...'")
 	}
 
 	encodedParams := make(isc.CallArguments, 0, len(params)/2)
@@ -246,36 +323,48 @@ func EncodeParams(params []string) isc.CallArguments {
 		vtype := params[i*2]
 		v := params[i*2+1]
 
-		val := ValueFromString(vtype, v)
+		val, err := ValueFromString(vtype, v)
+		if err != nil {
+			return nil, err
+		}
 		encodedParams = append(encodedParams, val)
 	}
 
-	return encodedParams
+	return encodedParams, nil
 }
 
-func PrintCallResultsAsJSON(res isc.CallResults) {
-	log.Check(json.NewEncoder(os.Stdout).Encode(models.ToCallResultsJSON(res)))
+func PrintCallResultsAsJSON(res isc.CallResults) error {
+	return json.NewEncoder(os.Stdout).Encode(models.ToCallResultsJSON(res))
 }
 
-func ReadCallResultsAsJSON() isc.CallArguments {
+func ReadCallResultsAsJSON() (isc.CallArguments, error) {
 	var args models.CallResultsJSON
-	log.Check(json.NewDecoder(os.Stdin).Decode(&args))
-	return lo.Must(args.ToCallResults())
+	err := json.NewDecoder(os.Stdin).Decode(&args)
+	if err != nil {
+		return nil, err
+	}
+	result, err := args.ToCallResults()
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
-func AgentIDFromArgs(args []string) isc.AgentID {
+func AgentIDFromArgs(args []string) (isc.AgentID, error) {
 	if len(args) == 0 {
-		return isc.NewAddressAgentID(wallet.Load().Address())
+		return isc.NewAddressAgentID(wallet.Load().Address()), nil
 	}
 	return AgentIDFromString(args[0])
 }
 
-func AgentIDFromString(s string) isc.AgentID {
+func AgentIDFromString(s string) (isc.AgentID, error) {
 	if s == "common" {
-		return accounts.CommonAccount()
+		return accounts.CommonAccount(), nil
 	}
 
 	agentID, err := isc.AgentIDFromString(s)
-	log.Check(err, "cannot parse AgentID")
-	return agentID
+	if err != nil {
+		return nil, fmt.Errorf("cannot parse AgentID: %w", err)
+	}
+	return agentID, nil
 }

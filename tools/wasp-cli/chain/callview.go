@@ -36,7 +36,10 @@ func initCallViewCmd() *cobra.Command {
 
 			contractName := args[0]
 			funcName := args[1]
-			params := util.EncodeParams(args[2:])
+			params, err := util.EncodeParams(args[2:])
+			if err != nil {
+				return err
+			}
 
 			msg := isc.NewMessage(isc.Hn(contractName), isc.Hn(funcName), params)
 
@@ -51,8 +54,7 @@ func initCallViewCmd() *cobra.Command {
 				return err
 			}
 
-			util.PrintCallResultsAsJSON(decodedResult)
-			return nil
+			return util.PrintCallResultsAsJSON(decodedResult)
 		},
 	}
 	waspcmd.WithWaspNodeFlag(cmd, &node)

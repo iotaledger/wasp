@@ -33,8 +33,7 @@ func initActivateCmd() *cobra.Command {
 			}
 			chainID := config.GetChain(chainName)
 			ctx := context.Background()
-			activateChain(ctx, node, chainName, chainID)
-			return nil
+			return activateChain(ctx, node, chainName, chainID)
 		},
 	}
 
