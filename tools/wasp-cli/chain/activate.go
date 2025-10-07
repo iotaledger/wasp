@@ -33,8 +33,7 @@ func initActivateCmd() *cobra.Command {
 			}
 			chainID := config.GetChain(chainName)
 			ctx := context.Background()
-			activateChain(ctx, node, chainName, chainID)
-			return nil
+			return activateChain(ctx, node, chainName, chainID)
 		},
 	}
 
@@ -44,15 +43,15 @@ func initActivateCmd() *cobra.Command {
 	return cmd
 }
 
-func activateChain(ctx context.Context, node string, chainName string, chainID isc.ChainID) {
+func activateChain(ctx context.Context, node string, chainName string, chainID isc.ChainID) error {
 	client := cliclients.WaspClientWithVersionCheck(ctx, node)
 	r, httpStatus, err := client.ChainsAPI.GetChainInfo(ctx).Execute() //nolint:bodyclose // false positive
 	if err != nil && httpStatus.StatusCode != http.StatusNotFound {
-		log.Check(err)
+		return err
 	}
 
 	if r != nil && r.IsActive {
-		return
+		return nil
 	}
 
 	if r == nil {
@@ -60,13 +59,18 @@ func activateChain(ctx context.Context, node string, chainName string, chainID i
 			IsActive:    true,
 			AccessNodes: []string{},
 		}).Execute() //nolint:bodyclose // false positive
-		log.Check(err2)
+		if err2 != nil {
+			return err2
+		}
 	} else {
 		_, err = client.ChainsAPI.ActivateChain(ctx, chainID.String()).Execute() //nolint:bodyclose // false positive
-		log.Check(err)
+		if err != nil {
+			return err
+		}
 	}
 
 	log.Printf("Chain: %v (%v)\nActivated\n", chainID, chainName)
+	return nil
 }
 
 func initDeactivateCmd() *cobra.Command {

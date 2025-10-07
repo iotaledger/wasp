@@ -1,22 +1,22 @@
 package util
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/isc"
-	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
 )
 
 const BaseTokenStr = "base"
 
-func TokenIDFromString(s string) []byte {
+func TokenIDFromString(s string) ([]byte, error) {
 	ret, err := cryptolib.DecodeHex(s)
 	if err != nil {
-		log.Fatalf("Invalid token id: %s", s)
+		return nil, fmt.Errorf("invalid token id: %s", s)
 	}
-	return ret
+	return ret, nil
 }
 
 func ArgsToFungibleTokensStr(args []string) []string {
@@ -25,18 +25,18 @@ func ArgsToFungibleTokensStr(args []string) []string {
 	return strings.Split(strings.Join(args, ""), ",")
 }
 
-func ParseFungibleTokens(args []string) *isc.Assets {
+func ParseFungibleTokens(args []string) (*isc.Assets, error) {
 	tokens := isc.NewEmptyAssets()
 
 	for _, tr := range args {
 		parts := strings.Split(tr, "|")
 		if len(parts) != 2 {
-			log.Fatal("fungible tokens syntax: <token-id1>|<amount1>, <token-id2>|<amount2>... -- Example: base|100")
+			return nil, fmt.Errorf("fungible tokens syntax: <token-id1>|<amount1>, <token-id2>|<amount2>... -- Example: base|100")
 		}
 
 		amount, err := coin.ValueFromString(parts[1])
 		if err != nil {
-			log.Fatalf("error parsing token amount: %v", err)
+			return nil, fmt.Errorf("error parsing token amount: %v", err)
 		}
 
 		// In the past we would indicate base tokens as 'IOTA:nnn'
@@ -46,10 +46,12 @@ func ParseFungibleTokens(args []string) *isc.Assets {
 			tokens.AddBaseTokens(amount)
 		} else {
 			coinID, err := coin.TypeFromString(parts[0])
-			log.Check(err)
+			if err != nil {
+				return nil, err
+			}
 			tokens.AddCoin(coinID, amount)
 		}
 	}
 
-	return tokens
+	return tokens, nil
 }

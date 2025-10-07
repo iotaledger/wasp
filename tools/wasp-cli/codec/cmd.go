@@ -68,7 +68,10 @@ func initDecodeCmd() *cobra.Command {
 		Short: "Decode the output of a contract function call",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, cmdArgs []string) error {
-			callResults := util.ReadCallResultsAsJSON()
+			callResults, err := util.ReadCallResultsAsJSON()
+			if err != nil {
+				return err
+			}
 
 			if len(callResults) != len(cmdArgs) {
 				log.Printf("Number of provided result types does not match number of results: types = %v, results = %v\n",
@@ -78,7 +81,10 @@ func initDecodeCmd() *cobra.Command {
 
 			for i := range cmdArgs {
 				vtype := cmdArgs[i]
-				val := util.ValueToString(vtype, callResults[i])
+				val, err := util.ValueToString(vtype, callResults[i])
+				if err != nil {
+					return err
+				}
 				log.Printf("[%v]: %s\n", i, val)
 			}
 			return nil
