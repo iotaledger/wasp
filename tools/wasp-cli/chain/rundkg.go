@@ -37,8 +37,8 @@ func initRunDKGCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			doDKG(context.Background(), node, peers, quorum)
-			return nil
+			_, err = doDKG(context.Background(), node, peers, quorum)
+			return err
 		},
 	}
 
@@ -49,10 +49,12 @@ func initRunDKGCmd() *cobra.Command {
 	return cmd
 }
 
-func doDKG(ctx context.Context, node string, peers []string, quorum int) *cryptolib.Address {
+func doDKG(ctx context.Context, node string, peers []string, quorum int) (*cryptolib.Address, error) {
 	client := cliclients.WaspClientWithVersionCheck(ctx, node)
 	nodeInfo, _, err := client.NodeAPI.GetPeeringIdentity(ctx).Execute() //nolint:bodyclose // false positive
-	log.Check(err)
+	if err != nil {
+		return nil, err
+	}
 
 	// Consider own node as a committee, if peers are not specified.
 	if len(peers) == 0 {
@@ -65,14 +67,16 @@ func doDKG(ctx context.Context, node string, peers []string, quorum int) *crypto
 	{
 		var trustedPeers []apiclient.PeeringNodeIdentityResponse
 		trustedPeers, _, err = client.NodeAPI.GetTrustedPeers(ctx).Execute() //nolint:bodyclose // false positive
-		log.Check(err)
+		if err != nil {
+			return nil, err
+		}
 
 		for _, peer := range peers {
 			foundPeer, exists := lo.Find(trustedPeers, func(p apiclient.PeeringNodeIdentityResponse) bool {
 				return (p.Name == peer || p.PublicKey == peer) && p.IsTrusted
 			})
 			if !exists {
-				log.Fatalf("peer with name {%s} not found in trusted peers", peer)
+				return nil, fmt.Errorf("peer with name {%s} not found in trusted peers", peer)
 			}
 			if foundPeer.PublicKey == nodeInfo.PublicKey {
 				thisNodeFound = true
@@ -98,11 +102,13 @@ func doDKG(ctx context.Context, node string, peers []string, quorum int) *crypto
 	}
 
 	if quorum < minQuorum {
-		log.Fatal("quorum needs to be at least (2/3)+1 of committee size")
+		return nil, fmt.Errorf("quorum needs to be at least (2/3)+1 of committee size")
 	}
 
 	committeeAddr, err := apilib.RunDKG(ctx, client, committeePubKeys, uint16(quorum)) //nolint:gosec
-	log.Check(err)
+	if err != nil {
+		return nil, err
+	}
 
 	committeeMembersStr := ""
 	for _, fp := range filteredPeers {
@@ -116,5 +122,5 @@ func doDKG(ctx context.Context, node string, peers []string, quorum int) *crypto
 		quorum,
 		committeeMembersStr,
 	)
-	return committeeAddr
+	return committeeAddr, nil
 }

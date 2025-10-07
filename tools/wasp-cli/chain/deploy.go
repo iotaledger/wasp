@@ -133,7 +133,7 @@ type chainInitResult struct {
 
 func initializeDeploymentWithGasCoin(ctx context.Context, signer wallets.Wallet, node string, chainName string, peers []string, quorum int) (*chainInitResult, error) {
 	if !util.IsSlug(chainName) {
-		log.Fatalf("invalid chain name: %s, must be in slug format, only lowercase and hyphens, example: foo-bar", chainName)
+		return nil, fmt.Errorf("invalid chain name: %s, must be in slug format, only lowercase and hyphens, example: foo-bar", chainName)
 	}
 
 	l1Client := cliclients.L1Client()
@@ -153,13 +153,20 @@ func initializeDeploymentWithGasCoin(ctx context.Context, signer wallets.Wallet,
 		return nil, fmt.Errorf("a chain has already been deployed")
 	}
 
-	committeeAddr := doDKG(ctx, node, peers, quorum)
+	committeeAddr, err := doDKG(ctx, node, peers, quorum)
+	if err != nil {
+		return nil, err
+	}
 
 	l1Params, err := parameters.FetchLatest(ctx, l1Client.IotaClient())
-	log.Check(err)
+	if err != nil {
+		return nil, err
+	}
 
 	gasCoin, err := CreateAndSendGasCoin(ctx, l1Client, signer, committeeAddr.AsIotaAddress(), l1Params)
-	log.Check(err)
+	if err != nil {
+		return nil, err
+	}
 
 	return &chainInitResult{
 		l1Params:         l1Params,
@@ -168,7 +175,7 @@ func initializeDeploymentWithGasCoin(ctx context.Context, signer wallets.Wallet,
 	}, nil
 }
 
-func finalizeChainDeployment(ctx context.Context, node string, packageID *iotago.PackageID, chainInitResult chainInitResult, stateMetadata *transaction.StateMetadata) isc.ChainID {
+func finalizeChainDeployment(ctx context.Context, node string, packageID *iotago.PackageID, chainInitResult chainInitResult, stateMetadata *transaction.StateMetadata) (isc.ChainID, error) {
 	par := apilib.CreateChainParams{
 		Layer1Client:      cliclients.L1Client(),
 		CommitteeAPIHosts: config.NodeAPIURLs([]string{node}),
@@ -179,9 +186,11 @@ func finalizeChainDeployment(ctx context.Context, node string, packageID *iotago
 	}
 
 	chainID, err := apilib.DeployChain(ctx, par, chainInitResult.committeeAddress)
-	log.Check(err)
+	if err != nil {
+		return isc.ChainID{}, err
+	}
 
-	return chainID
+	return chainID, nil
 }
 
 func initDeployCmd() *cobra.Command {
@@ -218,12 +227,16 @@ func initDeployCmd() *cobra.Command {
 			iscPackageID := &iotago.PackageID{}
 			if iscPackageIDStr != "" {
 				iscPackageID, err = iotago.PackageIDFromHex(iscPackageIDStr)
-				log.Check(err)
+				if err != nil {
+					return err
+				}
 			} else {
 				log.Printf("Deploying Move contract...\n")
 				l1Client := cliclients.L1Client()
 				*iscPackageID, err = l1Client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(kp))
-				log.Check(err)
+				if err != nil {
+					return err
+				}
 			}
 
 			result, err := initializeDeploymentWithGasCoin(ctx, kp, node, chainName, peers, quorum)
@@ -231,10 +244,15 @@ func initDeployCmd() *cobra.Command {
 				return err
 			}
 			stateMetadata := initializeNewChainState(kp.Address(), result.gasCoinObject, result.l1Params)
-			chainID := finalizeChainDeployment(ctx, node, iscPackageID, *result, stateMetadata)
+			chainID, err := finalizeChainDeployment(ctx, node, iscPackageID, *result, stateMetadata)
+			if err != nil {
+				return err
+			}
 
 			config.AddChain(chainName, chainID.String())
-			activateChain(ctx, node, chainName, chainID)
+			if err := activateChain(ctx, node, chainName, chainID); err != nil {
+				return err
+			}
 			return nil
 		},
 	}
