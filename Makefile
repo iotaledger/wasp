@@ -1,5 +1,4 @@
 GIT_REF_TAG := $(shell git describe --tags)
-BUILD_TAGS = rocksdb
 BUILD_LD_FLAGS = "-X=github.com/iotaledger/wasp/v2/components/app.Version=$(GIT_REF_TAG)"
 DOCKER_BUILD_ARGS = # E.g. make docker-build "DOCKER_BUILD_ARGS=--tag wasp:devel"
 
@@ -11,8 +10,8 @@ TEST_PKG=./...
 TEST_ARG=
 
 BUILD_PKGS ?= ./
-BUILD_CMD=go build -o . -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS)
-INSTALL_CMD=go install -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS)
+BUILD_CMD=go build -o . -ldflags $(BUILD_LD_FLAGS)
+INSTALL_CMD=go install -ldflags $(BUILD_LD_FLAGS)
 
 # Docker image name and tag
 DOCKER_IMAGE_NAME=wasp
@@ -26,7 +25,7 @@ compile-solidity:
 	cd packages/evm/evmtest/wiki_how_tos && go generate
 
 build-cli:
-	cd tools/wasp-cli && go mod tidy && go build  -ldflags $(BUILD_LD_FLAGS) -tags rocksdb -o ../../
+	cd tools/wasp-cli && go mod tidy && go build -ldflags $(BUILD_LD_FLAGS) -tags rocksdb -o ../../
 
 build-full: build-cli
 	$(BUILD_CMD) ./...
@@ -40,16 +39,16 @@ gendoc:
 	./scripts/gendoc.sh
 
 test-full: install
-	go test -tags $(BUILD_TAGS),runheavy -race -ldflags $(BUILD_LD_FLAGS) ./... --timeout 60m --count 1 -failfast
+	go test -tags runheavy -race -ldflags $(BUILD_LD_FLAGS) ./... --timeout 60m --count 1 -failfast
 
 test: install
-	go test -tags $(BUILD_TAGS) -race -ldflags $(BUILD_LD_FLAGS) $(TEST_PKG) --timeout 90m --count 1 -failfast  $(TEST_ARG)
+	go test -race -ldflags $(BUILD_LD_FLAGS) $(TEST_PKG) --timeout 90m --count 1 -failfast  $(TEST_ARG)
 
 test-short:
-	go test -tags $(BUILD_TAGS) -race -ldflags $(BUILD_LD_FLAGS) --short --count 1 -timeout 25m -failfast $(shell go list ./...)
+	go test -race -ldflags $(BUILD_LD_FLAGS) --short --count 1 -timeout 25m -failfast $(shell go list ./...)
 
 test-cluster: install
-	go test -tags $(BUILD_TAGS) -race -ldflags $(BUILD_LD_FLAGS) --count 1 -timeout 25m -failfast $(shell go list ./tools/cluster/tests/...)
+	go test -race -ldflags $(BUILD_LD_FLAGS) --count 1 -timeout 25m -failfast $(shell go list ./tools/cluster/tests/...)
 
 install-cli:
 	cd tools/wasp-cli && go mod tidy && go install -ldflags $(BUILD_LD_FLAGS)
@@ -76,7 +75,6 @@ gofumpt-list:
 
 docker-build:
 	DOCKER_BUILDKIT=1 docker build ${DOCKER_BUILD_ARGS} \
-		--build-arg BUILD_TAGS=${BUILD_TAGS} \
 		--build-arg BUILD_LD_FLAGS=${BUILD_LD_FLAGS} \
 		--tag iotaledger/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) \
 		.

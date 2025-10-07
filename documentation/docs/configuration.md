@@ -148,10 +148,11 @@ Example:
 
 ### <a id="db_chainstate"></a> ChainState
 
-| Name      | Description                                  | Type   | Default value        |
-| --------- | -------------------------------------------- | ------ | -------------------- |
-| path      | The path to the chain state databases folder | string | "waspdb/chains/data" |
-| cacheSize | Size of the RocksDB block cache              | uint   | 33554432             |
+| Name                  | Description                                  | Type   | Default value        |
+| --------------------- | -------------------------------------------- | ------ | -------------------- |
+| path                  | The path to the chain state databases folder | string | "waspdb/chains/data" |
+| cacheSize             | Size of the RocksDB block cache              | uint   | 33554432             |
+| bloomFilterBitsPerKey | RocksDB bloom filter bits per key            | float  | 0.0                  |
 
 Example:
 
@@ -161,7 +162,8 @@ Example:
       "engine": "rocksdb",
       "chainState": {
         "path": "waspdb/chains/data",
-        "cacheSize": 33554432
+        "cacheSize": 33554432,
+        "bloomFilterBitsPerKey": 0
       },
       "debugSkipHealthCheck": true,
       "readOnlyFilePath": ""

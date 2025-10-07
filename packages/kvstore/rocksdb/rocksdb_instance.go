@@ -1,5 +1,3 @@
-//go:build rocksdb
-
 package rocksdb
 
 import (
@@ -52,11 +50,14 @@ func CreateDB(directory string, options ...Option) (*RocksDB, error) {
 
 	fo := grocksdb.NewDefaultFlushOptions()
 
+	bbto := grocksdb.NewDefaultBlockBasedTableOptions()
 	if dbOpts.blockCacheSize != 0 {
-		bbto := grocksdb.NewDefaultBlockBasedTableOptions()
 		bbto.SetBlockCache(grocksdb.NewLRUCache(dbOpts.blockCacheSize))
-		opts.SetBlockBasedTableFactory(bbto)
 	}
+	if dbOpts.bloomFilterBitsPerKey > 0 {
+		bbto.SetFilterPolicy(grocksdb.NewBloomFilter(dbOpts.bloomFilterBitsPerKey))
+	}
+	opts.SetBlockBasedTableFactory(bbto)
 
 	db, err := grocksdb.OpenDb(opts, directory)
 	if err != nil {

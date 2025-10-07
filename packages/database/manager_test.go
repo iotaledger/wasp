@@ -48,7 +48,7 @@ func TestCreateChainStateDatabase(t *testing.T) {
 	require.Len(t, chainStateDatabaseManager.databases, 1)
 }
 
-// go test -tags rocksdb ./packages/database/ --run TestWriteAmplification -v --count=1 --timeout=30m
+// go test ./packages/database/ --run TestWriteAmplification -v --count=1 --timeout=30m
 // See <https://github.com/EighteenZi/rocksdb_wiki/blob/master/RocksDB-Tuning-Guide.md>.
 // On compaction: <https://vinodhinic.medium.com/lets-rock-3a73fbc6ea79>
 // Misc options: <https://github.com/facebook/rocksdb/blob/master/include/rocksdb/options.h>

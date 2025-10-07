@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/hive.go/runtime/ioutils"
 	"github.com/iotaledger/wasp/v2/packages/chaindb"
 	"github.com/iotaledger/wasp/v2/packages/kvstore"
-	"github.com/iotaledger/wasp/v2/packages/kvstore/rocksdb"
 )
 
 var AllowedEngines = []hivedb.Engine{
@@ -89,7 +88,7 @@ func CheckEngine(dbPath string, createDatabaseIfNotExists bool, dbEngine hivedb.
 }
 
 func NewDatabaseInMemory() (*Database, error) {
-	return NewDatabase(hivedb.EngineMapDB, "", false, 0)
+	return newDatabaseMapDB(), nil
 }
 
 // NewDatabase opens a database.
@@ -99,6 +98,7 @@ func NewDatabase(
 	path string,
 	createDatabaseIfNotExists bool,
 	cacheSize uint64,
+	bloomFilterBitsPerKey float64,
 ) (*Database, error) {
 	targetEngine, err := CheckEngine(path, createDatabaseIfNotExists, dbEngine)
 	if err != nil {
@@ -107,7 +107,11 @@ func NewDatabase(
 
 	switch targetEngine {
 	case hivedb.EngineRocksDB:
-		return newDatabaseRocksDB(path, cacheSize)
+		return newDatabaseRocksDB(
+			path,
+			cacheSize,
+			bloomFilterBitsPerKey,
+		)
 
 	case hivedb.EngineMapDB:
 		return newDatabaseMapDB(), nil
@@ -115,20 +119,6 @@ func NewDatabase(
 	default:
 		return nil, fmt.Errorf("unknown database engine: %s, supported engines: rocksdb/mapdb", dbEngine)
 	}
-}
-
-func NewReadOnlyDatabase(
-	path string,
-) (*Database, error) {
-	dbConn, err := rocksdb.OpenDBReadOnly(path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open read-only RocksDB: %w", err)
-	}
-
-	db := New(path, rocksdb.New(dbConn), hivedb.EngineRocksDB, false, func() bool {
-		return false
-	})
-	return db, nil
 }
 
 type databaseWithHealthTracker struct {
@@ -140,10 +130,11 @@ func newDatabaseWithHealthTracker(
 	path string,
 	dbEngine hivedb.Engine,
 	cacheSize uint64,
+	bloomFilterBitsPerKey float64,
 	storeVersion byte,
 	storeVersionUpdateFunc StoreVersionUpdateFunc,
 ) (*databaseWithHealthTracker, error) {
-	db, err := NewDatabase(dbEngine, path, true, cacheSize)
+	db, err := NewDatabase(dbEngine, path, true, cacheSize, bloomFilterBitsPerKey)
 	if err != nil {
 		return nil, err
 	}

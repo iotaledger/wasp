@@ -6,10 +6,8 @@ cd ${PARENT_DIR}/tools/gendoc
 # determine current wasp version tag
 GIT_REF_TAG="$(git describe --tags)"
 
-BUILD_TAGS=rocksdb
 BUILD_LD_FLAGS="-X=github.com/iotaledger/wasp/v2/components/app.Version=${GIT_REF_TAG}"
 
-go run -tags ${BUILD_TAGS} -ldflags ${BUILD_LD_FLAGS} main.go
+go run -ldflags ${BUILD_LD_FLAGS} main.go
 
 cd ${CURRENT_DIR}
-

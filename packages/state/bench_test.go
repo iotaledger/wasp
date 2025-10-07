@@ -13,7 +13,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/trie"
 )
 
-// run with: go test -tags rocksdb -benchmem -cpu=1 -run=' ' -bench='Bench.*' -benchtime 100x
+// run with: go test -benchmem -cpu=1 -run=' ' -bench='Bench.*' -benchtime 100x
 //
 // To generate mem and cpu profiles, add -cpuprofile=cpu.out -memprofile=mem.out
 // Then: go tool pprof -http :8080 {cpu,mem}.out
@@ -21,7 +21,7 @@ func BenchmarkTriePruning(b *testing.B) {
 	b.StopTimer()
 	path := "/tmp/" + b.Name() + ".db"
 	const cacheSize = database.CacheSizeDefault
-	db, err := database.NewDatabase(hivedb.EngineRocksDB, path, true, cacheSize)
+	db, err := database.NewDatabase(hivedb.EngineRocksDB, path, true, cacheSize, 0)
 	require.NoError(b, err)
 	b.Cleanup(func() {
 		os.RemoveAll(path)

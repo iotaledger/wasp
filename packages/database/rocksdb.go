@@ -9,10 +9,15 @@ import (
 )
 
 // NewRocksDB creates a new RocksDB instance.
-func NewRocksDB(path string, cacheSize uint64) (*rocksdb.RocksDB, error) {
+func NewRocksDB(
+	path string,
+	cacheSize uint64,
+	bloomFilterBitsPerKey float64,
+) (*rocksdb.RocksDB, error) {
 	opts := []rocksdb.Option{
 		rocksdb.IncreaseParallelism(runtime.NumCPU() - 1),
 		rocksdb.BlockCacheSize(cacheSize),
+		rocksdb.BloomFilterBitsPerKey(bloomFilterBitsPerKey),
 		rocksdb.Custom([]string{
 			"stats_dump_period_sec=10",
 			"periodic_compaction_seconds=43200",
@@ -25,8 +30,12 @@ func NewRocksDB(path string, cacheSize uint64) (*rocksdb.RocksDB, error) {
 	return rocksdb.CreateDB(path, opts...)
 }
 
-func newDatabaseRocksDB(path string, cacheSize uint64) (*Database, error) {
-	rocksDatabase, err := NewRocksDB(path, cacheSize)
+func newDatabaseRocksDB(
+	path string,
+	cacheSize uint64,
+	bloomFilterBitsPerKey float64,
+) (*Database, error) {
+	rocksDatabase, err := NewRocksDB(path, cacheSize, bloomFilterBitsPerKey)
 	if err != nil {
 		return nil, fmt.Errorf("rocksdb database initialization failed: %w", err)
 	}
@@ -42,8 +51,21 @@ func newDatabaseRocksDB(path string, cacheSize uint64) (*Database, error) {
 				running := numCompactions != 0
 				return running
 			}
-
 			return false
 		},
 	), nil
+}
+
+func NewReadOnlyDatabase(
+	path string,
+) (*Database, error) {
+	dbConn, err := rocksdb.OpenDBReadOnly(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open read-only RocksDB: %w", err)
+	}
+
+	db := New(path, rocksdb.New(dbConn), hivedb.EngineRocksDB, false, func() bool {
+		return false
+	})
+	return db, nil
 }
