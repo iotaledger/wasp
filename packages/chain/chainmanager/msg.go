@@ -13,7 +13,7 @@ const (
 	msgTypeBlockProduced
 )
 
-func (cmi *chainMgrImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
+func (cmi *ChainMgrImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	return gpa.UnmarshalMessage(data, gpa.Mapper{
 		msgTypeCmtLog: func() gpa.Message { return new(msgCmtLog) },
 		msgTypeBlockProduced: func() gpa.Message {

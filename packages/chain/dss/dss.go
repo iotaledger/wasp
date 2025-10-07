@@ -203,6 +203,9 @@ func (d *dssImpl) tryHandleDkgOutput(msgs gpa.OutMessages) gpa.OutMessages {
 				partialSig:   partialSig,
 			}
 			msg.SetSender(d.me)
+			if msgs == nil {
+				msgs = gpa.NoMessages()
+			}
 			msgs.Add(msg)
 		}
 		//

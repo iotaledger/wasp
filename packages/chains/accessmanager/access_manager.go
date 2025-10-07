@@ -196,7 +196,7 @@ func (ami *accessMgrImpl) handleDistDebugTick() {
 }
 
 func (ami *accessMgrImpl) handleDistTimeTick(timestamp time.Time) {
-	ami.sendMessages(ami.dist.Input(ami.dist.MakeTickInput(timestamp)))
+	//ami.sendMessages(ami.dist.Input(ami.dist.MakeTickInput(timestamp)))
 }
 
 func (ami *accessMgrImpl) handleNetMessage(recv *peering.PeerMessageIn) {
@@ -212,10 +212,10 @@ func (ami *accessMgrImpl) handleNetMessage(recv *peering.PeerMessageIn) {
 
 func (ami *accessMgrImpl) sendMessages(outMsgs gpa.OutMessages) {
 	if len(ami.dismissPeerBuf) != 0 {
-		for _, dismissPeerPub := range ami.dismissPeerBuf {
-			ami.dist.DismissPeer(ami.pubKeyAsNodeID(dismissPeerPub))
-		}
-		ami.dismissPeerBuf = []*cryptolib.PublicKey{}
+		// for _, dismissPeerPub := range ami.dismissPeerBuf {
+		// 	ami.dist.DismissPeer(ami.pubKeyAsNodeID(dismissPeerPub))
+		// }
+		// ami.dismissPeerBuf = []*cryptolib.PublicKey{}
 	}
 	if outMsgs == nil {
 		return

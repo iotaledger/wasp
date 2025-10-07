@@ -5,8 +5,6 @@ package cmtlog
 
 import (
 	"fmt"
-
-	"github.com/iotaledger/wasp/v2/packages/gpa"
 )
 
 type inputConsensusOutputSkip struct {
@@ -16,7 +14,7 @@ type inputConsensusOutputSkip struct {
 // NewInputConsensusOutputSkip creates an internal message that should be sent by other components (e.g. consensus or the chain).
 func NewInputConsensusOutputSkip(
 	logIndex LogIndex,
-) gpa.Input {
+) *inputConsensusOutputSkip {
 	return &inputConsensusOutputSkip{
 		logIndex: logIndex,
 	}

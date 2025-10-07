@@ -22,8 +22,9 @@ func NewOwnHandlerWithOutPredicate(me NodeID, target GPA, outPredicate func(Mess
 	return &OwnHandler{me: me, target: target, outPredicate: outPredicate}
 }
 
-func NewOwnHandler(me NodeID, target GPA) GPA {
-	return NewOwnHandlerWithOutPredicate(me, target, func(msg Message) bool { return false })
+func NewOwnHandler[T any](me NodeID, target T) T {
+	return target
+	//return NewOwnHandlerWithOutPredicate(me, target, func(msg Message) bool { return false })
 }
 
 func (o *OwnHandler) Input(input Input) OutMessages {

@@ -11,7 +11,7 @@ const (
 	msgTypeNextLogIndex gpa.MessageType = iota
 )
 
-func (cl *cmtLogImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
+func (cl *CmtLogImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	return UnmarshalMessage(data)
 }
 

@@ -3,13 +3,9 @@
 
 package chainmanager
 
-import (
-	"github.com/iotaledger/wasp/v2/packages/gpa"
-)
-
 type inputCanPropose struct{}
 
-func NewInputCanPropose() gpa.Input {
+func NewInputCanPropose() *inputCanPropose {
 	return &inputCanPropose{}
 }
 

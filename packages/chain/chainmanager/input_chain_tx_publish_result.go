@@ -6,7 +6,6 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/packages/chain/cmtlog"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
-	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
@@ -18,7 +17,7 @@ type inputChainTxPublishResult struct {
 	confirmed     bool
 }
 
-func NewInputChainTxPublishResult(committeeAddr cryptolib.Address, logIndex cmtlog.LogIndex, txDigest iotago.Digest, aliasOutput *isc.StateAnchor, confirmed bool) gpa.Input {
+func NewInputChainTxPublishResult(committeeAddr cryptolib.Address, logIndex cmtlog.LogIndex, txDigest iotago.Digest, aliasOutput *isc.StateAnchor, confirmed bool) *inputChainTxPublishResult {
 	return &inputChainTxPublishResult{
 		committeeAddr: committeeAddr,
 		logIndex:      logIndex,

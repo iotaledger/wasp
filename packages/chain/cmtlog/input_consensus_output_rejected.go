@@ -6,7 +6,6 @@ package cmtlog
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
@@ -15,7 +14,7 @@ type inputConsensusOutputRejected struct {
 	logIndex    LogIndex
 }
 
-func NewInputConsensusOutputRejected(aliasOutput *isc.StateAnchor, logIndex LogIndex) gpa.Input {
+func NewInputConsensusOutputRejected(aliasOutput *isc.StateAnchor, logIndex LogIndex) *inputConsensusOutputRejected {
 	return &inputConsensusOutputRejected{
 		aliasOutput: aliasOutput,
 		logIndex:    logIndex,

@@ -32,27 +32,30 @@ type ackHandler struct {
 	recvAcksIn   *shrinkingmap.ShrinkingMap[NodeID, map[int]*int]
 }
 
-type AckHandler interface {
-	GPA
-	DismissPeer(peerID NodeID) // To avoid resending messages to dead peers.
-	MakeTickInput(time.Time) Input
-	NestedMessage(msg Message) OutMessages
-	NestedCall(c func(GPA) OutMessages) OutMessages
-}
+type AckHandler = GPA
 
-var _ AckHandler = &ackHandler{}
+// type AckHandler interface {
+// 	GPA
+// 	DismissPeer(peerID NodeID) // To avoid resending messages to dead peers.
+// 	MakeTickInput(time.Time) Input
+// 	NestedMessage(msg Message) OutMessages
+// 	NestedCall(c func(GPA) OutMessages) OutMessages
+//}
 
-func NewAckHandler(me NodeID, nested GPA, resendPeriod time.Duration) AckHandler {
-	return &ackHandler{
-		me:           me,
-		nested:       nested,
-		resendPeriod: resendPeriod,
-		initialized:  shrinkingmap.New[NodeID, bool](),
-		initPending:  shrinkingmap.New[NodeID, []Message](),
-		counters:     shrinkingmap.New[NodeID, int](),
-		sentUnacked:  shrinkingmap.New[NodeID, *shrinkingmap.ShrinkingMap[int, *ackHandlerBatch]](),
-		recvAcksIn:   shrinkingmap.New[NodeID, map[int]*int](),
-	}
+//var _ AckHandler = &ackHandler{}
+
+func NewAckHandler[T any](me NodeID, nested T, resendPeriod time.Duration) T {
+	return nested
+	// return &ackHandler{
+	// 	me:           me,
+	// 	nested:       nested,
+	// 	resendPeriod: resendPeriod,
+	// 	initialized:  shrinkingmap.New[NodeID, bool](),
+	// 	initPending:  shrinkingmap.New[NodeID, []Message](),
+	// 	counters:     shrinkingmap.New[NodeID, int](),
+	// 	sentUnacked:  shrinkingmap.New[NodeID, *shrinkingmap.ShrinkingMap[int, *ackHandlerBatch]](),
+	// 	recvAcksIn:   shrinkingmap.New[NodeID, map[int]*int](),
+	// }
 }
 
 func (a *ackHandler) DismissPeer(peerID NodeID) {

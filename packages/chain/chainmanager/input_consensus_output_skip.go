@@ -8,7 +8,6 @@ import (
 
 	"github.com/iotaledger/wasp/v2/packages/chain/cmtlog"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
-	"github.com/iotaledger/wasp/v2/packages/gpa"
 )
 
 type inputConsensusOutputSkip struct {
@@ -19,7 +18,7 @@ type inputConsensusOutputSkip struct {
 func NewInputConsensusOutputSkip(
 	committeeAddr cryptolib.Address,
 	logIndex cmtlog.LogIndex,
-) gpa.Input {
+) *inputConsensusOutputSkip {
 	return &inputConsensusOutputSkip{
 		committeeAddr: committeeAddr,
 		logIndex:      logIndex,

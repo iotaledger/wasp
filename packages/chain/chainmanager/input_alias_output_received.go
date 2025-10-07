@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
-	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
@@ -16,7 +15,7 @@ type inputAnchorConfirmed struct {
 	anchor          *isc.StateAnchor
 }
 
-func NewInputAnchorConfirmed(stateController *cryptolib.Address, anchor *isc.StateAnchor) gpa.Input {
+func NewInputAnchorConfirmed(stateController *cryptolib.Address, anchor *isc.StateAnchor) *inputAnchorConfirmed {
 	return &inputAnchorConfirmed{
 		stateController: stateController,
 		anchor:          anchor,

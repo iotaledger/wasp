@@ -6,7 +6,6 @@ package cmtlog
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
@@ -14,7 +13,7 @@ type inputAnchorConfirmed struct {
 	anchor *isc.StateAnchor
 }
 
-func NewInputAnchorConfirmed(anchor *isc.StateAnchor) gpa.Input {
+func NewInputAnchorConfirmed(anchor *isc.StateAnchor) *inputAnchorConfirmed {
 	return &inputAnchorConfirmed{
 		anchor: anchor,
 	}

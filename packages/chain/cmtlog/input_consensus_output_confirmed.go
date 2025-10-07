@@ -6,7 +6,6 @@ package cmtlog
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
@@ -15,7 +14,7 @@ type inputConsensusOutputConfirmed struct {
 	logIndex         LogIndex
 }
 
-func NewInputConsensusOutputConfirmed(nextAnchorObject *isc.StateAnchor, logIndex LogIndex) gpa.Input {
+func NewInputConsensusOutputConfirmed(nextAnchorObject *isc.StateAnchor, logIndex LogIndex) *inputConsensusOutputConfirmed {
 	return &inputConsensusOutputConfirmed{
 		nextAnchorObject: nextAnchorObject,
 		logIndex:         logIndex,

@@ -271,6 +271,9 @@ func (a *acssImpl) tryHandleRBCTermination(wasOut bool, msgs gpa.OutMessages) gp
 		if err != nil {
 			outParsed = &msgRBCCEPayload{err: err}
 		}
+		if msgs == nil {
+			msgs = gpa.NoMessages()
+		}
 		msgs.AddAll(a.handleRBCOutput(outParsed))
 	}
 	return msgs

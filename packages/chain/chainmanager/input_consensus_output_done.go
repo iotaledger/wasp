@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/chain/cmtlog"
 	"github.com/iotaledger/wasp/v2/packages/chain/cons"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
-	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
@@ -25,7 +24,7 @@ func NewInputConsensusOutputDone(
 	logIndex cmtlog.LogIndex,
 	proposedBaseAO *isc.StateAnchor,
 	consensusResult *cons.Result,
-) gpa.Input {
+) *inputConsensusOutputDone {
 	return &inputConsensusOutputDone{
 		committeeAddr:   committeeAddr,
 		logIndex:        logIndex,

@@ -8,7 +8,6 @@ import (
 
 	"github.com/iotaledger/wasp/v2/packages/chain/cmtlog"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
-	"github.com/iotaledger/wasp/v2/packages/gpa"
 )
 
 type inputConsensusTimeout struct {
@@ -16,7 +15,7 @@ type inputConsensusTimeout struct {
 	logIndex      cmtlog.LogIndex
 }
 
-func NewInputConsensusTimeout(committeeAddr cryptolib.Address, logIndex cmtlog.LogIndex) gpa.Input {
+func NewInputConsensusTimeout(committeeAddr cryptolib.Address, logIndex cmtlog.LogIndex) *inputConsensusTimeout {
 	return &inputConsensusTimeout{
 		committeeAddr: committeeAddr,
 		logIndex:      logIndex,

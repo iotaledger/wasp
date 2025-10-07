@@ -33,11 +33,6 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/util/byzquorum"
 )
 
-// CmtLog is the public interface for this algorithm.
-type CmtLog interface {
-	AsGPA() gpa.GPA
-}
-
 type State struct {
 	LogIndex LogIndex
 }
@@ -59,7 +54,7 @@ var ErrCmtLogStateNotFound = errors.New("errCmtLogStateNotFound")
 type Output = map[LogIndex]*isc.StateAnchor
 
 // Protocol implementation.
-type cmtLogImpl struct {
+type CmtLogImpl struct {
 	chainID                isc.ChainID            // Chain, for which this log is maintained by this committee.
 	cmtAddr                *cryptolib.Address     // Address of the committee running this chain.
 	consensusStateRegistry ConsensusStateRegistry // Persistent storage.
@@ -69,11 +64,8 @@ type cmtLogImpl struct {
 	suspended              bool                   // Is this committee currently suspended?
 	output                 Output                 // The current output.
 	first                  bool                   // A workaround to senf the first nextLI messages.
-	asGPA                  gpa.GPA                // This object, just with all the needed wrappers.
 	log                    log.Logger
 }
-
-var _ gpa.GPA = &cmtLogImpl{}
 
 // New constructs a new node instance for this protocol.
 //
@@ -91,7 +83,7 @@ func New(
 	pipeliningLimit int,
 	cclMetrics *metrics.ChainCmtLogMetrics,
 	log log.Logger,
-) (CmtLog, error) {
+) (*CmtLogImpl, error) {
 	cmtAddr := dkShare.GetSharedPublic().AsAddress()
 	//
 	// Load the last LogIndex we were working on.
@@ -128,7 +120,7 @@ func New(
 	}
 	//
 	// Create it.
-	cl := &cmtLogImpl{
+	cl := &CmtLogImpl{
 		chainID:                chainID,
 		cmtAddr:                cmtAddr,
 		consensusStateRegistry: consensusStateRegistry,
@@ -158,45 +150,11 @@ func New(
 		log.LogDebugf("VarLocalView: Output received, %v", ao)
 		return cl.varConsInsts.LatestL1AO(ao, cl.varLogIndex.ConsensusStarted)
 	}, log.NewChildLogger("VLV"))
-	cl.asGPA = gpa.NewOwnHandler(me, cl)
 	return cl, nil
 }
 
-// Implements the CmtLog interface.
-func (cl *cmtLogImpl) AsGPA() gpa.GPA {
-	return cl.asGPA
-}
-
 // Implements the gpa.GPA interface.
-func (cl *cmtLogImpl) Input(input gpa.Input) gpa.OutMessages {
-	switch input.(type) {
-	case *inputCanPropose:
-		break // Don't log, its periodic.
-	default:
-		cl.log.LogDebugf("Input %T: %+v", input, input)
-	}
-	switch input := input.(type) {
-	case *inputAnchorConfirmed:
-		return cl.handleInputAnchorConfirmed(input)
-	case *inputConsensusOutputSkip:
-		return cl.handleInputConsensusOutputSkip(input)
-	case *inputConsensusOutputConfirmed:
-		return cl.handleInputConsensusOutputConfirmed(input)
-	case *inputConsensusOutputRejected:
-		return cl.handleInputConsensusOutputRejected(input)
-	case *inputConsensusTimeout:
-		return cl.handleInputConsensusTimeout(input)
-	case *inputCanPropose:
-		return cl.handleInputCanPropose()
-	case *inputSuspend:
-		cl.handleInputSuspend()
-		return nil
-	}
-	panic(fmt.Errorf("unexpected input %T: %+v", input, input))
-}
-
-// Implements the gpa.GPA interface.
-func (cl *cmtLogImpl) Message(msg gpa.Message) gpa.OutMessages {
+func (cl *CmtLogImpl) Message(msg gpa.Message) gpa.OutMessages {
 	msgNLI, ok := msg.(*MsgNextLogIndex)
 	if !ok {
 		cl.log.LogWarnf("dropping unexpected message %T: %+v", msg, msg)
@@ -206,32 +164,32 @@ func (cl *cmtLogImpl) Message(msg gpa.Message) gpa.OutMessages {
 }
 
 // The latest anchor object's version confirmed at the L1.
-func (cl *cmtLogImpl) handleInputAnchorConfirmed(input *inputAnchorConfirmed) gpa.OutMessages {
+func (cl *CmtLogImpl) HandleInputAnchorConfirmed(input *inputAnchorConfirmed) gpa.OutMessages {
 	cl.suspended = false
 	return cl.varLocalView.AnchorObjectConfirmed(input.anchor)
 }
 
 // Consensus completed with a decision to SKIP/⊥.
-func (cl *cmtLogImpl) handleInputConsensusOutputSkip(input *inputConsensusOutputSkip) gpa.OutMessages {
+func (cl *CmtLogImpl) HandleInputConsensusOutputSkip(input *inputConsensusOutputSkip) gpa.OutMessages {
 	return cl.varConsInsts.ConsOutputSkip(input.logIndex, cl.varLogIndex.ConsensusStarted)
 }
 
 // Consensus has decided, produced a TX and it is now confirmed by L1.
-func (cl *cmtLogImpl) handleInputConsensusOutputConfirmed(input *inputConsensusOutputConfirmed) gpa.OutMessages {
+func (cl *CmtLogImpl) HandleInputConsensusOutputConfirmed(input *inputConsensusOutputConfirmed) gpa.OutMessages {
 	return cl.varConsInsts.ConsOutputDone(input.logIndex, input.nextAnchorObject, cl.varLogIndex.ConsensusStarted)
 }
 
 // Consensus has decided, produced a TX but it was rejected by L1.
-func (cl *cmtLogImpl) handleInputConsensusOutputRejected(input *inputConsensusOutputRejected) gpa.OutMessages {
+func (cl *CmtLogImpl) HandleInputConsensusOutputRejected(input *inputConsensusOutputRejected) gpa.OutMessages {
 	return cl.varConsInsts.ConsOutputSkip(input.logIndex, cl.varLogIndex.ConsensusStarted) // This will cause proposal of our latest L1 AO.
 }
 
 // Consensus tries to decide for too long. Maybe quorum assumption has been violated.
-func (cl *cmtLogImpl) handleInputConsensusTimeout(input *inputConsensusTimeout) gpa.OutMessages {
+func (cl *CmtLogImpl) HandleInputConsensusTimeout(input *inputConsensusTimeout) gpa.OutMessages {
 	return cl.varConsInsts.ConsTimeout(input.logIndex, cl.varLogIndex.ConsensusStarted)
 }
 
-func (cl *cmtLogImpl) handleInputCanPropose() gpa.OutMessages {
+func (cl *CmtLogImpl) HandleInputCanPropose() gpa.OutMessages {
 	msgs := gpa.NoMessages()
 	msgs.AddAll(cl.varConsInsts.Tick(cl.varLogIndex.ConsensusStarted))
 
@@ -247,18 +205,18 @@ func (cl *cmtLogImpl) handleInputCanPropose() gpa.OutMessages {
 	return msgs
 }
 
-func (cl *cmtLogImpl) handleInputSuspend() {
+func (cl *CmtLogImpl) HandleInputSuspend() {
 	cl.suspended = true
 }
 
 // > ON Reception of ⟨NextLI, •⟩ message:
 // >   ...
-func (cl *cmtLogImpl) handleMsgNextLogIndex(msg *MsgNextLogIndex) gpa.OutMessages {
+func (cl *CmtLogImpl) handleMsgNextLogIndex(msg *MsgNextLogIndex) gpa.OutMessages {
 	return cl.varLogIndex.MsgNextLogIndexReceived(msg)
 }
 
 // Implements the gpa.GPA interface.
-func (cl *cmtLogImpl) Output() gpa.Output {
+func (cl *CmtLogImpl) Output() gpa.Output {
 	out := cl.output
 	if out == nil || cl.suspended {
 		return nil // Untyped nil.
@@ -267,7 +225,7 @@ func (cl *cmtLogImpl) Output() gpa.Output {
 }
 
 // Implements the gpa.GPA interface.
-func (cl *cmtLogImpl) StatusString() string {
+func (cl *CmtLogImpl) StatusString() string {
 	return fmt.Sprintf(
 		"{cmtLogImpl, %v, %v, %v}",
 		cl.varConsInsts.StatusString(),

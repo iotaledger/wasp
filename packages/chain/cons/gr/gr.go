@@ -394,9 +394,9 @@ func (cgr *ConsGr) handleConsInput(inp gpa.Input) {
 }
 
 func (cgr *ConsGr) handleRedeliveryTick(t time.Time) {
-	outMsgs := cgr.consInst.Input(cgr.consInst.MakeTickInput(t))
-	cgr.sendMessages(outMsgs)
-	cgr.tryHandleOutput()
+	// outMsgs := cgr.consInst.Input(cgr.consInst.MakeTickInput(t))
+	// cgr.sendMessages(outMsgs)
+	// cgr.tryHandleOutput()
 }
 
 func (cgr *ConsGr) handleNetMessage(recv *peering.PeerMessageIn) {
