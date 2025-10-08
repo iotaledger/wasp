@@ -34,8 +34,8 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/packages/chain/chainmanager"
 	"github.com/iotaledger/wasp/v2/packages/chain/cmtlog"
-	"github.com/iotaledger/wasp/v2/packages/chain/cons"
-	consGR "github.com/iotaledger/wasp/v2/packages/chain/cons/gr"
+	"github.com/iotaledger/wasp/v2/packages/chain/consensus"
+	"github.com/iotaledger/wasp/v2/packages/chain/consensus/consensusrunner"
 	"github.com/iotaledger/wasp/v2/packages/chain/mempool"
 	"github.com/iotaledger/wasp/v2/packages/chain/statemanager"
 	smgpa "github.com/iotaledger/wasp/v2/packages/chain/statemanager/gpa"
@@ -203,7 +203,7 @@ type chainNodeImpl struct {
 type consensusInst struct {
 	request    *chainmanager.NeedConsensus
 	cancelFunc context.CancelFunc
-	consensus  *consGR.ConsGr
+	consensus  *consensusrunner.ConsensusRunner
 	committee  []*cryptolib.PublicKey
 }
 
@@ -218,7 +218,7 @@ func (ci *consensusInst) Cancel() {
 // Used to correlate consensus request with its output.
 type consOutput struct {
 	request *chainmanager.NeedConsensus
-	output  *consGR.Output
+	output  *consensusrunner.Output
 }
 
 func (co *consOutput) String() string {
@@ -733,14 +733,14 @@ func (cni *chainNodeImpl) handleConsensusOutput(out *consOutput) {
 	cni.log.LogDebugf("handleConsensusOutput, %v", out)
 	var chainMgrInput gpa.Input
 	switch out.output.Status {
-	case cons.Completed:
+	case consensus.Completed:
 		chainMgrInput = chainmanager.NewInputConsensusOutputDone(
 			out.request.CommitteeAddr,
 			out.request.LogIndex,
 			out.request.BaseStateAnchor,
 			out.output.Result,
 		)
-	case cons.Skipped:
+	case consensus.Skipped:
 		chainMgrInput = chainmanager.NewInputConsensusOutputSkip(
 			out.request.CommitteeAddr,
 			out.request.LogIndex,
@@ -763,7 +763,7 @@ func (cni *chainNodeImpl) handleConsensusRecover(out *consRecover) {
 func (cni *chainNodeImpl) ensureConsensusInput(ctx context.Context, needConsensus *chainmanager.NeedConsensus) {
 	ci := cni.ensureConsensusInst(ctx, needConsensus)
 	if ci.request == nil {
-		outputCB := func(o *consGR.Output) {
+		outputCB := func(o *consensusrunner.Output) {
 			cni.consOutputPipe.In() <- &consOutput{request: needConsensus, output: o}
 		}
 		recoverCB := func() {
@@ -787,10 +787,10 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 	addLogIndex := logIndex
 	for range ConsensusInstsInAdvance {
 		if !consensusInstances.Has(addLogIndex) {
-			consGrCtx, consGrCancel := context.WithCancel(ctx)
+			consRunnerCtx, consRunnerCancel := context.WithCancel(ctx)
 			logIndexCopy := addLogIndex
-			cgr := consGR.New(
-				consGrCtx, cni.chainID, cni.chainStore, dkShare, &logIndexCopy, cni.nodeIdentity,
+			consRunner := consensusrunner.New(
+				consRunnerCtx, cni.chainID, cni.chainStore, dkShare, &logIndexCopy, cni.nodeIdentity,
 				cni.procCache, cni.mempool, cni.stateMgr,
 				cni.nodeConn,
 				cni.net,
@@ -802,12 +802,12 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 				cni.log.NewChildLogger(fmt.Sprintf("C-%v.LI-%v", committeeAddr.String()[:10], logIndexCopy)),
 			)
 			consensusInstances.Set(addLogIndex, &consensusInst{
-				cancelFunc: consGrCancel,
-				consensus:  cgr,
+				cancelFunc: consRunnerCancel,
+				consensus:  consRunner,
 				committee:  dkShare.GetNodePubKeys(),
 			})
 			if !cni.tangleTime.IsZero() {
-				cgr.Time(cni.tangleTime)
+				consRunner.Time(cni.tangleTime)
 			}
 		}
 		addLogIndex = addLogIndex.Next()

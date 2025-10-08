@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/v2/packages/chain/cmtlog"
-	"github.com/iotaledger/wasp/v2/packages/chain/cons"
+	"github.com/iotaledger/wasp/v2/packages/chain/consensus"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/isc"
@@ -17,14 +17,14 @@ type inputConsensusOutputDone struct {
 	committeeAddr   cryptolib.Address
 	logIndex        cmtlog.LogIndex
 	proposedBaseAO  *isc.StateAnchor
-	consensusResult *cons.Result
+	consensusResult *consensus.Result
 }
 
 func NewInputConsensusOutputDone(
 	committeeAddr cryptolib.Address,
 	logIndex cmtlog.LogIndex,
 	proposedBaseAO *isc.StateAnchor,
-	consensusResult *cons.Result,
+	consensusResult *consensus.Result,
 ) gpa.Input {
 	return &inputConsensusOutputDone{
 		committeeAddr:   committeeAddr,
