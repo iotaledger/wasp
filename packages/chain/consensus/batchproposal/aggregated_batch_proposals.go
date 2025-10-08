@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package bp
+package batchproposal
 
 import (
 	"bytes"
@@ -33,7 +33,7 @@ type AggregatedBatchProposals struct {
 }
 
 func AggregateBatchProposals(inputs map[gpa.NodeID][]byte, nodeIDs []gpa.NodeID, f int, log log.Logger) *AggregatedBatchProposals {
-	bps := batchProposalSet{}
+	batchProposals := batchProposalSet{}
 	//
 	// Parse and validate the batch proposals. Skip the invalid ones.
 	nilCount := 0
@@ -54,7 +54,7 @@ func AggregateBatchProposals(inputs map[gpa.NodeID][]byte, nodeIDs []gpa.NodeID,
 			log.LogWarnf("invalid nodeIndex=%v in batchProposal from %v", batchProposal.nodeIndex, nid)
 			continue
 		}
-		bps[nid] = batchProposal
+		batchProposals[nid] = batchProposal
 	}
 	//
 	// Store the aggregated values.
@@ -62,97 +62,97 @@ func AggregateBatchProposals(inputs map[gpa.NodeID][]byte, nodeIDs []gpa.NodeID,
 		log.LogDebugf("Can't aggregate batch proposal: have >= f+1 nil proposals.")
 		return &AggregatedBatchProposals{shouldBeSkipped: true}
 	}
-	if len(bps) == 0 {
+	if len(batchProposals) == 0 {
 		log.LogDebugf("Can't aggregate batch proposal: have 0 batch proposals.")
 		return &AggregatedBatchProposals{shouldBeSkipped: true}
 	}
-	aggregatedTime := bps.aggregatedTime(f)
-	decidedBaseAnchor := bps.decidedBaseAnchor(f)
-	aggregatedGasCoins := bps.aggregatedGasCoins(f)
-	aggregatedL1Params := bps.aggregatedL1Params(f)
-	abp := &AggregatedBatchProposals{
-		batchProposalSet:      bps,
-		decidedIndexProposals: bps.decidedDSSIndexProposals(),
+	aggregatedTime := batchProposals.aggregatedTime(f)
+	decidedBaseAnchor := batchProposals.decidedBaseAnchor(f)
+	aggregatedGasCoins := batchProposals.aggregatedGasCoins(f)
+	aggregatedL1Params := batchProposals.aggregatedL1Params(f)
+	aggregatedBatchProposals := &AggregatedBatchProposals{
+		batchProposalSet:      batchProposals,
+		decidedIndexProposals: batchProposals.decidedDSSIndexProposals(),
 		decidedBaseAnchor:     decidedBaseAnchor,
-		decidedRequestRefs:    bps.decidedRequestRefs(f, decidedBaseAnchor),
-		decidedRotateTo:       bps.decidedRotateTo(f),
+		decidedRequestRefs:    batchProposals.decidedRequestRefs(f, decidedBaseAnchor),
+		decidedRotateTo:       batchProposals.decidedRotateTo(f),
 		aggregatedTime:        aggregatedTime,
 		aggregatedGasCoins:    aggregatedGasCoins,
 		aggregatedL1Params:    aggregatedL1Params,
 	}
-	if abp.decidedBaseAnchor == nil ||
-		len(abp.decidedRequestRefs) == 0 ||
+	if aggregatedBatchProposals.decidedBaseAnchor == nil ||
+		len(aggregatedBatchProposals.decidedRequestRefs) == 0 ||
 		// No need to check the rotateTo field here.
-		abp.aggregatedTime.IsZero() ||
-		len(abp.aggregatedGasCoins) == 0 ||
-		abp.aggregatedL1Params == nil {
+		aggregatedBatchProposals.aggregatedTime.IsZero() ||
+		len(aggregatedBatchProposals.aggregatedGasCoins) == 0 ||
+		aggregatedBatchProposals.aggregatedL1Params == nil {
 		log.LogDebugf(
 			"Can't aggregate batch proposal: decidedBaseAnchor=%v, |decidedRequestRefs|=%v, |aggregatedGasCoins|=%v, |aggregatedL1Params|=%v , aggregatedTime=%v",
-			abp.decidedBaseAnchor, len(abp.decidedRequestRefs), len(abp.aggregatedGasCoins), abp.aggregatedL1Params, abp.aggregatedTime,
+			aggregatedBatchProposals.decidedBaseAnchor, len(aggregatedBatchProposals.decidedRequestRefs), len(aggregatedBatchProposals.aggregatedGasCoins), aggregatedBatchProposals.aggregatedL1Params, aggregatedBatchProposals.aggregatedTime,
 		)
-		abp.shouldBeSkipped = true
+		aggregatedBatchProposals.shouldBeSkipped = true
 	}
-	return abp
+	return aggregatedBatchProposals
 }
 
-func (abp *AggregatedBatchProposals) ShouldBeSkipped() bool {
-	return abp.shouldBeSkipped
+func (p *AggregatedBatchProposals) ShouldBeSkipped() bool {
+	return p.shouldBeSkipped
 }
 
-func (abp *AggregatedBatchProposals) DecidedDSSIndexProposals() map[gpa.NodeID][]int {
-	if abp.shouldBeSkipped {
+func (p *AggregatedBatchProposals) DecidedDSSIndexProposals() map[gpa.NodeID][]int {
+	if p.shouldBeSkipped {
 		panic("trying to use aggregated proposal marked to be skipped")
 	}
-	return abp.decidedIndexProposals
+	return p.decidedIndexProposals
 }
 
-func (abp *AggregatedBatchProposals) DecidedBaseAnchor() *isc.StateAnchor {
-	if abp.shouldBeSkipped {
+func (p *AggregatedBatchProposals) DecidedBaseAnchor() *isc.StateAnchor {
+	if p.shouldBeSkipped {
 		panic("trying to use aggregated proposal marked to be skipped")
 	}
-	return abp.decidedBaseAnchor
+	return p.decidedBaseAnchor
 }
 
-func (abp *AggregatedBatchProposals) DecidedRotateTo() *iotago.Address {
-	if abp.shouldBeSkipped {
+func (p *AggregatedBatchProposals) DecidedRotateTo() *iotago.Address {
+	if p.shouldBeSkipped {
 		panic("trying to use aggregated proposal marked to be skipped")
 	}
-	return abp.decidedRotateTo
+	return p.decidedRotateTo
 }
 
-func (abp *AggregatedBatchProposals) AggregatedTime() time.Time {
-	if abp.shouldBeSkipped {
+func (p *AggregatedBatchProposals) AggregatedTime() time.Time {
+	if p.shouldBeSkipped {
 		panic("trying to use aggregated proposal marked to be skipped")
 	}
-	return abp.aggregatedTime
+	return p.aggregatedTime
 }
 
-func (abp *AggregatedBatchProposals) ValidatorFeeTarget(randomness hashing.HashValue) isc.AgentID {
-	if abp.shouldBeSkipped {
+func (p *AggregatedBatchProposals) ValidatorFeeTarget(randomness hashing.HashValue) isc.AgentID {
+	if p.shouldBeSkipped {
 		panic("trying to use aggregated proposal marked to be skipped")
 	}
-	return abp.batchProposalSet.selectedFeeDestination(abp.aggregatedTime, randomness)
+	return p.batchProposalSet.selectedFeeDestination(p.aggregatedTime, randomness)
 }
 
-func (abp *AggregatedBatchProposals) DecidedRequestRefs() []*isc.RequestRef {
-	if abp.shouldBeSkipped {
+func (p *AggregatedBatchProposals) DecidedRequestRefs() []*isc.RequestRef {
+	if p.shouldBeSkipped {
 		panic("trying to use aggregated proposal marked to be skipped")
 	}
-	return abp.decidedRequestRefs
+	return p.decidedRequestRefs
 }
 
 // OrderedRequests returns ordered requests.
 // TODO: should this be moved to the VM?
-func (abp *AggregatedBatchProposals) OrderedRequests(requests []isc.Request, randomness hashing.HashValue) []isc.Request {
+func (p *AggregatedBatchProposals) OrderedRequests(requests []isc.Request, randomness hashing.HashValue) []isc.Request {
 	type sortStruct struct {
 		key hashing.HashValue
 		ref *isc.RequestRef
 		req isc.Request
 	}
 
-	sortBuf := make([]*sortStruct, len(abp.decidedRequestRefs))
-	for i := range abp.decidedRequestRefs {
-		ref := abp.decidedRequestRefs[i]
+	sortBuf := make([]*sortStruct, len(p.decidedRequestRefs))
+	for i := range p.decidedRequestRefs {
+		ref := p.decidedRequestRefs[i]
 		var found isc.Request
 		for j := range requests {
 			if ref.IsFor(requests[j]) {
@@ -194,23 +194,23 @@ func (abp *AggregatedBatchProposals) OrderedRequests(requests []isc.Request, ran
 		}
 	}
 
-	sorted := make([]isc.Request, len(abp.decidedRequestRefs))
+	sorted := make([]isc.Request, len(p.decidedRequestRefs))
 	for i := range sortBuf {
 		sorted[i] = sortBuf[i].req
 	}
 	return sorted
 }
 
-func (abp *AggregatedBatchProposals) AggregatedGasCoins() []*coin.CoinWithRef {
-	if abp.shouldBeSkipped {
+func (p *AggregatedBatchProposals) AggregatedGasCoins() []*coin.CoinWithRef {
+	if p.shouldBeSkipped {
 		panic("trying to use aggregated proposal marked to be skipped")
 	}
-	return abp.aggregatedGasCoins
+	return p.aggregatedGasCoins
 }
 
-func (abp *AggregatedBatchProposals) AggregatedL1Params() *parameters.L1Params {
-	if abp.shouldBeSkipped {
+func (p *AggregatedBatchProposals) AggregatedL1Params() *parameters.L1Params {
+	if p.shouldBeSkipped {
 		panic("trying to use aggregated proposal marked to be skipped")
 	}
-	return abp.aggregatedL1Params
+	return p.aggregatedL1Params
 }

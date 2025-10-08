@@ -1,8 +1,8 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// Package bp implements batch proposal functionality for consensus operations.
-package bp
+// Package batchproposal implements batch proposal functionality for consensus operations.
+package batchproposal
 
 import (
 	"bytes"
@@ -26,27 +26,27 @@ import (
 
 type batchProposalSet map[gpa.NodeID]*BatchProposal
 
-func (bps batchProposalSet) decidedDSSIndexProposals() map[gpa.NodeID][]int {
+func (s batchProposalSet) decidedDSSIndexProposals() map[gpa.NodeID][]int {
 	ips := map[gpa.NodeID][]int{}
-	for nid, bp := range bps {
-		ips[nid] = bp.dssIndexProposal.AsInts()
+	for nid, batchProposal := range s {
+		ips[nid] = batchProposal.dssIndexProposal.AsInts()
 	}
 	return ips
 }
 
 // Decided Base Alias Output is the one, that was proposed by F+1 nodes or more.
 // If there is more that 1 such ID, we refuse to use all of them.
-func (bps batchProposalSet) decidedBaseAnchor(f int) *isc.StateAnchor {
+func (s batchProposalSet) decidedBaseAnchor(f int) *isc.StateAnchor {
 	counts := map[hashing.HashValue]int{}
 	values := map[hashing.HashValue]*isc.StateAnchor{}
-	for _, bp := range bps {
-		if bp.baseAnchor == nil {
+	for _, batchProposal := range s {
+		if batchProposal.baseAnchor == nil {
 			continue
 		}
-		h := bp.baseAnchor.Hash()
+		h := batchProposal.baseAnchor.Hash()
 		counts[h]++
 		if _, ok := values[h]; !ok {
-			values[h] = bp.baseAnchor
+			values[h] = batchProposal.baseAnchor
 		}
 	}
 
@@ -73,26 +73,26 @@ func (bps batchProposalSet) decidedBaseAnchor(f int) *isc.StateAnchor {
 
 // Take requests proposed by at least F+1 nodes. Then the request is proposed at least by 1 fair node.
 // We should only consider the proposals from the nodes that proposed the decided Anchor, otherwise we can select already processed requests.
-func (bps batchProposalSet) decidedRequestRefs(f int, ao *isc.StateAnchor) []*isc.RequestRef {
+func (s batchProposalSet) decidedRequestRefs(f int, ao *isc.StateAnchor) []*isc.RequestRef {
 	minNumberMentioned := f + 1
 	requestsByKey := map[isc.RequestRefKey]*isc.RequestRef{}
 	numMentioned := map[isc.RequestRefKey]int{}
 	//
 	// Count number of nodes proposing a request.
 	maxLen := 0
-	for _, bp := range bps {
-		if bp.baseAnchor == nil || !bp.baseAnchor.Equals(ao) {
+	for _, batchProposal := range s {
+		if batchProposal.baseAnchor == nil || !batchProposal.baseAnchor.Equals(ao) {
 			continue
 		}
-		for _, reqRef := range bp.requestRefs {
+		for _, reqRef := range batchProposal.requestRefs {
 			reqRefFey := reqRef.AsKey()
 			numMentioned[reqRefFey]++
 			if _, ok := requestsByKey[reqRefFey]; !ok {
 				requestsByKey[reqRefFey] = reqRef
 			}
 		}
-		if len(bp.requestRefs) > maxLen {
-			maxLen = len(bp.requestRefs)
+		if len(batchProposal.requestRefs) > maxLen {
+			maxLen = len(batchProposal.requestRefs)
 		}
 	}
 	//
@@ -107,11 +107,11 @@ func (bps batchProposalSet) decidedRequestRefs(f int, ao *isc.StateAnchor) []*is
 	return decided
 }
 
-func (bps batchProposalSet) decidedRotateTo(f int) *iotago.Address {
+func (s batchProposalSet) decidedRotateTo(f int) *iotago.Address {
 	votes := map[iotago.Address]int{}
-	for _, bp := range bps {
-		if bp.rotateTo != nil {
-			votes[*bp.rotateTo] += 1
+	for _, batchProposal := range s {
+		if batchProposal.rotateTo != nil {
+			votes[*batchProposal.rotateTo] += 1
 		}
 	}
 
@@ -130,25 +130,25 @@ func (bps batchProposalSet) decidedRotateTo(f int) *iotago.Address {
 }
 
 // Returns zero time, if fails to aggregate the time.
-func (bps batchProposalSet) aggregatedTime(f int) time.Time {
-	ts := make([]time.Time, 0, len(bps))
-	for _, bp := range bps {
-		ts = append(ts, bp.timeData)
+func (s batchProposalSet) aggregatedTime(f int) time.Time {
+	ts := make([]time.Time, 0, len(s))
+	for _, batchProposal := range s {
+		ts = append(ts, batchProposal.timeData)
 	}
 	sort.Slice(ts, func(i, j int) bool {
 		return ts[i].Before(ts[j])
 	})
 
-	proposalCount := len(bps) // |acsProposals| >= N-F by ACS logic.
+	proposalCount := len(s) // |acsProposals| >= N-F by ACS logic.
 	if proposalCount <= f {
 		return time.Time{} // Zero time marks a failure.
 	}
 	return ts[proposalCount-f-1] // Max(|acsProposals|-F Lowest) ~= 66 percentile.
 }
 
-func (bps batchProposalSet) selectedProposal(aggregatedTime time.Time, randomness hashing.HashValue) gpa.NodeID {
-	peers := make([]gpa.NodeID, 0, len(bps))
-	for nid := range bps {
+func (s batchProposalSet) selectedProposal(aggregatedTime time.Time, randomness hashing.HashValue) gpa.NodeID {
+	peers := make([]gpa.NodeID, 0, len(s))
+	for nid := range s {
 		peers = append(peers, nid)
 	}
 	slices.SortFunc(peers, func(a gpa.NodeID, b gpa.NodeID) int {
@@ -166,11 +166,11 @@ func (bps batchProposalSet) selectedProposal(aggregatedTime time.Time, randomnes
 		randomness[:],
 	)
 	randomUint := binary.BigEndian.Uint64(hashed[:])
-	lenBps, err := safecast.Convert[uint64](len(bps))
+	lens, err := safecast.Convert[uint64](len(s))
 	if err != nil {
 		panic("length of batch proposal set overflows uint64")
 	}
-	randomPosU64 := randomUint % lenBps
+	randomPosU64 := randomUint % lens
 	randomPos, err := safecast.Convert[int](randomPosU64)
 	if err != nil {
 		panic("random proposal from set overflows int")
@@ -178,9 +178,9 @@ func (bps batchProposalSet) selectedProposal(aggregatedTime time.Time, randomnes
 	return peers[randomPos]
 }
 
-func (bps batchProposalSet) selectedFeeDestination(aggregatedTime time.Time, randomness hashing.HashValue) isc.AgentID {
-	bp := bps[bps.selectedProposal(aggregatedTime, randomness)]
-	return bp.validatorFeeDestination
+func (s batchProposalSet) selectedFeeDestination(aggregatedTime time.Time, randomness hashing.HashValue) isc.AgentID {
+	batchProposal := s[s.selectedProposal(aggregatedTime, randomness)]
+	return batchProposal.validatorFeeDestination
 }
 
 type l1paramsCounter struct {
@@ -189,14 +189,14 @@ type l1paramsCounter struct {
 }
 
 // Take the L1Params which is shared more than f+1 nodes
-func (bps batchProposalSet) aggregatedL1Params(f int) *parameters.L1Params {
-	proposalCount := len(bps) // |acsProposals| >= N-F by ACS logic.
+func (s batchProposalSet) aggregatedL1Params(f int) *parameters.L1Params {
+	proposalCount := len(s) // |acsProposals| >= N-F by ACS logic.
 	ps := make([]*parameters.L1Params, 0, proposalCount)
-	for _, bp := range bps {
-		if bp.l1params == nil {
+	for _, batchProposal := range s {
+		if batchProposal.l1params == nil {
 			continue
 		}
-		ps = append(ps, bp.l1params)
+		ps = append(ps, batchProposal.l1params)
 	}
 
 	// count the amount of each L1Params
@@ -231,12 +231,12 @@ func (bps batchProposalSet) aggregatedL1Params(f int) *parameters.L1Params {
 }
 
 // Here we return coins that are proposed by at least F+1 peers.
-func (bps batchProposalSet) aggregatedGasCoins(f int) []*coin.CoinWithRef {
+func (s batchProposalSet) aggregatedGasCoins(f int) []*coin.CoinWithRef {
 	coinRefs := map[string]*coin.CoinWithRef{}
 	coinFrom := map[string]map[gpa.NodeID]bool{}
-	for from, bp := range bps {
-		for i := range bp.gasCoins {
-			coinRef := bp.gasCoins[i]
+	for from, batchProposal := range s {
+		for i := range batchProposal.gasCoins {
+			coinRef := batchProposal.gasCoins[i]
 			bytesStr := string(coinRef.Ref.Bytes())
 			if _, ok := coinRefs[bytesStr]; !ok {
 				coinRefs[bytesStr] = coinRef
