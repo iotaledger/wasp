@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package cmtlog
+package committeelog
 
 import (
 	"fmt"
@@ -22,7 +22,7 @@ func NewInputConsensusTimeout(logIndex LogIndex) gpa.Input {
 
 func (inp *inputConsensusTimeout) String() string {
 	return fmt.Sprintf(
-		"{cmtLog.inputConsensusTimeout, logIndex=%v}",
+		"{committeeLog.inputConsensusTimeout, logIndex=%v}",
 		inp.logIndex,
 	)
 }

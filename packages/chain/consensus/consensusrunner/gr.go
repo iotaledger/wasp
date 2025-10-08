@@ -17,7 +17,7 @@ import (
 	"github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/packages/chain/cmtlog"
+	"github.com/iotaledger/wasp/v2/packages/chain/committeelog"
 	"github.com/iotaledger/wasp/v2/packages/chain/consensus"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
@@ -44,9 +44,9 @@ const (
 
 type ConsensusID [iotago.AddressLen + 4]byte
 
-func NewConsensusID(cmtAddr *cryptolib.Address, logIndex *cmtlog.LogIndex) ConsensusID {
+func NewConsensusID(committeeAddr *cryptolib.Address, logIndex *committeelog.LogIndex) ConsensusID {
 	ret := ConsensusID{}
-	copy(ret[:], cmtAddr.Bytes())
+	copy(ret[:], committeeAddr.Bytes())
 	copy(ret[iotago.AddressLen:], codec.Encode[uint32](logIndex.AsUint32()))
 	return ret
 }
@@ -160,7 +160,7 @@ func New(
 	chainID isc.ChainID,
 	chainStore state.Store,
 	dkShare tcrypto.DKShare,
-	logIndex *cmtlog.LogIndex,
+	logIndex *committeelog.LogIndex,
 	myNodeIdentity *cryptolib.KeyPair,
 	procCache *processors.Config,
 	mempool Mempool,
@@ -176,8 +176,8 @@ func New(
 	pipeMetrics *metrics.ChainPipeMetrics,
 	log log.Logger,
 ) *ConsensusRunner {
-	cmtPubKey := dkShare.GetSharedPublic()
-	netPeeringID := peering.HashPeeringIDFromBytes(chainID.Bytes(), cmtPubKey.AsBytes(), logIndex.Bytes()) // ChainID × Committee PubKey × LogIndex
+	committeePubKey := dkShare.GetSharedPublic()
+	netPeeringID := peering.HashPeeringIDFromBytes(chainID.Bytes(), committeePubKey.AsBytes(), logIndex.Bytes()) // ChainID × Committee PubKey × LogIndex
 	netPeerPubs := map[gpa.NodeID]*cryptolib.PublicKey{}
 	for _, peerPubKey := range dkShare.GetNodePubKeys() {
 		netPeerPubs[gpa.NodeIDFromPublicKey(peerPubKey)] = peerPubKey
@@ -202,7 +202,7 @@ func New(
 		netPeerPubs:       netPeerPubs,
 		netDisconnect:     nil, // Set bellow.
 		net:               net,
-		consensusID:       NewConsensusID(cmtPubKey.AsAddress(), logIndex),
+		consensusID:       NewConsensusID(committeePubKey.AsAddress(), logIndex),
 		ctx:               ctx,
 		pipeMetrics:       pipeMetrics,
 		log:               log,

@@ -1,4 +1,4 @@
-package cmtlog
+package committeelog
 
 import (
 	"github.com/iotaledger/hive.go/log"

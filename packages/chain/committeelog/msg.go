@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package cmtlog
+package committeelog
 
 import (
 	"github.com/iotaledger/wasp/v2/packages/gpa"
@@ -11,7 +11,7 @@ const (
 	msgTypeNextLogIndex gpa.MessageType = iota
 )
 
-func (cl *cmtLogImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
+func (cl *committeeLogImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	return UnmarshalMessage(data)
 }
 

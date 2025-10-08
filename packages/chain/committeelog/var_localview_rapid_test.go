@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package cmtlog_test
+package committeelog_test
 
 // TODO: Re-enable this test.
 
@@ -240,7 +240,7 @@ package cmtlog_test
 // var _ rapid.StateMachine = &varLocalViewSM{}
 
 // // E.g. for special parameters for reproducibility, etc.
-// // `go test ./packages/chain/cmtLog/ --run TestPropsRapid -v -rapid.seed=13061922091840831492 -rapid.checks=100`
+// // `go test ./packages/chain/committeeLog/ --run TestPropsRapid -v -rapid.seed=13061922091840831492 -rapid.checks=100`
 // func TestVarLocalViewRapid(t *testing.T) {
 // 	rapid.Check(t, func(t *rapid.T) {
 // 		sm := newVarLocalViewSM(t)

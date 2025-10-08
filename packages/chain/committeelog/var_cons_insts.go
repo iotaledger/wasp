@@ -1,4 +1,4 @@
-package cmtlog
+package committeelog
 
 import (
 	"fmt"
@@ -22,7 +22,7 @@ type VarConsInsts interface {
 	StatusString() string
 }
 
-// consInsts implements the algorithm modeled in WaspChainCmtLogSUI.tla
+// consInsts implements the algorithm modeled in WaspChainCommitteeLogSUI.tla
 type varConsInstsImpl struct {
 	haveConsOut bool
 	lis         map[LogIndex]*isc.StateAnchor

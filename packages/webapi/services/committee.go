@@ -92,11 +92,11 @@ func (c *CommitteeService) getCommitteeNodes(
 ) []*dto.ChainNodeStatus {
 	nodes := make([]*dto.ChainNodeStatus, 0)
 
-	for _, cmtNodePubKey := range dkShare.GetNodePubKeys() {
-		nodeStatus := c.makeChainNodeStatus(cmtNodePubKey, peeringStatus, candidateNodes)
+	for _, committeeNodePubKey := range dkShare.GetNodePubKeys() {
+		nodeStatus := c.makeChainNodeStatus(committeeNodePubKey, peeringStatus, candidateNodes)
 
 		nodes = append(nodes, nodeStatus)
-		inChainNodes[cmtNodePubKey.AsKey()] = true
+		inChainNodes[committeeNodePubKey.AsKey()] = true
 	}
 
 	return nodes
@@ -114,8 +114,8 @@ func (c *CommitteeService) getAccessNodes(
 	for _, chainNode := range chainNodes {
 		acnPubKey := chainNode.PubKey()
 		skip := false
-		for _, cmtNodePubKey := range dkShare.GetNodePubKeys() {
-			if acnPubKey.AsKey() == cmtNodePubKey.AsKey() {
+		for _, committeeNodePubKey := range dkShare.GetNodePubKeys() {
+			if acnPubKey.AsKey() == committeeNodePubKey.AsKey() {
 				skip = true
 				break
 			}

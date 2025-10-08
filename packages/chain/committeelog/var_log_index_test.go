@@ -1,14 +1,14 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package cmtlog_test
+package committeelog_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/v2/packages/chain/cmtlog"
+	"github.com/iotaledger/wasp/v2/packages/chain/committeelog"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
 )
@@ -20,17 +20,17 @@ func TestVarLogIndexV2Basic(t *testing.T) {
 	f := 1
 	//
 	nodeIDs := gpa.MakeTestNodeIDs(4)
-	initLI := cmtlog.NilLogIndex().Next()
+	initLI := committeelog.NilLogIndex().Next()
 	//
-	vliOut := cmtlog.NilLogIndex()
-	vli := cmtlog.NewVarLogIndex(nodeIDs, n, f, initLI, func(li cmtlog.LogIndex) gpa.OutMessages {
+	vliOut := committeelog.NilLogIndex()
+	vli := committeelog.NewVarLogIndex(nodeIDs, n, f, initLI, func(li committeelog.LogIndex) gpa.OutMessages {
 		vliOut = li
 		return nil
 	}, nil, log)
 	//
 	nextLI := initLI.Next()
 	require.NotEqual(t, nextLI, vliOut)
-	nextLIMsg := cmtlog.NewMsgNextLogIndex(nodeIDs[0], nextLI, cmtlog.MsgNextLogIndexCauseStarted, false)
+	nextLIMsg := committeelog.NewMsgNextLogIndex(nodeIDs[0], nextLI, committeelog.MsgNextLogIndexCauseStarted, false)
 	for i := 0; i < n-f; i++ {
 		nextLIMsg.SetSender(nodeIDs[i])
 		vli.MsgNextLogIndexReceived(nextLIMsg)
@@ -45,26 +45,26 @@ func TestVarLogIndexV2Other(t *testing.T) {
 	f := 1
 	//
 	nodeIDs := gpa.MakeTestNodeIDs(4)
-	initLI := cmtlog.NilLogIndex().Next()
+	initLI := committeelog.NilLogIndex().Next()
 	//
-	vliOut := cmtlog.NilLogIndex()
-	vli := cmtlog.NewVarLogIndex(nodeIDs, n, f, initLI, func(li cmtlog.LogIndex) gpa.OutMessages {
+	vliOut := committeelog.NilLogIndex()
+	vli := committeelog.NewVarLogIndex(nodeIDs, n, f, initLI, func(li committeelog.LogIndex) gpa.OutMessages {
 		vliOut = li
 		return nil
 	}, nil, log)
-	li15 := cmtlog.LogIndex(15)
-	li16 := cmtlog.LogIndex(16)
-	li18 := cmtlog.LogIndex(18)
-	require.Equal(t, cmtlog.NilLogIndex(), vliOut)
+	li15 := committeelog.LogIndex(15)
+	li16 := committeelog.LogIndex(16)
+	li18 := committeelog.LogIndex(18)
+	require.Equal(t, committeelog.NilLogIndex(), vliOut)
 
-	msgWithSender := func(sender gpa.NodeID, li cmtlog.LogIndex) *cmtlog.MsgNextLogIndex {
-		msg := cmtlog.NewMsgNextLogIndex(nodeIDs[0], li, cmtlog.MsgNextLogIndexCauseStarted, false)
+	msgWithSender := func(sender gpa.NodeID, li committeelog.LogIndex) *committeelog.MsgNextLogIndex {
+		msg := committeelog.NewMsgNextLogIndex(nodeIDs[0], li, committeelog.MsgNextLogIndexCauseStarted, false)
 		msg.SetSender(sender)
 		return msg
 	}
 
 	vli.MsgNextLogIndexReceived(msgWithSender(nodeIDs[0], li15))
-	require.Equal(t, cmtlog.NilLogIndex(), vliOut)
+	require.Equal(t, committeelog.NilLogIndex(), vliOut)
 
 	vli.MsgNextLogIndexReceived(msgWithSender(nodeIDs[1], li18))
 	require.Equal(t, li15, vliOut)

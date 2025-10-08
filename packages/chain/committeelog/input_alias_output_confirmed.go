@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package cmtlog
+package committeelog
 
 import (
 	"fmt"
@@ -21,5 +21,5 @@ func NewInputAnchorConfirmed(anchor *isc.StateAnchor) gpa.Input {
 }
 
 func (inp *inputAnchorConfirmed) String() string {
-	return fmt.Sprintf("{cmtLog.inputAnchorConfirmed, %v}", inp.anchor)
+	return fmt.Sprintf("{committeeLog.inputAnchorConfirmed, %v}", inp.anchor)
 }

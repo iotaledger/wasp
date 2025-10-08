@@ -11,7 +11,7 @@ import (
 	hiveshutdown "github.com/iotaledger/hive.go/app/shutdown"
 
 	"github.com/iotaledger/wasp/v2/packages/chain"
-	"github.com/iotaledger/wasp/v2/packages/chain/cmtlog"
+	"github.com/iotaledger/wasp/v2/packages/chain/committeelog"
 	"github.com/iotaledger/wasp/v2/packages/chain/mempool"
 	"github.com/iotaledger/wasp/v2/packages/chains"
 	"github.com/iotaledger/wasp/v2/packages/daemon"
@@ -83,7 +83,7 @@ func provide(c *dig.Container) error {
 		ChainRecordRegistryProvider registry.ChainRecordRegistryProvider
 		DKShareRegistryProvider     registry.DKShareRegistryProvider
 		NodeIdentityProvider        registry.NodeIdentityProvider
-		ConsensusStateRegistry      cmtlog.ConsensusStateRegistry
+		ConsensusStateRegistry      committeelog.ConsensusStateRegistry
 		ChainListener               *publisher.Publisher
 		ChainMetricsProvider        *metrics.ChainMetricsProvider
 	}

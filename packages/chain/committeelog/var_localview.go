@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// Package cmtlog implements the local view of a chain, maintained by a committee to decide which
+// Package committeelog implements the local view of a chain, maintained by a committee to decide which
 // achor object to propose to the ACS. The achor object decided by the ACS will be used
 // as an input for TX we build.
 //
@@ -41,7 +41,7 @@
 // Note on the AO as an input for a consensus. The provided AO is just a proposal. After ACS
 // is completed, the participants will select the actual AO, which can differ from the one
 // proposed by this node.
-package cmtlog
+package committeelog
 
 import (
 	"fmt"

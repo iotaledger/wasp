@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package cmtlog
+package committeelog
 
 import (
 	"fmt"
@@ -23,5 +23,5 @@ func NewInputConsensusOutputRejected(aliasOutput *isc.StateAnchor, logIndex LogI
 }
 
 func (inp *inputConsensusOutputRejected) String() string {
-	return fmt.Sprintf("{cmtLog.inputConsensusOutputRejected, %v, li=%v}", inp.aliasOutput, inp.logIndex)
+	return fmt.Sprintf("{committeeLog.inputConsensusOutputRejected, %v, li=%v}", inp.aliasOutput, inp.logIndex)
 }

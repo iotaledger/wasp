@@ -9,13 +9,13 @@ import (
 )
 
 const (
-	msgTypeCmtLog gpa.MessageType = iota
+	msgTypeCommitteeLog gpa.MessageType = iota
 	msgTypeBlockProduced
 )
 
 func (cmi *chainMgrImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	return gpa.UnmarshalMessage(data, gpa.Mapper{
-		msgTypeCmtLog: func() gpa.Message { return new(msgCmtLog) },
+		msgTypeCommitteeLog: func() gpa.Message { return new(msgCommitteeLog) },
 		msgTypeBlockProduced: func() gpa.Message {
 			msgBlock := new(msgBlockProduced)
 
