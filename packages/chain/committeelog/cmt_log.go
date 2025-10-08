@@ -1,4 +1,4 @@
-// Package cmtlog is responsible for producing a log of chain's block decisions.
+// Package committeelog is responsible for producing a log of chain's block decisions.
 // for a particular committee. The main functions:
 //
 //   - Propose to start a consensus instance at a specific LI.
@@ -17,7 +17,7 @@
 //
 //   - A lagging node will join LI-1 instance with ⊥ and then will input its
 //     output to the round LI. This assumes the latest round is LI.
-package cmtlog
+package committeelog
 
 import (
 	"errors"
@@ -33,8 +33,8 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/util/byzquorum"
 )
 
-// CmtLog is the public interface for this algorithm.
-type CmtLog interface {
+// CommitteeLog is the public interface for this algorithm.
+type CommitteeLog interface {
 	AsGPA() gpa.GPA
 }
 
@@ -45,11 +45,11 @@ type State struct {
 // ConsensusStateRegistry is the interface used to store and recover the existing persistent state.
 // To be implemented by the registry.
 type ConsensusStateRegistry interface {
-	Get(chainID isc.ChainID, committeeAddress *cryptolib.Address) (*State, error) // Can return ErrCmtLogStateNotFound.
+	Get(chainID isc.ChainID, committeeAddress *cryptolib.Address) (*State, error) // Can return ErrCommitteeLogStateNotFound.
 	Set(chainID isc.ChainID, committeeAddress *cryptolib.Address, state *State) error
 }
 
-var ErrCmtLogStateNotFound = errors.New("errCmtLogStateNotFound")
+var ErrCommitteeLogStateNotFound = errors.New("errCmtLogStateNotFound")
 
 // Output is a set of log indexes for which we should run the consensus with
 // the values indicated here. Nil means ⊥ here. The output might change AO to ⊥
@@ -59,9 +59,9 @@ var ErrCmtLogStateNotFound = errors.New("errCmtLogStateNotFound")
 type Output = map[LogIndex]*isc.StateAnchor
 
 // Protocol implementation.
-type cmtLogImpl struct {
+type committeeLogImpl struct {
 	chainID                isc.ChainID            // Chain, for which this log is maintained by this committee.
-	cmtAddr                *cryptolib.Address     // Address of the committee running this chain.
+	committeeAddr          *cryptolib.Address     // Address of the committee running this chain.
 	consensusStateRegistry ConsensusStateRegistry // Persistent storage.
 	varLogIndex            VarLogIndex            // Calculates the current log index.
 	varLocalView           VarLocalView           // Tracks the pending alias outputs.
@@ -73,7 +73,7 @@ type cmtLogImpl struct {
 	log                    log.Logger
 }
 
-var _ gpa.GPA = &cmtLogImpl{}
+var _ gpa.GPA = &committeeLogImpl{}
 
 // New constructs a new node instance for this protocol.
 //
@@ -89,17 +89,17 @@ func New(
 	nodeIDFromPubKey func(pubKey *cryptolib.PublicKey) gpa.NodeID,
 	deriveAOByQuorum bool,
 	pipeliningLimit int,
-	cclMetrics *metrics.ChainCmtLogMetrics,
+	cclMetrics *metrics.ChainCommitteeLogMetrics,
 	log log.Logger,
-) (CmtLog, error) {
-	cmtAddr := dkShare.GetSharedPublic().AsAddress()
+) (CommitteeLog, error) {
+	committeeAddr := dkShare.GetSharedPublic().AsAddress()
 	//
 	// Load the last LogIndex we were working on.
 	var prevLI LogIndex
-	state, err := consensusStateRegistry.Get(chainID, cmtAddr)
+	state, err := consensusStateRegistry.Get(chainID, committeeAddr)
 	if err != nil {
-		if !errors.Is(err, ErrCmtLogStateNotFound) {
-			return nil, fmt.Errorf("cannot load cmtLogState for %v: %w", cmtAddr, err)
+		if !errors.Is(err, ErrCommitteeLogStateNotFound) {
+			return nil, fmt.Errorf("cannot load committeeLogState for %v: %w", committeeAddr, err)
 		}
 		prevLI = NilLogIndex()
 	} else {
@@ -122,15 +122,15 @@ func New(
 	}
 	//
 	// Log important info.
-	log.LogInfof("Committee: N=%v, F=%v, address=%v, address=%v", n, f, cmtAddr.String(), cmtAddr.String())
+	log.LogInfof("Committee: N=%v, F=%v, address=%v, address=%v", n, f, committeeAddr.String(), committeeAddr.String())
 	for i := range nodePKs {
 		log.LogInfof("Committee node[%v]=%v", i, nodePKs[i])
 	}
 	//
 	// Create it.
-	cl := &cmtLogImpl{
+	cl := &committeeLogImpl{
 		chainID:                chainID,
-		cmtAddr:                cmtAddr,
+		committeeAddr:          committeeAddr,
 		consensusStateRegistry: consensusStateRegistry,
 		varLogIndex:            nil, // Set bellow.
 		varLocalView:           nil, // Set bellow.
@@ -141,9 +141,9 @@ func New(
 		log:                    log,
 	}
 	persistLIFunc := func(li LogIndex) {
-		if err := consensusStateRegistry.Set(chainID, cmtAddr, &State{LogIndex: li}); err != nil {
+		if err := consensusStateRegistry.Set(chainID, committeeAddr, &State{LogIndex: li}); err != nil {
 			// Nothing to do, if we cannot persist this.
-			panic(fmt.Errorf("cannot persist the cmtLog state: %w", err))
+			panic(fmt.Errorf("cannot persist the committeeLog state: %w", err))
 		}
 	}
 	cl.varConsInsts = NewVarConsInsts(prevLI.Next(), persistLIFunc, func(out Output) {
@@ -162,13 +162,13 @@ func New(
 	return cl, nil
 }
 
-// Implements the CmtLog interface.
-func (cl *cmtLogImpl) AsGPA() gpa.GPA {
+// Implements the CommitteeLog interface.
+func (cl *committeeLogImpl) AsGPA() gpa.GPA {
 	return cl.asGPA
 }
 
 // Implements the gpa.GPA interface.
-func (cl *cmtLogImpl) Input(input gpa.Input) gpa.OutMessages {
+func (cl *committeeLogImpl) Input(input gpa.Input) gpa.OutMessages {
 	switch input.(type) {
 	case *inputCanPropose:
 		break // Don't log, its periodic.
@@ -196,7 +196,7 @@ func (cl *cmtLogImpl) Input(input gpa.Input) gpa.OutMessages {
 }
 
 // Implements the gpa.GPA interface.
-func (cl *cmtLogImpl) Message(msg gpa.Message) gpa.OutMessages {
+func (cl *committeeLogImpl) Message(msg gpa.Message) gpa.OutMessages {
 	msgNLI, ok := msg.(*MsgNextLogIndex)
 	if !ok {
 		cl.log.LogWarnf("dropping unexpected message %T: %+v", msg, msg)
@@ -206,32 +206,32 @@ func (cl *cmtLogImpl) Message(msg gpa.Message) gpa.OutMessages {
 }
 
 // The latest anchor object's version confirmed at the L1.
-func (cl *cmtLogImpl) handleInputAnchorConfirmed(input *inputAnchorConfirmed) gpa.OutMessages {
+func (cl *committeeLogImpl) handleInputAnchorConfirmed(input *inputAnchorConfirmed) gpa.OutMessages {
 	cl.suspended = false
 	return cl.varLocalView.AnchorObjectConfirmed(input.anchor)
 }
 
 // Consensus completed with a decision to SKIP/⊥.
-func (cl *cmtLogImpl) handleInputConsensusOutputSkip(input *inputConsensusOutputSkip) gpa.OutMessages {
+func (cl *committeeLogImpl) handleInputConsensusOutputSkip(input *inputConsensusOutputSkip) gpa.OutMessages {
 	return cl.varConsInsts.ConsOutputSkip(input.logIndex, cl.varLogIndex.ConsensusStarted)
 }
 
 // Consensus has decided, produced a TX and it is now confirmed by L1.
-func (cl *cmtLogImpl) handleInputConsensusOutputConfirmed(input *inputConsensusOutputConfirmed) gpa.OutMessages {
+func (cl *committeeLogImpl) handleInputConsensusOutputConfirmed(input *inputConsensusOutputConfirmed) gpa.OutMessages {
 	return cl.varConsInsts.ConsOutputDone(input.logIndex, input.nextAnchorObject, cl.varLogIndex.ConsensusStarted)
 }
 
 // Consensus has decided, produced a TX but it was rejected by L1.
-func (cl *cmtLogImpl) handleInputConsensusOutputRejected(input *inputConsensusOutputRejected) gpa.OutMessages {
+func (cl *committeeLogImpl) handleInputConsensusOutputRejected(input *inputConsensusOutputRejected) gpa.OutMessages {
 	return cl.varConsInsts.ConsOutputSkip(input.logIndex, cl.varLogIndex.ConsensusStarted) // This will cause proposal of our latest L1 AO.
 }
 
 // Consensus tries to decide for too long. Maybe quorum assumption has been violated.
-func (cl *cmtLogImpl) handleInputConsensusTimeout(input *inputConsensusTimeout) gpa.OutMessages {
+func (cl *committeeLogImpl) handleInputConsensusTimeout(input *inputConsensusTimeout) gpa.OutMessages {
 	return cl.varConsInsts.ConsTimeout(input.logIndex, cl.varLogIndex.ConsensusStarted)
 }
 
-func (cl *cmtLogImpl) handleInputCanPropose() gpa.OutMessages {
+func (cl *committeeLogImpl) handleInputCanPropose() gpa.OutMessages {
 	msgs := gpa.NoMessages()
 	msgs.AddAll(cl.varConsInsts.Tick(cl.varLogIndex.ConsensusStarted))
 
@@ -247,18 +247,18 @@ func (cl *cmtLogImpl) handleInputCanPropose() gpa.OutMessages {
 	return msgs
 }
 
-func (cl *cmtLogImpl) handleInputSuspend() {
+func (cl *committeeLogImpl) handleInputSuspend() {
 	cl.suspended = true
 }
 
 // > ON Reception of ⟨NextLI, •⟩ message:
 // >   ...
-func (cl *cmtLogImpl) handleMsgNextLogIndex(msg *MsgNextLogIndex) gpa.OutMessages {
+func (cl *committeeLogImpl) handleMsgNextLogIndex(msg *MsgNextLogIndex) gpa.OutMessages {
 	return cl.varLogIndex.MsgNextLogIndexReceived(msg)
 }
 
 // Implements the gpa.GPA interface.
-func (cl *cmtLogImpl) Output() gpa.Output {
+func (cl *committeeLogImpl) Output() gpa.Output {
 	out := cl.output
 	if out == nil || cl.suspended {
 		return nil // Untyped nil.
@@ -267,9 +267,9 @@ func (cl *cmtLogImpl) Output() gpa.Output {
 }
 
 // Implements the gpa.GPA interface.
-func (cl *cmtLogImpl) StatusString() string {
+func (cl *committeeLogImpl) StatusString() string {
 	return fmt.Sprintf(
-		"{cmtLogImpl, %v, %v, %v}",
+		"{committeeLogImpl, %v, %v, %v}",
 		cl.varConsInsts.StatusString(),
 		cl.varLocalView.StatusString(),
 		cl.varLogIndex.StatusString(),

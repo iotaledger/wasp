@@ -11,7 +11,7 @@ import (
 // VarAccessNodeState tracks the active state at the access nodes. If this node is part of the committee,
 // then the tip tracked by this node should be ignored and the state tracked by the
 // committee should be used. The algorithm itself is similar to the `varLocalView`
-// in the `cmtLog`.
+// in the `committeeLog`.
 type VarAccessNodeState interface {
 	Tip() *isc.StateAnchor
 	// Considers the produced (not yet confirmed) block / TX and returns new tip AO.

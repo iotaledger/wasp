@@ -497,8 +497,8 @@ type testEnv struct {
 	peeringNetwork   *testutil.PeeringNetwork
 	networkProviders []peering.NetworkProvider
 	tcl              *testchain.TestChainLedger
-	cmtAddress       *cryptolib.Address
-	cmtSigner        cryptolib.Signer
+	committeeAddress *cryptolib.Address
+	committeeSigner  cryptolib.Signer
 	chainID          isc.ChainID
 	anchor           *isc.StateAnchor
 	nodeConns        []*testNodeConn
@@ -539,14 +539,14 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 	)
 	te.networkProviders = te.peeringNetwork.NetworkProviders()
 	var dkShareProviders []registry.DKShareRegistryProvider
-	te.cmtAddress, dkShareProviders = testpeers.SetupDkgTrivial(t, n, f, te.peerIdentities, nil)
-	te.cmtSigner = testpeers.NewTestDSSSigner(te.cmtAddress, dkShareProviders, gpa.MakeTestNodeIDs(n), te.peerIdentities, te.log)
+	te.committeeAddress, dkShareProviders = testpeers.SetupDkgTrivial(t, n, f, te.peerIdentities, nil)
+	te.committeeSigner = testpeers.NewTestDSSSigner(te.committeeAddress, dkShareProviders, gpa.MakeTestNodeIDs(n), te.peerIdentities, te.log)
 
-	require.NoError(t, node.L1Client().RequestFunds(context.Background(), *te.cmtSigner.Address()))
-	iotatest.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(te.cmtSigner), node.L1Client(), isc.GasCoinTargetValue*10)
+	require.NoError(t, node.L1Client().RequestFunds(context.Background(), *te.committeeSigner.Address()))
+	iotatest.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(te.committeeSigner), node.L1Client(), isc.GasCoinTargetValue*10)
 
 	iscPackageID := node.ISCPackageID()
-	te.tcl = testchain.NewTestChainLedger(t, te.cmtSigner, &iscPackageID, te.l1Client)
+	te.tcl = testchain.NewTestChainLedger(t, te.committeeSigner, &iscPackageID, te.l1Client)
 	var originDeposit coin.Value
 	te.anchor, originDeposit = te.tcl.MakeTxChainOrigin()
 	te.chainID = te.anchor.ChainID()

@@ -17,7 +17,7 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/iotatest"
-	"github.com/iotaledger/wasp/v2/packages/chain/cmtlog"
+	"github.com/iotaledger/wasp/v2/packages/chain/committeelog"
 	"github.com/iotaledger/wasp/v2/packages/chain/consensus/consensusrunner"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
@@ -110,7 +110,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 	)
 	defer peeringNetwork.Close()
 	networkProviders := peeringNetwork.NetworkProviders()
-	cmtAddress, dkShareProviders := testpeers.SetupDkgTrivial(t, n, f, peerIdentities, nil)
+	committeeAddress, dkShareProviders := testpeers.SetupDkgTrivial(t, n, f, peerIdentities, nil)
 	//
 	// Initialize the DSS subsystem in each node / chain.
 	nodes := make([]*consensusrunner.ConsensusRunner, len(peerIdentities))
@@ -132,10 +132,10 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 		Ref:   iotatest.RandomObjectRef(),
 	}
 
-	logIndex := cmtlog.LogIndex(0)
+	logIndex := committeelog.LogIndex(0)
 	chainMetricsProvider := metrics.NewChainMetricsProvider()
 	for i := range peerIdentities {
-		dkShare, err := dkShareProviders[i].LoadDKShare(cmtAddress)
+		dkShare, err := dkShareProviders[i].LoadDKShare(committeeAddress)
 		require.NoError(t, err)
 		chainStore := statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 		_, err = origin.InitChainByStateMetadataBytes(chainStore, anchor.GetStateMetadata(), anchorDeposit, parameterstest.L1Mock)

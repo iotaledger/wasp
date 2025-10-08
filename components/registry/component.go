@@ -14,7 +14,7 @@ import (
 	"github.com/iotaledger/hive.go/runtime/ioutils"
 
 	"github.com/iotaledger/wasp/v2/packages/chain"
-	"github.com/iotaledger/wasp/v2/packages/chain/cmtlog"
+	"github.com/iotaledger/wasp/v2/packages/chain/committeelog"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/readonly"
 	"github.com/iotaledger/wasp/v2/packages/registry"
@@ -63,7 +63,7 @@ func provide(c *dig.Container) error {
 		NodeConnection chain.NodeConnection
 	}
 
-	if err := c.Provide(func(deps consensusRegistryDeps) cmtlog.ConsensusStateRegistry {
+	if err := c.Provide(func(deps consensusRegistryDeps) committeelog.ConsensusStateRegistry {
 		consensusStateRegistry, err := registry.NewConsensusStateRegistry(ParamsRegistries.ConsensusState.Path)
 		if err != nil {
 			Component.LogPanic(err.Error())

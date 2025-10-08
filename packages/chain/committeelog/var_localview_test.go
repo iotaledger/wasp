@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package cmtlog_test
+package committeelog_test
 
 // TODO: Re-enable this test.
 

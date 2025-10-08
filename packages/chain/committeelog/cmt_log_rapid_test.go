@@ -1,4 +1,4 @@
-package cmtlog_test
+package committeelog_test
 
 // import (
 // 	"fmt"
@@ -19,7 +19,7 @@ package cmtlog_test
 // 	"github.com/iotaledger/wasp/v2/packages/testutil/testpeers"
 // )
 
-// type cmtLogTestRapidSM struct {
+// type committeeLogTestRapidSM struct {
 // 	anchorRef       iotago.ObjectRef
 // 	chainID         isc.ChainID
 // 	governorAddress *cryptolib.Address
@@ -31,10 +31,10 @@ package cmtlog_test
 // 	genNodeID       *rapid.Generator[gpa.NodeID]
 // }
 
-// var _ rapid.StateMachine = &cmtLogTestRapidSM{}
+// var _ rapid.StateMachine = &committeeLogTestRapidSM{}
 
-// func newCmtLogTestRapidSM(t *rapid.T) *cmtLogTestRapidSM {
-// 	sm := new(cmtLogTestRapidSM)
+// func newCommitteeLogTestRapidSM(t *rapid.T) *committeeLogTestRapidSM {
+// 	sm := new(committeeLogTestRapidSM)
 // 	n := 4
 // 	f := 1
 // 	log := testlogger.NewLogger(t)
@@ -59,9 +59,9 @@ package cmtlog_test
 // 		dkShare, err := committeeKeyShares[i].LoadDKShare(committeeAddress)
 // 		require.NoError(t, err)
 // 		consensusStateRegistry := testutil.NewConsensusStateRegistry() // Empty store in this case.
-// 		cmtLogInst, err := cmtlog.New(gpaNodeIDs[i], sm.chainID, dkShare, consensusStateRegistry, gpa.NodeIDFromPublicKey, true, -1, 1, nil, log.NewChildLogger(fmt.Sprintf("N%v", i)))
+// 		committeeLogInst, err := cmtlog.New(gpaNodeIDs[i], sm.chainID, dkShare, consensusStateRegistry, gpa.NodeIDFromPublicKey, true, -1, 1, nil, log.NewChildLogger(fmt.Sprintf("N%v", i)))
 // 		require.NoError(t, err)
-// 		gpaNodes[gpaNodeIDs[i]] = cmtLogInst.AsGPA()
+// 		gpaNodes[gpaNodeIDs[i]] = committeeLogInst.AsGPA()
 // 	}
 // 	sm.tc = gpa.NewTestContext(gpaNodes)
 // 	sm.l1Chain = []*isc.StateAnchor{}
@@ -80,7 +80,7 @@ package cmtlog_test
 // }
 
 // // simulate StateAnchor to state transition
-// func (sm *cmtLogTestRapidSM) nextStateAnchorWithStateIndex(stateIndex uint32) *isc.StateAnchor {
+// func (sm *committeeLogTestRapidSM) nextStateAnchorWithStateIndex(stateIndex uint32) *isc.StateAnchor {
 // 	newAnchor := iotago.ObjectRef{
 // 		ObjectID: sm.anchorRef.ObjectID,
 // 		Version:  sm.anchorRef.Version + 1,
@@ -94,48 +94,48 @@ package cmtlog_test
 // 	return &stateAnchor
 // }
 
-// // func (sm *cmtLogTestRapidSM) ConsDone(t *rapid.T) {
+// // func (sm *committeeLogTestRapidSM) ConsDone(t *rapid.T) {
 // // 	nodeID := sm.genNodeID.Draw(t, "node")
-// // 	var li cmtLog.LogIndex         // TODO: Set it.
+// // 	var li committeeLog.LogIndex         // TODO: Set it.
 // // 	var pAO iotago.ObjectID        // TODO: Set it.
 // // 	var bAO iotago.ObjectID        // TODO: Set it.
 // // 	var nAO *isc.StateAnchor // TODO: Set it.
-// // 	sm.tc.WithInput(nodeID, cmtLog.NewInputConsensusOutputDone(li, pAO, bAO, nAO))
+// // 	sm.tc.WithInput(nodeID, committeeLog.NewInputConsensusOutputDone(li, pAO, bAO, nAO))
 // // 	sm.tc.RunAll()
 // // }
 
-// // func (sm *cmtLogTestRapidSM) ConsSkip(t *rapid.T) {
+// // func (sm *committeeLogTestRapidSM) ConsSkip(t *rapid.T) {
 // // 	nodeID := sm.genNodeID.Draw(t, "node")
-// // 	var li cmtLog.LogIndex  // TODO: Set it.
+// // 	var li committeeLog.LogIndex  // TODO: Set it.
 // // 	var pAO iotago.ObjectID // TODO: Set it.
-// // 	sm.tc.WithInput(nodeID, cmtLog.NewInputConsensusOutputSkip(li, pAO))
+// // 	sm.tc.WithInput(nodeID, committeeLog.NewInputConsensusOutputSkip(li, pAO))
 // // 	sm.tc.RunAll()
 // // }
 
-// // func (sm *cmtLogTestRapidSM) ConsRecover(t *rapid.T) {
+// // func (sm *committeeLogTestRapidSM) ConsRecover(t *rapid.T) {
 // // 	nodeID := sm.genNodeID.Draw(t, "node")
-// // 	var li cmtLog.LogIndex // TODO: Set it.
-// // 	sm.tc.WithInput(nodeID, cmtLog.NewInputConsensusTimeout(li))
+// // 	var li committeeLog.LogIndex // TODO: Set it.
+// // 	sm.tc.WithInput(nodeID, committeeLog.NewInputConsensusTimeout(li))
 // // 	sm.tc.RunAll()
 // // }
 
-// // func (sm *cmtLogTestRapidSM) ConsConfirmed(t *rapid.T) {
-// // 	nodeID := sm.genNodeID.Draw(t, "node")
-// // 	var ao *isc.StateAnchor // TODO: Set it.
-// // 	var li cmtLog.LogIndex        // TODO: Set it.
-// // 	sm.tc.WithInput(nodeID, cmtLog.NewInputConsensusOutputConfirmed(ao, li))
-// // 	sm.tc.RunAll()
-// // }
-
-// // func (sm *cmtLogTestRapidSM) ConsRejected(t *rapid.T) {
+// // func (sm *committeeLogTestRapidSM) ConsConfirmed(t *rapid.T) {
 // // 	nodeID := sm.genNodeID.Draw(t, "node")
 // // 	var ao *isc.StateAnchor // TODO: Set it.
-// // 	var li cmtLog.LogIndex        // TODO: Set it.
-// // 	sm.tc.WithInput(nodeID, cmtLog.NewInputConsensusOutputRejected(ao, li))
+// // 	var li committeeLog.LogIndex        // TODO: Set it.
+// // 	sm.tc.WithInput(nodeID, committeeLog.NewInputConsensusOutputConfirmed(ao, li))
 // // 	sm.tc.RunAll()
 // // }
 
-// func (sm *cmtLogTestRapidSM) AliasOutputConfirmed(t *rapid.T) {
+// // func (sm *committeeLogTestRapidSM) ConsRejected(t *rapid.T) {
+// // 	nodeID := sm.genNodeID.Draw(t, "node")
+// // 	var ao *isc.StateAnchor // TODO: Set it.
+// // 	var li committeeLog.LogIndex        // TODO: Set it.
+// // 	sm.tc.WithInput(nodeID, committeeLog.NewInputConsensusOutputRejected(ao, li))
+// // 	sm.tc.RunAll()
+// // }
+
+// func (sm *committeeLogTestRapidSM) AliasOutputConfirmed(t *rapid.T) {
 // 	nodeID := sm.genNodeID.Draw(t, "node")
 // 	if len(sm.l1Chain)-sm.l1Delivered[nodeID] <= 1 {
 // 		t.SkipNow()
@@ -148,7 +148,7 @@ package cmtlog_test
 // }
 
 // // Trim the chain to some length and reset the delivery counters to all the peers to not exceed the trimmed chain.
-// func (sm *cmtLogTestRapidSM) L1Reorg(t *rapid.T) {
+// func (sm *committeeLogTestRapidSM) L1Reorg(t *rapid.T) {
 // 	chainLen := len(sm.l1Chain)
 // 	if chainLen <= 1 {
 // 		t.SkipNow()
@@ -162,7 +162,7 @@ package cmtlog_test
 // 	}
 // }
 
-// func (sm *cmtLogTestRapidSM) Check(t *rapid.T) {
+// func (sm *committeeLogTestRapidSM) Check(t *rapid.T) {
 // 	sm.invHaveConsRunningOrTxConfirming(t)
 // }
 
@@ -171,15 +171,15 @@ package cmtlog_test
 // // So we reformulate the property to the condition, that always, either TX is confirming
 // // or consensus is running. Assuming fairness for both, it should imply liveness of
 // // this algorithm.
-// func (sm *cmtLogTestRapidSM) invHaveConsRunningOrTxConfirming(t *rapid.T) {
+// func (sm *committeeLogTestRapidSM) invHaveConsRunningOrTxConfirming(t *rapid.T) {
 // 	// TODO: >...
 // }
 
-// var _ rapid.StateMachine = &cmtLogTestRapidSM{}
+// var _ rapid.StateMachine = &committeeLogTestRapidSM{}
 
-// func TestCmtLogRapid(t *testing.T) {
+// func TestCommitteeLogRapid(t *testing.T) {
 // 	rapid.Check(t, func(t *rapid.T) {
-// 		sm := newCmtLogTestRapidSM(t)
+// 		sm := newCommitteeLogTestRapidSM(t)
 // 		t.Repeat(rapid.StateMachineActions(sm))
 // 	})
 // }

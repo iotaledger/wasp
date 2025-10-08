@@ -6,7 +6,7 @@ package chainmanager
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/v2/packages/chain/cmtlog"
+	"github.com/iotaledger/wasp/v2/packages/chain/committeelog"
 	"github.com/iotaledger/wasp/v2/packages/chain/consensus"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
@@ -15,14 +15,14 @@ import (
 
 type inputConsensusOutputDone struct {
 	committeeAddr   cryptolib.Address
-	logIndex        cmtlog.LogIndex
+	logIndex        committeelog.LogIndex
 	proposedBaseAO  *isc.StateAnchor
 	consensusResult *consensus.Result
 }
 
 func NewInputConsensusOutputDone(
 	committeeAddr cryptolib.Address,
-	logIndex cmtlog.LogIndex,
+	logIndex committeelog.LogIndex,
 	proposedBaseAO *isc.StateAnchor,
 	consensusResult *consensus.Result,
 ) gpa.Input {

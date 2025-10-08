@@ -54,19 +54,19 @@ func testBasic(t *testing.T, n, cmtN, cmtF int) {
 		gas.LimitsDefault.MaxGasPerRequest,
 	).Sign(kp)
 	reqRef := isc.RequestRefFromRequest(req)
-	cmtNodes := []gpa.NodeID{} // Random subset of all nodes.
+	committeeNodes := []gpa.NodeID{} // Random subset of all nodes.
 	for pos, idx := range rand.Perm(cmtN) {
 		if pos >= cmtN {
 			break
 		}
-		cmtNodes = append(cmtNodes, nodeIDs[idx])
+		committeeNodes = append(committeeNodes, nodeIDs[idx])
 	}
 
 	tc := gpa.NewTestContext(nodes)
 	//
 	// Setup the committee for all nodes.
 	for _, nid := range nodeIDs {
-		tc.WithInput(nid, distsync.NewInputServerNodes(cmtNodes, cmtNodes))
+		tc.WithInput(nid, distsync.NewInputServerNodes(committeeNodes, committeeNodes))
 	}
 	//
 	// Send a request to a single node.

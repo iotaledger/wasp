@@ -1,4 +1,4 @@
-package cmtlog
+package committeelog
 
 import (
 	"fmt"
@@ -32,7 +32,7 @@ type varLogIndexImpl struct {
 	lastMsgs  map[gpa.NodeID]*MsgNextLogIndex // Latest messages we have sent to other peers.
 	qcStarted *QuorumCounter
 	outputCB  func(li LogIndex) gpa.OutMessages
-	metrics   *metrics.ChainCmtLogMetrics
+	metrics   *metrics.ChainCommitteeLogMetrics
 	log       log.Logger
 }
 
@@ -42,7 +42,7 @@ func NewVarLogIndex(
 	f int,
 	persistedLI LogIndex,
 	outputCB func(li LogIndex) gpa.OutMessages,
-	metrics *metrics.ChainCmtLogMetrics,
+	metrics *metrics.ChainCommitteeLogMetrics,
 	log log.Logger,
 ) VarLogIndex {
 	vli := &varLogIndexImpl{

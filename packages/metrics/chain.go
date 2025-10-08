@@ -13,7 +13,7 @@ import (
 type ChainMetrics struct {
 	Pipe         *ChainPipeMetrics
 	BlockWAL     *ChainBlockWALMetrics
-	CmtLog       *ChainCmtLogMetrics
+	CommitteeLog *ChainCommitteeLogMetrics
 	Consensus    *ChainConsensusMetrics
 	Mempool      *ChainMempoolMetrics
 	Message      *ChainMessageMetrics
@@ -31,7 +31,7 @@ type ChainMetricsProvider struct {
 
 	Pipe         *ChainPipeMetricsProvider
 	BlockWAL     *ChainBlockWALMetricsProvider
-	CmtLog       *ChainCmtLogMetricsProvider
+	CommitteeLog *ChainCommitteeLogMetricsProvider
 	Consensus    *ChainConsensusMetricsProvider
 	Mempool      *ChainMempoolMetricsProvider
 	Message      *ChainMessageMetricsProvider
@@ -48,7 +48,7 @@ func NewChainMetricsProvider() *ChainMetricsProvider {
 
 		Pipe:         newChainPipeMetricsProvider(),
 		BlockWAL:     newChainBlockWALMetricsProvider(),
-		CmtLog:       newChainCmtLogMetricsProvider(),
+		CommitteeLog: newChainCommitteeLogMetricsProvider(),
 		Consensus:    newChainConsensusMetricsProvider(),
 		Mempool:      newChainMempoolMetricsProvider(),
 		Message:      newChainMessageMetricsProvider(),
@@ -63,7 +63,7 @@ func NewChainMetricsProvider() *ChainMetricsProvider {
 func (m *ChainMetricsProvider) Register(reg prometheus.Registerer) {
 	m.Pipe.register(reg)
 	m.BlockWAL.register(reg)
-	m.CmtLog.register(reg)
+	m.CommitteeLog.register(reg)
 	m.Consensus.register(reg)
 	m.Mempool.register(reg)
 	m.Message.register(reg)
@@ -84,7 +84,7 @@ func (m *ChainMetricsProvider) GetChainMetrics(chainID isc.ChainID) *ChainMetric
 	cm := &ChainMetrics{
 		Pipe:         m.Pipe.createForChain(chainID),
 		BlockWAL:     m.BlockWAL.createForChain(chainID),
-		CmtLog:       m.CmtLog.createForChain(chainID),
+		CommitteeLog: m.CommitteeLog.createForChain(chainID),
 		Consensus:    m.Consensus.createForChain(chainID),
 		Mempool:      m.Mempool.createForChain(chainID),
 		Message:      m.Message.createForChain(chainID),

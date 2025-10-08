@@ -1,4 +1,4 @@
-package cmtlog
+package committeelog
 
 import "github.com/iotaledger/wasp/v2/packages/gpa"
 
@@ -13,5 +13,5 @@ func NewInputCanPropose() gpa.Input {
 }
 
 func (inp *inputCanPropose) String() string {
-	return "{cmtLog.inputCanPropose}"
+	return "{committeeLog.inputCanPropose}"
 }

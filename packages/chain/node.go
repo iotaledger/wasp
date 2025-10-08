@@ -33,7 +33,7 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/packages/chain/chainmanager"
-	"github.com/iotaledger/wasp/v2/packages/chain/cmtlog"
+	"github.com/iotaledger/wasp/v2/packages/chain/committeelog"
 	"github.com/iotaledger/wasp/v2/packages/chain/consensus"
 	"github.com/iotaledger/wasp/v2/packages/chain/consensus/consensusrunner"
 	"github.com/iotaledger/wasp/v2/packages/chain/mempool"
@@ -149,7 +149,7 @@ type chainNodeImpl struct {
 	stateMgr            statemanager.StateMgr
 	recvAnchorPipe      pipe.Pipe[lo.Tuple2[*isc.StateAnchor, *parameters.L1Params]]
 	recvTxPublishedPipe pipe.Pipe[*txPublished]
-	consensusInsts      *shrinkingmap.ShrinkingMap[cryptolib.AddressKey, *shrinkingmap.ShrinkingMap[cmtlog.LogIndex, *consensusInst]] // Running consensus instances.
+	consensusInsts      *shrinkingmap.ShrinkingMap[cryptolib.AddressKey, *shrinkingmap.ShrinkingMap[committeelog.LogIndex, *consensusInst]] // Running consensus instances.
 	// TODO: Send wantRotate to all the consInst.
 	// Also, if nil, wait for requests.
 	// If non-nil, wait for some delay, then propose empty set of requests.
@@ -237,7 +237,7 @@ func (cr *consRecover) String() string {
 // This is event received from the NodeConn as response to PublishTX
 type txPublished struct {
 	committeeAddr   cryptolib.Address
-	logIndex        cmtlog.LogIndex
+	logIndex        committeelog.LogIndex
 	txID            iotago.Digest
 	nextAliasOutput *isc.StateAnchor
 	confirmed       bool
@@ -263,7 +263,7 @@ func New(
 	nodeIdentity *cryptolib.KeyPair,
 	processorConfig *processors.Config,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
-	consensusStateRegistry cmtlog.ConsensusStateRegistry,
+	consensusStateRegistry committeelog.ConsensusStateRegistry,
 	recoverFromWAL bool,
 	blockWAL utils.BlockWAL,
 	snapshotManager snapshots.SnapshotManager,
@@ -343,7 +343,7 @@ func newChainNodeImplAndPeerID(
 		tangleTime:             time.Time{}, // Zero time, while we haven't received it from the L1.
 		recvAnchorPipe:         pipe.NewInfinitePipe[lo.Tuple2[*isc.StateAnchor, *parameters.L1Params]](),
 		recvTxPublishedPipe:    pipe.NewInfinitePipe[*txPublished](),
-		consensusInsts:         shrinkingmap.New[cryptolib.AddressKey, *shrinkingmap.ShrinkingMap[cmtlog.LogIndex, *consensusInst]](),
+		consensusInsts:         shrinkingmap.New[cryptolib.AddressKey, *shrinkingmap.ShrinkingMap[committeelog.LogIndex, *consensusInst]](),
 		consOutputPipe:         pipe.NewInfinitePipe[*consOutput](),
 		consRecoverPipe:        pipe.NewInfinitePipe[*consRecover](),
 		publishingTXes:         shrinkingmap.New[hashing.HashValue, context.CancelFunc](),
@@ -593,8 +593,8 @@ func (cni *chainNodeImpl) handleServersUpdated(serverNodes []*cryptolib.PublicKe
 func (cni *chainNodeImpl) handleRotateTo(address *iotago.Address) {
 	cni.log.LogDebugf("handleRotateTo: %v", address)
 	cni.rotateTo = address
-	cni.consensusInsts.ForEach(func(ak cryptolib.AddressKey, sm *shrinkingmap.ShrinkingMap[cmtlog.LogIndex, *consensusInst]) bool {
-		sm.ForEach(func(li cmtlog.LogIndex, ci *consensusInst) bool {
+	cni.consensusInsts.ForEach(func(ak cryptolib.AddressKey, sm *shrinkingmap.ShrinkingMap[committeelog.LogIndex, *consensusInst]) bool {
+		sm.ForEach(func(li committeelog.LogIndex, ci *consensusInst) bool {
 			ci.consensus.RotateTo(address)
 			return true
 		})
@@ -650,8 +650,8 @@ func (cni *chainNodeImpl) handleStateAnchor(stateAchor *isc.StateAnchor, l1Param
 func (cni *chainNodeImpl) handleMilestoneTimestamp(timestamp time.Time) {
 	cni.tangleTime = timestamp
 	cni.mempool.TangleTimeUpdated(timestamp)
-	cni.consensusInsts.ForEach(func(address cryptolib.AddressKey, consensusInstances *shrinkingmap.ShrinkingMap[cmtlog.LogIndex, *consensusInst]) bool {
-		consensusInstances.ForEach(func(li cmtlog.LogIndex, consensusInstance *consensusInst) bool {
+	cni.consensusInsts.ForEach(func(address cryptolib.AddressKey, consensusInstances *shrinkingmap.ShrinkingMap[committeelog.LogIndex, *consensusInst]) bool {
+		consensusInstances.ForEach(func(li committeelog.LogIndex, consensusInstance *consensusInst) bool {
 			if consensusInstance.cancelFunc != nil {
 				consensusInstance.consensus.Time(timestamp)
 			}
@@ -680,16 +680,16 @@ func (cni *chainNodeImpl) handleNeedConsensus(ctx context.Context, upd *chainman
 	})
 	//
 	// Cleanup instances not needed anymore.
-	cni.consensusInsts.ForEach(func(cmtAddr cryptolib.AddressKey, cmtInsts *shrinkingmap.ShrinkingMap[cmtlog.LogIndex, *consensusInst]) bool {
-		cmtInsts.ForEach(func(li cmtlog.LogIndex, ci *consensusInst) bool {
+	cni.consensusInsts.ForEach(func(committeeAddr cryptolib.AddressKey, consensusInstances *shrinkingmap.ShrinkingMap[committeelog.LogIndex, *consensusInst]) bool {
+		consensusInstances.ForEach(func(li committeelog.LogIndex, ci *consensusInst) bool {
 			if ci.request != nil && !upd.Has(chainmanager.MakeConsensusKey(ci.request.CommitteeAddr, li)) {
 				ci.Cancel()
-				cmtInsts.Delete(li)
+				consensusInstances.Delete(li)
 			}
 			return true
 		})
-		if cmtInsts.Size() == 0 {
-			cni.consensusInsts.Delete(cmtAddr)
+		if consensusInstances.Size() == 0 {
+			cni.consensusInsts.Delete(committeeAddr)
 		}
 		return true
 	})
@@ -780,8 +780,8 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 	logIndex := needConsensus.LogIndex
 	dkShare := needConsensus.DKShare
 
-	consensusInstances, _ := cni.consensusInsts.GetOrCreate(committeeAddr.Key(), func() *shrinkingmap.ShrinkingMap[cmtlog.LogIndex, *consensusInst] {
-		return shrinkingmap.New[cmtlog.LogIndex, *consensusInst]()
+	consensusInstances, _ := cni.consensusInsts.GetOrCreate(committeeAddr.Key(), func() *shrinkingmap.ShrinkingMap[committeelog.LogIndex, *consensusInst] {
+		return shrinkingmap.New[committeelog.LogIndex, *consensusInst]()
 	})
 
 	addLogIndex := logIndex
@@ -1205,7 +1205,7 @@ func initializeOperationalChain(
 	chainStore indexedstore.IndexedStore,
 	nodeConn NodeConnection,
 	nodeIdentity *cryptolib.KeyPair,
-	consensusStateRegistry cmtlog.ConsensusStateRegistry,
+	consensusStateRegistry committeelog.ConsensusStateRegistry,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	recoverFromWAL bool,
 	blockWAL utils.BlockWAL,
@@ -1340,7 +1340,7 @@ func initializeReadOnlyChain(
 func createChainManager(
 	ctx context.Context,
 	cni *chainNodeImpl,
-	consensusStateRegistry cmtlog.ConsensusStateRegistry,
+	consensusStateRegistry committeelog.ConsensusStateRegistry,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	deriveAliasOutputByQuorum bool,
 	pipeliningLimit int,
@@ -1396,7 +1396,7 @@ func createChainManager(
 		deriveAliasOutputByQuorum,
 		pipeliningLimit,
 		postponeRecoveryMilestones,
-		cni.chainMetrics.CmtLog,
+		cni.chainMetrics.CommitteeLog,
 		cni.log.NewChildLogger("CM"),
 	)
 }

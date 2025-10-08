@@ -5,29 +5,29 @@ import (
 	"testing"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/v2/packages/chain/cmtlog"
+	"github.com/iotaledger/wasp/v2/packages/chain/committeelog"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
 )
 
-func TestMsgCmtLogSerialization(t *testing.T) {
+func TestMsgCommitteeLogSerialization(t *testing.T) {
 	address := cryptolib.NewRandomAddress()
-	msg := &msgCmtLog{
+	msg := &msgCommitteeLog{
 		*address,
-		&cmtlog.MsgNextLogIndex{
+		&committeelog.MsgNextLogIndex{
 			BasicMessage: gpa.BasicMessage{},
-			NextLogIndex: cmtlog.LogIndex(rand.Int31()),
+			NextLogIndex: committeelog.LogIndex(rand.Int31()),
 			PleaseRepeat: false,
 		},
 	}
 
 	bcs.TestCodec(t, msg)
 
-	msg = &msgCmtLog{
+	msg = &msgCommitteeLog{
 		*cryptolib.TestAddress,
-		&cmtlog.MsgNextLogIndex{
+		&committeelog.MsgNextLogIndex{
 			BasicMessage: gpa.BasicMessage{},
-			NextLogIndex: cmtlog.LogIndex(1234567890),
+			NextLogIndex: committeelog.LogIndex(1234567890),
 			PleaseRepeat: false,
 		},
 	}
