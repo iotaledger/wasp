@@ -16,7 +16,7 @@ import (
 
 type BatchProposal struct {
 	nodeIndex               uint16               `bcs:"export"`          // Just for a double-check.
-	baseAliasOutput         *isc.StateAnchor     `bcs:"export,optional"` // Proposed Base AliasOutput to use.
+	baseAnchor              *isc.StateAnchor     `bcs:"export,optional"` // Proposed Base Anchor to use.
 	dssIndexProposal        util.BitVector       `bcs:"export"`          // DSS Index proposal.
 	rotateTo                *iotago.Address      `bcs:"export,optional"` // Suggestion to rotate the committee, optional.
 	timeData                time.Time            `bcs:"export"`          // Our view of time.
@@ -28,7 +28,7 @@ type BatchProposal struct {
 
 func NewBatchProposal(
 	nodeIndex uint16,
-	baseAliasOutput *isc.StateAnchor,
+	baseAnchor *isc.StateAnchor,
 	dssIndexProposal util.BitVector,
 	rotateTo *iotago.Address,
 	timeData time.Time,
@@ -39,7 +39,7 @@ func NewBatchProposal(
 ) *BatchProposal {
 	return &BatchProposal{
 		nodeIndex:               nodeIndex,
-		baseAliasOutput:         baseAliasOutput,
+		baseAnchor:              baseAnchor,
 		dssIndexProposal:        dssIndexProposal,
 		rotateTo:                rotateTo,
 		timeData:                timeData,
@@ -54,8 +54,8 @@ func (b *BatchProposal) Bytes() []byte {
 	return bcs.MustMarshal(b)
 }
 
-// IsVoid returns true if a proposal is ⊥, in which case it will not contain request refs nor base AO.
+// IsVoid returns true if a proposal is ⊥, in which case it will not contain request refs nor base Anchor.
 // Other fields are required to help other participants to sign a TX, if such is produced from other node's inputs.
 func (b *BatchProposal) IsVoid() bool {
-	return b.baseAliasOutput == nil
+	return b.baseAnchor == nil
 }

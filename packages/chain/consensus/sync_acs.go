@@ -16,7 +16,7 @@ import (
 )
 
 type SyncACS interface {
-	StateProposalReceived(proposedBaseAliasOutput *isc.StateAnchor) gpa.OutMessages
+	StateProposalReceived(proposedBaseAnchor *isc.StateAnchor) gpa.OutMessages
 	MempoolRequestsReceived(requestRefs []*isc.RequestRef) gpa.OutMessages
 	DSSIndexProposalReceived(dssIndexProposal []int) gpa.OutMessages
 	TimeDataReceived(timeData time.Time) gpa.OutMessages
@@ -40,7 +40,7 @@ type syncACSImpl struct {
 
 	inputsReady   bool
 	inputsReadyCB func(
-		baseAliasOutput *isc.StateAnchor,
+		baseAnchor *isc.StateAnchor,
 		requestRefs []*isc.RequestRef,
 		dssIndexProposal []int,
 		timeData time.Time,
@@ -57,7 +57,7 @@ type syncACSImpl struct {
 
 func NewSyncACS(
 	inputsReadyCB func(
-		baseAliasOutput *isc.StateAnchor,
+		baseAnchor *isc.StateAnchor,
 		requestRefs []*isc.RequestRef,
 		dssIndexProposal []int,
 		timeData time.Time,
@@ -74,11 +74,11 @@ func NewSyncACS(
 	}
 }
 
-func (sub *syncACSImpl) StateProposalReceived(proposedBaseAliasOutput *isc.StateAnchor) gpa.OutMessages {
+func (sub *syncACSImpl) StateProposalReceived(proposedBaseAnchor *isc.StateAnchor) gpa.OutMessages {
 	if sub.baseStateAnchorReceived {
 		return nil
 	}
-	sub.baseStateAnchor = proposedBaseAliasOutput
+	sub.baseStateAnchor = proposedBaseAnchor
 	sub.baseStateAnchorReceived = true
 	return sub.tryCompleteInput()
 }

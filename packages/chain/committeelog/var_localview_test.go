@@ -22,9 +22,9 @@ package committeelog_test
 // 	j := cmtlog.NewVarLocalView(-1, func(anchor *isc.StateAnchor) {}, log)
 // 	require.Nil(t, j.Value())
 // 	randAnchor := isctest.RandomStateAnchor()
-// 	tipAO, ok, _ := j.AliasOutputConfirmed(&randAnchor)
+// 	tipAnchor, ok, _ := j.AnchorConfirmed(&randAnchor)
 // 	require.True(t, ok)
-// 	require.NotNil(t, tipAO)
+// 	require.NotNil(t, tipAnchor)
 // 	require.NotNil(t, j.Value())
-// 	require.Equal(t, tipAO, j.Value())
+// 	require.Equal(t, tipAnchor, j.Value())
 // }

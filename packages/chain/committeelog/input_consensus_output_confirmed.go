@@ -11,17 +11,17 @@ import (
 )
 
 type inputConsensusOutputConfirmed struct {
-	nextAnchorObject *isc.StateAnchor
-	logIndex         LogIndex
+	nextAnchor *isc.StateAnchor
+	logIndex   LogIndex
 }
 
-func NewInputConsensusOutputConfirmed(nextAnchorObject *isc.StateAnchor, logIndex LogIndex) gpa.Input {
+func NewInputConsensusOutputConfirmed(nextAnchor *isc.StateAnchor, logIndex LogIndex) gpa.Input {
 	return &inputConsensusOutputConfirmed{
-		nextAnchorObject: nextAnchorObject,
-		logIndex:         logIndex,
+		nextAnchor: nextAnchor,
+		logIndex:   logIndex,
 	}
 }
 
 func (inp *inputConsensusOutputConfirmed) String() string {
-	return fmt.Sprintf("{committeeLog.inputConsensusOutputConfirmed, result=%v, li=%v}", inp.nextAnchorObject, inp.logIndex)
+	return fmt.Sprintf("{committeeLog.inputConsensusOutputConfirmed, result=%v, li=%v}", inp.nextAnchor, inp.logIndex)
 }

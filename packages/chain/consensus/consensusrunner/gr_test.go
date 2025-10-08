@@ -204,12 +204,12 @@ func anchorKeyFromAnchorRef(objectRef *iotago.ObjectRef) anchorKey {
 }
 
 type testMempool struct {
-	t          *testing.T
-	lock       *sync.Mutex
-	reqsByAO   map[anchorKey][]isc.Request
-	allReqs    []isc.Request
-	qProposals map[anchorKey]chan []*isc.RequestRef
-	qRequests  []*testMempoolReqQ
+	t            *testing.T
+	lock         *sync.Mutex
+	reqsByAnchor map[anchorKey][]isc.Request
+	allReqs      []isc.Request
+	qProposals   map[anchorKey]chan []*isc.RequestRef
+	qRequests    []*testMempoolReqQ
 }
 
 type testMempoolReqQ struct {
@@ -219,19 +219,19 @@ type testMempoolReqQ struct {
 
 func newTestMempool(t *testing.T) *testMempool {
 	return &testMempool{
-		t:          t,
-		lock:       &sync.Mutex{},
-		reqsByAO:   map[anchorKey][]isc.Request{},
-		allReqs:    []isc.Request{},
-		qProposals: map[anchorKey]chan []*isc.RequestRef{},
-		qRequests:  []*testMempoolReqQ{},
+		t:            t,
+		lock:         &sync.Mutex{},
+		reqsByAnchor: map[anchorKey][]isc.Request{},
+		allReqs:      []isc.Request{},
+		qProposals:   map[anchorKey]chan []*isc.RequestRef{},
+		qRequests:    []*testMempoolReqQ{},
 	}
 }
 
 func (tmp *testMempool) addRequests(anchorRef *iotago.ObjectRef, requests []isc.Request) {
 	tmp.lock.Lock()
 	defer tmp.lock.Unlock()
-	tmp.reqsByAO[anchorKeyFromAnchorRef(anchorRef)] = requests
+	tmp.reqsByAnchor[anchorKeyFromAnchorRef(anchorRef)] = requests
 	tmp.allReqs = append(tmp.allReqs, requests...)
 	tmp.tryRespondProposalQueries()
 	tmp.tryRespondRequestQueries()
@@ -239,7 +239,7 @@ func (tmp *testMempool) addRequests(anchorRef *iotago.ObjectRef, requests []isc.
 
 func (tmp *testMempool) tryRespondProposalQueries() {
 	for ao, resp := range tmp.qProposals {
-		if reqs, ok := tmp.reqsByAO[ao]; ok {
+		if reqs, ok := tmp.reqsByAnchor[ao]; ok {
 			resp <- isc.RequestRefsFromRequests(reqs)
 			close(resp)
 			delete(tmp.qProposals, ao)
@@ -310,36 +310,36 @@ func newTestStateMgr(t *testing.T, chainStore state.Store) *testStateMgr {
 	}
 }
 
-func (tsm *testStateMgr) addOriginState(originAO *isc.StateAnchor) {
-	originAOStateMetadata, err := transaction.StateMetadataFromBytes(originAO.GetStateMetadata())
+func (tsm *testStateMgr) addOriginState(originAnchor *isc.StateAnchor) {
+	originAnchorStateMetadata, err := transaction.StateMetadataFromBytes(originAnchor.GetStateMetadata())
 	require.NoError(tsm.t, err)
 	chainState, err := tsm.chainStore.StateByTrieRoot(
-		originAOStateMetadata.L1Commitment.TrieRoot(),
+		originAnchorStateMetadata.L1Commitment.TrieRoot(),
 	)
 	require.NoError(tsm.t, err)
-	tsm.addState(originAO, chainState)
+	tsm.addState(originAnchor, chainState)
 }
 
-func (tsm *testStateMgr) addState(aliasOutput *isc.StateAnchor, chainState state.State) { // TODO: Why is it not called from other places???
+func (tsm *testStateMgr) addState(anchor *isc.StateAnchor, chainState state.State) { // TODO: Why is it not called from other places???
 	tsm.lock.Lock()
 	defer tsm.lock.Unlock()
-	hash := commitmentHashFromAO(aliasOutput)
+	hash := commitmentHashFromAnchor(anchor)
 	tsm.states[hash] = chainState
 	tsm.tryRespond(hash)
 }
 
-func (tsm *testStateMgr) ConsensusStateProposal(ctx context.Context, aliasOutput *isc.StateAnchor) <-chan any {
+func (tsm *testStateMgr) ConsensusStateProposal(ctx context.Context, anchor *isc.StateAnchor) <-chan any {
 	tsm.lock.Lock()
 	defer tsm.lock.Unlock()
 	resp := make(chan any, 1)
-	hash := commitmentHashFromAO(aliasOutput)
+	hash := commitmentHashFromAnchor(anchor)
 	tsm.qProposal[hash] = resp
 	tsm.tryRespond(hash)
 	return resp
 }
 
 // State manager has to ensure all the data needed for the specified alias
-// output (presented as aliasOutputID+stateCommitment) is present in the DB.
+// output (presented as anchorID+stateCommitment) is present in the DB.
 func (tsm *testStateMgr) ConsensusDecidedState(ctx context.Context, anchor *isc.StateAnchor) <-chan state.State {
 	tsm.lock.Lock()
 	defer tsm.lock.Unlock()
@@ -409,7 +409,7 @@ func (t *testNodeConn) ConsensusL1InfoProposal(ctx context.Context, anchor *isc.
 	return ch
 }
 
-func commitmentHashFromAO(anchor *isc.StateAnchor) hashing.HashValue {
+func commitmentHashFromAnchor(anchor *isc.StateAnchor) hashing.HashValue {
 	commitment, err := transaction.L1CommitmentFromAnchor(anchor)
 	if err != nil {
 		panic(err)

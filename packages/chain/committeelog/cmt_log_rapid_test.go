@@ -27,7 +27,7 @@ package committeelog_test
 // 	tc              *gpa.TestContext
 // 	l1Chain         []*isc.StateAnchor // The actual chain.
 // 	l1Delivered     map[gpa.NodeID]int // Position of the last element from l1Chain to delivered for the corresponding node (-1 means none).
-// 	genAOSerial     uint32
+// 	genAnchorSerial     uint32
 // 	genNodeID       *rapid.Generator[gpa.NodeID]
 // }
 
@@ -68,7 +68,7 @@ package committeelog_test
 // 	sm.l1Delivered = map[gpa.NodeID]int{}
 // 	//
 // 	// Generators.
-// 	sm.genAOSerial = 0
+// 	sm.genAnchorSerial = 0
 // 	sm.genNodeID = rapid.SampledFrom(gpaNodeIDs)
 // 	//
 // 	// Start it.
@@ -97,18 +97,18 @@ package committeelog_test
 // // func (sm *committeeLogTestRapidSM) ConsDone(t *rapid.T) {
 // // 	nodeID := sm.genNodeID.Draw(t, "node")
 // // 	var li committeeLog.LogIndex         // TODO: Set it.
-// // 	var pAO iotago.ObjectID        // TODO: Set it.
-// // 	var bAO iotago.ObjectID        // TODO: Set it.
-// // 	var nAO *isc.StateAnchor // TODO: Set it.
-// // 	sm.tc.WithInput(nodeID, committeeLog.NewInputConsensusOutputDone(li, pAO, bAO, nAO))
+// // 	var pAnchor iotago.ObjectID        // TODO: Set it.
+// // 	var bAnchor iotago.ObjectID        // TODO: Set it.
+// // 	var nAnchor *isc.StateAnchor // TODO: Set it.
+// // 	sm.tc.WithInput(nodeID, committeeLog.NewInputConsensusOutputDone(li, pAnchor, bAnchor, nAnchor))
 // // 	sm.tc.RunAll()
 // // }
 
 // // func (sm *committeeLogTestRapidSM) ConsSkip(t *rapid.T) {
 // // 	nodeID := sm.genNodeID.Draw(t, "node")
 // // 	var li committeeLog.LogIndex  // TODO: Set it.
-// // 	var pAO iotago.ObjectID // TODO: Set it.
-// // 	sm.tc.WithInput(nodeID, committeeLog.NewInputConsensusOutputSkip(li, pAO))
+// // 	var pAnchor iotago.ObjectID // TODO: Set it.
+// // 	sm.tc.WithInput(nodeID, committeeLog.NewInputConsensusOutputSkip(li, pAnchor))
 // // 	sm.tc.RunAll()
 // // }
 
@@ -135,7 +135,7 @@ package committeelog_test
 // // 	sm.tc.RunAll()
 // // }
 
-// func (sm *committeeLogTestRapidSM) AliasOutputConfirmed(t *rapid.T) {
+// func (sm *committeeLogTestRapidSM) AnchorConfirmed(t *rapid.T) {
 // 	nodeID := sm.genNodeID.Draw(t, "node")
 // 	if len(sm.l1Chain)-sm.l1Delivered[nodeID] <= 1 {
 // 		t.SkipNow()

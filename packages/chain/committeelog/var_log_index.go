@@ -102,7 +102,7 @@ func (vli *varLogIndexImpl) tryOutputOnStarted() gpa.OutMessages {
 	return vli.tryOutput(ali, MsgNextLogIndexCauseStarted)
 }
 
-// That's output for the consensus. We will start consensus instances with strictly increasing LIs with non-nil AOs.
+// That's output for the consensus. We will start consensus instances with strictly increasing LIs with non-nil Anchors.
 func (vli *varLogIndexImpl) tryOutput(li LogIndex, cause MsgNextLogIndexCause) gpa.OutMessages {
 	if li <= vli.agreedLI || li < vli.minLI {
 		return nil

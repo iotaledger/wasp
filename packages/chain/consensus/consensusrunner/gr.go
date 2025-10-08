@@ -59,14 +59,14 @@ type Mempool interface {
 // StateMgr is an interface that state managers have to implement.
 type StateMgr interface {
 	// State manager has to return a signal via the return channel when it
-	// ensures all the needed blocks for the specified AliasOutput is present
+	// ensures all the needed blocks for the specified Anchor is present
 	// in the database. Context is used to cancel a request.
 	ConsensusStateProposal(
 		ctx context.Context,
 		anchor *isc.StateAnchor,
 	) <-chan interface{}
 	// State manager has to ensure all the data needed for the specified alias
-	// output (presented as aliasOutputID+stateCommitment) is present in the DB.
+	// output (presented as anchorID+stateCommitment) is present in the DB.
 	ConsensusDecidedState(
 		ctx context.Context,
 		anchor *isc.StateAnchor,
@@ -108,9 +108,9 @@ func (o *Output) String() string {
 }
 
 type input struct {
-	baseAliasOutput *isc.StateAnchor
-	outputCB        func(*Output)
-	recoverCB       func()
+	baseAnchor *isc.StateAnchor
+	outputCB   func(*Output)
+	recoverCB  func()
 }
 
 type ConsensusRunner struct {
@@ -237,15 +237,15 @@ func New(
 	return runner
 }
 
-func (r *ConsensusRunner) Input(baseAliasOutput *isc.StateAnchor, outputCB func(*Output), recoverCB func()) {
+func (r *ConsensusRunner) Input(baseAnchor *isc.StateAnchor, outputCB func(*Output), recoverCB func()) {
 	wasReceivedBefore := r.inputReceived.Swap(true)
 	if wasReceivedBefore {
-		panic(fmt.Errorf("duplicate input: %v", baseAliasOutput))
+		panic(fmt.Errorf("duplicate input: %v", baseAnchor))
 	}
 	inp := &input{
-		baseAliasOutput: baseAliasOutput,
-		outputCB:        outputCB,
-		recoverCB:       recoverCB,
+		baseAnchor: baseAnchor,
+		outputCB:   outputCB,
+		recoverCB:  recoverCB,
 	}
 	r.inputCh <- inp
 	close(r.inputCh)
@@ -293,7 +293,7 @@ func (r *ConsensusRunner) run() { //nolint:gocyclo,funlen
 			printStatusCh = time.After(r.printStatusPeriod)
 			r.outputCB = inp.outputCB
 			r.recoverCB = inp.recoverCB
-			r.handleConsInput(consensus.NewInputProposal(inp.baseAliasOutput))
+			r.handleConsInput(consensus.NewInputProposal(inp.baseAnchor))
 
 		case a, ok := <-r.inputRotateToCh:
 			if !ok {

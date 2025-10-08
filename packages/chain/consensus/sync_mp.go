@@ -9,7 +9,7 @@ import (
 )
 
 type SyncMP interface {
-	BaseAliasOutputReceived(baseAliasOutput *isc.StateAnchor) gpa.OutMessages
+	BaseAnchorReceived(baseAnchor *isc.StateAnchor) gpa.OutMessages
 	ProposalReceived(requestRefs []*isc.RequestRef) gpa.OutMessages
 	RequestsNeeded(requestRefs []*isc.RequestRef) gpa.OutMessages
 	RequestsReceived(requests []isc.Request) gpa.OutMessages
@@ -17,19 +17,19 @@ type SyncMP interface {
 }
 
 type syncMPImpl struct {
-	baseAliasOutput         *isc.StateAnchor
-	baseAliasOutputReceived bool
-	proposalInputsReadyCB   func(baseAliasOutput *isc.StateAnchor) gpa.OutMessages
-	proposalReceived        bool
-	proposalReceivedCB      func(requestRefs []*isc.RequestRef) gpa.OutMessages
-	requestsNeeded          bool
-	requestsNeededCB        func(requestIDs []*isc.RequestRef) gpa.OutMessages
-	requestsReceived        bool
-	requestsReceivedCB      func(requests []isc.Request) gpa.OutMessages
+	baseAnchor            *isc.StateAnchor
+	baseAnchorReceived    bool
+	proposalInputsReadyCB func(baseAnchor *isc.StateAnchor) gpa.OutMessages
+	proposalReceived      bool
+	proposalReceivedCB    func(requestRefs []*isc.RequestRef) gpa.OutMessages
+	requestsNeeded        bool
+	requestsNeededCB      func(requestIDs []*isc.RequestRef) gpa.OutMessages
+	requestsReceived      bool
+	requestsReceivedCB    func(requests []isc.Request) gpa.OutMessages
 }
 
 func NewSyncMP(
-	proposalInputsReadyCB func(baseAliasOutput *isc.StateAnchor) gpa.OutMessages,
+	proposalInputsReadyCB func(baseAnchor *isc.StateAnchor) gpa.OutMessages,
 	proposalReceivedCB func(requestRefs []*isc.RequestRef) gpa.OutMessages,
 	requestsNeededCB func(requestIDs []*isc.RequestRef) gpa.OutMessages,
 	requestsReceivedCB func(requests []isc.Request) gpa.OutMessages,
@@ -42,13 +42,13 @@ func NewSyncMP(
 	}
 }
 
-func (sub *syncMPImpl) BaseAliasOutputReceived(baseAliasOutput *isc.StateAnchor) gpa.OutMessages {
-	if sub.baseAliasOutputReceived {
+func (sub *syncMPImpl) BaseAnchorReceived(baseAnchor *isc.StateAnchor) gpa.OutMessages {
+	if sub.baseAnchorReceived {
 		return nil
 	}
-	sub.baseAliasOutput = baseAliasOutput
-	sub.baseAliasOutputReceived = true
-	return sub.proposalInputsReadyCB(sub.baseAliasOutput)
+	sub.baseAnchor = baseAnchor
+	sub.baseAnchorReceived = true
+	return sub.proposalInputsReadyCB(sub.baseAnchor)
 }
 
 func (sub *syncMPImpl) ProposalReceived(requestRefs []*isc.RequestRef) gpa.OutMessages {
@@ -83,8 +83,8 @@ func (sub *syncMPImpl) String() string {
 	}
 	if sub.proposalReceived {
 		str += "/proposal=OK"
-	} else if !sub.baseAliasOutputReceived {
-		str += "/proposal=WAIT[BaseAliasOutput]"
+	} else if !sub.baseAnchorReceived {
+		str += "/proposal=WAIT[BaseAnchor]"
 	} else {
 		str += "/proposal=WAIT[RespFromMemPool]"
 	}

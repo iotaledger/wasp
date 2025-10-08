@@ -111,7 +111,7 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 	require.NoError(t, err)
 
 	//
-	// The first AO should be reported by L1/NodeConn to the nodes.
+	// The first Anchor should be reported by L1/NodeConn to the nodes.
 	for _, tnc := range te.nodeConns {
 		tnc.recvAnchor(te.anchor, parameterstest.L1Mock)
 	}
@@ -176,9 +176,9 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 				// TODO: Double-check with the published TX.
 				/*
 					latestTX := te.nodeConns[i].published[len(te.nodeConns[i].published)-1]
-					_, latestAONoID, err := transaction.GetAnchorFromTransaction(latestTX)
+					_, latestAnchorNoID, err := transaction.GetAnchorFromTransaction(latestTX)
 					require.NoError(t, err)
-					latestL1Commitment, err := transaction.L1CommitmentFromAliasOutput(latestAONoID)
+					latestL1Commitment, err := transaction.L1CommitmentFromAnchor(latestAnchorNoID)
 					require.NoError(t, err)
 					st, err := node.GetStateReader().StateByTrieRoot(latestL1Commitment.GetTrieRoot())
 					require.NoError(t, err)
@@ -204,20 +204,20 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 				te.nodes[0].ReceiveOffLedgerRequest(scRequest, scClient.GetPublicKey())
 			}
 		}
-		// Check if LastAliasOutput() works as expected.
-		awaitPredicate(te, ctxTimeout, "LatestAliasOutput", func() bool {
-			confirmedAO, err := node.LatestAnchor(chain.ConfirmedState)
+		// Check if LastAnchor() works as expected.
+		awaitPredicate(te, ctxTimeout, "LatestAnchor", func() bool {
+			confirmedAnchor, err := node.LatestAnchor(chain.ConfirmedState)
 			require.NoError(t, err)
-			activeAO, err := node.LatestAnchor(chain.ActiveState)
+			activeAnchor, err := node.LatestAnchor(chain.ActiveState)
 			require.NoError(t, err)
 			lastPublishedTX := te.nodeConns[i].published[len(te.nodeConns[i].published)-1]
-			lastPublishedAO := isc.NewStateAnchor(lastPublishedTX, te.iscPackageID)
-			if !lastPublishedAO.Equals(confirmedAO) { // In this test we confirm outputs immediately.
-				te.log.LogDebugf("lastPublishedAO(%v) != confirmedAO(%v)", lastPublishedAO, confirmedAO)
+			lastPublishedAnchor := isc.NewStateAnchor(lastPublishedTX, te.iscPackageID)
+			if !lastPublishedAnchor.Equals(confirmedAnchor) { // In this test we confirm outputs immediately.
+				te.log.LogDebugf("lastPublishedAnchor(%v) != confirmedAnchor(%v)", lastPublishedAnchor, confirmedAnchor)
 				return false
 			}
-			if !lastPublishedAO.Equals(activeAO) {
-				te.log.LogDebugf("lastPublishedAO(%v) != activeAO(%v)", lastPublishedAO, activeAO)
+			if !lastPublishedAnchor.Equals(activeAnchor) {
+				te.log.LogDebugf("lastPublishedAnchor(%v) != activeAnchor(%v)", lastPublishedAnchor, activeAnchor)
 				return false
 			}
 			return true

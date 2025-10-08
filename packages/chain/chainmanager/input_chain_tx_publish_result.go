@@ -14,27 +14,27 @@ type inputChainTxPublishResult struct {
 	committeeAddr cryptolib.Address
 	logIndex      committeelog.LogIndex
 	txDigest      iotago.Digest
-	aliasOutput   *isc.StateAnchor
+	anchor        *isc.StateAnchor
 	confirmed     bool
 }
 
-func NewInputChainTxPublishResult(committeeAddr cryptolib.Address, logIndex committeelog.LogIndex, txDigest iotago.Digest, aliasOutput *isc.StateAnchor, confirmed bool) gpa.Input {
+func NewInputChainTxPublishResult(committeeAddr cryptolib.Address, logIndex committeelog.LogIndex, txDigest iotago.Digest, anchor *isc.StateAnchor, confirmed bool) gpa.Input {
 	return &inputChainTxPublishResult{
 		committeeAddr: committeeAddr,
 		logIndex:      logIndex,
 		txDigest:      txDigest,
-		aliasOutput:   aliasOutput,
+		anchor:        anchor,
 		confirmed:     confirmed,
 	}
 }
 
 func (i *inputChainTxPublishResult) String() string {
 	return fmt.Sprintf(
-		"{chainMgr.inputChainTxPublishResult, committeeAddr=%v, logIndex=%v, txDigest=%s, aliasOutput=%v, confirmed=%v}",
+		"{chainMgr.inputChainTxPublishResult, committeeAddr=%v, logIndex=%v, txDigest=%s, anchor=%v, confirmed=%v}",
 		i.committeeAddr.String(),
 		i.logIndex,
 		i.txDigest,
-		i.aliasOutput,
+		i.anchor,
 		i.confirmed,
 	)
 }

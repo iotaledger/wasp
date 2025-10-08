@@ -22,25 +22,25 @@ type SyncTX interface {
 }
 
 type syncTXImpl struct {
-	decidedAO  *isc.StateAnchor
-	unsignedTX *iotago.TransactionData
-	signature  []byte
-	blockSaved bool
-	block      state.Block
+	decidedAnchor *isc.StateAnchor
+	unsignedTX    *iotago.TransactionData
+	signature     []byte
+	blockSaved    bool
+	block         state.Block
 
 	inputsReady   bool
-	inputsReadyCB func(decidedAO *isc.StateAnchor, unsignedTX *iotago.TransactionData, block state.Block, signature []byte) gpa.OutMessages
+	inputsReadyCB func(decidedAnchor *isc.StateAnchor, unsignedTX *iotago.TransactionData, block state.Block, signature []byte) gpa.OutMessages
 }
 
-func NewSyncTX(inputsReadyCB func(decidedAO *isc.StateAnchor, unsignedTX *iotago.TransactionData, block state.Block, signature []byte) gpa.OutMessages) SyncTX {
+func NewSyncTX(inputsReadyCB func(decidedAnchor *isc.StateAnchor, unsignedTX *iotago.TransactionData, block state.Block, signature []byte) gpa.OutMessages) SyncTX {
 	return &syncTXImpl{inputsReadyCB: inputsReadyCB}
 }
 
 func (sub *syncTXImpl) AnchorDecided(ao *isc.StateAnchor) gpa.OutMessages {
-	if sub.decidedAO != nil || ao == nil {
+	if sub.decidedAnchor != nil || ao == nil {
 		return nil
 	}
-	sub.decidedAO = ao
+	sub.decidedAnchor = ao
 	return sub.tryCompleteInputs()
 }
 
@@ -70,11 +70,11 @@ func (sub *syncTXImpl) BlockSaved(block state.Block) gpa.OutMessages {
 }
 
 func (sub *syncTXImpl) tryCompleteInputs() gpa.OutMessages {
-	if sub.inputsReady || sub.decidedAO == nil || sub.unsignedTX == nil || sub.signature == nil || !sub.blockSaved {
+	if sub.inputsReady || sub.decidedAnchor == nil || sub.unsignedTX == nil || sub.signature == nil || !sub.blockSaved {
 		return nil
 	}
 	sub.inputsReady = true
-	return sub.inputsReadyCB(sub.decidedAO, sub.unsignedTX, sub.block, sub.signature)
+	return sub.inputsReadyCB(sub.decidedAnchor, sub.unsignedTX, sub.block, sub.signature)
 }
 
 // Try to provide useful human-readable compact status.
@@ -84,8 +84,8 @@ func (sub *syncTXImpl) String() string {
 		str += statusStrOK
 	} else {
 		wait := []string{}
-		if sub.decidedAO == nil {
-			wait = append(wait, "decidedAO")
+		if sub.decidedAnchor == nil {
+			wait = append(wait, "decidedAnchor")
 		}
 		if sub.unsignedTX == nil {
 			wait = append(wait, "unsignedTX")

@@ -273,7 +273,7 @@ func (s *StateReader) getRequestRecordDataByRef(blockIndex uint32, requestIndex 
 // 	if !ok {
 // 		return iotago.OutputID{}, false
 // 	}
-// 	return iotago.OutputIDFromTransactionIDAndIndex(blockInfo.PreviousAliasOutput.TransactionID(), outputIndex), true
+// 	return iotago.OutputIDFromTransactionIDAndIndex(blockInfo.PreviousAnchor.TransactionID(), outputIndex), true
 // }
 
 // tries to get block index from ParamBlockIndex, if no parameter is provided, returns the latest block index

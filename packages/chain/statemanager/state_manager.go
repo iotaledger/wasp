@@ -29,8 +29,8 @@ import (
 
 type StateMgr interface {
 	consGR.StateMgr
-	// The StateMgr has to find a common ancestor for the prevAO and nextAO, then return
-	// the state for Next ao and reject blocks in range (commonAO, prevAO]. The StateMgr
+	// The StateMgr has to find a common ancestor for the prevAnchor and nextAnchor, then return
+	// the state for Next ao and reject blocks in range (commonAnchor, prevAnchor]. The StateMgr
 	// can determine relative positions of the corresponding blocks based on their state
 	// indexes.
 	ChainFetchStateDiff(
@@ -214,8 +214,8 @@ func (smT *stateManager) PreliminaryBlock(block state.Block) error {
 // Implementations of consGR.StateMgr
 // -------------------------------------
 
-// ConsensusStateProposal asks State manager to ensure that all the blocks for aliasOutput are available.
-// `nil` is sent via the returned channel upon successful retrieval of every block for aliasOutput.
+// ConsensusStateProposal asks State manager to ensure that all the blocks for anchor are available.
+// `nil` is sent via the returned channel upon successful retrieval of every block for anchor.
 func (smT *stateManager) ConsensusStateProposal(ctx context.Context, anchor *isc.StateAnchor) <-chan interface{} {
 	input, resultCh := inputs.NewConsensusStateProposal(ctx, anchor)
 	smT.addInput(input)

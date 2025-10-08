@@ -14,32 +14,32 @@ import (
 )
 
 type inputConsensusOutputDone struct {
-	committeeAddr   cryptolib.Address
-	logIndex        committeelog.LogIndex
-	proposedBaseAO  *isc.StateAnchor
-	consensusResult *consensus.Result
+	committeeAddr      cryptolib.Address
+	logIndex           committeelog.LogIndex
+	proposedBaseAnchor *isc.StateAnchor
+	consensusResult    *consensus.Result
 }
 
 func NewInputConsensusOutputDone(
 	committeeAddr cryptolib.Address,
 	logIndex committeelog.LogIndex,
-	proposedBaseAO *isc.StateAnchor,
+	proposedBaseAnchor *isc.StateAnchor,
 	consensusResult *consensus.Result,
 ) gpa.Input {
 	return &inputConsensusOutputDone{
-		committeeAddr:   committeeAddr,
-		logIndex:        logIndex,
-		proposedBaseAO:  proposedBaseAO,
-		consensusResult: consensusResult,
+		committeeAddr:      committeeAddr,
+		logIndex:           logIndex,
+		proposedBaseAnchor: proposedBaseAnchor,
+		consensusResult:    consensusResult,
 	}
 }
 
 func (inp *inputConsensusOutputDone) String() string {
 	return fmt.Sprintf(
-		"{chainMgr.inputConsensusOutputDone, committeeAddr=%v, logIndex=%v, proposedBaseAO=%v, consensusResult=%v}",
+		"{chainMgr.inputConsensusOutputDone, committeeAddr=%v, logIndex=%v, proposedBaseAnchor=%v, consensusResult=%v}",
 		inp.committeeAddr.String(),
 		inp.logIndex,
-		inp.proposedBaseAO.Hash().Hex(),
+		inp.proposedBaseAnchor.Hash().Hex(),
 		inp.consensusResult,
 	)
 }
