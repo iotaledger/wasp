@@ -117,9 +117,9 @@ type consensusImpl struct {
 	asGPA            gpa.GPA
 	dss              dss.DSS
 	acs              acs.ACS
-	subMP            SyncMP         // Mempool.
-	subSM            SyncSM         // StateMgr.
-	subNC            SyncNC         // Synchronization with the NodeConn.
+	subMempool       SyncMempool    // Mempool.
+	subStateMgr      SyncStateMgr   // StateMgr.
+	subNodeconn      SyncNodeconn   // Synchronization with the NodeConn.
 	subDSS           SyncDSS        // Distributed Schnorr Signature.
 	subACS           SyncACS        // Asynchronous Common Subset.
 	subRND           SyncRND        // Randomness.
@@ -207,23 +207,23 @@ func New( //nolint:funlen
 	}
 	c.asGPA = gpa.NewOwnHandler(me, c)
 	c.msgWrapper = gpa.NewMsgWrapper(msgTypeWrapped, c.msgWrapperFunc)
-	c.subMP = NewSyncMP(
-		c.uponMPProposalInputsReady,
-		c.uponMPProposalReceived,
-		c.uponMPRequestsNeeded,
-		c.uponMPRequestsReceived,
+	c.subMempool = NewSyncMempool(
+		c.uponMempoolProposalInputsReady,
+		c.uponMempoolProposalReceived,
+		c.uponMempoolRequestsNeeded,
+		c.uponMempoolRequestsReceived,
 	)
-	c.subSM = NewSyncSM(
-		c.uponSMStateProposalQueryInputsReady,
-		c.uponSMStateProposalReceived,
-		c.uponSMDecidedStateQueryInputsReady,
-		c.uponSMDecidedStateReceived,
-		c.uponSMSaveProducedBlockInputsReady,
-		c.uponSMSaveProducedBlockDone,
+	c.subStateMgr = NewSyncStateMgr(
+		c.uponStateMgrStateProposalQueryInputsReady,
+		c.uponStateMgrStateProposalReceived,
+		c.uponStateMgrDecidedStateQueryInputsReady,
+		c.uponStateMgrDecidedStateReceived,
+		c.uponStateMgrSaveProducedBlockInputsReady,
+		c.uponStateMgrSaveProducedBlockDone,
 	)
-	c.subNC = NewSyncNC(
-		c.uponNCInputsReady,
-		c.uponNCOutputReady,
+	c.subNodeconn = NewSyncNodeconn(
+		c.uponNodeconnInputsReady,
+		c.uponNodeconnOutputReady,
 	)
 	c.subDSS = NewSyncDSS(
 		c.uponDSSInitialInputsReady,
@@ -287,9 +287,9 @@ func (c *consensusImpl) Input(input gpa.Input) gpa.OutMessages {
 	case *inputProposal:
 		c.log.LogInfof("Consensus started, received %v", input.String())
 		return gpa.NoMessages().
-			AddAll(c.subNC.HaveInputAnchor(input.baseAnchor)).
-			AddAll(c.subMP.BaseAnchorReceived(input.baseAnchor)).
-			AddAll(c.subSM.ProposedBaseAnchorReceived(input.baseAnchor)).
+			AddAll(c.subNodeconn.HaveInputAnchor(input.baseAnchor)).
+			AddAll(c.subMempool.BaseAnchorReceived(input.baseAnchor)).
+			AddAll(c.subStateMgr.ProposedBaseAnchorReceived(input.baseAnchor)).
 			AddAll(c.subDSS.InitialInputReceived())
 	case *inputRotateTo:
 		// We can update the rotation address while consensus is running.
@@ -297,19 +297,19 @@ func (c *consensusImpl) Input(input gpa.Input) gpa.OutMessages {
 		c.rotateTo = input.address
 		return nil
 	case *inputMempoolProposal:
-		return c.subMP.ProposalReceived(input.requestRefs)
+		return c.subMempool.ProposalReceived(input.requestRefs)
 	case *inputMempoolRequests:
-		return c.subMP.RequestsReceived(input.requests)
+		return c.subMempool.RequestsReceived(input.requests)
 	case *inputStateMgrProposalConfirmed:
-		return c.subSM.StateProposalConfirmedByStateMgr()
+		return c.subStateMgr.StateProposalConfirmedByStateMgr()
 	case *inputStateMgrDecidedVirtualState:
-		return c.subSM.DecidedVirtualStateReceived(input.chainState)
+		return c.subStateMgr.DecidedVirtualStateReceived(input.chainState)
 	case *inputStateMgrBlockSaved:
-		return c.subSM.BlockSaved(input.block)
+		return c.subStateMgr.BlockSaved(input.block)
 	case *inputTimeData:
 		return c.subACS.TimeDataReceived(input.timeData)
 	case *inputL1Info:
-		return c.subNC.HaveL1Info(input.gasCoins, input.l1params)
+		return c.subNodeconn.HaveL1Info(input.gasCoins, input.l1params)
 	case *inputVMResult:
 		return c.subVM.VMResultReceived(input.task)
 	}
@@ -350,9 +350,9 @@ func (c *consensusImpl) StatusString() string {
 	// We con't include RND here, maybe that's less important, and visible from the VM status.
 	return fmt.Sprintf("{consImpl⟨%v⟩,%v,%v,%v,%v,%v,%v,%v}",
 		c.output.Status,
-		c.subSM.String(),
-		c.subMP.String(),
-		c.subNC.String(),
+		c.subStateMgr.String(),
+		c.subMempool.String(),
+		c.subNodeconn.String(),
 		c.subDSS.String(),
 		c.subACS.String(),
 		c.subVM.String(),
@@ -363,29 +363,29 @@ func (c *consensusImpl) StatusString() string {
 ////////////////////////////////////////////////////////////////////////////////
 // MP -- MemPool
 
-func (c *consensusImpl) uponMPProposalInputsReady(baseAnchor *isc.StateAnchor) gpa.OutMessages {
+func (c *consensusImpl) uponMempoolProposalInputsReady(baseAnchor *isc.StateAnchor) gpa.OutMessages {
 	if baseAnchor == nil {
 		// If the base Anchor is nil, we are not going to propose any requests.
-		return c.subMP.ProposalReceived([]*isc.RequestRef{})
+		return c.subMempool.ProposalReceived([]*isc.RequestRef{})
 	}
 	c.output.NeedMempoolProposal = baseAnchor
 	return nil
 }
 
-func (c *consensusImpl) uponMPProposalReceived(requestRefs []*isc.RequestRef) gpa.OutMessages {
+func (c *consensusImpl) uponMempoolProposalReceived(requestRefs []*isc.RequestRef) gpa.OutMessages {
 	c.output.NeedMempoolProposal = nil
 	msgs := gpa.NoMessages()
 	msgs.AddAll(c.subACS.MempoolRequestsReceived(requestRefs))
-	msgs.AddAll(c.subNC.HaveRequests())
+	msgs.AddAll(c.subNodeconn.HaveRequests())
 	return msgs
 }
 
-func (c *consensusImpl) uponMPRequestsNeeded(requestRefs []*isc.RequestRef) gpa.OutMessages {
+func (c *consensusImpl) uponMempoolRequestsNeeded(requestRefs []*isc.RequestRef) gpa.OutMessages {
 	c.output.NeedMempoolRequests = requestRefs
 	return nil
 }
 
-func (c *consensusImpl) uponMPRequestsReceived(requests []isc.Request) gpa.OutMessages {
+func (c *consensusImpl) uponMempoolRequestsReceived(requests []isc.Request) gpa.OutMessages {
 	c.output.NeedMempoolRequests = nil
 	return c.subVM.RequestsReceived(requests)
 }
@@ -393,44 +393,44 @@ func (c *consensusImpl) uponMPRequestsReceived(requests []isc.Request) gpa.OutMe
 ////////////////////////////////////////////////////////////////////////////////
 // SM -- StateManager
 
-func (c *consensusImpl) uponSMStateProposalQueryInputsReady(baseAnchor *isc.StateAnchor) gpa.OutMessages {
+func (c *consensusImpl) uponStateMgrStateProposalQueryInputsReady(baseAnchor *isc.StateAnchor) gpa.OutMessages {
 	if baseAnchor == nil {
 		// Don't wait for the state if no base Anchor is known.
-		return c.subSM.StateProposalConfirmedByStateMgr()
+		return c.subStateMgr.StateProposalConfirmedByStateMgr()
 	}
 	c.output.NeedStateMgrStateProposal = baseAnchor
 	return nil
 }
 
-func (c *consensusImpl) uponSMStateProposalReceived(proposedAnchor *isc.StateAnchor) gpa.OutMessages {
+func (c *consensusImpl) uponStateMgrStateProposalReceived(proposedAnchor *isc.StateAnchor) gpa.OutMessages {
 	c.output.NeedStateMgrStateProposal = nil
 	msgs := gpa.NoMessages()
 	msgs.AddAll(c.subACS.StateProposalReceived(proposedAnchor))
-	msgs.AddAll(c.subNC.HaveState())
+	msgs.AddAll(c.subNodeconn.HaveState())
 	return msgs
 }
 
-func (c *consensusImpl) uponSMDecidedStateQueryInputsReady(decidedBaseAnchor *isc.StateAnchor) gpa.OutMessages {
+func (c *consensusImpl) uponStateMgrDecidedStateQueryInputsReady(decidedBaseAnchor *isc.StateAnchor) gpa.OutMessages {
 	c.output.NeedStateMgrDecidedState = decidedBaseAnchor
 	return nil
 }
 
-func (c *consensusImpl) uponSMDecidedStateReceived(chainState state.State) gpa.OutMessages {
+func (c *consensusImpl) uponStateMgrDecidedStateReceived(chainState state.State) gpa.OutMessages {
 	c.output.NeedStateMgrDecidedState = nil
 	return c.subVM.DecidedStateReceived(chainState)
 }
 
-func (c *consensusImpl) uponSMSaveProducedBlockInputsReady(producedBlock state.StateDraft) gpa.OutMessages {
+func (c *consensusImpl) uponStateMgrSaveProducedBlockInputsReady(producedBlock state.StateDraft) gpa.OutMessages {
 	if producedBlock == nil {
 		// Don't have a block to save in the case of self-governed rotation.
 		// So mark it as saved immediately.
-		return c.subSM.BlockSaved(nil)
+		return c.subStateMgr.BlockSaved(nil)
 	}
 	c.output.NeedStateMgrSaveBlock = producedBlock
 	return nil
 }
 
-func (c *consensusImpl) uponSMSaveProducedBlockDone(block state.Block) gpa.OutMessages {
+func (c *consensusImpl) uponStateMgrSaveProducedBlockDone(block state.Block) gpa.OutMessages {
 	c.output.NeedStateMgrSaveBlock = nil
 	return c.subTX.BlockSaved(block)
 }
@@ -438,7 +438,7 @@ func (c *consensusImpl) uponSMSaveProducedBlockDone(block state.Block) gpa.OutMe
 ////////////////////////////////////////////////////////////////////////////////
 // NC
 
-func (c *consensusImpl) uponNCInputsReady(anchor *isc.StateAnchor) gpa.OutMessages {
+func (c *consensusImpl) uponNodeconnInputsReady(anchor *isc.StateAnchor) gpa.OutMessages {
 	if anchor == nil {
 		c.log.LogDebugf("ACS got ⊥ as input, no L1 info can be fetched.")
 		return c.subACS.L1InfoReceived([]*coin.CoinWithRef{}, nil)
@@ -447,7 +447,7 @@ func (c *consensusImpl) uponNCInputsReady(anchor *isc.StateAnchor) gpa.OutMessag
 	return nil
 }
 
-func (c *consensusImpl) uponNCOutputReady(gasCoins []*coin.CoinWithRef, l1params *parameters.L1Params) gpa.OutMessages {
+func (c *consensusImpl) uponNodeconnOutputReady(gasCoins []*coin.CoinWithRef, l1params *parameters.L1Params) gpa.OutMessages {
 	c.log.LogDebugf("L1 info received, gasCoins=%v, l1Params=%v", gasCoins, l1params)
 	c.output.NeedNodeConnL1Info = nil
 	return c.subACS.L1InfoReceived(gasCoins, l1params)
@@ -555,8 +555,8 @@ func (c *consensusImpl) uponACSOutputReceived(outputValues map[gpa.NodeID][]byte
 			AddAll(c.subDSS.DecidedIndexProposalsReceived(aggr.DecidedDSSIndexProposals()))
 	}
 	return gpa.NoMessages().
-		AddAll(c.subMP.RequestsNeeded(reqs)).
-		AddAll(c.subSM.DecidedVirtualStateNeeded(bao)).
+		AddAll(c.subMempool.RequestsNeeded(reqs)).
+		AddAll(c.subStateMgr.DecidedVirtualStateNeeded(bao)).
 		AddAll(c.subVM.DecidedBatchProposalsReceived(aggr)).
 		AddAll(c.subRND.CanProceed(baoID.Bytes())).
 		AddAll(c.subDSS.DecidedIndexProposalsReceived(aggr.DecidedDSSIndexProposals()))
@@ -642,7 +642,7 @@ func (c *consensusImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult, aggregat
 	txBytes := c.makeTransactionSigningBytes(txData)
 	c.log.LogDebugf("VM produced TxDataBytes=%s", hex.EncodeToString(c.makeTransactionDataBytes(txData)))
 	return gpa.NoMessages().
-		AddAll(c.subSM.BlockProduced(vmResult.StateDraft)).
+		AddAll(c.subStateMgr.BlockProduced(vmResult.StateDraft)).
 		AddAll(c.subTX.UnsignedTXReceived(txData)).
 		AddAll(c.subDSS.MessageToSignReceived(txBytes))
 }
