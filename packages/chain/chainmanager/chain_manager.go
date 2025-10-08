@@ -9,18 +9,18 @@
 //   - Maintain a set of committee logs (1 for each committee this node participates in).
 //   - Maintain a set of consensus instances (one of them is the current one).
 //   - Supervise the Mempool and StateMgr.
-//   - Handle messages from the NodeConn (AO confirmed / rejected, Request received).
+//   - Handle messages from the NodeConn (Anchor confirmed / rejected, Request received).
 //   - Posting StateTX to NodeConn.
 //
 // > VARIABLES:
 // >     LatestActiveCmt -- The latest committee, that was active.
 // >        This field will be nil if the node is not part of the committee.
 // >        On the resynchronization it will store the previous active committee.
-// >     LatestActiveAO -- The latest AO we are building upon.
-// >        Derived, equal to NeedConsensus.BaseAO.
-// >     LatestConfirmedAO -- The latest ConfirmedAO from L1.
-// >        This one usually follows the LatestAliasOutput,
-// >        but can be published from outside and override the LatestAliasOutput.
+// >     LatestActiveAnchor -- The latest Anchor we are building upon.
+// >        Derived, equal to NeedConsensus.BaseAnchor.
+// >     LatestConfirmedAnchor -- The latest ConfirmedAnchor from L1.
+// >        This one usually follows the LatestAnchor,
+// >        but can be published from outside and override the LatestAnchor.
 // >     AccessNodes -- The set of access nodes for the current head.
 // >        Union of On-Chain access nodes and the nodes permitted by this node.
 // >     NeedConsensus -- A request to run consensus.
@@ -30,8 +30,8 @@
 // >          if it is still in NeedConsensus at the time.
 // >        - Removed on PublishResult from the NodeConn.
 // >
-// > UPON Reception of ConfirmedAO:
-// >     Set LatestConfirmedAO <- ConfirmedAO
+// > UPON Reception of ConfirmedAnchor:
+// >     Set LatestConfirmedAnchor <- ConfirmedAnchor
 // >     IF this node is in the committee THEN
 // >         Pass it to the corresponding CommitteeLog; HandleCommitteeLogOutput.
 // >     ELSE
@@ -44,9 +44,9 @@
 // >     If result.confirmed = false THEN
 // >         Forward it to ChainMgr; HandleCommitteeLogOutput.
 // >     ELSE
-// >         NOP // AO has to be received as ConfirmedAO.
+// >         NOP // Anchor has to be received as ConfirmedAnchor.
 // > UPON Reception of Consensus Output/DONE:
-// >     IF ConsensusOutput.BaseAO == NeedConsensus THEN
+// >     IF ConsensusOutput.BaseAnchor == NeedConsensus THEN
 // >         Add ConsensusOutput.TX to NeedPublishTX
 // >     Forward the message to the corresponding CommitteeLog; HandleCommitteeLogOutput.
 // >     Update AccessNodes.
@@ -102,12 +102,12 @@ type Output struct {
 	cmi *chainMgrImpl
 }
 
-func (o *Output) LatestActiveAnchorObject() *isc.StateAnchor {
+func (o *Output) LatestActiveAnchor() *isc.StateAnchor {
 	// There is no pipelining possible with the SUI based L1,
-	// thus there is no difference between the active and confirmed AO.
-	return o.cmi.latestConfirmedAO
+	// thus there is no difference between the active and confirmed Anchor.
+	return o.cmi.latestConfirmedAnchor
 }
-func (o *Output) LatestConfirmedAliasOutput() *isc.StateAnchor { return o.cmi.latestConfirmedAO }
+func (o *Output) LatestConfirmedAnchor() *isc.StateAnchor { return o.cmi.latestConfirmedAnchor }
 func (o *Output) NeedPublishTX() *NeedPublishTXMap {
 	return o.cmi.needPublishTX
 }
@@ -120,8 +120,8 @@ func (o *Output) String() string {
 	needPublishTX += "}"
 
 	return fmt.Sprintf(
-		"{chainMgr.Output, LatestConfirmedAliasOutput=%v, NeedConsensus=%v, NeedPublishTX=%s}",
-		o.LatestConfirmedAliasOutput(),
+		"{chainMgr.Output, LatestConfirmedAnchor=%v, NeedConsensus=%v, NeedPublishTX=%s}",
+		o.LatestConfirmedAnchor(),
 		o.cmi.needConsensus,
 		needPublishTX,
 	)
@@ -199,9 +199,9 @@ type chainMgrImpl struct {
 	committeeLogs              map[cryptolib.AddressKey]*committeeLogInst              // All the committee log instances for this chain.
 	consensusStateRegistry     committeelog.ConsensusStateRegistry                     // Persistent store for log indexes.
 	latestActiveCommittee      *cryptolib.Address                                      // The latest active committee.
-	latestConfirmedAO          *isc.StateAnchor                                        // The latest confirmed AO (follows Active AO).
-	activeNodesCB              func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey) // All the nodes authorized for being access nodes (for the ActiveAO).
-	trackActiveStateCB         func(ao *isc.StateAnchor)                               // We will call this to set new AO for the active state.
+	latestConfirmedAnchor      *isc.StateAnchor                                        // The latest confirmed Anchor (follows Active Anchor).
+	activeNodesCB              func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey) // All the nodes authorized for being access nodes (for the ActiveAnchor).
+	trackActiveStateCB         func(ao *isc.StateAnchor)                               // We will call this to set new Anchor for the active state.
 	savePreliminaryBlockCB     func(block state.Block)                                 // We will call this, when a preliminary block matching the tx signatures is received.
 	committeeUpdatedCB         func(dkShare tcrypto.DKShare)                           // Will be called, when a committee changes.
 	needConsensus              *NeedConsensusMap                                       // Query for a consensus.
@@ -214,7 +214,7 @@ type chainMgrImpl struct {
 	asGPA                      gpa.GPA
 	me                         gpa.NodeID
 	nodeIDFromPubKey           func(pubKey *cryptolib.PublicKey) gpa.NodeID
-	deriveAOByQuorum           bool // Config parameter.
+	deriveAnchorByQuorum       bool // Config parameter.
 	pipeliningLimit            int  // Config parameter.
 	postponeRecoveryMilestones int  // Config parameter.
 	metrics                    *metrics.ChainCommitteeLogMetrics
@@ -239,7 +239,7 @@ func New(
 	trackActiveStateCB func(ao *isc.StateAnchor),
 	savePreliminaryBlockCB func(block state.Block),
 	committeeUpdatedCB func(dkShare tcrypto.DKShare),
-	deriveAOByQuorum bool, // TODO: Review, some of them are outdated.
+	deriveAnchorByQuorum bool, // TODO: Review, some of them are outdated.
 	pipeliningLimit int,
 	postponeRecoveryMilestones int,
 	metrics *metrics.ChainCommitteeLogMetrics,
@@ -262,7 +262,7 @@ func New(
 		varAccessNodeState:         NewVarAccessNodeState(chainID, log.NewChildLogger("VAS")),
 		me:                         me,
 		nodeIDFromPubKey:           nodeIDFromPubKey,
-		deriveAOByQuorum:           deriveAOByQuorum,
+		deriveAnchorByQuorum:       deriveAnchorByQuorum,
 		pipeliningLimit:            pipeliningLimit,
 		metrics:                    metrics,
 		postponeRecoveryMilestones: postponeRecoveryMilestones,
@@ -308,10 +308,10 @@ func (cmi *chainMgrImpl) Message(msg gpa.Message) gpa.OutMessages {
 	panic(fmt.Errorf("unexpected message %T: %+v", msg, msg))
 }
 
-// > UPON Reception of ConfirmedAO:
-// >     Set LatestConfirmedAO <- ConfirmedAO
+// > UPON Reception of ConfirmedAnchor:
+// >     Set LatestConfirmedAnchor <- ConfirmedAnchor
 // >     IF this node is in the committee THEN
-// >         Pass it to the corresponding CommitteeLog; HandleCommitteeLogOutput(ConfirmedAO.Cmt).
+// >         Pass it to the corresponding CommitteeLog; HandleCommitteeLogOutput(ConfirmedAnchor.Cmt).
 // >     ELSE
 // >         IF LatestActiveCmt != nil THEN
 // >     	     Send Suspend to Last Active CommitteeLog; HandleCommitteeLogOutput(LatestActiveCmt)
@@ -320,9 +320,9 @@ func (cmi *chainMgrImpl) Message(msg gpa.Message) gpa.OutMessages {
 func (cmi *chainMgrImpl) handleInputAnchorConfirmed(input *inputAnchorConfirmed) gpa.OutMessages {
 	cmi.log.LogDebugf("handleInputAnchorConfirmed: %+v", input)
 	//
-	// >     Set LatestConfirmedAO <- ConfirmedAO
+	// >     Set LatestConfirmedAnchor <- ConfirmedAnchor
 	vsaTip, vsaUpdated := cmi.varAccessNodeState.BlockConfirmed(input.anchor)
-	cmi.latestConfirmedAO = input.anchor
+	cmi.latestConfirmedAnchor = input.anchor
 	msgs := gpa.NoMessages()
 	committeeLog, err := cmi.ensureCommitteeLog(*input.stateController) // TODO: input.stateController.Key()
 	if errors.Is(err, ErrNotInCommittee) {
@@ -341,7 +341,7 @@ func (cmi *chainMgrImpl) handleInputAnchorConfirmed(input *inputAnchorConfirmed)
 			cmi.log.LogDebugf("⊢ going to track %v as an access node on confirmed block.", vsaTip)
 			cmi.trackActiveStateCB(vsaTip)
 		}
-		cmi.log.LogDebugf("This node is not in the committee for aliasOutput: %v", input.anchor)
+		cmi.log.LogDebugf("This node is not in the committee for anchor: %v", input.anchor)
 		return msgs
 	}
 	if err != nil {
@@ -362,7 +362,7 @@ func (cmi *chainMgrImpl) handleInputAnchorConfirmed(input *inputAnchorConfirmed)
 // >     If result.confirmed = false THEN
 // >         Forward it to ChainMgr; HandleCommitteeLogOutput.
 // >     ELSE
-// >         NOP // AO has to be received as Confirmed AO.
+// >         NOP // Anchor has to be received as Confirmed Anchor.
 func (cmi *chainMgrImpl) handleInputChainTxPublishResult(input *inputChainTxPublishResult) gpa.OutMessages {
 	cmi.log.LogDebugf("handleInputChainTxPublishResult: %+v", input)
 	// >     Clear the TX from the NeedPublishTX variable.
@@ -372,20 +372,20 @@ func (cmi *chainMgrImpl) handleInputChainTxPublishResult(input *inputChainTxPubl
 	}
 	if input.confirmed {
 		// >     If result.confirmed = false THEN ... ELSE
-		// >         NOP // AO has to be received as Confirmed AO. // TODO: Not true, anymore.
+		// >         NOP // Anchor has to be received as Confirmed Anchor. // TODO: Not true, anymore.
 		return cmi.withCommitteeLog(input.committeeAddr, func(cl gpa.GPA) gpa.OutMessages {
-			return cl.Input(committeelog.NewInputConsensusOutputConfirmed(input.aliasOutput, input.logIndex))
+			return cl.Input(committeelog.NewInputConsensusOutputConfirmed(input.anchor, input.logIndex))
 		})
 	}
 	// >     If result.confirmed = false THEN
 	// >         Forward it to ChainMgr; HandleCommitteeLogOutput.
 	return cmi.withCommitteeLog(input.committeeAddr, func(cl gpa.GPA) gpa.OutMessages {
-		return cl.Input(committeelog.NewInputConsensusOutputRejected(input.aliasOutput, input.logIndex))
+		return cl.Input(committeelog.NewInputConsensusOutputRejected(input.anchor, input.logIndex))
 	})
 }
 
 // > UPON Reception of Consensus Output/DONE:
-// >     IF ConsensusOutput.BaseAO == NeedConsensus THEN
+// >     IF ConsensusOutput.BaseAnchor == NeedConsensus THEN
 // >         Add ConsensusOutput.TX to NeedPublishTX
 // >     Forward the message to the corresponding CommitteeLog; HandleCommitteeLogOutput.
 // >     Update AccessNodes.
@@ -398,7 +398,7 @@ func (cmi *chainMgrImpl) handleInputConsensusOutputDone(input *inputConsensusOut
 		panic("produced tx is not consuming the anchor")
 	}
 
-	// >     IF ConsensusOutput.BaseAO == NeedConsensus THEN
+	// >     IF ConsensusOutput.BaseAnchor == NeedConsensus THEN
 	// >         Add ConsensusOutput.TX to NeedPublishTX
 	if true { // TODO: Reconsider this condition. Several recent consensus instances should be published, if we run consensus instances in parallel.
 		txDigest := lo.Must(input.consensusResult.Transaction.Digest())
@@ -432,7 +432,7 @@ func (cmi *chainMgrImpl) handleInputConsensusOutputDone(input *inputConsensusOut
 	//
 	// TODO: This event is not needed anymore.
 	// msgs.AddAll(cmi.withCommitteeLog(input.committeeAddr, func(cl gpa.GPA) gpa.OutMessages {
-	// 	return cl.Input(cmtlog.NewInputConsensusOutputDone(input.logIndex, input.proposedBaseAO, input.consensusResult))
+	// 	return cl.Input(cmtlog.NewInputConsensusOutputDone(input.logIndex, input.proposedBaseAnchor, input.consensusResult))
 	// }))
 	return msgs
 }
@@ -480,7 +480,7 @@ func (cmi *chainMgrImpl) handleMsgBlockProduced(msg *msgBlockProduced) gpa.OutMe
 		if msg.block.L1Commitment().Equals(l1Commitment) {
 			cmi.savePreliminaryBlockCB(msg.block)
 		} else {
-			cmi.log.LogWarnf("Received msgBlockProduced, but publishedAO.l1Commitment != block.l1Commitment.")
+			cmi.log.LogWarnf("Received msgBlockProduced, but publishedAnchor.l1Commitment != block.l1Commitment.")
 		}
 	}
 	//
@@ -603,9 +603,9 @@ func (cmi *chainMgrImpl) Output() gpa.Output {
 // Implements the gpa.GPA interface.
 func (cmi *chainMgrImpl) StatusString() string { // TODO: Call it periodically. Show the active committee.
 	return "{ChainMgr,...}" // TODO: Add more info.
-	// return fmt.Sprintf("{ChainMgr,confirmedAO=%v,activeAO=%v}",
-	// 	cmi.output.LatestConfirmedAliasOutput().GetObjectID().String(),
-	// 	cmi.output.LatestActiveAnchorObject().GetObjectID().String(),
+	// return fmt.Sprintf("{ChainMgr,confirmedAnchor=%v,activeAnchor=%v}",
+	// 	cmi.output.LatestConfirmedAnchor().GetObjectID().String(),
+	// 	cmi.output.LatestActiveAnchor().GetObjectID().String(),
 	// )
 }
 
@@ -668,7 +668,7 @@ func (cmi *chainMgrImpl) ensureCommitteeLog(committeeAddr cryptolib.Address) (*c
 		dkShare,
 		cmi.consensusStateRegistry,
 		cmi.nodeIDFromPubKey,
-		cmi.deriveAOByQuorum,
+		cmi.deriveAnchorByQuorum,
 		cmi.pipeliningLimit,
 		cmi.metrics,
 		cmi.log.NewChildLogger(fmt.Sprintf("CL-%v", dkShare.GetSharedPublic().AsAddress().String()[:10])),

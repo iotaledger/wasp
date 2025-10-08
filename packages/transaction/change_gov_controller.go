@@ -16,16 +16,16 @@ func NewChangeGovControllerTx(
 	panic("refactor me: Reimplement GovController")
 	/*
 		// find the correct chain UTXO
-		var chainOutput *iotago.AliasOutput
+		var chainOutput *iotago.Anchor
 		var chainOutputID iotago.OutputID
 		for id, o := range utxos {
-			ao, ok := o.(*iotago.AliasOutput)
+			ao, ok := o.(*iotago.Anchor)
 			if !ok {
 				continue
 			}
-			if util.AliasIDFromAliasOutput(ao, id) == chainID {
+			if util.AliasIDFromAnchor(ao, id) == chainID {
 				chainOutputID = id
-				chainOutput = ao.Clone().(*iotago.AliasOutput)
+				chainOutput = ao.Clone().(*iotago.Anchor)
 				break
 			}
 		}

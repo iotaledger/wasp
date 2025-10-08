@@ -74,9 +74,9 @@ func testCommitteeLogBasic(t *testing.T, n, f int) {
 	// Provide first alias output. Consensus should be sent now.
 	// FIXME is should be anchor state transition, instead of random anchor
 	ao1 := randomAnchorWithID(*aliasRef.ObjectID, committeeAddress, 1)
-	t.Logf("AO1=%v", ao1)
+	t.Logf("Anchor1=%v", ao1)
 	gpaTC.WithInputs(inputAnchorConfirmed(gpaNodes, ao1)).RunAll()
-	gpaTC.PrintAllStatusStrings("After AO1Recv", t.Logf)
+	gpaTC.PrintAllStatusStrings("After Anchor1Recv", t.Logf)
 	cons1 := gpaNodes[gpaNodeIDs[0]].Output().(committeelog.Output)
 	cons1Outs := map[gpa.NodeID]committeelog.Output{}
 	for nid, n := range gpaNodes {
@@ -90,9 +90,9 @@ func testCommitteeLogBasic(t *testing.T, n, f int) {
 	// Consensus results received (consumed ao1, produced ao2).
 	// FIXME is should be anchor state transition, instead of random anchor
 	ao2 := randomAnchorWithID(*aliasRef.ObjectID, committeeAddress, 2)
-	t.Logf("AO2=%v", ao2)
+	t.Logf("Anchor2=%v", ao2)
 	gpaTC.WithInputs(inputConsensusOutput(cons1Outs, ao2)).RunAll()
-	gpaTC.PrintAllStatusStrings("After gpaMsgsAO2Cons", t.Logf)
+	gpaTC.PrintAllStatusStrings("After gpaMsgsAnchor2Cons", t.Logf)
 	cons2 := gpaNodes[gpaNodeIDs[0]].Output().(committeelog.Output)
 	t.Logf("cons2=%v", cons2)
 	for _, n := range gpaNodes {
@@ -104,9 +104,9 @@ func testCommitteeLogBasic(t *testing.T, n, f int) {
 		require.Equal(t, ao2, out[committeelog.LogIndex(2)])
 	}
 	//
-	// AO Confirmed received (nothing changes, we are ahead of it)
+	// Anchor Confirmed received (nothing changes, we are ahead of it)
 	gpaTC.WithInputs(inputAnchorConfirmed(gpaNodes, ao2)).RunAll()
-	gpaTC.PrintAllStatusStrings("After gpaMsgsAO2Recv", t.Logf)
+	gpaTC.PrintAllStatusStrings("After gpaMsgsAnchor2Recv", t.Logf)
 	for _, n := range gpaNodes {
 		require.NotNil(t, n.Output())
 		require.Equal(t, cons2, n.Output())
@@ -124,7 +124,7 @@ func inputAnchorConfirmed(gpaNodes map[gpa.NodeID]gpa.GPA, ao *isc.StateAnchor) 
 	return inputs
 }
 
-func inputConsensusOutput(consReq map[gpa.NodeID]committeelog.Output, nextAO *isc.StateAnchor) map[gpa.NodeID]gpa.Input {
+func inputConsensusOutput(consReq map[gpa.NodeID]committeelog.Output, nextAnchor *isc.StateAnchor) map[gpa.NodeID]gpa.Input {
 	inputs := map[gpa.NodeID]gpa.Input{}
 	for nid, outs := range consReq {
 		maxLI := committeelog.NilLogIndex()
@@ -133,7 +133,7 @@ func inputConsensusOutput(consReq map[gpa.NodeID]committeelog.Output, nextAO *is
 				break
 			}
 			maxLI = li
-			inputs[nid] = committeelog.NewInputConsensusOutputConfirmed(nextAO, li)
+			inputs[nid] = committeelog.NewInputConsensusOutputConfirmed(nextAnchor, li)
 		}
 	}
 	return inputs

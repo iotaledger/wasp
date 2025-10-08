@@ -11,17 +11,17 @@ import (
 )
 
 type inputConsensusOutputRejected struct {
-	aliasOutput *isc.StateAnchor
-	logIndex    LogIndex
+	anchor   *isc.StateAnchor
+	logIndex LogIndex
 }
 
-func NewInputConsensusOutputRejected(aliasOutput *isc.StateAnchor, logIndex LogIndex) gpa.Input {
+func NewInputConsensusOutputRejected(anchor *isc.StateAnchor, logIndex LogIndex) gpa.Input {
 	return &inputConsensusOutputRejected{
-		aliasOutput: aliasOutput,
-		logIndex:    logIndex,
+		anchor:   anchor,
+		logIndex: logIndex,
 	}
 }
 
 func (inp *inputConsensusOutputRejected) String() string {
-	return fmt.Sprintf("{committeeLog.inputConsensusOutputRejected, %v, li=%v}", inp.aliasOutput, inp.logIndex)
+	return fmt.Sprintf("{committeeLog.inputConsensusOutputRejected, %v, li=%v}", inp.anchor, inp.logIndex)
 }

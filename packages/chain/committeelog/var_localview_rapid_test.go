@@ -32,9 +32,9 @@ package committeelog_test
 // 	lv cmtlog.VarLocalView
 // 	//
 // 	// Following stands for the model.
-// 	confirmed []*isc.StateAnchor // A chain of confirmed AOs.
-// 	pending   []*isc.StateAnchor // A list of AOs proposed by the chain, not confirmed yet.
-// 	rejected  []*isc.StateAnchor // Rejected AOs, that should not impact the output anymore.
+// 	confirmed []*isc.StateAnchor // A chain of confirmed Anchors.
+// 	pending   []*isc.StateAnchor // A list of Anchors proposed by the chain, not confirmed yet.
+// 	rejected  []*isc.StateAnchor // Rejected Anchors, that should not impact the output anymore.
 // 	rejSync   bool               // True, if reject was done and pending was not made empty yet.
 // 	//
 // 	// Helpers.
@@ -55,19 +55,19 @@ package committeelog_test
 
 // // E.g. external rotation of a TX by other chain.
 // //
-// // If some external entity produced an AO and it was confirmed,
+// // If some external entity produced an Anchor and it was confirmed,
 // // all the TX'es proposed by us and not yet confirmed will be rejected.
-// func (sm *varLocalViewSM) L1ExternalAOConfirmed(t *rapid.T) {
+// func (sm *varLocalViewSM) L1ExternalAnchorConfirmed(t *rapid.T) {
 // 	//
-// 	// The AO from L1 is always respected as the correct one.
-// 	newAO := sm.nextAO()
-// 	tipAO, tipChanged, _ := sm.lv.AliasOutputConfirmed(newAO)
-// 	require.True(t, tipChanged)            // BaseAO is replaced or set.
-// 	require.Equal(t, newAO, tipAO)         // BaseAO is replaced or set.
-// 	require.Equal(t, newAO, sm.lv.Value()) // BaseAO is replaced or set.
+// 	// The Anchor from L1 is always respected as the correct one.
+// 	newAnchor := sm.nextAnchor()
+// 	tipAnchor, tipChanged, _ := sm.lv.AnchorConfirmed(newAnchor)
+// 	require.True(t, tipChanged)            // BaseAnchor is replaced or set.
+// 	require.Equal(t, newAnchor, tipAnchor)         // BaseAnchor is replaced or set.
+// 	require.Equal(t, newAnchor, sm.lv.Value()) // BaseAnchor is replaced or set.
 // 	//
 // 	// Update the model (add confirmed, move pending to rejected).
-// 	sm.confirmed = append(sm.confirmed, newAO)
+// 	sm.confirmed = append(sm.confirmed, newAnchor)
 // 	sm.rejected = append(sm.rejected, sm.pending...)
 // 	sm.rejSync = false
 // 	sm.pending = []*isc.StateAnchor{}
@@ -84,19 +84,19 @@ package committeelog_test
 // 	}
 // 	//
 // 	// Notify the LocalView on the CNF.
-// 	cnfAO := sm.pending[0]
-// 	prevAO := sm.lv.Value()
-// 	_, tipChanged, _ := sm.lv.AliasOutputConfirmed(cnfAO)
+// 	cnfAnchor := sm.pending[0]
+// 	prevAnchor := sm.lv.Value()
+// 	_, tipChanged, _ := sm.lv.AnchorConfirmed(cnfAnchor)
 // 	//
 // 	// Update the model.
-// 	sm.confirmed = append(sm.confirmed, cnfAO)
+// 	sm.confirmed = append(sm.confirmed, cnfAnchor)
 // 	sm.pending = sm.pending[1:]
 // 	sm.rejSync = sm.rejSync && len(sm.pending) != 0
 // 	//
-// 	// Post-condition: If there was no rejection, then the BaseAO has to be left unchanged.
-// 	if !sm.rejSync && prevAO != nil {
-// 		require.False(t, tipChanged)            // BaseAO is not replaced.
-// 		require.Equal(t, prevAO, sm.lv.Value()) // BaseAO is not replaced.
+// 	// Post-condition: If there was no rejection, then the BaseAnchor has to be left unchanged.
+// 	if !sm.rejSync && prevAnchor != nil {
+// 		require.False(t, tipChanged)            // BaseAnchor is not replaced.
+// 		require.Equal(t, prevAnchor, sm.lv.Value()) // BaseAnchor is not replaced.
 // 	}
 // }
 
@@ -112,7 +112,7 @@ package committeelog_test
 // 	//
 // 	// Notify the LocalView on the rejection.
 // 	rejectFrom := rapid.IntRange(0, len(sm.pending)-1).Draw(t, "reject.idx")
-// 	newTip, _ := sm.lv.AliasOutputRejected(sm.pending[rejectFrom])
+// 	newTip, _ := sm.lv.AnchorRejected(sm.pending[rejectFrom])
 // 	require.Equal(t, rejectFrom != 0, newTip == nil, "If that't not the first of the pending, then there are pending left, so the new tip is undefined.")
 // 	require.Equal(t, rejectFrom == 0, newTip != nil, "In this case, all the pending are marked as rejected, so we have the tip (the confirmed one).")
 // 	//
@@ -130,10 +130,10 @@ package committeelog_test
 // 		t.Skip()
 // 	}
 // 	selectedIdx := rapid.IntRange(0, len(sm.rejected)-1).Draw(t, "reject.idx")
-// 	selectedAO := sm.rejected[selectedIdx]
+// 	selectedAnchor := sm.rejected[selectedIdx]
 // 	//
 // 	// Perform the action.
-// 	_, tipChanged := sm.lv.AliasOutputRejected(selectedAO)
+// 	_, tipChanged := sm.lv.AnchorRejected(selectedAnchor)
 // 	require.False(t, tipChanged)
 // 	//
 // 	// Update the model.
@@ -149,39 +149,39 @@ package committeelog_test
 // 	}
 // 	//
 // 	// Perform the action.
-// 	prevAO := sm.lv.Value()
-// 	require.NotNil(t, prevAO)
-// 	newAO := sm.nextAO(prevAO)
-// 	tipAO, tipChanged := sm.lv.ConsensusOutputDone(cmtlog.NilLogIndex(), prevAO.GetObjectRef()) // TODO: LogIndex.
+// 	prevAnchor := sm.lv.Value()
+// 	require.NotNil(t, prevAnchor)
+// 	newAnchor := sm.nextAnchor(prevAnchor)
+// 	tipAnchor, tipChanged := sm.lv.ConsensusOutputDone(cmtlog.NilLogIndex(), prevAnchor.GetObjectRef()) // TODO: LogIndex.
 // 	require.True(t, tipChanged)
-// 	require.Equal(t, newAO, tipAO)
-// 	require.Equal(t, newAO, sm.lv.Value())
+// 	require.Equal(t, newAnchor, tipAnchor)
+// 	require.Equal(t, newAnchor, sm.lv.Value())
 // 	//
 // 	// Update the model.
-// 	sm.pending = append(sm.pending, newAO)
+// 	sm.pending = append(sm.pending, newAnchor)
 // }
 
 // // Here we check the invariants.
 // func (sm *varLocalViewSM) Check(t *rapid.T) {
 // 	t.Logf("Check, ModelStatus: %v", sm.modelStatus())
 // 	t.Logf("Check, %v", sm.lv.StatusString())
-// 	sm.propBaseAOProposedIfPossible(t)
-// 	sm.propBaseAOProposedCorrect(t)
+// 	sm.propBaseAnchorProposedIfPossible(t)
+// 	sm.propBaseAnchorProposedCorrect(t)
 // }
 
-// // We don't use randomness to generate AOs because they have to be unique.
-// func (sm *varLocalViewSM) nextAO(prevAO ...*isc.StateAnchor) *isc.StateAnchor {
+// // We don't use randomness to generate Anchors because they have to be unique.
+// func (sm *varLocalViewSM) nextAnchor(prevAnchor ...*isc.StateAnchor) *isc.StateAnchor {
 // 	sm.utxoIDCounter++
 // 	txIDBytes := []byte(fmt.Sprintf("%v", sm.utxoIDCounter))
 // 	utxoInput := iotago.UTXOInput{}
 // 	copy(utxoInput.TransactionID[:], txIDBytes)
 // 	utxoInput.TransactionOutputIndex = 0
-// 	if len(prevAO) > 1 {
-// 		panic("0/1 prevAO can be provided")
+// 	if len(prevAnchor) > 1 {
+// 		panic("0/1 prevAnchor can be provided")
 // 	}
 // 	var stateIndex uint32
-// 	if len(prevAO) == 1 {
-// 		stateIndex = prevAO[0].GetStateIndex() + 1
+// 	if len(prevAnchor) == 1 {
+// 		stateIndex = prevAnchor[0].GetStateIndex() + 1
 // 	} else {
 // 		stateIndex = uint32(sm.utxoIDCounter)
 // 	}
@@ -196,23 +196,23 @@ package committeelog_test
 // 	return &stateAnchor
 // }
 
-// // Alias output can be proposed, if there is at least one AO confirmed and there is no
+// // Alias output can be proposed, if there is at least one Anchor confirmed and there is no
 // // ongoing resync because of rejections.
 // func (sm *varLocalViewSM) nextChainStepPossible() bool {
 // 	return len(sm.confirmed) != 0 && !sm.rejSync
 // }
 
-// // The LocalView proposes next BaseAO if there is received at least 1 confirmed output
+// // The LocalView proposes next BaseAnchor if there is received at least 1 confirmed output
 // // and there is no rejections, that are not reported to the LocalView yet.
-// func (sm *varLocalViewSM) propBaseAOProposedIfPossible(t *rapid.T) {
+// func (sm *varLocalViewSM) propBaseAnchorProposedIfPossible(t *rapid.T) {
 // 	require.Equal(t,
 // 		sm.nextChainStepPossible(),
 // 		sm.lv.Value() != nil,
 // 	)
 // }
 
-// // If an BaseAO is proposed, it matches the last pending, or last confirmed, if there are no pending.
-// func (sm *varLocalViewSM) propBaseAOProposedCorrect(t *rapid.T) {
+// // If an BaseAnchor is proposed, it matches the last pending, or last confirmed, if there are no pending.
+// func (sm *varLocalViewSM) propBaseAnchorProposedCorrect(t *rapid.T) {
 // 	if sm.nextChainStepPossible() {
 // 		if len(sm.pending) != 0 {
 // 			require.Equal(t, sm.pending[len(sm.pending)-1], sm.lv.Value())

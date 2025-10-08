@@ -73,7 +73,7 @@ func DecodeInitParams(args isc.CallArguments) (*InitParams, error) {
 }
 
 // L1Commitment calculates the L1 commitment for the origin state
-// originDeposit must exclude the minSD for the AliasOutput
+// originDeposit must exclude the minSD for the Anchor
 func L1Commitment(
 	v isc.SchemaVersion,
 	args isc.CallArguments,

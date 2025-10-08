@@ -52,7 +52,7 @@ func TestBatchProposal1Serialization(t *testing.T) {
 	bpDecoded, err := bcs.Unmarshal[BatchProposal](bpEncoded)
 	require.NoError(t, err)
 	require.Equal(t, batchProposal.nodeIndex, bpDecoded.nodeIndex)
-	require.Equal(t, batchProposal.baseAliasOutput, bpDecoded.baseAliasOutput)
+	require.Equal(t, batchProposal.baseAnchor, bpDecoded.baseAnchor)
 	require.Equal(t, batchProposal.dssIndexProposal, bpDecoded.dssIndexProposal)
 	require.Equal(t, batchProposal.timeData.UnixNano(), bpDecoded.timeData.UnixNano())
 	require.Equal(t, batchProposal.validatorFeeDestination, bpDecoded.validatorFeeDestination)

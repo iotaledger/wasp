@@ -109,11 +109,11 @@ func testConsBasic(t *testing.T, n, f int) {
 	// err = errors.New("refactor me: testConsBasic")
 	// require.NoError(t, err)
 
-	// stateAnchor, aliasOutput, err := transaction.GetAnchorFromTransaction(originTX)
+	// stateAnchor, anchor, err := transaction.GetAnchorFromTransaction(originTX)
 	// require.NoError(t, err)
 	// require.NotNil(t, stateAnchor)
-	// require.NotNil(t, aliasOutput)
-	// stateAnchor0 := isc.NewAliasOutputWithID(aliasOutput, stateAnchor.OutputID)
+	// require.NotNil(t, anchor)
+	// stateAnchor0 := isc.NewAnchorWithID(anchor, stateAnchor.OutputID)
 	// err = utxoDB.AddToLedger(originTX)
 	// require.NoError(t, err)
 
@@ -389,13 +389,13 @@ func testChained(t *testing.T, n, f, b int) {
 	// Start the process by providing input to the first instance.
 	for _, nid := range nodeIDs {
 		t.Log("Going to provide inputs.")
-		originL1Commitment, err := transaction.L1CommitmentFromAliasOutput(anchor.GetAliasOutput())
+		originL1Commitment, err := transaction.L1CommitmentFromAnchor(anchor.GetAnchor())
 		require.NoError(t, err)
 		originState, err := testNodeStates[nid].StateByTrieRoot(originL1Commitment.TrieRoot())
 		require.NoError(t, err)
 		testChainInsts[0].input(&testInstInput{
 			nodeID:          nid,
-			baseAliasOutput: anchor,
+			baseAnchor: anchor,
 			baseState:       originState,
 		})
 	}
@@ -420,8 +420,8 @@ func testChained(t *testing.T, n, f, b int) {
 
 type testInstInput struct {
 	nodeID          gpa.NodeID
-	baseAliasOutput *isc.StateAnchor
-	baseState       state.State // State committed with the baseAliasOutput
+	baseAnchor *isc.StateAnchor
+	baseState       state.State // State committed with the baseAnchor
 }
 
 type testConsInst struct {
@@ -530,7 +530,7 @@ func (tci *testConsInst) run() {
 			}
 			tci.inputs[inp.nodeID] = inp
 			tci.lock.Unlock()
-			tci.tcInputCh <- map[gpa.NodeID]gpa.Input{inp.nodeID: cons.NewInputProposal(inp.baseAliasOutput)}
+			tci.tcInputCh <- map[gpa.NodeID]gpa.Input{inp.nodeID: cons.NewInputProposal(inp.baseAnchor)}
 			timeForStatus = time.After(3 * time.Second)
 			tci.tryHandleOutput(inp.nodeID)
 		case compInp, ok := <-tci.compInputPipe:
@@ -598,7 +598,7 @@ func (tci *testConsInst) tryHandleOutput(nodeID gpa.NodeID) { //nolint:gocyclo
 		require.NoError(tci.t, err)
 		tci.doneCB(&testInstInput{
 			nodeID:          nodeID,
-			baseAliasOutput: out.Result.NextAliasOutput,
+			baseAnchor: out.Result.NextAnchor,
 			baseState:       resultState,
 		})
 		tci.done[nodeID] = true
@@ -639,7 +639,7 @@ func (tci *testConsInst) tryHandleOutput(nodeID gpa.NodeID) { //nolint:gocyclo
 
 func (tci *testConsInst) tryHandledNeedMempoolProposal(nodeID gpa.NodeID, out *cons.Output, inp *testInstInput) {
 	if out.NeedMempoolProposal != nil && !tci.handledNeedMempoolProposal[nodeID] {
-		require.Equal(tci.t, out.NeedMempoolProposal, inp.baseAliasOutput)
+		require.Equal(tci.t, out.NeedMempoolProposal, inp.baseAnchor)
 		reqRefs := []*isc.RequestRef{}
 		for _, r := range tci.requests {
 			reqRefs = append(reqRefs, isc.RequestRefFromRequest(r))
@@ -651,7 +651,7 @@ func (tci *testConsInst) tryHandledNeedMempoolProposal(nodeID gpa.NodeID, out *c
 
 func (tci *testConsInst) tryHandledNeedStateMgrStateProposal(nodeID gpa.NodeID, out *cons.Output, inp *testInstInput) {
 	if out.NeedStateMgrStateProposal != nil && !tci.handledNeedStateMgrStateProposal[nodeID] {
-		require.Equal(tci.t, out.NeedStateMgrStateProposal, inp.baseAliasOutput)
+		require.Equal(tci.t, out.NeedStateMgrStateProposal, inp.baseAnchor)
 		tci.compInputPipe <- map[gpa.NodeID]gpa.Input{nodeID: cons.NewInputStateMgrProposalConfirmed()}
 		tci.handledNeedStateMgrStateProposal[nodeID] = true
 	}
@@ -679,7 +679,7 @@ func (tci *testConsInst) tryHandledNeedMempoolRequests(nodeID gpa.NodeID, out *c
 
 func (tci *testConsInst) tryHandledNeedStateMgrDecidedState(nodeID gpa.NodeID, out *cons.Output, inp *testInstInput) {
 	if out.NeedStateMgrDecidedState != nil && !tci.handledNeedStateMgrDecidedState[nodeID] {
-		if out.NeedStateMgrDecidedState.OutputID() == inp.baseAliasOutput.OutputID() {
+		if out.NeedStateMgrDecidedState.OutputID() == inp.baseAnchor.OutputID() {
 			tci.compInputPipe <- map[gpa.NodeID]gpa.Input{nodeID: cons.NewInputStateMgrDecidedVirtualState(inp.baseState)}
 		} else {
 			tci.t.Error("we have to sync between state managers, should not happen in this test")

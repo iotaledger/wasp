@@ -89,16 +89,16 @@ type Output struct {
 }
 
 type Result struct {
-	DecidedAO   *isc.StateAnchor              // The consumed state anchor.
-	Transaction *iotasigner.SignedTransaction // The TX for committing the block.
-	Block       state.Block                   // The state diff produced.
+	DecidedAnchor *isc.StateAnchor              // The consumed state anchor.
+	Transaction   *iotasigner.SignedTransaction // The TX for committing the block.
+	Block         state.Block                   // The state diff produced.
 }
 
 func (r *Result) String() string {
 	return fmt.Sprintf(
-		"{cons.Result, txDigest=%s, baseAO=%v, outBlockHash=%v}",
+		"{cons.Result, txDigest=%s, baseAnchor=%v, outBlockHash=%v}",
 		lo.Must(r.Transaction.Digest()),
-		r.DecidedAO,
+		r.DecidedAnchor,
 		r.Block.Hash(),
 	)
 }
@@ -287,9 +287,9 @@ func (c *consensusImpl) Input(input gpa.Input) gpa.OutMessages {
 	case *inputProposal:
 		c.log.LogInfof("Consensus started, received %v", input.String())
 		return gpa.NoMessages().
-			AddAll(c.subNC.HaveInputAnchor(input.baseAliasOutput)).
-			AddAll(c.subMP.BaseAliasOutputReceived(input.baseAliasOutput)).
-			AddAll(c.subSM.ProposedBaseAliasOutputReceived(input.baseAliasOutput)).
+			AddAll(c.subNC.HaveInputAnchor(input.baseAnchor)).
+			AddAll(c.subMP.BaseAnchorReceived(input.baseAnchor)).
+			AddAll(c.subSM.ProposedBaseAnchorReceived(input.baseAnchor)).
 			AddAll(c.subDSS.InitialInputReceived())
 	case *inputRotateTo:
 		// We can update the rotation address while consensus is running.
@@ -363,12 +363,12 @@ func (c *consensusImpl) StatusString() string {
 ////////////////////////////////////////////////////////////////////////////////
 // MP -- MemPool
 
-func (c *consensusImpl) uponMPProposalInputsReady(baseAliasOutput *isc.StateAnchor) gpa.OutMessages {
-	if baseAliasOutput == nil {
-		// If the base AO is nil, we are not going to propose any requests.
+func (c *consensusImpl) uponMPProposalInputsReady(baseAnchor *isc.StateAnchor) gpa.OutMessages {
+	if baseAnchor == nil {
+		// If the base Anchor is nil, we are not going to propose any requests.
 		return c.subMP.ProposalReceived([]*isc.RequestRef{})
 	}
-	c.output.NeedMempoolProposal = baseAliasOutput
+	c.output.NeedMempoolProposal = baseAnchor
 	return nil
 }
 
@@ -393,25 +393,25 @@ func (c *consensusImpl) uponMPRequestsReceived(requests []isc.Request) gpa.OutMe
 ////////////////////////////////////////////////////////////////////////////////
 // SM -- StateManager
 
-func (c *consensusImpl) uponSMStateProposalQueryInputsReady(baseAliasOutput *isc.StateAnchor) gpa.OutMessages {
-	if baseAliasOutput == nil {
-		// Don't wait for the state if no base AO is known.
+func (c *consensusImpl) uponSMStateProposalQueryInputsReady(baseAnchor *isc.StateAnchor) gpa.OutMessages {
+	if baseAnchor == nil {
+		// Don't wait for the state if no base Anchor is known.
 		return c.subSM.StateProposalConfirmedByStateMgr()
 	}
-	c.output.NeedStateMgrStateProposal = baseAliasOutput
+	c.output.NeedStateMgrStateProposal = baseAnchor
 	return nil
 }
 
-func (c *consensusImpl) uponSMStateProposalReceived(proposedAliasOutput *isc.StateAnchor) gpa.OutMessages {
+func (c *consensusImpl) uponSMStateProposalReceived(proposedAnchor *isc.StateAnchor) gpa.OutMessages {
 	c.output.NeedStateMgrStateProposal = nil
 	msgs := gpa.NoMessages()
-	msgs.AddAll(c.subACS.StateProposalReceived(proposedAliasOutput))
+	msgs.AddAll(c.subACS.StateProposalReceived(proposedAnchor))
 	msgs.AddAll(c.subNC.HaveState())
 	return msgs
 }
 
-func (c *consensusImpl) uponSMDecidedStateQueryInputsReady(decidedBaseAliasOutput *isc.StateAnchor) gpa.OutMessages {
-	c.output.NeedStateMgrDecidedState = decidedBaseAliasOutput
+func (c *consensusImpl) uponSMDecidedStateQueryInputsReady(decidedBaseAnchor *isc.StateAnchor) gpa.OutMessages {
+	c.output.NeedStateMgrDecidedState = decidedBaseAnchor
 	return nil
 }
 
@@ -493,7 +493,7 @@ func (c *consensusImpl) uponDSSOutputReady(signature []byte) gpa.OutMessages {
 // ACS
 
 func (c *consensusImpl) uponACSInputsReceived(
-	baseAliasOutput *isc.StateAnchor, // Can be nil.
+	baseAnchor *isc.StateAnchor, // Can be nil.
 	requestRefs []*isc.RequestRef,
 	dssIndexProposal []int,
 	timeData time.Time,
@@ -507,7 +507,7 @@ func (c *consensusImpl) uponACSInputsReceived(
 	}
 	batchProposal := bp.NewBatchProposal(
 		*c.dkShare.GetIndex(),
-		baseAliasOutput, // Will be NIL in the case of ⊥ proposal.
+		baseAnchor, // Will be NIL in the case of ⊥ proposal.
 		util.NewFixedSizeBitVector(c.dkShare.GetN()).SetBits(dssIndexProposal),
 		rotateTo,
 		timeData,
@@ -535,10 +535,10 @@ func (c *consensusImpl) uponACSOutputReceived(outputValues map[gpa.NodeID][]byte
 		c.term.haveOutputProduced()
 		return nil
 	}
-	bao := aggr.DecidedBaseAliasOutput()
+	bao := aggr.DecidedBaseAnchor()
 	baoID := bao.GetObjectRef()
 	reqs := aggr.DecidedRequestRefs()
-	c.log.LogDebugf("ACS decision: baseAO=%v, requests=%v", bao, reqs)
+	c.log.LogDebugf("ACS decision: baseAnchor=%v, requests=%v", bao, reqs)
 	if aggr.DecidedRotateTo() != nil {
 		c.log.LogDebugf("Will rotate to %v", aggr.DecidedRotateTo().ToHex())
 		rotationPTB := vmtxbuilder.NewAnchorTransactionBuilder(bao.ISCPackage(), bao, c.dkShare.GetAddress())
@@ -598,8 +598,8 @@ func (c *consensusImpl) uponRNDSigSharesReady(dataToSign []byte, partialSigs map
 // VM
 
 func (c *consensusImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedBatchProposals, chainState state.State, randomness *hashing.HashValue, requests []isc.Request) gpa.OutMessages {
-	decidedBaseAliasOutput := aggregatedProposals.DecidedBaseAliasOutput()
-	stateAnchor := isc.NewStateAnchor(decidedBaseAliasOutput.Anchor(), decidedBaseAliasOutput.ISCPackage())
+	decidedBaseAnchor := aggregatedProposals.DecidedBaseAnchor()
+	stateAnchor := isc.NewStateAnchor(decidedBaseAnchor.Anchor(), decidedBaseAnchor.ISCPackage())
 	gasCoins := aggregatedProposals.AggregatedGasCoins()
 	// FIXME we need only one
 	if len(gasCoins) != 1 {
@@ -622,7 +622,7 @@ func (c *consensusImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedB
 		Log:                  c.log.NewChildLogger("VM"),
 		Migrations:           allmigrations.DefaultScheme,
 	}
-	return c.subTX.AnchorDecided(decidedBaseAliasOutput)
+	return c.subTX.AnchorDecided(decidedBaseAnchor)
 }
 
 func (c *consensusImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult, aggregatedProposals *bp.AggregatedBatchProposals) gpa.OutMessages {
@@ -681,13 +681,13 @@ func (c *consensusImpl) makeTransactionSigningBytes(txData *iotago.TransactionDa
 }
 
 // Everything is ready for the output TX, produce it.
-func (c *consensusImpl) uponTXInputsReady(decidedAO *isc.StateAnchor, unsignedTX *iotago.TransactionData, block state.Block, signature []byte) gpa.OutMessages {
+func (c *consensusImpl) uponTXInputsReady(decidedAnchor *isc.StateAnchor, unsignedTX *iotago.TransactionData, block state.Block, signature []byte) gpa.OutMessages {
 	suiSignature := cryptolib.NewSignature(c.dkShare.GetSharedPublic(), signature).AsIotaSignature()
 	signedTX := iotasigner.NewSignedTransaction(unsignedTX, suiSignature)
 	c.output.Result = &Result{
-		DecidedAO:   decidedAO,
-		Transaction: signedTX,
-		Block:       block,
+		DecidedAnchor: decidedAnchor,
+		Transaction:   signedTX,
+		Block:         block,
 	}
 	c.output.Status = Completed
 	c.log.LogInfof("Terminating consensus with status=Completed")

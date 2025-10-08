@@ -2,17 +2,17 @@
 // for a particular committee. The main functions:
 //
 //   - Propose to start a consensus instance at a specific LI.
-//   - Propose the input for a consensus instance (AO).
+//   - Propose the input for a consensus instance (Anchor).
 //
 // The main idea:
 //
 //   - In the normal operation, don't consider L1 state at all.
 //     Use the anchor ref returned by L1 as a result the previously posted TX.
 //
-//   - On boot a node proposes ⊥ as a base AO.
+//   - On boot a node proposes ⊥ as a base Anchor.
 //     It uses ConsStarted Quorum counter to find that?
 //
-//   - If consensus decides BaseAO=⊥, the nodes will propose latest known L1 AO,
+//   - If consensus decides BaseAnchor=⊥, the nodes will propose latest known L1 Anchor,
 //     as reported by their clients.
 //
 //   - A lagging node will join LI-1 instance with ⊥ and then will input its
@@ -52,7 +52,7 @@ type ConsensusStateRegistry interface {
 var ErrCommitteeLogStateNotFound = errors.New("errCmtLogStateNotFound")
 
 // Output is a set of log indexes for which we should run the consensus with
-// the values indicated here. Nil means ⊥ here. The output might change AO to ⊥
+// the values indicated here. Nil means ⊥ here. The output might change Anchor to ⊥
 // for a particular LI, but not opposite. The updated value should only be used if
 // the previous value was not yet proposed to the consensus (unlikely), otherwise
 // the update can be ignored.
@@ -87,7 +87,7 @@ func New(
 	dkShare tcrypto.DKShare,
 	consensusStateRegistry ConsensusStateRegistry,
 	nodeIDFromPubKey func(pubKey *cryptolib.PublicKey) gpa.NodeID,
-	deriveAOByQuorum bool,
+	deriveAnchorByQuorum bool,
 	pipeliningLimit int,
 	cclMetrics *metrics.ChainCommitteeLogMetrics,
 	log log.Logger,
@@ -156,7 +156,7 @@ func New(
 	}, cclMetrics, log.NewChildLogger("VLI"))
 	cl.varLocalView = NewVarLocalView(pipeliningLimit, func(ao *isc.StateAnchor) gpa.OutMessages {
 		log.LogDebugf("VarLocalView: Output received, %v", ao)
-		return cl.varConsInsts.LatestL1AO(ao, cl.varLogIndex.ConsensusStarted)
+		return cl.varConsInsts.LatestL1Anchor(ao, cl.varLogIndex.ConsensusStarted)
 	}, log.NewChildLogger("VLV"))
 	cl.asGPA = gpa.NewOwnHandler(me, cl)
 	return cl, nil
@@ -208,7 +208,7 @@ func (cl *committeeLogImpl) Message(msg gpa.Message) gpa.OutMessages {
 // The latest anchor object's version confirmed at the L1.
 func (cl *committeeLogImpl) handleInputAnchorConfirmed(input *inputAnchorConfirmed) gpa.OutMessages {
 	cl.suspended = false
-	return cl.varLocalView.AnchorObjectConfirmed(input.anchor)
+	return cl.varLocalView.AnchorConfirmed(input.anchor)
 }
 
 // Consensus completed with a decision to SKIP/⊥.
@@ -218,12 +218,12 @@ func (cl *committeeLogImpl) handleInputConsensusOutputSkip(input *inputConsensus
 
 // Consensus has decided, produced a TX and it is now confirmed by L1.
 func (cl *committeeLogImpl) handleInputConsensusOutputConfirmed(input *inputConsensusOutputConfirmed) gpa.OutMessages {
-	return cl.varConsInsts.ConsOutputDone(input.logIndex, input.nextAnchorObject, cl.varLogIndex.ConsensusStarted)
+	return cl.varConsInsts.ConsOutputDone(input.logIndex, input.nextAnchor, cl.varLogIndex.ConsensusStarted)
 }
 
 // Consensus has decided, produced a TX but it was rejected by L1.
 func (cl *committeeLogImpl) handleInputConsensusOutputRejected(input *inputConsensusOutputRejected) gpa.OutMessages {
-	return cl.varConsInsts.ConsOutputSkip(input.logIndex, cl.varLogIndex.ConsensusStarted) // This will cause proposal of our latest L1 AO.
+	return cl.varConsInsts.ConsOutputSkip(input.logIndex, cl.varLogIndex.ConsensusStarted) // This will cause proposal of our latest L1 Anchor.
 }
 
 // Consensus tries to decide for too long. Maybe quorum assumption has been violated.

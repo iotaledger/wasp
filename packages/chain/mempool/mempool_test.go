@@ -79,10 +79,10 @@ func TestMempoolBasic(t *testing.T) {
 
 // Scenario:
 //   - Send an on-ledger/off-ledger requests to different nodes.
-//   - Send BaseAO to all nodes.
+//   - Send BaseAnchor to all nodes.
 //   - Get proposals in all nodes -> all have at least 1 of those reqs.
 //   - Get both requests for all nodes.
-//   - Send next BaseAO on all nodes.
+//   - Send next BaseAnchor on all nodes.
 //   - Get proposals -- all waiting.
 //   - Send a request.
 //   - Get proposals -- all received 1 request.

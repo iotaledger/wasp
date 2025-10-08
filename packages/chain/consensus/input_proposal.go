@@ -12,18 +12,18 @@ import (
 
 // That's the main/initial input for the consensus.
 type inputProposal struct {
-	baseAliasOutput *isc.StateAnchor
+	baseAnchor *isc.StateAnchor
 }
 
-func NewInputProposal(baseAliasOutput *isc.StateAnchor) gpa.Input {
-	return &inputProposal{baseAliasOutput: baseAliasOutput}
+func NewInputProposal(baseAnchor *isc.StateAnchor) gpa.Input {
+	return &inputProposal{baseAnchor: baseAnchor}
 }
 
 func (ip *inputProposal) String() string {
-	/*l1Commitment, err := transaction.L1CommitmentFromAliasOutput(ip.baseAliasOutput.GetAliasOutput())
+	/*l1Commitment, err := transaction.L1CommitmentFromAnchor(ip.baseAnchor.GetAnchor())
 	if err != nil {
 		panic(fmt.Errorf("cannot extract L1 commitment from alias output: %w", err))
 	}
-	return fmt.Sprintf("{cons.inputProposal: baseAliasOutput=%v, l1Commitment=%v}", ip.baseAliasOutput, l1Commitment)*/
-	return fmt.Sprintf("{cons.inputProposal: baseAliasOutput=%v}", ip.baseAliasOutput)
+	return fmt.Sprintf("{cons.inputProposal: baseAnchor=%v, l1Commitment=%v}", ip.baseAnchor, l1Commitment)*/
+	return fmt.Sprintf("{cons.inputProposal: baseAnchor=%v}", ip.baseAnchor)
 }

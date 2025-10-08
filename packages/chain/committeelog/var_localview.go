@@ -5,18 +5,18 @@
 // achor object to propose to the ACS. The achor object decided by the ACS will be used
 // as an input for TX we build.
 //
-// The LocalView maintains a list of achor objects (AOs). The are chained based on consumed/produced
-// AOs in a transaction we publish. The goal here is to tract the unconfirmed achor objects, update
+// The LocalView maintains a list of achor objects (Anchors). The are chained based on consumed/produced
+// Anchors in a transaction we publish. The goal here is to tract the unconfirmed achor objects, update
 // the list based on confirmations/rejections from the L1.
 //
 // In overall, the LocalView acts as a filter between the L1 and LogIndex assignment in varLogIndex.
-// It has to distinguish between AOs that are confirming a prefix of the posted transaction (pipelining),
+// It has to distinguish between Anchors that are confirming a prefix of the posted transaction (pipelining),
 // from other changes in L1 (rotations, rollbacks, rejections, etc.).
 //
 // We have several inputs:
 //
 //   - **Achor Object Confirmed**.
-//     It can be AO posted by this committee,
+//     It can be Anchor posted by this committee,
 //     as well as by other committee (e.g. chain was rotated to other committee and then back)
 //     or a user (e.g. external rotation TX).
 //
@@ -28,18 +28,18 @@
 //     Consensus produced a TX, and will post it to the L1.
 //
 //   - **Consensus Skip**.
-//     Consensus completed without producing a TX and a block. So the previous AO is left actual.
+//     Consensus completed without producing a TX and a block. So the previous Anchor is left actual.
 //
 //   - **Consensus Recover**.
 //     Consensus is still running, but it takes long time, so maybe something is wrong
-//     and we should consider spawning another consensus for the same base AO.
+//     and we should consider spawning another consensus for the same base Anchor.
 //
 // On the pipelining -- the current L1 model don't allow us to do any kind of pipelining,
 // apart from creating L2 blocks without committing them to the L1. But that's not the
 // responsibility of the local view component.
 //
-// Note on the AO as an input for a consensus. The provided AO is just a proposal. After ACS
-// is completed, the participants will select the actual AO, which can differ from the one
+// Note on the Anchor as an input for a consensus. The provided Anchor is just a proposal. After ACS
+// is completed, the participants will select the actual Anchor, which can differ from the one
 // proposed by this node.
 package committeelog
 
@@ -58,11 +58,11 @@ import (
 
 type VarLocalView interface {
 	//
-	// Called in the case of new AO from L1.
-	AnchorObjectConfirmed(confirmedAO *isc.StateAnchor) gpa.OutMessages
+	// Called in the case of new Anchor from L1.
+	AnchorConfirmed(confirmedAnchor *isc.StateAnchor) gpa.OutMessages
 	//
 	// Called by the consensus to determine if a produced TX can be posted to the L1.
-	TransactionProduced(logIndex LogIndex, consumedAO *isc.StateAnchor, tx *iotasigner.SignedTransaction) gpa.OutMessages // TODO: Call it.
+	TransactionProduced(logIndex LogIndex, consumedAnchor *isc.StateAnchor, tx *iotasigner.SignedTransaction) gpa.OutMessages // TODO: Call it.
 	//
 	// Called if a TX is rejected.
 	// This will always be called after TransactionProduced.
@@ -73,16 +73,16 @@ type VarLocalView interface {
 }
 
 type varLocalViewEntry struct {
-	logIndex    LogIndex
-	consumedAO  *isc.StateAnchor
-	transaction *iotasigner.SignedTransaction
+	logIndex       LogIndex
+	consumedAnchor *isc.StateAnchor
+	transaction    *iotasigner.SignedTransaction
 }
 
 type varLocalViewImpl struct {
 	latestTip *isc.StateAnchor
-	// The latest confirmed AO, as received from L1.
-	// It can be nil, if the latest AO is unclear (either not received yet).
-	confirmedAO *isc.StateAnchor
+	// The latest confirmed Anchor, as received from L1.
+	// It can be nil, if the latest Anchor is unclear (either not received yet).
+	confirmedAnchor *isc.StateAnchor
 	// Transactions that are ready to be posted.
 	pendingTXes *shrinkingmap.ShrinkingMap[uint32, []*varLocalViewEntry]
 	// Callback for the TIP changes.
@@ -94,30 +94,30 @@ type varLocalViewImpl struct {
 func NewVarLocalView(pipeliningLimit int, tipUpdatedCB func(ao *isc.StateAnchor) gpa.OutMessages, log log.Logger) VarLocalView {
 	log.LogDebugf("NewVarLocalView, pipeliningLimit=%v", pipeliningLimit)
 	return &varLocalViewImpl{
-		latestTip:    nil,
-		confirmedAO:  nil,
-		pendingTXes:  shrinkingmap.New[uint32, []*varLocalViewEntry](),
-		tipUpdatedCB: tipUpdatedCB,
-		log:          log,
+		latestTip:       nil,
+		confirmedAnchor: nil,
+		pendingTXes:     shrinkingmap.New[uint32, []*varLocalViewEntry](),
+		tipUpdatedCB:    tipUpdatedCB,
+		log:             log,
 	}
 }
 
-func (lvi *varLocalViewImpl) AnchorObjectConfirmed(confirmedAO *isc.StateAnchor) gpa.OutMessages {
-	lvi.confirmedAO = confirmedAO
+func (lvi *varLocalViewImpl) AnchorConfirmed(confirmedAnchor *isc.StateAnchor) gpa.OutMessages {
+	lvi.confirmedAnchor = confirmedAnchor
 	return lvi.processIt()
 }
 
-func (lvi *varLocalViewImpl) TransactionProduced(logIndex LogIndex, consumedAO *isc.StateAnchor, tx *iotasigner.SignedTransaction) gpa.OutMessages {
-	stateIndex := consumedAO.GetStateIndex()
+func (lvi *varLocalViewImpl) TransactionProduced(logIndex LogIndex, consumedAnchor *isc.StateAnchor, tx *iotasigner.SignedTransaction) gpa.OutMessages {
+	stateIndex := consumedAnchor.GetStateIndex()
 	stateIndexEntries, _ := lvi.pendingTXes.GetOrCreate(stateIndex, func() []*varLocalViewEntry { return []*varLocalViewEntry{} })
 	contains := lo.ContainsBy(stateIndexEntries, func(entry *varLocalViewEntry) bool {
 		return lo.Must(tx.Digest()).Equals(*lo.Must(entry.transaction.Digest()))
 	})
 	if !contains {
 		stateIndexEntries = append(stateIndexEntries, &varLocalViewEntry{
-			logIndex:    logIndex,
-			consumedAO:  consumedAO,
-			transaction: tx,
+			logIndex:       logIndex,
+			consumedAnchor: consumedAnchor,
+			transaction:    tx,
 		})
 		lvi.pendingTXes.Set(stateIndex, stateIndexEntries)
 	}
@@ -140,15 +140,15 @@ func (lvi *varLocalViewImpl) TransactionRejected(logIndex LogIndex) gpa.OutMessa
 }
 
 func (lvi *varLocalViewImpl) StatusString() string {
-	return fmt.Sprintf("{varLocalView: confirmedAO=%v, |pendingTxIndexes|=%v}", lvi.confirmedAO, lvi.pendingTXes.Size())
+	return fmt.Sprintf("{varLocalView: confirmedAnchor=%v, |pendingTxIndexes|=%v}", lvi.confirmedAnchor, lvi.pendingTXes.Size())
 }
 
 func (lvi *varLocalViewImpl) processIt() gpa.OutMessages {
-	if lvi.confirmedAO == nil {
+	if lvi.confirmedAnchor == nil {
 		lvi.updateVal(nil)
 		return nil
 	}
-	confirmedStateIndex := lvi.confirmedAO.GetStateIndex()
+	confirmedStateIndex := lvi.confirmedAnchor.GetStateIndex()
 
 	//
 	// Cleanup outdated.
@@ -164,7 +164,7 @@ func (lvi *varLocalViewImpl) processIt() gpa.OutMessages {
 		return lvi.updateVal(nil)
 	}
 
-	return lvi.updateVal(lvi.confirmedAO)
+	return lvi.updateVal(lvi.confirmedAnchor)
 }
 
 func (lvi *varLocalViewImpl) updateVal(tip *isc.StateAnchor) gpa.OutMessages {

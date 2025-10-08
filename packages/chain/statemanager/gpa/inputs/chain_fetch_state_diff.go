@@ -24,7 +24,7 @@ var _ gpa.Input = &ChainFetchStateDiff{}
 
 func NewChainFetchStateDiff(ctx context.Context, prevAnchor, nextAnchor *isc.StateAnchor) (*ChainFetchStateDiff, <-chan *ChainFetchStateDiffResults) {
 	if prevAnchor == nil {
-		// Only the current state is needed, if prevAO is unknown.
+		// Only the current state is needed, if prevAnchor is unknown.
 		prevAnchor = nextAnchor
 	}
 	oldCommitment, err := transaction.L1CommitmentFromAnchor(prevAnchor)

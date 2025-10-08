@@ -21,15 +21,15 @@ import (
 
 // AggregatedBatchProposals stores just an aggregated info.
 type AggregatedBatchProposals struct {
-	shouldBeSkipped        bool
-	batchProposalSet       batchProposalSet
-	decidedIndexProposals  map[gpa.NodeID][]int
-	decidedBaseAliasOutput *isc.StateAnchor
-	decidedRequestRefs     []*isc.RequestRef
-	decidedRotateTo        *iotago.Address
-	aggregatedTime         time.Time
-	aggregatedGasCoins     []*coin.CoinWithRef
-	aggregatedL1Params     *parameters.L1Params
+	shouldBeSkipped       bool
+	batchProposalSet      batchProposalSet
+	decidedIndexProposals map[gpa.NodeID][]int
+	decidedBaseAnchor     *isc.StateAnchor
+	decidedRequestRefs    []*isc.RequestRef
+	decidedRotateTo       *iotago.Address
+	aggregatedTime        time.Time
+	aggregatedGasCoins    []*coin.CoinWithRef
+	aggregatedL1Params    *parameters.L1Params
 }
 
 func AggregateBatchProposals(inputs map[gpa.NodeID][]byte, nodeIDs []gpa.NodeID, f int, log log.Logger) *AggregatedBatchProposals {
@@ -47,7 +47,7 @@ func AggregateBatchProposals(inputs map[gpa.NodeID][]byte, nodeIDs []gpa.NodeID,
 			log.LogWarnf("cannot decode BatchProposal from %v: %v", nid, err)
 			continue
 		}
-		if batchProposal.baseAliasOutput == nil {
+		if batchProposal.baseAnchor == nil {
 			nilCount++
 		}
 		if int(batchProposal.nodeIndex) >= len(nodeIDs) || nodeIDs[batchProposal.nodeIndex] != nid {
@@ -67,28 +67,28 @@ func AggregateBatchProposals(inputs map[gpa.NodeID][]byte, nodeIDs []gpa.NodeID,
 		return &AggregatedBatchProposals{shouldBeSkipped: true}
 	}
 	aggregatedTime := bps.aggregatedTime(f)
-	decidedBaseAliasOutput := bps.decidedBaseAliasOutput(f)
+	decidedBaseAnchor := bps.decidedBaseAnchor(f)
 	aggregatedGasCoins := bps.aggregatedGasCoins(f)
 	aggregatedL1Params := bps.aggregatedL1Params(f)
 	abp := &AggregatedBatchProposals{
-		batchProposalSet:       bps,
-		decidedIndexProposals:  bps.decidedDSSIndexProposals(),
-		decidedBaseAliasOutput: decidedBaseAliasOutput,
-		decidedRequestRefs:     bps.decidedRequestRefs(f, decidedBaseAliasOutput),
-		decidedRotateTo:        bps.decidedRotateTo(f),
-		aggregatedTime:         aggregatedTime,
-		aggregatedGasCoins:     aggregatedGasCoins,
-		aggregatedL1Params:     aggregatedL1Params,
+		batchProposalSet:      bps,
+		decidedIndexProposals: bps.decidedDSSIndexProposals(),
+		decidedBaseAnchor:     decidedBaseAnchor,
+		decidedRequestRefs:    bps.decidedRequestRefs(f, decidedBaseAnchor),
+		decidedRotateTo:       bps.decidedRotateTo(f),
+		aggregatedTime:        aggregatedTime,
+		aggregatedGasCoins:    aggregatedGasCoins,
+		aggregatedL1Params:    aggregatedL1Params,
 	}
-	if abp.decidedBaseAliasOutput == nil ||
+	if abp.decidedBaseAnchor == nil ||
 		len(abp.decidedRequestRefs) == 0 ||
 		// No need to check the rotateTo field here.
 		abp.aggregatedTime.IsZero() ||
 		len(abp.aggregatedGasCoins) == 0 ||
 		abp.aggregatedL1Params == nil {
 		log.LogDebugf(
-			"Can't aggregate batch proposal: decidedBaseAliasOutput=%v, |decidedRequestRefs|=%v, |aggregatedGasCoins|=%v, |aggregatedL1Params|=%v , aggregatedTime=%v",
-			abp.decidedBaseAliasOutput, len(abp.decidedRequestRefs), len(abp.aggregatedGasCoins), abp.aggregatedL1Params, abp.aggregatedTime,
+			"Can't aggregate batch proposal: decidedBaseAnchor=%v, |decidedRequestRefs|=%v, |aggregatedGasCoins|=%v, |aggregatedL1Params|=%v , aggregatedTime=%v",
+			abp.decidedBaseAnchor, len(abp.decidedRequestRefs), len(abp.aggregatedGasCoins), abp.aggregatedL1Params, abp.aggregatedTime,
 		)
 		abp.shouldBeSkipped = true
 	}
@@ -106,11 +106,11 @@ func (abp *AggregatedBatchProposals) DecidedDSSIndexProposals() map[gpa.NodeID][
 	return abp.decidedIndexProposals
 }
 
-func (abp *AggregatedBatchProposals) DecidedBaseAliasOutput() *isc.StateAnchor {
+func (abp *AggregatedBatchProposals) DecidedBaseAnchor() *isc.StateAnchor {
 	if abp.shouldBeSkipped {
 		panic("trying to use aggregated proposal marked to be skipped")
 	}
-	return abp.decidedBaseAliasOutput
+	return abp.decidedBaseAnchor
 }
 
 func (abp *AggregatedBatchProposals) DecidedRotateTo() *iotago.Address {

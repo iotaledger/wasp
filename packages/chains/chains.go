@@ -87,7 +87,7 @@ type Chains struct {
 	log                        log.Logger
 	nodeConnection             chain.NodeConnection
 	processorConfig            *processors.Config
-	deriveAliasOutputByQuorum  bool
+	deriveAnchorByQuorum       bool
 	pipeliningLimit            int
 	postponeRecoveryMilestones int
 	consensusDelay             time.Duration
@@ -149,7 +149,7 @@ func New(
 	nodeConnection chain.NodeConnection,
 	processorConfig *processors.Config,
 	validatorAddrStr string,
-	deriveAliasOutputByQuorum bool,
+	deriveAnchorByQuorum bool,
 	pipeliningLimit int,
 	postponeRecoveryMilestones int,
 	consensusDelay time.Duration,
@@ -199,7 +199,7 @@ func New(
 		allChains:                           shrinkingmap.New[isc.ChainID, *activeChain](),
 		nodeConnection:                      nodeConnection,
 		processorConfig:                     processorConfig,
-		deriveAliasOutputByQuorum:           deriveAliasOutputByQuorum,
+		deriveAnchorByQuorum:                deriveAnchorByQuorum,
 		pipeliningLimit:                     pipeliningLimit,
 		consensusDelay:                      consensusDelay,
 		recoveryTimeout:                     recoveryTimeout,
@@ -439,7 +439,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID, mode ChainMode) err
 		chainShutdownCoordinator,
 		func() { c.chainMetricsProvider.RegisterChain(chainID) },
 		func() { c.chainMetricsProvider.UnregisterChain(chainID) },
-		c.deriveAliasOutputByQuorum,
+		c.deriveAnchorByQuorum,
 		c.pipeliningLimit,
 		c.postponeRecoveryMilestones,
 		c.consensusDelay,

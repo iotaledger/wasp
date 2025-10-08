@@ -113,7 +113,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 			trackActiveStateCB,
 			savePreliminaryBlockCB,
 			updateCommitteeNodesCB,
-			true, // deriveAOByQuorum
+			true, // deriveAnchorByQuorum
 			-1,   // pipeliningLimit
 			1,    // postponeRecoveryMilestones
 			nil,  // metrics
@@ -125,15 +125,15 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	tc := gpa.NewTestContext(nodes)
 	tc.PrintAllStatusStrings("Started", t.Logf)
 	//
-	// Provide initial AO.
+	// Provide initial Anchor.
 	// Nevertheless, the first round after a reboot should have ⊥ as input to synchronize with each other.
-	initAOInputs := map[gpa.NodeID]gpa.Input{}
+	initAnchorInputs := map[gpa.NodeID]gpa.Input{}
 	for nid := range nodes {
-		initAOInputs[nid] = chainmanager.NewInputAnchorConfirmed(committeeAddrA, anchor)
+		initAnchorInputs[nid] = chainmanager.NewInputAnchorConfirmed(committeeAddrA, anchor)
 	}
-	tc.WithInputs(initAOInputs).RunAll()
-	tc.PrintAllStatusStrings("Initial AO received", t.Logf)
-	initAOLogIndex := committeelog.NilLogIndex()
+	tc.WithInputs(initAnchorInputs).RunAll()
+	tc.PrintAllStatusStrings("Initial Anchor received", t.Logf)
+	initAnchorLogIndex := committeelog.NilLogIndex()
 	for nid, n := range nodes {
 		out := n.Output().(*chainmanager.Output)
 		ncm := needCons[nid]
@@ -144,7 +144,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 			require.Nil(t, nc.BaseStateAnchor)
 			require.Equal(t, uint32(1), nc.LogIndex.AsUint32())
 			require.Equal(t, committeeAddrA, &nc.CommitteeAddr)
-			initAOLogIndex = nc.LogIndex
+			initAnchorLogIndex = nc.LogIndex
 			return true
 		})
 	}
@@ -153,13 +153,13 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	// So, we report consensus output to the chainMgr as ⊥.
 	inputs := map[gpa.NodeID]gpa.Input{}
 	for nid := range nodes {
-		inputs[nid] = chainmanager.NewInputConsensusOutputSkip(*committeeAddrA, initAOLogIndex)
+		inputs[nid] = chainmanager.NewInputConsensusOutputSkip(*committeeAddrA, initAnchorLogIndex)
 	}
 	tc.WithInputs(inputs).RunAll()
-	tc.PrintAllStatusStrings("Next AO received", t.Logf)
+	tc.PrintAllStatusStrings("Next Anchor received", t.Logf)
 	//
 	// Now the next consensus instance should be requested.
-	// Since the previous consensus decided ⊥, now all the nodes will propose the latest AO received from L1.
+	// Since the previous consensus decided ⊥, now all the nodes will propose the latest Anchor received from L1.
 	for nid, n := range nodes {
 		out := n.Output().(*chainmanager.Output)
 		ncm := needCons[nid]
@@ -185,7 +185,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	// it was posted to the L1 and now we sending a response to the chain manager.
 	tx1Digest := iotatest.RandomDigest()
 	tx1OutSI := anchor.Anchor().Object.StateIndex + uint32(1)
-	tx1OutAO := isctest.RandomStateAnchor(isctest.RandomAnchorOption{
+	tx1OutAnchor := isctest.RandomStateAnchor(isctest.RandomAnchorOption{
 		ID:         anchor.GetObjectID(),
 		StateIndex: &tx1OutSI,
 	})
@@ -194,7 +194,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 			*committeeAddrA,
 			committeelog.LogIndex(2),
 			*tx1Digest,
-			&tx1OutAO,
+			&tx1OutAnchor,
 			true,
 		)
 	})).RunAll()
@@ -213,7 +213,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 				require.Equal(t, anchor, nc.BaseStateAnchor)
 				require.Equal(t, committeeAddrA, &nc.CommitteeAddr)
 			case 3:
-				require.Equal(t, &tx1OutAO, nc.BaseStateAnchor)
+				require.Equal(t, &tx1OutAnchor, nc.BaseStateAnchor)
 				require.Equal(t, committeeAddrA, &nc.CommitteeAddr)
 			default:
 				panic("unexpected LI here")
