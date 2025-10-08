@@ -1,4 +1,4 @@
-package bp_test
+package batchproposal_test
 
 import (
 	"math/rand"
@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/iotatest"
-	"github.com/iotaledger/wasp/v2/packages/chain/consensus/bp"
+	"github.com/iotaledger/wasp/v2/packages/chain/consensus/batchproposal"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
@@ -42,7 +42,7 @@ func TestOffLedgerOrdering(t *testing.T) {
 	rs := []isc.Request{r3, r1, r0, r2} // Out of order.
 	//
 	// Construct the batch proposal, and aggregate it.
-	bp0 := bp.NewBatchProposal(
+	bp0 := batchproposal.NewBatchProposal(
 		0,
 		&anchor0,
 		util.NewFixedSizeBitVector(1).SetBits([]int{0}),
@@ -61,7 +61,7 @@ func TestOffLedgerOrdering(t *testing.T) {
 	abpInputs := map[gpa.NodeID][]byte{
 		nodeIDs[0]: bp0.Bytes(),
 	}
-	abp := bp.AggregateBatchProposals(abpInputs, nodeIDs, 0, log)
+	abp := batchproposal.AggregateBatchProposals(abpInputs, nodeIDs, 0, log)
 	require.NotNil(t, abp)
 	require.Equal(t, len(abp.DecidedRequestRefs()), len(rs))
 	//

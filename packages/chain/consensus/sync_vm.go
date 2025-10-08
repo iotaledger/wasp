@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/iotaledger/wasp/v2/packages/chain/consensus/bp"
+	"github.com/iotaledger/wasp/v2/packages/chain/consensus/batchproposal"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/hashing"
 	"github.com/iotaledger/wasp/v2/packages/isc"
@@ -16,7 +16,7 @@ import (
 )
 
 type SyncVM interface {
-	DecidedBatchProposalsReceived(aggregatedProposals *bp.AggregatedBatchProposals) gpa.OutMessages
+	DecidedBatchProposalsReceived(aggregatedProposals *batchproposal.AggregatedBatchProposals) gpa.OutMessages
 	DecidedStateReceived(chainState state.State) gpa.OutMessages
 	RandomnessReceived(randomness hashing.HashValue) gpa.OutMessages
 	RequestsReceived(requests []isc.Request) gpa.OutMessages
@@ -25,25 +25,25 @@ type SyncVM interface {
 }
 
 type syncVMImpl struct {
-	aggregatedProposals *bp.AggregatedBatchProposals
+	aggregatedProposals *batchproposal.AggregatedBatchProposals
 	chainState          state.State
 	randomness          *hashing.HashValue
 	requests            []isc.Request
 	vmResult            *vm.VMTaskResult
 	inputsReady         bool
-	inputsReadyCB       func(aggregatedProposals *bp.AggregatedBatchProposals, chainState state.State, randomness *hashing.HashValue, requests []isc.Request) gpa.OutMessages
+	inputsReadyCB       func(aggregatedProposals *batchproposal.AggregatedBatchProposals, chainState state.State, randomness *hashing.HashValue, requests []isc.Request) gpa.OutMessages
 	outputReady         bool
-	outputReadyCB       func(output *vm.VMTaskResult, aggregatedProposals *bp.AggregatedBatchProposals) gpa.OutMessages
+	outputReadyCB       func(output *vm.VMTaskResult, aggregatedProposals *batchproposal.AggregatedBatchProposals) gpa.OutMessages
 }
 
 func NewSyncVM(
-	inputsReadyCB func(aggregatedProposals *bp.AggregatedBatchProposals, chainState state.State, randomness *hashing.HashValue, requests []isc.Request) gpa.OutMessages,
-	outputReadyCB func(output *vm.VMTaskResult, aggregatedProposals *bp.AggregatedBatchProposals) gpa.OutMessages,
+	inputsReadyCB func(aggregatedProposals *batchproposal.AggregatedBatchProposals, chainState state.State, randomness *hashing.HashValue, requests []isc.Request) gpa.OutMessages,
+	outputReadyCB func(output *vm.VMTaskResult, aggregatedProposals *batchproposal.AggregatedBatchProposals) gpa.OutMessages,
 ) SyncVM {
 	return &syncVMImpl{inputsReadyCB: inputsReadyCB, outputReadyCB: outputReadyCB}
 }
 
-func (sub *syncVMImpl) DecidedBatchProposalsReceived(aggregatedProposals *bp.AggregatedBatchProposals) gpa.OutMessages {
+func (sub *syncVMImpl) DecidedBatchProposalsReceived(aggregatedProposals *batchproposal.AggregatedBatchProposals) gpa.OutMessages {
 	if sub.aggregatedProposals != nil || aggregatedProposals == nil {
 		return nil
 	}

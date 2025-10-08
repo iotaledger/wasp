@@ -25,7 +25,7 @@ import (
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
-	"github.com/iotaledger/wasp/v2/packages/chain/consensus/bp"
+	"github.com/iotaledger/wasp/v2/packages/chain/consensus/batchproposal"
 	"github.com/iotaledger/wasp/v2/packages/chain/dss"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
@@ -505,7 +505,7 @@ func (c *consensusImpl) uponACSInputsReceived(
 		// Do not propose to rotate to the existing committee.
 		rotateTo = nil
 	}
-	batchProposal := bp.NewBatchProposal(
+	batchProposal := batchproposal.NewBatchProposal(
 		*c.dkShare.GetIndex(),
 		baseAnchor, // Will be NIL in the case of ⊥ proposal.
 		util.NewFixedSizeBitVector(c.dkShare.GetN()).SetBits(dssIndexProposal),
@@ -526,7 +526,7 @@ func (c *consensusImpl) uponACSInputsReceived(
 }
 
 func (c *consensusImpl) uponACSOutputReceived(outputValues map[gpa.NodeID][]byte) gpa.OutMessages {
-	aggr := bp.AggregateBatchProposals(outputValues, c.nodeIDs, c.f, c.log)
+	aggr := batchproposal.AggregateBatchProposals(outputValues, c.nodeIDs, c.f, c.log)
 	if aggr.ShouldBeSkipped() {
 		// Cannot proceed with such proposals.
 		// Have to retry the consensus after some time with the next log index.
@@ -597,7 +597,7 @@ func (c *consensusImpl) uponRNDSigSharesReady(dataToSign []byte, partialSigs map
 ////////////////////////////////////////////////////////////////////////////////
 // VM
 
-func (c *consensusImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedBatchProposals, chainState state.State, randomness *hashing.HashValue, requests []isc.Request) gpa.OutMessages {
+func (c *consensusImpl) uponVMInputsReceived(aggregatedProposals *batchproposal.AggregatedBatchProposals, chainState state.State, randomness *hashing.HashValue, requests []isc.Request) gpa.OutMessages {
 	decidedBaseAnchor := aggregatedProposals.DecidedBaseAnchor()
 	stateAnchor := isc.NewStateAnchor(decidedBaseAnchor.Anchor(), decidedBaseAnchor.ISCPackage())
 	gasCoins := aggregatedProposals.AggregatedGasCoins()
@@ -625,7 +625,7 @@ func (c *consensusImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedB
 	return c.subTX.AnchorDecided(decidedBaseAnchor)
 }
 
-func (c *consensusImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult, aggregatedProposals *bp.AggregatedBatchProposals) gpa.OutMessages {
+func (c *consensusImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult, aggregatedProposals *batchproposal.AggregatedBatchProposals) gpa.OutMessages {
 	c.output.NeedVMResult = nil
 	if len(vmResult.RequestResults) == 0 {
 		// No requests were processed, don't have what to do.
@@ -650,7 +650,7 @@ func (c *consensusImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult, aggregat
 ////////////////////////////////////////////////////////////////////////////////
 // TX
 
-func (c *consensusImpl) makeTransactionData(pt *iotago.ProgrammableTransaction, aggregatedProposals *bp.AggregatedBatchProposals) *iotago.TransactionData {
+func (c *consensusImpl) makeTransactionData(pt *iotago.ProgrammableTransaction, aggregatedProposals *batchproposal.AggregatedBatchProposals) *iotago.TransactionData {
 	sender := c.dkShare.GetAddress().AsIotaAddress()
 	l1params := aggregatedProposals.AggregatedL1Params()
 	gasPrice := l1params.Protocol.ReferenceGasPrice.Uint64()
