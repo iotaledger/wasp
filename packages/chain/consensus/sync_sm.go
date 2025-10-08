@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/state"
 )
 
-type SyncSM interface {
+type SyncStateMgr interface {
 	//
 	// State proposal.
 	ProposedBaseAnchorReceived(baseAnchor *isc.StateAnchor) gpa.OutMessages
@@ -27,7 +27,7 @@ type SyncSM interface {
 	String() string
 }
 
-type syncSMImpl struct {
+type syncStateMgrImpl struct {
 	//
 	// Query for a proposal.
 	proposedBaseAnchor              *isc.StateAnchor
@@ -50,15 +50,15 @@ type syncSMImpl struct {
 	saveProducedBlockDoneCB        func(savedBlock state.Block) gpa.OutMessages
 }
 
-func NewSyncSM(
+func NewSyncStateMgr(
 	stateProposalQueryInputsReadyCB func(baseAnchor *isc.StateAnchor) gpa.OutMessages,
 	stateProposalReceivedCB func(proposedAnchor *isc.StateAnchor) gpa.OutMessages,
 	decidedStateQueryInputsReadyCB func(decidedBaseAnchor *isc.StateAnchor) gpa.OutMessages,
 	decidedStateReceivedCB func(chainState state.State) gpa.OutMessages,
 	saveProducedBlockInputsReadyCB func(producedBlock state.StateDraft) gpa.OutMessages,
 	saveProducedBlockDoneCB func(savedBlock state.Block) gpa.OutMessages,
-) SyncSM {
-	return &syncSMImpl{
+) SyncStateMgr {
+	return &syncStateMgrImpl{
 		stateProposalQueryInputsReadyCB: stateProposalQueryInputsReadyCB,
 		stateProposalReceivedCB:         stateProposalReceivedCB,
 		decidedStateQueryInputsReadyCB:  decidedStateQueryInputsReadyCB,
@@ -68,81 +68,81 @@ func NewSyncSM(
 	}
 }
 
-func (sub *syncSMImpl) ProposedBaseAnchorReceived(baseAnchor *isc.StateAnchor) gpa.OutMessages {
-	if sub.proposedBaseAnchorReceived {
+func (s *syncStateMgrImpl) ProposedBaseAnchorReceived(baseAnchor *isc.StateAnchor) gpa.OutMessages {
+	if s.proposedBaseAnchorReceived {
 		return nil
 	}
-	sub.proposedBaseAnchor = baseAnchor
-	sub.proposedBaseAnchorReceived = true
-	return sub.stateProposalQueryInputsReadyCB(sub.proposedBaseAnchor)
+	s.proposedBaseAnchor = baseAnchor
+	s.proposedBaseAnchorReceived = true
+	return s.stateProposalQueryInputsReadyCB(s.proposedBaseAnchor)
 }
 
-func (sub *syncSMImpl) StateProposalConfirmedByStateMgr() gpa.OutMessages {
-	if sub.stateProposalReceived {
+func (s *syncStateMgrImpl) StateProposalConfirmedByStateMgr() gpa.OutMessages {
+	if s.stateProposalReceived {
 		return nil
 	}
-	sub.stateProposalReceived = true
-	return sub.stateProposalReceivedCB(sub.proposedBaseAnchor)
+	s.stateProposalReceived = true
+	return s.stateProposalReceivedCB(s.proposedBaseAnchor)
 }
 
-func (sub *syncSMImpl) DecidedVirtualStateNeeded(decidedBaseAnchor *isc.StateAnchor) gpa.OutMessages {
-	if sub.decidedBaseAnchor != nil {
+func (s *syncStateMgrImpl) DecidedVirtualStateNeeded(decidedBaseAnchor *isc.StateAnchor) gpa.OutMessages {
+	if s.decidedBaseAnchor != nil {
 		return nil
 	}
-	sub.decidedBaseAnchor = decidedBaseAnchor
-	return sub.decidedStateQueryInputsReadyCB(decidedBaseAnchor)
+	s.decidedBaseAnchor = decidedBaseAnchor
+	return s.decidedStateQueryInputsReadyCB(decidedBaseAnchor)
 }
 
-func (sub *syncSMImpl) DecidedVirtualStateReceived(
+func (s *syncStateMgrImpl) DecidedVirtualStateReceived(
 	chainState state.State,
 ) gpa.OutMessages {
-	if sub.decidedStateReceived {
+	if s.decidedStateReceived {
 		return nil
 	}
-	sub.decidedStateReceived = true
-	return sub.decidedStateReceivedCB(chainState)
+	s.decidedStateReceived = true
+	return s.decidedStateReceivedCB(chainState)
 }
 
-func (sub *syncSMImpl) BlockProduced(block state.StateDraft) gpa.OutMessages {
-	if sub.producedBlockReceived {
+func (s *syncStateMgrImpl) BlockProduced(block state.StateDraft) gpa.OutMessages {
+	if s.producedBlockReceived {
 		return nil
 	}
-	sub.producedBlock = block
-	sub.producedBlockReceived = true
-	return sub.saveProducedBlockInputsReadyCB(sub.producedBlock)
+	s.producedBlock = block
+	s.producedBlockReceived = true
+	return s.saveProducedBlockInputsReadyCB(s.producedBlock)
 }
 
-func (sub *syncSMImpl) BlockSaved(block state.Block) gpa.OutMessages {
-	if sub.saveProducedBlockDone {
+func (s *syncStateMgrImpl) BlockSaved(block state.Block) gpa.OutMessages {
+	if s.saveProducedBlockDone {
 		return nil
 	}
-	sub.saveProducedBlockDone = true
-	return sub.saveProducedBlockDoneCB(block)
+	s.saveProducedBlockDone = true
+	return s.saveProducedBlockDoneCB(block)
 }
 
 // Try to provide useful human-readable compact status.
-func (sub *syncSMImpl) String() string {
+func (s *syncStateMgrImpl) String() string {
 	str := "SM"
-	if sub.stateProposalReceived && sub.decidedStateReceived {
+	if s.stateProposalReceived && s.decidedStateReceived {
 		return str + statusStrOK
 	}
-	if sub.stateProposalReceived {
+	if s.stateProposalReceived {
 		str += "/proposal=OK"
-	} else if !sub.proposedBaseAnchorReceived {
+	} else if !s.proposedBaseAnchorReceived {
 		str += "/proposal=WAIT[BaseAnchor]"
 	} else {
 		str += "/proposal=WAIT[RespFromStateMgr]"
 	}
-	if sub.decidedStateReceived {
+	if s.decidedStateReceived {
 		str += "/state=OK"
-	} else if sub.decidedBaseAnchor == nil {
+	} else if s.decidedBaseAnchor == nil {
 		str += "/state=WAIT[AcsDecision]"
 	} else {
 		str += "/state=WAIT[RespFromStateMgr]"
 	}
-	if sub.saveProducedBlockDone {
+	if s.saveProducedBlockDone {
 		str += "/state=OK"
-	} else if sub.producedBlock == nil {
+	} else if s.producedBlock == nil {
 		str += "/state=WAIT[BlockFromVM]"
 	} else {
 		str += "/state=WAIT[RespFromStateMgr]"
