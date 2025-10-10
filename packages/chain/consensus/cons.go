@@ -333,7 +333,7 @@ func (c *consensusImpl) Message(msg gpa.Message) gpa.OutMessages {
 		case subsystemTypeACS:
 			return msgs.AddAll(c.subACS.ACSOutputReceived(sub.Output()))
 		case subsystemTypeDistributedSignature:
-			return msgs.AddAll(c.subDistributedSignature.DistributedSignatureOutputReceived(sub.Output()))
+			return msgs.AddAll(c.subDistributedSignature.DistributedSignatureReady(sub.Output()))
 		default:
 			c.log.LogWarnf("unexpected subsystem after check: %+v", msg)
 			return nil
@@ -464,7 +464,7 @@ func (c *consensusImpl) uponDistributedSignatureInitialInputsReady() gpa.OutMess
 	}
 	return gpa.NoMessages().
 		AddAll(subMsgs).
-		AddAll(c.subDistributedSignature.DistributedSignatureOutputReceived(sub.Output()))
+		AddAll(c.subDistributedSignature.DistributedSignatureReady(sub.Output()))
 }
 
 func (c *consensusImpl) uponDistributedSignatureIndexProposalReady(indexProposal []int) gpa.OutMessages {
@@ -481,7 +481,7 @@ func (c *consensusImpl) uponDistributedSignatureSigningInputsReceived(decidedInd
 	}
 	return gpa.NoMessages().
 		AddAll(subMsgs).
-		AddAll(c.subDistributedSignature.DistributedSignatureOutputReceived(subDistributedSignature.Output()))
+		AddAll(c.subDistributedSignature.DistributedSignatureReady(subDistributedSignature.Output()))
 }
 
 func (c *consensusImpl) uponDistributedSignatureOutputReady(signature []byte) gpa.OutMessages {
