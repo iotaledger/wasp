@@ -18,25 +18,25 @@ import (
 type SyncACS interface {
 	StateProposalReceived(proposedBaseAnchor *isc.StateAnchor) gpa.OutMessages
 	MempoolRequestsReceived(requestRefs []*isc.RequestRef) gpa.OutMessages
-	DSSIndexProposalReceived(dssIndexProposal []int) gpa.OutMessages
+	DistributedSignatureIndexProposalReceived(dssIndexProposal []int) gpa.OutMessages
 	TimeDataReceived(timeData time.Time) gpa.OutMessages
 	L1InfoReceived(gasCoins []*coin.CoinWithRef, l1params *parameters.L1Params) gpa.OutMessages
 	ACSOutputReceived(output gpa.Output) gpa.OutMessages
 	String() string
 }
 
-// > UPON Reception of responses from Mempool, StateMgr and DSS NonceIndexes:
+// > UPON Reception of responses from Mempool, StateMgr and DistributedSignature NonceIndexes:
 // >     Produce a batch proposal.
 // >     Start the ACS.
 type syncACSImpl struct {
-	baseStateAnchor         *isc.StateAnchor
-	baseStateAnchorReceived bool
-	RequestRefs             []*isc.RequestRef
-	DSSIndexProposal        []int
-	TimeData                time.Time
-	gasCoins                []*coin.CoinWithRef
-	l1params                *parameters.L1Params
-	l1InfoReceived          bool
+	baseStateAnchor                   *isc.StateAnchor
+	baseStateAnchorReceived           bool
+	RequestRefs                       []*isc.RequestRef
+	DistributedSignatureIndexProposal []int
+	TimeData                          time.Time
+	gasCoins                          []*coin.CoinWithRef
+	l1params                          *parameters.L1Params
+	l1InfoReceived                    bool
 
 	inputsReady   bool
 	inputsReadyCB func(
@@ -91,11 +91,11 @@ func (sub *syncACSImpl) MempoolRequestsReceived(requestRefs []*isc.RequestRef) g
 	return sub.tryCompleteInput()
 }
 
-func (sub *syncACSImpl) DSSIndexProposalReceived(dssIndexProposal []int) gpa.OutMessages {
-	if sub.DSSIndexProposal != nil {
+func (sub *syncACSImpl) DistributedSignatureIndexProposalReceived(dssIndexProposal []int) gpa.OutMessages {
+	if sub.DistributedSignatureIndexProposal != nil {
 		return nil
 	}
-	sub.DSSIndexProposal = dssIndexProposal
+	sub.DistributedSignatureIndexProposal = dssIndexProposal
 	return sub.tryCompleteInput()
 }
 
@@ -121,11 +121,11 @@ func (sub *syncACSImpl) tryCompleteInput() gpa.OutMessages {
 	if sub.inputsReady || !sub.baseStateAnchorReceived {
 		return nil
 	}
-	if sub.RequestRefs == nil || sub.DSSIndexProposal == nil || sub.TimeData.IsZero() || !sub.l1InfoReceived {
+	if sub.RequestRefs == nil || sub.DistributedSignatureIndexProposal == nil || sub.TimeData.IsZero() || !sub.l1InfoReceived {
 		return nil
 	}
 	sub.inputsReady = true
-	return sub.inputsReadyCB(sub.baseStateAnchor, sub.RequestRefs, sub.DSSIndexProposal, sub.TimeData, sub.gasCoins, sub.l1params)
+	return sub.inputsReadyCB(sub.baseStateAnchor, sub.RequestRefs, sub.DistributedSignatureIndexProposal, sub.TimeData, sub.gasCoins, sub.l1params)
 }
 
 func (sub *syncACSImpl) ACSOutputReceived(output gpa.Output) gpa.OutMessages {
@@ -162,8 +162,8 @@ func (sub *syncACSImpl) String() string {
 		if sub.RequestRefs == nil {
 			wait = append(wait, "RequestRefs")
 		}
-		if sub.DSSIndexProposal == nil {
-			wait = append(wait, "DSSIndexProposal")
+		if sub.DistributedSignatureIndexProposal == nil {
+			wait = append(wait, "DistributedSignatureIndexProposal")
 		}
 		if sub.TimeData.IsZero() {
 			wait = append(wait, "TimeData")

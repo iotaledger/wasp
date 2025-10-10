@@ -23,7 +23,7 @@ func TestDSSSigner(t *testing.T) {
 	addr, dkRegs := testpeers.SetupDkgTrivial(t, n, f, peerIdentities, nil)
 	//
 	// Create the signer.
-	signer := testpeers.NewTestDSSSigner(addr, dkRegs, nodeIDs, peerIdentities, log)
+	signer := testpeers.NewTestDistributedSignatureSigner(addr, dkRegs, nodeIDs, peerIdentities, log)
 	//
 	// Use it.
 	msg := []byte{1, 2, 3}

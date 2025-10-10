@@ -26,7 +26,7 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/v2/packages/chain/consensus/batchproposal"
-	"github.com/iotaledger/wasp/v2/packages/chain/dss"
+	distsign "github.com/iotaledger/wasp/v2/packages/chain/dss"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
@@ -104,36 +104,36 @@ func (r *Result) String() string {
 }
 
 type consensusImpl struct {
-	chainID          isc.ChainID
-	chainStore       state.Store
-	edSuite          suites.Suite    // For signatures.
-	blsSuite         suites.Suite    // For randomness only.
-	dkShare          tcrypto.DKShare // The current committee's keys.
-	rotateTo         *iotago.Address // If non-nil and differs from the dkShare, then rotation is suggested.
-	processorCache   *processors.Config
-	nodeIDs          []gpa.NodeID
-	me               gpa.NodeID
-	f                int
-	asGPA            gpa.GPA
-	dss              dss.DSS
-	acs              acs.ACS
-	subMempool       SyncMempool    // Mempool.
-	subStateMgr      SyncStateMgr   // StateMgr.
-	subNodeconn      SyncNodeconn   // Synchronization with the NodeConn.
-	subDSS           SyncDSS        // Distributed Schnorr Signature.
-	subACS           SyncACS        // Asynchronous Common Subset.
-	subRND           SyncRND        // Randomness.
-	subVM            SyncVM         // Virtual Machine.
-	subTX            SyncTX         // Building final TX.
-	term             *termCondition // To detect, when this instance can be terminated.
-	msgWrapper       *gpa.MsgWrapper
-	output           *Output
-	validatorAgentID isc.AgentID
-	log              log.Logger
+	chainID                 isc.ChainID
+	chainStore              state.Store
+	edSuite                 suites.Suite    // For signatures.
+	blsSuite                suites.Suite    // For randomness only.
+	dkShare                 tcrypto.DKShare // The current committee's keys.
+	rotateTo                *iotago.Address // If non-nil and differs from the dkShare, then rotation is suggested.
+	processorCache          *processors.Config
+	nodeIDs                 []gpa.NodeID
+	me                      gpa.NodeID
+	f                       int
+	asGPA                   gpa.GPA
+	dss                     distsign.DistributedSignature
+	acs                     acs.ACS
+	subMempool              SyncMempool              // Mempool.
+	subStateMgr             SyncStateMgr             // StateMgr.
+	subNodeconn             SyncNodeconn             // Synchronization with the NodeConn.
+	subDistributedSignature SyncDistributedSignature // Distributed Schnorr Signature.
+	subACS                  SyncACS                  // Asynchronous Common Subset.
+	subRND                  SyncRND                  // Randomness.
+	subVM                   SyncVM                   // Virtual Machine.
+	subTX                   SyncTX                   // Building final TX.
+	term                    *termCondition           // To detect, when this instance can be terminated.
+	msgWrapper              *gpa.MsgWrapper
+	output                  *Output
+	validatorAgentID        isc.AgentID
+	log                     log.Logger
 }
 
 const (
-	subsystemTypeDSS byte = iota
+	subsystemTypeDistributedSignature byte = iota
 	subsystemTypeACS
 )
 
@@ -199,7 +199,7 @@ func New( //nolint:funlen
 		nodeIDs:          nodeIDs,
 		me:               me,
 		f:                f,
-		dss:              dss.New(edSuite, nodeIDs, nodePKs, f, me, myKyberKeys.Private, longTermDKS, log.NewChildLogger("DSS")),
+		dss:              distsign.New(edSuite, nodeIDs, nodePKs, f, me, myKyberKeys.Private, longTermDKS, log.NewChildLogger("DistributedSignature")),
 		acs:              acs.New(nodeIDs, me, f, acsCCInstFunc, acsLog),
 		output:           &Output{Status: Running},
 		log:              log,
@@ -225,11 +225,11 @@ func New( //nolint:funlen
 		c.uponNodeconnInputsReady,
 		c.uponNodeconnOutputReady,
 	)
-	c.subDSS = NewSyncDSS(
-		c.uponDSSInitialInputsReady,
-		c.uponDSSIndexProposalReady,
-		c.uponDSSSigningInputsReceived,
-		c.uponDSSOutputReady,
+	c.subDistributedSignature = NewSyncDistributedSignature(
+		c.uponDistributedSignatureInitialInputsReady,
+		c.uponDistributedSignatureIndexProposalReady,
+		c.uponDistributedSignatureSigningInputsReceived,
+		c.uponDistributedSignatureOutputReady,
 	)
 	c.subACS = NewSyncACS(
 		c.uponACSInputsReceived,
@@ -256,9 +256,9 @@ func New( //nolint:funlen
 
 // Used to select a target subsystem for a wrapped message received.
 func (c *consensusImpl) msgWrapperFunc(subsystem byte, index int) (gpa.GPA, error) {
-	if subsystem == subsystemTypeDSS {
+	if subsystem == subsystemTypeDistributedSignature {
 		if index != 0 {
-			return nil, fmt.Errorf("unexpected DSS index: %v", index)
+			return nil, fmt.Errorf("unexpected DistributedSignature index: %v", index)
 		}
 		return c.dss.AsGPA(), nil
 	}
@@ -290,7 +290,7 @@ func (c *consensusImpl) Input(input gpa.Input) gpa.OutMessages {
 			AddAll(c.subNodeconn.HaveInputAnchor(input.baseAnchor)).
 			AddAll(c.subMempool.BaseAnchorReceived(input.baseAnchor)).
 			AddAll(c.subStateMgr.ProposedBaseAnchorReceived(input.baseAnchor)).
-			AddAll(c.subDSS.InitialInputReceived())
+			AddAll(c.subDistributedSignature.InitialInputReceived())
 	case *inputRotateTo:
 		// We can update the rotation address while consensus is running.
 		// New value will be used, if decision has not been made yet.
@@ -332,8 +332,8 @@ func (c *consensusImpl) Message(msg gpa.Message) gpa.OutMessages {
 		switch msgT.Subsystem() {
 		case subsystemTypeACS:
 			return msgs.AddAll(c.subACS.ACSOutputReceived(sub.Output()))
-		case subsystemTypeDSS:
-			return msgs.AddAll(c.subDSS.DSSOutputReceived(sub.Output()))
+		case subsystemTypeDistributedSignature:
+			return msgs.AddAll(c.subDistributedSignature.DistributedSignatureReady(sub.Output()))
 		default:
 			c.log.LogWarnf("unexpected subsystem after check: %+v", msg)
 			return nil
@@ -353,7 +353,7 @@ func (c *consensusImpl) StatusString() string {
 		c.subStateMgr.String(),
 		c.subMempool.String(),
 		c.subNodeconn.String(),
-		c.subDSS.String(),
+		c.subDistributedSignature.String(),
 		c.subACS.String(),
 		c.subVM.String(),
 		c.subTX.String(),
@@ -454,38 +454,38 @@ func (c *consensusImpl) uponNodeconnOutputReady(gasCoins []*coin.CoinWithRef, l1
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// DSS
+// DistributedSignature
 
-func (c *consensusImpl) uponDSSInitialInputsReady() gpa.OutMessages {
-	c.log.LogDebugf("uponDSSInitialInputsReady")
-	sub, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeDSS, 0, dss.NewInputStart())
+func (c *consensusImpl) uponDistributedSignatureInitialInputsReady() gpa.OutMessages {
+	c.log.LogDebugf("uponDistributedSignatureInitialInputsReady")
+	sub, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeDistributedSignature, 0, distsign.NewInputStart())
 	if err != nil {
-		panic(fmt.Errorf("cannot provide input to DSS: %w", err))
+		panic(fmt.Errorf("cannot provide input to DistributedSignature: %w", err))
 	}
 	return gpa.NoMessages().
 		AddAll(subMsgs).
-		AddAll(c.subDSS.DSSOutputReceived(sub.Output()))
+		AddAll(c.subDistributedSignature.DistributedSignatureReady(sub.Output()))
 }
 
-func (c *consensusImpl) uponDSSIndexProposalReady(indexProposal []int) gpa.OutMessages {
-	c.log.LogDebugf("uponDSSIndexProposalReady")
-	return c.subACS.DSSIndexProposalReceived(indexProposal)
+func (c *consensusImpl) uponDistributedSignatureIndexProposalReady(indexProposal []int) gpa.OutMessages {
+	c.log.LogDebugf("uponDistributedSignatureIndexProposalReady")
+	return c.subACS.DistributedSignatureIndexProposalReceived(indexProposal)
 }
 
-func (c *consensusImpl) uponDSSSigningInputsReceived(decidedIndexProposals map[gpa.NodeID][]int, messageToSign []byte) gpa.OutMessages {
-	c.log.LogDebugf("uponDSSSigningInputsReceived(decidedIndexProposals=%+v, H(messageToSign)=%v)", decidedIndexProposals, hashing.HashDataBlake2b(messageToSign))
-	dssDecidedInput := dss.NewInputDecided(decidedIndexProposals, messageToSign)
-	subDSS, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeDSS, 0, dssDecidedInput)
+func (c *consensusImpl) uponDistributedSignatureSigningInputsReceived(decidedIndexProposals map[gpa.NodeID][]int, messageToSign []byte) gpa.OutMessages {
+	c.log.LogDebugf("uponDistributedSignatureSigningInputsReceived(decidedIndexProposals=%+v, H(messageToSign)=%v)", decidedIndexProposals, hashing.HashDataBlake2b(messageToSign))
+	dssDecidedInput := distsign.NewInputDecided(decidedIndexProposals, messageToSign)
+	subDistributedSignature, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeDistributedSignature, 0, dssDecidedInput)
 	if err != nil {
 		panic(fmt.Errorf("cannot provide inputs for signing: %w", err))
 	}
 	return gpa.NoMessages().
 		AddAll(subMsgs).
-		AddAll(c.subDSS.DSSOutputReceived(subDSS.Output()))
+		AddAll(c.subDistributedSignature.DistributedSignatureReady(subDistributedSignature.Output()))
 }
 
-func (c *consensusImpl) uponDSSOutputReady(signature []byte) gpa.OutMessages {
-	c.log.LogDebugf("uponDSSOutputReady")
+func (c *consensusImpl) uponDistributedSignatureOutputReady(signature []byte) gpa.OutMessages {
+	c.log.LogDebugf("uponDistributedSignatureOutputReady")
 	return c.subTX.SignatureReceived(signature)
 }
 
@@ -551,15 +551,15 @@ func (c *consensusImpl) uponACSOutputReceived(outputValues map[gpa.NodeID][]byte
 			AddAll(c.subTX.UnsignedTXReceived(rotationTXD)).
 			AddAll(c.subTX.BlockSaved(nil)).
 			AddAll(c.subTX.AnchorDecided(bao)).
-			AddAll(c.subDSS.MessageToSignReceived(rotationTXB)).
-			AddAll(c.subDSS.DecidedIndexProposalsReceived(aggr.DecidedDSSIndexProposals()))
+			AddAll(c.subDistributedSignature.MessageToSignReceived(rotationTXB)).
+			AddAll(c.subDistributedSignature.DecidedIndexProposalsReceived(aggr.DecidedDistributedSignatureIndexProposals()))
 	}
 	return gpa.NoMessages().
 		AddAll(c.subMempool.RequestsNeeded(reqs)).
 		AddAll(c.subStateMgr.DecidedVirtualStateNeeded(bao)).
 		AddAll(c.subVM.DecidedBatchProposalsReceived(aggr)).
 		AddAll(c.subRND.CanProceed(baoID.Bytes())).
-		AddAll(c.subDSS.DecidedIndexProposalsReceived(aggr.DecidedDSSIndexProposals()))
+		AddAll(c.subDistributedSignature.DecidedIndexProposalsReceived(aggr.DecidedDistributedSignatureIndexProposals()))
 }
 
 func (c *consensusImpl) uponACSTerminated() {
@@ -644,7 +644,7 @@ func (c *consensusImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult, aggregat
 	return gpa.NoMessages().
 		AddAll(c.subStateMgr.BlockProduced(vmResult.StateDraft)).
 		AddAll(c.subTX.UnsignedTXReceived(txData)).
-		AddAll(c.subDSS.MessageToSignReceived(txBytes))
+		AddAll(c.subDistributedSignature.MessageToSignReceived(txBytes))
 }
 
 ////////////////////////////////////////////////////////////////////////////////
