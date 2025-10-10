@@ -164,18 +164,23 @@ func newRPCTransaction(tx *types.Transaction, blockHash common.Hash, blockNumber
 		S:     (*hexutil.Big)(s),
 	}
 
-	if tx.ChainId() != nil {
-		result.ChainID = (*hexutil.Big)(tx.ChainId())
-	}
-
 	switch tx.Type() {
 	case types.LegacyTxType:
+		// Only include chainId for signed, replay-protected transactions
+		// - Unsigned transactions (v=r=s=0) have chainId=0 and should omit it
+		// - Pre-EIP155 transactions (v=27/28) have chainId=0 and should omit it
+		chainID := tx.ChainId()
+		if chainID != nil && chainID.Sign() != 0 && (r.Sign() != 0 || s.Sign() != 0) {
+			result.ChainID = (*hexutil.Big)(chainID)
+		}
 		// in legacy gasPrice is meaningful
 		if gp := tx.GasPrice(); gp != nil {
 			result.GasPrice = (*hexutil.Big)(gp)
 		}
 
 	case types.AccessListTxType:
+		// EIP-2930 transactions always include chainId
+		result.ChainID = (*hexutil.Big)(tx.ChainId())
 		// include access list and gasPrice
 		if al := tx.AccessList(); al != nil {
 			result.AccessList = al
@@ -185,6 +190,8 @@ func newRPCTransaction(tx *types.Transaction, blockHash common.Hash, blockNumber
 		}
 
 	case types.DynamicFeeTxType:
+		// EIP-1559 transactions always include chainId
+		result.ChainID = (*hexutil.Big)(tx.ChainId())
 		// include access list and both FeePerGas, PriorityFeePerGascaps
 		if al := tx.AccessList(); al != nil {
 			result.AccessList = al
@@ -193,6 +200,8 @@ func newRPCTransaction(tx *types.Transaction, blockHash common.Hash, blockNumber
 		result.MaxPriorityFeePerGas = (*hexutil.Big)(tx.GasTipCap())
 
 	case types.BlobTxType:
+		// EIP-4844 transactions always include chainId
+		result.ChainID = (*hexutil.Big)(tx.ChainId())
 		// EIP-4844 is EIP-1559 + blob fields
 		if al := tx.AccessList(); al != nil {
 			result.AccessList = al

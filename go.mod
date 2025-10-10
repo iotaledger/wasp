@@ -18,8 +18,6 @@ require (
 	github.com/bygui86/multi-profile/v2 v2.1.0
 	github.com/coder/websocket v1.8.13
 	github.com/consensys/gnark-crypto v0.19.0
-	github.com/dgraph-io/ristretto v0.2.0
-	github.com/dgryski/go-clockpro v0.0.0-20140817124034-edc6d3eeb96e
 	github.com/dustin/go-humanize v1.0.1
 	github.com/ethereum/go-ethereum v1.15.5
 	github.com/golang-jwt/jwt/v5 v5.2.2
