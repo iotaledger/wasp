@@ -20,7 +20,7 @@
 // TODO: Make sure no two signatures are ever produced by the nonce-dkg for the same
 //
 //	base TX. That would reveal the permanent private key of the committee.
-package dss
+package distsign
 
 import (
 	"fmt"
@@ -50,7 +50,7 @@ const (
 	subsystemDKG byte = iota
 )
 
-type dssImpl struct {
+type distributedSignatureImpl struct {
 	suite                      suites.Suite
 	withWrappers               gpa.GPA // This instance, with all the wrappers.
 	me                         gpa.NodeID
@@ -71,7 +71,7 @@ type dssImpl struct {
 	log                        log.Logger
 }
 
-var _ DistributedSignature = &dssImpl{}
+var _ DistributedSignature = &distributedSignatureImpl{}
 
 func New(
 	suite suites.Suite,
@@ -83,7 +83,7 @@ func New(
 	longTermSecretShare tcrypto.SecretShare,
 	log log.Logger,
 ) DistributedSignature {
-	d := &dssImpl{
+	d := &distributedSignatureImpl{
 		suite:                      suite,
 		withWrappers:               nil, // Set bellow.
 		me:                         me,
@@ -107,12 +107,12 @@ func New(
 }
 
 // DSS Specific Interface: Get a GPA instance to pass messages with all the intermediate layers.
-func (d *dssImpl) AsGPA() gpa.GPA {
+func (d *distributedSignatureImpl) AsGPA() gpa.GPA {
 	return d.withWrappers
 }
 
 // Handle the input to the protocol.
-func (d *dssImpl) Input(input gpa.Input) gpa.OutMessages {
+func (d *distributedSignatureImpl) Input(input gpa.Input) gpa.OutMessages {
 	d.log.LogDebugf("Input %+v", input)
 	switch input := input.(type) {
 	case *inputStart:
@@ -125,7 +125,7 @@ func (d *dssImpl) Input(input gpa.Input) gpa.OutMessages {
 }
 
 // Handle the messages.
-func (d *dssImpl) Message(msg gpa.Message) gpa.OutMessages {
+func (d *distributedSignatureImpl) Message(msg gpa.Message) gpa.OutMessages {
 	switch msgT := msg.(type) {
 	case *msgPartialSig:
 		d.log.LogDebugf("Message %+v", msg)
@@ -143,7 +143,7 @@ func (d *dssImpl) Message(msg gpa.Message) gpa.OutMessages {
 }
 
 // Provide the output, if any.
-func (d *dssImpl) Output() gpa.Output {
+func (d *distributedSignatureImpl) Output() gpa.Output {
 	if d.dkgOutIndexes == nil && d.signature == nil {
 		return nil
 	}
@@ -153,7 +153,7 @@ func (d *dssImpl) Output() gpa.Output {
 	}
 }
 
-func (d *dssImpl) tryHandleDkgOutput(msgs gpa.OutMessages) gpa.OutMessages {
+func (d *distributedSignatureImpl) tryHandleDkgOutput(msgs gpa.OutMessages) gpa.OutMessages {
 	dkgOut := d.dkg.Output()
 	if d.dkgOutIndexes == nil && dkgOut != nil && dkgOut.(*nonce.Output).Indexes != nil {
 		d.dkgOutIndexes = dkgOut.(*nonce.Output).Indexes
@@ -219,7 +219,7 @@ func (d *dssImpl) tryHandleDkgOutput(msgs gpa.OutMessages) gpa.OutMessages {
 	return msgs
 }
 
-func (d *dssImpl) handlePartialSig(msg *msgPartialSig) gpa.OutMessages {
+func (d *distributedSignatureImpl) handlePartialSig(msg *msgPartialSig) gpa.OutMessages {
 	if d.signature != nil {
 		// Signature already aggregated, ignore the remaining shares.
 		return nil
@@ -253,7 +253,7 @@ func (d *dssImpl) handlePartialSig(msg *msgPartialSig) gpa.OutMessages {
 	return nil
 }
 
-func (d *dssImpl) handleDecided(input *inputDecided) gpa.OutMessages {
+func (d *distributedSignatureImpl) handleDecided(input *inputDecided) gpa.OutMessages {
 	if d.dkgDecidedIndexProposals != nil {
 		d.log.LogWarn("Duplicate will be dropped: DecidedIndexes=%+v", input.decidedIndexProposals)
 		return nil
@@ -266,7 +266,7 @@ func (d *dssImpl) handleDecided(input *inputDecided) gpa.OutMessages {
 	return d.tryHandleDkgOutput(msgs)
 }
 
-func (d *dssImpl) nodePKArray() []kyber.Point {
+func (d *distributedSignatureImpl) nodePKArray() []kyber.Point {
 	res := make([]kyber.Point, len(d.nodeIDs))
 	for i := range res {
 		res[i] = d.nodePKs[d.nodeIDs[i]]
@@ -274,6 +274,6 @@ func (d *dssImpl) nodePKArray() []kyber.Point {
 	return res
 }
 
-func (d *dssImpl) StatusString() string {
+func (d *distributedSignatureImpl) StatusString() string {
 	return fmt.Sprintf("{DSS, dkg=%v}", d.dkg.StatusString())
 }

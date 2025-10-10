@@ -1,4 +1,4 @@
-package dss
+package distsign
 
 import (
 	"fortio.org/safecast"

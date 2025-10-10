@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package dss
+package distsign
 
 import (
 	"github.com/iotaledger/wasp/v2/packages/gpa"

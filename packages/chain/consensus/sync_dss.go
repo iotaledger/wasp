@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/iotaledger/wasp/v2/packages/chain/dss"
+	"github.com/iotaledger/wasp/v2/packages/chain/distsign"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
 )
 
@@ -59,14 +59,14 @@ func (sub *syncDistributedSignatureImpl) DistributedSignatureReady(output gpa.Ou
 		return nil
 	}
 	msgs := gpa.NoMessages()
-	dssOutput := output.(*dss.Output)
-	if !sub.indexProposalReady && dssOutput.ProposedIndexes != nil {
+	distSignOutput := output.(*distsign.Output)
+	if !sub.indexProposalReady && distSignOutput.ProposedIndexes != nil {
 		sub.indexProposalReady = true
-		msgs.AddAll(sub.indexProposalReadyCB(dssOutput.ProposedIndexes))
+		msgs.AddAll(sub.indexProposalReadyCB(distSignOutput.ProposedIndexes))
 	}
-	if !sub.outputReady && dssOutput.Signature != nil {
+	if !sub.outputReady && distSignOutput.Signature != nil {
 		sub.outputReady = true
-		msgs.AddAll(sub.outputReadyCB(dssOutput.Signature))
+		msgs.AddAll(sub.outputReadyCB(distSignOutput.Signature))
 	}
 	return msgs
 }

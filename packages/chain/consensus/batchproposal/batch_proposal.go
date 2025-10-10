@@ -29,7 +29,7 @@ type BatchProposal struct {
 func NewBatchProposal(
 	nodeIndex uint16,
 	baseAnchor *isc.StateAnchor,
-	dssIndexProposal util.BitVector,
+	distSignIndexProposal util.BitVector,
 	rotateTo *iotago.Address,
 	timeData time.Time,
 	validatorFeeDestination isc.AgentID,
@@ -40,7 +40,7 @@ func NewBatchProposal(
 	return &BatchProposal{
 		nodeIndex:                     nodeIndex,
 		baseAnchor:                    baseAnchor,
-		distributedStateIndexProposal: dssIndexProposal,
+		distributedStateIndexProposal: distSignIndexProposal,
 		rotateTo:                      rotateTo,
 		timeData:                      timeData,
 		validatorFeeDestination:       validatorFeeDestination,
