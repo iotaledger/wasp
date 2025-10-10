@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// Package dss runs a NonceDKG and signs the supplied hash.
+// Package distsign runs a NonceDKG and signs the supplied hash.
 //
 // This is a simplified implementation.
 // Later the DKG part can be run in advance, while waiting for transactions.
