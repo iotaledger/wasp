@@ -39,7 +39,7 @@ func TestBasic(t *testing.T) {
 
 		//
 		// Setup nodes.
-		dsss := map[gpa.NodeID]dss.DSS{}
+		dsss := map[gpa.NodeID]dss.DistributedSignature{}
 		gpas := map[gpa.NodeID]gpa.GPA{}
 		for _, nid := range nodeIDs {
 			dsss[nid] = dss.New(suite, nodeIDs, nodePKs, f, nid, nodeSKs[nid], longTermSecretShares[nid], log)

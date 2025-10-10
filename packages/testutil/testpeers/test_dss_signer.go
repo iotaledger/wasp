@@ -24,7 +24,7 @@ type testDssSigner struct {
 	log      log.Logger
 }
 
-func NewTestDSSSigner(
+func NewTestDistributedSignatureSigner(
 	addr *cryptolib.Address,
 	reg []registry.DKShareRegistryProvider,
 	nodeIDs []gpa.NodeID,
@@ -59,7 +59,7 @@ func (sig *testDssSigner) Sign(messageToSign []byte) (*cryptolib.Signature, erro
 
 	//
 	// Setup nodes.
-	dsss := map[gpa.NodeID]dss.DSS{}
+	dsss := map[gpa.NodeID]dss.DistributedSignature{}
 	gpas := map[gpa.NodeID]gpa.GPA{}
 	for idx, nid := range sig.nodeIDs {
 		dks := sig.dkShares[idx]

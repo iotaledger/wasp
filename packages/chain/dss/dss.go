@@ -37,7 +37,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/tcrypto"
 )
 
-type DSS interface {
+type DistributedSignature interface {
 	AsGPA() gpa.GPA
 }
 
@@ -51,27 +51,27 @@ const (
 )
 
 type dssImpl struct {
-	suite                    suites.Suite
-	withWrappers             gpa.GPA // This instance, with all the wrappers.
-	me                       gpa.NodeID
-	mySK                     kyber.Scalar
-	nodeIDs                  []gpa.NodeID
-	nodePKs                  map[gpa.NodeID]kyber.Point
-	f                        int
-	longTermSecretShare      tcrypto.SecretShare
-	dkg                      gpa.GPA
-	dkgOutIndexes            []int                // Intermediate DKG output.
-	dkgDecidedIndexProposals map[gpa.NodeID][]int // ACS decision.
-	dkgOutNonce              dss.DistKeyShare     // Final DKG output.
-	messageToSign            []byte
-	dssPartialSigBuffer      *shrinkingmap.ShrinkingMap[gpa.NodeID, *dss.PartialSig] // Accumulate early partial signatures
-	dssSigner                *dss.DSS
-	signature                []byte // The output.
-	msgWrapper               *gpa.MsgWrapper
-	log                      log.Logger
+	suite                      suites.Suite
+	withWrappers               gpa.GPA // This instance, with all the wrappers.
+	me                         gpa.NodeID
+	mySK                       kyber.Scalar
+	nodeIDs                    []gpa.NodeID
+	nodePKs                    map[gpa.NodeID]kyber.Point
+	f                          int
+	longTermSecretShare        tcrypto.SecretShare
+	dkg                        gpa.GPA
+	dkgOutIndexes              []int                // Intermediate DKG output.
+	dkgDecidedIndexProposals   map[gpa.NodeID][]int // ACS decision.
+	dkgOutNonce                dss.DistKeyShare     // Final DKG output.
+	messageToSign              []byte
+	distSignPartialSigBuffer   *shrinkingmap.ShrinkingMap[gpa.NodeID, *dss.PartialSig] // Accumulate early partial signatures
+	distributedSignatureSigner *dss.DSS
+	signature                  []byte // The output.
+	msgWrapper                 *gpa.MsgWrapper
+	log                        log.Logger
 }
 
-var _ DSS = &dssImpl{}
+var _ DistributedSignature = &dssImpl{}
 
 func New(
 	suite suites.Suite,
@@ -82,24 +82,24 @@ func New(
 	mySK kyber.Scalar,
 	longTermSecretShare tcrypto.SecretShare,
 	log log.Logger,
-) DSS {
+) DistributedSignature {
 	d := &dssImpl{
-		suite:                    suite,
-		withWrappers:             nil, // Set bellow.
-		me:                       me,
-		mySK:                     mySK,
-		nodeIDs:                  nodeIDs,
-		nodePKs:                  nodePKs,
-		f:                        f,
-		longTermSecretShare:      longTermSecretShare,
-		dkg:                      nonce.New(suite, nodeIDs, nodePKs, f, me, mySK, log),
-		dkgOutIndexes:            nil, // To be decided.
-		dkgDecidedIndexProposals: nil, // To be received.
-		dkgOutNonce:              nil, // To be decided.
-		messageToSign:            nil, // Will be received later.
-		dssPartialSigBuffer:      shrinkingmap.New[gpa.NodeID, *dss.PartialSig](),
-		dssSigner:                nil, // Will be created when indexProposals and message to sign will be created.
-		log:                      log,
+		suite:                      suite,
+		withWrappers:               nil, // Set bellow.
+		me:                         me,
+		mySK:                       mySK,
+		nodeIDs:                    nodeIDs,
+		nodePKs:                    nodePKs,
+		f:                          f,
+		longTermSecretShare:        longTermSecretShare,
+		dkg:                        nonce.New(suite, nodeIDs, nodePKs, f, me, mySK, log),
+		dkgOutIndexes:              nil, // To be decided.
+		dkgDecidedIndexProposals:   nil, // To be received.
+		dkgOutNonce:                nil, // To be decided.
+		messageToSign:              nil, // Will be received later.
+		distSignPartialSigBuffer:   shrinkingmap.New[gpa.NodeID, *dss.PartialSig](),
+		distributedSignatureSigner: nil, // Will be created when indexProposals and message to sign will be created.
+		log:                        log,
 	}
 	d.msgWrapper = gpa.NewMsgWrapper(msgTypeWrapped, d.msgWrapperFunc)
 	d.withWrappers = gpa.NewOwnHandler(me, d)
@@ -172,22 +172,22 @@ func (d *dssImpl) tryHandleDkgOutput(msgs gpa.OutMessages) gpa.OutMessages {
 			d.log.LogError("Failed to create DSS Signer: %v", err)
 			return msgs
 		}
-		d.dssSigner = dssSigner
-		partialSig, err := d.dssSigner.PartialSig()
+		d.distributedSignatureSigner = dssSigner
+		partialSig, err := d.distributedSignatureSigner.PartialSig()
 		if err != nil {
 			d.log.LogErrorf("cannot create a partial signature: %v", err)
 			return msgs
 		}
 		//
 		// Process early sent partial signatures, if any.
-		if d.dssPartialSigBuffer.Size() > 0 {
-			d.dssPartialSigBuffer.ForEach(func(nid gpa.NodeID, ps *dss.PartialSig) bool {
-				err := d.dssSigner.ProcessPartialSig(ps)
+		if d.distSignPartialSigBuffer.Size() > 0 {
+			d.distSignPartialSigBuffer.ForEach(func(nid gpa.NodeID, ps *dss.PartialSig) bool {
+				err := d.distributedSignatureSigner.ProcessPartialSig(ps)
 				if err != nil {
 					d.log.LogErrorf("Failed to process a buffered partial signature: %v", err)
 				}
 
-				d.dssPartialSigBuffer.Delete(nid)
+				d.distSignPartialSigBuffer.Delete(nid)
 				return true
 			})
 		}
@@ -207,8 +207,8 @@ func (d *dssImpl) tryHandleDkgOutput(msgs gpa.OutMessages) gpa.OutMessages {
 		}
 		//
 		// Maybe we have everything for the signature already?
-		if d.dssSigner.EnoughPartialSig() {
-			sig, err := d.dssSigner.Signature()
+		if d.distributedSignatureSigner.EnoughPartialSig() {
+			sig, err := d.distributedSignatureSigner.Signature()
 			if err != nil {
 				d.log.LogErrorf("unable to aggregate the signature: %v", err)
 				return msgs
@@ -224,27 +224,27 @@ func (d *dssImpl) handlePartialSig(msg *msgPartialSig) gpa.OutMessages {
 		// Signature already aggregated, ignore the remaining shares.
 		return nil
 	}
-	if d.dssSigner == nil {
-		if d.dssPartialSigBuffer.Has(msg.Sender()) {
+	if d.distributedSignatureSigner == nil {
+		if d.distSignPartialSigBuffer.Has(msg.Sender()) {
 			d.log.LogWarn("duplicate partial signature from %v", msg.Sender())
 			return nil
 		}
 
-		d.dssPartialSigBuffer.Set(msg.Sender(), msg.partialSig)
+		d.distSignPartialSigBuffer.Set(msg.Sender(), msg.partialSig)
 		return nil
 	}
 	//
 	// Then process the one received with the current message.
-	err := d.dssSigner.ProcessPartialSig(msg.partialSig)
+	err := d.distributedSignatureSigner.ProcessPartialSig(msg.partialSig)
 	if err != nil {
 		d.log.LogWarnf("Failed to process a partial signature: %v", err)
 		return nil
 	}
-	if !d.dssSigner.EnoughPartialSig() {
+	if !d.distributedSignatureSigner.EnoughPartialSig() {
 		return nil
 	}
 
-	sig, err := d.dssSigner.Signature()
+	sig, err := d.distributedSignatureSigner.Signature()
 	if err != nil {
 		d.log.LogErrorf("unable to aggregate the signature: %v", err)
 		return nil
