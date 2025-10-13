@@ -1,8 +1,8 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// Package adkg implements Asynchronous Distributed Key Generation algorithms
-package adkg
+// Package asyncdistkeygen implements Asynchronous Distributed Key Generation algorithms
+package asyncdistkeygen
 
 import (
 	"testing"
@@ -15,7 +15,7 @@ import (
 
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
-	"github.com/iotaledger/wasp/v2/packages/gpa/adkg/nonce"
+	"github.com/iotaledger/wasp/v2/packages/gpa/asyncdistkeygen/nonce"
 	"github.com/iotaledger/wasp/v2/packages/tcrypto"
 )
 

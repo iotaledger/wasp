@@ -52,7 +52,7 @@ func testCommitteeLogBasic(t *testing.T, n, f int) {
 	peerPubKeys := testpeers.PublicKeys(peerIdentities)
 	//
 	// Committee.
-	committeeAddress, committeeKeyShares := testpeers.SetupDkgTrivial(t, n, f, peerIdentities, nil)
+	committeeAddress, committeeKeyShares := testpeers.SetupDistributedKeyGenerationTrivial(t, n, f, peerIdentities, nil)
 	//
 	// Construct the algorithm nodes.
 	gpaNodeIDs := gpa.NodeIDsFromPublicKeys(peerPubKeys)

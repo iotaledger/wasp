@@ -16,7 +16,7 @@ import (
 	"go.dedis.ch/kyber/v3/suites"
 
 	"github.com/iotaledger/wasp/v2/packages/gpa"
-	"github.com/iotaledger/wasp/v2/packages/gpa/adkg"
+	"github.com/iotaledger/wasp/v2/packages/gpa/asyncdistkeygen"
 	"github.com/iotaledger/wasp/v2/packages/tcrypto"
 )
 
@@ -42,7 +42,7 @@ func TestDSS(t *testing.T) {
 			commits = long[n].Commitments()
 		}
 	}
-	adkg.VerifyPriShares(t, suite, nodeIDs, nodePKs, nodeSKs, longPK, priShares, commits, f)
+	asyncdistkeygen.VerifyPriShares(t, suite, nodeIDs, nodePKs, nodeSKs, longPK, priShares, commits, f)
 }
 
 func makeDistKeyShares(suite suites.Suite, nodeIDs []gpa.NodeID, f int) (kyber.Scalar, kyber.Point, map[gpa.NodeID]kyberDSS.DistKeyShare) {

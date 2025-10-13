@@ -15,20 +15,20 @@ import (
 )
 
 type Controller struct {
-	waspVersion    string
-	config         *configuration.Configuration
-	dkgService     *services.DKGService
-	nodeService    interfaces.NodeService
-	peeringService interfaces.PeeringService
+	waspVersion       string
+	config            *configuration.Configuration
+	distKeyGenService *services.DistributedKeyGenerationService
+	nodeService       interfaces.NodeService
+	peeringService    interfaces.PeeringService
 }
 
-func NewNodeController(waspVersion string, config *configuration.Configuration, dkgService *services.DKGService, nodeService interfaces.NodeService, peeringService interfaces.PeeringService) interfaces.APIController {
+func NewNodeController(waspVersion string, config *configuration.Configuration, distKeyGenService *services.DistributedKeyGenerationService, nodeService interfaces.NodeService, peeringService interfaces.PeeringService) interfaces.APIController {
 	return &Controller{
-		waspVersion:    waspVersion,
-		config:         config,
-		dkgService:     dkgService,
-		nodeService:    nodeService,
-		peeringService: peeringService,
+		waspVersion:       waspVersion,
+		config:            config,
+		distKeyGenService: distKeyGenService,
+		nodeService:       nodeService,
+		peeringService:    peeringService,
 	}
 }
 

@@ -539,7 +539,7 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 	)
 	te.networkProviders = te.peeringNetwork.NetworkProviders()
 	var dkShareProviders []registry.DKShareRegistryProvider
-	te.committeeAddress, dkShareProviders = testpeers.SetupDkgTrivial(t, n, f, te.peerIdentities, nil)
+	te.committeeAddress, dkShareProviders = testpeers.SetupDistributedKeyGenerationTrivial(t, n, f, te.peerIdentities, nil)
 	te.committeeSigner = testpeers.NewTestDistributedSignatureSigner(te.committeeAddress, dkShareProviders, gpa.MakeTestNodeIDs(n), te.peerIdentities, te.log)
 
 	require.NoError(t, node.L1Client().RequestFunds(context.Background(), *te.committeeSigner.Address()))

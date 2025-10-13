@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package dkg
+package distkeygen
 
 //
 // This file contains message types, exchanged between the DKG nodes
@@ -82,7 +82,7 @@ func msgFromBytes[T interface{ Read(r io.Reader) error }](data []byte, msg T) er
 }
 
 // Check if that's an Initiator -> PeerProc message.
-func isDkgInitProcRecvMsg(msgType byte) bool {
+func isDistributedKeyGenerationInitProcRecvMsg(msgType byte) bool {
 	return msgType == initiatorStepMsgType || msgType == initiatorDoneMsgType
 }
 
@@ -171,14 +171,14 @@ type initiatorInitMsgIn struct {
 // This is a message sent by the initiator to all the peers to
 // initiate the DKG process.
 type initiatorInitMsg struct {
-	step         byte                   `bcs:"export"`
-	dkgRef       string                 `bcs:"export"` // Some unique string to identify duplicate initialization.
-	peeringID    peering.PeeringID      `bcs:"export"`
-	peerPubs     []*cryptolib.PublicKey `bcs:"export"`
-	initiatorPub *cryptolib.PublicKey   `bcs:"export"`
-	threshold    uint16                 `bcs:"export"`
-	timeout      time.Duration          `bcs:"export"`
-	roundRetry   time.Duration          `bcs:"export"`
+	step                byte                   `bcs:"export"`
+	distKeyGeneratorRef string                 `bcs:"export"` // Some unique string to identify duplicate initialization.
+	peeringID           peering.PeeringID      `bcs:"export"`
+	peerPubs            []*cryptolib.PublicKey `bcs:"export"`
+	initiatorPub        *cryptolib.PublicKey   `bcs:"export"`
+	threshold           uint16                 `bcs:"export"`
+	timeout             time.Duration          `bcs:"export"`
+	roundRetry          time.Duration          `bcs:"export"`
 }
 
 var _ initiatorMsg = new(initiatorInitMsg)
@@ -198,7 +198,7 @@ func (msg *initiatorInitMsg) SetStep(step byte) {
 func (msg *initiatorInitMsg) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msg.step = rr.ReadByte()
-	msg.dkgRef = rr.ReadString()
+	msg.distKeyGeneratorRef = rr.ReadString()
 	rr.ReadN(msg.peeringID[:])
 
 	size := rr.ReadSize16()
@@ -219,7 +219,7 @@ func (msg *initiatorInitMsg) Read(r io.Reader) error {
 func (msg *initiatorInitMsg) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	ww.WriteByte(msg.step)
-	ww.WriteString(msg.dkgRef)
+	ww.WriteString(msg.distKeyGeneratorRef)
 	ww.WriteN(msg.peeringID[:])
 
 	ww.WriteSize16(len(msg.peerPubs))

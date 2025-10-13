@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package dkg
+package distkeygen
 
 // TODO: [KP] Check, if error responses are considered gracefully at the initiator.
 
@@ -43,41 +43,41 @@ const (
 
 // Stands for a DKG procedure instance on a particular node.
 type proc struct {
-	dkgRef       string            // User supplied unique ID for this instance.
-	dkgID        peering.PeeringID // DKG procedure ID we are participating in.
-	dkShare      tcrypto.DKShare   // This will be generated as a result of this procedure.
-	node         *Node             // DKG node we are running in.
-	nodeIndex    uint16            // Index of this node.
-	initiatorPub *cryptolib.PublicKey
-	threshold    uint16                                     // Threshold used for the ED signatures.
-	blsThreshold uint16                                     // Here we must use low threshold.
-	roundRetry   time.Duration                              // Retry period for the Peer <-> Peer communication.
-	netGroup     peering.GroupProvider                      // A group for which the distributed key is generated.
-	dkgImpl      map[keySetType]*rabin_dkg.DistKeyGenerator // The cryptographic implementation to use.
-	dkgLock      *sync.RWMutex                              // Guard access to dkgImpl
-	cleanupFunc  context.CancelFunc                         // We keep it here to be able to detach from the network.
-	peerMsgCh    chan *peering.PeerMessageGroupIn           // A buffer for the received peer messages.
-	log          log.Logger                                 // A logger to use.
-	myPubKey     *cryptolib.PublicKey                       // Just to make logging easier.
-	steps        map[byte]*procStep                         // All the steps for the procedure.
+	distKeyGeneratorRef   string            // User supplied unique ID for this instance.
+	distKeyGeneratorID    peering.PeeringID // DKG procedure ID we are participating in.
+	dkShare               tcrypto.DKShare   // This will be generated as a result of this procedure.
+	node                  *Node             // DKG node we are running in.
+	nodeIndex             uint16            // Index of this node.
+	initiatorPub          *cryptolib.PublicKey
+	threshold             uint16                                     // Threshold used for the ED signatures.
+	blsThreshold          uint16                                     // Here we must use low threshold.
+	roundRetry            time.Duration                              // Retry period for the Peer <-> Peer communication.
+	netGroup              peering.GroupProvider                      // A group for which the distributed key is generated.
+	distKeyGenerationImpl map[keySetType]*rabin_dkg.DistKeyGenerator // The cryptographic implementation to use.
+	distKeyGenLock        *sync.RWMutex                              // Guard access to dkgImpl
+	cleanupFunc           context.CancelFunc                         // We keep it here to be able to detach from the network.
+	peerMsgCh             chan *peering.PeerMessageGroupIn           // A buffer for the received peer messages.
+	log                   log.Logger                                 // A logger to use.
+	myPubKey              *cryptolib.PublicKey                       // Just to make logging easier.
+	steps                 map[byte]*procStep                         // All the steps for the procedure.
 }
 
 //nolint:funlen
-func onInitiatorInit(dkgID peering.PeeringID, msg *initiatorInitMsg, node *Node) (*proc, error) {
-	log := node.log.NewChildLogger(fmt.Sprintf("dkgID.%s", dkgID.String()))
+func onInitiatorInit(distKeyGeneratorID peering.PeeringID, msg *initiatorInitMsg, node *Node) (*proc, error) {
+	log := node.log.NewChildLogger(fmt.Sprintf("dkgID.%s", distKeyGeneratorID.String()))
 	var err error
 
 	var netGroup peering.GroupProvider
-	if netGroup, err = node.netProvider.PeerGroup(dkgID, msg.peerPubs); err != nil {
+	if netGroup, err = node.netProvider.PeerGroup(distKeyGeneratorID, msg.peerPubs); err != nil {
 		return nil, err
 	}
 
 	blsThreshold := deriveBlsThreshold(msg)
 
-	var dkgImpl map[keySetType]*rabin_dkg.DistKeyGenerator
+	var distKeyGenerationImpl map[keySetType]*rabin_dkg.DistKeyGenerator
 	if len(msg.peerPubs) >= 2 {
 		// We use real DKG only if N >= 2. Otherwise, we just generate key pair, and that's all.
-		dkgImpl = make(map[keySetType]*rabin_dkg.DistKeyGenerator)
+		distKeyGenerationImpl = make(map[keySetType]*rabin_dkg.DistKeyGenerator)
 		kyberPeerPubs := make([]kyber.Point, len(msg.peerPubs))
 		for i := range kyberPeerPubs {
 			kyberPeerPubs[i], err = cryptolib.PointFromBytes(msg.peerPubs[i].AsBytes(), node.edSuite)
@@ -85,10 +85,10 @@ func onInitiatorInit(dkgID peering.PeeringID, msg *initiatorInitMsg, node *Node)
 				return nil, err
 			}
 		}
-		if dkgImpl[keySetTypeEd25519], err = rabin_dkg.NewDistKeyGenerator(node.edSuite, node.edSuite, node.secKey, kyberPeerPubs, int(msg.threshold)); err != nil {
+		if distKeyGenerationImpl[keySetTypeEd25519], err = rabin_dkg.NewDistKeyGenerator(node.edSuite, node.edSuite, node.secKey, kyberPeerPubs, int(msg.threshold)); err != nil {
 			return nil, fmt.Errorf("failed to instantiate DistKeyGenerator: %w", err)
 		}
-		if dkgImpl[keySetTypeBLS], err = rabin_dkg.NewDistKeyGenerator(node.blsSuite, node.edSuite, node.secKey, kyberPeerPubs, blsThreshold); err != nil {
+		if distKeyGenerationImpl[keySetTypeBLS], err = rabin_dkg.NewDistKeyGenerator(node.blsSuite, node.edSuite, node.secKey, kyberPeerPubs, blsThreshold); err != nil {
 			return nil, fmt.Errorf("failed to instantiate DistKeyGenerator: %w", err)
 		}
 	}
@@ -97,25 +97,25 @@ func onInitiatorInit(dkgID peering.PeeringID, msg *initiatorInitMsg, node *Node)
 		return nil, fmt.Errorf("bls threshold overflows uint16: %d", blsThreshold)
 	}
 	p := proc{
-		dkgRef:       msg.dkgRef,
-		dkgID:        dkgID,
-		node:         node,
-		nodeIndex:    netGroup.SelfIndex(),
-		initiatorPub: msg.initiatorPub,
-		threshold:    msg.threshold,
-		blsThreshold: thresholdUint16,
-		roundRetry:   msg.roundRetry,
-		netGroup:     netGroup,
-		dkgImpl:      dkgImpl,
-		dkgLock:      &sync.RWMutex{},
-		peerMsgCh:    make(chan *peering.PeerMessageGroupIn, len(msg.peerPubs)),
-		log:          log,
-		myPubKey:     node.netProvider.Self().PubKey(),
+		distKeyGeneratorRef:   msg.distKeyGeneratorRef,
+		distKeyGeneratorID:    distKeyGeneratorID,
+		node:                  node,
+		nodeIndex:             netGroup.SelfIndex(),
+		initiatorPub:          msg.initiatorPub,
+		threshold:             msg.threshold,
+		blsThreshold:          thresholdUint16,
+		roundRetry:            msg.roundRetry,
+		netGroup:              netGroup,
+		distKeyGenerationImpl: distKeyGenerationImpl,
+		distKeyGenLock:        &sync.RWMutex{},
+		peerMsgCh:             make(chan *peering.PeerMessageGroupIn, len(msg.peerPubs)),
+		log:                   log,
+		myPubKey:              node.netProvider.Self().PubKey(),
 	}
-	p.log.LogInfof("Starting DKG Peer process at %v for DkgID=%v", p.myPubKey.String(), p.dkgID.String())
+	p.log.LogInfof("Starting DKG Peer process at %v for DkgID=%v", p.myPubKey.String(), p.distKeyGeneratorID.String())
 	stepsStart := make(chan multiKeySetMsgs)
 	p.steps = make(map[byte]*procStep)
-	if p.dkgImpl == nil {
+	if p.distKeyGenerationImpl == nil {
 		p.steps[rabinStep6R6SendReconstructCommits] = newProcStep(rabinStep6R6SendReconstructCommits, &p,
 			stepsStart,
 			p.rabinStep6R6SendReconstructCommitsMakeSent,
@@ -164,7 +164,7 @@ func onInitiatorInit(dkgID peering.PeeringID, msg *initiatorInitMsg, node *Node)
 		)
 	}
 	go p.processLoop(msg.timeout, p.steps[rabinStep7CommitAndTerminate].doneCh)
-	unhook := p.netGroup.Attach(peering.ReceiverDkg, p.onPeerMessage)
+	unhook := p.netGroup.Attach(peering.ReceiverDistributedKeyGeneration, p.onPeerMessage)
 	p.cleanupFunc = unhook
 	stepsStart <- make(multiKeySetMsgs)
 	return &p, nil
@@ -199,7 +199,7 @@ func (p *proc) processLoop(timeout time.Duration, doneCh chan multiKeySetMsgs) {
 		select {
 		case recv := <-p.peerMsgCh:
 			rabinPeerToPeerMsg, _, _, _ := isDkgRabinRoundMsg(recv.MsgType)
-			if isDkgInitProcRecvMsg(recv.MsgType) || rabinPeerToPeerMsg {
+			if isDistributedKeyGenerationInitProcRecvMsg(recv.MsgType) || rabinPeerToPeerMsg {
 				step := readDkgMessageStep(recv.MsgData)
 				if s := p.steps[step]; s != nil {
 					s.recv(recv)
@@ -232,24 +232,24 @@ func (p *proc) processLoop(timeout time.Duration, doneCh chan multiKeySetMsgs) {
 // rabinStep1R21SendDeals
 func (p *proc) rabinStep1R21SendDealsMakeSent(step byte, kst keySetType, initRecv *peering.PeerMessageGroupIn, prevMsgs map[uint16]*peering.PeerMessageData) (map[uint16]*peering.PeerMessageData, error) {
 	var err error
-	if p.dkgImpl == nil {
+	if p.distKeyGenerationImpl == nil {
 		return nil, errors.New("unexpected step for n=1")
 	}
-	p.dkgLock.Lock()
+	p.distKeyGenLock.Lock()
 	var deals map[int]*rabin_dkg.Deal
-	if deals, err = p.dkgImpl[kst].Deals(); err != nil {
-		p.dkgLock.Unlock()
+	if deals, err = p.distKeyGenerationImpl[kst].Deals(); err != nil {
+		p.distKeyGenLock.Unlock()
 		p.log.LogErrorf("Deals -> %+v", err)
 		return nil, err
 	}
-	p.dkgLock.Unlock()
+	p.distKeyGenLock.Unlock()
 	sentMsgs := make(map[uint16]*peering.PeerMessageData)
 	for i := range deals {
 		iterator, err := safecast.Convert[uint16](i)
 		if err != nil {
 			return nil, errors.New("length of rabin deals overflows uint16")
 		}
-		sentMsgs[iterator] = makePeerMessage(p.dkgID, peering.ReceiverDkg, step, &rabinDealMsg{
+		sentMsgs[iterator] = makePeerMessage(p.distKeyGeneratorID, peering.ReceiverDistributedKeyGeneration, step, &rabinDealMsg{
 			deal: deals[i],
 		})
 	}
@@ -257,13 +257,13 @@ func (p *proc) rabinStep1R21SendDealsMakeSent(step byte, kst keySetType, initRec
 }
 
 func (p *proc) rabinStep1R21SendDealsMakeResp(step byte, initRecv *peering.PeerMessageGroupIn, recvMsgs multiKeySetMsgs) (*peering.PeerMessageData, error) {
-	return makePeerMessage(p.dkgID, peering.ReceiverDkg, step, &initiatorStatusMsg{error: nil}), nil
+	return makePeerMessage(p.distKeyGeneratorID, peering.ReceiverDistributedKeyGeneration, step, &initiatorStatusMsg{error: nil}), nil
 }
 
 // rabinStep2R22SendResponses
 func (p *proc) rabinStep2R22SendResponsesMakeSent(step byte, kst keySetType, initRecv *peering.PeerMessageGroupIn, prevMsgs map[uint16]*peering.PeerMessageData) (map[uint16]*peering.PeerMessageData, error) {
 	var err error
-	if p.dkgImpl == nil {
+	if p.distKeyGenerationImpl == nil {
 		return nil, errors.New("unexpected step for n=1")
 	}
 	//
@@ -287,13 +287,13 @@ func (p *proc) rabinStep2R22SendResponsesMakeSent(step byte, kst keySetType, ini
 	ourResponses := []*rabin_dkg.Response{}
 	for i := range recvDeals {
 		var r *rabin_dkg.Response
-		p.dkgLock.Lock()
-		if r, err = p.dkgImpl[kst].ProcessDeal(recvDeals[i].deal); err != nil {
-			p.dkgLock.Unlock()
+		p.distKeyGenLock.Lock()
+		if r, err = p.distKeyGenerationImpl[kst].ProcessDeal(recvDeals[i].deal); err != nil {
+			p.distKeyGenLock.Unlock()
 			p.log.LogErrorf("ProcessDeal(%v) -> %+v", i, err)
 			return nil, err
 		}
-		p.dkgLock.Unlock()
+		p.distKeyGenLock.Unlock()
 		p.log.LogDebugf("RabinDKG[%v] DealResponse[%v|%v]=%v", p.myPubKey.String(), r.Index, r.Response.Index, hexutil.Encode(r.Response.SessionID))
 		ourResponses = append(ourResponses, r)
 	}
@@ -301,7 +301,7 @@ func (p *proc) rabinStep2R22SendResponsesMakeSent(step byte, kst keySetType, ini
 	// Produce the sent messages.
 	sentMsgs := make(map[uint16]*peering.PeerMessageData)
 	for i := range prevMsgs { // Use peerIdx from the previous round.
-		sentMsgs[i] = makePeerMessage(p.dkgID, peering.ReceiverDkg, step, &rabinResponseMsg{
+		sentMsgs[i] = makePeerMessage(p.distKeyGeneratorID, peering.ReceiverDistributedKeyGeneration, step, &rabinResponseMsg{
 			responses: ourResponses,
 		})
 	}
@@ -309,13 +309,13 @@ func (p *proc) rabinStep2R22SendResponsesMakeSent(step byte, kst keySetType, ini
 }
 
 func (p *proc) rabinStep2R22SendResponsesMakeResp(step byte, initRecv *peering.PeerMessageGroupIn, recvMsgs multiKeySetMsgs) (*peering.PeerMessageData, error) {
-	return makePeerMessage(p.dkgID, peering.ReceiverDkg, step, &initiatorStatusMsg{error: nil}), nil
+	return makePeerMessage(p.distKeyGeneratorID, peering.ReceiverDistributedKeyGeneration, step, &initiatorStatusMsg{error: nil}), nil
 }
 
 // rabinStep3R23SendJustifications
 func (p *proc) rabinStep3R23SendJustificationsMakeSent(step byte, kst keySetType, initRecv *peering.PeerMessageGroupIn, prevMsgs map[uint16]*peering.PeerMessageData) (map[uint16]*peering.PeerMessageData, error) {
 	var err error
-	if p.dkgImpl == nil {
+	if p.distKeyGenerationImpl == nil {
 		return nil, errors.New("unexpected step for n=1")
 	}
 	//
@@ -334,15 +334,15 @@ func (p *proc) rabinStep3R23SendJustificationsMakeSent(step byte, kst keySetType
 	ourJustifications := []*rabin_dkg.Justification{}
 	for i := range recvResponses {
 		for _, r := range recvResponses[i].responses {
-			p.dkgLock.Lock()
+			p.distKeyGenLock.Lock()
 			var j *rabin_dkg.Justification
 			p.log.LogDebugf("RabinDKG[%v] ProcResponse[%v|%v]=%v", p.myPubKey.String(), r.Index, r.Response.Index, hexutil.Encode(r.Response.SessionID))
-			if j, err = p.dkgImpl[kst].ProcessResponse(r); err != nil {
-				p.dkgLock.Unlock()
+			if j, err = p.distKeyGenerationImpl[kst].ProcessResponse(r); err != nil {
+				p.distKeyGenLock.Unlock()
 				p.log.LogErrorf("ProcessResponse(%v) -> %+v, resp.SessionID=%v", i, err, hexutil.Encode(r.Response.SessionID))
 				return nil, err
 			}
-			p.dkgLock.Unlock()
+			p.distKeyGenLock.Unlock()
 			if j != nil {
 				ourJustifications = append(ourJustifications, j)
 			}
@@ -352,7 +352,7 @@ func (p *proc) rabinStep3R23SendJustificationsMakeSent(step byte, kst keySetType
 	// Produce the sent messages.
 	sentMsgs := make(map[uint16]*peering.PeerMessageData)
 	for i := range prevMsgs { // Use peerIdx from the previous round.
-		sentMsgs[i] = makePeerMessage(p.dkgID, peering.ReceiverDkg, step, &rabinJustificationMsg{
+		sentMsgs[i] = makePeerMessage(p.distKeyGeneratorID, peering.ReceiverDistributedKeyGeneration, step, &rabinJustificationMsg{
 			justifications: ourJustifications,
 		})
 	}
@@ -360,13 +360,13 @@ func (p *proc) rabinStep3R23SendJustificationsMakeSent(step byte, kst keySetType
 }
 
 func (p *proc) rabinStep3R23SendJustificationsMakeResp(step byte, initRecv *peering.PeerMessageGroupIn, recvMsgs multiKeySetMsgs) (*peering.PeerMessageData, error) {
-	return makePeerMessage(p.dkgID, peering.ReceiverDkg, step, &initiatorStatusMsg{error: nil}), nil
+	return makePeerMessage(p.distKeyGeneratorID, peering.ReceiverDistributedKeyGeneration, step, &initiatorStatusMsg{error: nil}), nil
 }
 
 // rabinStep4R4SendSecretCommits
 func (p *proc) rabinStep4R4SendSecretCommitsMakeSent(step byte, kst keySetType, initRecv *peering.PeerMessageGroupIn, prevMsgs map[uint16]*peering.PeerMessageData) (map[uint16]*peering.PeerMessageData, error) {
 	var err error
-	if p.dkgImpl == nil {
+	if p.distKeyGenerationImpl == nil {
 		return nil, errors.New("unexpected step for n=1")
 	}
 	//
@@ -381,46 +381,46 @@ func (p *proc) rabinStep4R4SendSecretCommitsMakeSent(step byte, kst keySetType, 
 	}
 	//
 	// Process the received justifications.
-	p.dkgLock.Lock()
+	p.distKeyGenLock.Lock()
 	for i := range recvJustifications {
 		for _, j := range recvJustifications[i].justifications {
-			if err = p.dkgImpl[kst].ProcessJustification(j); err != nil {
-				p.dkgLock.Unlock()
+			if err = p.distKeyGenerationImpl[kst].ProcessJustification(j); err != nil {
+				p.distKeyGenLock.Unlock()
 				return nil, fmt.Errorf("justification: processing failed: %w", err)
 			}
 		}
 	}
-	p.dkgLock.Unlock()
+	p.distKeyGenLock.Unlock()
 	p.log.LogDebugf("All justifications processed.")
 	//
 	// Take the QUAL set.
-	p.dkgLock.Lock()
-	p.dkgImpl[kst].SetTimeout()
-	if !p.dkgImpl[kst].Certified() {
-		p.dkgLock.Unlock()
+	p.distKeyGenLock.Lock()
+	p.distKeyGenerationImpl[kst].SetTimeout()
+	if !p.distKeyGenerationImpl[kst].Certified() {
+		p.distKeyGenLock.Unlock()
 		return nil, errors.New("node not certified")
 	}
-	p.dkgLock.Unlock()
+	p.distKeyGenLock.Unlock()
 	thisInQual := p.nodeInQUAL(kst, p.nodeIndex)
 	var ourSecretCommits *rabin_dkg.SecretCommits // Will be nil, if we are not in QUAL.
 	if thisInQual {
-		p.dkgLock.Lock()
-		if ourSecretCommits, err = p.dkgImpl[kst].SecretCommits(); err != nil {
-			p.dkgLock.Unlock()
+		p.distKeyGenLock.Lock()
+		if ourSecretCommits, err = p.distKeyGenerationImpl[kst].SecretCommits(); err != nil {
+			p.distKeyGenLock.Unlock()
 			return nil, fmt.Errorf("SecretCommits: generation failed: %w", err)
 		}
-		p.dkgLock.Unlock()
+		p.distKeyGenLock.Unlock()
 	}
 	//
 	// Produce the sent messages.
 	sentMsgs := make(map[uint16]*peering.PeerMessageData)
 	for i := range prevMsgs { // Use peerIdx from the previous round.
 		if thisInQual && p.nodeInQUAL(kst, i) {
-			sentMsgs[i] = makePeerMessage(p.dkgID, peering.ReceiverDkg, step, &rabinSecretCommitsMsg{
+			sentMsgs[i] = makePeerMessage(p.distKeyGeneratorID, peering.ReceiverDistributedKeyGeneration, step, &rabinSecretCommitsMsg{
 				secretCommits: ourSecretCommits,
 			})
 		} else {
-			sentMsgs[i] = makePeerMessage(p.dkgID, peering.ReceiverDkg, step, &rabinSecretCommitsMsg{
+			sentMsgs[i] = makePeerMessage(p.distKeyGeneratorID, peering.ReceiverDistributedKeyGeneration, step, &rabinSecretCommitsMsg{
 				secretCommits: nil,
 			})
 		}
@@ -429,13 +429,13 @@ func (p *proc) rabinStep4R4SendSecretCommitsMakeSent(step byte, kst keySetType, 
 }
 
 func (p *proc) rabinStep4R4SendSecretCommitsMakeResp(step byte, initRecv *peering.PeerMessageGroupIn, recvMsgs multiKeySetMsgs) (*peering.PeerMessageData, error) {
-	return makePeerMessage(p.dkgID, peering.ReceiverDkg, step, &initiatorStatusMsg{error: nil}), nil
+	return makePeerMessage(p.distKeyGeneratorID, peering.ReceiverDistributedKeyGeneration, step, &initiatorStatusMsg{error: nil}), nil
 }
 
 // rabinStep5R5SendComplaintCommits
 func (p *proc) rabinStep5R5SendComplaintCommitsMakeSent(step byte, kst keySetType, initRecv *peering.PeerMessageGroupIn, prevMsgs map[uint16]*peering.PeerMessageData) (map[uint16]*peering.PeerMessageData, error) {
 	var err error
-	if p.dkgImpl == nil {
+	if p.distKeyGenerationImpl == nil {
 		return nil, errors.New("unexpected step for n=1")
 	}
 	//
@@ -455,13 +455,13 @@ func (p *proc) rabinStep5R5SendComplaintCommitsMakeSent(step byte, kst keySetTyp
 		for i := range recvSecretCommits {
 			sc := recvSecretCommits[i].secretCommits
 			if sc != nil {
-				p.dkgLock.Lock()
+				p.distKeyGenLock.Lock()
 				var cc *rabin_dkg.ComplaintCommits
-				if cc, err = p.dkgImpl[kst].ProcessSecretCommits(sc); err != nil {
-					p.dkgLock.Unlock()
+				if cc, err = p.distKeyGenerationImpl[kst].ProcessSecretCommits(sc); err != nil {
+					p.distKeyGenLock.Unlock()
 					return nil, err
 				}
-				p.dkgLock.Unlock()
+				p.distKeyGenLock.Unlock()
 				if cc != nil {
 					ourComplaintCommits = append(ourComplaintCommits, cc)
 				}
@@ -473,11 +473,11 @@ func (p *proc) rabinStep5R5SendComplaintCommitsMakeSent(step byte, kst keySetTyp
 	sentMsgs := make(map[uint16]*peering.PeerMessageData)
 	for i := range prevMsgs { // Use peerIdx from the previous round.
 		if p.nodeInQUAL(kst, i) {
-			sentMsgs[i] = makePeerMessage(p.dkgID, peering.ReceiverDkg, step, &rabinComplaintCommitsMsg{
+			sentMsgs[i] = makePeerMessage(p.distKeyGeneratorID, peering.ReceiverDistributedKeyGeneration, step, &rabinComplaintCommitsMsg{
 				complaintCommits: ourComplaintCommits,
 			})
 		} else {
-			sentMsgs[i] = makePeerMessage(p.dkgID, peering.ReceiverDkg, step, &rabinComplaintCommitsMsg{
+			sentMsgs[i] = makePeerMessage(p.distKeyGeneratorID, peering.ReceiverDistributedKeyGeneration, step, &rabinComplaintCommitsMsg{
 				complaintCommits: []*rabin_dkg.ComplaintCommits{},
 			})
 		}
@@ -486,13 +486,13 @@ func (p *proc) rabinStep5R5SendComplaintCommitsMakeSent(step byte, kst keySetTyp
 }
 
 func (p *proc) rabinStep5R5SendComplaintCommitsMakeResp(step byte, initRecv *peering.PeerMessageGroupIn, recvMsgs multiKeySetMsgs) (*peering.PeerMessageData, error) {
-	return makePeerMessage(p.dkgID, peering.ReceiverDkg, step, &initiatorStatusMsg{error: nil}), nil
+	return makePeerMessage(p.distKeyGeneratorID, peering.ReceiverDistributedKeyGeneration, step, &initiatorStatusMsg{error: nil}), nil
 }
 
 // rabinStep6R6SendReconstructCommits
 func (p *proc) rabinStep6R6SendReconstructCommitsMakeSent(step byte, kst keySetType, initRecv *peering.PeerMessageGroupIn, prevMsgs map[uint16]*peering.PeerMessageData) (map[uint16]*peering.PeerMessageData, error) {
 	var err error
-	if p.dkgImpl == nil {
+	if p.distKeyGenerationImpl == nil {
 		// Nothing to exchange in the round, if N=1
 		return make(map[uint16]*peering.PeerMessageData), nil
 	}
@@ -512,13 +512,13 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeSent(step byte, kst keySetT
 	if p.nodeInQUAL(kst, p.nodeIndex) {
 		for i := range recvComplaintCommits {
 			for _, cc := range recvComplaintCommits[i].complaintCommits {
-				p.dkgLock.Lock()
+				p.distKeyGenLock.Lock()
 				var rc *rabin_dkg.ReconstructCommits
-				if rc, err = p.dkgImpl[kst].ProcessComplaintCommits(cc); err != nil {
-					p.dkgLock.Unlock()
+				if rc, err = p.distKeyGenerationImpl[kst].ProcessComplaintCommits(cc); err != nil {
+					p.distKeyGenLock.Unlock()
 					return nil, err
 				}
-				p.dkgLock.Unlock()
+				p.distKeyGenLock.Unlock()
 				if rc != nil {
 					ourReconstructCommits = append(ourReconstructCommits, rc)
 				}
@@ -536,7 +536,7 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeSent(step byte, kst keySetT
 		if p.nodeInQUAL(kst, i) {
 			msg.reconstructCommits = ourReconstructCommits
 		}
-		sentMsgs[i] = makePeerMessage(p.dkgID, peering.ReceiverDkg, step, msg)
+		sentMsgs[i] = makePeerMessage(p.distKeyGeneratorID, peering.ReceiverDistributedKeyGeneration, step, msg)
 	}
 	return sentMsgs, nil
 }
@@ -547,7 +547,7 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp(
 	recvMsgs multiKeySetMsgs,
 ) (*peering.PeerMessageData, error) {
 	var err error
-	if p.dkgImpl == nil {
+	if p.distKeyGenerationImpl == nil {
 		// This is the case for N=1, just use simple BLS key pair.
 		keyPairE := key.NewKeyPair(p.node.edSuite)
 		keyPairB := key.NewKeyPair(p.node.blsSuite)
@@ -584,43 +584,43 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp(
 			if err2 := msgFromBytes(recvMsg.blsMsg.MsgData, peerReconstructCommitsMsgBLS); err2 != nil {
 				return nil, err2
 			}
-			p.dkgLock.Lock()
+			p.distKeyGenLock.Lock()
 			for _, rc := range peerReconstructCommitsMsgEd.reconstructCommits {
-				if err = p.dkgImpl[keySetTypeEd25519].ProcessReconstructCommits(rc); err != nil {
-					p.dkgLock.Unlock()
+				if err = p.distKeyGenerationImpl[keySetTypeEd25519].ProcessReconstructCommits(rc); err != nil {
+					p.distKeyGenLock.Unlock()
 					return nil, err
 				}
 			}
 			for _, rc := range peerReconstructCommitsMsgBLS.reconstructCommits {
-				if err = p.dkgImpl[keySetTypeBLS].ProcessReconstructCommits(rc); err != nil {
-					p.dkgLock.Unlock()
+				if err = p.distKeyGenerationImpl[keySetTypeBLS].ProcessReconstructCommits(rc); err != nil {
+					p.distKeyGenLock.Unlock()
 					return nil, err
 				}
 			}
-			p.dkgLock.Unlock()
+			p.distKeyGenLock.Unlock()
 		}
 		//
 		// Retrieve the generated DistKeyShare.
-		p.dkgLock.Lock()
-		if !p.dkgImpl[keySetTypeEd25519].Finished() {
-			p.dkgLock.Unlock()
+		p.distKeyGenLock.Lock()
+		if !p.distKeyGenerationImpl[keySetTypeEd25519].Finished() {
+			p.distKeyGenLock.Unlock()
 			return nil, errors.New("DKG procedure is not finished")
 		}
-		if !p.dkgImpl[keySetTypeBLS].Finished() {
-			p.dkgLock.Unlock()
+		if !p.distKeyGenerationImpl[keySetTypeBLS].Finished() {
+			p.distKeyGenLock.Unlock()
 			return nil, errors.New("DKG procedure is not finished")
 		}
 		var distKeyShareDSS *rabin_dkg.DistKeyShare
 		var distKeyShareBLS *rabin_dkg.DistKeyShare
-		if distKeyShareDSS, err = p.dkgImpl[keySetTypeEd25519].DistKeyShare(); err != nil {
-			p.dkgLock.Unlock()
+		if distKeyShareDSS, err = p.distKeyGenerationImpl[keySetTypeEd25519].DistKeyShare(); err != nil {
+			p.distKeyGenLock.Unlock()
 			return nil, err
 		}
-		if distKeyShareBLS, err = p.dkgImpl[keySetTypeBLS].DistKeyShare(); err != nil {
-			p.dkgLock.Unlock()
+		if distKeyShareBLS, err = p.distKeyGenerationImpl[keySetTypeBLS].DistKeyShare(); err != nil {
+			p.distKeyGenLock.Unlock()
 			return nil, err
 		}
-		p.dkgLock.Unlock()
+		p.distKeyGenLock.Unlock()
 		//
 		// Save the needed info.
 		groupSize, groupErr := safecast.Convert[uint16](len(p.netGroup.AllNodes()))
@@ -665,7 +665,7 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp(
 	if pubShareMsg, err = p.makeInitiatorPubShareMsg(step); err != nil {
 		return nil, err
 	}
-	return makePeerMessage(p.dkgID, peering.ReceiverDkg, step, pubShareMsg), nil
+	return makePeerMessage(p.distKeyGeneratorID, peering.ReceiverDistributedKeyGeneration, step, pubShareMsg), nil
 }
 
 // rabinStep7CommitAndTerminate
@@ -687,21 +687,21 @@ func (p *proc) rabinStep7CommitAndTerminateMakeResp(step byte, initRecv *peering
 	if err := p.node.dkShareRegistryProvider.SaveDKShare(p.dkShare); err != nil {
 		return nil, err
 	}
-	return makePeerMessage(p.dkgID, peering.ReceiverDkg, step, &initiatorStatusMsg{error: nil}), nil
+	return makePeerMessage(p.distKeyGeneratorID, peering.ReceiverDistributedKeyGeneration, step, &initiatorStatusMsg{error: nil}), nil
 }
 
 func (p *proc) nodeInQUAL(kst keySetType, nodeIdx uint16) bool {
-	if nodeIdx == 0 && p.dkgImpl == nil {
+	if nodeIdx == 0 && p.distKeyGenerationImpl == nil {
 		return true // If N=1, Idx=0 is in QUAL.
 	}
-	p.dkgLock.RLock()
-	for _, q := range p.dkgImpl[kst].QUAL() {
+	p.distKeyGenLock.RLock()
+	for _, q := range p.distKeyGenerationImpl[kst].QUAL() {
 		if safecast.MustConvert[uint16](q) == nodeIdx {
-			p.dkgLock.RUnlock()
+			p.distKeyGenLock.RUnlock()
 			return true
 		}
 	}
-	p.dkgLock.RUnlock()
+	p.distKeyGenLock.RUnlock()
 	return false
 }
 
@@ -838,7 +838,7 @@ func (s *procStep) run() {
 			// The following is for the case, when we already completed our step, but receiving
 			// messages from others. Maybe our messages were lost, so we just resend the same messages.
 			if s.initResp != nil {
-				if isDkgInitProcRecvMsg(recv.MsgType) {
+				if isDistributedKeyGenerationInitProcRecvMsg(recv.MsgType) {
 					s.log.LogDebugf("[%v -%v-> %v] Resending initiator response.", s.proc.myPubKey.String(), s.initResp.MsgType, recv.SenderPubKey.String())
 					s.proc.netGroup.SendMsgByIndex(recv.SenderIndex, s.initResp.MsgReceiver, s.initResp.MsgType, s.initResp.MsgData)
 					continue
@@ -857,7 +857,7 @@ func (s *procStep) run() {
 			}
 			//
 			// The following processes the messages while this step is active.
-			if isDkgInitProcRecvMsg(recv.MsgType) {
+			if isDistributedKeyGenerationInitProcRecvMsg(recv.MsgType) {
 				s.onceSent.Do(func() {
 					s.initRecv = recv
 					s.sentMsgs = make(multiKeySetMsgs)
@@ -867,12 +867,12 @@ func (s *procStep) run() {
 					if edSentMsgs, err = s.makeSent(s.step, keySetTypeEd25519, s.initRecv, s.prevMsgs.GetEdMsgs()); err != nil {
 						s.log.LogErrorf("Step %v failed to make round messages, reason=%v", s.step, err)
 						// s.sentMsgs[keySetTypeEd25519] = make(map[uint16]*peering.PeerMessageData) // TODO: No messages will be sent on error.
-						s.markDone(makePeerMessage(s.proc.dkgID, peering.ReceiverDkg, s.step, &initiatorStatusMsg{error: err}))
+						s.markDone(makePeerMessage(s.proc.distKeyGeneratorID, peering.ReceiverDistributedKeyGeneration, s.step, &initiatorStatusMsg{error: err}))
 					}
 					if blsSentMsgs, err = s.makeSent(s.step, keySetTypeBLS, s.initRecv, s.prevMsgs.GetBLSMsgs()); err != nil {
 						s.log.LogErrorf("Step %v failed to make round messages, reason=%v", s.step, err)
 						// s.sentMsgs[keySetTypeBLS] = make(map[uint16]*peering.PeerMessageData) // TODO: No messages will be sent on error.
-						s.markDone(makePeerMessage(s.proc.dkgID, peering.ReceiverDkg, s.step, &initiatorStatusMsg{error: err}))
+						s.markDone(makePeerMessage(s.proc.distKeyGeneratorID, peering.ReceiverDistributedKeyGeneration, s.step, &initiatorStatusMsg{error: err}))
 					}
 					s.sentMsgs.AddDSSMsgs(edSentMsgs, s.step)
 					s.sentMsgs.AddBLSMsgs(blsSentMsgs, s.step)
@@ -963,7 +963,7 @@ func (s *procStep) makeDone() {
 		var initResp *peering.PeerMessageData
 		if initResp, err = s.makeResp(s.step, s.initRecv, s.recvMsgs); err != nil {
 			s.log.LogErrorf("Step failed to make round response, reason=%v", err)
-			s.markDone(makePeerMessage(s.proc.dkgID, peering.ReceiverDkg, s.step, &initiatorStatusMsg{error: err}))
+			s.markDone(makePeerMessage(s.proc.distKeyGeneratorID, peering.ReceiverDistributedKeyGeneration, s.step, &initiatorStatusMsg{error: err}))
 		} else {
 			s.markDone(initResp)
 		}

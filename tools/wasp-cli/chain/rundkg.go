@@ -20,7 +20,7 @@ import (
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/waspcmd"
 )
 
-func initRunDKGCmd() *cobra.Command {
+func initRunDistributedKeyGenerationCmd() *cobra.Command {
 	var (
 		node   string
 		peers  []string
@@ -37,7 +37,7 @@ func initRunDKGCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			_, err = doDKG(context.Background(), node, peers, quorum)
+			_, err = doDistributedKeyGeneration(context.Background(), node, peers, quorum)
 			return err
 		},
 	}
@@ -49,7 +49,7 @@ func initRunDKGCmd() *cobra.Command {
 	return cmd
 }
 
-func doDKG(ctx context.Context, node string, peers []string, quorum int) (*cryptolib.Address, error) {
+func doDistributedKeyGeneration(ctx context.Context, node string, peers []string, quorum int) (*cryptolib.Address, error) {
 	client := cliclients.WaspClientWithVersionCheck(ctx, node)
 	nodeInfo, _, err := client.NodeAPI.GetPeeringIdentity(ctx).Execute() //nolint:bodyclose // false positive
 	if err != nil {
@@ -105,7 +105,7 @@ func doDKG(ctx context.Context, node string, peers []string, quorum int) (*crypt
 		return nil, fmt.Errorf("quorum needs to be at least (2/3)+1 of committee size")
 	}
 
-	committeeAddr, err := apilib.RunDKG(ctx, client, committeePubKeys, uint16(quorum)) //nolint:gosec
+	committeeAddr, err := apilib.RunDistributedKeyGeneration(ctx, client, committeePubKeys, uint16(quorum)) //nolint:gosec
 	if err != nil {
 		return nil, err
 	}

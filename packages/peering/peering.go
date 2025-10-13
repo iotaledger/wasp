@@ -33,8 +33,8 @@ const (
 	ReceiverChain
 	ReceiverChainDSS
 	ReceiverChainCons
-	ReceiverDkg
-	ReceiverDkgInit
+	ReceiverDistributedKeyGeneration
+	ReceiverDistributedKeyGenerationInit
 	ReceiverMempool
 	ReceiverAccessMgr
 )

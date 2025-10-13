@@ -19,7 +19,7 @@ import (
 	"github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
-	"github.com/iotaledger/wasp/v2/packages/dkg"
+	"github.com/iotaledger/wasp/v2/packages/distkeygen"
 	"github.com/iotaledger/wasp/v2/packages/peering"
 	"github.com/iotaledger/wasp/v2/packages/registry"
 	"github.com/iotaledger/wasp/v2/packages/tcrypto"
@@ -45,7 +45,7 @@ func PublicKeys(peerIdentities []*cryptolib.KeyPair) []*cryptolib.PublicKey {
 	return pubKeys
 }
 
-func SetupDkg(
+func SetupDistributedKeyGeneration(
 	t *testing.T,
 	threshold uint16,
 	peeringURLs []string,
@@ -57,20 +57,20 @@ func SetupDkg(
 	networkProviders, networkCloser := SetupNet(peeringURLs, peerIdentities, testutil.NewPeeringNetReliable(log), log)
 	//
 	// Initialize the DKG subsystem in each node.
-	dkgNodes := make([]*dkg.Node, len(peeringURLs))
+	distKeyGenNodes := make([]*distkeygen.Node, len(peeringURLs))
 	dkShareRegistryProviders := make([]registry.DKShareRegistryProvider, len(peeringURLs))
 	for i := range peeringURLs {
-		dkShareRegistryProviders[i] = testutil.NewDkgRegistryProvider(peerIdentities[i].GetPrivateKey())
-		dkgNode, err := dkg.NewNode(
+		dkShareRegistryProviders[i] = testutil.NewDistributedKeyGenerationRegistryProvider(peerIdentities[i].GetPrivateKey())
+		distKeyGenNode, err := distkeygen.NewNode(
 			peerIdentities[i], networkProviders[i], dkShareRegistryProviders[i],
 			testlogger.WithLevel(log.NewChildLogger(fmt.Sprintf("peeringURL:%s", peeringURLs[i])), slog.LevelError, false),
 		)
 		require.NoError(t, err)
-		dkgNodes[i] = dkgNode
+		distKeyGenNodes[i] = distKeyGenNode
 	}
 	//
 	// Initiate the key generation from some client node.
-	dkShare, err := dkgNodes[0].GenerateDistributedKey(
+	dkShare, err := distKeyGenNodes[0].GenerateDistributedKey(
 		PublicKeys(peerIdentities),
 		threshold,
 		100*time.Second,
@@ -84,7 +84,7 @@ func SetupDkg(
 	return dkShare.GetAddress(), dkShareRegistryProviders
 }
 
-func SetupDkgTrivial(
+func SetupDistributedKeyGenerationTrivial(
 	t require.TestingT,
 	n, f int,
 	peerIdentities []*cryptolib.KeyPair,
@@ -149,7 +149,7 @@ func SetupDkgTrivial(
 			address = nodeDKS.GetAddress()
 		}
 		if dkShareRegistryProviders[i] == nil {
-			dkShareRegistryProviders[i] = testutil.NewDkgRegistryProvider(identity.GetPrivateKey())
+			dkShareRegistryProviders[i] = testutil.NewDistributedKeyGenerationRegistryProvider(identity.GetPrivateKey())
 		}
 		require.NoError(t, dkShareRegistryProviders[i].SaveDKShare(nodeDKS))
 	}
