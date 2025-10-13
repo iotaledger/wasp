@@ -11,30 +11,30 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/tcrypto"
 )
 
-// DkgRegistryProvider stands for a mock for dkg.DKShareRegistryProvider.
-type DkgRegistryProvider struct {
+// DistributedKeyGenerationRegistryProvider stands for a mock for dkg.DKShareRegistryProvider.
+type DistributedKeyGenerationRegistryProvider struct {
 	DB          map[string][]byte
 	nodePrivKey *cryptolib.PrivateKey
 }
 
-var _ registry.DKShareRegistryProvider = &DkgRegistryProvider{}
+var _ registry.DKShareRegistryProvider = &DistributedKeyGenerationRegistryProvider{}
 
-// NewDkgRegistryProvider creates new mocked DKG registry provider.
-func NewDkgRegistryProvider(nodePrivKey *cryptolib.PrivateKey) *DkgRegistryProvider {
-	return &DkgRegistryProvider{
+// NewDistributedKeyGenerationRegistryProvider creates new mocked DKG registry provider.
+func NewDistributedKeyGenerationRegistryProvider(nodePrivKey *cryptolib.PrivateKey) *DistributedKeyGenerationRegistryProvider {
+	return &DistributedKeyGenerationRegistryProvider{
 		DB:          map[string][]byte{},
 		nodePrivKey: nodePrivKey,
 	}
 }
 
 // SaveDKShare implements dkg.DKShareRegistryProvider.
-func (p *DkgRegistryProvider) SaveDKShare(dkShare tcrypto.DKShare) error {
+func (p *DistributedKeyGenerationRegistryProvider) SaveDKShare(dkShare tcrypto.DKShare) error {
 	p.DB[dkShare.GetAddress().String()] = dkShare.Bytes()
 	return nil
 }
 
 // LoadDKShare implements dkg.DKShareRegistryProvider.
-func (p *DkgRegistryProvider) LoadDKShare(sharedAddress *cryptolib.Address) (tcrypto.DKShare, error) {
+func (p *DistributedKeyGenerationRegistryProvider) LoadDKShare(sharedAddress *cryptolib.Address) (tcrypto.DKShare, error) {
 	dkShareBytes := p.DB[sharedAddress.String()]
 	if dkShareBytes == nil {
 		return nil, fmt.Errorf("DKShare not found for %v", sharedAddress.String())

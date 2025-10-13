@@ -601,7 +601,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 		testlogger.WithLevel(te.log, log.LevelWarning, false),
 	)
 	te.networkProviders = te.peeringNetwork.NetworkProviders()
-	te.committeeAddress, _ = testpeers.SetupDkgTrivial(t, n, f, te.peerIdentities, nil)
+	te.committeeAddress, _ = testpeers.SetupDistributedKeyGenerationTrivial(t, n, f, te.peerIdentities, nil)
 
 	l1client := l1starter.Instance().L1Client()
 

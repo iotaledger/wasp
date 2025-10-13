@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package dkg
+package distkeygen
 
 import (
 	"go.dedis.ch/kyber/v3"

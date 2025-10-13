@@ -7,7 +7,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
-	"github.com/iotaledger/wasp/v2/packages/dkg"
+	"github.com/iotaledger/wasp/v2/packages/distkeygen"
 	"github.com/iotaledger/wasp/v2/packages/peering"
 	"github.com/iotaledger/wasp/v2/packages/registry"
 	"github.com/iotaledger/wasp/v2/packages/tcrypto"
@@ -19,21 +19,21 @@ const (
 	stepRetry  = 3 * time.Second // Retry for Initiator -> Peer communication.
 )
 
-type DKGService struct {
+type DistributedKeyGenerationService struct {
 	dkShareRegistryProvider registry.DKShareRegistryProvider
-	dkgNodeProvider         dkg.NodeProvider
+	distKeyGenNodeProvider  distkeygen.NodeProvider
 	trustedNetworkManager   peering.TrustedNetworkManager
 }
 
-func NewDKGService(dkShareRegistryProvider registry.DKShareRegistryProvider, dkgNodeProvider dkg.NodeProvider, trustedNetworkManager peering.TrustedNetworkManager) *DKGService {
-	return &DKGService{
+func NewDistributedKeyGenerationService(dkShareRegistryProvider registry.DKShareRegistryProvider, distKeyGenNodeProvider distkeygen.NodeProvider, trustedNetworkManager peering.TrustedNetworkManager) *DistributedKeyGenerationService {
+	return &DistributedKeyGenerationService{
 		dkShareRegistryProvider: dkShareRegistryProvider,
-		dkgNodeProvider:         dkgNodeProvider,
+		distKeyGenNodeProvider:  distKeyGenNodeProvider,
 		trustedNetworkManager:   trustedNetworkManager,
 	}
 }
 
-func (d *DKGService) GenerateDistributedKey(peerPubKeysOrNames []string, threshold uint16, timeout time.Duration) (*models.DKSharesInfo, error) {
+func (d *DistributedKeyGenerationService) GenerateDistributedKey(peerPubKeysOrNames []string, threshold uint16, timeout time.Duration) (*models.DKSharesInfo, error) {
 	trustedPeers, err := d.trustedNetworkManager.TrustedPeersByPubKeyOrName(peerPubKeysOrNames)
 	if err != nil {
 		return nil, err
@@ -42,7 +42,7 @@ func (d *DKGService) GenerateDistributedKey(peerPubKeysOrNames []string, thresho
 		return tp.PubKey()
 	})
 
-	dkShare, err := d.dkgNodeProvider().GenerateDistributedKey(peerPubKeys, threshold, roundRetry, stepRetry, timeout)
+	dkShare, err := d.distKeyGenNodeProvider().GenerateDistributedKey(peerPubKeys, threshold, roundRetry, stepRetry, timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (d *DKGService) GenerateDistributedKey(peerPubKeysOrNames []string, thresho
 	return dkShareInfo, nil
 }
 
-func (d *DKGService) GetShares(sharedAddress *cryptolib.Address) (*models.DKSharesInfo, error) {
+func (d *DistributedKeyGenerationService) GetShares(sharedAddress *cryptolib.Address) (*models.DKSharesInfo, error) {
 	dkShare, err := d.dkShareRegistryProvider.LoadDKShare(sharedAddress)
 	if err != nil {
 		return nil, err
@@ -69,7 +69,7 @@ func (d *DKGService) GetShares(sharedAddress *cryptolib.Address) (*models.DKShar
 	return dkShareInfo, nil
 }
 
-func (d *DKGService) createDKModel(dkShare tcrypto.DKShare) (*models.DKSharesInfo, error) {
+func (d *DistributedKeyGenerationService) createDKModel(dkShare tcrypto.DKShare) (*models.DKSharesInfo, error) {
 	publicKey, err := dkShare.DSSSharedPublic().MarshalBinary()
 	if err != nil {
 		return nil, err

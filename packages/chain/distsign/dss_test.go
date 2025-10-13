@@ -15,7 +15,7 @@ import (
 
 	"github.com/iotaledger/wasp/v2/packages/chain/distsign"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
-	"github.com/iotaledger/wasp/v2/packages/gpa/adkg"
+	"github.com/iotaledger/wasp/v2/packages/gpa/asyncdistkeygen"
 	"github.com/iotaledger/wasp/v2/packages/tcrypto"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
 )
@@ -35,7 +35,7 @@ func TestBasic(t *testing.T) {
 			nodePKs[nodeIDs[i]] = suite.Point().Mul(nodeSKs[nodeIDs[i]], nil)
 		}
 
-		longTermPK, longTermSecretShares := adkg.MakeTestDistributedKey(tt, suite, nodeIDs, nodeSKs, nodePKs, f, log)
+		longTermPK, longTermSecretShares := asyncdistkeygen.MakeTestDistributedKey(tt, suite, nodeIDs, nodeSKs, nodePKs, f, log)
 
 		//
 		// Setup nodes.

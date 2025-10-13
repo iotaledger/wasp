@@ -196,19 +196,19 @@ func (clu *Cluster) DeployDefaultChain() (*Chain, error) {
 	if quorum < minQuorum {
 		quorum = minQuorum
 	}
-	return clu.DeployChainWithDKG(committee, committee, uint16(quorum))
+	return clu.DeployChainWithDistKeyGen(committee, committee, uint16(quorum))
 }
 
-func (clu *Cluster) InitDKG(committeeNodeCount int) ([]int, *cryptolib.Address, error) {
+func (clu *Cluster) InitDistributedKeyGeneration(committeeNodeCount int) ([]int, *cryptolib.Address, error) {
 	cmt := util.MakeRange(0, committeeNodeCount-1) // End is inclusive for some reason.
 	quorum := uint16((2*len(cmt))/3 + 1)
 
-	address, err := clu.RunDKG(cmt, quorum)
+	address, err := clu.RunDistributedKeyGeneration(cmt, quorum)
 
 	return cmt, address, err
 }
 
-func (clu *Cluster) RunDKG(committeeNodes []int, threshold uint16, timeout ...time.Duration) (*cryptolib.Address, error) {
+func (clu *Cluster) RunDistributedKeyGeneration(committeeNodes []int, threshold uint16, timeout ...time.Duration) (*cryptolib.Address, error) {
 	if threshold == 0 {
 		threshold = (uint16(len(committeeNodes))*2)/3 + 1
 	}
@@ -225,14 +225,14 @@ func (clu *Cluster) RunDKG(committeeNodes []int, threshold uint16, timeout ...ti
 		peerPubKeys = append(peerPubKeys, peeringNodeInfo.PublicKey)
 	}
 
-	dkgInitiatorIndex := rand.Intn(len(apiHosts))
-	client := clu.WaspClientFromHostName(apiHosts[dkgInitiatorIndex])
+	distKeyGenInitiatorIndex := rand.Intn(len(apiHosts))
+	client := clu.WaspClientFromHostName(apiHosts[distKeyGenInitiatorIndex])
 
-	return apilib.RunDKG(context.Background(), client, peerPubKeys, threshold, timeout...)
+	return apilib.RunDistributedKeyGeneration(context.Background(), client, peerPubKeys, threshold, timeout...)
 }
 
-func (clu *Cluster) DeployChainWithDKG(allPeers, committeeNodes []int, quorum uint16, blockKeepAmount ...int32) (*Chain, error) {
-	stateAddr, err := clu.RunDKG(committeeNodes, quorum)
+func (clu *Cluster) DeployChainWithDistKeyGen(allPeers, committeeNodes []int, quorum uint16, blockKeepAmount ...int32) (*Chain, error) {
+	stateAddr, err := clu.RunDistributedKeyGeneration(committeeNodes, quorum)
 	if err != nil {
 		return nil, err
 	}

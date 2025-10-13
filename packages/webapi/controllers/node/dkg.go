@@ -19,7 +19,7 @@ func (c *Controller) generateDKS(e echo.Context) error {
 		return apierrors.InvalidPropertyError("body", err)
 	}
 
-	sharesInfo, err := c.dkgService.GenerateDistributedKey(generateDKSRequest.PeerPubKeysOrNames, generateDKSRequest.Threshold, time.Duration(generateDKSRequest.TimeoutMS)*time.Millisecond)
+	sharesInfo, err := c.distKeyGenService.GenerateDistributedKey(generateDKSRequest.PeerPubKeysOrNames, generateDKSRequest.Threshold, time.Duration(generateDKSRequest.TimeoutMS)*time.Millisecond)
 	if err != nil {
 		panic(err)
 	}
@@ -33,7 +33,7 @@ func (c *Controller) getDKSInfo(e echo.Context) error {
 		return apierrors.InvalidPropertyError(params.ParamSharedAddress, err)
 	}
 
-	sharesInfo, err := c.dkgService.GetShares(sharedAddress)
+	sharesInfo, err := c.distKeyGenService.GetShares(sharedAddress)
 	if err != nil {
 		panic(err)
 	}

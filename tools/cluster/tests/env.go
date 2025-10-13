@@ -48,7 +48,7 @@ func SetupWithChain(t *testing.T, opts ...waspClusterOpts) *ChainEnv {
 func SetupWithChainWithOpts(t *testing.T, opt *waspClusterOpts, committeeNodes []int, quorum uint16, blockKeepAmount ...int32) *ChainEnv {
 	clu := newCluster(t, *opt)
 	e := &ChainEnv{t: t, Clu: clu}
-	chain, err := clu.DeployChainWithDKG(clu.Config.AllNodes(), committeeNodes, quorum, blockKeepAmount...)
+	chain, err := clu.DeployChainWithDistKeyGen(clu.Config.AllNodes(), committeeNodes, quorum, blockKeepAmount...)
 	require.NoError(t, err)
 	return newChainEnv(e.t, e.Clu, chain)
 }
