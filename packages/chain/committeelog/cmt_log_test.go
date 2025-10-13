@@ -60,8 +60,28 @@ func testCommitteeLogBasic(t *testing.T, n, f int) {
 	for i := range gpaNodeIDs {
 		dkShare, err := committeeKeyShares[i].LoadDKShare(committeeAddress)
 		require.NoError(t, err)
+
+		committeeAddr := dkShare.GetSharedPublic().AsAddress()
+		nodePKs := dkShare.GetNodePubKeys()
+
+		nodeIDs := make([]gpa.NodeID, len(nodePKs))
+		for i := range nodeIDs {
+			nodeIDs[i] = gpa.NodeIDFromPublicKey(nodePKs[i])
+		}
+
 		consensusStateRegistry := testutil.NewConsensusStateRegistry() // Empty store in this case.
-		committeeLogInst, err := committeelog.New(gpaNodeIDs[i], chainID, dkShare, consensusStateRegistry, gpa.NodeIDFromPublicKey, true, -1, nil, log.NewChildLogger(fmt.Sprintf("N%v", i)))
+		committeeLogInst, err := committeelog.New(
+			gpaNodeIDs[i],
+			chainID,
+			committeeAddr,
+			nodeIDs,
+			dkShare.DSS().MaxFaulty(),
+			consensusStateRegistry,
+			true,
+			-1,
+			nil,
+			log.NewChildLogger(fmt.Sprintf("N%v", i)),
+		)
 		require.NoError(t, err)
 		gpaNodes[gpaNodeIDs[i]] = committeeLogInst.AsGPA()
 	}
