@@ -5,7 +5,7 @@
 // a DKG for tests is presented in this file. Not sure, whi it fails.
 // Similar setup is working in https://github.com/iotaledger/crypto-tss/blob/main/demo/examples/nonce-sign/main.go
 
-package dss_test
+package distsign_test
 
 import (
 	"testing"

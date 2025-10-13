@@ -10,7 +10,7 @@ import (
 
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
-	"github.com/iotaledger/wasp/v2/packages/chain/dss"
+	"github.com/iotaledger/wasp/v2/packages/chain/distsign"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/registry"
@@ -59,31 +59,31 @@ func (sig *testDssSigner) Sign(messageToSign []byte) (*cryptolib.Signature, erro
 
 	//
 	// Setup nodes.
-	dsss := map[gpa.NodeID]dss.DistributedSignature{}
+	distributedSignatures := map[gpa.NodeID]distsign.DistributedSignature{}
 	gpas := map[gpa.NodeID]gpa.GPA{}
 	for idx, nid := range sig.nodeIDs {
 		dks := sig.dkShares[idx]
 		privKey := lo.Must(sig.nodeKeys[idx].GetPrivateKey().AsKyberKeyPair()).Private
-		dsss[nid] = dss.New(edSuite, sig.nodeIDs, nodePKs, f, nid, privKey, dks.DSS(), sig.log)
-		gpas[nid] = dsss[nid].AsGPA()
+		distributedSignatures[nid] = distsign.New(edSuite, sig.nodeIDs, nodePKs, f, nid, privKey, dks.DSS(), sig.log)
+		gpas[nid] = distributedSignatures[nid].AsGPA()
 	}
 	tc := gpa.NewTestContext(gpas)
 	//
 	// Run the DKG
 	inputs := make(map[gpa.NodeID]gpa.Input)
 	for _, nid := range sig.nodeIDs {
-		inputs[nid] = dss.NewInputStart() // Input is only a signal here.
+		inputs[nid] = distsign.NewInputStart() // Input is only a signal here.
 	}
 	tc.WithInputs(inputs).RunUntil(tc.NumberOfOutputsPredicate(n - f))
 	//
 	// Check the INTERMEDIATE result.
-	intermediateOutputs := map[gpa.NodeID]*dss.Output{}
+	intermediateOutputs := map[gpa.NodeID]*distsign.Output{}
 	for nid := range gpas {
 		nodeOutput := gpas[nid].Output()
 		if nodeOutput == nil {
 			continue
 		}
-		intermediateOutput := nodeOutput.(*dss.Output)
+		intermediateOutput := nodeOutput.(*distsign.Output)
 		intermediateOutputs[nid] = intermediateOutput
 	}
 	//
@@ -92,8 +92,8 @@ func (sig *testDssSigner) Sign(messageToSign []byte) (*cryptolib.Signature, erro
 	for nid := range intermediateOutputs {
 		decidedProposals[nid] = intermediateOutputs[nid].ProposedIndexes
 	}
-	for nid := range dsss {
-		tc.WithInput(nid, dss.NewInputDecided(decidedProposals, messageToSign))
+	for nid := range distributedSignatures {
+		tc.WithInput(nid, distsign.NewInputDecided(decidedProposals, messageToSign))
 	}
 	//
 	// Run the ADKG with agreement already decided.
@@ -103,7 +103,7 @@ func (sig *testDssSigner) Sign(messageToSign []byte) (*cryptolib.Signature, erro
 	for _, n := range gpas {
 		o := n.Output()
 		if o != nil {
-			signatureBytes := o.(*dss.Output).Signature
+			signatureBytes := o.(*distsign.Output).Signature
 			signature := cryptolib.NewSignature(sig.dkShares[0].GetSharedPublic(), signatureBytes)
 			if !signature.Validate(messageToSign) {
 				return nil, fmt.Errorf("produced an invalid signature")

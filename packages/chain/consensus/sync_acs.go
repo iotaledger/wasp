@@ -18,7 +18,7 @@ import (
 type SyncACS interface {
 	StateProposalReceived(proposedBaseAnchor *isc.StateAnchor) gpa.OutMessages
 	MempoolRequestsReceived(requestRefs []*isc.RequestRef) gpa.OutMessages
-	DistributedSignatureIndexProposalReceived(dssIndexProposal []int) gpa.OutMessages
+	DistributedSignatureIndexProposalReceived(distSignIndexProposal []int) gpa.OutMessages
 	TimeDataReceived(timeData time.Time) gpa.OutMessages
 	L1InfoReceived(gasCoins []*coin.CoinWithRef, l1params *parameters.L1Params) gpa.OutMessages
 	ACSOutputReceived(output gpa.Output) gpa.OutMessages
@@ -42,7 +42,7 @@ type syncACSImpl struct {
 	inputsReadyCB func(
 		baseAnchor *isc.StateAnchor,
 		requestRefs []*isc.RequestRef,
-		dssIndexProposal []int,
+		distSignIndexProposal []int,
 		timeData time.Time,
 		gasCoins []*coin.CoinWithRef,
 		l1params *parameters.L1Params,
@@ -59,7 +59,7 @@ func NewSyncACS(
 	inputsReadyCB func(
 		baseAnchor *isc.StateAnchor,
 		requestRefs []*isc.RequestRef,
-		dssIndexProposal []int,
+		distSignIndexProposal []int,
 		timeData time.Time,
 		gasCoins []*coin.CoinWithRef,
 		l1params *parameters.L1Params,
@@ -91,11 +91,11 @@ func (sub *syncACSImpl) MempoolRequestsReceived(requestRefs []*isc.RequestRef) g
 	return sub.tryCompleteInput()
 }
 
-func (sub *syncACSImpl) DistributedSignatureIndexProposalReceived(dssIndexProposal []int) gpa.OutMessages {
+func (sub *syncACSImpl) DistributedSignatureIndexProposalReceived(distSignIndexProposal []int) gpa.OutMessages {
 	if sub.DistributedSignatureIndexProposal != nil {
 		return nil
 	}
-	sub.DistributedSignatureIndexProposal = dssIndexProposal
+	sub.DistributedSignatureIndexProposal = distSignIndexProposal
 	return sub.tryCompleteInput()
 }
 

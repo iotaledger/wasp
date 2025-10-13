@@ -26,7 +26,7 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/v2/packages/chain/consensus/batchproposal"
-	distsign "github.com/iotaledger/wasp/v2/packages/chain/dss"
+	"github.com/iotaledger/wasp/v2/packages/chain/distsign"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
@@ -115,7 +115,7 @@ type consensusImpl struct {
 	me                      gpa.NodeID
 	f                       int
 	asGPA                   gpa.GPA
-	dss                     distsign.DistributedSignature
+	distributedSignature    distsign.DistributedSignature
 	acs                     acs.ACS
 	subMempool              SyncMempool              // Mempool.
 	subStateMgr             SyncStateMgr             // StateMgr.
@@ -189,21 +189,21 @@ func New( //nolint:funlen
 		return semi.New(round, realCC)
 	}
 	c := &consensusImpl{
-		chainID:          chainID,
-		chainStore:       chainStore,
-		edSuite:          edSuite,
-		blsSuite:         blsSuite,
-		dkShare:          dkShare,
-		rotateTo:         rotateTo,
-		processorCache:   processorCache,
-		nodeIDs:          nodeIDs,
-		me:               me,
-		f:                f,
-		dss:              distsign.New(edSuite, nodeIDs, nodePKs, f, me, myKyberKeys.Private, longTermDKS, log.NewChildLogger("DistributedSignature")),
-		acs:              acs.New(nodeIDs, me, f, acsCCInstFunc, acsLog),
-		output:           &Output{Status: Running},
-		log:              log,
-		validatorAgentID: validatorAgentID,
+		chainID:              chainID,
+		chainStore:           chainStore,
+		edSuite:              edSuite,
+		blsSuite:             blsSuite,
+		dkShare:              dkShare,
+		rotateTo:             rotateTo,
+		processorCache:       processorCache,
+		nodeIDs:              nodeIDs,
+		me:                   me,
+		f:                    f,
+		distributedSignature: distsign.New(edSuite, nodeIDs, nodePKs, f, me, myKyberKeys.Private, longTermDKS, log.NewChildLogger("DistributedSignature")),
+		acs:                  acs.New(nodeIDs, me, f, acsCCInstFunc, acsLog),
+		output:               &Output{Status: Running},
+		log:                  log,
+		validatorAgentID:     validatorAgentID,
 	}
 	c.asGPA = gpa.NewOwnHandler(me, c)
 	c.msgWrapper = gpa.NewMsgWrapper(msgTypeWrapped, c.msgWrapperFunc)
@@ -260,7 +260,7 @@ func (c *consensusImpl) msgWrapperFunc(subsystem byte, index int) (gpa.GPA, erro
 		if index != 0 {
 			return nil, fmt.Errorf("unexpected DistributedSignature index: %v", index)
 		}
-		return c.dss.AsGPA(), nil
+		return c.distributedSignature.AsGPA(), nil
 	}
 	if subsystem == subsystemTypeACS {
 		if index != 0 {
@@ -474,8 +474,8 @@ func (c *consensusImpl) uponDistributedSignatureIndexProposalReady(indexProposal
 
 func (c *consensusImpl) uponDistributedSignatureSigningInputsReceived(decidedIndexProposals map[gpa.NodeID][]int, messageToSign []byte) gpa.OutMessages {
 	c.log.LogDebugf("uponDistributedSignatureSigningInputsReceived(decidedIndexProposals=%+v, H(messageToSign)=%v)", decidedIndexProposals, hashing.HashDataBlake2b(messageToSign))
-	dssDecidedInput := distsign.NewInputDecided(decidedIndexProposals, messageToSign)
-	subDistributedSignature, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeDistributedSignature, 0, dssDecidedInput)
+	distributedSignatureDecidedInput := distsign.NewInputDecided(decidedIndexProposals, messageToSign)
+	subDistributedSignature, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeDistributedSignature, 0, distributedSignatureDecidedInput)
 	if err != nil {
 		panic(fmt.Errorf("cannot provide inputs for signing: %w", err))
 	}
@@ -495,7 +495,7 @@ func (c *consensusImpl) uponDistributedSignatureOutputReady(signature []byte) gp
 func (c *consensusImpl) uponACSInputsReceived(
 	baseAnchor *isc.StateAnchor, // Can be nil.
 	requestRefs []*isc.RequestRef,
-	dssIndexProposal []int,
+	distSignIndexProposal []int,
 	timeData time.Time,
 	gasCoins []*coin.CoinWithRef, // Can be nil.
 	l1params *parameters.L1Params, // Can be nil.
@@ -508,7 +508,7 @@ func (c *consensusImpl) uponACSInputsReceived(
 	batchProposal := batchproposal.NewBatchProposal(
 		*c.dkShare.GetIndex(),
 		baseAnchor, // Will be NIL in the case of ⊥ proposal.
-		util.NewFixedSizeBitVector(c.dkShare.GetN()).SetBits(dssIndexProposal),
+		util.NewFixedSizeBitVector(c.dkShare.GetN()).SetBits(distSignIndexProposal),
 		rotateTo,
 		timeData,
 		c.validatorAgentID,
