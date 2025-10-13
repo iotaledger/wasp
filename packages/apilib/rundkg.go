@@ -31,7 +31,7 @@ func RunDistributedKeyGeneration(ctx context.Context, client *apiclient.APIClien
 		}
 	}
 
-	dkShares, _, err := client.NodeAPI.GenerateDKS(ctx).DKSharesPostRequest(apiclient.DKSharesPostRequest{
+	distKeyParts, _, err := client.NodeAPI.GenerateDKS(ctx).DKSharesPostRequest(apiclient.DKSharesPostRequest{
 		Threshold:      uint32(threshold),
 		TimeoutMS:      to,
 		PeerIdentities: peerPubKeys,
@@ -40,7 +40,7 @@ func RunDistributedKeyGeneration(ctx context.Context, client *apiclient.APIClien
 		return nil, err
 	}
 
-	addr, err := cryptolib.NewAddressFromHexString(dkShares.Address)
+	addr, err := cryptolib.NewAddressFromHexString(distKeyParts.Address)
 	if err != nil {
 		return nil, fmt.Errorf("RunDistributedKeyGeneration: invalid address returned from DKG: %w", err)
 	}

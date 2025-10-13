@@ -75,17 +75,17 @@ func provide(c *dig.Container) error {
 	type chainsDeps struct {
 		dig.In
 
-		NodeConnection              chain.NodeConnection
-		ProcessorsConfig            *processors.Config
-		NetworkProvider             peering.NetworkProvider       `name:"networkProvider"`
-		TrustedNetworkManager       peering.TrustedNetworkManager `name:"trustedNetworkManager"`
-		ChainStateDatabaseManager   *database.ChainStateDatabaseManager
-		ChainRecordRegistryProvider registry.ChainRecordRegistryProvider
-		DKShareRegistryProvider     registry.DKShareRegistryProvider
-		NodeIdentityProvider        registry.NodeIdentityProvider
-		ConsensusStateRegistry      committeelog.ConsensusStateRegistry
-		ChainListener               *publisher.Publisher
-		ChainMetricsProvider        *metrics.ChainMetricsProvider
+		NodeConnection            chain.NodeConnection
+		ProcessorsConfig          *processors.Config
+		NetworkProvider           peering.NetworkProvider       `name:"networkProvider"`
+		TrustedNetworkManager     peering.TrustedNetworkManager `name:"trustedNetworkManager"`
+		ChainStateDatabaseManager *database.ChainStateDatabaseManager
+		ChainRecordRegistry       registry.ChainRecordRegistry
+		DistKeyPartsRegistry      registry.DistKeyPartsRegistry
+		NodeIdentityProvider      registry.NodeIdentityProvider
+		ConsensusStateRegistry    committeelog.ConsensusStateRegistry
+		ChainListener             *publisher.Publisher
+		ChainMetricsProvider      *metrics.ChainMetricsProvider
 	}
 
 	type chainsResult struct {
@@ -127,8 +127,8 @@ func provide(c *dig.Container) error {
 				ParamsSnapshotManager.Delay,
 				ParamsSnapshotManager.LocalPath,
 				ParamsSnapshotManager.NetworkPaths,
-				deps.ChainRecordRegistryProvider,
-				deps.DKShareRegistryProvider,
+				deps.ChainRecordRegistry,
+				deps.DistKeyPartsRegistry,
 				deps.NodeIdentityProvider,
 				deps.ConsensusStateRegistry,
 				deps.ChainListener,

@@ -159,7 +159,7 @@ func New(
 	ctx context.Context,
 	chainID isc.ChainID,
 	chainStore state.Store,
-	dkShare tcrypto.DKShare,
+	distKeyPart tcrypto.DistKeyPart,
 	logIndex *committeelog.LogIndex,
 	myNodeIdentity *cryptolib.KeyPair,
 	procCache *processors.Config,
@@ -176,10 +176,10 @@ func New(
 	pipeMetrics *metrics.ChainPipeMetrics,
 	log log.Logger,
 ) *ConsensusRunner {
-	committeePubKey := dkShare.GetSharedPublic()
+	committeePubKey := distKeyPart.GetSharedPublic()
 	netPeeringID := peering.HashPeeringIDFromBytes(chainID.Bytes(), committeePubKey.AsBytes(), logIndex.Bytes()) // ChainID × Committee PubKey × LogIndex
 	netPeerPubs := map[gpa.NodeID]*cryptolib.PublicKey{}
-	for _, peerPubKey := range dkShare.GetNodePubKeys() {
+	for _, peerPubKey := range distKeyPart.GetNodePubKeys() {
 		netPeerPubs[gpa.NodeIDFromPublicKey(peerPubKey)] = peerPubKey
 	}
 	me := gpa.NodeIDFromPublicKey(myNodeIdentity.GetPublicKey())
@@ -214,7 +214,7 @@ func New(
 		chainStore,
 		me,
 		myNodeIdentity.GetPrivateKey(),
-		dkShare,
+		distKeyPart,
 		rotateTo,
 		procCache,
 		netPeeringID[:],

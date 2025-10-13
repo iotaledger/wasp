@@ -58,11 +58,11 @@ func testCommitteeLogBasic(t *testing.T, n, f int) {
 	gpaNodeIDs := gpa.NodeIDsFromPublicKeys(peerPubKeys)
 	gpaNodes := map[gpa.NodeID]gpa.GPA{}
 	for i := range gpaNodeIDs {
-		dkShare, err := committeeKeyShares[i].LoadDKShare(committeeAddress)
+		distKeyPart, err := committeeKeyShares[i].LoadDistKeyPart(committeeAddress)
 		require.NoError(t, err)
 
-		committeeAddr := dkShare.GetSharedPublic().AsAddress()
-		nodePKs := dkShare.GetNodePubKeys()
+		committeeAddr := distKeyPart.GetSharedPublic().AsAddress()
+		nodePKs := distKeyPart.GetNodePubKeys()
 
 		nodeIDs := make([]gpa.NodeID, len(nodePKs))
 		for i := range nodeIDs {
@@ -75,7 +75,7 @@ func testCommitteeLogBasic(t *testing.T, n, f int) {
 			chainID,
 			committeeAddr,
 			nodeIDs,
-			dkShare.DSS().MaxFaulty(),
+			distKeyPart.DSS().MaxFaulty(),
 			consensusStateRegistry,
 			true,
 			-1,

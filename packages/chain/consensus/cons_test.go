@@ -70,7 +70,7 @@ func testConsBasic(t *testing.T, n, f int) {
 	//
 	// Node Identities and shared key.
 	_, peerIdentities := testpeers.SetupKeys(uint16(n))
-	committeeAddress, dkShareProviders := testpeers.SetupDistributedKeyGenerationTrivial(t, n, f, peerIdentities, nil)
+	committeeAddress, distKeyPartsProviders := testpeers.SetupDistributedKeyGenerationTrivial(t, n, f, peerIdentities, nil)
 	var chainID isc.ChainID
 
 	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(committeeAddress)).Encode()
@@ -152,7 +152,7 @@ func testConsBasic(t *testing.T, n, f int) {
 	for i, nid := range nodeIDs {
 		nodeLog := log.NewChildLogger(nid.ShortString())
 		nodeSK := peerIdentities[i].GetPrivateKey()
-		nodeDKShare, err := dkShareProviders[i].LoadDKShare(committeeAddress)
+		nodeDistKeyPart, err := distKeyPartsProviders[i].LoadDistKeyPart(committeeAddress)
 		require.NoError(t, err)
 		chainStates[nid] = statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 		_, err = origin.InitChainByStateMetadataBytes(chainStates[nid], stateAnchor0.GetStateMetadata(), 0, parameterstest.L1Mock)
@@ -162,7 +162,7 @@ func testConsBasic(t *testing.T, n, f int) {
 			chainStates[nid],
 			nid,
 			nodeSK,
-			nodeDKShare,
+			nodeDistKeyPart,
 			nil, // rotateTo
 			procConfig,
 			consInstID,

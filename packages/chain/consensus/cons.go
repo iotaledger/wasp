@@ -106,10 +106,10 @@ func (r *Result) String() string {
 type consensusImpl struct {
 	chainID                 isc.ChainID
 	chainStore              state.Store
-	edSuite                 suites.Suite    // For signatures.
-	blsSuite                suites.Suite    // For randomness only.
-	dkShare                 tcrypto.DKShare // The current committee's keys.
-	rotateTo                *iotago.Address // If non-nil and differs from the dkShare, then rotation is suggested.
+	edSuite                 suites.Suite        // For signatures.
+	blsSuite                suites.Suite        // For randomness only.
+	distKeyPart             tcrypto.DistKeyPart // The current committee's keys.
+	rotateTo                *iotago.Address     // If non-nil and differs from the distKeyPart, then rotation is suggested.
 	processorCache          *processors.Config
 	nodeIDs                 []gpa.NodeID
 	me                      gpa.NodeID
@@ -147,7 +147,7 @@ func New( //nolint:funlen
 	chainStore state.Store,
 	me gpa.NodeID,
 	mySK *cryptolib.PrivateKey,
-	dkShare tcrypto.DKShare,
+	distKeyPart tcrypto.DistKeyPart,
 	rotateTo *iotago.Address,
 	processorCache *processors.Config,
 	instID []byte,
@@ -158,24 +158,24 @@ func New( //nolint:funlen
 	edSuite := tcrypto.DefaultEd25519Suite()
 	blsSuite := tcrypto.DefaultBLSSuite()
 
-	dkShareNodePubKeys := dkShare.GetNodePubKeys()
-	nodeIDs := make([]gpa.NodeID, len(dkShareNodePubKeys))
+	distKeyPartNodePubKeys := distKeyPart.GetNodePubKeys()
+	nodeIDs := make([]gpa.NodeID, len(distKeyPartNodePubKeys))
 	nodePKs := map[gpa.NodeID]kyber.Point{}
-	for i := range dkShareNodePubKeys {
+	for i := range distKeyPartNodePubKeys {
 		var err error
-		nodeIDs[i] = nodeIDFromPubKey(dkShareNodePubKeys[i])
-		nodePKs[nodeIDs[i]], err = dkShareNodePubKeys[i].AsKyberPoint()
+		nodeIDs[i] = nodeIDFromPubKey(distKeyPartNodePubKeys[i])
+		nodePKs[nodeIDs[i]], err = distKeyPartNodePubKeys[i].AsKyberPoint()
 		if err != nil {
 			panic(fmt.Errorf("cannot convert nodePK[%v] to kyber.Point: %w", i, err))
 		}
 	}
 
-	f := len(dkShareNodePubKeys) - int(dkShare.GetT())
+	f := len(distKeyPartNodePubKeys) - int(distKeyPart.GetT())
 	myKyberKeys, err := mySK.AsKyberKeyPair()
 	if err != nil {
 		panic(fmt.Errorf("cannot convert node's SK to kyber.Scalar: %w", err))
 	}
-	longTermDKS := dkShare.DSS()
+	longTermDKS := distKeyPart.DSS()
 	acsLog := log.NewChildLogger("ACS")
 	acsCCInstFunc := func(nodeID gpa.NodeID, round int) gpa.GPA {
 		var roundBin [4]byte
@@ -185,7 +185,7 @@ func New( //nolint:funlen
 		}
 		binary.BigEndian.PutUint32(roundBin[:], roundU32)
 		sid := hashing.HashDataBlake2b(instID, nodeID[:], roundBin[:]).Bytes()
-		realCC := blssig.New(blsSuite, nodeIDs, dkShare.BLSCommits(), dkShare.BLSPriShare(), int(dkShare.BLSThreshold()), me, sid, acsLog)
+		realCC := blssig.New(blsSuite, nodeIDs, distKeyPart.BLSCommits(), distKeyPart.BLSPriShare(), int(distKeyPart.BLSThreshold()), me, sid, acsLog)
 		return semi.New(round, realCC)
 	}
 	c := &consensusImpl{
@@ -193,7 +193,7 @@ func New( //nolint:funlen
 		chainStore:           chainStore,
 		edSuite:              edSuite,
 		blsSuite:             blsSuite,
-		dkShare:              dkShare,
+		distKeyPart:          distKeyPart,
 		rotateTo:             rotateTo,
 		processorCache:       processorCache,
 		nodeIDs:              nodeIDs,
@@ -237,7 +237,7 @@ func New( //nolint:funlen
 		c.uponACSTerminated,
 	)
 	c.subRND = NewSyncRND(
-		int(dkShare.BLSThreshold()),
+		int(distKeyPart.BLSThreshold()),
 		c.uponRNDInputsReady,
 		c.uponRNDSigSharesReady,
 	)
@@ -501,14 +501,14 @@ func (c *consensusImpl) uponACSInputsReceived(
 	l1params *parameters.L1Params, // Can be nil.
 ) gpa.OutMessages {
 	rotateTo := c.rotateTo
-	if rotateTo != nil && rotateTo.Equals(*c.dkShare.GetAddress().AsIotaAddress()) {
+	if rotateTo != nil && rotateTo.Equals(*c.distKeyPart.GetAddress().AsIotaAddress()) {
 		// Do not propose to rotate to the existing committee.
 		rotateTo = nil
 	}
 	batchProposal := batchproposal.NewBatchProposal(
-		*c.dkShare.GetIndex(),
+		*c.distKeyPart.GetIndex(),
 		baseAnchor, // Will be NIL in the case of ⊥ proposal.
-		util.NewFixedSizeBitVector(c.dkShare.GetN()).SetBits(distSignIndexProposal),
+		util.NewFixedSizeBitVector(c.distKeyPart.GetN()).SetBits(distSignIndexProposal),
 		rotateTo,
 		timeData,
 		c.validatorAgentID,
@@ -541,7 +541,7 @@ func (c *consensusImpl) uponACSOutputReceived(outputValues map[gpa.NodeID][]byte
 	c.log.LogDebugf("ACS decision: baseAnchor=%v, requests=%v", bao, reqs)
 	if aggr.DecidedRotateTo() != nil {
 		c.log.LogDebugf("Will rotate to %v", aggr.DecidedRotateTo().ToHex())
-		rotationPTB := vmtxbuilder.NewAnchorTransactionBuilder(bao.ISCPackage(), bao, c.dkShare.GetAddress())
+		rotationPTB := vmtxbuilder.NewAnchorTransactionBuilder(bao.ISCPackage(), bao, c.distKeyPart.GetAddress())
 		rotationPTB.RotationTransaction(aggr.DecidedRotateTo())
 		rotationPTX := rotationPTB.BuildTransactionEssence(bao.GetStateMetadata(), 0)
 		rotationTXD := c.makeTransactionData(&rotationPTX, aggr)
@@ -570,7 +570,7 @@ func (c *consensusImpl) uponACSTerminated() {
 // RND
 
 func (c *consensusImpl) uponRNDInputsReady(dataToSign []byte) gpa.OutMessages {
-	sigShare, err := c.dkShare.BLSSignShare(dataToSign)
+	sigShare, err := c.distKeyPart.BLSSignShare(dataToSign)
 	if err != nil {
 		panic(fmt.Errorf("cannot sign share for randomness: %w", err))
 	}
@@ -586,9 +586,9 @@ func (c *consensusImpl) uponRNDSigSharesReady(dataToSign []byte, partialSigs map
 	for nid := range partialSigs {
 		partialSigArray = append(partialSigArray, partialSigs[nid])
 	}
-	sig, err := c.dkShare.BLSRecoverMasterSignature(partialSigArray, dataToSign)
+	sig, err := c.distKeyPart.BLSRecoverMasterSignature(partialSigArray, dataToSign)
 	if err != nil {
-		c.log.LogWarnf("Cannot reconstruct BLS signature from %v/%v sigShares: %v", len(partialSigs), c.dkShare.GetN(), err)
+		c.log.LogWarnf("Cannot reconstruct BLS signature from %v/%v sigShares: %v", len(partialSigs), c.distKeyPart.GetN(), err)
 		return false, nil // Continue to wait for other sig shares.
 	}
 	return true, c.subVM.RandomnessReceived(hashing.HashDataBlake2b(sig.Signature.Bytes()))
@@ -651,7 +651,7 @@ func (c *consensusImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult, aggregat
 // TX
 
 func (c *consensusImpl) makeTransactionData(pt *iotago.ProgrammableTransaction, aggregatedProposals *batchproposal.AggregatedBatchProposals) *iotago.TransactionData {
-	sender := c.dkShare.GetAddress().AsIotaAddress()
+	sender := c.distKeyPart.GetAddress().AsIotaAddress()
 	l1params := aggregatedProposals.AggregatedL1Params()
 	gasPrice := l1params.Protocol.ReferenceGasPrice.Uint64()
 	gasBudget := pt.EstimateGasBudget(gasPrice)
@@ -682,7 +682,7 @@ func (c *consensusImpl) makeTransactionSigningBytes(txData *iotago.TransactionDa
 
 // Everything is ready for the output TX, produce it.
 func (c *consensusImpl) uponTXInputsReady(decidedAnchor *isc.StateAnchor, unsignedTX *iotago.TransactionData, block state.Block, signature []byte) gpa.OutMessages {
-	suiSignature := cryptolib.NewSignature(c.dkShare.GetSharedPublic(), signature).AsIotaSignature()
+	suiSignature := cryptolib.NewSignature(c.distKeyPart.GetSharedPublic(), signature).AsIotaSignature()
 	signedTX := iotasigner.NewSignedTransaction(unsignedTX, suiSignature)
 	c.output.Result = &Result{
 		DecidedAnchor: decidedAnchor,

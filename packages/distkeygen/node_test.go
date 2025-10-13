@@ -42,11 +42,11 @@ func TestBasic(t *testing.T) {
 	//
 	// Initialize the DKG subsystem in each node.
 	distKeyGenNodes := make([]*distkeygen.Node, len(peeringURLs))
-	dkShareRegistryProviders := make([]registry.DKShareRegistryProvider, len(peeringURLs))
+	distKeyPartRegistries := make([]registry.DistKeyPartsRegistry, len(peeringURLs))
 	for i := range peeringURLs {
-		dkShareRegistryProviders[i] = testutil.NewDistributedKeyGenerationRegistryProvider(peerIdentities[i].GetPrivateKey())
+		distKeyPartRegistries[i] = testutil.NewDistributedKeyGenerationRegistry(peerIdentities[i].GetPrivateKey())
 		distKeyGenNode, err := distkeygen.NewNode(
-			peerIdentities[i], networkProviders[i], dkShareRegistryProviders[i],
+			peerIdentities[i], networkProviders[i], distKeyPartRegistries[i],
 			testlogger.WithLevel(log.NewChildLogger(fmt.Sprintf("PeeringURL:%s", peeringURLs[i])), hivelog.LevelDebug, false),
 		)
 		require.NoError(t, err)
@@ -54,7 +54,7 @@ func TestBasic(t *testing.T) {
 	}
 	//
 	// Initiate the key generation from some client node.
-	dkShare, err := distKeyGenNodes[0].GenerateDistributedKey(
+	distKeyPart, err := distKeyGenNodes[0].GenerateDistributedKey(
 		testpeers.PublicKeys(peerIdentities),
 		threshold,
 		1*time.Second,
@@ -62,17 +62,17 @@ func TestBasic(t *testing.T) {
 		timeout,
 	)
 	require.NoError(t, err)
-	require.NotNil(t, dkShare.GetAddress())
-	require.NotNil(t, dkShare.GetSharedPublic())
+	require.NotNil(t, distKeyPart.GetAddress())
+	require.NotNil(t, distKeyPart.GetSharedPublic())
 	//
 	// Aggregate the signatures: generate signature shares.
 	dataToSign := []byte{112, 117, 116, 105, 110, 32, 99, 104, 117, 105, 108, 111, 33}
 	require.NoError(t, err)
 	// dssPartSigs := make([]*dss.PartialSig, len(peerPeeringURLs))
 	blsPartSigs := make([][]byte, len(peeringURLs))
-	var aggrDks tcrypto.DKShare
-	for i, r := range dkShareRegistryProviders {
-		dks, err2 := r.LoadDKShare(dkShare.GetAddress())
+	var aggrDks tcrypto.DistKeyPart
+	for i, r := range distKeyPartRegistries {
+		dks, err2 := r.LoadDistKeyPart(distKeyPart.GetAddress())
 		if i == 0 {
 			aggrDks = dks
 		}
@@ -125,7 +125,7 @@ func TestUnreliableNet(t *testing.T) {
 	// Initialize the DKG subsystem in each node.
 	distKeyGenNodes := make([]*distkeygen.Node, len(peerPeeringURLs))
 	for i := range peerPeeringURLs {
-		dksReg := testutil.NewDistributedKeyGenerationRegistryProvider(peerIdentities[i].GetPrivateKey())
+		dksReg := testutil.NewDistributedKeyGenerationRegistry(peerIdentities[i].GetPrivateKey())
 		distKeyGenNode, err := distkeygen.NewNode(
 			peerIdentities[i], networkProviders[i], dksReg,
 			testlogger.WithLevel(log.NewChildLogger(fmt.Sprintf("PeeringURL:%s", peerPeeringURLs[i])), hivelog.LevelDebug, false),
@@ -135,7 +135,7 @@ func TestUnreliableNet(t *testing.T) {
 	}
 	//
 	// Initiate the key generation from some client node.
-	dkShare, err := distKeyGenNodes[0].GenerateDistributedKey(
+	distKeyPart, err := distKeyGenNodes[0].GenerateDistributedKey(
 		testpeers.PublicKeys(peerIdentities),
 		threshold,
 		100*time.Millisecond, // Round retry.
@@ -143,8 +143,8 @@ func TestUnreliableNet(t *testing.T) {
 		timeout,
 	)
 	require.NoError(t, err)
-	require.NotNil(t, dkShare.GetAddress())
-	require.NotNil(t, dkShare.GetSharedPublic())
+	require.NotNil(t, distKeyPart.GetAddress())
+	require.NotNil(t, distKeyPart.GetSharedPublic())
 }
 
 // TestLowN checks, if the DKG works with N=1 and other low values. N=1 is a special case.
@@ -169,7 +169,7 @@ func TestLowN(t *testing.T) {
 		// Initialize the DKG subsystem in each node.
 		distKeyGenNodes := make([]*distkeygen.Node, len(peerPeeringURLs))
 		for i := range peerPeeringURLs {
-			dksReg := testutil.NewDistributedKeyGenerationRegistryProvider(peerIdentities[i].GetPrivateKey())
+			dksReg := testutil.NewDistributedKeyGenerationRegistry(peerIdentities[i].GetPrivateKey())
 			distKeyGenNode, err := distkeygen.NewNode(
 				peerIdentities[i], networkProviders[i], dksReg,
 				testlogger.WithLevel(log.NewChildLogger(fmt.Sprintf("PeeringURL:%s", peerPeeringURLs[i])), hivelog.LevelDebug, false),
@@ -179,7 +179,7 @@ func TestLowN(t *testing.T) {
 		}
 		//
 		// Initiate the key generation from some client node.
-		dkShare, err := distKeyGenNodes[0].GenerateDistributedKey(
+		distKeyPart, err := distKeyGenNodes[0].GenerateDistributedKey(
 			testpeers.PublicKeys(peerIdentities),
 			threshold,
 			1*time.Second,
@@ -187,7 +187,7 @@ func TestLowN(t *testing.T) {
 			timeout,
 		)
 		require.NoError(t, err)
-		require.NotNil(t, dkShare.GetAddress())
-		require.NotNil(t, dkShare.GetSharedPublic())
+		require.NotNil(t, distKeyPart.GetAddress())
+		require.NotNil(t, distKeyPart.GetSharedPublic())
 	}
 }

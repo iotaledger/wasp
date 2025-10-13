@@ -28,9 +28,9 @@ type SecretShare interface {
 	Threshold() int // T -- Minimal number of participants to recover a secret, T = N - F.
 }
 
-// DKShare stands for the information stored on
+// DistKeyPart stands for the information stored on
 // a node as a result of the DKG procedure.
-type DKShare interface {
+type DistKeyPart interface {
 	json.Marshaler
 	json.Unmarshaler
 	ID() *util.ComparableAddress
@@ -68,8 +68,8 @@ type DKShare interface {
 	//
 	// For tests only.
 	AssignNodePubKeys(nodePubKeys []*cryptolib.PublicKey)
-	AssignCommonData(dks DKShare)
+	AssignCommonData(dks DistKeyPart)
 	ClearCommonData()
 }
 
-var ErrDKShareNotFound = errors.New("dkShare not found")
+var ErrDistKeyPartNotFound = errors.New("distKeyPart not found")

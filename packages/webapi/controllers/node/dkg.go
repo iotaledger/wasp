@@ -13,7 +13,7 @@ import (
 )
 
 func (c *Controller) generateDKS(e echo.Context) error {
-	generateDKSRequest := models.DKSharesPostRequest{}
+	generateDKSRequest := models.DistKeyPartsPostRequest{}
 
 	if err := e.Bind(&generateDKSRequest); err != nil {
 		return apierrors.InvalidPropertyError("body", err)

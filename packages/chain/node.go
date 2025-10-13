@@ -174,7 +174,7 @@ type chainNodeImpl struct {
 	// Information for other components.
 	listener                   ChainListener          // Object expecting event notifications.
 	accessLock                 *sync.RWMutex          // Mutex for accessing informative fields from other threads.
-	activeCommitteeDKShare     tcrypto.DKShare        // DKShare of the current active committee.
+	activeCommitteeDistKeyPart tcrypto.DistKeyPart    // DistKeyPart of the current active committee.
 	activeCommitteeNodes       []*cryptolib.PublicKey // The nodes acting as a committee for the latest consensus.
 	activeAccessNodes          []*cryptolib.PublicKey // All the nodes authorized for being access nodes (∪{{Self}, accessNodesFromNode, accessNodesFrom{ACT, CNF}}, activeCommitteeNodes}).
 	accessNodesFromNode        []*cryptolib.PublicKey // Access nodes, as configured locally by a user in this node.
@@ -262,7 +262,7 @@ func New(
 	nodeConn NodeConnection,
 	nodeIdentity *cryptolib.KeyPair,
 	processorConfig *processors.Config,
-	dkShareRegistryProvider registry.DKShareRegistryProvider,
+	distKeyPartsRegistry registry.DistKeyPartsRegistry,
 	consensusStateRegistry committeelog.ConsensusStateRegistry,
 	recoverFromWAL bool,
 	blockWAL utils.BlockWAL,
@@ -304,7 +304,7 @@ func New(
 	if mode == OperationalMode {
 		return initializeOperationalChain(
 			ctx, cni, netPeeringID, chainID, chainStore, nodeConn, nodeIdentity,
-			consensusStateRegistry, dkShareRegistryProvider, recoverFromWAL, blockWAL,
+			consensusStateRegistry, distKeyPartsRegistry, recoverFromWAL, blockWAL,
 			net, snapshotManager, chainMetrics, shutdownCoordinator, smParameters,
 			mempoolSettings, mempoolBroadcastInterval, accessNodesFromNode,
 			deriveAnchorByQuorum, pipeliningLimit, postponeRecoveryMilestones,
@@ -361,7 +361,7 @@ func newChainNodeImplAndPeerID(
 		validatorAgentID:           validatorAgentID,
 		listener:                   listener,
 		accessLock:                 &sync.RWMutex{},
-		activeCommitteeDKShare:     nil,
+		activeCommitteeDistKeyPart: nil,
 		activeCommitteeNodes:       []*cryptolib.PublicKey{},
 		activeAccessNodes:          nil, // Set bellow.
 		accessNodesFromNode:        nil, // Set bellow.
@@ -778,7 +778,7 @@ func (cni *chainNodeImpl) ensureConsensusInput(ctx context.Context, needConsensu
 func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus *chainmanager.NeedConsensus) *consensusInst {
 	committeeAddr := needConsensus.CommitteeAddr
 	logIndex := needConsensus.LogIndex
-	dkShare := needConsensus.DKShare
+	distKeyPart := needConsensus.DistKeyPart
 
 	consensusInstances, _ := cni.consensusInsts.GetOrCreate(committeeAddr.Key(), func() *shrinkingmap.ShrinkingMap[committeelog.LogIndex, *consensusInst] {
 		return shrinkingmap.New[committeelog.LogIndex, *consensusInst]()
@@ -790,7 +790,7 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 			consRunnerCtx, consRunnerCancel := context.WithCancel(ctx)
 			logIndexCopy := addLogIndex
 			consRunner := consensusrunner.New(
-				consRunnerCtx, cni.chainID, cni.chainStore, dkShare, &logIndexCopy, cni.nodeIdentity,
+				consRunnerCtx, cni.chainID, cni.chainStore, distKeyPart, &logIndexCopy, cni.nodeIdentity,
 				cni.procCache, cni.mempool, cni.stateMgr,
 				cni.nodeConn,
 				cni.net,
@@ -804,7 +804,7 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 			consensusInstances.Set(addLogIndex, &consensusInst{
 				cancelFunc: consRunnerCancel,
 				consensus:  consRunner,
-				committee:  dkShare.GetNodePubKeys(),
+				committee:  distKeyPart.GetNodePubKeys(),
 			})
 			if !cni.tangleTime.IsZero() {
 				consRunner.Time(cni.tangleTime)
@@ -1029,12 +1029,12 @@ func (cni *chainNodeImpl) LatestState(freshness StateFreshness) (state.State, er
 
 func (cni *chainNodeImpl) GetCommitteeInfo() *CommitteeInfo {
 	cni.accessLock.RLock()
-	dkShare := cni.activeCommitteeDKShare
+	distKeyPart := cni.activeCommitteeDistKeyPart
 	cni.accessLock.RUnlock()
-	if dkShare == nil {
+	if distKeyPart == nil {
 		return nil // There is no current committee for now.
 	}
-	committeePubKeys := dkShare.GetNodePubKeys()
+	committeePubKeys := distKeyPart.GetNodePubKeys()
 	netPeerStatus := cni.net.PeerStatus()
 	peerStatus := make([]*PeerStatus, len(committeePubKeys))
 	connectedCount := uint16(0)
@@ -1062,10 +1062,10 @@ func (cni *chainNodeImpl) GetCommitteeInfo() *CommitteeInfo {
 		}
 	}
 	ci := &CommitteeInfo{
-		Address:       dkShare.GetAddress(),
-		Size:          dkShare.GetN(),
-		Quorum:        dkShare.GetT(),
-		QuorumIsAlive: connectedCount >= dkShare.GetT(),
+		Address:       distKeyPart.GetAddress(),
+		Size:          distKeyPart.GetN(),
+		Quorum:        distKeyPart.GetT(),
+		QuorumIsAlive: connectedCount >= distKeyPart.GetT(),
 		PeerStatus:    peerStatus,
 	}
 	return ci
@@ -1073,15 +1073,15 @@ func (cni *chainNodeImpl) GetCommitteeInfo() *CommitteeInfo {
 
 func (cni *chainNodeImpl) GetChainNodes() []peering.PeerStatusProvider {
 	cni.accessLock.RLock()
-	dkShare := cni.activeCommitteeDKShare
+	distKeyPart := cni.activeCommitteeDistKeyPart
 	acNodes := cni.activeAccessNodes
 	srNodes := cni.serverNodes
 	cni.accessLock.RUnlock()
 	allNodeKeys := map[cryptolib.PublicKeyKey]*cryptolib.PublicKey{}
 	//
 	// Add committee nodes.
-	if dkShare != nil {
-		for _, nodePubKey := range dkShare.GetNodePubKeys() {
+	if distKeyPart != nil {
+		for _, nodePubKey := range distKeyPart.GetNodePubKeys() {
 			allNodeKeys[nodePubKey.AsKey()] = nodePubKey
 		}
 	}
@@ -1206,7 +1206,7 @@ func initializeOperationalChain(
 	nodeConn NodeConnection,
 	nodeIdentity *cryptolib.KeyPair,
 	consensusStateRegistry committeelog.ConsensusStateRegistry,
-	dkShareRegistryProvider registry.DKShareRegistryProvider,
+	distKeyPartsRegistry registry.DistKeyPartsRegistry,
 	recoverFromWAL bool,
 	blockWAL utils.BlockWAL,
 	net peering.NetworkProvider,
@@ -1239,7 +1239,7 @@ func initializeOperationalChain(
 	cni.me = cni.pubKeyAsNodeID(nodeIdentity.GetPublicKey())
 
 	// Create chain manager
-	chainMgr, err := createChainManager(ctx, cni, consensusStateRegistry, dkShareRegistryProvider,
+	chainMgr, err := createChainManager(ctx, cni, consensusStateRegistry, distKeyPartsRegistry,
 		deriveAnchorByQuorum, pipeliningLimit, postponeRecoveryMilestones, log)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create chainMgr: %w", err)
@@ -1341,7 +1341,7 @@ func createChainManager(
 	ctx context.Context,
 	cni *chainNodeImpl,
 	consensusStateRegistry committeelog.ConsensusStateRegistry,
-	dkShareRegistryProvider registry.DKShareRegistryProvider,
+	distKeyPartsRegistry registry.DistKeyPartsRegistry,
 	deriveAnchorByQuorum bool,
 	pipeliningLimit int,
 	postponeRecoveryMilestones int,
@@ -1352,7 +1352,7 @@ func createChainManager(
 		cni.chainID,
 		cni.chainStore,
 		consensusStateRegistry,
-		dkShareRegistryProvider,
+		distKeyPartsRegistry,
 		cni.pubKeyAsNodeID,
 		func(upd *chainmanager.NeedConsensusMap) {
 			log.LogDebugf("needConsensusCB called with %v", upd)
@@ -1375,16 +1375,16 @@ func createChainManager(
 				cni.log.LogWarnf("Failed to save a preliminary block %v: %v", block.L1Commitment(), err)
 			}
 		},
-		func(dkShare tcrypto.DKShare) {
+		func(distKeyPart tcrypto.DistKeyPart) {
 			cni.accessLock.Lock()
-			cni.activeCommitteeDKShare = dkShare
+			cni.activeCommitteeDistKeyPart = distKeyPart
 			activeCommitteeNodes := cni.activeCommitteeNodes
 			cni.accessLock.Unlock()
 			var newCommitteeNodes []*cryptolib.PublicKey
-			if dkShare == nil {
+			if distKeyPart == nil {
 				newCommitteeNodes = []*cryptolib.PublicKey{}
 			} else {
-				newCommitteeNodes = dkShare.GetNodePubKeys()
+				newCommitteeNodes = distKeyPart.GetNodePubKeys()
 			}
 			if !util.Same(newCommitteeNodes, activeCommitteeNodes) {
 				cni.log.LogInfof("Committee nodes updated to %v, was %v", newCommitteeNodes, activeCommitteeNodes)

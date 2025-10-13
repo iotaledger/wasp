@@ -93,7 +93,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 		savePreliminaryBlockCB := func(state.Block) {
 			// Nothing
 		}
-		updateCommitteeNodesCB := func(tcrypto.DKShare) {
+		updateCommitteeNodesCB := func(tcrypto.DistKeyPart) {
 			// Nothing
 		}
 		needConsensusCB := func(upd *chainmanager.NeedConsensusMap) {

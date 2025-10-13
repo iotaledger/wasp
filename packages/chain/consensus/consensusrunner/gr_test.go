@@ -110,7 +110,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 	)
 	defer peeringNetwork.Close()
 	networkProviders := peeringNetwork.NetworkProviders()
-	committeeAddress, dkShareProviders := testpeers.SetupDistributedKeyGenerationTrivial(t, n, f, peerIdentities, nil)
+	committeeAddress, distKeyPartsProviders := testpeers.SetupDistributedKeyGenerationTrivial(t, n, f, peerIdentities, nil)
 	//
 	// Initialize the DSS subsystem in each node / chain.
 	nodes := make([]*consensusrunner.ConsensusRunner, len(peerIdentities))
@@ -135,7 +135,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 	logIndex := committeelog.LogIndex(0)
 	chainMetricsProvider := metrics.NewChainMetricsProvider()
 	for i := range peerIdentities {
-		dkShare, err := dkShareProviders[i].LoadDKShare(committeeAddress)
+		distKeyPart, err := distKeyPartsProviders[i].LoadDistKeyPart(committeeAddress)
 		require.NoError(t, err)
 		chainStore := statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 		_, err = origin.InitChainByStateMetadataBytes(chainStore, anchor.GetStateMetadata(), anchorDeposit, parameterstest.L1Mock)
@@ -144,7 +144,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 		stateMgrs[i] = newTestStateMgr(t, chainStore)
 		chainMetrics := chainMetricsProvider.GetChainMetrics(isc.EmptyChainID())
 		nodes[i] = consensusrunner.New(
-			ctx, anchor.ChainID(), chainStore, dkShare, &logIndex, peerIdentities[i],
+			ctx, anchor.ChainID(), chainStore, distKeyPart, &logIndex, peerIdentities[i],
 			procConfig, mempools[i], stateMgrs[i], newTestNodeConn(gasCoin),
 			networkProviders[i],
 			nil,

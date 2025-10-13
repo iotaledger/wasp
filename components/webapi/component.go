@@ -214,21 +214,21 @@ func provide(c *dig.Container) error {
 	type webapiServerDeps struct {
 		dig.In
 
-		AppInfo                     *app.Info
-		AppConfig                   *configuration.Configuration `name:"appConfig"`
-		ShutdownHandler             *shutdown.ShutdownHandler
-		APICacheTTL                 time.Duration `name:"apiCacheTTL"`
-		Chains                      *chains.Chains
-		ChainMetricsProvider        *metrics.ChainMetricsProvider
-		ChainRecordRegistryProvider registry.ChainRecordRegistryProvider
-		DKShareRegistryProvider     registry.DKShareRegistryProvider
-		NodeIdentityProvider        registry.NodeIdentityProvider
-		NetworkProvider             peering.NetworkProvider       `name:"networkProvider"`
-		TrustedNetworkManager       peering.TrustedNetworkManager `name:"trustedNetworkManager"`
-		Node                        *distkeygen.Node
-		UserManager                 *users.UserManager
-		Publisher                   *publisher.Publisher
-		NodeConn                    chain.NodeConnection
+		AppInfo               *app.Info
+		AppConfig             *configuration.Configuration `name:"appConfig"`
+		ShutdownHandler       *shutdown.ShutdownHandler
+		APICacheTTL           time.Duration `name:"apiCacheTTL"`
+		Chains                *chains.Chains
+		ChainMetricsProvider  *metrics.ChainMetricsProvider
+		ChainRecordRegistry   registry.ChainRecordRegistry
+		DistKeyPartsRegistry  registry.DistKeyPartsRegistry
+		NodeIdentityProvider  registry.NodeIdentityProvider
+		NetworkProvider       peering.NetworkProvider       `name:"networkProvider"`
+		TrustedNetworkManager peering.TrustedNetworkManager `name:"trustedNetworkManager"`
+		Node                  *distkeygen.Node
+		UserManager           *users.UserManager
+		Publisher             *publisher.Publisher
+		NodeConn              chain.NodeConnection
 	}
 
 	type webapiServerResult struct {
@@ -276,8 +276,8 @@ func provide(c *dig.Container) error {
 			deps.NetworkProvider,
 			deps.TrustedNetworkManager,
 			deps.UserManager,
-			deps.ChainRecordRegistryProvider,
-			deps.DKShareRegistryProvider,
+			deps.ChainRecordRegistry,
+			deps.DistKeyPartsRegistry,
 			deps.NodeIdentityProvider,
 			func() *chains.Chains {
 				return deps.Chains

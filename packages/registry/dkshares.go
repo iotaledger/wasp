@@ -19,34 +19,34 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/util"
 )
 
-type DKSharesRegistry struct {
-	onChangeMap *onchangemap.OnChangeMap[cryptolib.AddressKey, *util.ComparableAddress, tcrypto.DKShare]
+type distKeyPartsRegistry struct {
+	onChangeMap *onchangemap.OnChangeMap[cryptolib.AddressKey, *util.ComparableAddress, tcrypto.DistKeyPart]
 
 	folderPath string
 }
 
-var _ DKShareRegistryProvider = &DKSharesRegistry{}
+var _ DistKeyPartsRegistry = &distKeyPartsRegistry{}
 
-// NewDKSharesRegistry creates new instance of the DKShare registry implementation.
-func NewDKSharesRegistry(folderPath string, nodePrivKey *cryptolib.PrivateKey) (*DKSharesRegistry, error) {
+// NewDistKeyPartsRegistry creates new instance of the DistKeyPart registry implementation.
+func NewDistKeyPartsRegistry(folderPath string, nodePrivKey *cryptolib.PrivateKey) (*distKeyPartsRegistry, error) {
 	// create the target directory during initialization
 	if err := ioutils.CreateDirectory(folderPath, 0o770); err != nil {
 		return nil, err
 	}
 
-	registry := &DKSharesRegistry{
+	registry := &distKeyPartsRegistry{
 		folderPath: folderPath,
 	}
 
 	registry.onChangeMap = onchangemap.NewOnChangeMap(
-		onchangemap.WithItemAddedCallback[cryptolib.AddressKey, *util.ComparableAddress](registry.writeDKShareJSONToFolder),
-		onchangemap.WithItemModifiedCallback[cryptolib.AddressKey, *util.ComparableAddress](registry.writeDKShareJSONToFolder),
-		onchangemap.WithItemDeletedCallback[cryptolib.AddressKey, *util.ComparableAddress](registry.deleteDKShareJSON),
+		onchangemap.WithItemAddedCallback[cryptolib.AddressKey, *util.ComparableAddress](registry.writeDistKeyPartJSONToFolder),
+		onchangemap.WithItemModifiedCallback[cryptolib.AddressKey, *util.ComparableAddress](registry.writeDistKeyPartJSONToFolder),
+		onchangemap.WithItemDeletedCallback[cryptolib.AddressKey, *util.ComparableAddress](registry.deleteDistKeyPartJSON),
 	)
 
-	// load DKShares on startup
-	if err := registry.loadDKSharesJSONFromFolder(nodePrivKey); err != nil {
-		return nil, fmt.Errorf("unable to read DKShares configuration (%s): %w", folderPath, err)
+	// load DistKeyParts on startup
+	if err := registry.loadDistKeyPartsJSONFromFolder(nodePrivKey); err != nil {
+		return nil, fmt.Errorf("unable to read DistKeyParts configuration (%s): %w", folderPath, err)
 	}
 
 	registry.onChangeMap.CallbacksEnabled(true)
@@ -54,7 +54,7 @@ func NewDKSharesRegistry(folderPath string, nodePrivKey *cryptolib.PrivateKey) (
 	return registry, nil
 }
 
-func (p *DKSharesRegistry) loadDKSharesJSONFromFolder(nodePrivKey *cryptolib.PrivateKey) error {
+func (p *distKeyPartsRegistry) loadDistKeyPartsJSONFromFolder(nodePrivKey *cryptolib.PrivateKey) error {
 	if p.folderPath == "" {
 		// do not load entries if no path is given
 		return nil
@@ -66,7 +66,7 @@ func (p *DKSharesRegistry) loadDKSharesJSONFromFolder(nodePrivKey *cryptolib.Pri
 			// if the folder doesn't exist, there are no entries yet.
 			return nil
 		}
-		return fmt.Errorf("unable to read dkShares directory (%s), error: %w", p.folderPath, err)
+		return fmt.Errorf("unable to read distKeyParts directory (%s), error: %w", p.folderPath, err)
 	}
 
 	// loop over all matching files
@@ -87,55 +87,55 @@ func (p *DKSharesRegistry) loadDKSharesJSONFromFolder(nodePrivKey *cryptolib.Pri
 			return fmt.Errorf("unable to parse shared hex address (%s), error: %w", sharedAddressHex, err)
 		}
 
-		dkShareFilePath := path.Join(p.folderPath, file.Name())
-		dkShare := tcrypto.NewEmptyDKShare(nodePrivKey, tcrypto.DefaultEd25519Suite(), tcrypto.DefaultBLSSuite())
-		if err := ioutils.ReadJSONFromFile(dkShareFilePath, dkShare); err != nil && !os.IsNotExist(err) {
-			return fmt.Errorf("unable to unmarshal json file (%s): %w", dkShareFilePath, err)
+		distKeyPartFilePath := path.Join(p.folderPath, file.Name())
+		distKeyPart := tcrypto.NewEmptyDistKeyPart(nodePrivKey, tcrypto.DefaultEd25519Suite(), tcrypto.DefaultBLSSuite())
+		if err := ioutils.ReadJSONFromFile(distKeyPartFilePath, distKeyPart); err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("unable to unmarshal json file (%s): %w", distKeyPartFilePath, err)
 		}
 
-		if !dkShare.GetAddress().Equals(sharedAddress) {
-			return errors.New("unable to add DKShare to registry: sharedAddress in the file not equal to sharedAddress in folder name")
+		if !distKeyPart.GetAddress().Equals(sharedAddress) {
+			return errors.New("unable to add DistKeyPart to registry: sharedAddress in the file not equal to sharedAddress in folder name")
 		}
 
-		if err := p.SaveDKShare(dkShare); err != nil {
-			return fmt.Errorf("unable to add DKShare to registry: %w", err)
+		if err := p.SaveDistKeyPart(distKeyPart); err != nil {
+			return fmt.Errorf("unable to add DistKeyPart to registry: %w", err)
 		}
 	}
 
 	return nil
 }
 
-func (p *DKSharesRegistry) getDKShareFilePath(dkShare tcrypto.DKShare) string {
-	sharedAddressHex := dkShare.GetAddress().String()
+func (p *distKeyPartsRegistry) getDistKeyPartFilePath(distKeyPart tcrypto.DistKeyPart) string {
+	sharedAddressHex := distKeyPart.GetAddress().String()
 
 	return path.Join(p.folderPath, fmt.Sprintf("%s.json", sharedAddressHex))
 }
 
-func (p *DKSharesRegistry) writeDKShareJSONToFolder(dkShare tcrypto.DKShare) error {
+func (p *distKeyPartsRegistry) writeDistKeyPartJSONToFolder(distKeyPart tcrypto.DistKeyPart) error {
 	if p.folderPath == "" {
 		// do not store entries if no path is given
 		return nil
 	}
 
-	filePath := p.getDKShareFilePath(dkShare)
+	filePath := p.getDistKeyPartFilePath(distKeyPart)
 	if err := util.CreateDirectoryForFilePath(filePath, 0o770); err != nil {
 		return err
 	}
 
-	if err := ioutils.WriteJSONToFile(filePath, dkShare, 0o600); err != nil {
+	if err := ioutils.WriteJSONToFile(filePath, distKeyPart, 0o600); err != nil {
 		return fmt.Errorf("unable to marshal json file: %w", err)
 	}
 
 	return nil
 }
 
-func (p *DKSharesRegistry) deleteDKShareJSON(dkShare tcrypto.DKShare) error {
+func (p *distKeyPartsRegistry) deleteDistKeyPartJSON(distKeyPart tcrypto.DistKeyPart) error {
 	if p.folderPath == "" {
 		// do not delete entries if no path is given
 		return nil
 	}
 
-	filePath := p.getDKShareFilePath(dkShare)
+	filePath := p.getDistKeyPartFilePath(distKeyPart)
 
 	exists, isDir, err := ioutils.PathExists(filePath)
 	if err != nil {
@@ -156,14 +156,14 @@ func (p *DKSharesRegistry) deleteDKShareJSON(dkShare tcrypto.DKShare) error {
 	return nil
 }
 
-func (p *DKSharesRegistry) SaveDKShare(dkShare tcrypto.DKShare) error {
-	return p.onChangeMap.Add(dkShare)
+func (p *distKeyPartsRegistry) SaveDistKeyPart(distKeyPart tcrypto.DistKeyPart) error {
+	return p.onChangeMap.Add(distKeyPart)
 }
 
-func (p *DKSharesRegistry) LoadDKShare(sharedAddress *cryptolib.Address) (tcrypto.DKShare, error) {
-	dkShare, err := p.onChangeMap.Get(util.NewComparableAddress(sharedAddress))
+func (p *distKeyPartsRegistry) LoadDistKeyPart(sharedAddress *cryptolib.Address) (tcrypto.DistKeyPart, error) {
+	distKeyPart, err := p.onChangeMap.Get(util.NewComparableAddress(sharedAddress))
 	if err != nil {
-		return dkShare, tcrypto.ErrDKShareNotFound
+		return distKeyPart, tcrypto.ErrDistKeyPartNotFound
 	}
-	return dkShare, nil
+	return distKeyPart, nil
 }

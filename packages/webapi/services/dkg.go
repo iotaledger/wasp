@@ -20,20 +20,20 @@ const (
 )
 
 type DistributedKeyGenerationService struct {
-	dkShareRegistryProvider registry.DKShareRegistryProvider
-	distKeyGenNodeProvider  distkeygen.NodeProvider
-	trustedNetworkManager   peering.TrustedNetworkManager
+	distKeyPartRegistry    registry.DistKeyPartsRegistry
+	distKeyGenNodeProvider distkeygen.NodeProvider
+	trustedNetworkManager  peering.TrustedNetworkManager
 }
 
-func NewDistributedKeyGenerationService(dkShareRegistryProvider registry.DKShareRegistryProvider, distKeyGenNodeProvider distkeygen.NodeProvider, trustedNetworkManager peering.TrustedNetworkManager) *DistributedKeyGenerationService {
+func NewDistributedKeyGenerationService(distKeyPartRegistry registry.DistKeyPartsRegistry, distKeyGenNodeProvider distkeygen.NodeProvider, trustedNetworkManager peering.TrustedNetworkManager) *DistributedKeyGenerationService {
 	return &DistributedKeyGenerationService{
-		dkShareRegistryProvider: dkShareRegistryProvider,
-		distKeyGenNodeProvider:  distKeyGenNodeProvider,
-		trustedNetworkManager:   trustedNetworkManager,
+		distKeyPartRegistry:    distKeyPartRegistry,
+		distKeyGenNodeProvider: distKeyGenNodeProvider,
+		trustedNetworkManager:  trustedNetworkManager,
 	}
 }
 
-func (d *DistributedKeyGenerationService) GenerateDistributedKey(peerPubKeysOrNames []string, threshold uint16, timeout time.Duration) (*models.DKSharesInfo, error) {
+func (d *DistributedKeyGenerationService) GenerateDistributedKey(peerPubKeysOrNames []string, threshold uint16, timeout time.Duration) (*models.DistKeyPartsInfo, error) {
 	trustedPeers, err := d.trustedNetworkManager.TrustedPeersByPubKeyOrName(peerPubKeysOrNames)
 	if err != nil {
 		return nil, err
@@ -42,40 +42,40 @@ func (d *DistributedKeyGenerationService) GenerateDistributedKey(peerPubKeysOrNa
 		return tp.PubKey()
 	})
 
-	dkShare, err := d.distKeyGenNodeProvider().GenerateDistributedKey(peerPubKeys, threshold, roundRetry, stepRetry, timeout)
+	distKeyPart, err := d.distKeyGenNodeProvider().GenerateDistributedKey(peerPubKeys, threshold, roundRetry, stepRetry, timeout)
 	if err != nil {
 		return nil, err
 	}
 
-	dkShareInfo, err := d.createDKModel(dkShare)
+	distKeyPartInfo, err := d.createDKModel(distKeyPart)
 	if err != nil {
 		return nil, err
 	}
 
-	return dkShareInfo, nil
+	return distKeyPartInfo, nil
 }
 
-func (d *DistributedKeyGenerationService) GetShares(sharedAddress *cryptolib.Address) (*models.DKSharesInfo, error) {
-	dkShare, err := d.dkShareRegistryProvider.LoadDKShare(sharedAddress)
+func (d *DistributedKeyGenerationService) GetShares(sharedAddress *cryptolib.Address) (*models.DistKeyPartsInfo, error) {
+	distKeyPart, err := d.distKeyPartRegistry.LoadDistKeyPart(sharedAddress)
 	if err != nil {
 		return nil, err
 	}
 
-	dkShareInfo, err := d.createDKModel(dkShare)
+	distKeyPartInfo, err := d.createDKModel(distKeyPart)
 	if err != nil {
 		return nil, err
 	}
 
-	return dkShareInfo, nil
+	return distKeyPartInfo, nil
 }
 
-func (d *DistributedKeyGenerationService) createDKModel(dkShare tcrypto.DKShare) (*models.DKSharesInfo, error) {
-	publicKey, err := dkShare.DSSSharedPublic().MarshalBinary()
+func (d *DistributedKeyGenerationService) createDKModel(distKeyPart tcrypto.DistKeyPart) (*models.DistKeyPartsInfo, error) {
+	publicKey, err := distKeyPart.DSSSharedPublic().MarshalBinary()
 	if err != nil {
 		return nil, err
 	}
 
-	distributesSignaturePublicShares := dkShare.DSSPublicShares()
+	distributesSignaturePublicShares := distKeyPart.DSSPublicShares()
 	pubKeySharesHex := make([]string, len(distributesSignaturePublicShares))
 	for i := range distributesSignaturePublicShares {
 		publicKeyShare, err := distributesSignaturePublicShares[i].MarshalBinary()
@@ -86,20 +86,20 @@ func (d *DistributedKeyGenerationService) createDKModel(dkShare tcrypto.DKShare)
 		pubKeySharesHex[i] = hexutil.Encode(publicKeyShare)
 	}
 
-	peerIdentities := dkShare.GetNodePubKeys()
+	peerIdentities := distKeyPart.GetNodePubKeys()
 	peerIdentitiesHex := make([]string, len(peerIdentities))
 	for i := range peerIdentities {
 		peerIdentitiesHex[i] = peerIdentities[i].String()
 	}
 
-	dkShareInfo := &models.DKSharesInfo{
-		Address:         dkShare.GetAddress().String(),
+	distKeyPartInfo := &models.DistKeyPartsInfo{
+		Address:         distKeyPart.GetAddress().String(),
 		PeerIdentities:  peerIdentitiesHex,
-		PeerIndex:       dkShare.GetIndex(),
+		PeerIndex:       distKeyPart.GetIndex(),
 		PublicKey:       hexutil.Encode(publicKey),
 		PublicKeyShares: pubKeySharesHex,
-		Threshold:       dkShare.GetT(),
+		Threshold:       distKeyPart.GetT(),
 	}
 
-	return dkShareInfo, nil
+	return distKeyPartInfo, nil
 }

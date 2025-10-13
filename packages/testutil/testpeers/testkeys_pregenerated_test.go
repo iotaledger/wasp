@@ -46,9 +46,9 @@ func testPregenerateDKS(t *testing.T, n, f uint16) {
 	ww.WriteSize16(len(dksRegistries))
 	require.NoError(t, ww.Err)
 	for i := range dksRegistries {
-		var dki tcrypto.DKShare
+		var dki tcrypto.DistKeyPart
 		var dkb []byte
-		dki, err2 := dksRegistries[i].LoadDKShare(dksAddr)
+		dki, err2 := dksRegistries[i].LoadDistKeyPart(dksAddr)
 		require.NoError(t, err2)
 		if i > 0 {
 			// Remove it here to make serialized object smaller.

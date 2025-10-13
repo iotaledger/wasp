@@ -538,9 +538,9 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 		testlogger.WithLevel(te.log, log.LevelWarning, false),
 	)
 	te.networkProviders = te.peeringNetwork.NetworkProviders()
-	var dkShareProviders []registry.DKShareRegistryProvider
-	te.committeeAddress, dkShareProviders = testpeers.SetupDistributedKeyGenerationTrivial(t, n, f, te.peerIdentities, nil)
-	te.committeeSigner = testpeers.NewTestDistributedSignatureSigner(te.committeeAddress, dkShareProviders, gpa.MakeTestNodeIDs(n), te.peerIdentities, te.log)
+	var distKeyPartsProviders []registry.DistKeyPartsRegistry
+	te.committeeAddress, distKeyPartsProviders = testpeers.SetupDistributedKeyGenerationTrivial(t, n, f, te.peerIdentities, nil)
+	te.committeeSigner = testpeers.NewTestDistributedSignatureSigner(te.committeeAddress, distKeyPartsProviders, gpa.MakeTestNodeIDs(n), te.peerIdentities, te.log)
 
 	require.NoError(t, node.L1Client().RequestFunds(context.Background(), *te.committeeSigner.Address()))
 	iotatest.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(te.committeeSigner), node.L1Client(), isc.GasCoinTargetValue*10)
@@ -569,7 +569,7 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 			te.nodeConns[i],
 			te.peerIdentities[i],
 			coreprocessors.NewConfigWithTestContracts(),
-			dkShareProviders[i],
+			distKeyPartsProviders[i],
 			testutil.NewConsensusStateRegistry(),
 			false,
 			utils.NewMockedTestBlockWAL(),

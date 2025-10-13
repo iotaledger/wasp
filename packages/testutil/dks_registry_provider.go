@@ -11,33 +11,33 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/tcrypto"
 )
 
-// DistributedKeyGenerationRegistryProvider stands for a mock for dkg.DKShareRegistryProvider.
-type DistributedKeyGenerationRegistryProvider struct {
+// DistributedKeyGenerationRegistry stands for a mock for distkeygen.DistKeyPartsRegistry.
+type DistributedKeyGenerationRegistry struct {
 	DB          map[string][]byte
 	nodePrivKey *cryptolib.PrivateKey
 }
 
-var _ registry.DKShareRegistryProvider = &DistributedKeyGenerationRegistryProvider{}
+var _ registry.DistKeyPartsRegistry = &DistributedKeyGenerationRegistry{}
 
-// NewDistributedKeyGenerationRegistryProvider creates new mocked DKG registry provider.
-func NewDistributedKeyGenerationRegistryProvider(nodePrivKey *cryptolib.PrivateKey) *DistributedKeyGenerationRegistryProvider {
-	return &DistributedKeyGenerationRegistryProvider{
+// NewDistributedKeyGenerationRegistry creates new mocked DKG registry provider.
+func NewDistributedKeyGenerationRegistry(nodePrivKey *cryptolib.PrivateKey) *DistributedKeyGenerationRegistry {
+	return &DistributedKeyGenerationRegistry{
 		DB:          map[string][]byte{},
 		nodePrivKey: nodePrivKey,
 	}
 }
 
-// SaveDKShare implements dkg.DKShareRegistryProvider.
-func (p *DistributedKeyGenerationRegistryProvider) SaveDKShare(dkShare tcrypto.DKShare) error {
-	p.DB[dkShare.GetAddress().String()] = dkShare.Bytes()
+// SaveDistKeyPart implements distkeygen.DistKeyPartsRegistry.
+func (p *DistributedKeyGenerationRegistry) SaveDistKeyPart(distKeyPart tcrypto.DistKeyPart) error {
+	p.DB[distKeyPart.GetAddress().String()] = distKeyPart.Bytes()
 	return nil
 }
 
-// LoadDKShare implements dkg.DKShareRegistryProvider.
-func (p *DistributedKeyGenerationRegistryProvider) LoadDKShare(sharedAddress *cryptolib.Address) (tcrypto.DKShare, error) {
-	dkShareBytes := p.DB[sharedAddress.String()]
-	if dkShareBytes == nil {
-		return nil, fmt.Errorf("DKShare not found for %v", sharedAddress.String())
+// LoadDistKeyPart implements distkeygen.DistKeyPartsRegistry.
+func (p *DistributedKeyGenerationRegistry) LoadDistKeyPart(sharedAddress *cryptolib.Address) (tcrypto.DistKeyPart, error) {
+	distKeyPartBytes := p.DB[sharedAddress.String()]
+	if distKeyPartBytes == nil {
+		return nil, fmt.Errorf("DistKeyPart not found for %v", sharedAddress.String())
 	}
-	return tcrypto.DKShareFromBytes(dkShareBytes, tcrypto.DefaultEd25519Suite(), tcrypto.DefaultBLSSuite(), p.nodePrivKey)
+	return tcrypto.DistKeyPartFromBytes(distKeyPartBytes, tcrypto.DefaultEd25519Suite(), tcrypto.DefaultBLSSuite(), p.nodePrivKey)
 }

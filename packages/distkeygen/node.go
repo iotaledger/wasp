@@ -32,18 +32,18 @@ type NodeProvider func() *Node
 // It receives commands from the initiator as a dkg.NodeProvider,
 // and communicates with other DKG nodes via the peering network.
 type Node struct {
-	identity                *cryptolib.KeyPair                        // Keys of the current node.
-	secKey                  kyber.Scalar                              // Derived from the identity.
-	pubKey                  kyber.Point                               // Derived from the identity.
-	blsSuite                Suite                                     // Cryptography to use for the Pairing based operations.
-	edSuite                 suites.Suite                              // Cryptography to use for the Ed25519 based operations.
-	netProvider             peering.NetworkProvider                   // Network to communicate through.
-	dkShareRegistryProvider registry.DKShareRegistryProvider          // Where to store the generated keys.
-	processes               *shrinkingmap.ShrinkingMap[string, *proc] // Only for introspection.
-	procLock                *sync.RWMutex                             // To guard access to the process pool.
-	initMsgQueue            chan *initiatorInitMsgIn                  // Incoming events processed async.
-	cleanupFunc             context.CancelFunc                        // Peering cleanup func
-	log                     log.Logger
+	identity             *cryptolib.KeyPair                        // Keys of the current node.
+	secKey               kyber.Scalar                              // Derived from the identity.
+	pubKey               kyber.Point                               // Derived from the identity.
+	blsSuite             Suite                                     // Cryptography to use for the Pairing based operations.
+	edSuite              suites.Suite                              // Cryptography to use for the Ed25519 based operations.
+	netProvider          peering.NetworkProvider                   // Network to communicate through.
+	distKeyPartsRegistry registry.DistKeyPartsRegistry             // Where to store the generated keys.
+	processes            *shrinkingmap.ShrinkingMap[string, *proc] // Only for introspection.
+	procLock             *sync.RWMutex                             // To guard access to the process pool.
+	initMsgQueue         chan *initiatorInitMsgIn                  // Incoming events processed async.
+	cleanupFunc          context.CancelFunc                        // Peering cleanup func
+	log                  log.Logger
 }
 
 // NewNode creates new node, that can participate in the DKG procedure.
@@ -51,7 +51,7 @@ type Node struct {
 func NewNode(
 	identity *cryptolib.KeyPair,
 	netProvider peering.NetworkProvider,
-	dkShareRegistryProvider registry.DKShareRegistryProvider,
+	distKeyPartRegistry registry.DistKeyPartsRegistry,
 	log log.Logger,
 ) (*Node, error) {
 	kyberKeyPair, err := identity.GetPrivateKey().AsKyberKeyPair()
@@ -59,17 +59,17 @@ func NewNode(
 		return nil, err
 	}
 	n := Node{
-		identity:                identity,
-		secKey:                  kyberKeyPair.Private,
-		pubKey:                  kyberKeyPair.Public,
-		blsSuite:                tcrypto.DefaultBLSSuite(),
-		edSuite:                 edwards25519.NewBlakeSHA256Ed25519(),
-		netProvider:             netProvider,
-		dkShareRegistryProvider: dkShareRegistryProvider,
-		processes:               shrinkingmap.New[string, *proc](),
-		procLock:                &sync.RWMutex{},
-		initMsgQueue:            make(chan *initiatorInitMsgIn),
-		log:                     log,
+		identity:             identity,
+		secKey:               kyberKeyPair.Private,
+		pubKey:               kyberKeyPair.Public,
+		blsSuite:             tcrypto.DefaultBLSSuite(),
+		edSuite:              edwards25519.NewBlakeSHA256Ed25519(),
+		netProvider:          netProvider,
+		distKeyPartsRegistry: distKeyPartRegistry,
+		processes:            shrinkingmap.New[string, *proc](),
+		procLock:             &sync.RWMutex{},
+		initMsgQueue:         make(chan *initiatorInitMsgIn),
+		log:                  log,
 	}
 	unhook := netProvider.Attach(&initPeeringID, peering.ReceiverDistributedKeyGenerationInit, n.receiveInitMessage)
 	n.cleanupFunc = unhook
@@ -111,7 +111,7 @@ func (n *Node) GenerateDistributedKey(
 	roundRetry time.Duration, // Retry for Peer <-> Peer communication.
 	stepRetry time.Duration, // Retry for Initiator -> Peer communication.
 	timeout time.Duration, // Timeout for the entire procedure.
-) (tcrypto.DKShare, error) {
+) (tcrypto.DistKeyPart, error) {
 	n.log.LogInfof("Starting new DKG procedure, initiator=%v, peers=%+v", n.netProvider.Self().PeeringURL(), peerPubs)
 	var err error
 	peerCount, err := safecast.Convert[uint16](len(peerPubs))
@@ -256,7 +256,7 @@ func (n *Node) GenerateDistributedKey(
 	if err != nil {
 		return nil, errors.New("bls threshold overflows uint16")
 	}
-	dkShare := tcrypto.NewDKSharePublic(
+	DistKeyPart := tcrypto.NewDistKeyPartPublic(
 		sharedAddress,
 		peerCount,
 		threshold,
@@ -291,7 +291,7 @@ func (n *Node) GenerateDistributedKey(
 			if blsPubShareBytes, err = pubShareResponses[i].blsPublicShare.MarshalBinary(); err != nil {
 				return nil, err
 			}
-			err = dkShare.BLSVerify(
+			err = DistKeyPart.BLSVerify(
 				pubShareResponses[i].blsPublicShare,
 				blsPubShareBytes,
 				pubShareResponses[i].blsSignature,
@@ -302,7 +302,7 @@ func (n *Node) GenerateDistributedKey(
 		}
 	}
 
-	return dkShare, nil
+	return DistKeyPart, nil
 }
 
 // Async recv is needed to avoid locking on the even publisher (Recv vs Attach in proc).

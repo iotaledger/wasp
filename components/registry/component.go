@@ -43,16 +43,16 @@ func provide(c *dig.Container) error {
 		ReadOnlyDBPath string
 	}
 
-	if err := c.Provide(func(deps chainRecordRegistryDeps) registry.ChainRecordRegistryProvider {
+	if err := c.Provide(func(deps chainRecordRegistryDeps) registry.ChainRecordRegistry {
 		path := ParamsRegistries.Chains.FilePath
 		if readonly.Enabled(deps.ReadOnlyDBPath) {
 			path = readonly.ChainRegistryFile(deps.ReadOnlyDBPath)
 		}
-		chainRecordRegistryProvider, err := registry.NewChainRecordRegistryImpl(path)
+		chainRecordRegistry, err := registry.NewChainRecordRegistryImpl(path)
 		if err != nil {
 			Component.LogPanic(err.Error())
 		}
-		return chainRecordRegistryProvider
+		return chainRecordRegistry
 	}); err != nil {
 		Component.LogPanic(err.Error())
 	}
@@ -73,29 +73,29 @@ func provide(c *dig.Container) error {
 		Component.LogPanic(err.Error())
 	}
 
-	type dkSharesRegistryDeps struct {
+	type distKeyPartsRegistryDeps struct {
 		dig.In
 
 		NodeIdentityProvider registry.NodeIdentityProvider
 		NodeConnection       chain.NodeConnection
 	}
 
-	if err := c.Provide(func(deps dkSharesRegistryDeps) registry.DKShareRegistryProvider {
-		dkSharesRegistry, err := registry.NewDKSharesRegistry(ParamsRegistries.DKShares.Path, deps.NodeIdentityProvider.NodeIdentity().GetPrivateKey())
+	if err := c.Provide(func(deps distKeyPartsRegistryDeps) registry.DistKeyPartsRegistry {
+		distKeyPartsRegistry, err := registry.NewDistKeyPartsRegistry(ParamsRegistries.DKShares.Path, deps.NodeIdentityProvider.NodeIdentity().GetPrivateKey())
 		if err != nil {
 			Component.LogPanic(err.Error())
 		}
-		return dkSharesRegistry
+		return distKeyPartsRegistry
 	}); err != nil {
 		Component.LogPanic(err.Error())
 	}
 
-	if err := c.Provide(func() registry.TrustedPeersRegistryProvider {
-		trustedPeersRegistryProvider, err := registry.NewTrustedPeersRegistryImpl(ParamsRegistries.TrustedPeers.FilePath)
+	if err := c.Provide(func() registry.TrustedPeersRegistry {
+		trustedPeersRegistry, err := registry.NewTrustedPeersRegistryImpl(ParamsRegistries.TrustedPeers.FilePath)
 		if err != nil {
 			Component.LogPanic(err.Error())
 		}
-		return trustedPeersRegistryProvider
+		return trustedPeersRegistry
 	}); err != nil {
 		Component.LogPanic(err.Error())
 	}

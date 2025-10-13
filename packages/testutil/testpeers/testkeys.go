@@ -52,17 +52,17 @@ func SetupDistributedKeyGeneration(
 	peerIdentities []*cryptolib.KeyPair,
 	suite tcrypto.Suite,
 	log log.Logger,
-) (*cryptolib.Address, []registry.DKShareRegistryProvider) {
+) (*cryptolib.Address, []registry.DistKeyPartsRegistry) {
 	timeout := 300 * time.Second
 	networkProviders, networkCloser := SetupNet(peeringURLs, peerIdentities, testutil.NewPeeringNetReliable(log), log)
 	//
 	// Initialize the DKG subsystem in each node.
 	distKeyGenNodes := make([]*distkeygen.Node, len(peeringURLs))
-	dkShareRegistryProviders := make([]registry.DKShareRegistryProvider, len(peeringURLs))
+	distKeyPartsRegistry := make([]registry.DistKeyPartsRegistry, len(peeringURLs))
 	for i := range peeringURLs {
-		dkShareRegistryProviders[i] = testutil.NewDistributedKeyGenerationRegistryProvider(peerIdentities[i].GetPrivateKey())
+		distKeyPartsRegistry[i] = testutil.NewDistributedKeyGenerationRegistry(peerIdentities[i].GetPrivateKey())
 		distKeyGenNode, err := distkeygen.NewNode(
-			peerIdentities[i], networkProviders[i], dkShareRegistryProviders[i],
+			peerIdentities[i], networkProviders[i], distKeyPartsRegistry[i],
 			testlogger.WithLevel(log.NewChildLogger(fmt.Sprintf("peeringURL:%s", peeringURLs[i])), slog.LevelError, false),
 		)
 		require.NoError(t, err)
@@ -70,7 +70,7 @@ func SetupDistributedKeyGeneration(
 	}
 	//
 	// Initiate the key generation from some client node.
-	dkShare, err := distKeyGenNodes[0].GenerateDistributedKey(
+	distKeyPart, err := distKeyGenNodes[0].GenerateDistributedKey(
 		PublicKeys(peerIdentities),
 		threshold,
 		100*time.Second,
@@ -78,18 +78,18 @@ func SetupDistributedKeyGeneration(
 		timeout,
 	)
 	require.NoError(t, err)
-	require.NotNil(t, dkShare.GetAddress())
-	require.NotNil(t, dkShare.GetSharedPublic())
+	require.NotNil(t, distKeyPart.GetAddress())
+	require.NotNil(t, distKeyPart.GetSharedPublic())
 	require.NoError(t, networkCloser.Close())
-	return dkShare.GetAddress(), dkShareRegistryProviders
+	return distKeyPart.GetAddress(), distKeyPartsRegistry
 }
 
 func SetupDistributedKeyGenerationTrivial(
 	t require.TestingT,
 	n, f int,
 	peerIdentities []*cryptolib.KeyPair,
-	dkShareRegistryProviders []registry.DKShareRegistryProvider, // Will be used if not nil.
-) (*cryptolib.Address, []registry.DKShareRegistryProvider) {
+	distKeyPartsRegistries []registry.DistKeyPartsRegistry, // Will be used if not nil.
+) (*cryptolib.Address, []registry.DistKeyPartsRegistry) {
 	nodePubKeys := PublicKeys(peerIdentities)
 	dssSuite := tcrypto.DefaultEd25519Suite()
 	blsSuite := tcrypto.DefaultBLSSuite()
@@ -110,11 +110,11 @@ func SetupDistributedKeyGenerationTrivial(
 		blsPublicShares[i] = blsSuite.Point().Mul(blsPriShares[i].V, nil)
 	}
 	//
-	// Create the DKShare objects.
-	if dkShareRegistryProviders == nil {
-		dkShareRegistryProviders = make([]registry.DKShareRegistryProvider, len(peerIdentities))
+	// Create the DistKeyPart objects.
+	if distKeyPartsRegistries == nil {
+		distKeyPartsRegistries = make([]registry.DistKeyPartsRegistry, len(peerIdentities))
 	}
-	require.Equal(t, n, len(dkShareRegistryProviders))
+	require.Equal(t, n, len(distKeyPartsRegistries))
 	var address *cryptolib.Address
 	for i, identity := range peerIdentities {
 		indexUint16, err := safecast.Convert[uint16](i)
@@ -126,7 +126,7 @@ func SetupDistributedKeyGenerationTrivial(
 		blsThresholdUint16, err := safecast.Convert[uint16](blsThreshold)
 		require.NoError(t, err)
 
-		nodeDKS, err := tcrypto.NewDKShare(
+		nodeDKS, err := tcrypto.NewDistKeyPart(
 			indexUint16,              // index
 			nUint16,                  // n
 			dssThresholdUint16,       // t
@@ -148,12 +148,12 @@ func SetupDistributedKeyGenerationTrivial(
 		if address == nil {
 			address = nodeDKS.GetAddress()
 		}
-		if dkShareRegistryProviders[i] == nil {
-			dkShareRegistryProviders[i] = testutil.NewDistributedKeyGenerationRegistryProvider(identity.GetPrivateKey())
+		if distKeyPartsRegistries[i] == nil {
+			distKeyPartsRegistries[i] = testutil.NewDistributedKeyGenerationRegistry(identity.GetPrivateKey())
 		}
-		require.NoError(t, dkShareRegistryProviders[i].SaveDKShare(nodeDKS))
+		require.NoError(t, distKeyPartsRegistries[i].SaveDistKeyPart(nodeDKS))
 	}
-	return address, dkShareRegistryProviders
+	return address, distKeyPartsRegistries
 }
 
 func MakeSharedSecret(suite suites.Suite, n, t int) (kyber.Point, *share.PubPoly, []*share.PriShare) {

@@ -17,12 +17,12 @@ type NodeIdentityProvider interface {
 	NodePublicKey() *cryptolib.PublicKey
 }
 
-type DKShareRegistryProvider interface {
-	SaveDKShare(dkShare tcrypto.DKShare) error
-	LoadDKShare(sharedAddress *cryptolib.Address) (tcrypto.DKShare, error)
+type DistKeyPartsRegistry interface {
+	SaveDistKeyPart(distKeyPart tcrypto.DistKeyPart) error
+	LoadDistKeyPart(sharedAddress *cryptolib.Address) (tcrypto.DistKeyPart, error)
 }
 
-type ChainRecordRegistryProvider interface {
+type ChainRecordRegistry interface {
 	Events() *ChainRecordRegistryEvents
 	ChainRecord(chainID isc.ChainID) (*ChainRecord, error)
 	ChainRecords() ([]*ChainRecord, error)
@@ -34,7 +34,7 @@ type ChainRecordRegistryProvider interface {
 	DeactivateChainRecord(chainID isc.ChainID) (*ChainRecord, error)
 }
 
-type TrustedPeersRegistryProvider interface {
+type TrustedPeersRegistry interface {
 	IsTrustedPeer(pubKey *cryptolib.PublicKey) error
 	TrustPeer(name string, pubKey *cryptolib.PublicKey, accountURL string) (*peering.TrustedPeer, error)
 	DistrustPeer(pubKey *cryptolib.PublicKey) (*peering.TrustedPeer, error)

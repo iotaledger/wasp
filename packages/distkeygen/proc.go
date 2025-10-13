@@ -43,11 +43,11 @@ const (
 
 // Stands for a DKG procedure instance on a particular node.
 type proc struct {
-	distKeyGeneratorRef   string            // User supplied unique ID for this instance.
-	distKeyGeneratorID    peering.PeeringID // DKG procedure ID we are participating in.
-	dkShare               tcrypto.DKShare   // This will be generated as a result of this procedure.
-	node                  *Node             // DKG node we are running in.
-	nodeIndex             uint16            // Index of this node.
+	distKeyGeneratorRef   string              // User supplied unique ID for this instance.
+	distKeyGeneratorID    peering.PeeringID   // DKG procedure ID we are participating in.
+	distKeyPart           tcrypto.DistKeyPart // This will be generated as a result of this procedure.
+	node                  *Node               // DKG node we are running in.
+	nodeIndex             uint16              // Index of this node.
 	initiatorPub          *cryptolib.PublicKey
 	threshold             uint16                                     // Threshold used for the ED signatures.
 	blsThreshold          uint16                                     // Here we must use low threshold.
@@ -551,7 +551,7 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp(
 		// This is the case for N=1, just use simple BLS key pair.
 		keyPairE := key.NewKeyPair(p.node.edSuite)
 		keyPairB := key.NewKeyPair(p.node.blsSuite)
-		p.dkShare, err = tcrypto.NewDKShare(
+		p.distKeyPart, err = tcrypto.NewDistKeyPart(
 			0,                               // Index
 			1,                               // N
 			1,                               // T
@@ -635,7 +635,7 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp(
 		publicSharesDSS[ownIndex] = p.node.edSuite.Point().Mul(distKeyShareDSS.PriShare().V, nil)
 		publicSharesBLS := make([]kyber.Point, groupSize)
 		publicSharesBLS[ownIndex] = p.node.blsSuite.Point().Mul(distKeyShareBLS.PriShare().V, nil)
-		p.dkShare, err = tcrypto.NewDKShare(
+		p.distKeyPart, err = tcrypto.NewDistKeyPart(
 			ownIndex,                        // Index
 			groupSize,                       // N
 			p.threshold,                     // T
@@ -659,7 +659,7 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp(
 	}
 	p.log.LogDebugf(
 		"All reconstruct commits received, shared public: %v.",
-		p.dkShare.GetSharedPublic(),
+		p.distKeyPart.GetSharedPublic(),
 	)
 	var pubShareMsg *initiatorPubShareMsg
 	if pubShareMsg, err = p.makeInitiatorPubShareMsg(step); err != nil {
@@ -680,11 +680,11 @@ func (p *proc) rabinStep7CommitAndTerminateMakeResp(step byte, initRecv *peering
 		p.log.LogWarnf("Dropping message, failed to decode: %v", initRecv)
 		return nil, err
 	}
-	if p.dkShare == nil {
-		return nil, errors.New("there is no dkShare to commit")
+	if p.distKeyPart == nil {
+		return nil, errors.New("there is no distKeyPart to commit")
 	}
-	p.dkShare.SetPublicShares(doneMsg.edPubShares, doneMsg.blsPubShares) // Store public shares of all the other peers.
-	if err := p.node.dkShareRegistryProvider.SaveDKShare(p.dkShare); err != nil {
+	p.distKeyPart.SetPublicShares(doneMsg.edPubShares, doneMsg.blsPubShares) // Store public shares of all the other peers.
+	if err := p.node.distKeyPartsRegistry.SaveDistKeyPart(p.distKeyPart); err != nil {
 		return nil, err
 	}
 	return makePeerMessage(p.distKeyGeneratorID, peering.ReceiverDistributedKeyGeneration, step, &initiatorStatusMsg{error: nil}), nil
@@ -712,7 +712,7 @@ func (p *proc) makeInitiatorPubShareMsg(step byte) (*initiatorPubShareMsg, error
 	// 	return nil, err
 	// }
 	var blsPublicShareBytes []byte
-	if blsPublicShareBytes, err = p.dkShare.BLSPublicShares()[*p.dkShare.GetIndex()].MarshalBinary(); err != nil {
+	if blsPublicShareBytes, err = p.distKeyPart.BLSPublicShares()[*p.distKeyPart.GetIndex()].MarshalBinary(); err != nil {
 		return nil, err
 	}
 	// var dssSignature *dss.PartialSig // TODO: we have to add another DKG here to produce a nonce.
@@ -720,17 +720,17 @@ func (p *proc) makeInitiatorPubShareMsg(step byte) (*initiatorPubShareMsg, error
 	// 	return nil, err
 	// }
 	var blsSignature []byte
-	if blsSignature, err = p.dkShare.BLSSign(blsPublicShareBytes); err != nil {
+	if blsSignature, err = p.distKeyPart.BLSSign(blsPublicShareBytes); err != nil {
 		return nil, err
 	}
 	return &initiatorPubShareMsg{
 		step:            step,
-		sharedAddress:   p.dkShare.GetAddress(),
-		edSharedPublic:  p.dkShare.DSSSharedPublic(),
-		edPublicShare:   p.dkShare.DSSPublicShares()[*p.dkShare.GetIndex()],
+		sharedAddress:   p.distKeyPart.GetAddress(),
+		edSharedPublic:  p.distKeyPart.DSSSharedPublic(),
+		edPublicShare:   p.distKeyPart.DSSPublicShares()[*p.distKeyPart.GetIndex()],
 		edSignature:     []byte{}, // dssSignature.Signature, // TODO: Restore this.
-		blsSharedPublic: p.dkShare.BLSSharedPublic(),
-		blsPublicShare:  p.dkShare.BLSPublicShares()[*p.dkShare.GetIndex()],
+		blsSharedPublic: p.distKeyPart.BLSSharedPublic(),
+		blsPublicShare:  p.distKeyPart.BLSPublicShares()[*p.distKeyPart.GetIndex()],
 		blsSignature:    blsSignature,
 	}, nil
 }
