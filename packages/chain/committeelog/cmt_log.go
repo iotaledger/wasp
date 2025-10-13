@@ -29,7 +29,6 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/metrics"
-	"github.com/iotaledger/wasp/v2/packages/tcrypto"
 	"github.com/iotaledger/wasp/v2/packages/util/byzquorum"
 )
 
@@ -84,15 +83,15 @@ var _ gpa.GPA = &committeeLogImpl{}
 func New(
 	me gpa.NodeID,
 	chainID isc.ChainID,
-	dkShare tcrypto.DKShare,
+	committeeAddr *cryptolib.Address,
+	nodeIDs []gpa.NodeID,
+	dssMaxFaulty int,
 	consensusStateRegistry ConsensusStateRegistry,
-	nodeIDFromPubKey func(pubKey *cryptolib.PublicKey) gpa.NodeID,
 	deriveAnchorByQuorum bool,
 	pipeliningLimit int,
 	cclMetrics *metrics.ChainCommitteeLogMetrics,
 	log log.Logger,
 ) (CommitteeLog, error) {
-	committeeAddr := dkShare.GetSharedPublic().AsAddress()
 	//
 	// Load the last LogIndex we were working on.
 	var prevLI LogIndex
@@ -106,26 +105,18 @@ func New(
 		// Don't participate in the last stored LI, because maybe we have already sent some messages.
 		prevLI = state.LogIndex
 	}
-	//
-	// Make node IDs.
-	nodePKs := dkShare.GetNodePubKeys()
-	nodeIDs := make([]gpa.NodeID, len(nodePKs))
-	for i := range nodeIDs {
-		nodeIDs[i] = nodeIDFromPubKey(nodePKs[i])
-	}
+
 	//
 	// Construct the object.
 	n := len(nodeIDs)
-	f := dkShare.DSS().MaxFaulty()
+	f := dssMaxFaulty
 	if f > byzquorum.MaxF(n) {
 		log.LogPanicf("invalid f=%v for n=%v", f, n)
 	}
 	//
 	// Log important info.
 	log.LogInfof("Committee: N=%v, F=%v, address=%v, address=%v", n, f, committeeAddr.String(), committeeAddr.String())
-	for i := range nodePKs {
-		log.LogInfof("Committee node[%v]=%v", i, nodePKs[i])
-	}
+
 	//
 	// Create it.
 	cl := &committeeLogImpl{
