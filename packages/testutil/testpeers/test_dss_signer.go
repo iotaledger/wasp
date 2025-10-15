@@ -59,13 +59,13 @@ func (sig *testDssSigner) Sign(messageToSign []byte) (*cryptolib.Signature, erro
 
 	//
 	// Setup nodes.
-	distributedSignatures := map[gpa.NodeID]distsign.DistributedSignature{}
+	distributedSignatures := map[gpa.NodeID]*distsign.DistributedSignature{}
 	gpas := map[gpa.NodeID]gpa.GPA{}
 	for idx, nid := range sig.nodeIDs {
 		dks := sig.dkShares[idx]
 		privKey := lo.Must(sig.nodeKeys[idx].GetPrivateKey().AsKyberKeyPair()).Private
 		distributedSignatures[nid] = distsign.New(edSuite, sig.nodeIDs, nodePKs, f, nid, privKey, dks.DSS(), sig.log)
-		gpas[nid] = distributedSignatures[nid].AsGPA()
+		gpas[nid] = gpa.NewOwnHandler(nid, distributedSignatures[nid])
 	}
 	tc := gpa.NewTestContext(gpas)
 	//

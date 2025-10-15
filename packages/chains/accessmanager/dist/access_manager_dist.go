@@ -23,15 +23,11 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/util"
 )
 
-type AccessMgr interface {
-	AsGPA() gpa.GPA
-}
-
 type Output interface {
 	ChainServerNodes(chainID isc.ChainID) []*cryptolib.PublicKey
 }
 
-type accessMgrDist struct {
+type AccessMgr struct {
 	nodes            *shrinkingmap.ShrinkingMap[gpa.NodeID, *accessMgrNode]   // State for each peer.
 	chains           *shrinkingmap.ShrinkingMap[isc.ChainID, *accessMgrChain] // State for each chain.
 	pubKeyToNodeID   func(*cryptolib.PublicKey) gpa.NodeID                    // Convert PubKeys to NodeIDs.
@@ -40,15 +36,15 @@ type accessMgrDist struct {
 	log              log.Logger
 }
 
-var _ gpa.GPA = &accessMgrDist{}
+var _ gpa.GPA = &AccessMgr{}
 
 func NewAccessMgr(
 	pubKeyToNodeID func(*cryptolib.PublicKey) gpa.NodeID,
 	serversUpdatedCB func(chainID isc.ChainID, servers []*cryptolib.PublicKey),
 	dismissPeerCB func(*cryptolib.PublicKey),
 	log log.Logger,
-) AccessMgr {
-	return &accessMgrDist{
+) *AccessMgr {
+	return &AccessMgr{
 		nodes:            shrinkingmap.New[gpa.NodeID, *accessMgrNode](),
 		chains:           shrinkingmap.New[isc.ChainID, *accessMgrChain](),
 		pubKeyToNodeID:   pubKeyToNodeID,
@@ -58,13 +54,8 @@ func NewAccessMgr(
 	}
 }
 
-// Implements the AccessMgr interface.
-func (amd *accessMgrDist) AsGPA() gpa.GPA {
-	return amd
-}
-
 // Implements the Output interface.
-func (amd *accessMgrDist) ChainServerNodes(chainID isc.ChainID) []*cryptolib.PublicKey {
+func (amd *AccessMgr) ChainServerNodes(chainID isc.ChainID) []*cryptolib.PublicKey {
 	if chain, exists := amd.chains.Get(chainID); exists {
 		return chain.server.Values()
 	}
@@ -72,7 +63,7 @@ func (amd *accessMgrDist) ChainServerNodes(chainID isc.ChainID) []*cryptolib.Pub
 }
 
 // Implements the gpa.GPA interface.
-func (amd *accessMgrDist) Input(input gpa.Input) gpa.OutMessages {
+func (amd *AccessMgr) Input(input gpa.Input) gpa.OutMessages {
 	switch input := input.(type) {
 	case *inputChainDisabled:
 		return amd.handleInputChainDisabled(input)
@@ -85,7 +76,7 @@ func (amd *accessMgrDist) Input(input gpa.Input) gpa.OutMessages {
 }
 
 // Implements the gpa.GPA interface.
-func (amd *accessMgrDist) Message(msg gpa.Message) gpa.OutMessages {
+func (amd *AccessMgr) Message(msg gpa.Message) gpa.OutMessages {
 	if msg, ok := msg.(*msgAccess); ok {
 		return amd.handleMsgAccess(msg)
 	}
@@ -93,17 +84,17 @@ func (amd *accessMgrDist) Message(msg gpa.Message) gpa.OutMessages {
 }
 
 // Implements the gpa.GPA interface.
-func (amd *accessMgrDist) Output() gpa.Output {
+func (amd *AccessMgr) Output() gpa.Output {
 	return amd
 }
 
 // Implements the gpa.GPA interface.
-func (amd *accessMgrDist) StatusString() string {
+func (amd *AccessMgr) StatusString() string {
 	return fmt.Sprintf("{accessMgr, |nodes|=%v, |chains|=%v}", amd.nodes.Size(), amd.chains.Size())
 }
 
 // > Notify all the trusted access nodes, that we will not serve the requests anymore.
-func (amd *accessMgrDist) handleInputChainDisabled(input *inputChainDisabled) gpa.OutMessages {
+func (amd *AccessMgr) handleInputChainDisabled(input *inputChainDisabled) gpa.OutMessages {
 	chain, exists := amd.chains.Get(input.chainID)
 	if !exists {
 		return nil // Already disabled.
@@ -122,7 +113,7 @@ func (amd *accessMgrDist) handleInputChainDisabled(input *inputChainDisabled) gp
 //
 // > Send disabled for nodes not in the access list anymore.
 // > Send enabled for new access nodes.
-func (amd *accessMgrDist) handleInputAccessNodes(input *inputAccessNodes) gpa.OutMessages {
+func (amd *AccessMgr) handleInputAccessNodes(input *inputAccessNodes) gpa.OutMessages {
 	//
 	// Update the info from the chain perspective.
 	chain, exists := amd.chains.Get(input.chainID)
@@ -148,7 +139,7 @@ func (amd *accessMgrDist) handleInputAccessNodes(input *inputAccessNodes) gpa.Ou
 	return msgs
 }
 
-func (amd *accessMgrDist) handleInputTrustedNodes(input *inputTrustedNodes) gpa.OutMessages {
+func (amd *AccessMgr) handleInputTrustedNodes(input *inputTrustedNodes) gpa.OutMessages {
 	msgs := gpa.NoMessages()
 	//
 	// Setup new nodes.
@@ -188,7 +179,7 @@ func (amd *accessMgrDist) handleInputTrustedNodes(input *inputTrustedNodes) gpa.
 	return msgs
 }
 
-func (amd *accessMgrDist) handleMsgAccess(msg *msgAccess) gpa.OutMessages {
+func (amd *AccessMgr) handleMsgAccess(msg *msgAccess) gpa.OutMessages {
 	node, exists := amd.nodes.Get(msg.Sender())
 	if !exists {
 		return nil
