@@ -10,47 +10,47 @@ import "fmt"
 // The idea is instead of checking if a message for myself in the actual
 // protocols, one just send a message, and this handler passes it back
 // as an ordinary message.
-type OwnHandler struct {
+type OwnHandler[Target GPA] struct {
 	me           NodeID
-	target       GPA
+	target       Target
 	outPredicate func(msg Message) bool
 }
 
-var _ GPA = &OwnHandler{}
+var _ GPA = &OwnHandler[GPA]{}
 
-func NewOwnHandlerWithOutPredicate(me NodeID, target GPA, outPredicate func(Message) bool) GPA {
-	return &OwnHandler{me: me, target: target, outPredicate: outPredicate}
+func NewOwnHandlerWithOutPredicate[Target GPA](me NodeID, target Target, outPredicate func(Message) bool) *OwnHandler[Target] {
+	return &OwnHandler[Target]{me: me, target: target, outPredicate: outPredicate}
 }
 
-func NewOwnHandler(me NodeID, target GPA) GPA {
+func NewOwnHandler[Target GPA](me NodeID, target Target) *OwnHandler[Target] {
 	return NewOwnHandlerWithOutPredicate(me, target, func(msg Message) bool { return false })
 }
 
-func (o *OwnHandler) Input(input Input) OutMessages {
+func (o *OwnHandler[_]) Input(input Input) OutMessages {
 	msgs := o.target.Input(input)
 	outMsgs := NoMessages()
 	return o.handleMsgs(msgs, outMsgs)
 }
 
-func (o *OwnHandler) Message(msg Message) OutMessages {
+func (o *OwnHandler[_]) Message(msg Message) OutMessages {
 	msgs := o.target.Message(msg)
 	outMsgs := NoMessages()
 	return o.handleMsgs(msgs, outMsgs)
 }
 
-func (o *OwnHandler) Output() Output {
+func (o *OwnHandler[_]) Output() Output {
 	return o.target.Output()
 }
 
-func (o *OwnHandler) StatusString() string {
+func (o *OwnHandler[_]) StatusString() string {
 	return fmt.Sprintf("{OWN%s}", o.target.StatusString())
 }
 
-func (o *OwnHandler) UnmarshalMessage(data []byte) (Message, error) {
+func (o *OwnHandler[_]) UnmarshalMessage(data []byte) (Message, error) {
 	return o.target.UnmarshalMessage(data)
 }
 
-func (o *OwnHandler) handleMsgs(msgs, outMsgs OutMessages) OutMessages {
+func (o *OwnHandler[_]) handleMsgs(msgs, outMsgs OutMessages) OutMessages {
 	if msgs == nil {
 		return outMsgs
 	}

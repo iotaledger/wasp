@@ -83,7 +83,7 @@ func testCommitteeLogBasic(t *testing.T, n, f int) {
 			log.NewChildLogger(fmt.Sprintf("N%v", i)),
 		)
 		require.NoError(t, err)
-		gpaNodes[gpaNodeIDs[i]] = committeeLogInst.AsGPA()
+		gpaNodes[gpaNodeIDs[i]] = gpa.NewOwnHandler(gpaNodeIDs[i], committeeLogInst)
 	}
 	gpaTC := gpa.NewTestContext(gpaNodes)
 	//

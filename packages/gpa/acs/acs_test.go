@@ -60,7 +60,7 @@ func testBasic(t *testing.T, n, f, silent int) {
 				)
 				return semi.New(round, realCC)
 			}
-			nodes[nid] = acs.New(nodeIDs, nid, f, makeCCInstFun, nodeLog).AsGPA()
+			nodes[nid] = gpa.NewOwnHandler(nid, acs.New(nodeIDs, nid, f, makeCCInstFun, nodeLog))
 		}
 	}
 	tc := gpa.NewTestContext(nodes)

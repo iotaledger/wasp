@@ -120,7 +120,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 			log.NewChildLogger(nid.ShortString()),
 		)
 		require.NoError(t, err)
-		nodes[nid] = cm.AsGPA()
+		nodes[nid] = gpa.NewOwnHandler(nid, cm)
 	}
 	tc := gpa.NewTestContext(nodes)
 	tc.PrintAllStatusStrings("Started", t.Logf)

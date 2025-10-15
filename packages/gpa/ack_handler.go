@@ -21,9 +21,9 @@ const (
 // acknowledgement is received. To make this more efficient, acknowledgements
 // are piggy-backed on other messages (or sent stand-alone, if there is no
 // messages to piggy-back the acknowledgements).
-type ackHandler struct {
+type AckHandler[Nested GPA] struct {
 	me           NodeID
-	nested       GPA
+	nested       Nested
 	resendPeriod time.Duration
 	initialized  *shrinkingmap.ShrinkingMap[NodeID, bool]
 	initPending  *shrinkingmap.ShrinkingMap[NodeID, []Message]
@@ -32,18 +32,8 @@ type ackHandler struct {
 	recvAcksIn   *shrinkingmap.ShrinkingMap[NodeID, map[int]*int]
 }
 
-type AckHandler interface {
-	GPA
-	DismissPeer(peerID NodeID) // To avoid resending messages to dead peers.
-	MakeTickInput(time.Time) Input
-	NestedMessage(msg Message) OutMessages
-	NestedCall(c func(GPA) OutMessages) OutMessages
-}
-
-var _ AckHandler = &ackHandler{}
-
-func NewAckHandler(me NodeID, nested GPA, resendPeriod time.Duration) AckHandler {
-	return &ackHandler{
+func NewAckHandler[Nested GPA](me NodeID, nested Nested, resendPeriod time.Duration) *AckHandler[Nested] {
+	return &AckHandler[Nested]{
 		me:           me,
 		nested:       nested,
 		resendPeriod: resendPeriod,
@@ -55,7 +45,7 @@ func NewAckHandler(me NodeID, nested GPA, resendPeriod time.Duration) AckHandler
 	}
 }
 
-func (a *ackHandler) DismissPeer(peerID NodeID) {
+func (a *AckHandler[Nested]) DismissPeer(peerID NodeID) {
 	a.initialized.Delete(peerID)
 	a.initPending.Delete(peerID)
 	a.counters.Delete(peerID)
@@ -63,11 +53,11 @@ func (a *ackHandler) DismissPeer(peerID NodeID) {
 	a.recvAcksIn.Delete(peerID)
 }
 
-func (a *ackHandler) MakeTickInput(timestamp time.Time) Input {
+func (a *AckHandler[Nested]) MakeTickInput(timestamp time.Time) Input {
 	return &ackHandlerTick{timestamp: timestamp}
 }
 
-func (a *ackHandler) Input(input Input) OutMessages {
+func (a *AckHandler[Nested]) Input(input Input) OutMessages {
 	switch input := input.(type) {
 	case *ackHandlerTick:
 		return a.handleTickMsg(input)
@@ -76,7 +66,7 @@ func (a *ackHandler) Input(input Input) OutMessages {
 	}
 }
 
-func (a *ackHandler) Message(msg Message) OutMessages {
+func (a *AckHandler[Nested]) Message(msg Message) OutMessages {
 	switch msg := msg.(type) {
 	case *ackHandlerReset:
 		return a.handleResetMsg(msg)
@@ -87,23 +77,23 @@ func (a *ackHandler) Message(msg Message) OutMessages {
 	}
 }
 
-func (a *ackHandler) NestedMessage(msg Message) OutMessages {
+func (a *AckHandler[Nested]) NestedMessage(msg Message) OutMessages {
 	return a.makeBatches(a.nested.Message(msg))
 }
 
-func (a *ackHandler) NestedCall(c func(GPA) OutMessages) OutMessages {
+func (a *AckHandler[Nested]) NestedCall(c func(GPA) OutMessages) OutMessages {
 	return a.makeBatches(c(a.nested))
 }
 
-func (a *ackHandler) Output() Output {
+func (a *AckHandler[Nested]) Output() Output {
 	return a.nested.Output()
 }
 
-func (a *ackHandler) StatusString() string {
+func (a *AckHandler[Nested]) StatusString() string {
 	return fmt.Sprintf("{ACK:%s}", a.nested.StatusString())
 }
 
-func (a *ackHandler) UnmarshalMessage(data []byte) (Message, error) {
+func (a *AckHandler[Nested]) UnmarshalMessage(data []byte) (Message, error) {
 	msg, err := UnmarshalMessage(data, Mapper{
 		msgTypeAckHandlerReset: func() Message { return &ackHandlerReset{} },
 		msgTypeAckHandlerBatch: func() Message { return &ackHandlerBatch{nestedGPA: a.nested} },
@@ -114,7 +104,7 @@ func (a *ackHandler) UnmarshalMessage(data []byte) (Message, error) {
 	return msg, err
 }
 
-func (a *ackHandler) handleTickMsg(msg *ackHandlerTick) OutMessages {
+func (a *AckHandler[Nested]) handleTickMsg(msg *ackHandlerTick) OutMessages {
 	resendOlderThan := msg.timestamp.Add(-a.resendPeriod)
 	resendMsgs := NoMessages()
 	a.sentUnacked.ForEach(func(_ NodeID, nodeSentUnacked *shrinkingmap.ShrinkingMap[int, *ackHandlerBatch]) bool {
@@ -141,7 +131,7 @@ func (a *ackHandler) handleTickMsg(msg *ackHandlerTick) OutMessages {
 	return resendMsgs
 }
 
-func (a *ackHandler) handleResetMsg(msg *ackHandlerReset) OutMessages {
+func (a *AckHandler[Nested]) handleResetMsg(msg *ackHandlerReset) OutMessages {
 	from := msg.sender
 	if !msg.response {
 		maxID := 0
@@ -167,7 +157,7 @@ func (a *ackHandler) handleResetMsg(msg *ackHandlerReset) OutMessages {
 	return a.makeBatches(NoMessages())
 }
 
-func (a *ackHandler) handleBatchMsg(msgBatch *ackHandlerBatch) OutMessages {
+func (a *AckHandler[Nested]) handleBatchMsg(msgBatch *ackHandlerBatch) OutMessages {
 	//
 	// Process the received acknowledgements.
 	// Drop all the outgoing batches, that are now acknowledged.
@@ -228,7 +218,7 @@ func (a *ackHandler) handleBatchMsg(msgBatch *ackHandlerBatch) OutMessages {
 	return a.makeBatches(nestedMsgs)
 }
 
-func (a *ackHandler) makeBatches(msgs OutMessages) OutMessages {
+func (a *AckHandler[Nested]) makeBatches(msgs OutMessages) OutMessages {
 	if msgs == nil {
 		return nil
 	}

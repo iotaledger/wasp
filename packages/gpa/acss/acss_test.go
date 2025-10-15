@@ -77,7 +77,7 @@ func genericTest(
 	faulty := nodeIDs[:silentNodes]
 	nodes := map[gpa.NodeID]gpa.GPA{}
 	for _, nid := range nodeIDs {
-		nodes[nid] = acss.New(suite, nodeIDs, nodePKs, f, nid, nodeSKs[nid], dealer, dealCB, log.NewChildLogger(nid.ShortString()))
+		nodes[nid] = gpa.NewOwnHandler(nid, acss.New(suite, nodeIDs, nodePKs, f, nid, nodeSKs[nid], dealer, dealCB, log.NewChildLogger(nid.ShortString())))
 		if isNodeInList(nid, faulty) {
 			nodes[nid] = &silentNode{nested: nodes[nid]}
 		}

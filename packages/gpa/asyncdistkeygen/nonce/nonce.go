@@ -61,7 +61,7 @@ type nonceDistributedKeyGenerationImpl struct {
 	me        gpa.NodeID
 	myIdx     int
 	nodeIDs   []gpa.NodeID
-	acss      []gpa.GPA
+	acss      []*gpa.OwnHandler[*acss.ACSS]
 	st        map[int]*share.PriShare // > Let Si = {}; Ti = {}
 	stCommits map[int][]kyber.Point   // Commits for Si.
 	agreedT   []int                   // Output from the external consensus.
@@ -114,7 +114,7 @@ func New(
 		log:       log,
 	}
 	n.wrapper = gpa.NewMsgWrapper(msgTypeWrapped, n.subsystemFunc)
-	n.acss = make([]gpa.GPA, len(nodeIDs))
+	n.acss = make([]*gpa.OwnHandler[*acss.ACSS], len(nodeIDs))
 	for i := range n.acss {
 		n.acss[i] = acss.New(suite, nodeIDs, peerPKs, f, me, mySK, nodeIDs[i], nil, log)
 	}

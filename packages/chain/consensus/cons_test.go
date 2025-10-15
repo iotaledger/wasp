@@ -157,7 +157,7 @@ func testConsBasic(t *testing.T, n, f int) {
 		chainStates[nid] = statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 		_, err = origin.InitChainByStateMetadataBytes(chainStates[nid], stateAnchor0.GetStateMetadata(), 0, parameterstest.L1Mock)
 		require.NoError(t, err)
-		nodes[nid] = consensus.New(
+		nodes[nid] = gpa.NewOwnHandler(nid, consensus.New(
 			chainID,
 			chainStates[nid],
 			nid,
@@ -169,7 +169,7 @@ func testConsBasic(t *testing.T, n, f int) {
 			gpa.NodeIDFromPublicKey,
 			accounts.CommonAccount(),
 			nodeLog,
-		).AsGPA()
+		))
 	}
 	tc := gpa.NewTestContext(nodes)
 	//

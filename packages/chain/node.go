@@ -141,7 +141,7 @@ type chainNodeImpl struct {
 	me                  gpa.NodeID
 	nodeIdentity        *cryptolib.KeyPair
 	chainID             isc.ChainID
-	chainMgr            gpa.AckHandler
+	chainMgr            *gpa.AckHandler[*chainmanager.ChainMgr]
 	chainStore          indexedstore.IndexedStore
 	nodeConn            NodeConnection
 	tangleTime          time.Time
@@ -1256,7 +1256,7 @@ func initializeOperationalChain(
 	mempool := createMempool(ctx, chainID, nodeIdentity, net, cni, chainMetrics,
 		mempoolSettings, mempoolBroadcastInterval, nodeConn)
 
-	cni.chainMgr = gpa.NewAckHandler(cni.me, chainMgr.AsGPA(), RedeliveryPeriod)
+	cni.chainMgr = gpa.NewAckHandler(cni.me, chainMgr, RedeliveryPeriod)
 	cni.stateMgr = stateMgr
 	cni.mempool = mempool
 
@@ -1346,7 +1346,7 @@ func createChainManager(
 	pipeliningLimit int,
 	postponeRecoveryMilestones int,
 	log log.Logger,
-) (chainmanager.ChainMgr, error) {
+) (*chainmanager.ChainMgr, error) {
 	return chainmanager.New(
 		cni.me,
 		cni.chainID,

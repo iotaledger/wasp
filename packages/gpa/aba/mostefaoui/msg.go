@@ -14,7 +14,7 @@ const (
 )
 
 // Implements the gpa.GPA interface.
-func (a *abaImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
+func (a *ABA) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	return gpa.UnmarshalMessage(data, gpa.Mapper{
 		msgTypeVote: func() gpa.Message { return new(msgVote) },
 		msgTypeDone: func() gpa.Message { return new(msgDone) },

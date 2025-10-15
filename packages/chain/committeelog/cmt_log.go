@@ -32,11 +32,6 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/util/byzquorum"
 )
 
-// CommitteeLog is the public interface for this algorithm.
-type CommitteeLog interface {
-	AsGPA() gpa.GPA
-}
-
 type State struct {
 	LogIndex LogIndex
 }
@@ -58,7 +53,7 @@ var ErrCommitteeLogStateNotFound = errors.New("errCmtLogStateNotFound")
 type Output = map[LogIndex]*isc.StateAnchor
 
 // Protocol implementation.
-type committeeLogImpl struct {
+type CommitteeLog struct {
 	chainID                isc.ChainID            // Chain, for which this log is maintained by this committee.
 	committeeAddr          *cryptolib.Address     // Address of the committee running this chain.
 	consensusStateRegistry ConsensusStateRegistry // Persistent storage.
@@ -72,7 +67,7 @@ type committeeLogImpl struct {
 	log                    log.Logger
 }
 
-var _ gpa.GPA = &committeeLogImpl{}
+var _ gpa.GPA = &CommitteeLog{}
 
 // New constructs a new node instance for this protocol.
 //
@@ -91,7 +86,7 @@ func New(
 	pipeliningLimit int,
 	cclMetrics *metrics.ChainCommitteeLogMetrics,
 	log log.Logger,
-) (CommitteeLog, error) {
+) (*CommitteeLog, error) {
 	//
 	// Load the last LogIndex we were working on.
 	var prevLI LogIndex
@@ -119,7 +114,7 @@ func New(
 
 	//
 	// Create it.
-	cl := &committeeLogImpl{
+	cl := &CommitteeLog{
 		chainID:                chainID,
 		committeeAddr:          committeeAddr,
 		consensusStateRegistry: consensusStateRegistry,
@@ -149,17 +144,11 @@ func New(
 		log.LogDebugf("VarLocalView: Output received, %v", ao)
 		return cl.varConsInsts.LatestL1Anchor(ao, cl.varLogIndex.ConsensusStarted)
 	}, log.NewChildLogger("VLV"))
-	cl.asGPA = gpa.NewOwnHandler(me, cl)
 	return cl, nil
 }
 
-// Implements the CommitteeLog interface.
-func (cl *committeeLogImpl) AsGPA() gpa.GPA {
-	return cl.asGPA
-}
-
 // Implements the gpa.GPA interface.
-func (cl *committeeLogImpl) Input(input gpa.Input) gpa.OutMessages {
+func (cl *CommitteeLog) Input(input gpa.Input) gpa.OutMessages {
 	switch input.(type) {
 	case *inputCanPropose:
 		break // Don't log, its periodic.
@@ -187,7 +176,7 @@ func (cl *committeeLogImpl) Input(input gpa.Input) gpa.OutMessages {
 }
 
 // Implements the gpa.GPA interface.
-func (cl *committeeLogImpl) Message(msg gpa.Message) gpa.OutMessages {
+func (cl *CommitteeLog) Message(msg gpa.Message) gpa.OutMessages {
 	msgNLI, ok := msg.(*MsgNextLogIndex)
 	if !ok {
 		cl.log.LogWarnf("dropping unexpected message %T: %+v", msg, msg)
@@ -197,32 +186,32 @@ func (cl *committeeLogImpl) Message(msg gpa.Message) gpa.OutMessages {
 }
 
 // The latest anchor object's version confirmed at the L1.
-func (cl *committeeLogImpl) handleInputAnchorConfirmed(input *inputAnchorConfirmed) gpa.OutMessages {
+func (cl *CommitteeLog) handleInputAnchorConfirmed(input *inputAnchorConfirmed) gpa.OutMessages {
 	cl.suspended = false
 	return cl.varLocalView.AnchorConfirmed(input.anchor)
 }
 
 // Consensus completed with a decision to SKIP/⊥.
-func (cl *committeeLogImpl) handleInputConsensusOutputSkip(input *inputConsensusOutputSkip) gpa.OutMessages {
+func (cl *CommitteeLog) handleInputConsensusOutputSkip(input *inputConsensusOutputSkip) gpa.OutMessages {
 	return cl.varConsInsts.ConsOutputSkip(input.logIndex, cl.varLogIndex.ConsensusStarted)
 }
 
 // Consensus has decided, produced a TX and it is now confirmed by L1.
-func (cl *committeeLogImpl) handleInputConsensusOutputConfirmed(input *inputConsensusOutputConfirmed) gpa.OutMessages {
+func (cl *CommitteeLog) handleInputConsensusOutputConfirmed(input *inputConsensusOutputConfirmed) gpa.OutMessages {
 	return cl.varConsInsts.ConsOutputDone(input.logIndex, input.nextAnchor, cl.varLogIndex.ConsensusStarted)
 }
 
 // Consensus has decided, produced a TX but it was rejected by L1.
-func (cl *committeeLogImpl) handleInputConsensusOutputRejected(input *inputConsensusOutputRejected) gpa.OutMessages {
+func (cl *CommitteeLog) handleInputConsensusOutputRejected(input *inputConsensusOutputRejected) gpa.OutMessages {
 	return cl.varConsInsts.ConsOutputSkip(input.logIndex, cl.varLogIndex.ConsensusStarted) // This will cause proposal of our latest L1 Anchor.
 }
 
 // Consensus tries to decide for too long. Maybe quorum assumption has been violated.
-func (cl *committeeLogImpl) handleInputConsensusTimeout(input *inputConsensusTimeout) gpa.OutMessages {
+func (cl *CommitteeLog) handleInputConsensusTimeout(input *inputConsensusTimeout) gpa.OutMessages {
 	return cl.varConsInsts.ConsTimeout(input.logIndex, cl.varLogIndex.ConsensusStarted)
 }
 
-func (cl *committeeLogImpl) handleInputCanPropose() gpa.OutMessages {
+func (cl *CommitteeLog) handleInputCanPropose() gpa.OutMessages {
 	msgs := gpa.NoMessages()
 	msgs.AddAll(cl.varConsInsts.Tick(cl.varLogIndex.ConsensusStarted))
 
@@ -238,18 +227,18 @@ func (cl *committeeLogImpl) handleInputCanPropose() gpa.OutMessages {
 	return msgs
 }
 
-func (cl *committeeLogImpl) handleInputSuspend() {
+func (cl *CommitteeLog) handleInputSuspend() {
 	cl.suspended = true
 }
 
 // > ON Reception of ⟨NextLI, •⟩ message:
 // >   ...
-func (cl *committeeLogImpl) handleMsgNextLogIndex(msg *MsgNextLogIndex) gpa.OutMessages {
+func (cl *CommitteeLog) handleMsgNextLogIndex(msg *MsgNextLogIndex) gpa.OutMessages {
 	return cl.varLogIndex.MsgNextLogIndexReceived(msg)
 }
 
 // Implements the gpa.GPA interface.
-func (cl *committeeLogImpl) Output() gpa.Output {
+func (cl *CommitteeLog) Output() gpa.Output {
 	out := cl.output
 	if out == nil || cl.suspended {
 		return nil // Untyped nil.
@@ -258,7 +247,7 @@ func (cl *committeeLogImpl) Output() gpa.Output {
 }
 
 // Implements the gpa.GPA interface.
-func (cl *committeeLogImpl) StatusString() string {
+func (cl *CommitteeLog) StatusString() string {
 	return fmt.Sprintf(
 		"{committeeLogImpl, %v, %v, %v}",
 		cl.varConsInsts.StatusString(),

@@ -68,7 +68,7 @@ func testBasic(t *testing.T, n, f int, inpType string, silent int) {
 				)
 				return semi.New(round, realCC)
 			}
-			nodes[nid] = mostefaoui.New(nodeIDs, nid, f, makeCCInst, nodeLog).AsGPA()
+			nodes[nid] = mostefaoui.New(nodeIDs, nid, f, makeCCInst, nodeLog)
 		}
 	}
 	tc := gpa.NewTestContext(nodes)

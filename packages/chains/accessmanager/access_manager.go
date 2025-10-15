@@ -27,7 +27,7 @@ type AccessMgr interface {
 }
 
 type accessMgrImpl struct {
-	dist                    gpa.AckHandler
+	dist                    *gpa.AckHandler[*gpa.OwnHandler[*dist.AccessMgr]]
 	dismissPeerBuf          []*cryptolib.PublicKey
 	reqTrustedNodesPipe     pipe.Pipe[*reqTrustedNodes]
 	reqChainAccessNodesPipe pipe.Pipe[*reqChainAccessNodes]
@@ -87,7 +87,7 @@ func New(
 	me := ami.pubKeyAsNodeID(nodeIdentity.GetPublicKey())
 	ami.dist = gpa.NewAckHandler(me, gpa.NewOwnHandler(
 		me,
-		dist.NewAccessMgr(ami.pubKeyAsNodeID, serversUpdatedCB, ami.dismissPeerCB, log).AsGPA(),
+		dist.NewAccessMgr(ami.pubKeyAsNodeID, serversUpdatedCB, ami.dismissPeerCB, log),
 	), resendPeriod)
 
 	netRecvPipeInCh := ami.netRecvPipe.In()

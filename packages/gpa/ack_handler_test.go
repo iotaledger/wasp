@@ -17,7 +17,7 @@ func TestAckHandler(t *testing.T) {
 	t.Parallel()
 	n := 10
 	nodeIDs := MakeTestNodeIDs(n)
-	nodesAH := map[NodeID]AckHandler{}
+	nodesAH := map[NodeID]*AckHandler[GPA]{}
 	nodes := map[NodeID]GPA{}
 	inputs := map[NodeID]Input{}
 	for _, nid := range nodeIDs {
