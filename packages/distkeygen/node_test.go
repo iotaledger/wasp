@@ -42,11 +42,11 @@ func TestBasic(t *testing.T) {
 	//
 	// Initialize the DKG subsystem in each node.
 	distKeyGenNodes := make([]*distkeygen.Node, len(peeringURLs))
-	dkShareRegistryProviders := make([]registry.DKShareRegistryProvider, len(peeringURLs))
+	dkShareRegistrys := make([]registry.DKShareRegistry, len(peeringURLs))
 	for i := range peeringURLs {
-		dkShareRegistryProviders[i] = testutil.NewDistributedKeyGenerationRegistryProvider(peerIdentities[i].GetPrivateKey())
+		dkShareRegistrys[i] = testutil.NewDistributedKeyGenerationRegistry(peerIdentities[i].GetPrivateKey())
 		distKeyGenNode, err := distkeygen.NewNode(
-			peerIdentities[i], networkProviders[i], dkShareRegistryProviders[i],
+			peerIdentities[i], networkProviders[i], dkShareRegistrys[i],
 			testlogger.WithLevel(log.NewChildLogger(fmt.Sprintf("PeeringURL:%s", peeringURLs[i])), hivelog.LevelDebug, false),
 		)
 		require.NoError(t, err)
@@ -71,7 +71,7 @@ func TestBasic(t *testing.T) {
 	// dssPartSigs := make([]*dss.PartialSig, len(peerPeeringURLs))
 	blsPartSigs := make([][]byte, len(peeringURLs))
 	var aggrDks tcrypto.DKShare
-	for i, r := range dkShareRegistryProviders {
+	for i, r := range dkShareRegistrys {
 		dks, err2 := r.LoadDKShare(dkShare.GetAddress())
 		if i == 0 {
 			aggrDks = dks
@@ -125,7 +125,7 @@ func TestUnreliableNet(t *testing.T) {
 	// Initialize the DKG subsystem in each node.
 	distKeyGenNodes := make([]*distkeygen.Node, len(peerPeeringURLs))
 	for i := range peerPeeringURLs {
-		dksReg := testutil.NewDistributedKeyGenerationRegistryProvider(peerIdentities[i].GetPrivateKey())
+		dksReg := testutil.NewDistributedKeyGenerationRegistry(peerIdentities[i].GetPrivateKey())
 		distKeyGenNode, err := distkeygen.NewNode(
 			peerIdentities[i], networkProviders[i], dksReg,
 			testlogger.WithLevel(log.NewChildLogger(fmt.Sprintf("PeeringURL:%s", peerPeeringURLs[i])), hivelog.LevelDebug, false),
@@ -169,7 +169,7 @@ func TestLowN(t *testing.T) {
 		// Initialize the DKG subsystem in each node.
 		distKeyGenNodes := make([]*distkeygen.Node, len(peerPeeringURLs))
 		for i := range peerPeeringURLs {
-			dksReg := testutil.NewDistributedKeyGenerationRegistryProvider(peerIdentities[i].GetPrivateKey())
+			dksReg := testutil.NewDistributedKeyGenerationRegistry(peerIdentities[i].GetPrivateKey())
 			distKeyGenNode, err := distkeygen.NewNode(
 				peerIdentities[i], networkProviders[i], dksReg,
 				testlogger.WithLevel(log.NewChildLogger(fmt.Sprintf("PeeringURL:%s", peerPeeringURLs[i])), hivelog.LevelDebug, false),

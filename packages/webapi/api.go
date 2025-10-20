@@ -84,8 +84,8 @@ func Init(
 	networkProvider peering.NetworkProvider,
 	trustedNetworkManager peering.TrustedNetworkManager,
 	userManager *userspkg.UserManager,
-	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
-	dkShareRegistryProvider registry.DKShareRegistryProvider,
+	chainRecordRegistry registry.ChainRecordRegistry,
+	dkShareRegistry registry.DKShareRegistry,
 	nodeIdentityProvider registry.NodeIdentityProvider,
 	chainsProvider chains.Provider,
 	distKeyGenNodeProvider distkeygen.NodeProvider,
@@ -105,15 +105,15 @@ func Init(
 	mocker := NewMocker()
 	mocker.LoadMockFiles()
 
-	chainService := services.NewChainService(logger, chainsProvider, chainMetricsProvider, chainRecordRegistryProvider)
-	committeeService := services.NewCommitteeService(chainsProvider, networkProvider, dkShareRegistryProvider)
-	registryService := services.NewRegistryService(chainsProvider, chainRecordRegistryProvider)
+	chainService := services.NewChainService(logger, chainsProvider, chainMetricsProvider, chainRecordRegistry)
+	committeeService := services.NewCommitteeService(chainsProvider, networkProvider, dkShareRegistry)
+	registryService := services.NewRegistryService(chainsProvider, chainRecordRegistry)
 	offLedgerService := services.NewOffLedgerService(chainService, networkProvider, requestCacheTTL)
 	metricsService := services.NewMetricsService(chainsProvider, chainMetricsProvider)
 	peeringService := services.NewPeeringService(chainsProvider, networkProvider, trustedNetworkManager)
 	evmService := services.NewEVMService(chainsProvider, chainService, networkProvider, pub, indexDBPath, chainMetricsProvider, jsonrpcParams, logger.NewChildLogger("EVMService"))
-	nodeService := services.NewNodeService(chainRecordRegistryProvider, nodeIdentityProvider, chainsProvider, shutdownHandler, trustedNetworkManager, l1ParamsFetcher)
-	distKeyGenService := services.NewDistributedKeyGenerationService(dkShareRegistryProvider, distKeyGenNodeProvider, trustedNetworkManager)
+	nodeService := services.NewNodeService(chainRecordRegistry, nodeIdentityProvider, chainsProvider, shutdownHandler, trustedNetworkManager, l1ParamsFetcher)
+	distKeyGenService := services.NewDistributedKeyGenerationService(dkShareRegistry, distKeyGenNodeProvider, trustedNetworkManager)
 	userService := services.NewUserService(userManager)
 	// --
 

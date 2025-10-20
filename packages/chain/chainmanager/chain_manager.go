@@ -208,7 +208,7 @@ type chainMgrImpl struct {
 	needConsensusCB            func(upd *NeedConsensusMap)                             // A callback.
 	needPublishTX              *NeedPublishTXMap                                       // Query to post TXes.
 	needPublishCB              func(upd *NeedPublishTXMap)                             // A callback.
-	dkShareRegistryProvider    registry.DKShareRegistryProvider                        // Source for DKShares.
+	dkShareRegistry            registry.DKShareRegistry                                // Source for DKShares.
 	varAccessNodeState         VarAccessNodeState
 	output                     *Output
 	asGPA                      gpa.GPA
@@ -231,7 +231,7 @@ func New(
 	chainID isc.ChainID,
 	chainStore state.Store,
 	consensusStateRegistry committeelog.ConsensusStateRegistry,
-	dkShareRegistryProvider registry.DKShareRegistryProvider,
+	dkShareRegistry registry.DKShareRegistry,
 	nodeIDFromPubKey func(pubKey *cryptolib.PublicKey) gpa.NodeID,
 	needConsensusCB func(upd *NeedConsensusMap),
 	needPublishCB func(upd *NeedPublishTXMap),
@@ -258,7 +258,7 @@ func New(
 		needConsensusCB:            needConsensusCB,
 		needPublishTX:              shrinkingmap.New[hashing.HashValue, *NeedPublishTX](),
 		needPublishCB:              needPublishCB,
-		dkShareRegistryProvider:    dkShareRegistryProvider,
+		dkShareRegistry:            dkShareRegistry,
 		varAccessNodeState:         NewVarAccessNodeState(chainID, log.NewChildLogger("VAS")),
 		me:                         me,
 		nodeIDFromPubKey:           nodeIDFromPubKey,
@@ -552,7 +552,7 @@ func (cmi *chainMgrImpl) ensureNeedConsensus(cli *committeeLogInst, outputUntype
 	// 	// Not changed, keep it.
 	// 	return
 	// }
-	dkShare, err := cmi.dkShareRegistryProvider.LoadDKShare(&cli.committeeAddr)
+	dkShare, err := cmi.dkShareRegistry.LoadDKShare(&cli.committeeAddr)
 	if errors.Is(err, tcrypto.ErrDKShareNotFound) {
 		// Rotated to other nodes, so we don't need to start the next consensus.
 		cmi.needConsensus.Clear()
@@ -654,7 +654,7 @@ func (cmi *chainMgrImpl) ensureCommitteeLog(committeeAddr cryptolib.Address) (*c
 	}
 	//
 	// Create a committee if not created yet.
-	dkShare, err := cmi.dkShareRegistryProvider.LoadDKShare(&committeeAddr)
+	dkShare, err := cmi.dkShareRegistry.LoadDKShare(&committeeAddr)
 	if errors.Is(err, tcrypto.ErrDKShareNotFound) {
 		return nil, ErrNotInCommittee
 	}

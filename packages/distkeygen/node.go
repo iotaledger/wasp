@@ -32,18 +32,18 @@ type NodeProvider func() *Node
 // It receives commands from the initiator as a dkg.NodeProvider,
 // and communicates with other DKG nodes via the peering network.
 type Node struct {
-	identity                *cryptolib.KeyPair                        // Keys of the current node.
-	secKey                  kyber.Scalar                              // Derived from the identity.
-	pubKey                  kyber.Point                               // Derived from the identity.
-	blsSuite                Suite                                     // Cryptography to use for the Pairing based operations.
-	edSuite                 suites.Suite                              // Cryptography to use for the Ed25519 based operations.
-	netProvider             peering.NetworkProvider                   // Network to communicate through.
-	dkShareRegistryProvider registry.DKShareRegistryProvider          // Where to store the generated keys.
-	processes               *shrinkingmap.ShrinkingMap[string, *proc] // Only for introspection.
-	procLock                *sync.RWMutex                             // To guard access to the process pool.
-	initMsgQueue            chan *initiatorInitMsgIn                  // Incoming events processed async.
-	cleanupFunc             context.CancelFunc                        // Peering cleanup func
-	log                     log.Logger
+	identity        *cryptolib.KeyPair                        // Keys of the current node.
+	secKey          kyber.Scalar                              // Derived from the identity.
+	pubKey          kyber.Point                               // Derived from the identity.
+	blsSuite        Suite                                     // Cryptography to use for the Pairing based operations.
+	edSuite         suites.Suite                              // Cryptography to use for the Ed25519 based operations.
+	netProvider     peering.NetworkProvider                   // Network to communicate through.
+	dkShareRegistry registry.DKShareRegistry                  // Where to store the generated keys.
+	processes       *shrinkingmap.ShrinkingMap[string, *proc] // Only for introspection.
+	procLock        *sync.RWMutex                             // To guard access to the process pool.
+	initMsgQueue    chan *initiatorInitMsgIn                  // Incoming events processed async.
+	cleanupFunc     context.CancelFunc                        // Peering cleanup func
+	log             log.Logger
 }
 
 // NewNode creates new node, that can participate in the DKG procedure.
@@ -51,7 +51,7 @@ type Node struct {
 func NewNode(
 	identity *cryptolib.KeyPair,
 	netProvider peering.NetworkProvider,
-	dkShareRegistryProvider registry.DKShareRegistryProvider,
+	dkShareRegistry registry.DKShareRegistry,
 	log log.Logger,
 ) (*Node, error) {
 	kyberKeyPair, err := identity.GetPrivateKey().AsKyberKeyPair()
@@ -59,17 +59,17 @@ func NewNode(
 		return nil, err
 	}
 	n := Node{
-		identity:                identity,
-		secKey:                  kyberKeyPair.Private,
-		pubKey:                  kyberKeyPair.Public,
-		blsSuite:                tcrypto.DefaultBLSSuite(),
-		edSuite:                 edwards25519.NewBlakeSHA256Ed25519(),
-		netProvider:             netProvider,
-		dkShareRegistryProvider: dkShareRegistryProvider,
-		processes:               shrinkingmap.New[string, *proc](),
-		procLock:                &sync.RWMutex{},
-		initMsgQueue:            make(chan *initiatorInitMsgIn),
-		log:                     log,
+		identity:        identity,
+		secKey:          kyberKeyPair.Private,
+		pubKey:          kyberKeyPair.Public,
+		blsSuite:        tcrypto.DefaultBLSSuite(),
+		edSuite:         edwards25519.NewBlakeSHA256Ed25519(),
+		netProvider:     netProvider,
+		dkShareRegistry: dkShareRegistry,
+		processes:       shrinkingmap.New[string, *proc](),
+		procLock:        &sync.RWMutex{},
+		initMsgQueue:    make(chan *initiatorInitMsgIn),
+		log:             log,
 	}
 	unhook := netProvider.Attach(&initPeeringID, peering.ReceiverDistributedKeyGenerationInit, n.receiveInitMessage)
 	n.cleanupFunc = unhook

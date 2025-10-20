@@ -8,17 +8,17 @@ import (
 )
 
 type RegistryService struct {
-	chainsProvider              chains.Provider
-	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
+	chainsProvider      chains.Provider
+	chainRecordRegistry registry.ChainRecordRegistry
 }
 
-func NewRegistryService(chainsProvider chains.Provider, chainRecordRegistryProvider registry.ChainRecordRegistryProvider) interfaces.RegistryService {
+func NewRegistryService(chainsProvider chains.Provider, chainRecordRegistry registry.ChainRecordRegistry) interfaces.RegistryService {
 	return &RegistryService{
-		chainsProvider:              chainsProvider,
-		chainRecordRegistryProvider: chainRecordRegistryProvider,
+		chainsProvider:      chainsProvider,
+		chainRecordRegistry: chainRecordRegistry,
 	}
 }
 
 func (c *RegistryService) GetChainRecordByChainID(chainID isc.ChainID) (*registry.ChainRecord, error) {
-	return c.chainRecordRegistryProvider.ChainRecord(chainID)
+	return c.chainRecordRegistry.ChainRecord(chainID)
 }

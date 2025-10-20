@@ -25,7 +25,7 @@ type DKSharesRegistry struct {
 	folderPath string
 }
 
-var _ DKShareRegistryProvider = &DKSharesRegistry{}
+var _ DKShareRegistry = &DKSharesRegistry{}
 
 // NewDKSharesRegistry creates new instance of the DKShare registry implementation.
 func NewDKSharesRegistry(folderPath string, nodePrivKey *cryptolib.PrivateKey) (*DKSharesRegistry, error) {

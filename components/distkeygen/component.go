@@ -27,9 +27,9 @@ func provide(c *dig.Container) error {
 	type nodeDeps struct {
 		dig.In
 
-		NodeIdentityProvider    registry.NodeIdentityProvider
-		DKShareRegistryProvider registry.DKShareRegistryProvider
-		NetworkProvider         peering.NetworkProvider `name:"networkProvider"`
+		NodeIdentityProvider registry.NodeIdentityProvider
+		DKShareRegistry      registry.DKShareRegistry
+		NetworkProvider      peering.NetworkProvider `name:"networkProvider"`
 	}
 
 	type nodeResult struct {
@@ -42,7 +42,7 @@ func provide(c *dig.Container) error {
 		node, err := distkeygen.NewNode(
 			deps.NodeIdentityProvider.NodeIdentity(),
 			deps.NetworkProvider,
-			deps.DKShareRegistryProvider,
+			deps.DKShareRegistry,
 			Component.Logger,
 		)
 		if err != nil {

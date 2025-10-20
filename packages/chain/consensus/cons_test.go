@@ -466,7 +466,7 @@ func newTestConsInst(
 	nodeIDs []gpa.NodeID,
 	nodeStates map[gpa.NodeID]state.Store,
 	peerIdentities []*cryptolib.KeyPair,
-	dkShareRegistryProviders []registry.DKShareRegistryProvider,
+	dkShareRegistrys []registry.DKShareRegistry,
 	requests []isc.Request,
 	doneCB func(nextInput *testInstInput),
 	log log.Logger,
@@ -476,7 +476,7 @@ func newTestConsInst(
 	for i, nid := range nodeIDs {
 		nodeLog := log.NewChildLogger(nid.ShortString())
 		nodeSK := peerIdentities[i].GetPrivateKey()
-		nodeDKShare, err := dkShareRegistryProviders[i].LoadDKShare(committeeAddress)
+		nodeDKShare, err := dkShareRegistrys[i].LoadDKShare(committeeAddress)
 		require.NoError(t, err)
 		nodes[nid] = cons.New(chainID, nodeStates[nid], nid, nodeSK, nodeDKShare, procCache, consInstID, gpa.NodeIDFromPublicKey, accounts.CommonAccount(), nodeLog).AsGPA()
 	}

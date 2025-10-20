@@ -684,7 +684,7 @@ func (p *proc) rabinStep7CommitAndTerminateMakeResp(step byte, initRecv *peering
 		return nil, errors.New("there is no dkShare to commit")
 	}
 	p.dkShare.SetPublicShares(doneMsg.edPubShares, doneMsg.blsPubShares) // Store public shares of all the other peers.
-	if err := p.node.dkShareRegistryProvider.SaveDKShare(p.dkShare); err != nil {
+	if err := p.node.dkShareRegistry.SaveDKShare(p.dkShare); err != nil {
 		return nil, err
 	}
 	return makePeerMessage(p.distKeyGeneratorID, peering.ReceiverDistributedKeyGeneration, step, &initiatorStatusMsg{error: nil}), nil
