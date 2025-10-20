@@ -9,12 +9,12 @@ import (
 
 var L1Mock = &parameters.L1Params{
 	Protocol: &parameters.Protocol{
-		Epoch:                 iotajsonrpc.NewBigInt(100),
-		ProtocolVersion:       iotajsonrpc.NewBigInt(1),
-		SystemStateVersion:    iotajsonrpc.NewBigInt(1),
-		ReferenceGasPrice:     iotajsonrpc.NewBigInt(1000),
-		EpochStartTimestampMs: iotajsonrpc.NewBigInt(1734538812318),
-		EpochDurationMs:       iotajsonrpc.NewBigInt(86400000),
+		Epoch:              iotajsonrpc.NewBigInt(100),
+		ProtocolVersion:    iotajsonrpc.NewBigInt(1),
+		SystemStateVersion: iotajsonrpc.NewBigInt(1),
+		ReferenceGasPrice:  iotajsonrpc.NewBigInt(1000),
+		// EpochStartTimestampMs: iotajsonrpc.NewBigInt(1734538812318),
+		// EpochDurationMs:       iotajsonrpc.NewBigInt(86400000),
 	},
 	BaseToken: &parameters.IotaCoinInfo{
 		CoinType:    coin.BaseTokenType,

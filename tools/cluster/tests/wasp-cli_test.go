@@ -249,7 +249,7 @@ func TestWaspCLISendFunds(t *testing.T) {
 }
 
 func TestWaspCLIDeposit(t *testing.T) {
-	t.Skip("TODO: fix test")
+	// t.Skip("TODO: fix test")
 	w := newWaspCLITest(t)
 
 	committee, quorum := w.ArgCommitteeConfig(0)
@@ -278,11 +278,11 @@ func TestWaspCLIDeposit(t *testing.T) {
 	})
 
 	t.Run("deposit to own account, then to EVM", func(t *testing.T) {
-		w.MustRun("chain", "deposit", "base|1000000", "--node=0", "--address-index=1")
-		outs = w.MustRun("chain", "balance", "--node=0", "--address-index=1")
+		w.MustRun("chain", "deposit", "base|1000000", "--node=0")
+		outs = w.MustRun("chain", "balance", "--node=0")
 		checkL2Balance(t, outs, 1000000-int(minFee))
 		_, eth := newEthereumAccount()
-		outs = w.MustRun("chain", "deposit", eth.String(), "base|1000000", "--node=0", "--address-index=1", "--print-receipt")
+		outs = w.MustRun("chain", "deposit", eth.String(), "base|1000000", "--node=0", "--print-receipt")
 		re := regexp.MustCompile(`Gas fee charged:\s*(\d+)`)
 		var l2GasFee int64
 		for _, line := range outs {
@@ -386,7 +386,7 @@ func findRequestIDInOutput(out []string) string {
 }
 
 func TestWaspCLIBlockLog(t *testing.T) {
-	t.Skip("TODO: fix test")
+	// t.Skip("TODO: fix test")
 
 	w := newWaspCLITest(t)
 

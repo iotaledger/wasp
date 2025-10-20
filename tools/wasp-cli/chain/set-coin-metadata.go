@@ -44,12 +44,12 @@ func initSetCoinMetadataCmd() *cobra.Command {
 				return fmt.Errorf("invalid coin type: %s => %v", coinType, err)
 			}
 
-			coinInfo, err := cliclients.L1Client().GetCoinMetadata(ctx, args[0])
+			coinInfo, err := cliclients.L1ClientBinding().GetCoinMetadata(ctx, args[0])
 			if err != nil {
 				return err
 			}
 
-			totalSupply, err := cliclients.L1Client().GetTotalSupply(ctx, args[0])
+			totalSupply, err := cliclients.L1ClientBinding().GetTotalSupply(ctx, args[0])
 			if err != nil {
 				return err
 			}

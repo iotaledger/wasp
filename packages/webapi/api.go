@@ -17,7 +17,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/distkeygen"
 	"github.com/iotaledger/wasp/v2/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/v2/packages/metrics"
-	"github.com/iotaledger/wasp/v2/packages/parameters"
+	"github.com/iotaledger/wasp/v2/packages/param_fetcher"
 	"github.com/iotaledger/wasp/v2/packages/peering"
 	"github.com/iotaledger/wasp/v2/packages/publisher"
 	"github.com/iotaledger/wasp/v2/packages/registry"
@@ -97,7 +97,7 @@ func Init(
 	indexDBPath string,
 	accountDumpsPath string,
 	pub *publisher.Publisher,
-	l1ParamsFetcher parameters.L1ParamsFetcher,
+	l1ParamsFetcher param_fetcher.L1ParamsFetcher,
 	l1Client clients.L1Client,
 	jsonrpcParams *jsonrpc.Parameters,
 ) {

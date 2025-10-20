@@ -24,6 +24,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
 	"github.com/iotaledger/wasp/v2/packages/origin"
+	"github.com/iotaledger/wasp/v2/packages/param_fetcher"
 	"github.com/iotaledger/wasp/v2/packages/parameters"
 	"github.com/iotaledger/wasp/v2/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/v2/packages/state/statetest"
@@ -49,7 +50,7 @@ func initDeployMoveContractCmd() *cobra.Command {
 			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 			defer cancel()
 
-			l1Client := cliclients.L1Client()
+			l1Client := cliclients.L1ClientBinding()
 			kp := wallet.Load()
 			packageID, err := l1Client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(kp))
 			if err != nil {
@@ -117,6 +118,14 @@ func CreateAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet w
 		return iotago.ObjectID{}, fmt.Errorf("failed to create GasCoin: %w", err)
 	}
 
+	// Populate object types for created coins
+	// For PayIota/SplitCoins transactions, we know created coins are IOTA coins
+	for i := range result.ObjectChanges {
+		if result.ObjectChanges[i].Data.Created != nil {
+			result.ObjectChanges[i].Data.Created.ObjectType = "0x2::coin::Coin<0x2::iota::IOTA>"
+		}
+	}
+
 	gasCoin, err := result.GetCreatedCoinByType("iota", "IOTA")
 	if err != nil {
 		return iotago.ObjectID{}, err
@@ -136,7 +145,7 @@ func initializeDeploymentWithGasCoin(ctx context.Context, signer wallets.Wallet,
 		return nil, fmt.Errorf("invalid chain name: %s, must be in slug format, only lowercase and hyphens, example: foo-bar", chainName)
 	}
 
-	l1Client := cliclients.L1Client()
+	l1Client := cliclients.L1ClientBinding()
 
 	client := cliclients.WaspClientWithVersionCheck(ctx, node)
 	_, header, err := client.ChainsAPI.GetChainInfo(ctx).Execute()
@@ -158,7 +167,7 @@ func initializeDeploymentWithGasCoin(ctx context.Context, signer wallets.Wallet,
 		return nil, err
 	}
 
-	l1Params, err := parameters.FetchLatest(ctx, l1Client.IotaClient())
+	l1Params, err := param_fetcher.FetchLatest(ctx, l1Client.IotaClient())
 	if err != nil {
 		return nil, err
 	}
@@ -177,7 +186,7 @@ func initializeDeploymentWithGasCoin(ctx context.Context, signer wallets.Wallet,
 
 func finalizeChainDeployment(ctx context.Context, node string, packageID *iotago.PackageID, chainInitResult chainInitResult, stateMetadata *transaction.StateMetadata) (isc.ChainID, error) {
 	par := apilib.CreateChainParams{
-		Layer1Client:      cliclients.L1Client(),
+		Layer1Client:      cliclients.L1ClientBinding(),
 		CommitteeAPIHosts: config.NodeAPIURLs([]string{node}),
 		Signer:            wallet.Load(),
 		Textout:           os.Stdout,

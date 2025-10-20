@@ -6,14 +6,14 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/v2/clients/bindings"
+	"github.com/iotaledger/wasp/v2/clients"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 )
 
 func TestGetCommitteeInfo(t *testing.T) {
-	client := bindings.NewBindingClient(iotaconn.DevnetEndpointURL)
+	client := clients.NewBindingClient(iotaconn.DevnetEndpointURL)
 	epochId := iotajsonrpc.NewBigInt(0)
 	committeeInfo, err := client.GetCommitteeInfo(context.Background(), epochId)
 	require.NoError(t, err)
@@ -23,21 +23,21 @@ func TestGetCommitteeInfo(t *testing.T) {
 }
 
 func TestGetLatestIotaSystemState(t *testing.T) {
-	client := bindings.NewBindingClient(iotaconn.DevnetEndpointURL)
+	client := clients.NewBindingClient(iotaconn.DevnetEndpointURL)
 	state, err := client.GetLatestIotaSystemState(context.Background())
 	require.NoError(t, err)
 	require.NotNil(t, state)
 }
 
 func TestGetReferenceGasPrice(t *testing.T) {
-	client := bindings.NewBindingClient(iotaconn.DevnetEndpointURL)
+	client := clients.NewBindingClient(iotaconn.DevnetEndpointURL)
 	gasPrice, err := client.GetReferenceGasPrice(context.Background())
 	require.NoError(t, err)
 	require.GreaterOrEqual(t, gasPrice.Int64(), int64(1000))
 }
 
 func TestGetStakes(t *testing.T) {
-	client := bindings.NewBindingClient(iotaconn.DevnetEndpointURL)
+	client := clients.NewBindingClient(iotaconn.DevnetEndpointURL)
 	address, err := GetValidatorAddress(context.Background())
 	require.NoError(t, err)
 	stakes, err := client.GetStakes(context.Background(), &address)
@@ -57,7 +57,7 @@ func TestGetStakes(t *testing.T) {
 }
 
 func TestGetStakesByIds(t *testing.T) {
-	api := bindings.NewBindingClient(iotaconn.DevnetEndpointURL)
+	api := clients.NewBindingClient(iotaconn.DevnetEndpointURL)
 	address, err := GetValidatorAddress(context.Background())
 	require.NoError(t, err)
 	stakes, err := api.GetStakes(context.Background(), &address)
@@ -83,7 +83,7 @@ func TestGetStakesByIds(t *testing.T) {
 }
 
 func TestGetValidatorsApy(t *testing.T) {
-	api := bindings.NewBindingClient(iotaconn.DevnetEndpointURL)
+	api := clients.NewBindingClient(iotaconn.DevnetEndpointURL)
 	apys, err := api.GetValidatorsApy(context.Background())
 	require.NoError(t, err)
 	t.Logf("current epoch %v", apys.Epoch)

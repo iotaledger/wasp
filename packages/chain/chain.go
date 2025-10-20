@@ -14,7 +14,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/chain/consensus/consensusrunner"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/isc"
-	"github.com/iotaledger/wasp/v2/packages/parameters"
+	"github.com/iotaledger/wasp/v2/packages/param_fetcher"
 	"github.com/iotaledger/wasp/v2/packages/peering"
 	"github.com/iotaledger/wasp/v2/packages/state"
 	"github.com/iotaledger/wasp/v2/packages/state/indexedstore"
@@ -62,7 +62,7 @@ type NodeConnection interface {
 	Run(ctx context.Context) error
 	// WaitUntilInitiallySynced blocks until the connection is established.
 	WaitUntilInitiallySynced(context.Context) error
-	L1ParamsFetcher() parameters.L1ParamsFetcher
+	L1ParamsFetcher() param_fetcher.L1ParamsFetcher
 	L1Client() clients.L1Client
 	ConsensusL1InfoProposal(
 		ctx context.Context,

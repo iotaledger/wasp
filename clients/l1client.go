@@ -201,7 +201,7 @@ type L1Client interface {
 	RequestFunds(ctx context.Context, address cryptolib.Address) error
 	Health(ctx context.Context) error
 	L2() L2Client
-	IotaClient() *iotaclient.Client
+	IotaClient() L1Client
 	DeployISCContracts(ctx context.Context, signer iotasigner.Signer) (iotago.PackageID, error)
 	GetISCPackageIDForAnchor(ctx context.Context, anchor iotago.ObjectID) (iotago.PackageID, error)
 	FindCoinsForGasPayment(
@@ -306,11 +306,11 @@ func (c *l1Client) GetISCPackageIDForAnchor(ctx context.Context, anchor iotago.O
 }
 
 func (c *l1Client) L2() L2Client {
-	return iscmoveclient.NewClient(c.Client, c.Config.FaucetURL)
+	return iscmoveclient.NewClient(c.Config.APIURL, c.Config.FaucetURL)
 }
 
-func (c *l1Client) IotaClient() *iotaclient.Client {
-	return c.Client
+func (c *l1Client) IotaClient() L1Client {
+	return c
 }
 
 // WaitForNextVersionForTesting waits for an object to change its version.

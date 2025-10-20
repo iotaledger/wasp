@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -23,6 +24,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/chain/consensus/consensusrunner"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/param_fetcher"
 	"github.com/iotaledger/wasp/v2/packages/parameters"
 	"github.com/iotaledger/wasp/v2/packages/transaction"
 	"github.com/iotaledger/wasp/v2/packages/util"
@@ -55,7 +57,7 @@ type nodeConnection struct {
 	log.Logger
 
 	httpClient          clients.L1Client
-	l1ParamsFetcher     parameters.L1ParamsFetcher
+	l1ParamsFetcher     param_fetcher.L1ParamsFetcher
 	wsURL               string
 	httpURL             string
 	maxNumberOfRequests int
@@ -85,7 +87,7 @@ func New(
 		wsURL:               wsURL,
 		httpURL:             httpURL,
 		httpClient:          httpClient,
-		l1ParamsFetcher:     parameters.NewL1ParamsFetcher(httpClient.IotaClient(), log),
+		l1ParamsFetcher:     param_fetcher.NewL1ParamsFetcher(httpClient, log),
 		maxNumberOfRequests: maxNumberOfRequests,
 		chainsMap: shrinkingmap.New[isc.ChainID, *ncChain](
 			shrinkingmap.WithShrinkingThresholdRatio(chainsCleanupThresholdRatio),
@@ -110,7 +112,9 @@ func (nc *nodeConnection) AttachChain(
 	}
 
 	if !readOnly {
-		nc.initializeOperationalChain(ctx, ncc, chainID)
+		// Initialize the operational chain asynchronously so it doesn't block chain activation
+		// This is especially important for newly created chains where the L1 anchor may not be available yet
+		go nc.initializeOperationalChain(ctx, ncc, chainID)
 	}
 
 	// disconnect the chain after the context is done
@@ -231,7 +235,7 @@ func (nc *nodeConnection) L1Client() clients.L1Client {
 	return nc.httpClient
 }
 
-func (nc *nodeConnection) L1ParamsFetcher() parameters.L1ParamsFetcher {
+func (nc *nodeConnection) L1ParamsFetcher() param_fetcher.L1ParamsFetcher {
 	return nc.l1ParamsFetcher
 }
 
@@ -310,10 +314,18 @@ func (nc *nodeConnection) createReadOnlyChain(chainID isc.ChainID) *ncChain {
 // initializeOperationalChain performs initialization steps for operational (non-readonly) chains
 func (nc *nodeConnection) initializeOperationalChain(ctx context.Context, ncc *ncChain, chainID isc.ChainID) {
 	if err := ncc.syncChainState(ctx); err != nil {
-		nc.LogErrorf("synchronizing chain state %s failed: %s", chainID, err.Error())
-		nc.shutdownHandler.SelfShutdown(
-			fmt.Sprintf("Cannot sync chain %s with L1, %s", ncc.chainID, err.Error()),
-			true)
+		// Check if this is an "object not exists" error - this is expected for newly created chains
+		// where the anchor hasn't been indexed on L1 yet
+		if strings.Contains(err.Error(), "object not exists") {
+			nc.LogWarnf("Initial chain state sync for %s failed (anchor not yet available on L1): %s. Will retry via subscription.", chainID, err.Error())
+			// Don't shut down - the subscription mechanism will pick up the anchor when it becomes available
+		} else {
+			// For other errors, shut down as before
+			nc.LogErrorf("synchronizing chain state %s failed: %s", chainID, err.Error())
+			nc.shutdownHandler.SelfShutdown(
+				fmt.Sprintf("Cannot sync chain %s with L1, %s", ncc.chainID, err.Error()),
+				true)
+		}
 	}
 	ncc.subscribeToUpdates(ctx, chainID.AsObjectID())
 }

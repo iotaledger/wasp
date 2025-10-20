@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/v2/clients"
-	"github.com/iotaledger/wasp/v2/clients/bindings"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
@@ -18,7 +17,7 @@ import (
 )
 
 func TestGetAllBalances(t *testing.T) {
-	api := bindings.NewBindingClient(iotaconn.DevnetEndpointURL)
+	api := clients.NewBindingClient(iotaconn.DevnetEndpointURL)
 	balances, err := api.GetAllBalances(context.Background(), iotago.MustAddressFromHex("0xb14f13f5343641e5b52d144fd6f106a7058efe2f1ad44598df5cda73acf0101f"))
 	require.NoError(t, err)
 	for _, balance := range balances {
@@ -48,7 +47,7 @@ func TestGetAllCoins(t *testing.T) {
 		{
 			name: "successful with limit",
 			a: func() clients.L1Client {
-				return bindings.NewBindingClient(iotaconn.DevnetEndpointURL)
+				return clients.NewBindingClient(iotaconn.DevnetEndpointURL)
 			}(),
 			args: args{
 				ctx:     context.Background(),
@@ -61,7 +60,7 @@ func TestGetAllCoins(t *testing.T) {
 		{
 			name: "successful without limit",
 			a: func() clients.L1Client {
-				return bindings.NewBindingClient(iotaconn.DevnetEndpointURL)
+				return clients.NewBindingClient(iotaconn.DevnetEndpointURL)
 			}(),
 			args: args{
 				ctx:     context.Background(),
@@ -99,7 +98,7 @@ func TestGetAllCoins(t *testing.T) {
 }
 
 func TestGetBalance(t *testing.T) {
-	api := bindings.NewBindingClient(iotaconn.DevnetEndpointURL)
+	api := clients.NewBindingClient(iotaconn.DevnetEndpointURL)
 	err := iotaclient.RequestFundsFromFaucet(
 		context.Background(),
 		iotago.MustAddressFromHex(testcommon.TestAddress),
@@ -120,7 +119,7 @@ func TestGetBalance(t *testing.T) {
 }
 
 func TestGetCoinMetadata(t *testing.T) {
-	api := bindings.NewBindingClient(iotaconn.DevnetEndpointURL)
+	api := clients.NewBindingClient(iotaconn.DevnetEndpointURL)
 	metadata, err := api.GetCoinMetadata(context.Background(), iotajsonrpc.IotaCoinType.String())
 	require.NoError(t, err)
 
@@ -128,7 +127,7 @@ func TestGetCoinMetadata(t *testing.T) {
 }
 
 func TestGetCoins(t *testing.T) {
-	api := bindings.NewBindingClient(iotaconn.DevnetEndpointURL)
+	api := clients.NewBindingClient(iotaconn.DevnetEndpointURL)
 	address := iotago.MustAddressFromHex(testcommon.TestAddress)
 
 	defaultCoinType := iotajsonrpc.IotaCoinType.String()
@@ -165,7 +164,7 @@ func TestGetTotalSupply(t *testing.T) {
 		{
 			name: "get Iota supply",
 			api: func() clients.L1Client {
-				return bindings.NewBindingClient(iotaconn.DevnetEndpointURL)
+				return clients.NewBindingClient(iotaconn.DevnetEndpointURL)
 			}(),
 			args: args{
 				context.Background(),

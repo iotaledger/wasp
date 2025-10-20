@@ -16,7 +16,7 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
-	"github.com/iotaledger/wasp/v2/packages/parameters"
+	"github.com/iotaledger/wasp/v2/packages/param_fetcher"
 	"github.com/iotaledger/wasp/v2/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/chain"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/cliclients"
@@ -39,7 +39,7 @@ import (
 func TestDepositFundsToGasCoin(t *testing.T) {
 	t.Skip("you only want to call this test manually")
 
-	client := cliclients.L1Client()
+	client := cliclients.L1ClientBinding()
 	committeeAddress := lo.Must(cryptolib.AddressFromHex("0x6e6d126fc61cbf50672f1738580c7b275e7c4727912842d71ee33e195f9879fe"))
 	gasCoinID := lo.Must(iotago.ObjectIDFromHex("0x9e274660552ed50402c8015c5388478415cde8a06d114af48fd2e3ec365c562d"))
 
@@ -136,7 +136,7 @@ func TestCreateTX(t *testing.T) {
 	// This specific address is the product of the committee keys in `test_committee_keys`.
 	committeeAddress := lo.Must(cryptolib.AddressFromHex("0x4c7fb31a460907210c3b7cbaa50cf9faa23f60cbfbe5f26efd27809265458894"))
 
-	client := cliclients.L1Client()
+	client := cliclients.L1ClientBinding()
 	kp := cryptolib.NewKeyPair()
 	wallet := providers.NewUnsafeInMemoryTestingSeed(kp, 0)
 	require.NoError(t, client.RequestFunds(context.Background(), *kp.Address()))
@@ -147,7 +147,7 @@ func TestCreateTX(t *testing.T) {
 
 	t.Log("Creating new coin and transfer it to the Committee address")
 
-	l1Params := lo.Must(parameters.FetchLatest(context.Background(), client.IotaClient()))
+	l1Params := lo.Must(param_fetcher.FetchLatest(context.Background(), client.IotaClient()))
 	newGasCoinAddress := lo.Must(chain.CreateAndSendGasCoin(context.Background(), client, wallet, committeeAddress.AsIotaAddress(), l1Params))
 
 	gasCoin := lo.Must(client.GetObject(context.Background(), iotaclient.GetObjectRequest{

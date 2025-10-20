@@ -55,7 +55,7 @@ func assertMatchingNodeVersion(ctx context.Context, name string, client *apiclie
 }
 
 func L2Client() clients.L2Client {
-	return L1Client().L2()
+	return L1ClientBinding().L2()
 }
 
 func L1Client() clients.L1Client {
@@ -65,9 +65,13 @@ func L1Client() clients.L1Client {
 	}, iotaclient.WaitForEffectsEnabled)
 }
 
+func L1ClientBinding() clients.L1Client {
+	return clients.NewBindingClient(config.L1APIAddress())
+}
+
 func ChainClient(waspClient *apiclient.APIClient, chainID isc.ChainID) *chainclient.Client {
 	return chainclient.New(
-		L1Client(),
+		L1ClientBinding(),
 		waspClient,
 		chainID,
 		wallet.Load(),

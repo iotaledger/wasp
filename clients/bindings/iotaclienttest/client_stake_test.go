@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/v2/clients/bindings"
+	"github.com/iotaledger/wasp/v2/clients"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
@@ -21,7 +21,7 @@ func TestRequestAddDelegation(t *testing.T) {
 		t.Skipf("Skipped test as the configured local node does not support this test case")
 	}
 
-	client := bindings.NewBindingClient(iotaconn.LocalnetEndpointURL)
+	client := clients.NewBindingClient(iotaconn.LocalnetEndpointURL)
 	signer := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 
 	coins, err := client.GetCoins(
@@ -60,7 +60,7 @@ func TestRequestWithdrawDelegation(t *testing.T) {
 		t.Skipf("Skipped test as the configured local node does not support this test case")
 	}
 
-	client := bindings.NewBindingClient(iotaconn.LocalnetEndpointURL)
+	client := clients.NewBindingClient(iotaconn.LocalnetEndpointURL)
 	signer, err := GetValidatorAddressWithCoins(context.Background())
 	require.NoError(t, err)
 	stakes, err := client.GetStakes(context.Background(), &signer)

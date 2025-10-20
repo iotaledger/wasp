@@ -36,6 +36,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
 	"github.com/iotaledger/wasp/v2/packages/metrics"
+	"github.com/iotaledger/wasp/v2/packages/param_fetcher"
 	"github.com/iotaledger/wasp/v2/packages/parameters"
 	"github.com/iotaledger/wasp/v2/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/v2/packages/peering"
@@ -277,7 +278,7 @@ type testNodeConn struct {
 	recvRequest     chain.RequestHandler
 	recvAnchor      chain.AnchorHandler
 	attachWG        *sync.WaitGroup
-	l1ParamsFetcher parameters.L1ParamsFetcher
+	l1ParamsFetcher param_fetcher.L1ParamsFetcher
 
 	l1Client     clients.L1Client
 	l2Client     clients.L2Client
@@ -288,7 +289,7 @@ func (tnc *testNodeConn) L1Client() clients.L1Client {
 	return tnc.l1Client
 }
 
-func (tnc *testNodeConn) L1ParamsFetcher() parameters.L1ParamsFetcher {
+func (tnc *testNodeConn) L1ParamsFetcher() param_fetcher.L1ParamsFetcher {
 	return tnc.l1ParamsFetcher
 }
 
@@ -306,7 +307,7 @@ func newTestNodeConn(t *testing.T, l1Client clients.L1Client, iscPackageID iotag
 		l1Client:        l1Client,
 		l2Client:        l1Client.L2(),
 		iscPackageID:    iscPackageID,
-		l1ParamsFetcher: parameters.NewL1ParamsFetcher(l1Client.IotaClient(), log.EmptyLogger),
+		l1ParamsFetcher: param_fetcher.NewL1ParamsFetcher(l1Client, log.EmptyLogger),
 	}
 	tnc.attachWG.Add(1)
 	return tnc

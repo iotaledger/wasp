@@ -17,6 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/v2/clients/apiclient"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/isc"
@@ -54,8 +55,10 @@ func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
 	w.MustRun("wallet", "init")
 
 	// FIXME make them into parameters
-	w.MustRun("set", "l1.apiaddress", clu.Config.L1APIAddress())
-	w.MustRun("set", "l1.faucetaddress", clu.Config.L1FaucetAddress())
+	// FIXME wasp-cli should use graphql but the wasp node is not
+	w.MustRun("set", "l1.apiaddress", iotaconn.AlphanetGraphQLEndpointURL)
+	w.MustRun("set", "l1.faucetaddress", iotaconn.AlphanetFaucetURL)
+	w.MustRun("set", "l1.packageid", clu.Config.ISCPackageID().String())
 	for _, node := range clu.Config.AllNodes() {
 		w.MustRun("wasp", "add", fmt.Sprintf("%d", node), clu.Config.APIHost(node))
 	}

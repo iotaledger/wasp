@@ -6,6 +6,8 @@ const (
 	TestnetEndpointURL  = "https://api.testnet.iota.cafe"
 	DevnetEndpointURL   = "https://api.devnet.iota.cafe"
 
+	AlphanetGraphQLEndpointURL = "https://graphql.iota-rebased-alphanet.iota.cafe"
+
 	LocalnetWebsocketEndpointURL = "ws://localhost:9000"
 	AlphanetWebsocketEndpointURL = "wss://api.iota-rebased-alphanet.iota.cafe"
 	TestnetWebsocketEndpointURL  = "wss://api.testnet.iota.cafe"
@@ -33,8 +35,12 @@ const (
 
 func FaucetURL(apiURL string) string {
 	switch apiURL {
-	case AlphanetEndpointURL:
+	case AlphanetEndpointURL, AlphanetGraphQLEndpointURL:
 		return AlphanetFaucetURL
+	case TestnetEndpointURL:
+		return TestnetFaucetURL
+	case DevnetEndpointURL:
+		return DevnetFaucetURL
 	case LocalnetEndpointURL:
 		return LocalnetFaucetURL
 	default:

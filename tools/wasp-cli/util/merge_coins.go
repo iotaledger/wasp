@@ -18,7 +18,7 @@ import (
 )
 
 func TryMergeAllCoins(ctx context.Context) error {
-	client := cliclients.L1Client()
+	client := cliclients.L1ClientBinding()
 	w := wallet.Load()
 
 	coins, err := client.GetAllCoins(ctx, iotaclient.GetAllCoinsRequest{
@@ -54,7 +54,7 @@ func TryMergeAllCoins(ctx context.Context) error {
 }
 
 func TryManageCoinsAmount(ctx context.Context) {
-	client := cliclients.L1Client()
+	client := cliclients.L1ClientBinding()
 	w := wallet.Load()
 
 	coinPage, err := client.GetCoins(ctx, iotaclient.GetCoinsRequest{

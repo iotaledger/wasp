@@ -3,17 +3,18 @@ set -euo pipefail
 
 root_path=$(git rev-parse --show-toplevel)
 
-git clone --depth=1 --branch sdk-bindings --single-branch https://github.com/iotaledger/iota-rust-sdk.git "$root_path/clients/bindings/iota-rust-sdk" || true
+# use commit b921ab3e65acbe377cd4da0ec6d8421fecc15ad8
+# git clone --branch modify-sdk --single-branch git@github.com:howjmay/iota-rust-sdk.git "$root_path/clients/bindings/iota-rust-sdk" || true
+# cd $root_path/clients/bindings/iota-rust-sdk
+# git switch --detach b921ab3e65acbe377cd4da0ec6d8421fecc15ad8
+# cd ..
 
 iota_binding_dir="$root_path/clients/bindings"
 iota_go_ffi_dir="$iota_binding_dir/iota_sdk_ffi"
 iota_go_ffi_file="$iota_go_ffi_dir/iota_sdk_ffi.go"
 
 iota_rust_sdk_path="$iota_binding_dir/iota-rust-sdk"
-go_ffi_dir="$iota_rust_sdk_path/bindings/go/iota_sdk_ffi/iota_sdk_ffi"
-go_ffi_file="$go_ffi_dir/iota_sdk_ffi.go"
-
-go_ffi_target_dir="$root_path/clients/bindings/iota-rust-sdk/target"
+iota_rust_go_ffi_dir="$iota_rust_sdk_path/bindings/go/iota_sdk_ffi"
 
 cd "$iota_rust_sdk_path"
 cargo build --all-features -p iota-sdk-ffi --lib --release
@@ -27,20 +28,20 @@ case "$(uname -s)" in
 esac
 lib_path="${lib_base}.${ext}"
 
-command -v uniffi-bindgen-go >/dev/null || {
-echo "uniffi-bindgen-go not found in PATH" >&2
-exit 1
-}
 [[ -f "$lib_path" ]] || {
 echo "Library not found: $lib_path" >&2
 exit 1
 }
 
-# Clean up old generated files before generating new ones
-rm -rf "$root_path/clients/bindings/iota_sdk_ffi"
-
-uniffi-bindgen-go --library "$lib_path" --out-dir "$iota_binding_dir" --no-format
-echo "Generated Go bindings to $iota_binding_dir using $lib_path"
+# Overwrite local Go FFI bindings with those from iota-rust-sdk
+rm -rf "$iota_go_ffi_dir"
+if [[ -d "$iota_rust_go_ffi_dir" ]]; then
+  cp -R "$iota_rust_go_ffi_dir" "$iota_binding_dir/"
+  echo "Copied Go bindings from $iota_rust_go_ffi_dir to $iota_binding_dir"
+else
+  echo "Source bindings not found: $iota_rust_go_ffi_dir" >&2
+  exit 1
+fi
 
 if [[ -f "$iota_go_ffi_file" ]]; then
   # Only replace if the placeholder include line exists
@@ -58,9 +59,3 @@ else
   echo "File not found: $iota_go_ffi_file" >&2
   exit 1
 fi
-
-
-# cp -R $go_ffi_target_dir $root_path/clients/bindings/iota_sdk_ffi
-
-
-

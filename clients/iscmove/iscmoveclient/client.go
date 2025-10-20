@@ -20,16 +20,25 @@ type Client struct {
 	faucetURL string
 }
 
-func NewClient(client *iotaclient.Client, faucetURL string) *Client {
+func NewClient(apiURL, faucetURL string) *Client {
+	iotaClient := iotaclient.NewHTTP(apiURL, iotaclient.WaitForEffectsEnabled)
 	return &Client{
-		Client:    client,
+		Client:    iotaClient,
+		faucetURL: faucetURL,
+	}
+}
+
+func NewGraphQlClient(apiURL, faucetURL string) *Client {
+	iotaClient := iotaclient.NewHTTP(apiURL, iotaclient.WaitForEffectsEnabled)
+	return &Client{
+		Client:    iotaClient,
 		faucetURL: faucetURL,
 	}
 }
 
 func NewHTTPClient(apiURL, faucetURL string, waitUntilEffectsVisible *iotaclient.WaitParams) *Client {
 	return NewClient(
-		iotaclient.NewHTTP(apiURL, waitUntilEffectsVisible),
+		apiURL,
 		faucetURL,
 	)
 }
@@ -40,11 +49,14 @@ func NewWebsocketClient(
 	waitUntilEffectsVisible *iotaclient.WaitParams,
 	log log.Logger,
 ) (*Client, error) {
-	ws, err := iotaclient.NewWebsocket(ctx, wsURL, waitUntilEffectsVisible, log)
+	iotaClient, err := iotaclient.NewWebsocket(ctx, wsURL, iotaclient.WaitForEffectsEnabled, log)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
-	return NewClient(ws, faucetURL), nil
+	return &Client{
+		Client:    iotaClient,
+		faucetURL: faucetURL,
+	}, nil
 }
 
 func (c *Client) RequestFunds(ctx context.Context, address cryptolib.Address) error {

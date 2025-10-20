@@ -48,3 +48,4 @@ type L2Client interface {
 }
 
 var _ L2Client = &iscmoveclient.Client{}
+var _ L2Client = &BindingClientL2{}

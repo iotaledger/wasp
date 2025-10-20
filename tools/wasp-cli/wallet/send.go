@@ -44,7 +44,7 @@ func initSendFundsCmd() *cobra.Command { //nolint:funlen
 			util.TryManageCoinsAmount(cmd.Context())
 			time.Sleep(3 * time.Second)
 
-			client := cliclients.L1Client()
+			client := cliclients.L1ClientBinding()
 
 			balances, err := client.GetAllBalances(context.Background(), senderAddress.AsIotaAddress())
 			if err != nil {

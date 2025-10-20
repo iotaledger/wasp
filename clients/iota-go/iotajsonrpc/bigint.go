@@ -21,6 +21,14 @@ func NewBigIntInt64(v int64) *BigInt {
 	return &BigInt{new(big.Int).SetInt64(v)}
 }
 
+func NewBigIntFromString(v string) *BigInt {
+	b, ok := new(big.Int).SetString(v, 10)
+	if !ok {
+		panic(fmt.Sprintf("can't conver %s to BigInt", v))
+	}
+	return &BigInt{b}
+}
+
 func (w *BigInt) UnmarshalText(data []byte) error {
 	return w.UnmarshalJSON(data)
 }

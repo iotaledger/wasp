@@ -1,18 +1,21 @@
-package bindings
+package clients
 
 import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"math/big"
 	"reflect"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/hive.go/log"
-	"github.com/iotaledger/wasp/v2/clients"
 	"github.com/iotaledger/wasp/v2/clients/bindings/iota_sdk_ffi"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/contracts"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
@@ -46,7 +49,7 @@ func NewBindingClient(rpcUrl string) *BindingClient {
 
 	switch rpcUrl {
 	case iotaconn.LocalnetEndpointURL:
-		client.qclient = iota_sdk_ffi.GraphQlClientNewLocalhost()
+		client.qclient = iota_sdk_ffi.GraphQlClientNewLocalnet()
 	case iotaconn.TestnetEndpointURL:
 		client.qclient = iota_sdk_ffi.GraphQlClientNewTestnet()
 	case iotaconn.DevnetEndpointURL:
@@ -219,7 +222,7 @@ func toFfiTypeTag(tag *iotago.TypeTag) (*iota_sdk_ffi.TypeTag, error) {
 	return nil, fmt.Errorf("unknown TypeTag variant")
 }
 
-func mapFfiObjectToIotaResponse(obj **iota_sdk_ffi.Object) (*iotajsonrpc.IotaObjectResponse, error) {
+func mapFfiObjectToIotaResponse(obj **iota_sdk_ffi.Object, options *iotajsonrpc.IotaObjectDataOptions, bcsBytes *[]byte) (*iotajsonrpc.IotaObjectResponse, error) {
 	if obj == nil || *obj == nil {
 		return &iotajsonrpc.IotaObjectResponse{}, nil
 	}
@@ -235,7 +238,8 @@ func mapFfiObjectToIotaResponse(obj **iota_sdk_ffi.Object) (*iotajsonrpc.IotaObj
 		return nil, err
 	}
 	var typeStr *string
-	if ot := o.ObjectType(); ot != nil {
+	ot := o.ObjectType()
+	if ot != nil {
 		s := ot.String()
 		typeStr = &s
 	}
@@ -252,7 +256,79 @@ func mapFfiObjectToIotaResponse(obj **iota_sdk_ffi.Object) (*iotajsonrpc.IotaObj
 		PreviousTransaction: prev,
 		StorageRebate:       iotajsonrpc.NewBigInt(o.StorageRebate()),
 	}
+
+	// Add owner if requested
+	if options != nil && options.ShowOwner {
+		if owner := o.Owner(); owner != nil {
+			iotaOwner, err := fromFfiOwner(owner)
+			if err != nil {
+				return nil, fmt.Errorf("failed to convert owner: %w", err)
+			}
+			if iotaOwner != nil {
+				ownerInternal := &iotajsonrpc.ObjectOwnerInternal{
+					AddressOwner: iotaOwner.AddressOwner,
+					ObjectOwner:  iotaOwner.ObjectOwner,
+				}
+				// Convert Shared field if present
+				if iotaOwner.Shared != nil {
+					ownerInternal.Shared = &struct {
+						InitialSharedVersion *iotago.SequenceNumber `json:"initial_shared_version"`
+					}{
+						InitialSharedVersion: &iotaOwner.Shared.InitialSharedVersion,
+					}
+				}
+				data.Owner = &iotajsonrpc.ObjectOwner{
+					ObjectOwnerInternal: ownerInternal,
+				}
+			}
+		}
+	}
+
+	// Add BCS data if requested and available
+	if options != nil && options.ShowBcs && bcsBytes != nil && *bcsBytes != nil {
+		bcsData := iotago.Base64Data(*bcsBytes)
+
+		// For move objects, we need to populate the IotaRawMoveObject structure
+		if typeStr != nil {
+			structTag, err := iotago.StructTagFromString(extractTypeTag(*typeStr))
+			if err == nil {
+				data.Bcs = &serialization.TagJson[iotajsonrpc.IotaRawData]{
+					Data: iotajsonrpc.IotaRawData{
+						MoveObject: &iotajsonrpc.IotaRawMoveObject{
+							Type:              *structTag,
+							HasPublicTransfer: false, // This would need to be determined from object data
+							Version:           iotago.SequenceNumber(ver),
+							BcsBytes:          bcsData,
+						},
+					},
+				}
+			}
+		}
+	}
+
 	return &iotajsonrpc.IotaObjectResponse{Data: data}, nil
+}
+
+var moveTagRe = regexp.MustCompile(
+	`^(?:Struct\()?(0x[0-9a-fA-F]+::[A-Za-z_][A-Za-z0-9_]*::[A-Za-z_][A-Za-z0-9_]*)(?:\))?$`,
+)
+
+func extractTypeTag(s string) string {
+	s = strings.TrimSpace(s)
+	if m := moveTagRe.FindStringSubmatch(s); m != nil {
+		return m[1]
+	}
+	// Fallback: if parentheses exist, peel the first (...) pair.
+	if l := strings.IndexByte(s, '('); l >= 0 {
+		if r := strings.IndexByte(s[l+1:], ')'); r >= 0 {
+			return s[l+1 : l+1+r]
+		}
+	}
+	// Otherwise just return as-is if non-empty.
+	if s != "" {
+		return s
+	}
+	return ""
 }
 
 // formatExecutionError formats an ExecutionError with type information
@@ -455,8 +531,116 @@ func convertTransactionEffects(effects *iota_sdk_ffi.TransactionEffects) (*iotaj
 	}, nil
 }
 
+// PopulateObjectTypesInChanges enriches ObjectChanges with object types by querying the chain.
+// This should be called after SignAndExecuteTransaction to populate ObjectType fields.
+//
+// Note: For newly created objects, there may be an indexing delay. Consider adding a sleep
+// before calling this function, or use DryRunTransaction which populates types automatically.
+//
+// Example:
+//
+//	txnResponse, err := client.SignAndExecuteTransaction(ctx, &req)
+//	if err != nil { return err }
+//	time.Sleep(2 * time.Second) // Wait for indexing
+//	err = client.PopulateObjectTypesInChanges(ctx, txnResponse.ObjectChanges)
+func (c *BindingClient) PopulateObjectTypesInChanges(ctx context.Context, objectChanges []serialization.TagJson[iotajsonrpc.ObjectChange]) error {
+	for i := range objectChanges {
+		change := &objectChanges[i].Data
+
+		var objectID *iotago.ObjectID
+		var objectTypePtr *string
+
+		// Determine which type of change and get the object ID
+		if change.Created != nil {
+			objectID = &change.Created.ObjectID
+			objectTypePtr = &change.Created.ObjectType
+		} else if change.Mutated != nil {
+			objectID = &change.Mutated.ObjectID
+			objectTypePtr = &change.Mutated.ObjectType
+		} else if change.Deleted != nil {
+			objectID = &change.Deleted.ObjectID
+			objectTypePtr = &change.Deleted.ObjectType
+		} else if change.Wrapped != nil {
+			objectID = &change.Wrapped.ObjectID
+			objectTypePtr = &change.Wrapped.ObjectType
+		}
+
+		if objectID == nil {
+			continue
+		}
+
+		// Query the object to get its type
+		objResp, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: objectID})
+		if err != nil {
+			// For debugging: print the error
+			fmt.Printf("Failed to get object %s: %v\n", objectID.String(), err)
+			continue
+		}
+		if objResp.Data == nil {
+			fmt.Printf("Object %s: Data is nil\n", objectID.String())
+			continue
+		}
+		if objResp.Data.Type == nil {
+			fmt.Printf("Object %s: Type is nil\n", objectID.String())
+			continue
+		}
+
+		// Populate the ObjectType field
+		fmt.Printf("Setting ObjectType for %s: %s\n", objectID.String(), *objResp.Data.Type)
+		*objectTypePtr = *objResp.Data.Type
+	}
+	return nil
+}
+
+// populateObjectTypesFromDryRun extracts object types from DryRunResult and populates them in ChangedObjects
+func populateObjectTypesFromDryRun(effects *iota_sdk_ffi.TransactionEffects, dryRunResult *iota_sdk_ffi.DryRunResult) {
+	if effects == nil || dryRunResult == nil || !effects.IsV1() {
+		return
+	}
+
+	// Build a map of object ID (bytes) -> type string
+	objectTypes := make(map[string]string)
+
+	for _, result := range dryRunResult.Results {
+		// Extract types from mutated references
+		for _, mutation := range result.MutatedReferences {
+			if mutation.TypeTag != nil {
+				typeStr := mutation.TypeTag.String()
+				// Extract object ID from BCS if it's a coin/object type
+				// The BCS data starts with the object ID (32 bytes)
+				if len(mutation.Bcs) >= 32 {
+					objectID := string(mutation.Bcs[:32])
+					objectTypes[objectID] = typeStr
+				}
+			}
+		}
+
+		// Extract types from return values
+		for _, ret := range result.ReturnValues {
+			if ret.TypeTag != nil {
+				typeStr := ret.TypeTag.String()
+				// Extract object ID from BCS if available
+				if len(ret.Bcs) >= 32 {
+					objectID := string(ret.Bcs[:32])
+					objectTypes[objectID] = typeStr
+				}
+			}
+		}
+	}
+
+	// Now populate the ChangedObjects with the types
+	v1 := effects.AsV1()
+	for i := range v1.ChangedObjects {
+		objIDBytes := v1.ChangedObjects[i].ObjectId.ToBytes()
+		if typeStr, ok := objectTypes[string(objIDBytes)]; ok {
+			v1.ChangedObjects[i].ObjectType = &typeStr
+		}
+	}
+}
+
 // convertChangedObjectsToObjectChanges converts FFI TransactionEffects ChangedObjects to ObjectChanges
-func convertChangedObjectsToObjectChanges(effects *iota_sdk_ffi.TransactionEffects) ([]serialization.TagJson[iotajsonrpc.ObjectChange], error) {
+func (c *BindingClient) convertChangedObjectsToObjectChanges(effects *iota_sdk_ffi.TransactionEffects) ([]serialization.TagJson[iotajsonrpc.ObjectChange], error) {
+	time.Sleep(400 * time.Millisecond)
 	if effects == nil {
 		return nil, nil
 	}
@@ -472,6 +656,12 @@ func convertChangedObjectsToObjectChanges(effects *iota_sdk_ffi.TransactionEffec
 	// We'll create a zero address as a placeholder.
 	zeroAddr := iotago.Address{}
 	for _, changedObj := range v1.ChangedObjects {
+		fmt.Println("*******changedObj.IdOperation: ", changedObj.IdOperation)
+		fmt.Println("*******changedObj.ObjectType: ", changedObj.ObjectType)
+		fmt.Println("*******changedObj.ObjectId: ", changedObj.ObjectId.ToHex())
+		if changedObj.ObjectType != nil {
+			fmt.Println("*******!changedObj: ", *changedObj.ObjectType)
+		}
 		objID, err := fromFfiObjectID(changedObj.ObjectId)
 		if err != nil || objID == nil {
 			continue
@@ -514,6 +704,10 @@ func convertChangedObjectsToObjectChanges(effects *iota_sdk_ffi.TransactionEffec
 
 		// Create ObjectChange based on state transitions
 		var change iotajsonrpc.ObjectChange
+		var changeObjectType string
+		if changedObj.ObjectType != nil {
+			changeObjectType = *changedObj.ObjectType
+		}
 
 		switch changedObj.IdOperation {
 		case iota_sdk_ffi.IdOperationCreated:
@@ -531,6 +725,19 @@ func convertChangedObjectsToObjectChanges(effects *iota_sdk_ffi.TransactionEffec
 					Nodules:   []string{}, // TODO: Extract module names if available
 				}
 			} else if !outputIsMissing && outputDigest != nil && outputOwner != nil {
+				resGetObject, err := c.GetObject(context.TODO(), iotaclient.GetObjectRequest{ObjectID: objID, Options: &iotajsonrpc.IotaObjectDataOptions{
+					ShowType:                true,
+					ShowContent:             true,
+					ShowBcs:                 true,
+					ShowOwner:               true,
+					ShowPreviousTransaction: true,
+					ShowStorageRebate:       true,
+					ShowDisplay:             true,
+				}})
+				if err != nil {
+					panic(err)
+				}
+
 				change.Created = &struct {
 					Sender     iotago.Address          `json:"sender"`
 					Owner      iotajsonrpc.ObjectOwner `json:"owner"`
@@ -541,7 +748,7 @@ func convertChangedObjectsToObjectChanges(effects *iota_sdk_ffi.TransactionEffec
 				}{
 					Sender:     zeroAddr,
 					Owner:      iotagoOwnerToObjectOwner(outputOwner),
-					ObjectType: "", // TODO: Get object type if available
+					ObjectType: *resGetObject.Data.Type,
 					ObjectID:   *objID,
 					Version:    iotajsonrpc.NewBigInt(v1.LamportVersion),
 					Digest:     *outputDigest,
@@ -559,7 +766,7 @@ func convertChangedObjectsToObjectChanges(effects *iota_sdk_ffi.TransactionEffec
 					Version    *iotajsonrpc.BigInt `json:"version"`
 				}{
 					Sender:     zeroAddr,
-					ObjectType: "",
+					ObjectType: changeObjectType,
 					ObjectID:   *objID,
 					Version:    iotajsonrpc.NewBigInt(v1.LamportVersion),
 				}
@@ -573,7 +780,7 @@ func convertChangedObjectsToObjectChanges(effects *iota_sdk_ffi.TransactionEffec
 					Version    *iotajsonrpc.BigInt `json:"version"`
 				}{
 					Sender:     zeroAddr,
-					ObjectType: "",
+					ObjectType: changeObjectType,
 					ObjectID:   *objID,
 					Version:    iotajsonrpc.NewBigInt(v1.LamportVersion),
 				}
@@ -589,7 +796,7 @@ func convertChangedObjectsToObjectChanges(effects *iota_sdk_ffi.TransactionEffec
 				}{
 					Sender:          zeroAddr,
 					Owner:           iotagoOwnerToObjectOwner(outputOwner),
-					ObjectType:      "",
+					ObjectType:      changeObjectType,
 					ObjectID:        *objID,
 					Version:         iotajsonrpc.NewBigInt(v1.LamportVersion),
 					PreviousVersion: iotajsonrpc.NewBigInt(v1.LamportVersion - 1), // Approximation
@@ -673,7 +880,7 @@ func (c *BindingClient) GetOwnedObjects(ctx context.Context, req iotaclient.GetO
 		if err.(*iota_sdk_ffi.SdkFfiError) != nil {
 			return nil, fmt.Errorf("Object failed: %w", err)
 		}
-		resp, err := mapFfiObjectToIotaResponse(obj)
+		resp, err := mapFfiObjectToIotaResponse(obj, nil, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -815,6 +1022,9 @@ func (c *BindingClient) DryRunTransaction(ctx context.Context, txDataBytes iotag
 
 	// Convert effects
 	if dryRunResult.Effects != nil && *dryRunResult.Effects != nil {
+		// Populate object types from dry run results
+		populateObjectTypesFromDryRun(*dryRunResult.Effects, &dryRunResult)
+
 		convertedEffects, err := convertTransactionEffects(*dryRunResult.Effects)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert transaction effects: %w", err)
@@ -822,7 +1032,7 @@ func (c *BindingClient) DryRunTransaction(ctx context.Context, txDataBytes iotag
 		response.Effects = serialization.TagJson[iotajsonrpc.IotaTransactionBlockEffects]{Data: *convertedEffects}
 
 		// Convert object changes
-		objectChanges, err := convertChangedObjectsToObjectChanges(*dryRunResult.Effects)
+		objectChanges, err := c.convertChangedObjectsToObjectChanges(*dryRunResult.Effects)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert object changes: %w", err)
 		}
@@ -941,7 +1151,132 @@ func (c *BindingClient) GetCommitteeInfo(ctx context.Context, epoch *iotajsonrpc
 }
 
 func (c *BindingClient) GetLatestIotaSystemState(ctx context.Context) (*iotajsonrpc.IotaSystemStateSummary, error) {
-	return nil, errors.New("GetLatestIotaSystemState not supported by FFI bindings yet")
+	epoch, err := c.qclient.Epoch(nil)
+	if err.(*iota_sdk_ffi.SdkFfiError) != nil {
+		return nil, fmt.Errorf("GraphQL GetLatestIotaSystemState failed: %w", err)
+	}
+
+	// Helper function to convert string pointer to BigInt
+	strToBigInt := func(s *string) *iotajsonrpc.BigInt {
+		if s == nil {
+			return nil
+		}
+		bi := &iotajsonrpc.BigInt{Int: new(big.Int)}
+		bi.SetString(*s, 10)
+		return bi
+	}
+
+	// Convert ObjectId pointer to iotago.ObjectID
+	objIDConv := func(id **iota_sdk_ffi.ObjectId) iotago.ObjectID {
+		if id == nil || *id == nil {
+			return iotago.ObjectID{}
+		}
+		bytes := (*id).ToBytes()
+		if len(bytes) != 32 {
+			return iotago.ObjectID{}
+		}
+		var arr [32]byte
+		copy(arr[:], bytes)
+		return iotago.ObjectID(arr)
+	}
+
+	// Convert int32 pointer to BigInt
+	int32ToBigInt := func(i *int32) *iotajsonrpc.BigInt {
+		if i == nil {
+			return nil
+		}
+		return iotajsonrpc.NewBigIntInt64(int64(*i))
+	}
+
+	// Convert []int32 pointer to []*BigInt
+	int32SliceToBigIntSlice := func(s *[]int32) []*iotajsonrpc.BigInt {
+		if s == nil {
+			return nil
+		}
+		result := make([]*iotajsonrpc.BigInt, len(*s))
+		for i, v := range *s {
+			result[i] = iotajsonrpc.NewBigIntInt64(int64(v))
+		}
+		return result
+	}
+
+	summary := &iotajsonrpc.IotaSystemStateSummary{
+		Epoch:                 iotajsonrpc.NewBigInt(epoch.EpochId),
+		ReferenceGasPrice:     strToBigInt(epoch.ReferenceGasPrice),
+		EpochStartTimestampMs: iotajsonrpc.NewBigInt(epoch.StartTimestamp),
+	}
+
+	// Map SystemStateVersion if available
+	if epoch.SystemStateVersion != nil {
+		summary.SystemStateVersion = iotajsonrpc.NewBigInt(*epoch.SystemStateVersion)
+	}
+
+	// Map ProtocolVersion from ProtocolConfigs if available
+	if epoch.ProtocolConfigs != nil {
+		summary.ProtocolVersion = iotajsonrpc.NewBigInt(epoch.ProtocolConfigs.ProtocolVersion)
+
+		// Extract config attributes from ProtocolConfigs.Configs
+		for _, attr := range epoch.ProtocolConfigs.Configs {
+			if attr.Value == nil {
+				continue
+			}
+
+			switch attr.Key {
+			case "epoch_duration_ms", "epochDurationMs", "epoch-duration-ms":
+				if val, err := strconv.ParseUint(*attr.Value, 10, 64); err == nil {
+					summary.EpochDurationMs = iotajsonrpc.NewBigInt(val)
+				}
+			case "min_validator_count", "minValidatorCount":
+				if val, err := strconv.ParseUint(*attr.Value, 10, 64); err == nil {
+					summary.MinValidatorCount = iotajsonrpc.NewBigInt(val)
+				}
+			case "max_validator_count", "maxValidatorCount":
+				if val, err := strconv.ParseUint(*attr.Value, 10, 64); err == nil {
+					summary.MaxValidatorCount = iotajsonrpc.NewBigInt(val)
+				}
+			}
+		}
+	}
+
+	// FIXME: EpochDurationMs is not available in the current GraphQL API response.
+	// The epoch_duration_ms key does not exist in ProtocolConfigs.Configs attributes.
+	// Using a hardcoded default value of 24 hours (86400000 ms) as a workaround.
+	// This should be replaced with the actual value from the protocol config once available.
+	if summary.EpochDurationMs == nil {
+		summary.EpochDurationMs = iotajsonrpc.NewBigInt(86400000) // 24 hours in milliseconds
+	}
+
+	// Map ValidatorSet fields if available
+	if epoch.ValidatorSet != nil {
+		vs := epoch.ValidatorSet
+		summary.TotalStake = strToBigInt(vs.TotalStake)
+		summary.PendingActiveValidatorsId = objIDConv(vs.PendingActiveValidatorsId)
+		summary.PendingActiveValidatorsSize = int32ToBigInt(vs.PendingActiveValidatorsSize)
+		summary.PendingRemovals = int32SliceToBigIntSlice(vs.PendingRemovals)
+		summary.StakingPoolMappingsId = objIDConv(vs.StakingPoolMappingsId)
+		summary.StakingPoolMappingsSize = int32ToBigInt(vs.StakingPoolMappingsSize)
+		summary.InactivePoolsId = objIDConv(vs.InactivePoolsId)
+		summary.InactivePoolsSize = int32ToBigInt(vs.InactivePoolsSize)
+		summary.ValidatorCandidatesId = objIDConv(vs.ValidatorCandidatesId)
+		summary.ValidatorCandidatesSize = int32ToBigInt(vs.ValidatorCandidatesSize)
+	}
+
+	metadata, err := c.qclient.CoinMetadata("0x2::iota::IOTA")
+	if err.(*iota_sdk_ffi.SdkFfiError) != nil {
+		return nil, fmt.Errorf("GraphQL CoinMetadata failed: %w", err)
+	}
+	summary.IotaTotalSupply = iotajsonrpc.NewBigIntFromString(*metadata.Supply)
+	// Note: Many fields in IotaSystemStateSummary don't have corresponding fields in Epoch
+	// and are left as nil or use defaults:
+	// - StorageFundTotalObjectStorageRebates, StorageFundNonRefundableBalance
+	// - SafeMode, SafeModeStorageCharges, SafeModeStorageRewards, SafeModeComputationRewards
+	// - SafeModeStorageRebates, SafeModeNonRefundableStorageFee
+	// - EpochDurationMs (using hardcoded 24h default - see FIXME above)
+	// - MinValidatorCount, MaxValidatorCount (may not be available in ProtocolConfigs)
+	// - StakeSubsidy* fields, Validator* threshold fields
+	// - ActiveValidators, AtRiskValidators, ValidatorReportRecords
+
+	return summary, nil
 }
 
 func (c *BindingClient) GetReferenceGasPrice(ctx context.Context) (*iotajsonrpc.BigInt, error) {
@@ -2461,7 +2796,7 @@ func (c *BindingClient) SignAndExecuteTransaction(ctx context.Context, req *iota
 			response.Effects = &serialization.TagJson[iotajsonrpc.IotaTransactionBlockEffects]{Data: *convertedEffects}
 		}
 		if req.Options.ShowObjectChanges {
-			objectChanges, err := convertChangedObjectsToObjectChanges(*txEffects)
+			objectChanges, err := c.convertChangedObjectsToObjectChanges(*txEffects)
 			if err != nil {
 				return nil, fmt.Errorf("failed to convert object changes: %w", err)
 			}
@@ -2767,7 +3102,7 @@ func (c *BindingClient) BatchGetObjectsOwnedByAddress(ctx context.Context, addre
 
 	var results []iotajsonrpc.IotaObjectResponse
 	for _, obj := range objectPage.Data {
-		resp, err := mapFfiObjectToIotaResponse(&obj)
+		resp, err := mapFfiObjectToIotaResponse(&obj, options, nil)
 		if err != nil {
 			return nil, fmt.Errorf("failed to map object: %w", err)
 		}
@@ -3096,12 +3431,25 @@ func (c *BindingClient) GetObject(ctx context.Context, req iotaclient.GetObjectR
 	if err != nil {
 		return nil, err
 	}
+
 	obj, err := c.qclient.Object(oid, nil)
 	if err.(*iota_sdk_ffi.SdkFfiError) != nil {
 		return nil, fmt.Errorf("GraphQL Object failed: %w", err)
 	}
 
-	return mapFfiObjectToIotaResponse(obj)
+	// Fetch BCS data if requested
+	var bcsBytes *[]byte
+	if req.Options != nil && req.Options.ShowBcs {
+		// Use MoveObjectContentsBcs to get just the Move object contents (not the full object wrapper)
+		// This matches what the JSON-RPC API returns for showBcs and allows direct deserialization
+		bcs, err := c.qclient.MoveObjectContentsBcs(oid, nil)
+		if err.(*iota_sdk_ffi.SdkFfiError) == nil && bcs != nil {
+			bcsBytes = bcs
+		}
+		// Silently ignore BCS fetch errors - BCS data might not be available for all objects
+	}
+
+	return mapFfiObjectToIotaResponse(obj, req.Options, bcsBytes)
 }
 
 func (c *BindingClient) GetProtocolConfig(ctx context.Context, version *iotajsonrpc.BigInt) (*iotajsonrpc.ProtocolConfig, error) {
@@ -3113,19 +3461,66 @@ func (c *BindingClient) GetProtocolConfig(ctx context.Context, version *iotajson
 	}
 
 	// Call GraphQL client's ProtocolConfig method
-	_, err := c.qclient.ProtocolConfig(versionUint64)
-	if err.(*iota_sdk_ffi.SdkFfiError) != nil {
+	protocolConfigs, err := c.qclient.ProtocolConfig(versionUint64)
+	if err != nil {
 		return nil, fmt.Errorf("GraphQL ProtocolConfig failed: %w", err)
 	}
 
+	if protocolConfigs == nil {
+		return nil, fmt.Errorf("no protocol config found")
+	}
+
 	// Convert back to iota-go response format
-	// Note: ProtocolConfig mapping from FFI ProtocolConfigs is complex and involves
-	// mapping many fields between different struct types. This can be implemented
-	// on demand if protocol config details are needed by the application.
-	// For now, return an empty config to satisfy the interface.
-	response := &iotajsonrpc.ProtocolConfig{}
+	response := &iotajsonrpc.ProtocolConfig{
+		ProtocolVersion: iotajsonrpc.NewBigInt(protocolConfigs.ProtocolVersion),
+	}
+
+	// Convert feature flags from slice to map
+	if len(protocolConfigs.FeatureFlags) > 0 {
+		response.FeatureFlags = make(map[string]bool)
+		for _, flag := range protocolConfigs.FeatureFlags {
+			response.FeatureFlags[flag.Key] = flag.Value
+		}
+	}
+
+	// Convert config attributes from slice to map
+	if len(protocolConfigs.Configs) > 0 {
+		response.Attributes = make(map[string]iotajsonrpc.ProtocolConfigValue)
+		for _, attr := range protocolConfigs.Configs {
+			if attr.Value != nil {
+				if configValue := parseProtocolConfigValue(*attr.Value); configValue != nil {
+					response.Attributes[attr.Key] = *configValue
+				}
+			}
+		}
+	}
 
 	return response, nil
+}
+
+// parseProtocolConfigValue attempts to parse a string value into the appropriate numeric type
+func parseProtocolConfigValue(value string) *iotajsonrpc.ProtocolConfigValue {
+	// Try parsing as uint64
+	if u64, err := strconv.ParseUint(value, 10, 64); err == nil {
+		// Check if it fits in smaller types
+		if u64 <= math.MaxUint16 {
+			u16 := uint16(u64)
+			return &iotajsonrpc.ProtocolConfigValue{U16: &u16}
+		}
+		if u64 <= math.MaxUint32 {
+			u32 := uint32(u64)
+			return &iotajsonrpc.ProtocolConfigValue{U32: &u32}
+		}
+		return &iotajsonrpc.ProtocolConfigValue{U64: &u64}
+	}
+
+	// Try parsing as float64
+	if f64, err := strconv.ParseFloat(value, 64); err == nil {
+		return &iotajsonrpc.ProtocolConfigValue{F64: &f64}
+	}
+
+	// If parsing fails, return nil
+	return nil
 }
 
 func (c *BindingClient) GetTotalTransactionBlocks(ctx context.Context) (string, error) {
@@ -3169,6 +3564,14 @@ func (c *BindingClient) GetTransactionBlock(ctx context.Context, req iotaclient.
 	return response, nil
 }
 
+func (c *BindingClient) Transaction(digest *iota_sdk_ffi.Digest) (*iota_sdk_ffi.SignedTransaction, error) {
+	signedTx, err := c.qclient.Transaction(digest)
+	if err.(*iota_sdk_ffi.SdkFfiError) != nil {
+		return nil, fmt.Errorf("failed to get transaction: %w", err)
+	}
+	return signedTx, nil
+}
+
 func (c *BindingClient) MultiGetObjects(ctx context.Context, req iotaclient.MultiGetObjectsRequest) ([]iotajsonrpc.IotaObjectResponse, error) {
 	if len(req.ObjectIDs) == 0 {
 		return nil, nil
@@ -3196,7 +3599,7 @@ func (c *BindingClient) MultiGetObjects(ctx context.Context, req iotaclient.Mult
 
 	var results []iotajsonrpc.IotaObjectResponse
 	for _, obj := range objectPage.Data {
-		resp, err := mapFfiObjectToIotaResponse(&obj)
+		resp, err := mapFfiObjectToIotaResponse(&obj, req.Options, nil)
 		if err != nil {
 			return nil, fmt.Errorf("failed to map object: %w", err)
 		}
@@ -3254,7 +3657,9 @@ func (c *BindingClient) TryMultiGetPastObjects(ctx context.Context, req iotaclie
 }
 
 func (c *BindingClient) RequestFunds(ctx context.Context, address cryptolib.Address) error {
-	return errors.New("RequestFunds not implemented for BindingClient")
+	faucetURL := iotaconn.FaucetURL(c.RpcURL)
+
+	return iotaclient.RequestFundsFromFaucet(ctx, address.AsIotaAddress(), faucetURL)
 }
 
 func (c *BindingClient) Health(ctx context.Context) error {
@@ -3272,16 +3677,49 @@ func (c *BindingClient) Health(ctx context.Context) error {
 	return nil
 }
 
-func (c *BindingClient) L2() clients.L2Client {
-	return nil
+func (c *BindingClient) L2() L2Client {
+	return NewBindingClientL2(c.RpcURL, c)
 }
 
-func (c *BindingClient) IotaClient() *iotaclient.Client {
-	return nil
+func (c *BindingClient) IotaClient() L1Client {
+	return c
 }
 
 func (c *BindingClient) DeployISCContracts(ctx context.Context, signer iotasigner.Signer) (iotago.PackageID, error) {
-	return iotago.PackageID{}, errors.New("DeployISCContracts not implemented for BindingClient")
+	iscBytecode := contracts.ISC()
+	txnBytes, err := c.Publish(ctx, iotaclient.PublishRequest{
+		Sender:          signer.Address(),
+		CompiledModules: iscBytecode.Modules,
+		Dependencies:    iscBytecode.Dependencies,
+		GasBudget:       iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget * 10),
+	})
+	if err != nil {
+		return iotago.PackageID{}, err
+	}
+
+	txnResponse, err := c.SignAndExecuteTransaction(
+		ctx,
+		&iotaclient.SignAndExecuteTransactionRequest{
+			TxDataBytes: txnBytes.TxBytes,
+			Signer:      signer,
+			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+				ShowEffects:       true,
+				ShowObjectChanges: true,
+			},
+		},
+	)
+	if err != nil {
+		return iotago.PackageID{}, err
+	}
+
+	if !txnResponse.Effects.Data.IsSuccess() {
+		return iotago.PackageID{}, errors.New("publish ISC contracts failed")
+	}
+	packageID, err := txnResponse.GetPublishedPackageID()
+	if err != nil {
+		return iotago.PackageID{}, err
+	}
+	return *packageID, nil
 }
 
 func (c *BindingClient) FindCoinsForGasPayment(ctx context.Context, owner *iotago.Address, pt iotago.ProgrammableTransaction, gasPrice uint64, gasBudget uint64) ([]*iotago.ObjectRef, error) {
@@ -3348,11 +3786,108 @@ func (c *BindingClient) MergeCoinsAndExecute(ctx context.Context, owner iotasign
 }
 
 func (c *BindingClient) SignAndExecuteTxWithRetry(ctx context.Context, signer iotasigner.Signer, pt iotago.ProgrammableTransaction, gasCoin *iotago.ObjectRef, gasBudget uint64, gasPrice uint64, options *iotajsonrpc.IotaTransactionBlockResponseOptions) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
-	return nil, errors.New("SignAndExecuteTxWithRetry not implemented for BindingClient")
+	var err error
+	var txnBytes []byte
+	var txnResponse *iotajsonrpc.IotaTransactionBlockResponse
+	var gasPayments []*iotago.ObjectRef
+	for i := 0; i < 5; i++ {
+		if gasCoin == nil {
+			gasPayments, err = c.FindCoinsForGasPayment(ctx, signer.Address(), pt, gasPrice, gasBudget)
+			if err != nil {
+				return nil, fmt.Errorf("failed to find gas payment: %w", err)
+			}
+		} else {
+			gasCoin, err = c.UpdateObjectRef(ctx, gasCoin)
+			if err != nil {
+				return nil, fmt.Errorf("failed to update gas payment: %w", err)
+			}
+			gasPayments = []*iotago.ObjectRef{gasCoin}
+		}
+
+		tx := iotago.NewProgrammable(
+			signer.Address(),
+			pt,
+			gasPayments,
+			gasBudget,
+			gasPrice,
+		)
+		txnBytes, err = bcs.Marshal(&tx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal tx: %w", err)
+		}
+
+		txnResponse, err = c.SignAndExecuteTransaction(
+			ctx, &iotaclient.SignAndExecuteTransactionRequest{
+				TxDataBytes: txnBytes,
+				Signer:      signer,
+				Options:     options,
+			},
+		)
+		if err == nil {
+			return txnResponse, nil
+		}
+		time.Sleep(2 * time.Second)
+	}
+	return nil, fmt.Errorf("can't execute the transaction in time: %w", err)
 }
 
 func (c *BindingClient) WaitForNextVersionForTesting(ctx context.Context, timeout time.Duration, logger log.Logger, currentRef *iotago.ObjectRef, cb func()) (*iotago.ObjectRef, error) {
-	return nil, errors.New("WaitForNextVersionForTesting not implemented for BindingClient")
+	// Some 'sugar' to make dynamic refs handling easier (where refs can be nil or set depending on state)
+	if currentRef == nil {
+		cb()
+		return currentRef, nil
+	}
+
+	cb()
+
+	// Create a ticker for polling
+	ticker := time.NewTicker(250 * time.Millisecond)
+	defer ticker.Stop()
+
+	// Add timeout to context if not already set
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, fmt.Errorf("WaitForNextVersionForTesting: context deadline exceeded while waiting for object version change: %v", currentRef)
+		case <-ticker.C:
+			// Poll for object update
+			newRef, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: currentRef.ObjectID})
+			if err != nil {
+				if logger != nil {
+					logger.LogInfof("WaitForNextVersionForTesting: error getting object: %v, retrying...", err)
+				}
+				continue
+			}
+
+			if newRef.Error != nil {
+				// The provided object got consumed and is gone. We can return.
+				if newRef.Error.Data.Deleted != nil || newRef.Error.Data.NotExists != nil {
+					return currentRef, nil
+				}
+
+				if logger != nil {
+					logger.LogInfof("WaitForNextVersionForTesting: object error: %v, retrying...", newRef.Error)
+				}
+				continue
+			}
+
+			if newRef.Data.Ref().Version > currentRef.Version {
+				if logger != nil {
+					logger.LogInfof("WaitForNextVersionForTesting: Found the updated version of %v, which is: %v", currentRef, newRef.Data.Ref())
+				}
+
+				ref := newRef.Data.Ref()
+				return &ref, nil
+			}
+
+			if logger != nil {
+				logger.LogInfof("WaitForNextVersionForTesting: Getting the same version ref as before. Retrying. %v", currentRef)
+			}
+		}
+	}
 }
 
 // Transaction builder helper functions
@@ -3378,7 +3913,7 @@ func (c *BindingClient) WaitForNextVersionForTesting(ctx context.Context, timeou
 // }
 
 // buildTransactionAndExecute builds, signs, and executes a transaction
-func (c *BindingClient) buildTransactionAndExecute(ctx context.Context, signer iotasigner.Signer, builder *iota_sdk_ffi.TransactionBuilder, gasBudget uint64, gasPrice uint64, options *iotajsonrpc.IotaTransactionBlockResponseOptions) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+func (c *BindingClient) buildTransactionAndExecute(_ context.Context, signer iotasigner.Signer, builder *iota_sdk_ffi.TransactionBuilder, gasBudget uint64, gasPrice uint64, options *iotajsonrpc.IotaTransactionBlockResponseOptions) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	// Set gas budget and price
 	builder = builder.GasBudget(gasBudget)
 	if gasPrice > 0 {
@@ -3435,7 +3970,7 @@ func (c *BindingClient) buildTransactionAndExecute(ctx context.Context, signer i
 			response.Effects = &serialization.TagJson[iotajsonrpc.IotaTransactionBlockEffects]{Data: *convertedEffects}
 		}
 		if options.ShowObjectChanges {
-			objectChanges, err := convertChangedObjectsToObjectChanges(*txEffects)
+			objectChanges, err := c.convertChangedObjectsToObjectChanges(*txEffects)
 			if err != nil {
 				return nil, fmt.Errorf("failed to convert object changes: %w", err)
 			}

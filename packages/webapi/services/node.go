@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/hive.go/app/shutdown"
 	"github.com/iotaledger/wasp/v2/packages/chains"
 	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/param_fetcher"
 	"github.com/iotaledger/wasp/v2/packages/parameters"
 	"github.com/iotaledger/wasp/v2/packages/peering"
 	"github.com/iotaledger/wasp/v2/packages/registry"
@@ -20,7 +21,7 @@ type NodeService struct {
 	chainsProvider        chains.Provider
 	shutdownHandler       *shutdown.ShutdownHandler
 	trustedNetworkManager peering.TrustedNetworkManager
-	l1ParamsFetcher       parameters.L1ParamsFetcher
+	l1ParamsFetcher       param_fetcher.L1ParamsFetcher
 }
 
 func NewNodeService(
@@ -29,7 +30,7 @@ func NewNodeService(
 	chainsProvider chains.Provider,
 	shutdownHandler *shutdown.ShutdownHandler,
 	trustedNetworkManager peering.TrustedNetworkManager,
-	l1ParamsFetcher parameters.L1ParamsFetcher,
+	l1ParamsFetcher param_fetcher.L1ParamsFetcher,
 ) interfaces.NodeService {
 	return &NodeService{
 		chainRecordRegistry:   chainRecordRegistry,

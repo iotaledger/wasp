@@ -11,7 +11,7 @@ import (
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/v2/clients/bindings"
+	"github.com/iotaledger/wasp/v2/clients"
 	"github.com/iotaledger/wasp/v2/clients/bindings/iota_sdk_ffi"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/contracts"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
@@ -61,7 +61,7 @@ func TestMergeCoins(t *testing.T) {
 }
 
 func TestMoveCall(t *testing.T) {
-	client := bindings.NewBindingClient(iotaconn.DevnetEndpointURL)
+	client := clients.NewBindingClient(iotaconn.DevnetEndpointURL)
 	signer := iotatest.MakeSignerWithFunds(0, iotaconn.DevnetFaucetURL)
 	// err := iotaclient.RequestFundsFromFaucet(context.TODO(), signer.Address(), iotaconn.DevnetFaucetURL)
 	// require.NoError(t, err)
@@ -149,7 +149,7 @@ func TestMoveCall(t *testing.T) {
 }
 
 func TestPay(t *testing.T) {
-	client := bindings.NewBindingClient(iotaconn.DevnetEndpointURL)
+	client := clients.NewBindingClient(iotaconn.DevnetEndpointURL)
 	signer := iotatest.MakeSignerWithFunds(0, iotaconn.DevnetFaucetURL)
 	recipient := iotatest.MakeSignerWithFunds(1, iotaconn.DevnetFaucetURL)
 
@@ -289,7 +289,7 @@ func TestPay(t *testing.T) {
 }
 
 // func TestPayAllIota(t *testing.T) {
-// 	client := bindings.NewBindingClient(iotaconn.DevnetEndpointURL)
+// 	client := clients.NewBindingClient(iotaconn.DevnetEndpointURL)
 // 	signer := iotatest.MakeSignerWithFunds(0, iotaconn.DevnetFaucetURL)
 // 	recipient := iotatest.MakeSignerWithFunds(1, iotaconn.DevnetFaucetURL)
 
@@ -349,7 +349,7 @@ func TestPay(t *testing.T) {
 
 // verified result at https://explorer.iota.org/txblock/FJARZfgxJqQL427a4dmHT15MfApGakZHsFUCRT2z2GAS?network=devnet
 func TestPayIota(t *testing.T) {
-	client := bindings.NewBindingClient(iotaconn.DevnetEndpointURL)
+	client := clients.NewBindingClient(iotaconn.DevnetEndpointURL)
 	signer := iotatest.MakeSignerWithFunds(0, iotaconn.DevnetFaucetURL)
 	recipient1 := iotatest.MakeSignerWithFunds(1, iotaconn.DevnetFaucetURL)
 	recipient2 := iotatest.MakeSignerWithFunds(2, iotaconn.DevnetFaucetURL)
@@ -400,11 +400,19 @@ func TestPayIota(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, txnResponse.Effects.Data.IsSuccess(), "transaction should succeed")
 
+	// Wait for transaction to be indexed (required for PopulateObjectTypesInChanges)
+	time.Sleep(2 * time.Second)
+
+	// Populate object types by querying the chain
+	err = client.PopulateObjectTypesInChanges(context.Background(), txnResponse.ObjectChanges)
+	require.NoError(t, err)
+
 	// 3 stands for the three amounts (3 created IOTA objects) in payIota API
 	amountNum := uint(3)
 	delObjNum := uint(0)
 	createdObjNum := uint(0)
 	for _, change := range txnResponse.ObjectChanges {
+		fmt.Println("!!!!change: ", change.Data.String())
 		if change.Data.Mutated != nil {
 			require.Equal(t, *signer.Address(), change.Data.Mutated.Sender)
 			require.Contains(t, coins.ObjectIDVals(), change.Data.Mutated.ObjectID)
@@ -452,7 +460,7 @@ func TestPayIota(t *testing.T) {
 }
 
 func TestPublish(t *testing.T) {
-	client := bindings.NewBindingClient(iotaconn.DevnetEndpointURL)
+	client := clients.NewBindingClient(iotaconn.DevnetEndpointURL)
 	signer := iotatest.MakeSignerWithFunds(0, iotaconn.DevnetFaucetURL)
 
 	testcoinBytecode := contracts.Testcoin()
@@ -483,7 +491,7 @@ func TestPublish(t *testing.T) {
 }
 
 // func TestSplitCoin(t *testing.T) {
-// 	client := bindings.NewBindingClient(iotaconn.DevnetEndpointURL)
+// 	client := clients.NewBindingClient(iotaconn.DevnetEndpointURL)
 // 	signer := iotatest.MakeSignerWithFunds(0, iotaconn.DevnetFaucetURL)
 
 // 	limit := uint(4)
@@ -524,7 +532,7 @@ func TestPublish(t *testing.T) {
 // }
 
 // func TestSplitCoinEqual(t *testing.T) {
-// 	client := bindings.NewBindingClient(iotaconn.DevnetEndpointURL)
+// 	client := clients.NewBindingClient(iotaconn.DevnetEndpointURL)
 // 	signer := iotatest.MakeSignerWithFunds(0, iotaconn.DevnetFaucetURL)
 
 // 	limit := uint(4)
@@ -561,45 +569,101 @@ func TestPublish(t *testing.T) {
 // 	require.Equal(t, amt, -simulate.Effects.Data.GasFee())
 // }
 
-// func TestTransferObject(t *testing.T) {
-// 	client := bindings.NewBindingClient(iotaconn.DevnetEndpointURL)
-// 	signer := iotatest.MakeSignerWithFunds(0, iotaconn.DevnetFaucetURL)
-// 	recipient := iotatest.MakeSignerWithFunds(1, iotaconn.DevnetFaucetURL)
+// example https://explorer.iota.org/txblock/2XYG6BbbNAVqGRege2efVe5U8tiCzm4CWAQR8B672R8h?network=devnet
+func TestTransferObject(t *testing.T) {
+	client := clients.NewBindingClient(iotaconn.DevnetEndpointURL)
+	signer := iotatest.MakeSignerWithFunds(0, iotaconn.DevnetFaucetURL)
+	recipient := iotatest.MakeSignerWithFunds(1, iotaconn.DevnetFaucetURL)
 
-// 	limit := uint(3)
-// 	coinPages, err := client.GetCoins(
-// 		context.Background(), iotaclient.GetCoinsRequest{
-// 			Owner: signer.Address(),
-// 			Limit: limit,
-// 		},
-// 	)
-// 	require.NoError(t, err)
-// 	transferCoin := coinPages.Data[0]
+	limit := uint(3)
+	coinPages, err := client.GetCoins(
+		context.Background(), iotaclient.GetCoinsRequest{
+			Owner: signer.Address(),
+			Limit: limit,
+		},
+	)
+	require.NoError(t, err)
+	transferCoin := coinPages.Data[0]
 
-// 	txn, err := client.TransferObject(
-// 		context.Background(),
-// 		iotaclient.TransferObjectRequest{
-// 			Signer:    signer.Address(),
-// 			Recipient: recipient.Address(),
-// 			ObjectID:  transferCoin.CoinObjectID,
-// 			GasBudget: iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget),
-// 		},
-// 	)
-// 	require.NoError(t, err)
+	txn, err := client.TransferObject(
+		context.Background(),
+		iotaclient.TransferObjectRequest{
+			Signer:    signer.Address(),
+			Recipient: recipient.Address(),
+			ObjectID:  transferCoin.CoinObjectID,
+			GasBudget: iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget),
+		},
+	)
+	require.NoError(t, err)
 
-// 	simulate, err := client.DryRunTransaction(context.Background(), txn.TxBytes)
-// 	require.NoError(t, err)
-// 	require.Empty(t, simulate.Effects.Data.V1.Status.Error)
-// 	require.True(t, simulate.Effects.Data.IsSuccess())
+	// Sign and execute the transaction
+	txnResponse, err := client.SignAndExecuteTransaction(
+		context.Background(),
+		&iotaclient.SignAndExecuteTransactionRequest{
+			TxDataBytes: txn.TxBytes,
+			Signer:      signer,
+			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+				ShowEffects:        true,
+				ShowObjectChanges:  true,
+				ShowBalanceChanges: true,
+			},
+		},
+	)
+	require.NoError(t, err)
+	require.True(t, txnResponse.Effects.Data.IsSuccess(), "transaction should succeed")
 
-// 	// one is transferred object, one is the gas object
-// 	require.Len(t, simulate.ObjectChanges, 2)
+	// Print the transaction digest
+	fmt.Printf("Transaction Digest: %s\n", txnResponse.Digest)
 
-// 	require.Len(t, simulate.BalanceChanges, 2)
-// }
+	// Wait a bit for the transaction to be indexed
+	time.Sleep(2 * time.Second)
+
+	// Get the transaction using FFI directly
+	digest, err := iota_sdk_ffi.DigestFromBase58(txnResponse.Digest.String())
+	require.NoError(t, err)
+
+	signedTx, err := client.Transaction(digest)
+	require.NoError(t, err)
+	require.NotNil(t, signedTx)
+
+	// Print transaction content
+	fmt.Printf("\n=== Transaction Block Content ===\n")
+
+	// Get transaction details
+	tx := signedTx.Transaction
+	if tx != nil {
+		fmt.Printf("Sender: %s\n", tx.Sender().ToHex())
+		fmt.Printf("Transaction Kind: %+v\n", tx.Kind())
+
+		// Print gas payment info
+		gasPayment := tx.GasPayment()
+		fmt.Printf("Gas Payment:\n")
+		fmt.Printf("  Budget: %d\n", gasPayment.Budget)
+		fmt.Printf("  Price: %d\n", gasPayment.Price)
+		fmt.Printf("  Objects: %v\n", gasPayment.Objects)
+
+		// Print expiration
+		expiration := tx.Expiration()
+		fmt.Printf("Expiration: %+v\n", expiration)
+
+		// Serialize transaction to BCS
+		txBytes, err := tx.BcsSerialize()
+		if err == nil {
+			fmt.Printf("Transaction BCS (length): %d bytes\n", len(txBytes))
+		}
+	}
+
+	// Print signatures
+	if len(signedTx.Signatures) > 0 {
+		fmt.Printf("\nSignatures (%d):\n", len(signedTx.Signatures))
+		for i, sig := range signedTx.Signatures {
+			fmt.Printf("  Signature %d: %+v\n", i, sig)
+		}
+	}
+}
 
 // func TestTransferIota(t *testing.T) {
-// 	client := bindings.NewBindingClient(iotaconn.DevnetEndpointURL)
+// 	client := clients.NewBindingClient(iotaconn.DevnetEndpointURL)
 // 	signer := iotatest.MakeSignerWithFunds(0, iotaconn.DevnetFaucetURL)
 // 	recipient := iotatest.MakeSignerWithFunds(1, iotaconn.DevnetFaucetURL)
 
@@ -643,3 +707,17 @@ func TestPublish(t *testing.T) {
 
 // 	require.Len(t, simulate.BalanceChanges, 2)
 // }
+
+func TestDeployISCContracts(t *testing.T) {
+	client := clients.NewBindingClient(iotaconn.DevnetEndpointURL)
+	signer := iotatest.MakeSignerWithFunds(0, iotaconn.DevnetFaucetURL)
+
+	packageID, err := client.DeployISCContracts(context.Background(), signer)
+	require.NoError(t, err)
+
+	// Verify package ID is not empty
+	require.NotEqual(t, iotago.PackageID{}, packageID, "package ID should not be empty")
+
+	// Print the package ID for reference
+	fmt.Printf("ISC Contracts deployed with Package ID: %s\n", packageID.String())
+}

@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/v2/clients/bindings"
+	"github.com/iotaledger/wasp/v2/clients"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
@@ -20,7 +20,7 @@ import (
 )
 
 func TestGetDynamicFieldObject(t *testing.T) {
-	api := bindings.NewBindingClient(iotaconn.DevnetEndpointURL)
+	api := clients.NewBindingClient(iotaconn.DevnetEndpointURL)
 	parentObjectID, err := iotago.AddressFromHex("0x1719957d7a2bf9d72459ff0eab8e600cbb1991ef41ddd5b4a8c531035933d256")
 	require.NoError(t, err)
 	type args struct {
@@ -66,7 +66,7 @@ func TestGetDynamicFieldObject(t *testing.T) {
 }
 
 func TestGetOwnedObjects(t *testing.T) {
-	client := bindings.NewBindingClient(iotaconn.DevnetEndpointURL)
+	client := clients.NewBindingClient(iotaconn.DevnetEndpointURL)
 	signer := iotasigner.NewSignerByIndex(testcommon.TestSeed, iotasigner.KeySchemeFlagDefault, 0)
 	t.Run(
 		"struct tag", func(t *testing.T) {
@@ -147,7 +147,7 @@ func TestGetOwnedObjects(t *testing.T) {
 }
 
 func TestQueryTransactionBlocks(t *testing.T) {
-	api := bindings.NewBindingClient(iotaconn.DevnetEndpointURL)
+	api := clients.NewBindingClient(iotaconn.DevnetEndpointURL)
 	limit := uint(10)
 	type args struct {
 		ctx             context.Context
@@ -206,7 +206,7 @@ func TestQueryTransactionBlocks(t *testing.T) {
 func TestResolveNameServiceAddress(t *testing.T) {
 	t.Skip()
 
-	api := bindings.NewBindingClient(iotaconn.DevnetEndpointURL)
+	api := clients.NewBindingClient(iotaconn.DevnetEndpointURL)
 	addr, err := api.ResolveNameServiceAddress(context.Background(), "2222.iotax")
 	require.NoError(t, err)
 	require.Equal(t, "0x6174c5bd8ab9bf492e159a64e102de66429cfcde4fa883466db7b03af28b3ce9", addr.String())
@@ -218,7 +218,7 @@ func TestResolveNameServiceAddress(t *testing.T) {
 func TestResolveNameServiceNames(t *testing.T) {
 	t.Skip("Fails with 'Method not found'")
 
-	api := bindings.NewBindingClient(iotaconn.DevnetEndpointURL)
+	api := clients.NewBindingClient(iotaconn.DevnetEndpointURL)
 	owner := iotago.MustAddressFromHex("0x57188743983628b3474648d8aa4a9ee8abebe8f6816243773d7e8ed4fd833a28")
 	namePage, err := api.ResolveNameServiceNames(
 		context.Background(), iotaclient.ResolveNameServiceNamesRequest{

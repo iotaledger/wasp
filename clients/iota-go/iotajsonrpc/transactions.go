@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
+	"strings"
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/serialization"
@@ -335,7 +337,7 @@ func (r *IotaTransactionBlockResponse) GetCreatedObjectByName(module string, obj
 			// some possible examples
 			// * 0x2::coin::TreasuryCap<0x14c12b454ac6996024342312769e00bb98c70ad2f3546a40f62516c83aa0f0d4::testcoin::TESTCOIN>
 			// * 0x14c12b454ac6996024342312769e00bb98c70ad2f3546a40f62516c83aa0f0d4::anchor::Anchor
-			resource, err := iotago.NewResourceType(change.Data.Created.ObjectType)
+			resource, err := iotago.NewResourceType(extractTypeTag(change.Data.Created.ObjectType))
 			if err != nil {
 				return nil, fmt.Errorf("invalid resource string: %w", err)
 			}
@@ -362,6 +364,28 @@ func (r *IotaTransactionBlockResponse) GetCreatedObjectByName(module string, obj
 		return nil, fmt.Errorf("not found")
 	}
 	return ref, nil
+}
+
+var moveTagRe = regexp.MustCompile(
+	`^(?:Struct\()?(0x[0-9a-fA-F]+::[A-Za-z_][A-Za-z0-9_]*::[A-Za-z_][A-Za-z0-9_]*)(?:\))?$`,
+)
+
+func extractTypeTag(s string) string {
+	s = strings.TrimSpace(s)
+	if m := moveTagRe.FindStringSubmatch(s); m != nil {
+		return m[1]
+	}
+	// Fallback: if parentheses exist, peel the first (...) pair.
+	if l := strings.IndexByte(s, '('); l >= 0 {
+		if r := strings.IndexByte(s[l+1:], ')'); r >= 0 {
+			return s[l+1 : l+1+r]
+		}
+	}
+	// Otherwise just return as-is if non-empty.
+	if s != "" {
+		return s
+	}
+	return ""
 }
 
 func (r *IotaTransactionBlockResponse) GetMutatedObjectByName(module string, objectName string) (

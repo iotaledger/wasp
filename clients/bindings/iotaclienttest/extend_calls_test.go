@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/v2/clients/bindings"
+	"github.com/iotaledger/wasp/v2/clients"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/contracts"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
@@ -20,7 +20,7 @@ import (
 
 func TestMintToken(t *testing.T) {
 	t.Skip()
-	client := bindings.NewBindingClient(iotaconn.LocalnetEndpointURL)
+	client := clients.NewBindingClient(iotaconn.LocalnetEndpointURL)
 	signer := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 
 	tokenPackageID, treasuryCap := DeployCoinPackage(
@@ -60,7 +60,7 @@ func TestMintToken(t *testing.T) {
 }
 
 func TestBatchGetObjectsOwnedByAddress(t *testing.T) {
-	api := bindings.NewBindingClient(iotaconn.LocalnetEndpointURL)
+	api := clients.NewBindingClient(iotaconn.LocalnetEndpointURL)
 
 	options := iotajsonrpc.IotaObjectDataOptions{
 		ShowType:    true,

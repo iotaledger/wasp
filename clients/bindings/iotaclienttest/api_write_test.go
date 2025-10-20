@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/v2/clients/bindings"
+	"github.com/iotaledger/wasp/v2/clients"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
@@ -19,7 +19,7 @@ import (
 )
 
 func TestDevInspectTransactionBlock(t *testing.T) {
-	client := bindings.NewBindingClient(iotaconn.DevnetEndpointURL)
+	client := clients.NewBindingClient(iotaconn.DevnetEndpointURL)
 	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 
 	limit := uint(3)
@@ -57,7 +57,7 @@ func TestDevInspectTransactionBlock(t *testing.T) {
 }
 
 func TestDryRunTransaction(t *testing.T) {
-	api := bindings.NewBindingClient(iotaconn.DevnetEndpointURL)
+	api := clients.NewBindingClient(iotaconn.DevnetEndpointURL)
 	signer := iotago.MustAddressFromHex(testcommon.TestAddress)
 	coins, err := api.GetCoins(
 		context.Background(), iotaclient.GetCoinsRequest{

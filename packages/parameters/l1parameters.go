@@ -38,12 +38,12 @@ func (l *L1Params) Hash() hashing.HashValue {
 }
 
 type Protocol struct {
-	Epoch                 *iotajsonrpc.BigInt `json:"epoch" swagger:"required"`
-	ProtocolVersion       *iotajsonrpc.BigInt `json:"protocol_version" swagger:"required"`
-	SystemStateVersion    *iotajsonrpc.BigInt `json:"system_state_version" swagger:"required"`
-	ReferenceGasPrice     *iotajsonrpc.BigInt `json:"reference_gas_price" swagger:"required"`
-	EpochStartTimestampMs *iotajsonrpc.BigInt `json:"epoch_start_timestamp_ms" swagger:"required"`
-	EpochDurationMs       *iotajsonrpc.BigInt `json:"epoch_duration_ms" swagger:"required"`
+	Epoch              *iotajsonrpc.BigInt `json:"epoch" swagger:"required"`
+	ProtocolVersion    *iotajsonrpc.BigInt `json:"protocol_version" swagger:"required"`
+	SystemStateVersion *iotajsonrpc.BigInt `json:"system_state_version" swagger:"required"`
+	ReferenceGasPrice  *iotajsonrpc.BigInt `json:"reference_gas_price" swagger:"required"`
+	// EpochStartTimestampMs *iotajsonrpc.BigInt `json:"epoch_start_timestamp_ms" swagger:"required"`
+	// EpochDurationMs       *iotajsonrpc.BigInt `json:"epoch_duration_ms" swagger:"required"`
 }
 
 func (p *Protocol) String() string {

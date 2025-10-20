@@ -4,14 +4,14 @@ import (
 	"context"
 	"errors"
 
-	"github.com/iotaledger/wasp/v2/clients/bindings"
+	"github.com/iotaledger/wasp/v2/clients"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 )
 
 func GetValidatorAddress(ctx context.Context) (iotago.Address, error) {
-	api := bindings.NewBindingClient(iotaconn.LocalnetEndpointURL)
+	api := clients.NewBindingClient(iotaconn.LocalnetEndpointURL)
 	apy, err := api.GetValidatorsApy(ctx)
 	if err != nil {
 		return iotago.Address{}, err
@@ -26,7 +26,7 @@ func GetValidatorAddress(ctx context.Context) (iotago.Address, error) {
 }
 
 func GetValidatorAddressWithCoins(ctx context.Context) (iotago.Address, error) {
-	api := bindings.NewBindingClient(iotaconn.LocalnetEndpointURL)
+	api := clients.NewBindingClient(iotaconn.LocalnetEndpointURL)
 	apy, err := api.GetValidatorsApy(ctx)
 	if err != nil {
 		return iotago.Address{}, err
