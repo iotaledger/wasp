@@ -58,11 +58,11 @@ func SetupDistributedKeyGeneration(
 	//
 	// Initialize the DKG subsystem in each node.
 	distKeyGenNodes := make([]*distkeygen.Node, len(peeringURLs))
-	dkShareRegistrys := make([]registry.DKShareRegistry, len(peeringURLs))
+	dkShareRegistries := make([]registry.DKShareRegistry, len(peeringURLs))
 	for i := range peeringURLs {
-		dkShareRegistrys[i] = testutil.NewDistributedKeyGenerationRegistry(peerIdentities[i].GetPrivateKey())
+		dkShareRegistries[i] = testutil.NewDistributedKeyGenerationRegistry(peerIdentities[i].GetPrivateKey())
 		distKeyGenNode, err := distkeygen.NewNode(
-			peerIdentities[i], networkProviders[i], dkShareRegistrys[i],
+			peerIdentities[i], networkProviders[i], dkShareRegistries[i],
 			testlogger.WithLevel(log.NewChildLogger(fmt.Sprintf("peeringURL:%s", peeringURLs[i])), slog.LevelError, false),
 		)
 		require.NoError(t, err)
@@ -81,14 +81,14 @@ func SetupDistributedKeyGeneration(
 	require.NotNil(t, dkShare.GetAddress())
 	require.NotNil(t, dkShare.GetSharedPublic())
 	require.NoError(t, networkCloser.Close())
-	return dkShare.GetAddress(), dkShareRegistrys
+	return dkShare.GetAddress(), dkShareRegistries
 }
 
 func SetupDistributedKeyGenerationTrivial(
 	t require.TestingT,
 	n, f int,
 	peerIdentities []*cryptolib.KeyPair,
-	dkShareRegistrys []registry.DKShareRegistry, // Will be used if not nil.
+	dkShareRegistries []registry.DKShareRegistry, // Will be used if not nil.
 ) (*cryptolib.Address, []registry.DKShareRegistry) {
 	nodePubKeys := PublicKeys(peerIdentities)
 	dssSuite := tcrypto.DefaultEd25519Suite()
@@ -111,10 +111,10 @@ func SetupDistributedKeyGenerationTrivial(
 	}
 	//
 	// Create the DKShare objects.
-	if dkShareRegistrys == nil {
-		dkShareRegistrys = make([]registry.DKShareRegistry, len(peerIdentities))
+	if dkShareRegistries == nil {
+		dkShareRegistries = make([]registry.DKShareRegistry, len(peerIdentities))
 	}
-	require.Equal(t, n, len(dkShareRegistrys))
+	require.Equal(t, n, len(dkShareRegistries))
 	var address *cryptolib.Address
 	for i, identity := range peerIdentities {
 		indexUint16, err := safecast.Convert[uint16](i)
@@ -148,12 +148,12 @@ func SetupDistributedKeyGenerationTrivial(
 		if address == nil {
 			address = nodeDKS.GetAddress()
 		}
-		if dkShareRegistrys[i] == nil {
-			dkShareRegistrys[i] = testutil.NewDistributedKeyGenerationRegistry(identity.GetPrivateKey())
+		if dkShareRegistries[i] == nil {
+			dkShareRegistries[i] = testutil.NewDistributedKeyGenerationRegistry(identity.GetPrivateKey())
 		}
-		require.NoError(t, dkShareRegistrys[i].SaveDKShare(nodeDKS))
+		require.NoError(t, dkShareRegistries[i].SaveDKShare(nodeDKS))
 	}
-	return address, dkShareRegistrys
+	return address, dkShareRegistries
 }
 
 func MakeSharedSecret(suite suites.Suite, n, t int) (kyber.Point, *share.PubPoly, []*share.PriShare) {

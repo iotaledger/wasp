@@ -42,11 +42,11 @@ func TestBasic(t *testing.T) {
 	//
 	// Initialize the DKG subsystem in each node.
 	distKeyGenNodes := make([]*distkeygen.Node, len(peeringURLs))
-	dkShareRegistrys := make([]registry.DKShareRegistry, len(peeringURLs))
+	dkShareRegistries := make([]registry.DKShareRegistry, len(peeringURLs))
 	for i := range peeringURLs {
-		dkShareRegistrys[i] = testutil.NewDistributedKeyGenerationRegistry(peerIdentities[i].GetPrivateKey())
+		dkShareRegistries[i] = testutil.NewDistributedKeyGenerationRegistry(peerIdentities[i].GetPrivateKey())
 		distKeyGenNode, err := distkeygen.NewNode(
-			peerIdentities[i], networkProviders[i], dkShareRegistrys[i],
+			peerIdentities[i], networkProviders[i], dkShareRegistries[i],
 			testlogger.WithLevel(log.NewChildLogger(fmt.Sprintf("PeeringURL:%s", peeringURLs[i])), hivelog.LevelDebug, false),
 		)
 		require.NoError(t, err)
@@ -71,7 +71,7 @@ func TestBasic(t *testing.T) {
 	// dssPartSigs := make([]*dss.PartialSig, len(peerPeeringURLs))
 	blsPartSigs := make([][]byte, len(peeringURLs))
 	var aggrDks tcrypto.DKShare
-	for i, r := range dkShareRegistrys {
+	for i, r := range dkShareRegistries {
 		dks, err2 := r.LoadDKShare(dkShare.GetAddress())
 		if i == 0 {
 			aggrDks = dks
