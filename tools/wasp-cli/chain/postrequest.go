@@ -48,8 +48,12 @@ func initPostRequestCmd() *cobra.Command {
 		Short: "Post a request to a contract",
 		Long:  "Post a request to contract <name>, function <funcname> with given params.",
 		Args:  cobra.MinimumNArgs(2),
-		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultWaspNodeFallback(node)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+			node, err = waspcmd.DefaultWaspNodeFallback(node)
+			if err != nil {
+				return err
+			}
 			chain = defaultChainFallback(chain)
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
@@ -67,6 +71,7 @@ func initPostRequestCmd() *cobra.Command {
 				L2GasBudget: iotaclient.DefaultGasBudget,
 			}
 			postRequest(ctx, client, chain, msg, postParams, postRequestParams.offLedger)
+			return nil
 		},
 	}
 

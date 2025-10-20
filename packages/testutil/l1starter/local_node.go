@@ -64,7 +64,6 @@ func (in *LocalIotaNode) start(ctx context.Context) {
 			"iota",
 			"start",
 			"--force-regenesis",
-			fmt.Sprintf("--epoch-duration-ms=%d", 60000),
 			"--with-faucet",
 			fmt.Sprintf("--faucet-amount=%d", iotaclient.SingleCoinFundsFromFaucetAmount),
 		},

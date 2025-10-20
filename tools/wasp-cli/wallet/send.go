@@ -21,17 +21,21 @@ import (
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/util"
 )
 
-func initSendFundsCmd() *cobra.Command {
+func initSendFundsCmd() *cobra.Command { //nolint:funlen
 	cmd := &cobra.Command{
 		Use:   "send-funds <target-address> <token-id1>|<amount1> <token-id2>|<amount2> ...",
 		Short: "Transfer L1 tokens",
 		Args:  cobra.MinimumNArgs(2),
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			targetAddress, err := cryptolib.NewAddressFromHexString(args[0])
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 
 			tokens := util.ParseFungibleTokens(util.ArgsToFungibleTokensStr(args[1:]))
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 
 			log.Printf("\nSending \n\t%v \n\tto: %v\n\n", tokens, args[0])
 
@@ -43,14 +47,18 @@ func initSendFundsCmd() *cobra.Command {
 			client := cliclients.L1Client()
 
 			balances, err := client.GetAllBalances(context.Background(), senderAddress.AsIotaAddress())
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 			for _, balance := range balances {
 				requestedAmt := tokens.Coins.Get(coin.MustTypeFromString(balance.CoinType.String()))
 				var coinValue uint64
 				coinValue, err = safecast.Convert[uint64](balance.TotalBalance.Int64())
-				log.Check(err)
+				if err != nil {
+					return err
+				}
 				if coin.Value(coinValue) < requestedAmt {
-					panic("not enough balance")
+					return fmt.Errorf("not enough balance")
 				}
 			}
 
@@ -61,7 +69,9 @@ func initSendFundsCmd() *cobra.Command {
 					Owner: senderAddress.AsIotaAddress(),
 				},
 			)
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 			for cointype, balance := range tokens.Coins.Iterate() {
 				var pickedCoin *iotajsonrpc.PickedCoins
 				pickedCoin, err = iotajsonrpc.PickupCoinsWithCointype(
@@ -69,20 +79,24 @@ func initSendFundsCmd() *cobra.Command {
 					balance.BigInt(),
 					iotajsonrpc.MustCoinTypeFromString(cointype.String()),
 				)
-				log.Check(err)
+				if err != nil {
+					return err
+				}
 
 				err = ptb.Pay(pickedCoin.CoinRefs(), []*iotago.Address{targetAddress.AsIotaAddress()}, []uint64{balance.Uint64()})
-				log.Check(err)
+				if err != nil {
+					return err
+				}
 			}
 
 			pt := ptb.Finish()
 
 			gasPayments, err := client.FindCoinsForGasPayment(context.TODO(), senderAddress.AsIotaAddress(), pt, iotaclient.DefaultGasPrice, iotaclient.DefaultGasBudget)
 			if err != nil {
-				panic(fmt.Sprintf("failed to find gas payment: %s", err))
+				return fmt.Errorf("failed to find gas payment: %s", err)
 			}
 			if len(gasPayments) == 0 {
-				panic("no coin found as gas payment")
+				return fmt.Errorf("no coin found as gas payment")
 			}
 			tx := iotago.NewProgrammable(
 				senderAddress.AsIotaAddress(),
@@ -92,7 +106,9 @@ func initSendFundsCmd() *cobra.Command {
 				iotaclient.DefaultGasPrice,
 			)
 			txBytes, err := bcs.Marshal(&tx)
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 
 			res, err := client.SignAndExecuteTransaction(
 				context.Background(),
@@ -105,9 +121,11 @@ func initSendFundsCmd() *cobra.Command {
 					},
 				},
 			)
-
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 			fmt.Printf("%v", res)
+			return nil
 		},
 	}
 

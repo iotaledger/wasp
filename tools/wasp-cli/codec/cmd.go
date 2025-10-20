@@ -57,8 +57,8 @@ func createSubCmd(use, short string) *cobra.Command {
 		Use:   use,
 		Short: short,
 		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			log.Check(cmd.Help())
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmd.Help()
 		},
 	}
 }
@@ -117,9 +117,8 @@ func initDecodeWALCmd() *cobra.Command {
 				}
 			}
 
-			receipts, err := blocklog.RequestReceiptsFromBlock(block)
 			fmt.Printf("\nRequests:\n\n")
-
+			receipts, err := blocklog.RequestReceiptsFromBlock(block)
 			if err != nil {
 				fmt.Println("Failed to decode receipts")
 				fmt.Println(err)

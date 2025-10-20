@@ -3,6 +3,7 @@ package solo
 import (
 	"hash/fnv"
 	"math"
+	"math/rand/v2"
 	"time"
 
 	"fortio.org/safecast"
@@ -82,7 +83,9 @@ func (env *Solo) WaitForNewBalance(address *cryptolib.Address, startBalance coin
 		}
 
 		count++
-		time.Sleep(1 * time.Second)
+		// wait for random time in case of collision
+		rint := rand.IntN(100)
+		time.Sleep(time.Duration(rint)*50*time.Millisecond + time.Second)
 	}
 }
 
@@ -102,6 +105,7 @@ func (env *Solo) GetFundsFromFaucet(target *cryptolib.Address) {
 	err := iotaclient.RequestFundsFromFaucet(env.ctx, target.AsIotaAddress(), env.l1Config.IotaFaucetURL)
 	env.WaitForNewBalance(target, currentBalance)
 	require.NoError(env.T, err)
+	env.WaitForNewBalance(target, currentBalance)
 	require.GreaterOrEqual(env.T, env.L1BaseTokens(target), coin.Value(iotaclient.FundsFromFaucetAmount))
 }
 

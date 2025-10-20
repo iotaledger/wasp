@@ -21,12 +21,17 @@ func initActivateCmd() *cobra.Command {
 		Use:   "activate",
 		Short: "Activates the chain on selected nodes",
 		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultWaspNodeFallback(node)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+			node, err = waspcmd.DefaultWaspNodeFallback(node)
+			if err != nil {
+				return err
+			}
 			chainName = defaultChainFallback(chainName)
 			chainID := config.GetChain(chainName)
 			ctx := context.Background()
 			activateChain(ctx, node, chainName, chainID)
+			return nil
 		},
 	}
 
@@ -39,7 +44,6 @@ func initActivateCmd() *cobra.Command {
 func activateChain(ctx context.Context, node string, chainName string, chainID isc.ChainID) {
 	client := cliclients.WaspClientWithVersionCheck(ctx, node)
 	r, httpStatus, err := client.ChainsAPI.GetChainInfo(ctx).Execute() //nolint:bodyclose // false positive
-
 	if err != nil && httpStatus.StatusCode != http.StatusNotFound {
 		log.Check(err)
 	}
@@ -53,7 +57,6 @@ func activateChain(ctx context.Context, node string, chainName string, chainID i
 			IsActive:    true,
 			AccessNodes: []string{},
 		}).Execute() //nolint:bodyclose // false positive
-
 		log.Check(err2)
 	} else {
 		_, err = client.ChainsAPI.ActivateChain(ctx, chainID.String()).Execute() //nolint:bodyclose // false positive
@@ -71,15 +74,22 @@ func initDeactivateCmd() *cobra.Command {
 		Use:   "deactivate",
 		Short: "Deactivates the chain on selected nodes",
 		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			chainName = defaultChainFallback(chainName)
 
-			node = waspcmd.DefaultWaspNodeFallback(node)
+			var err error
+			node, err = waspcmd.DefaultWaspNodeFallback(node)
+			if err != nil {
+				return err
+			}
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
-			_, err := client.ChainsAPI.DeactivateChain(ctx).Execute() //nolint:bodyclose // false positive
-			log.Check(err)
+			_, err = client.ChainsAPI.DeactivateChain(ctx).Execute() //nolint:bodyclose // false positive
+			if err != nil {
+				return err
+			}
 			log.Printf("Chain: %v \nDeactivated.\n", chainName)
+			return nil
 		},
 	}
 	waspcmd.WithWaspNodeFlag(cmd, &node)

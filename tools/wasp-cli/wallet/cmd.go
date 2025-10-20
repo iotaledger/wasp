@@ -3,7 +3,6 @@
 package wallet
 
 import (
-	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/wallet"
@@ -45,8 +44,8 @@ func initWalletCmd() *cobra.Command {
 		Use:   "wallet <command>",
 		Short: "Wallet tools",
 		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			log.Check(cmd.Help())
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmd.Help()
 		},
 	}
 }

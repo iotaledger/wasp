@@ -4,6 +4,7 @@
 package testutil // not `..._test` because it uses peeringMsg.
 
 import (
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -48,9 +49,7 @@ func TestPeeringNetDynamicUnreliable(t *testing.T) {
 	}
 	inCh := make(chan *peeringMsg)
 	outCh := make(chan *peeringMsg, 1000)
-	stopCh := make(chan bool)
-	durations := make([]time.Duration, 0)
-	go testRecvLoop(outCh, &durations, stopCh)
+	recvLoop := runTestRecvLoop(outCh)
 	srcPeerIdentity := cryptolib.NewKeyPair()
 	dstPeerIdentity := cryptolib.NewKeyPair()
 	someNode := peeringNode{peeringURL: "src", identity: srcPeerIdentity}
@@ -68,17 +67,17 @@ func TestPeeringNetDynamicUnreliable(t *testing.T) {
 	//
 	// Validate the results (with some tolerance for randomness).
 	{ // 50% of messages dropped + 50% duplicated -> delivered ~75%
-		require.Greater(t, len(durations), 500)
-		require.Less(t, len(durations), 900)
+		require.Greater(t, recvLoop.ReceivedCount(), 500)
+		require.Less(t, recvLoop.ReceivedCount(), 900)
 	}
 	{ // Average should be between the specified boundaries.
-		avgDuration := averageDuration(durations)
+		avgDuration := recvLoop.AverageDuration()
 		require.Greater(t, avgDuration, int64(50))
 		require.Less(t, avgDuration, int64(100))
 	}
 	//
 	// Stop the test.
-	stopCh <- true
+	recvLoop.Stop()
 	behavior.Close()
 }
 
@@ -88,9 +87,7 @@ func TestPeeringNetDynamicChanging(t *testing.T) {
 	}
 	inCh := make(chan *peeringMsg)
 	outCh := make(chan *peeringMsg, 1000)
-	stopCh := make(chan bool)
-	durations := make([]time.Duration, 0)
-	go testRecvLoop(outCh, &durations, stopCh)
+	recvLoop := runTestRecvLoop(outCh)
 	srcPeerIdentity := cryptolib.NewKeyPair()
 	dstPeerIdentity := cryptolib.NewKeyPair()
 	someNode := peeringNode{peeringURL: "src", identity: srcPeerIdentity}
@@ -102,9 +99,9 @@ func TestPeeringNetDynamicChanging(t *testing.T) {
 		sendMessage(&someNode, inCh)
 	}
 	time.Sleep(100 * time.Millisecond)
-	require.Equal(t, 100, len(durations))
-	require.Less(t, averageDuration(durations), int64(20))
-	durations = durations[:0]
+	require.Equal(t, 100, recvLoop.ReceivedCount())
+	require.Less(t, recvLoop.AverageDuration(), int64(20))
+	recvLoop.Reset()
 
 	deliver40Name := "Deliver40"
 	deliver70Name := "Deliver70"
@@ -113,9 +110,9 @@ func TestPeeringNetDynamicChanging(t *testing.T) {
 		sendMessage(&someNode, inCh)
 	}
 	time.Sleep(100 * time.Millisecond)
-	require.InDelta(t, 280, len(durations), 90)
-	require.Less(t, averageDuration(durations), int64(20))
-	durations = durations[:0]
+	require.InDelta(t, 280, recvLoop.ReceivedCount(), 90)
+	require.Less(t, recvLoop.AverageDuration(), int64(20))
+	recvLoop.Reset()
 
 	delayName := "Delay"
 	behavior.WithDelayingChannel(&delayName, 20*time.Millisecond, 70*time.Millisecond) // 28% delivery probability and 20-70 ms delay
@@ -123,39 +120,37 @@ func TestPeeringNetDynamicChanging(t *testing.T) {
 		sendMessage(&someNode, inCh)
 	}
 	time.Sleep(150 * time.Millisecond)
-	require.InDelta(t, 280, len(durations), 90)
-	require.InDelta(t, 45, averageDuration(durations), 20)
-	durations = durations[:0]
+	require.InDelta(t, 280, recvLoop.ReceivedCount(), 90)
+	require.InDelta(t, 45, recvLoop.AverageDuration(), 20)
+	recvLoop.Reset()
 
 	behavior.RemoveHandler(deliver40Name) // 70% delivery probability and 20-70 ms delay
 	for i := 0; i < 1000; i++ {
 		sendMessage(&someNode, inCh)
 	}
 	time.Sleep(150 * time.Millisecond)
-	require.InDelta(t, 700, len(durations), 90)
-	require.InDelta(t, 45, averageDuration(durations), 20)
-	durations = durations[:0]
+	require.InDelta(t, 700, recvLoop.ReceivedCount(), 90)
+	require.InDelta(t, 45, recvLoop.AverageDuration(), 20)
+	recvLoop.Reset()
 
 	behavior.RemoveHandler(delayName) // 70% delivery probability without a delay
 	for i := 0; i < 1000; i++ {
 		sendMessage(&someNode, inCh)
 	}
 	time.Sleep(100 * time.Millisecond)
-	require.InDelta(t, 700, len(durations), 90)
-	require.Less(t, averageDuration(durations), int64(20))
-	durations = durations[:0]
+	require.InDelta(t, 700, recvLoop.ReceivedCount(), 90)
+	require.Less(t, recvLoop.AverageDuration(), int64(20))
+	recvLoop.Reset()
 
 	// Stop the test.
-	stopCh <- true
+	recvLoop.Stop()
 	behavior.Close()
 }
 
 func TestPeeringNetDynamicLosingChannel(t *testing.T) {
 	inCh := make(chan *peeringMsg)
 	outCh := make(chan *peeringMsg, 1000)
-	stopCh := make(chan bool)
-	durations := make([]time.Duration, 0)
-	go testRecvLoop(outCh, &durations, stopCh)
+	recvLoop := runTestRecvLoop(outCh)
 	srcPeerIdentity := cryptolib.NewKeyPair()
 	dstPeerIdentity := cryptolib.NewKeyPair()
 	someNode := peeringNode{peeringURL: "src", identity: srcPeerIdentity}
@@ -167,11 +162,11 @@ func TestPeeringNetDynamicLosingChannel(t *testing.T) {
 		sendMessage(&someNode, inCh)
 	}
 	time.Sleep(100 * time.Millisecond)
-	require.InDelta(t, 500, len(durations), 90)
-	require.Less(t, averageDuration(durations), int64(20))
+	require.InDelta(t, 500, recvLoop.ReceivedCount(), 90)
+	require.Less(t, recvLoop.AverageDuration(), int64(20))
 
 	// Stop the test.
-	stopCh <- true
+	recvLoop.Stop()
 	behavior.Close()
 }
 
@@ -181,9 +176,7 @@ func TestPeeringNetDynamicRepeatingChannel(t *testing.T) {
 	}
 	inCh := make(chan *peeringMsg)
 	outCh := make(chan *peeringMsg, 10000)
-	stopCh := make(chan bool)
-	durations := make([]time.Duration, 0)
-	go testRecvLoop(outCh, &durations, stopCh)
+	recvLoop := runTestRecvLoop(outCh)
 	srcPeerIdentity := cryptolib.NewKeyPair()
 	dstPeerIdentity := cryptolib.NewKeyPair()
 	someNode := peeringNode{peeringURL: "src", identity: srcPeerIdentity}
@@ -195,11 +188,11 @@ func TestPeeringNetDynamicRepeatingChannel(t *testing.T) {
 		sendMessage(&someNode, inCh)
 	}
 	time.Sleep(100 * time.Millisecond)
-	require.InDelta(t, 2500, len(durations), 90)
-	require.Less(t, averageDuration(durations), int64(20))
+	require.InDelta(t, 2500, recvLoop.ReceivedCount(), 90)
+	require.Less(t, recvLoop.AverageDuration(), int64(20))
 
 	// Stop the test.
-	stopCh <- true
+	recvLoop.Stop()
 	behavior.Close()
 }
 
@@ -209,9 +202,7 @@ func TestPeeringNetDynamicDelayingChannel(t *testing.T) {
 	}
 	inCh := make(chan *peeringMsg)
 	outCh := make(chan *peeringMsg, 1000)
-	stopCh := make(chan bool)
-	durations := make([]time.Duration, 0)
-	go testRecvLoop(outCh, &durations, stopCh)
+	recvLoop := runTestRecvLoop(outCh)
 	srcPeerIdentity := cryptolib.NewKeyPair()
 	dstPeerIdentity := cryptolib.NewKeyPair()
 	someNode := peeringNode{peeringURL: "src", identity: srcPeerIdentity}
@@ -223,11 +214,11 @@ func TestPeeringNetDynamicDelayingChannel(t *testing.T) {
 		sendMessage(&someNode, inCh)
 	}
 	time.Sleep(100 * time.Millisecond)
-	require.Equal(t, 100, len(durations))
-	require.InDelta(t, 50, averageDuration(durations), 20)
+	require.Equal(t, 100, recvLoop.ReceivedCount())
+	require.InDelta(t, 50, recvLoop.AverageDuration(), 20)
 
 	// Stop the test.
-	stopCh <- true
+	recvLoop.Stop()
 	behavior.Close()
 }
 
@@ -239,11 +230,8 @@ func TestPeeringNetDynamicPeerDisconnected(t *testing.T) {
 	outCh := make(chan *peeringMsg, 1000)
 	inChD := make(chan *peeringMsg)
 	outChD := make(chan *peeringMsg)
-	stopCh := make(chan bool)
-	durations := make([]time.Duration, 0)
-	durationsD := make([]time.Duration, 0)
-	go testRecvLoop(outCh, &durations, stopCh)
-	go testRecvLoop(outChD, &durationsD, stopCh)
+	recvLoop := runTestRecvLoop(outCh)
+	recvLoopD := runTestRecvLoop(outChD)
 	srcPeerIdentity := cryptolib.NewKeyPair()
 	dstPeerIdentity := cryptolib.NewKeyPair()
 	disPeerIdentity := cryptolib.NewKeyPair()
@@ -260,24 +248,65 @@ func TestPeeringNetDynamicPeerDisconnected(t *testing.T) {
 		sendMessage(&disconnectedNode, inCh) // Won't be received - source is disconnected
 	}
 	time.Sleep(100 * time.Millisecond)
-	require.Equal(t, 100, len(durations))
-	require.Less(t, averageDuration(durations), int64(20))
-	require.Equal(t, 0, len(durationsD))
+	require.Equal(t, 100, recvLoop.ReceivedCount())
+	require.Less(t, recvLoop.AverageDuration(), int64(20))
+	require.Equal(t, 0, recvLoopD.ReceivedCount())
 
 	// Stop the test.
-	stopCh <- true
+	recvLoop.Stop()
+	recvLoopD.Stop()
 	behavior.Close()
 }
 
-func testRecvLoop(outCh chan *peeringMsg, durations *[]time.Duration, stopCh chan bool) {
-	for {
-		select {
-		case <-stopCh:
-			return
-		case msg := <-outCh:
-			*durations = append(*durations, time.Since(time.Unix(0, msg.timestamp)))
-		}
+type testLoopStats struct {
+	receivedCount   atomic.Int32
+	averageDuration atomic.Int64
+	resetCh         chan struct{}
+	stopCh          chan struct{}
+}
+
+func (s *testLoopStats) ReceivedCount() int {
+	return int(s.receivedCount.Load())
+}
+
+func (s *testLoopStats) AverageDuration() int64 {
+	return s.averageDuration.Load()
+}
+
+func (s *testLoopStats) Reset() {
+	s.resetCh <- struct{}{}
+}
+
+func (s *testLoopStats) Stop() {
+	s.stopCh <- struct{}{}
+}
+
+func runTestRecvLoop(outCh chan *peeringMsg) *testLoopStats {
+	stats := testLoopStats{
+		resetCh: make(chan struct{}),
+		stopCh:  make(chan struct{}),
 	}
+
+	var durations []time.Duration
+
+	go func() {
+		for {
+			select {
+			case <-stats.stopCh:
+				return
+			case <-stats.resetCh:
+				durations = durations[:0]
+				stats.averageDuration.Store(0)
+				stats.receivedCount.Store(0)
+			case msg := <-outCh:
+				durations = append(durations, time.Since(time.Unix(0, msg.timestamp)))
+				stats.receivedCount.Add(1)
+				stats.averageDuration.Store(averageDuration(durations))
+			}
+		}
+	}()
+
+	return &stats
 }
 
 func averageDuration(durations []time.Duration) int64 {

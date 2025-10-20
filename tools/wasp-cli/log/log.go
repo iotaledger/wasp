@@ -24,9 +24,11 @@ import (
 )
 
 var (
-	VerboseFlag bool
-	DebugFlag   bool
-	JSONFlag    bool
+	VerboseFlag     bool
+	DebugFlag       bool
+	JSONFlag        bool
+	JSONCompactFlag bool
+	TableFlag       bool
 
 	hiveLogger log.Logger
 )
@@ -34,7 +36,9 @@ var (
 func Init(rootCmd *cobra.Command) {
 	rootCmd.PersistentFlags().BoolVarP(&VerboseFlag, "verbose", "", false, "verbose output")
 	rootCmd.PersistentFlags().BoolVarP(&DebugFlag, "debug", "d", false, "output debug information")
-	rootCmd.PersistentFlags().BoolVarP(&JSONFlag, "json", "j", false, "json output")
+	rootCmd.PersistentFlags().BoolVarP(&JSONFlag, "json", "j", false, "pretty-printed json output")
+	rootCmd.PersistentFlags().BoolVarP(&JSONCompactFlag, "json-compact", "", false, "compact json output (no indentation)")
+	rootCmd.PersistentFlags().BoolVarP(&TableFlag, "table", "t", false, "table output format")
 }
 
 func HiveLogger() log.Logger {
@@ -121,6 +125,21 @@ func ParseCLIOutputTemplate(output CLIOutput, templateDefinition string) (string
 }
 
 func PrintCLIOutput(output CLIOutput) {
+	// Use the new format system via adapter for consistency
+	// This provides backward compatibility while using the unified output system
+
+	outputText, err := GetCLIOutputText(output)
+	Check(err)
+	Printf("%s", outputText)
+	// make sure we always end with newline
+	if !strings.HasSuffix(outputText, "\n") {
+		Printf("\n")
+	}
+}
+
+// PrintCLIOutputDeprecated is the old implementation, kept for reference
+// Deprecated: Use format.PrintLegacyOutput instead for new code
+func PrintCLIOutputDeprecated(output CLIOutput) {
 	outputText, err := GetCLIOutputText(output)
 	Check(err)
 	Printf("%s", outputText)
@@ -164,11 +183,11 @@ func PrintTable(header []string, rows [][]string) {
 	}
 	w := tabwriter.NewWriter(os.Stdout, 5, 0, 2, ' ', 0)
 
-	fmt.Fprintf(w, strings.Join(makeSeparator(header), "\t")+"\n")
-	fmt.Fprintf(w, strings.Join(header, "\t")+"\n")
-	fmt.Fprintf(w, strings.Join(makeSeparator(header), "\t")+"\n")
+	fmt.Fprintf(w, "%s", strings.Join(makeSeparator(header), "\t")+"\n")
+	fmt.Fprintf(w, "%s", strings.Join(header, "\t")+"\n")
+	fmt.Fprintf(w, "%s", strings.Join(makeSeparator(header), "\t")+"\n")
 	for _, row := range rows {
-		fmt.Fprintf(w, strings.Join(row, "\t")+"\n")
+		fmt.Fprintf(w, "%s", strings.Join(row, "\t")+"\n")
 	}
 	w.Flush()
 }

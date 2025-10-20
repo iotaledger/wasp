@@ -139,8 +139,9 @@ func initializeDeploymentWithGasCoin(ctx context.Context, signer wallets.Wallet,
 
 	client := cliclients.WaspClientWithVersionCheck(ctx, node)
 	_, header, err := client.ChainsAPI.GetChainInfo(ctx).Execute()
-	defer header.Body.Close()
-
+	if header != nil && header.Body != nil {
+		defer header.Body.Close()
+	}
 	// We expect a 404 if no chain has been deployed yet. In any other case, show the error.
 	if err != nil && !strings.Contains(err.Error(), strconv.Itoa(http.StatusNotFound)) {
 		return nil, fmt.Errorf("failed to get current chain info: %w", err)
@@ -199,8 +200,12 @@ func initDeployCmd() *cobra.Command {
 		Use:   "deploy --chain=<name>",
 		Short: "Deploy a new chain",
 		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultWaspNodeFallback(node)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+			node, err = waspcmd.DefaultWaspNodeFallback(node)
+			if err != nil {
+				return err
+			}
 			chainName = defaultChainFallback(chainName)
 			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 			defer cancel()
@@ -209,13 +214,14 @@ func initDeployCmd() *cobra.Command {
 
 			result, err := initializeDeploymentWithGasCoin(ctx, kp, node, chainName, peers, quorum)
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
 			stateMetadata := initializeNewChainState(kp.Address(), result.gasCoinObject, result.l1Params)
 			chainID := finalizeChainDeployment(ctx, node, *result, stateMetadata)
 
 			config.AddChain(chainName, chainID.String())
 			activateChain(ctx, node, chainName, chainID)
+			return nil
 		},
 	}
 

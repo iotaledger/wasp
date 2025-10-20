@@ -2,6 +2,7 @@ package chain
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/spf13/cobra"
 
@@ -26,15 +27,19 @@ func initRegisterERC20NativeTokenCmd() *cobra.Command {
 		Use:   "register-erc20-native-token <coinType>",
 		Short: "Call evm core contract registerERC20NativeToken entry point",
 		Args:  cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultWaspNodeFallback(node)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+			node, err = waspcmd.DefaultWaspNodeFallback(node)
+			if err != nil {
+				return err
+			}
 			chainAliasName = defaultChainFallback(chainAliasName)
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
 			coinType, err := coin.TypeFromString(args[0])
 			if err != nil {
-				log.Fatalf("invalid coin type: %s => %v", coinType, err)
+				return fmt.Errorf("invalid coin type: %s => %v", coinType, err)
 			}
 
 			request := evm.FuncRegisterERC20Coin.Message(coinType)
@@ -43,6 +48,7 @@ func initRegisterERC20NativeTokenCmd() *cobra.Command {
 			}, withOffLedger)
 
 			log.Printf("ERC20 contract deployed at address %s", iscmagic.ERC20CoinAddress(coinType))
+			return nil
 		},
 	}
 

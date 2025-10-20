@@ -2,8 +2,6 @@ package chain
 
 import (
 	"github.com/spf13/cobra"
-
-	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
 )
 
 func initChainCmd() *cobra.Command {
@@ -11,8 +9,8 @@ func initChainCmd() *cobra.Command {
 		Use:   "chain <command>",
 		Short: "Interact with a chain",
 		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			log.Check(cmd.Help())
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmd.Help()
 		},
 	}
 }
@@ -44,6 +42,6 @@ func Init(rootCmd *cobra.Command) {
 	chainCmd.AddCommand(initAddChainCmd())
 	chainCmd.AddCommand(initRegisterERC20NativeTokenCmd())
 	chainCmd.AddCommand(initSetCoinMetadataCmd())
-	// chainCmd.AddCommand(initCreateNativeTokenCmd())
 	chainCmd.AddCommand(initMetadataCmd())
+	chainCmd.AddCommand(initBuildIndex())
 }

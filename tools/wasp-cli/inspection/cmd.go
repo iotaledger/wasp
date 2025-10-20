@@ -4,8 +4,6 @@ package inspection
 
 import (
 	"github.com/spf13/cobra"
-
-	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
 )
 
 func initInspect() *cobra.Command {
@@ -13,8 +11,8 @@ func initInspect() *cobra.Command {
 		Use:   "inspect <command>",
 		Short: "Get information about a given object",
 		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			log.Check(cmd.Help())
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmd.Help()
 		},
 	}
 }

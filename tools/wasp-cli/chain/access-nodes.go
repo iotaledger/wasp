@@ -23,13 +23,19 @@ func initPermissionlessAccessNodesCmd() *cobra.Command {
 		Use:   "access-nodes <action (add|remove)> --peers=<...>",
 		Short: "Changes the access nodes of a chain for the target node.",
 		Args:  cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultWaspNodeFallback(node)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+			node, err = waspcmd.DefaultWaspNodeFallback(node)
+			if err != nil {
+				return err
+			}
 			chain = defaultChainFallback(chain)
 
 			action := args[0]
-			node = waspcmd.DefaultWaspNodeFallback(node)
-
+			node, err = waspcmd.DefaultWaspNodeFallback(node)
+			if err != nil {
+				return err
+			}
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
@@ -59,6 +65,7 @@ func initPermissionlessAccessNodesCmd() *cobra.Command {
 			for _, peer := range peers {
 				executeActionFunc(peer)
 			}
+			return nil
 		},
 	}
 

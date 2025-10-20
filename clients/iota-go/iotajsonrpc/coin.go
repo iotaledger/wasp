@@ -75,6 +75,29 @@ func (cs Coins) PickCoinNoLess(amount uint64) (*Coin, error) {
 	return nil, errors.New("no coin is enough to cover the gas")
 }
 
+func (cs Coins) PickMultipleCoinsNoLess(amount uint64) ([]*Coin, error) {
+	if amount == 0 {
+		return nil, nil
+	}
+
+	sum := uint64(0)
+	var coins []*Coin
+	for _, c := range cs {
+		if sum >= amount {
+			return coins, nil
+		}
+		bal := c.Balance.Uint64()
+
+		need := amount - sum
+		coins = append(coins, c)
+		if bal >= need {
+			return coins, nil
+		}
+		sum += bal
+	}
+	return nil, errors.New("insufficient balance")
+}
+
 func (cs Coins) CoinRefs() []*iotago.ObjectRef {
 	coinRefs := make([]*iotago.ObjectRef, len(cs))
 	for idx, coin := range cs {

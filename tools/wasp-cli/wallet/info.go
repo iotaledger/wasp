@@ -2,12 +2,14 @@ package wallet
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/wallet"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/format"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
 )
 
@@ -19,26 +21,12 @@ func initAddressCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			myWallet := wallet.Load()
 			address := myWallet.Address()
-			log.PrintCLIOutput(&AddressModel{
-				Address: address.String(),
-				Index:   int(myWallet.AddressIndex()),
-			})
+			err := format.FormatWalletAddress(myWallet.AddressIndex(), address.String())
+			if err != nil {
+				log.Printf("Error formatting output: %v", err)
+			}
 		},
 	}
-}
-
-type AddressModel struct {
-	Index   int
-	Address string
-}
-
-var _ log.CLIOutput = &AddressModel{}
-
-func (a *AddressModel) AsText() (string, error) {
-	addressTemplate := `Address index: {{ .Index }}
-Address: {{ .Address }}
-`
-	return log.ParseCLIOutputTemplate(a, addressTemplate)
 }
 
 func initBalanceCmd() *cobra.Command {
@@ -49,15 +37,19 @@ func initBalanceCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			myWallet := wallet.Load()
 			address := myWallet.Address()
-
 			balance, err := cliclients.L1Client().GetAllBalances(context.Background(), address.AsIotaAddress())
-			log.Check(err)
+			if err != nil {
+				formatErr := format.FormatError("wallet_balance", fmt.Sprintf("Address: %s (index %d), Error: %s", address.String(), myWallet.AddressIndex(), err.Error()))
+				if formatErr != nil {
+					log.Printf("Error formatting output: %v", formatErr)
+				}
+				return
+			}
 
-			log.PrintCLIOutput(&BalanceModel{
-				Address:      address.String(),
-				AddressIndex: myWallet.AddressIndex(),
-				Balance:      balance,
-			})
+			err = format.FormatWalletBalance(myWallet.AddressIndex(), address.String(), balance)
+			if err != nil {
+				log.Printf("Error formatting output: %v", err)
+			}
 		},
 	}
 }

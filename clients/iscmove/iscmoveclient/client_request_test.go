@@ -127,6 +127,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 		coinRef, _ := buildDeployMintTestcoin(t, client, cryptolibSigner)
 		time.Sleep(3 * time.Second)
 		testCoinRef = append(testCoinRef, coinRef)
+		time.Sleep(3 * time.Second)
 	}
 
 	t.Run("success", func(t *testing.T) {

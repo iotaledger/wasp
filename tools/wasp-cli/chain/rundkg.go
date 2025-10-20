@@ -31,9 +31,14 @@ func initRunDKGCmd() *cobra.Command {
 		Use:   "rundkg --peers=...",
 		Short: "Runs the DKG on specified nodes",
 		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultWaspNodeFallback(node)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+			node, err = waspcmd.DefaultWaspNodeFallback(node)
+			if err != nil {
+				return err
+			}
 			doDKG(context.Background(), node, peers, quorum)
+			return nil
 		},
 	}
 

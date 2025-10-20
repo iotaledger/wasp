@@ -5,7 +5,6 @@ package authentication
 import (
 	"bufio"
 	"context"
-	"fmt"
 	"os"
 	"syscall"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/apiclient"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/config"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/format"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/waspcmd"
 )
@@ -30,12 +30,16 @@ func initSetTokenCmd() *cobra.Command {
 		Use:   "set-token",
 		Short: "Manually sets a token for a given node",
 		Args:  cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultWaspNodeFallback(node)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+			node, err = waspcmd.DefaultWaspNodeFallback(node)
+			if err != nil {
+				return err
+			}
 
 			config.SetToken(node, args[0])
 
-			fmt.Printf("Set token for %s", node)
+			return format.FormatAuthResult("success", node, "manual", "Token set successfully")
 		},
 	}
 	waspcmd.WithWaspNodeFlag(cmd, &node)
@@ -48,8 +52,12 @@ func initLoginCmd() *cobra.Command {
 		Use:   "login",
 		Short: "Authenticate against a Wasp node",
 		// Args:  cobra.ArbitraryArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultWaspNodeFallback(node)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+			node, err = waspcmd.DefaultWaspNodeFallback(node)
+			if err != nil {
+				return err
+			}
 			if username == "" || password == "" {
 				scanner := bufio.NewScanner(os.Stdin)
 
@@ -59,9 +67,10 @@ func initLoginCmd() *cobra.Command {
 
 				log.Printf("Password: ")
 				// int cast is needed for windows
-				passwordBytes, err := term.ReadPassword(int(syscall.Stdin)) //nolint:unconvert
+				var passwordBytes []byte
+				passwordBytes, err = term.ReadPassword(int(syscall.Stdin)) //nolint:unconvert
 				if err != nil {
-					panic(err)
+					return err
 				}
 
 				password = string(passwordBytes)
@@ -69,8 +78,7 @@ func initLoginCmd() *cobra.Command {
 
 			// If credentials are still empty, exit early.
 			if username == "" || password == "" {
-				log.Printf("Invalid credentials")
-				return
+				return format.FormatAuthResult("error", node, username, "Invalid credentials provided")
 			}
 
 			ctx := context.Background()
@@ -80,12 +88,13 @@ func initLoginCmd() *cobra.Command {
 					Username: username,
 					Password: password,
 				}).Execute()
-
-			log.Check(err)
+			if err != nil {
+				return format.FormatAuthResult("error", node, username, err.Error())
+			}
 
 			config.SetToken(node, token.Jwt)
 
-			log.Printf("\nSuccessfully authenticated\n")
+			return format.FormatAuthResult("success", node, username, "Authentication successful")
 		},
 	}
 	waspcmd.WithWaspNodeFlag(cmd, &node)

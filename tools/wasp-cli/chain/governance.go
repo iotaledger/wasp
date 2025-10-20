@@ -5,6 +5,7 @@ package chain
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/samber/lo"
 
@@ -19,7 +20,6 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/util"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/cliclients"
-	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/waspcmd"
 )
 
@@ -32,20 +32,26 @@ func initChangeAccessNodesCmd() *cobra.Command {
 		Use:   "gov-change-access-nodes <action (accept|remove|drop)> <pubkey>",
 		Short: "Changes the access nodes of a chain on the governance contract.",
 		Args:  cobra.MinimumNArgs(2),
-		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultWaspNodeFallback(node)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+			node, err = waspcmd.DefaultWaspNodeFallback(node)
+			if err != nil {
+				return err
+			}
 			chain = defaultChainFallback(chain)
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 			if len(args)%2 != 0 {
-				log.Fatal("wrong number of arguments")
+				return fmt.Errorf("wrong number of arguments")
 			}
 			pars := make(governance.ChangeAccessNodeActions, 0)
 
 			for i := 1; i < len(args); i += 2 {
 				pubkey, err := cryptolib.PublicKeyFromString(args[i])
 				action := args[i-1]
-				log.Check(err)
+				if err != nil {
+					return err
+				}
 
 				var actionResult governance.ChangeAccessNodeAction
 
@@ -57,7 +63,7 @@ func initChangeAccessNodesCmd() *cobra.Command {
 				case "drop":
 					actionResult = governance.ChangeAccessNodeActionDrop
 				default:
-					log.Fatal("invalid action")
+					return fmt.Errorf("invalid action")
 				}
 
 				pars = append(pars, lo.T2(pubkey, actionResult))
@@ -73,6 +79,7 @@ func initChangeAccessNodesCmd() *cobra.Command {
 				},
 				offLedger,
 			)
+			return nil
 		},
 	}
 
@@ -93,28 +100,42 @@ func initDisableFeePolicyCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "disable-feepolicy",
 		Short: "set token charged by each gas to free.",
-		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultWaspNodeFallback(node)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+			node, err = waspcmd.DefaultWaspNodeFallback(node)
+			if err != nil {
+				return err
+			}
 			chain = defaultChainFallback(chain)
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
-			callGovView := func(viewName string) isc.CallResults {
-				apiResult, _, err := client.ChainsAPI.CallView(ctx).
+			callGovView := func(viewName string) (isc.CallResults, error) {
+				var apiResult []string
+				apiResult, _, err = client.ChainsAPI.CallView(ctx).
 					ContractCallViewRequest(apiclient.ContractCallViewRequest{
 						ContractName: governance.Contract.Name,
 						FunctionName: viewName,
 					}).Execute() //nolint:bodyclose // false positive
-				log.Check(err)
-
-				result, err := apiextensions.APIResultToCallArgs(apiResult)
-				log.Check(err)
-				return result
+				if err != nil {
+					return nil, err
+				}
+				var result isc.CallResults
+				result, err = apiextensions.APIResultToCallArgs(apiResult)
+				if err != nil {
+					return nil, err
+				}
+				return result, nil
 			}
 
-			r := callGovView(governance.ViewGetFeePolicy.Name)
+			r, err := callGovView(governance.ViewGetFeePolicy.Name)
+			if err != nil {
+				return err
+			}
 			feePolicy, err := governance.ViewGetFeePolicy.DecodeOutput(r)
-			log.Check(err)
+			if err != nil {
+				return err
+			}
 			feePolicy.GasPerToken = util.Ratio32{}
 
 			postRequest(
@@ -128,6 +149,7 @@ func initDisableFeePolicyCmd() *cobra.Command {
 				},
 				offLedger,
 			)
+			return nil
 		},
 	}
 
