@@ -1346,7 +1346,7 @@ func createChainManager(
 	pipeliningLimit int,
 	postponeRecoveryMilestones int,
 	log log.Logger,
-) (chainmanager.ChainMgr, error) {
+) (*chainmanager.ChainMgr, error) {
 	return chainmanager.New(
 		cni.me,
 		cni.chainID,
