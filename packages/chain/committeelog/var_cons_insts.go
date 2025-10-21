@@ -12,7 +12,7 @@ import (
 
 type onLIInc = func(li LogIndex) gpa.OutMessages
 
-// consInsts implements the algorithm modeled in WaspChainCommitteeLogSUI.tla
+// VarConsInsts implements the algorithm modeled in WaspChainCommitteeLogSUI.tla
 type VarConsInsts struct {
 	haveConsOut bool
 	lis         map[LogIndex]*isc.StateAnchor
@@ -53,13 +53,13 @@ func NewVarConsInsts(
 	return vci
 }
 
-// Consensus at LI produced a TX.
+// ConsOutputDone - Consensus at LI produced a TX.
 func (vci *VarConsInsts) ConsOutputDone(li LogIndex, producedAnchor *isc.StateAnchor, cb onLIInc) gpa.OutMessages {
 	vci.haveConsOut = true
 	return vci.trySet(li.Next(), producedAnchor, cb)
 }
 
-// Consensus at LI terminate with a SKIP/⊥ decision.
+// ConsOutputSkip - Consensus at LI terminate with a SKIP/⊥ decision.
 func (vci *VarConsInsts) ConsOutputSkip(li LogIndex, cb onLIInc) gpa.OutMessages {
 	vci.haveConsOut = true
 	if vci.lastAnchor == nil {
@@ -69,12 +69,12 @@ func (vci *VarConsInsts) ConsOutputSkip(li LogIndex, cb onLIInc) gpa.OutMessages
 	return vci.trySet(li.Next(), vci.lastAnchor, cb)
 }
 
-// Consensus at LI indicated a timeout.
-func (vci *VarConsInsts) ConsTimeout(li LogIndex, cb onLIInc) gpa.OutMessages {
+// ConsOutputTimeout - Consensus at LI indicated a timeout.
+func (vci *VarConsInsts) ConsOutputTimeout(li LogIndex, cb onLIInc) gpa.OutMessages {
 	return vci.trySet(li.Next(), nil, cb)
 }
 
-// If we see consensus proposals from F+1 nodes at seenLI...
+// LatestSeenLI - If we see consensus proposals from F+1 nodes at seenLI...
 func (vci *VarConsInsts) LatestSeenLI(seenLI LogIndex, cb onLIInc) gpa.OutMessages {
 	msgs := gpa.NoMessages()
 	msgs.AddAll(vci.trySet(seenLI.Prev(), nil, cb))
@@ -89,7 +89,7 @@ func (vci *VarConsInsts) LatestSeenLI(seenLI LogIndex, cb onLIInc) gpa.OutMessag
 	return msgs
 }
 
-// Here we get the latest L1 state.
+// LatestL1Anchor - Here we get the latest L1 state.
 func (vci *VarConsInsts) LatestL1Anchor(ao *isc.StateAnchor, cb onLIInc) gpa.OutMessages {
 	vci.lastAnchor = ao
 	return vci.trySet(vci.lastLI, ao, cb) // Finish ConsOutputSkipBase, if pending.

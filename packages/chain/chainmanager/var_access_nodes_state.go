@@ -30,6 +30,7 @@ func (vas *VarAccessNodeState) Tip() *isc.StateAnchor {
 	return vas.tipAnchor
 }
 
+// BlockProduced
 // TODO: Probably this function can be removed at all. This left from the pipelining.
 func (vas *VarAccessNodeState) BlockProduced(tx *iotasigner.SignedTransaction) (*isc.StateAnchor, bool, *state.L1Commitment) {
 	vas.log.LogDebugf("BlockProduced: tx=%v", tx)

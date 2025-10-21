@@ -14,11 +14,11 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/state"
 )
 
+type StateTrackerStepCB = func(st state.State, from, till *isc.StateAnchor, added, removed []state.Block)
+
 // StateTracker tracks a single chain of state transitions. We will have 2 instances of it:
 //   - one for tracking the active state. It is needed for mempool to clear the requests.
 //   - one for the committed state to await for committed request receipts.
-type StateTrackerStepCB = func(st state.State, from, till *isc.StateAnchor, added, removed []state.Block)
-
 type StateTracker struct {
 	ctx                    context.Context
 	stateMgr               statemanager.StateMgr
@@ -87,12 +87,12 @@ func (sti *StateTracker) AwaitRequestReceipt(query *awaitReceiptReq) {
 	sti.awaitReceipt.Await(query)
 }
 
-// To be used in the select loop at the chain node.
+// ChainNodeAwaitStateMgrCh is to be used in the select loop at the chain node.
 func (sti *StateTracker) ChainNodeAwaitStateMgrCh() <-chan *inputs.ChainFetchStateDiffResults {
 	return sti.nextAnchorWaitCh
 }
 
-// This is assumed to be called right after the `ChainNodeAwaitStateMgrCh()`,
+// ChainNodeStateMgrResponse is assumed to be called right after the `ChainNodeAwaitStateMgrCh()`,
 // thus no additional checks are present here.
 func (sti *StateTracker) ChainNodeStateMgrResponse(results *inputs.ChainFetchStateDiffResults) {
 	sti.cancelQuery()

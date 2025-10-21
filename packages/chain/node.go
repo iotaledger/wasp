@@ -449,7 +449,7 @@ func (cni *chainNodeImpl) run(ctx context.Context, cleanupFunc context.CancelFun
 				recvAnchorPipeOutCh = nil
 				continue
 			}
-			cni.handleStateAnchor(t.A, t.B)
+			cni.handleStateAnchor(t.A, t.B) //nolint:contextcheck
 		case timestamp := <-timestampTicker.C:
 			cni.handleMilestoneTimestamp(timestamp)
 		case recv, ok := <-netRecvPipeOutCh:
@@ -770,7 +770,7 @@ func (cni *chainNodeImpl) ensureConsensusInput(ctx context.Context, needConsensu
 			cni.consRecoverPipe.In() <- &consRecover{request: needConsensus}
 		}
 		ci.request = needConsensus
-		cni.stateTrackerAct.TrackAnchor(needConsensus.BaseStateAnchor, true)
+		cni.stateTrackerAct.TrackAnchor(needConsensus.BaseStateAnchor, true) //nolint:contextcheck
 		ci.consensus.Input(needConsensus.BaseStateAnchor, outputCB, recoverCB)
 	}
 }
@@ -1367,7 +1367,7 @@ func createChainManager(
 			defer cni.accessLock.RUnlock()
 			return cni.activeAccessNodes, cni.activeCommitteeNodes
 		},
-		func(anchor *isc.StateAnchor) {
+		func(anchor *isc.StateAnchor) { //nolint:contextcheck
 			cni.stateTrackerAct.TrackAnchor(anchor, true)
 		},
 		func(block state.Block) {

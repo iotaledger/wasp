@@ -95,17 +95,17 @@ func New(
 	return ami
 }
 
-// Implements the AccessMgr interface.
+// TrustedNodes implements the AccessMgr interface.
 func (ami *AccessMgr) TrustedNodes(trusted []*cryptolib.PublicKey) {
 	ami.reqTrustedNodesPipe.In() <- &reqTrustedNodes{trusted: trusted}
 }
 
-// Implements the AccessMgr interface.
+// ChainAccessNodes implements the AccessMgr interface.
 func (ami *AccessMgr) ChainAccessNodes(chainID isc.ChainID, accessNodes []*cryptolib.PublicKey) {
 	ami.reqChainAccessNodesPipe.In() <- &reqChainAccessNodes{chainID: chainID, accessNodes: accessNodes}
 }
 
-// Implements the AccessMgr interface.
+// ChainDismissed implements the AccessMgr interface.
 func (ami *AccessMgr) ChainDismissed(chainID isc.ChainID) {
 	ami.reqChainDismissedPipe.In() <- &reqChainDismissed{chainID: chainID}
 }
