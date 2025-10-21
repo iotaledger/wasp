@@ -243,7 +243,7 @@ func (cl *CommitteeLog) handleMsgNextLogIndex(msg *MsgNextLogIndex) gpa.OutMessa
 	return cl.varLogIndex.MsgNextLogIndexReceived(msg)
 }
 
-// Implements the gpa.GPA interface.
+// Output implements the gpa.GPA interface.
 func (cl *CommitteeLog) Output() gpa.Output {
 	out := cl.output
 	if out == nil || cl.suspended {
@@ -252,7 +252,7 @@ func (cl *CommitteeLog) Output() gpa.Output {
 	return out
 }
 
-// Implements the gpa.GPA interface.
+// StatusString implements the gpa.GPA interface.
 func (cl *CommitteeLog) StatusString() string {
 	return fmt.Sprintf(
 		"{committeeLogImpl, %v, %v, %v}",

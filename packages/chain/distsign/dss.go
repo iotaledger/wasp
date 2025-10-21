@@ -136,7 +136,7 @@ func (d *DistributedSignature) Message(msg gpa.Message) gpa.OutMessages {
 	}
 }
 
-// Provide the output, if any.
+// Output provides the output, if any.
 func (d *DistributedSignature) Output() gpa.Output {
 	if d.distKeyGenOutIndexes == nil && d.signature == nil {
 		return nil

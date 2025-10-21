@@ -334,7 +334,7 @@ func (a *ABA) uponTerminationCondition() gpa.OutMessages {
 	return nil
 }
 
-// Implements the gpa.GPA interface.
+// Output implements the gpa.GPA interface.
 func (a *ABA) Output() gpa.Output {
 	if a.output == nil {
 		return nil // Untyped nil
@@ -342,7 +342,7 @@ func (a *ABA) Output() gpa.Output {
 	return a.output
 }
 
-// Implements the gpa.GPA interface.
+// StatusString implements the gpa.GPA interface.
 func (a *ABA) StatusString() string {
 	return fmt.Sprintf(
 		"{ABA:Mostefaoui, R=%v, %v, %v, %v, %v, out=%+v}",

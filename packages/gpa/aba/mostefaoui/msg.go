@@ -13,7 +13,7 @@ const (
 	msgTypeWrapped
 )
 
-// Implements the gpa.GPA interface.
+// UnmarshalMessage implements the gpa.GPA interface.
 func (a *ABA) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	return gpa.UnmarshalMessage(data, gpa.Mapper{
 		msgTypeVote: func() gpa.Message { return new(msgVote) },

@@ -588,7 +588,7 @@ func (cmi *ChainMgr) ensureNeedConsensus(cli *committeeLogInst, outputUntyped gp
 	}
 }
 
-// Implements the gpa.GPA interface.
+// Output implements the gpa.GPA interface.
 func (cmi *ChainMgr) Output() gpa.Output {
 	return cmi.output
 }
