@@ -219,7 +219,7 @@ func (cl *committeeLogImpl) handleInputConsensusOutputRejected(input *inputConse
 
 // Consensus tries to decide for too long. Maybe quorum assumption has been violated.
 func (cl *committeeLogImpl) handleInputConsensusTimeout(input *inputConsensusTimeout) gpa.OutMessages {
-	return cl.varConsInsts.ConsTimeout(input.logIndex, cl.varLogIndex.ConsensusStarted)
+	return cl.varConsInsts.ConsOutputTimeout(input.logIndex, cl.varLogIndex.ConsensusStarted)
 }
 
 func (cl *committeeLogImpl) handleInputCanPropose() gpa.OutMessages {
