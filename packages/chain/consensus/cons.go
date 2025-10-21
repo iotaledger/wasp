@@ -112,7 +112,7 @@ type Consensus struct {
 	f                       int
 	asGPA                   gpa.GPA
 	distributedSignature    *distsign.DistributedSignature
-	acs                     acs.ACS
+	acs                     *acs.ACS
 	subMempool              SyncMempool              // Mempool.
 	subStateMgr             SyncStateMgr             // StateMgr.
 	subNodeconn             SyncNodeconn             // Synchronization with the NodeConn.

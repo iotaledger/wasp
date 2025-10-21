@@ -88,15 +88,11 @@ type Output struct {
 }
 
 // ABA is the public API for this protocol.
-type ABA interface {
-	AsGPA() gpa.GPA
-}
-
 const (
 	subsystemCC byte = iota
 )
 
-type abaImpl struct {
+type ABA struct {
 	nodeIDs            []gpa.NodeID            // Nodes in the consensus.
 	nodeIdx            map[gpa.NodeID]bool     // For a fast check, if peer is known.
 	round              int                     // The current round.
@@ -114,8 +110,7 @@ type abaImpl struct {
 }
 
 var (
-	_ gpa.GPA = &abaImpl{}
-	_ ABA     = &abaImpl{}
+	_ gpa.GPA = &ABA{}
 )
 
 // New creates a single node for a consensus.
@@ -123,12 +118,12 @@ var (
 // Here `ccCreateFun` is used as a factory function to create Common Coin instances for each round.
 // This way this implementation is made independent of particular CC instance. The created CC
 // is expected to take `nil` inputs and produce `*bool` outputs.
-func New(nodeIDs []gpa.NodeID, me gpa.NodeID, f int, ccCreateFun func(round int) gpa.GPA, log log.Logger) ABA {
+func New(nodeIDs []gpa.NodeID, me gpa.NodeID, f int, ccCreateFun func(round int) gpa.GPA, log log.Logger) *ABA {
 	nodeIdx := map[gpa.NodeID]bool{}
 	for _, n := range nodeIDs {
 		nodeIdx[n] = true
 	}
-	a := &abaImpl{
+	a := &ABA{
 		nodeIDs:       nodeIDs,
 		nodeIdx:       nodeIdx,
 		round:         -1,
@@ -148,7 +143,7 @@ func New(nodeIDs []gpa.NodeID, me gpa.NodeID, f int, ccCreateFun func(round int)
 }
 
 // Helper for routing messages to sub-protocols (i.e. CC instances).
-func (a *abaImpl) selectSubsystem(subsystem byte, index int) (gpa.GPA, error) {
+func (a *ABA) selectSubsystem(subsystem byte, index int) (gpa.GPA, error) {
 	if subsystem == subsystemCC {
 		if index > a.round+10 {
 			return nil, fmt.Errorf("cc round=%v to far in future, our round=%v", index, a.round)
@@ -160,7 +155,7 @@ func (a *abaImpl) selectSubsystem(subsystem byte, index int) (gpa.GPA, error) {
 
 // Creates and returns a CC instance for a particular round.
 // CC instances are not cleaned up, as the algorithm is supposed to terminate in few rounds.
-func (a *abaImpl) ccInst(round int) gpa.GPA {
+func (a *ABA) ccInst(round int) gpa.GPA {
 	if round >= len(a.ccInsts) {
 		add := make([]gpa.GPA, round-len(a.ccInsts)+1)
 		a.ccInsts = append(a.ccInsts, add...)
@@ -172,7 +167,7 @@ func (a *abaImpl) ccInst(round int) gpa.GPA {
 }
 
 // Implements the ABA interface.
-func (a *abaImpl) AsGPA() gpa.GPA {
+func (a *ABA) AsGPA() gpa.GPA {
 	return a.asGPA
 }
 
@@ -180,7 +175,7 @@ func (a *abaImpl) AsGPA() gpa.GPA {
 //
 // > • upon receiving input b_input, set est_0 := b_input and proceed as
 // >   follows in consecutive epochs, with increasing labels r:
-func (a *abaImpl) Input(input gpa.Input) gpa.OutMessages {
+func (a *ABA) Input(input gpa.Input) gpa.OutMessages {
 	if a.round != -1 {
 		panic(fmt.Errorf("duplicate input to BBA: %v", input))
 	}
@@ -194,7 +189,7 @@ func (a *abaImpl) Input(input gpa.Input) gpa.OutMessages {
 //
 // >     – multicast BVAL_r(est_r)
 // >     – bin_values_r := {}
-func (a *abaImpl) startRound(round int, est bool) gpa.OutMessages {
+func (a *ABA) startRound(round int, est bool) gpa.OutMessages {
 	if a.output != nil && a.output.Terminated {
 		// Don't start the next round if the algorithm is already terminated.
 		return nil
@@ -232,7 +227,7 @@ func (a *abaImpl) startRound(round int, est bool) gpa.OutMessages {
 
 // Implements the gpa.GPA interface.
 // Here we only route the messages to appropriate objects.
-func (a *abaImpl) Message(msg gpa.Message) gpa.OutMessages {
+func (a *ABA) Message(msg gpa.Message) gpa.OutMessages {
 	switch msgT := msg.(type) {
 	case *msgVote: // The BVAL and AUX messages.
 		return a.handleMsgVote(msgT)
@@ -245,7 +240,7 @@ func (a *abaImpl) Message(msg gpa.Message) gpa.OutMessages {
 	return nil
 }
 
-func (a *abaImpl) handleMsgVote(msgT *msgVote) gpa.OutMessages {
+func (a *ABA) handleMsgVote(msgT *msgVote) gpa.OutMessages {
 	if _, ok := a.nodeIdx[msgT.Sender()]; !ok {
 		a.log.LogWarnf("unknown sender: %+v", msgT)
 		return nil // Unknown sender.
@@ -267,14 +262,14 @@ func (a *abaImpl) handleMsgVote(msgT *msgVote) gpa.OutMessages {
 	return nil
 }
 
-func (a *abaImpl) handleMsgDone(msgT *msgDone) gpa.OutMessages {
+func (a *ABA) handleMsgDone(msgT *msgDone) gpa.OutMessages {
 	if _, ok := a.nodeIdx[msgT.Sender()]; !ok {
 		return nil // Unknown sender.
 	}
 	return a.varDone.msgDoneReceived(msgT)
 }
 
-func (a *abaImpl) handleMsgWrapped(msgT *gpa.WrappingMsg) gpa.OutMessages {
+func (a *ABA) handleMsgWrapped(msgT *gpa.WrappingMsg) gpa.OutMessages {
 	msgs := gpa.NoMessages()
 	subGPA, subMsgs, err := a.msgWrapper.DelegateMessage(msgT)
 	if err != nil {
@@ -299,7 +294,7 @@ func (a *abaImpl) handleMsgWrapped(msgT *gpa.WrappingMsg) gpa.OutMessages {
 // >           bin_values_r may continue to change as BVAL_r messages
 // >           are received, thus this condition may be triggered upon
 // >           arrival of either an AUX_r or a BVAL_r message)
-func (a *abaImpl) uponBinValuesUpdated(binValues []bool) gpa.OutMessages {
+func (a *ABA) uponBinValuesUpdated(binValues []bool) gpa.OutMessages {
 	return a.varAuxVals.binValuesUpdated(binValues)
 }
 
@@ -309,7 +304,7 @@ func (a *abaImpl) uponBinValuesUpdated(binValues []bool) gpa.OutMessages {
 // >           bin_values_r may continue to change as BVAL_r messages
 // >           are received, thus this condition may be triggered upon
 // >           arrival of either an AUX_r or a BVAL_r message)
-func (a *abaImpl) uponAuxValsReady(auxVals []bool) gpa.OutMessages {
+func (a *ABA) uponAuxValsReady(auxVals []bool) gpa.OutMessages {
 	return a.uponDecisionInputs.auxValsReady(auxVals)
 }
 
@@ -317,7 +312,7 @@ func (a *abaImpl) uponAuxValsReady(auxVals []bool) gpa.OutMessages {
 // >             · est_r+1 := b
 // >             · if (b = s%2) then output b
 // >         ∗ else est_r+1 := s%2
-func (a *abaImpl) uponDecisionInputsReceived(cc bool, auxVals []bool) gpa.OutMessages {
+func (a *ABA) uponDecisionInputsReceived(cc bool, auxVals []bool) gpa.OutMessages {
 	if len(auxVals) == 1 {
 		nextEst := auxVals[0]
 		if nextEst == cc {
@@ -334,7 +329,7 @@ func (a *abaImpl) uponDecisionInputsReceived(cc bool, auxVals []bool) gpa.OutMes
 }
 
 // Here we get notification from `varDone` on the termination.
-func (a *abaImpl) uponTerminationCondition() gpa.OutMessages {
+func (a *ABA) uponTerminationCondition() gpa.OutMessages {
 	if a.output != nil {
 		a.output.Terminated = true
 	}
@@ -342,7 +337,7 @@ func (a *abaImpl) uponTerminationCondition() gpa.OutMessages {
 }
 
 // Implements the gpa.GPA interface.
-func (a *abaImpl) Output() gpa.Output {
+func (a *ABA) Output() gpa.Output {
 	if a.output == nil {
 		return nil // Untyped nil
 	}
@@ -350,7 +345,7 @@ func (a *abaImpl) Output() gpa.Output {
 }
 
 // Implements the gpa.GPA interface.
-func (a *abaImpl) StatusString() string {
+func (a *ABA) StatusString() string {
 	return fmt.Sprintf(
 		"{ABA:Mostefaoui, R=%v, %v, %v, %v, %v, out=%+v}",
 		a.round,

@@ -38,10 +38,6 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/gpa/rbc/bracha"
 )
 
-type ACS interface {
-	AsGPA() gpa.GPA
-}
-
 type Output struct {
 	Values     map[gpa.NodeID][]byte
 	Terminated bool
@@ -52,7 +48,7 @@ const (
 	subsystemABA
 )
 
-type acsImpl struct {
+type ACS struct {
 	nodeIDs    []gpa.NodeID           // Nodes in the consensus.
 	nodeIdx    map[gpa.NodeID]int     // For a fast check, if peer is known.
 	me         gpa.NodeID             // Out name.
@@ -72,15 +68,14 @@ type acsImpl struct {
 }
 
 var (
-	_ gpa.GPA = &acsImpl{}
-	_ ACS     = &acsImpl{}
+	_ gpa.GPA = &ACS{}
 )
 
 // New creates a new instance of the ACS protocol.
 // > Let {RBC_i}_N refer to N instances of the reliable broadcast protocol,
 // > where P_i is the sender of RBC_i. Let {BA_i}_N refer to N instances
 // > of the binary byzantine agreement protocol.
-func New(nodeIDs []gpa.NodeID, me gpa.NodeID, f int, ccCreateFun func(node gpa.NodeID, round int) gpa.GPA, log log.Logger) ACS {
+func New(nodeIDs []gpa.NodeID, me gpa.NodeID, f int, ccCreateFun func(node gpa.NodeID, round int) gpa.GPA, log log.Logger) *ACS {
 	nodeIdx := map[gpa.NodeID]int{}
 	rbcInsts := map[gpa.NodeID]gpa.GPA{}
 	abaInsts := map[gpa.NodeID]gpa.GPA{}
@@ -95,7 +90,7 @@ func New(nodeIDs []gpa.NodeID, me gpa.NodeID, f int, ccCreateFun func(node gpa.N
 	}
 
 	n := len(nodeIDs)
-	a := &acsImpl{
+	a := &ACS{
 		nodeIDs:    nodeIDs,
 		nodeIdx:    nodeIdx,
 		me:         me,
@@ -117,7 +112,7 @@ func New(nodeIDs []gpa.NodeID, me gpa.NodeID, f int, ccCreateFun func(node gpa.N
 }
 
 // Helper for routing messages to sub-protocols (i.e. RBC and ABA instances).
-func (a *acsImpl) selectSubsystem(subsystem byte, index int) (gpa.GPA, error) {
+func (a *ACS) selectSubsystem(subsystem byte, index int) (gpa.GPA, error) {
 	if index < 0 || index >= a.n {
 		return nil, fmt.Errorf("unexpected index=%v for subsystem", index)
 	}
@@ -131,12 +126,12 @@ func (a *acsImpl) selectSubsystem(subsystem byte, index int) (gpa.GPA, error) {
 	return nil, fmt.Errorf("unexpected subsystem=%v, index=%v", subsystem, index)
 }
 
-func (a *acsImpl) AsGPA() gpa.GPA {
+func (a *ACS) AsGPA() gpa.GPA {
 	return a.asGPA
 }
 
 // >   • upon receiving input v_i, input v_i to RBC_i
-func (a *acsImpl) Input(input gpa.Input) gpa.OutMessages {
+func (a *ACS) Input(input gpa.Input) gpa.OutMessages {
 	if _, ok := input.([]byte); !ok {
 		panic("input has to be []byte")
 	}
@@ -154,7 +149,7 @@ func (a *acsImpl) Input(input gpa.Input) gpa.OutMessages {
 	return msgs
 }
 
-func (a *acsImpl) Message(msg gpa.Message) gpa.OutMessages {
+func (a *ACS) Message(msg gpa.Message) gpa.OutMessages {
 	msgT, ok := msg.(*gpa.WrappingMsg)
 	if !ok {
 		a.log.LogWarnf("unexpected message of type %T: %+v", msg, msg)
@@ -182,7 +177,7 @@ func (a *acsImpl) Message(msg gpa.Message) gpa.OutMessages {
 
 // >   • upon delivery of v_j from RBC_j, if input has not yet been
 // >     provided to BA_j, then provide input 1 to BA_j.
-func (a *acsImpl) tryHandleRBCOutput(nodeID gpa.NodeID, rbcInst gpa.GPA) gpa.OutMessages {
+func (a *ACS) tryHandleRBCOutput(nodeID gpa.NodeID, rbcInst gpa.GPA) gpa.OutMessages {
 	out := rbcInst.Output()
 	if out == nil {
 		return nil // Output not ready yet.
@@ -210,7 +205,7 @@ func (a *acsImpl) tryHandleRBCOutput(nodeID gpa.NodeID, rbcInst gpa.GPA) gpa.Out
 // >   • upon delivery of value 1 from at least N − f instances of BA,
 // >     provide input 0 to each instance of BA that has not yet been
 // >     provided input.
-func (a *acsImpl) tryHandleABAOutput(nodeID gpa.NodeID, abaInst gpa.GPA) gpa.OutMessages {
+func (a *ACS) tryHandleABAOutput(nodeID gpa.NodeID, abaInst gpa.GPA) gpa.OutMessages {
 	out := abaInst.Output()
 	if out == nil {
 		return nil // Output not ready yet.
@@ -257,7 +252,7 @@ func (a *acsImpl) tryHandleABAOutput(nodeID gpa.NodeID, abaInst gpa.GPA) gpa.Out
 // >   • once all instances of BA have completed, let C ⊂ [1..N] be the
 // >     indexes of each BA that delivered 1. Wait for the output v_j for
 // >     each RBC_j such that j ∈ C. Finally output ∪_{j∈C} v_j.
-func (a *acsImpl) tryOutput() {
+func (a *ACS) tryOutput() {
 	if a.output != nil {
 		return // Output already provided.
 	}
@@ -280,21 +275,21 @@ func (a *acsImpl) tryOutput() {
 	}
 }
 
-func (a *acsImpl) uponTermCondition() gpa.OutMessages {
+func (a *ACS) uponTermCondition() gpa.OutMessages {
 	if a.output != nil {
 		a.output.Terminated = true
 	}
 	return nil
 }
 
-func (a *acsImpl) Output() gpa.Output {
+func (a *ACS) Output() gpa.Output {
 	if a.output == nil {
 		return nil // Untyped nil.
 	}
 	return a.output
 }
 
-func (a *acsImpl) StatusString() string {
+func (a *ACS) StatusString() string {
 	if a.output != nil {
 		return fmt.Sprintf(
 			"{ACS, |outVals|=%v, outTerm=%+v, n=%v, f=%v, |rbcOut|=%v, |abaOut|=%v}",
