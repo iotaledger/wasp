@@ -58,7 +58,7 @@ func (s *SyncMempool) RequestsReceived(requests []isc.Request) gpa.OutMessages {
 	return s.c.uponMempoolRequestsReceived(requests)
 }
 
-// Try to provide useful human-readable compact status.
+// String tries to provide useful human-readable compact status.
 func (s *SyncMempool) String() string {
 	str := "MP"
 	if s.proposalReceived && s.requestsReceived {

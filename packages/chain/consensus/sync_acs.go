@@ -18,6 +18,7 @@ import (
 // > UPON Reception of responses from Mempool, StateMgr and DistributedSignature NonceIndexes:
 // >     Produce a batch proposal.
 // >     Start the ACS.
+
 type SyncACS struct {
 	c *consensusImpl
 
@@ -116,7 +117,7 @@ func (sub *SyncACS) ACSOutputReceived(output gpa.Output) gpa.OutMessages {
 	return sub.c.uponACSOutputReceived(acsOutput.Values)
 }
 
-// Try to provide useful human-readable compact status.
+// String tries to provide useful human-readable compact status.
 func (sub *SyncACS) String() string {
 	str := "ACS"
 	if sub.outputReady {

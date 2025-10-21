@@ -74,7 +74,7 @@ func (sub *SyncDistributedSignature) tryCompleteSigning() gpa.OutMessages {
 	return sub.c.uponDistributedSignatureSigningInputsReceived(sub.DecidedIndexProposals, sub.MessageToSign)
 }
 
-// Try to provide useful human-readable compact status.
+// String tries to provide useful human-readable compact status.
 func (sub *SyncDistributedSignature) String() string {
 	str := "DistributedSignature"
 	if sub.indexProposalReady && sub.outputReady {

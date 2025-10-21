@@ -70,7 +70,7 @@ func (sub *SyncTX) tryCompleteInputs() gpa.OutMessages {
 	return sub.c.uponTXInputsReady(sub.decidedAnchor, sub.unsignedTX, sub.block, sub.signature)
 }
 
-// Try to provide useful human-readable compact status.
+// String tries to provide useful human-readable compact status.
 func (sub *SyncTX) String() string {
 	str := "TX"
 	if sub.inputsReady {

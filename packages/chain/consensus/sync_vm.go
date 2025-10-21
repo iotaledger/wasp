@@ -72,7 +72,7 @@ func (sub *SyncVM) tryCompleteInputs() gpa.OutMessages {
 		return nil
 	}
 	sub.inputsReady = true
-	return sub.c.uponVMInputsReceived(sub.aggregatedProposals, sub.chainState, sub.randomness, sub.requests)
+	return sub.c.uponVMInputsReceived(sub.aggregatedProposals, sub.randomness, sub.requests)
 }
 
 func (sub *SyncVM) tryCompleteOutputs() gpa.OutMessages {
@@ -94,7 +94,7 @@ func (sub *SyncVM) VMResultReceived(vmResult *vm.VMTaskResult) gpa.OutMessages {
 	return sub.tryCompleteOutputs()
 }
 
-// Try to provide useful human-readable compact status.
+// String tries to provide useful human-readable compact status.
 func (sub *SyncVM) String() string {
 	str := "VM"
 	if sub.outputReady {

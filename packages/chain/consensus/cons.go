@@ -142,7 +142,7 @@ var (
 	_ Consensus = &consensusImpl{}
 )
 
-func New( //nolint:funlen
+func New(
 	chainID isc.ChainID,
 	chainStore state.Store,
 	me gpa.NodeID,
@@ -564,7 +564,7 @@ func (c *consensusImpl) uponRNDSigSharesReady(dataToSign []byte, partialSigs map
 ////////////////////////////////////////////////////////////////////////////////
 // VM
 
-func (c *consensusImpl) uponVMInputsReceived(aggregatedProposals *batchproposal.AggregatedBatchProposals, chainState state.State, randomness *hashing.HashValue, requests []isc.Request) gpa.OutMessages {
+func (c *consensusImpl) uponVMInputsReceived(aggregatedProposals *batchproposal.AggregatedBatchProposals, randomness *hashing.HashValue, requests []isc.Request) gpa.OutMessages {
 	decidedBaseAnchor := aggregatedProposals.DecidedBaseAnchor()
 	stateAnchor := isc.NewStateAnchor(decidedBaseAnchor.Anchor(), decidedBaseAnchor.ISCPackage())
 	gasCoins := aggregatedProposals.AggregatedGasCoins()

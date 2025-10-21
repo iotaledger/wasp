@@ -85,7 +85,7 @@ func (s *SyncStateMgr) BlockSaved(block state.Block) gpa.OutMessages {
 	return s.c.uponStateMgrSaveProducedBlockDone(block)
 }
 
-// Try to provide useful human-readable compact status.
+// String tries to provide useful human-readable compact status.
 func (s *SyncStateMgr) String() string {
 	str := "SM"
 	if s.stateProposalReceived && s.decidedStateReceived {
