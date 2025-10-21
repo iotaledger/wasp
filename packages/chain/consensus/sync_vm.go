@@ -15,35 +15,24 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/vm"
 )
 
-type SyncVM interface {
-	DecidedBatchProposalsReceived(aggregatedProposals *batchproposal.AggregatedBatchProposals) gpa.OutMessages
-	DecidedStateReceived(chainState state.State) gpa.OutMessages
-	RandomnessReceived(randomness hashing.HashValue) gpa.OutMessages
-	RequestsReceived(requests []isc.Request) gpa.OutMessages
-	VMResultReceived(vmResult *vm.VMTaskResult) gpa.OutMessages
-	String() string
-}
-
-type syncVMImpl struct {
+type SyncVM struct {
+	c                   *consensusImpl
 	aggregatedProposals *batchproposal.AggregatedBatchProposals
 	chainState          state.State
 	randomness          *hashing.HashValue
 	requests            []isc.Request
 	vmResult            *vm.VMTaskResult
 	inputsReady         bool
-	inputsReadyCB       func(aggregatedProposals *batchproposal.AggregatedBatchProposals, chainState state.State, randomness *hashing.HashValue, requests []isc.Request) gpa.OutMessages
 	outputReady         bool
-	outputReadyCB       func(output *vm.VMTaskResult, aggregatedProposals *batchproposal.AggregatedBatchProposals) gpa.OutMessages
 }
 
 func NewSyncVM(
-	inputsReadyCB func(aggregatedProposals *batchproposal.AggregatedBatchProposals, chainState state.State, randomness *hashing.HashValue, requests []isc.Request) gpa.OutMessages,
-	outputReadyCB func(output *vm.VMTaskResult, aggregatedProposals *batchproposal.AggregatedBatchProposals) gpa.OutMessages,
-) SyncVM {
-	return &syncVMImpl{inputsReadyCB: inputsReadyCB, outputReadyCB: outputReadyCB}
+	c *consensusImpl,
+) *SyncVM {
+	return &SyncVM{c: c}
 }
 
-func (sub *syncVMImpl) DecidedBatchProposalsReceived(aggregatedProposals *batchproposal.AggregatedBatchProposals) gpa.OutMessages {
+func (sub *SyncVM) DecidedBatchProposalsReceived(aggregatedProposals *batchproposal.AggregatedBatchProposals) gpa.OutMessages {
 	if sub.aggregatedProposals != nil || aggregatedProposals == nil {
 		return nil
 	}
@@ -54,7 +43,7 @@ func (sub *syncVMImpl) DecidedBatchProposalsReceived(aggregatedProposals *batchp
 	return msgs
 }
 
-func (sub *syncVMImpl) DecidedStateReceived(chainState state.State) gpa.OutMessages {
+func (sub *SyncVM) DecidedStateReceived(chainState state.State) gpa.OutMessages {
 	if sub.chainState != nil {
 		return nil
 	}
@@ -62,7 +51,7 @@ func (sub *syncVMImpl) DecidedStateReceived(chainState state.State) gpa.OutMessa
 	return sub.tryCompleteInputs()
 }
 
-func (sub *syncVMImpl) RandomnessReceived(randomness hashing.HashValue) gpa.OutMessages {
+func (sub *SyncVM) RandomnessReceived(randomness hashing.HashValue) gpa.OutMessages {
 	if sub.randomness != nil {
 		return nil
 	}
@@ -70,7 +59,7 @@ func (sub *syncVMImpl) RandomnessReceived(randomness hashing.HashValue) gpa.OutM
 	return sub.tryCompleteInputs()
 }
 
-func (sub *syncVMImpl) RequestsReceived(requests []isc.Request) gpa.OutMessages {
+func (sub *SyncVM) RequestsReceived(requests []isc.Request) gpa.OutMessages {
 	if sub.requests != nil || requests == nil {
 		return nil
 	}
@@ -78,15 +67,15 @@ func (sub *syncVMImpl) RequestsReceived(requests []isc.Request) gpa.OutMessages 
 	return sub.tryCompleteInputs()
 }
 
-func (sub *syncVMImpl) tryCompleteInputs() gpa.OutMessages {
+func (sub *SyncVM) tryCompleteInputs() gpa.OutMessages {
 	if sub.inputsReady || sub.aggregatedProposals == nil || sub.chainState == nil || sub.randomness == nil || sub.requests == nil {
 		return nil
 	}
 	sub.inputsReady = true
-	return sub.inputsReadyCB(sub.aggregatedProposals, sub.chainState, sub.randomness, sub.requests)
+	return sub.c.uponVMInputsReceived(sub.aggregatedProposals, sub.chainState, sub.randomness, sub.requests)
 }
 
-func (sub *syncVMImpl) tryCompleteOutputs() gpa.OutMessages {
+func (sub *SyncVM) tryCompleteOutputs() gpa.OutMessages {
 	if sub.vmResult == nil || sub.aggregatedProposals == nil {
 		return nil
 	}
@@ -94,10 +83,10 @@ func (sub *syncVMImpl) tryCompleteOutputs() gpa.OutMessages {
 		return nil
 	}
 	sub.outputReady = true
-	return sub.outputReadyCB(sub.vmResult, sub.aggregatedProposals)
+	return sub.c.uponVMOutputReceived(sub.vmResult, sub.aggregatedProposals)
 }
 
-func (sub *syncVMImpl) VMResultReceived(vmResult *vm.VMTaskResult) gpa.OutMessages {
+func (sub *SyncVM) VMResultReceived(vmResult *vm.VMTaskResult) gpa.OutMessages {
 	if sub.vmResult != nil || vmResult == nil {
 		return nil
 	}
@@ -106,7 +95,7 @@ func (sub *syncVMImpl) VMResultReceived(vmResult *vm.VMTaskResult) gpa.OutMessag
 }
 
 // Try to provide useful human-readable compact status.
-func (sub *syncVMImpl) String() string {
+func (sub *SyncVM) String() string {
 	str := "VM"
 	if sub.outputReady {
 		str += statusStrOK

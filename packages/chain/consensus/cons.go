@@ -117,15 +117,15 @@ type consensusImpl struct {
 	asGPA                   gpa.GPA
 	distributedSignature    distsign.DistributedSignature
 	acs                     acs.ACS
-	subMempool              SyncMempool              // Mempool.
-	subStateMgr             SyncStateMgr             // StateMgr.
-	subNodeconn             SyncNodeconn             // Synchronization with the NodeConn.
-	subDistributedSignature SyncDistributedSignature // Distributed Schnorr Signature.
-	subACS                  SyncACS                  // Asynchronous Common Subset.
-	subRND                  SyncRND                  // Randomness.
-	subVM                   SyncVM                   // Virtual Machine.
-	subTX                   SyncTX                   // Building final TX.
-	term                    *termCondition           // To detect, when this instance can be terminated.
+	subMempool              *SyncMempool              // Mempool.
+	subStateMgr             *SyncStateMgr             // StateMgr.
+	subNodeconn             *SyncNodeconn             // Synchronization with the NodeConn.
+	subDistributedSignature *SyncDistributedSignature // Distributed Schnorr Signature.
+	subACS                  *SyncACS                  // Asynchronous Common Subset.
+	subRND                  *SyncRND                  // Randomness.
+	subVM                   *SyncVM                   // Virtual Machine.
+	subTX                   *SyncTX                   // Building final TX.
+	term                    *termCondition            // To detect, when this instance can be terminated.
 	msgWrapper              *gpa.MsgWrapper
 	output                  *Output
 	validatorAgentID        isc.AgentID
@@ -207,47 +207,14 @@ func New( //nolint:funlen
 	}
 	c.asGPA = gpa.NewOwnHandler(me, c)
 	c.msgWrapper = gpa.NewMsgWrapper(msgTypeWrapped, c.msgWrapperFunc)
-	c.subMempool = NewSyncMempool(
-		c.uponMempoolProposalInputsReady,
-		c.uponMempoolProposalReceived,
-		c.uponMempoolRequestsNeeded,
-		c.uponMempoolRequestsReceived,
-	)
-	c.subStateMgr = NewSyncStateMgr(
-		c.uponStateMgrStateProposalQueryInputsReady,
-		c.uponStateMgrStateProposalReceived,
-		c.uponStateMgrDecidedStateQueryInputsReady,
-		c.uponStateMgrDecidedStateReceived,
-		c.uponStateMgrSaveProducedBlockInputsReady,
-		c.uponStateMgrSaveProducedBlockDone,
-	)
-	c.subNodeconn = NewSyncNodeconn(
-		c.uponNodeconnInputsReady,
-		c.uponNodeconnOutputReady,
-	)
-	c.subDistributedSignature = NewSyncDistributedSignature(
-		c.uponDistributedSignatureInitialInputsReady,
-		c.uponDistributedSignatureIndexProposalReady,
-		c.uponDistributedSignatureSigningInputsReceived,
-		c.uponDistributedSignatureOutputReady,
-	)
-	c.subACS = NewSyncACS(
-		c.uponACSInputsReceived,
-		c.uponACSOutputReceived,
-		c.uponACSTerminated,
-	)
-	c.subRND = NewSyncRND(
-		int(dkShare.BLSThreshold()),
-		c.uponRNDInputsReady,
-		c.uponRNDSigSharesReady,
-	)
-	c.subVM = NewSyncVM(
-		c.uponVMInputsReceived,
-		c.uponVMOutputReceived,
-	)
-	c.subTX = NewSyncTX(
-		c.uponTXInputsReady,
-	)
+	c.subMempool = NewSyncMempool(c)
+	c.subStateMgr = NewSyncStateMgr(c)
+	c.subNodeconn = NewSyncNodeconn(c)
+	c.subDistributedSignature = NewSyncDistributedSignature(c)
+	c.subACS = NewSyncACS(c)
+	c.subRND = NewSyncRND(int(dkShare.BLSThreshold()), c)
+	c.subVM = NewSyncVM(c)
+	c.subTX = NewSyncTX(c)
 	c.term = newTermCondition(
 		c.uponTerminationCondition,
 	)
