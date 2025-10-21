@@ -52,7 +52,7 @@ var ErrCommitteeLogStateNotFound = errors.New("errCmtLogStateNotFound")
 // the update can be ignored.
 type Output = map[LogIndex]*isc.StateAnchor
 
-// Protocol implementation.
+// CommitteeLog is a protocol implementation.
 type CommitteeLog struct {
 	chainID                isc.ChainID            // Chain, for which this log is maintained by this committee.
 	committeeAddr          *cryptolib.Address     // Address of the committee running this chain.

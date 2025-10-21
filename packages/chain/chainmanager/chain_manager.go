@@ -593,7 +593,7 @@ func (cmi *ChainMgr) Output() gpa.Output {
 	return cmi.output
 }
 
-// Implements the gpa.GPA interface.
+// StatusString implements the gpa.GPA interface.
 func (cmi *ChainMgr) StatusString() string { // TODO: Call it periodically. Show the active committee.
 	return "{ChainMgr,...}" // TODO: Add more info.
 	// return fmt.Sprintf("{ChainMgr,confirmedAnchor=%v,activeAnchor=%v}",
