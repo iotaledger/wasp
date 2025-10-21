@@ -100,12 +100,12 @@ func New(
 	return d
 }
 
-// DSS Specific Interface: Get a GPA instance to pass messages with all the intermediate layers.
+// AsGPA implements DSS Specific Interface: Get a GPA instance to pass messages with all the intermediate layers.
 func (d *DistributedSignature) AsGPA() gpa.GPA {
 	return d.withWrappers
 }
 
-// Handle the input to the protocol.
+// Input handles the input to the protocol.
 func (d *DistributedSignature) Input(input gpa.Input) gpa.OutMessages {
 	d.log.LogDebugf("Input %+v", input)
 	switch input := input.(type) {
@@ -118,7 +118,7 @@ func (d *DistributedSignature) Input(input gpa.Input) gpa.OutMessages {
 	panic(fmt.Errorf("unexpected input: %T: %+v", input, input))
 }
 
-// Handle the messages.
+// Message handles the messages.
 func (d *DistributedSignature) Message(msg gpa.Message) gpa.OutMessages {
 	switch msgT := msg.(type) {
 	case *msgPartialSig:

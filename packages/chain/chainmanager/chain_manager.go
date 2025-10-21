@@ -217,9 +217,7 @@ type ChainMgr struct {
 	log                        log.Logger
 }
 
-var (
-	_ gpa.GPA = &ChainMgr{}
-)
+var _ gpa.GPA = &ChainMgr{}
 
 func New(
 	me gpa.NodeID,
@@ -268,12 +266,12 @@ func New(
 	return cmi, nil
 }
 
-// Implements the CommitteeLog interface.
+// AsGPA implements the CommitteeLog interface.
 func (cmi *ChainMgr) AsGPA() gpa.GPA {
 	return cmi.asGPA
 }
 
-// Implements the gpa.GPA interface.
+// Input implements the gpa.GPA interface.
 func (cmi *ChainMgr) Input(input gpa.Input) gpa.OutMessages {
 	switch input := input.(type) {
 	case *inputAnchorConfirmed:
@@ -292,7 +290,7 @@ func (cmi *ChainMgr) Input(input gpa.Input) gpa.OutMessages {
 	panic(fmt.Errorf("unexpected input %T: %+v", input, input))
 }
 
-// Implements the gpa.GPA interface.
+// Message implements the gpa.GPA interface.
 func (cmi *ChainMgr) Message(msg gpa.Message) gpa.OutMessages {
 	switch msg := msg.(type) {
 	case *msgCommitteeLog:

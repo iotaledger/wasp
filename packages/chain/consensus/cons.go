@@ -133,9 +133,7 @@ const (
 	subsystemTypeACS
 )
 
-var (
-	_ gpa.GPA = &Consensus{}
-)
+var _ gpa.GPA = &Consensus{}
 
 func New( //nolint:funlen
 	chainID isc.ChainID,
@@ -311,7 +309,7 @@ func (c *Consensus) Input(input gpa.Input) gpa.OutMessages {
 	panic(fmt.Errorf("unexpected input: %v", input))
 }
 
-// Implements the gpa.GPA interface.
+// Message implements the gpa.GPA interface.
 // Here we route all the messages.
 func (c *Consensus) Message(msg gpa.Message) gpa.OutMessages {
 	switch msgT := msg.(type) {

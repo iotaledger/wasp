@@ -67,9 +67,7 @@ type ACS struct {
 	log        log.Logger             // A logger.
 }
 
-var (
-	_ gpa.GPA = &ACS{}
-)
+var _ gpa.GPA = &ACS{}
 
 // New creates a new instance of the ACS protocol.
 // > Let {RBC_i}_N refer to N instances of the reliable broadcast protocol,
@@ -130,6 +128,7 @@ func (a *ACS) AsGPA() gpa.GPA {
 	return a.asGPA
 }
 
+// Input implements the gpa.GPA interface:
 // >   • upon receiving input v_i, input v_i to RBC_i
 func (a *ACS) Input(input gpa.Input) gpa.OutMessages {
 	if _, ok := input.([]byte); !ok {

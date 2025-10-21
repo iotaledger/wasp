@@ -148,12 +148,12 @@ func New(
 	return cl, nil
 }
 
-// Implements the CommitteeLog interface.
+// AsGPA implements the CommitteeLog interface.
 func (cl *CommitteeLog) AsGPA() gpa.GPA {
 	return cl.asGPA
 }
 
-// Implements the gpa.GPA interface.
+// Input implements the gpa.GPA interface.
 func (cl *CommitteeLog) Input(input gpa.Input) gpa.OutMessages {
 	switch input.(type) {
 	case *inputCanPropose:
@@ -181,7 +181,7 @@ func (cl *CommitteeLog) Input(input gpa.Input) gpa.OutMessages {
 	panic(fmt.Errorf("unexpected input %T: %+v", input, input))
 }
 
-// Implements the gpa.GPA interface.
+// Message implements the gpa.GPA interface.
 func (cl *CommitteeLog) Message(msg gpa.Message) gpa.OutMessages {
 	msgNLI, ok := msg.(*MsgNextLogIndex)
 	if !ok {

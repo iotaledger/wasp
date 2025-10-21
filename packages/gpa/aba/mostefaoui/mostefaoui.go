@@ -109,9 +109,7 @@ type ABA struct {
 	log                log.Logger              // A logger.
 }
 
-var (
-	_ gpa.GPA = &ABA{}
-)
+var _ gpa.GPA = &ABA{}
 
 // New creates a single node for a consensus.
 //
@@ -166,12 +164,12 @@ func (a *ABA) ccInst(round int) gpa.GPA {
 	return a.ccInsts[round]
 }
 
-// Implements the ABA interface.
+// AsGPA implements the ABA interface.
 func (a *ABA) AsGPA() gpa.GPA {
 	return a.asGPA
 }
 
-// Implements the gpa.GPA interface.
+// Input implements the gpa.GPA interface.
 //
 // > • upon receiving input b_input, set est_0 := b_input and proceed as
 // >   follows in consecutive epochs, with increasing labels r:
@@ -225,7 +223,7 @@ func (a *ABA) startRound(round int, est bool) gpa.OutMessages {
 	return msgs
 }
 
-// Implements the gpa.GPA interface.
+// Message implements the gpa.GPA interface.
 // Here we only route the messages to appropriate objects.
 func (a *ABA) Message(msg gpa.Message) gpa.OutMessages {
 	switch msgT := msg.(type) {
