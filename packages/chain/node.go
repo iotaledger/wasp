@@ -162,8 +162,8 @@ type chainNodeImpl struct {
 	rotateToPipe       pipe.Pipe[*iotago.Address]
 	awaitReceiptActCh  chan *awaitReceiptReq
 	awaitReceiptCnfCh  chan *awaitReceiptReq
-	stateTrackerAct    StateTracker
-	stateTrackerCnf    StateTracker
+	stateTrackerAct    *StateTracker
+	stateTrackerCnf    *StateTracker
 	blockWAL           utils.BlockWAL
 	//
 	// Configuration values.

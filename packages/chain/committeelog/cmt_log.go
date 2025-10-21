@@ -62,9 +62,9 @@ type committeeLogImpl struct {
 	chainID                isc.ChainID            // Chain, for which this log is maintained by this committee.
 	committeeAddr          *cryptolib.Address     // Address of the committee running this chain.
 	consensusStateRegistry ConsensusStateRegistry // Persistent storage.
-	varLogIndex            VarLogIndex            // Calculates the current log index.
-	varLocalView           VarLocalView           // Tracks the pending alias outputs.
-	varConsInsts           VarConsInsts           // The main algorithm.
+	varLogIndex            *VarLogIndex           // Calculates the current log index.
+	varLocalView           *VarLocalView          // Tracks the pending alias outputs.
+	varConsInsts           *VarConsInsts          // The main algorithm.
 	suspended              bool                   // Is this committee currently suspended?
 	output                 Output                 // The current output.
 	first                  bool                   // A workaround to senf the first nextLI messages.

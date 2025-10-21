@@ -209,7 +209,7 @@ type chainMgrImpl struct {
 	needPublishTX              *NeedPublishTXMap                                       // Query to post TXes.
 	needPublishCB              func(upd *NeedPublishTXMap)                             // A callback.
 	dkShareRegistryProvider    registry.DKShareRegistryProvider                        // Source for DKShares.
-	varAccessNodeState         VarAccessNodeState
+	varAccessNodeState         *VarAccessNodeState
 	output                     *Output
 	asGPA                      gpa.GPA
 	me                         gpa.NodeID

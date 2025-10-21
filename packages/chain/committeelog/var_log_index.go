@@ -11,19 +11,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/metrics"
 )
 
-type VarLogIndex interface {
-	// Summary of the internal state.
-	StatusString() string
-
-	// Consensus terminated with either with DONE or SKIP.
-	// The logIndex is of the consensus that has been completed.
-	ConsensusStarted(consensusLI LogIndex) gpa.OutMessages
-
-	// Messages are exchanged, so this function handles them.
-	MsgNextLogIndexReceived(msg *MsgNextLogIndex) gpa.OutMessages
-}
-
-type varLogIndexImpl struct {
+type VarLogIndex struct {
 	nodeIDs   []gpa.NodeID                    // All the peers in this committee.
 	n         int                             // Total number of nodes.
 	f         int                             // Maximal number of faulty nodes to tolerate.
@@ -44,8 +32,8 @@ func NewVarLogIndex(
 	outputCB func(li LogIndex) gpa.OutMessages,
 	metrics *metrics.ChainCommitteeLogMetrics,
 	log log.Logger,
-) VarLogIndex {
-	vli := &varLogIndexImpl{
+) *VarLogIndex {
+	vli := &VarLogIndex{
 		nodeIDs:   nodeIDs,
 		n:         n,
 		f:         f,
@@ -60,14 +48,14 @@ func NewVarLogIndex(
 	return vli
 }
 
-func (vli *varLogIndexImpl) StatusString() string {
+func (vli *VarLogIndex) StatusString() string {
 	return fmt.Sprintf(
 		"{varLogIndex: minLI=%v, agreedLI=%v}",
 		vli.minLI, vli.agreedLI,
 	)
 }
 
-func (vli *varLogIndexImpl) ConsensusStarted(consensusLI LogIndex) gpa.OutMessages {
+func (vli *VarLogIndex) ConsensusStarted(consensusLI LogIndex) gpa.OutMessages {
 	vli.log.LogDebugf("ConsensusStarted: consensusLI=%v", consensusLI)
 	msgs := gpa.NoMessages()
 	msgs.AddAll(vli.qcStarted.MaybeSendVote(consensusLI))
@@ -75,7 +63,7 @@ func (vli *varLogIndexImpl) ConsensusStarted(consensusLI LogIndex) gpa.OutMessag
 	return msgs
 }
 
-func (vli *varLogIndexImpl) MsgNextLogIndexReceived(msg *MsgNextLogIndex) gpa.OutMessages {
+func (vli *VarLogIndex) MsgNextLogIndexReceived(msg *MsgNextLogIndex) gpa.OutMessages {
 	vli.log.LogDebugf("MsgNextLogIndexReceived, %v", msg)
 	sender := msg.Sender()
 	if !vli.knownNodeID(sender) {
@@ -92,18 +80,18 @@ func (vli *varLogIndexImpl) MsgNextLogIndexReceived(msg *MsgNextLogIndex) gpa.Ou
 	}
 }
 
-func (vli *varLogIndexImpl) msgNextLogIndexOnStarted(msg *MsgNextLogIndex) gpa.OutMessages {
+func (vli *VarLogIndex) msgNextLogIndexOnStarted(msg *MsgNextLogIndex) gpa.OutMessages {
 	vli.qcStarted.VoteReceived(msg)
 	return vli.tryOutputOnStarted()
 }
 
-func (vli *varLogIndexImpl) tryOutputOnStarted() gpa.OutMessages {
+func (vli *VarLogIndex) tryOutputOnStarted() gpa.OutMessages {
 	ali := vli.qcStarted.EnoughVotes(vli.f + 1)
 	return vli.tryOutput(ali, MsgNextLogIndexCauseStarted)
 }
 
 // That's output for the consensus. We will start consensus instances with strictly increasing LIs with non-nil Anchors.
-func (vli *varLogIndexImpl) tryOutput(li LogIndex, cause MsgNextLogIndexCause) gpa.OutMessages {
+func (vli *VarLogIndex) tryOutput(li LogIndex, cause MsgNextLogIndexCause) gpa.OutMessages {
 	if li <= vli.agreedLI || li < vli.minLI {
 		return nil
 	}
@@ -117,6 +105,6 @@ func (vli *varLogIndexImpl) tryOutput(li LogIndex, cause MsgNextLogIndexCause) g
 	return vli.outputCB(vli.agreedLI)
 }
 
-func (vli *varLogIndexImpl) knownNodeID(nodeID gpa.NodeID) bool {
+func (vli *VarLogIndex) knownNodeID(nodeID gpa.NodeID) bool {
 	return lo.Contains(vli.nodeIDs, nodeID)
 }

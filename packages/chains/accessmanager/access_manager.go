@@ -20,13 +20,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/util/pipe"
 )
 
-type AccessMgr interface {
-	TrustedNodes(trusted []*cryptolib.PublicKey)
-	ChainAccessNodes(chainID isc.ChainID, accessNodes []*cryptolib.PublicKey)
-	ChainDismissed(chainID isc.ChainID)
-}
-
-type accessMgrImpl struct {
+type AccessMgr struct {
 	dist                    gpa.AckHandler
 	dismissPeerBuf          []*cryptolib.PublicKey
 	reqTrustedNodesPipe     pipe.Pipe[*reqTrustedNodes]
@@ -52,8 +46,6 @@ type reqChainDismissed struct {
 	chainID isc.ChainID
 }
 
-var _ AccessMgr = &accessMgrImpl{}
-
 const (
 	msgTypeAccessMgr byte = iota
 )
@@ -70,10 +62,10 @@ func New(
 	nodeIdentity *cryptolib.KeyPair,
 	net peering.NetworkProvider,
 	log log.Logger,
-) AccessMgr {
+) *AccessMgr {
 	// there is only one AccessMgr per Wasp node, so the identifier is a constant.
 	netPeeringID := peering.HashPeeringIDFromBytes([]byte("AccessManager")) // AccessManager
-	ami := &accessMgrImpl{
+	ami := &AccessMgr{
 		dismissPeerBuf:          []*cryptolib.PublicKey{},
 		reqTrustedNodesPipe:     pipe.NewInfinitePipe[*reqTrustedNodes](),
 		reqChainAccessNodesPipe: pipe.NewInfinitePipe[*reqChainAccessNodes](),
@@ -104,27 +96,27 @@ func New(
 }
 
 // Implements the AccessMgr interface.
-func (ami *accessMgrImpl) TrustedNodes(trusted []*cryptolib.PublicKey) {
+func (ami *AccessMgr) TrustedNodes(trusted []*cryptolib.PublicKey) {
 	ami.reqTrustedNodesPipe.In() <- &reqTrustedNodes{trusted: trusted}
 }
 
 // Implements the AccessMgr interface.
-func (ami *accessMgrImpl) ChainAccessNodes(chainID isc.ChainID, accessNodes []*cryptolib.PublicKey) {
+func (ami *AccessMgr) ChainAccessNodes(chainID isc.ChainID, accessNodes []*cryptolib.PublicKey) {
 	ami.reqChainAccessNodesPipe.In() <- &reqChainAccessNodes{chainID: chainID, accessNodes: accessNodes}
 }
 
 // Implements the AccessMgr interface.
-func (ami *accessMgrImpl) ChainDismissed(chainID isc.ChainID) {
+func (ami *AccessMgr) ChainDismissed(chainID isc.ChainID) {
 	ami.reqChainDismissedPipe.In() <- &reqChainDismissed{chainID: chainID}
 }
 
 // A callback for amDist.
-func (ami *accessMgrImpl) dismissPeerCB(peerPubKey *cryptolib.PublicKey) {
+func (ami *AccessMgr) dismissPeerCB(peerPubKey *cryptolib.PublicKey) {
 	// Dismiss them after the messages are sent.
 	ami.dismissPeerBuf = append(ami.dismissPeerBuf, peerPubKey)
 }
 
-func (ami *accessMgrImpl) run(ctx context.Context, cleanupFunc context.CancelFunc) {
+func (ami *AccessMgr) run(ctx context.Context, cleanupFunc context.CancelFunc) {
 	reqTrustedNodesOutCh := ami.reqTrustedNodesPipe.Out()
 	reqChainAccessNodesPipeOutCh := ami.reqChainAccessNodesPipe.Out()
 	reqChainDismissedPipeOutCh := ami.reqChainDismissedPipe.Out()
@@ -173,33 +165,33 @@ func (ami *accessMgrImpl) run(ctx context.Context, cleanupFunc context.CancelFun
 	}
 }
 
-func (ami *accessMgrImpl) handleReqTrustedNodes(recv *reqTrustedNodes) {
+func (ami *AccessMgr) handleReqTrustedNodes(recv *reqTrustedNodes) {
 	ami.log.LogDebugf("handleReqTrustedNodes: trusted=%v", recv.trusted)
 	ami.sendMessages(ami.dist.Input(dist.NewInputTrustedNodes(recv.trusted)))
 }
 
-func (ami *accessMgrImpl) handleReqChainAccessNodes(recv *reqChainAccessNodes) {
+func (ami *AccessMgr) handleReqChainAccessNodes(recv *reqChainAccessNodes) {
 	ami.log.LogDebugf("handleReqChainAccessNodes: chainID=%v, access=%v", recv.chainID, recv.accessNodes)
 	ami.sendMessages(ami.dist.Input(dist.NewInputAccessNodes(recv.chainID, recv.accessNodes)))
 }
 
-func (ami *accessMgrImpl) handleReqChainDismissed(recv *reqChainDismissed) {
+func (ami *AccessMgr) handleReqChainDismissed(recv *reqChainDismissed) {
 	ami.log.LogDebugf("handleReqChainDismissed: chainID=%v", recv.chainID)
 	ami.sendMessages(ami.dist.Input(dist.NewInputChainDisabled(recv.chainID)))
 }
 
-func (ami *accessMgrImpl) handleDistDebugTick() {
+func (ami *AccessMgr) handleDistDebugTick() {
 	ami.log.LogDebugf(
 		"AccessMgr, dist=%v",
 		ami.dist.StatusString(),
 	)
 }
 
-func (ami *accessMgrImpl) handleDistTimeTick(timestamp time.Time) {
+func (ami *AccessMgr) handleDistTimeTick(timestamp time.Time) {
 	ami.sendMessages(ami.dist.Input(ami.dist.MakeTickInput(timestamp)))
 }
 
-func (ami *accessMgrImpl) handleNetMessage(recv *peering.PeerMessageIn) {
+func (ami *AccessMgr) handleNetMessage(recv *peering.PeerMessageIn) {
 	msg, err := ami.dist.UnmarshalMessage(recv.MsgData)
 	if err != nil {
 		ami.log.LogWarnf("cannot parse message: %v", err)
@@ -210,7 +202,7 @@ func (ami *accessMgrImpl) handleNetMessage(recv *peering.PeerMessageIn) {
 	ami.sendMessages(outMsgs)
 }
 
-func (ami *accessMgrImpl) sendMessages(outMsgs gpa.OutMessages) {
+func (ami *AccessMgr) sendMessages(outMsgs gpa.OutMessages) {
 	if len(ami.dismissPeerBuf) != 0 {
 		for _, dismissPeerPub := range ami.dismissPeerBuf {
 			ami.dist.DismissPeer(ami.pubKeyAsNodeID(dismissPeerPub))
@@ -227,7 +219,7 @@ func (ami *accessMgrImpl) sendMessages(outMsgs gpa.OutMessages) {
 	})
 }
 
-func (ami *accessMgrImpl) pubKeyAsNodeID(pubKey *cryptolib.PublicKey) gpa.NodeID {
+func (ami *AccessMgr) pubKeyAsNodeID(pubKey *cryptolib.PublicKey) gpa.NodeID {
 	nodeID := gpa.NodeIDFromPublicKey(pubKey)
 	if _, ok := ami.netPeerPubs[nodeID]; !ok {
 		ami.netPeerPubs[nodeID] = pubKey
