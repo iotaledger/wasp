@@ -39,7 +39,7 @@ func TestBasic(t *testing.T) {
 
 		//
 		// Setup nodes.
-		distributedSignatures := map[gpa.NodeID]distsign.DistributedSignature{}
+		distributedSignatures := map[gpa.NodeID]*distsign.DistributedSignature{}
 		gpas := map[gpa.NodeID]gpa.GPA{}
 		for _, nid := range nodeIDs {
 			distributedSignatures[nid] = distsign.New(suite, nodeIDs, nodePKs, f, nid, nodeSKs[nid], longTermSecretShares[nid], log)

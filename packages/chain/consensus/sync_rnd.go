@@ -8,7 +8,7 @@ import (
 )
 
 type SyncRND struct {
-	c              *consensusImpl
+	c              *Consensus
 	blsThreshold   int
 	blsPartialSigs map[gpa.NodeID][]byte
 	dataToSign     []byte
@@ -17,7 +17,7 @@ type SyncRND struct {
 
 func NewSyncRND(
 	blsThreshold int,
-	c *consensusImpl,
+	c *Consensus,
 ) *SyncRND {
 	return &SyncRND{
 		blsThreshold:   blsThreshold,

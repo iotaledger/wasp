@@ -12,7 +12,7 @@ import (
 )
 
 type SyncDistributedSignature struct {
-	c                     *consensusImpl
+	c                     *Consensus
 	DecidedIndexProposals map[gpa.NodeID][]int
 	MessageToSign         []byte
 	initialInputsReady    bool
@@ -21,7 +21,7 @@ type SyncDistributedSignature struct {
 	outputReady           bool
 }
 
-func NewSyncDistributedSignature(c *consensusImpl) *SyncDistributedSignature {
+func NewSyncDistributedSignature(c *Consensus) *SyncDistributedSignature {
 	return &SyncDistributedSignature{c: c}
 }
 

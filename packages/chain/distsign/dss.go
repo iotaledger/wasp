@@ -37,10 +37,6 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/tcrypto"
 )
 
-type DistributedSignature interface {
-	AsGPA() gpa.GPA
-}
-
 type Output struct {
 	ProposedIndexes []int  // Intermediate output.
 	Signature       []byte // Final output.
@@ -50,7 +46,7 @@ const (
 	subsystemDistributedKeyGeneration byte = iota
 )
 
-type distributedSignatureImpl struct {
+type DistributedSignature struct {
 	suite                           suites.Suite
 	withWrappers                    gpa.GPA // This instance, with all the wrappers.
 	me                              gpa.NodeID
@@ -71,8 +67,6 @@ type distributedSignatureImpl struct {
 	log                             log.Logger
 }
 
-var _ DistributedSignature = &distributedSignatureImpl{}
-
 func New(
 	suite suites.Suite,
 	nodeIDs []gpa.NodeID,
@@ -82,8 +76,8 @@ func New(
 	mySK kyber.Scalar,
 	longTermSecretShare tcrypto.SecretShare,
 	log log.Logger,
-) DistributedSignature {
-	d := &distributedSignatureImpl{
+) *DistributedSignature {
+	d := &DistributedSignature{
 		suite:                           suite,
 		withWrappers:                    nil, // Set bellow.
 		me:                              me,
@@ -106,13 +100,13 @@ func New(
 	return d
 }
 
-// DSS Specific Interface: Get a GPA instance to pass messages with all the intermediate layers.
-func (d *distributedSignatureImpl) AsGPA() gpa.GPA {
+// AsGPA implements DSS Specific Interface: Get a GPA instance to pass messages with all the intermediate layers.
+func (d *DistributedSignature) AsGPA() gpa.GPA {
 	return d.withWrappers
 }
 
-// Handle the input to the protocol.
-func (d *distributedSignatureImpl) Input(input gpa.Input) gpa.OutMessages {
+// Input handles the input to the protocol.
+func (d *DistributedSignature) Input(input gpa.Input) gpa.OutMessages {
 	d.log.LogDebugf("Input %+v", input)
 	switch input := input.(type) {
 	case *inputStart:
@@ -124,8 +118,8 @@ func (d *distributedSignatureImpl) Input(input gpa.Input) gpa.OutMessages {
 	panic(fmt.Errorf("unexpected input: %T: %+v", input, input))
 }
 
-// Handle the messages.
-func (d *distributedSignatureImpl) Message(msg gpa.Message) gpa.OutMessages {
+// Message handles the messages.
+func (d *DistributedSignature) Message(msg gpa.Message) gpa.OutMessages {
 	switch msgT := msg.(type) {
 	case *msgPartialSig:
 		d.log.LogDebugf("Message %+v", msg)
@@ -142,8 +136,8 @@ func (d *distributedSignatureImpl) Message(msg gpa.Message) gpa.OutMessages {
 	}
 }
 
-// Provide the output, if any.
-func (d *distributedSignatureImpl) Output() gpa.Output {
+// Output provides the output, if any.
+func (d *DistributedSignature) Output() gpa.Output {
 	if d.distKeyGenOutIndexes == nil && d.signature == nil {
 		return nil
 	}
@@ -153,7 +147,7 @@ func (d *distributedSignatureImpl) Output() gpa.Output {
 	}
 }
 
-func (d *distributedSignatureImpl) tryHandleDistributedKeyGenerationOutput(msgs gpa.OutMessages) gpa.OutMessages {
+func (d *DistributedSignature) tryHandleDistributedKeyGenerationOutput(msgs gpa.OutMessages) gpa.OutMessages {
 	distKeyGenOut := d.distributedKeyGen.Output()
 	if d.distKeyGenOutIndexes == nil && distKeyGenOut != nil && distKeyGenOut.(*nonce.Output).Indexes != nil {
 		d.distKeyGenOutIndexes = distKeyGenOut.(*nonce.Output).Indexes
@@ -219,7 +213,7 @@ func (d *distributedSignatureImpl) tryHandleDistributedKeyGenerationOutput(msgs 
 	return msgs
 }
 
-func (d *distributedSignatureImpl) handlePartialSig(msg *msgPartialSig) gpa.OutMessages {
+func (d *DistributedSignature) handlePartialSig(msg *msgPartialSig) gpa.OutMessages {
 	if d.signature != nil {
 		// Signature already aggregated, ignore the remaining shares.
 		return nil
@@ -253,7 +247,7 @@ func (d *distributedSignatureImpl) handlePartialSig(msg *msgPartialSig) gpa.OutM
 	return nil
 }
 
-func (d *distributedSignatureImpl) handleDecided(input *inputDecided) gpa.OutMessages {
+func (d *DistributedSignature) handleDecided(input *inputDecided) gpa.OutMessages {
 	if d.distKeyGenDecidedIndexProposals != nil {
 		d.log.LogWarn("Duplicate will be dropped: DecidedIndexes=%+v", input.decidedIndexProposals)
 		return nil
@@ -266,7 +260,7 @@ func (d *distributedSignatureImpl) handleDecided(input *inputDecided) gpa.OutMes
 	return d.tryHandleDistributedKeyGenerationOutput(msgs)
 }
 
-func (d *distributedSignatureImpl) nodePKArray() []kyber.Point {
+func (d *DistributedSignature) nodePKArray() []kyber.Point {
 	res := make([]kyber.Point, len(d.nodeIDs))
 	for i := range res {
 		res[i] = d.nodePKs[d.nodeIDs[i]]
@@ -274,6 +268,6 @@ func (d *distributedSignatureImpl) nodePKArray() []kyber.Point {
 	return res
 }
 
-func (d *distributedSignatureImpl) StatusString() string {
+func (d *DistributedSignature) StatusString() string {
 	return fmt.Sprintf("{DSS, dkg=%v}", d.distributedKeyGen.StatusString())
 }

@@ -9,7 +9,7 @@ import (
 )
 
 type SyncMempool struct {
-	c                  *consensusImpl
+	c                  *Consensus
 	baseAnchor         *isc.StateAnchor
 	baseAnchorReceived bool
 	proposalReceived   bool
@@ -18,7 +18,7 @@ type SyncMempool struct {
 }
 
 func NewSyncMempool(
-	c *consensusImpl,
+	c *Consensus,
 ) *SyncMempool {
 	return &SyncMempool{
 		c: c,

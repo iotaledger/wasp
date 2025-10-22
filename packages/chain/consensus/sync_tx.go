@@ -14,7 +14,7 @@ import (
 )
 
 type SyncTX struct {
-	c *consensusImpl
+	c *Consensus
 
 	decidedAnchor *isc.StateAnchor
 	unsignedTX    *iotago.TransactionData
@@ -25,7 +25,7 @@ type SyncTX struct {
 	inputsReady bool
 }
 
-func NewSyncTX(c *consensusImpl) *SyncTX {
+func NewSyncTX(c *Consensus) *SyncTX {
 	return &SyncTX{c: c}
 }
 
