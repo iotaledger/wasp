@@ -11,7 +11,7 @@ import (
 )
 
 type SyncNodeconn struct {
-	c *consensusImpl
+	c *Consensus
 
 	inputProcessed      bool
 	inputAnchor         *isc.StateAnchor
@@ -24,7 +24,7 @@ type SyncNodeconn struct {
 	l1params        *parameters.L1Params
 }
 
-func NewSyncNodeconn(c *consensusImpl) *SyncNodeconn {
+func NewSyncNodeconn(c *Consensus) *SyncNodeconn {
 	return &SyncNodeconn{c: c}
 }
 
