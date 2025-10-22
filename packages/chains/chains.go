@@ -126,7 +126,7 @@ type Chains struct {
 
 	mutex     *sync.RWMutex
 	allChains *shrinkingmap.ShrinkingMap[isc.ChainID, *activeChain]
-	accessMgr accessmanager.AccessMgr
+	accessMgr *accessmanager.AccessMgr
 
 	cleanupFunc         context.CancelFunc
 	shutdownCoordinator *shutdown.Coordinator

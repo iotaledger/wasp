@@ -56,29 +56,13 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
-type VarLocalView interface {
-	//
-	// Called in the case of new Anchor from L1.
-	AnchorConfirmed(confirmedAnchor *isc.StateAnchor) gpa.OutMessages
-	//
-	// Called by the consensus to determine if a produced TX can be posted to the L1.
-	TransactionProduced(logIndex LogIndex, consumedAnchor *isc.StateAnchor, tx *iotasigner.SignedTransaction) gpa.OutMessages // TODO: Call it.
-	//
-	// Called if a TX is rejected.
-	// This will always be called after TransactionProduced.
-	TransactionRejected(logIndex LogIndex) gpa.OutMessages // TODO: Call it.
-	//
-	// Support functions.
-	StatusString() string
-}
-
 type varLocalViewEntry struct {
 	logIndex       LogIndex
 	consumedAnchor *isc.StateAnchor
 	transaction    *iotasigner.SignedTransaction
 }
 
-type varLocalViewImpl struct {
+type VarLocalView struct {
 	latestTip *isc.StateAnchor
 	// The latest confirmed Anchor, as received from L1.
 	// It can be nil, if the latest Anchor is unclear (either not received yet).
@@ -91,9 +75,9 @@ type varLocalViewImpl struct {
 	log log.Logger
 }
 
-func NewVarLocalView(pipeliningLimit int, tipUpdatedCB func(ao *isc.StateAnchor) gpa.OutMessages, log log.Logger) VarLocalView {
+func NewVarLocalView(pipeliningLimit int, tipUpdatedCB func(ao *isc.StateAnchor) gpa.OutMessages, log log.Logger) *VarLocalView {
 	log.LogDebugf("NewVarLocalView, pipeliningLimit=%v", pipeliningLimit)
-	return &varLocalViewImpl{
+	return &VarLocalView{
 		latestTip:       nil,
 		confirmedAnchor: nil,
 		pendingTXes:     shrinkingmap.New[uint32, []*varLocalViewEntry](),
@@ -102,12 +86,12 @@ func NewVarLocalView(pipeliningLimit int, tipUpdatedCB func(ao *isc.StateAnchor)
 	}
 }
 
-func (lvi *varLocalViewImpl) AnchorConfirmed(confirmedAnchor *isc.StateAnchor) gpa.OutMessages {
+func (lvi *VarLocalView) AnchorConfirmed(confirmedAnchor *isc.StateAnchor) gpa.OutMessages {
 	lvi.confirmedAnchor = confirmedAnchor
 	return lvi.processIt()
 }
 
-func (lvi *varLocalViewImpl) TransactionProduced(logIndex LogIndex, consumedAnchor *isc.StateAnchor, tx *iotasigner.SignedTransaction) gpa.OutMessages {
+func (lvi *VarLocalView) TransactionProduced(logIndex LogIndex, consumedAnchor *isc.StateAnchor, tx *iotasigner.SignedTransaction) gpa.OutMessages {
 	stateIndex := consumedAnchor.GetStateIndex()
 	stateIndexEntries, _ := lvi.pendingTXes.GetOrCreate(stateIndex, func() []*varLocalViewEntry { return []*varLocalViewEntry{} })
 	contains := lo.ContainsBy(stateIndexEntries, func(entry *varLocalViewEntry) bool {
@@ -124,7 +108,7 @@ func (lvi *varLocalViewImpl) TransactionProduced(logIndex LogIndex, consumedAnch
 	return lvi.processIt()
 }
 
-func (lvi *varLocalViewImpl) TransactionRejected(logIndex LogIndex) gpa.OutMessages {
+func (lvi *VarLocalView) TransactionRejected(logIndex LogIndex) gpa.OutMessages {
 	lvi.pendingTXes.ForEach(func(stateIndex uint32, entries []*varLocalViewEntry) bool {
 		entries = lo.Filter(entries, func(entry *varLocalViewEntry, index int) bool {
 			return entry.logIndex != logIndex
@@ -139,11 +123,11 @@ func (lvi *varLocalViewImpl) TransactionRejected(logIndex LogIndex) gpa.OutMessa
 	return lvi.processIt()
 }
 
-func (lvi *varLocalViewImpl) StatusString() string {
+func (lvi *VarLocalView) StatusString() string {
 	return fmt.Sprintf("{varLocalView: confirmedAnchor=%v, |pendingTxIndexes|=%v}", lvi.confirmedAnchor, lvi.pendingTXes.Size())
 }
 
-func (lvi *varLocalViewImpl) processIt() gpa.OutMessages {
+func (lvi *VarLocalView) processIt() gpa.OutMessages {
 	if lvi.confirmedAnchor == nil {
 		lvi.updateVal(nil)
 		return nil
@@ -167,7 +151,7 @@ func (lvi *varLocalViewImpl) processIt() gpa.OutMessages {
 	return lvi.updateVal(lvi.confirmedAnchor)
 }
 
-func (lvi *varLocalViewImpl) updateVal(tip *isc.StateAnchor) gpa.OutMessages {
+func (lvi *VarLocalView) updateVal(tip *isc.StateAnchor) gpa.OutMessages {
 	if tip == nil && lvi.latestTip == nil {
 		return nil
 	}

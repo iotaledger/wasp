@@ -14,23 +14,12 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/state"
 )
 
+type StateTrackerStepCB = func(st state.State, from, till *isc.StateAnchor, added, removed []state.Block)
+
 // StateTracker tracks a single chain of state transitions. We will have 2 instances of it:
 //   - one for tracking the active state. It is needed for mempool to clear the requests.
 //   - one for the committed state to await for committed request receipts.
-type StateTracker interface {
-	//
-	// The main functions provided by this component.
-	TrackAnchor(ao *isc.StateAnchor, strict bool)
-	AwaitRequestReceipt(query *awaitReceiptReq)
-	//
-	// The following 2 functions are only to move the channel receive loop to the main ChainNode thread.
-	ChainNodeAwaitStateMgrCh() <-chan *inputs.ChainFetchStateDiffResults
-	ChainNodeStateMgrResponse(*inputs.ChainFetchStateDiffResults)
-}
-
-type StateTrackerStepCB = func(st state.State, from, till *isc.StateAnchor, added, removed []state.Block)
-
-type stateTrackerImpl struct {
+type StateTracker struct {
 	ctx                    context.Context
 	stateMgr               statemanager.StateMgr
 	haveLatestCB           StateTrackerStepCB
@@ -45,8 +34,6 @@ type stateTrackerImpl struct {
 	log                    log.Logger
 }
 
-var _ StateTracker = &stateTrackerImpl{}
-
 func NewStateTracker(
 	ctx context.Context,
 	stateMgr statemanager.StateMgr,
@@ -54,8 +41,8 @@ func NewStateTracker(
 	metricWantStateIndexCB func(uint32),
 	metricHaveStateIndexCB func(uint32),
 	log log.Logger,
-) StateTracker {
-	return &stateTrackerImpl{
+) *StateTracker {
+	return &StateTracker{
 		ctx:                    ctx,
 		stateMgr:               stateMgr,
 		haveLatestCB:           haveLatestCB,
@@ -71,7 +58,7 @@ func NewStateTracker(
 	}
 }
 
-func (sti *stateTrackerImpl) TrackAnchor(ao *isc.StateAnchor, strict bool) {
+func (sti *StateTracker) TrackAnchor(ao *isc.StateAnchor, strict bool) {
 	if ao == nil {
 		// We don't have the latest Anchor while we are still synching.
 		return
@@ -95,19 +82,19 @@ func (sti *stateTrackerImpl) TrackAnchor(ao *isc.StateAnchor, strict bool) {
 	sti.nextAnchorWaitCh = sti.stateMgr.ChainFetchStateDiff(nextAnchorCtx, sti.haveAnchor, sti.nextAnchor)
 }
 
-func (sti *stateTrackerImpl) AwaitRequestReceipt(query *awaitReceiptReq) {
+func (sti *StateTracker) AwaitRequestReceipt(query *awaitReceiptReq) {
 	sti.log.LogDebugf("AwaitRequestReceipt, query.requestID=%v", query.requestID)
 	sti.awaitReceipt.Await(query)
 }
 
-// To be used in the select loop at the chain node.
-func (sti *stateTrackerImpl) ChainNodeAwaitStateMgrCh() <-chan *inputs.ChainFetchStateDiffResults {
+// ChainNodeAwaitStateMgrCh is to be used in the select loop at the chain node.
+func (sti *StateTracker) ChainNodeAwaitStateMgrCh() <-chan *inputs.ChainFetchStateDiffResults {
 	return sti.nextAnchorWaitCh
 }
 
-// This is assumed to be called right after the `ChainNodeAwaitStateMgrCh()`,
+// ChainNodeStateMgrResponse is assumed to be called right after the `ChainNodeAwaitStateMgrCh()`,
 // thus no additional checks are present here.
-func (sti *stateTrackerImpl) ChainNodeStateMgrResponse(results *inputs.ChainFetchStateDiffResults) {
+func (sti *StateTracker) ChainNodeStateMgrResponse(results *inputs.ChainFetchStateDiffResults) {
 	sti.cancelQuery()
 	newState := results.GetNewState()
 	sti.log.LogDebugf(
@@ -121,7 +108,7 @@ func (sti *stateTrackerImpl) ChainNodeStateMgrResponse(results *inputs.ChainFetc
 	sti.awaitReceipt.ConsiderState(newState, results.GetAdded())
 }
 
-func (sti *stateTrackerImpl) cancelQuery() {
+func (sti *StateTracker) cancelQuery() {
 	if sti.nextAnchorCancel == nil {
 		return
 	}

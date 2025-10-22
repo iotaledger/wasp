@@ -12,18 +12,8 @@ import (
 
 type onLIInc = func(li LogIndex) gpa.OutMessages
 
-type VarConsInsts interface {
-	ConsOutputDone(li LogIndex, producedAnchor *isc.StateAnchor, cb onLIInc) gpa.OutMessages
-	ConsOutputSkip(li LogIndex, cb onLIInc) gpa.OutMessages
-	ConsTimeout(li LogIndex, cb onLIInc) gpa.OutMessages
-	LatestSeenLI(seenLI LogIndex, cb onLIInc) gpa.OutMessages
-	LatestL1Anchor(ao *isc.StateAnchor, cb onLIInc) gpa.OutMessages
-	Tick(cb onLIInc) gpa.OutMessages
-	StatusString() string
-}
-
-// consInsts implements the algorithm modeled in WaspChainCommitteeLogSUI.tla
-type varConsInstsImpl struct {
+// VarConsInsts implements the algorithm modeled in WaspChainCommitteeLogSUI.tla
+type VarConsInsts struct {
 	haveConsOut bool
 	lis         map[LogIndex]*isc.StateAnchor
 	minLI       LogIndex         // Do not participate in LI lower than this.
@@ -37,16 +27,14 @@ type varConsInstsImpl struct {
 	log         log.Logger
 }
 
-var _ VarConsInsts = &varConsInstsImpl{}
-
 // NewVarConsInsts is a constructor.
 func NewVarConsInsts(
 	minLI LogIndex,
 	persistCB func(li LogIndex),
 	outputCB func(lis Output),
 	log log.Logger,
-) VarConsInsts {
-	vci := &varConsInstsImpl{
+) *VarConsInsts {
+	vci := &VarConsInsts{
 		haveConsOut: false,
 		lis: map[LogIndex]*isc.StateAnchor{
 			minLI: nil,
@@ -65,14 +53,14 @@ func NewVarConsInsts(
 	return vci
 }
 
-// Consensus at LI produced a TX.
-func (vci *varConsInstsImpl) ConsOutputDone(li LogIndex, producedAnchor *isc.StateAnchor, cb onLIInc) gpa.OutMessages {
+// ConsOutputDone - Consensus at LI produced a TX.
+func (vci *VarConsInsts) ConsOutputDone(li LogIndex, producedAnchor *isc.StateAnchor, cb onLIInc) gpa.OutMessages {
 	vci.haveConsOut = true
 	return vci.trySet(li.Next(), producedAnchor, cb)
 }
 
-// Consensus at LI terminate with a SKIP/⊥ decision.
-func (vci *varConsInstsImpl) ConsOutputSkip(li LogIndex, cb onLIInc) gpa.OutMessages {
+// ConsOutputSkip - Consensus at LI terminate with a SKIP/⊥ decision.
+func (vci *VarConsInsts) ConsOutputSkip(li LogIndex, cb onLIInc) gpa.OutMessages {
 	vci.haveConsOut = true
 	if vci.lastAnchor == nil {
 		vci.lastLI = li.Next() // Will be set in LatestL1Anchor.
@@ -81,13 +69,13 @@ func (vci *varConsInstsImpl) ConsOutputSkip(li LogIndex, cb onLIInc) gpa.OutMess
 	return vci.trySet(li.Next(), vci.lastAnchor, cb)
 }
 
-// Consensus at LI indicated a timeout.
-func (vci *varConsInstsImpl) ConsTimeout(li LogIndex, cb onLIInc) gpa.OutMessages {
+// ConsOutputTimeout - Consensus at LI indicated a timeout.
+func (vci *VarConsInsts) ConsOutputTimeout(li LogIndex, cb onLIInc) gpa.OutMessages {
 	return vci.trySet(li.Next(), nil, cb)
 }
 
-// If we see consensus proposals from F+1 nodes at seenLI...
-func (vci *varConsInstsImpl) LatestSeenLI(seenLI LogIndex, cb onLIInc) gpa.OutMessages {
+// LatestSeenLI - If we see consensus proposals from F+1 nodes at seenLI...
+func (vci *VarConsInsts) LatestSeenLI(seenLI LogIndex, cb onLIInc) gpa.OutMessages {
 	msgs := gpa.NoMessages()
 	msgs.AddAll(vci.trySet(seenLI.Prev(), nil, cb))
 	if !vci.haveConsOut {
@@ -101,13 +89,13 @@ func (vci *varConsInstsImpl) LatestSeenLI(seenLI LogIndex, cb onLIInc) gpa.OutMe
 	return msgs
 }
 
-// Here we get the latest L1 state.
-func (vci *varConsInstsImpl) LatestL1Anchor(ao *isc.StateAnchor, cb onLIInc) gpa.OutMessages {
+// LatestL1Anchor - Here we get the latest L1 state.
+func (vci *VarConsInsts) LatestL1Anchor(ao *isc.StateAnchor, cb onLIInc) gpa.OutMessages {
 	vci.lastAnchor = ao
 	return vci.trySet(vci.lastLI, ao, cb) // Finish ConsOutputSkipBase, if pending.
 }
 
-func (vci *varConsInstsImpl) Tick(cb onLIInc) gpa.OutMessages {
+func (vci *VarConsInsts) Tick(cb onLIInc) gpa.OutMessages {
 	n := len(vci.delayed)
 	last := vci.delayed[n-1]
 	for i := n - 1; i > 0; i-- {
@@ -120,7 +108,7 @@ func (vci *varConsInstsImpl) Tick(cb onLIInc) gpa.OutMessages {
 	return vci.trySet(last, nil, cb)
 }
 
-func (vci *varConsInstsImpl) trySet(li LogIndex, ao *isc.StateAnchor, cb onLIInc) gpa.OutMessages {
+func (vci *VarConsInsts) trySet(li LogIndex, ao *isc.StateAnchor, cb onLIInc) gpa.OutMessages {
 	//
 	// Is it outdated?
 	if li < vci.minLI {
@@ -165,7 +153,7 @@ func (vci *varConsInstsImpl) trySet(li LogIndex, ao *isc.StateAnchor, cb onLIInc
 	return msgs
 }
 
-func (vci *varConsInstsImpl) StatusString() string {
+func (vci *VarConsInsts) StatusString() string {
 	buf := ""
 	for li := vci.minLI; li <= vci.maxLI; li = li.Next() {
 		ao, ok := vci.lis[li]

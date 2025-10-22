@@ -78,7 +78,7 @@ func testBasic(t *testing.T, n int, reliable bool) {
 	networkProviders := peeringNetwork.NetworkProviders()
 	defer peeringNetwork.Close()
 
-	accessMgrs := make([]accessmanager.AccessMgr, len(peerIdentities))
+	accessMgrs := make([]*accessmanager.AccessMgr, len(peerIdentities))
 	var nodeServersMx sync.Mutex
 	nodeServers := make([][]*cryptolib.PublicKey, len(peerIdentities)) // That's the output.
 	for i := range accessMgrs {
