@@ -118,11 +118,11 @@ type Chains struct {
 	snapshotFolderPath                  string
 	snapshotNetworkPaths                []string
 
-	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
-	dkShareRegistryProvider     registry.DKShareRegistryProvider
-	nodeIdentityProvider        registry.NodeIdentityProvider
-	consensusStateRegistry      committeelog.ConsensusStateRegistry
-	chainListener               chain.ChainListener
+	chainRecordRegistry    registry.ChainRecordRegistry
+	dkShareRegistry        registry.DKShareRegistry
+	nodeIdentityProvider   registry.NodeIdentityProvider
+	consensusStateRegistry committeelog.ConsensusStateRegistry
+	chainListener          chain.ChainListener
 
 	mutex     *sync.RWMutex
 	allChains *shrinkingmap.ShrinkingMap[isc.ChainID, *activeChain]
@@ -175,8 +175,8 @@ func New(
 	snapshotDelay uint32,
 	snapshotFolderPath string,
 	snapshotNetworkPaths []string,
-	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
-	dkShareRegistryProvider registry.DKShareRegistryProvider,
+	chainRecordRegistry registry.ChainRecordRegistry,
+	dkShareRegistry registry.DKShareRegistry,
 	nodeIdentityProvider registry.NodeIdentityProvider,
 	consensusStateRegistry committeelog.ConsensusStateRegistry,
 	chainListener chain.ChainListener,
@@ -223,8 +223,8 @@ func New(
 		snapshotDelay:                       snapshotDelay,
 		snapshotFolderPath:                  snapshotFolderPath,
 		snapshotNetworkPaths:                snapshotNetworkPaths,
-		chainRecordRegistryProvider:         chainRecordRegistryProvider,
-		dkShareRegistryProvider:             dkShareRegistryProvider,
+		chainRecordRegistry:                 chainRecordRegistry,
+		dkShareRegistry:                     dkShareRegistry,
 		nodeIdentityProvider:                nodeIdentityProvider,
 		chainListener:                       nil, // See bellow.
 		mempoolSettings:                     mempoolSettings,
@@ -296,7 +296,7 @@ func (c *Chains) runWithMode(ctx context.Context, mode ChainMode) error {
 		c.accessMgr = accessmanager.New(ctx, c.chainServersUpdatedCB, c.nodeIdentityProvider.NodeIdentity(), c.networkProvider, c.log.NewChildLogger("AM"))
 		c.trustedNetworkListenerCancel = c.trustedNetworkManager.TrustedPeersListener(c.trustedPeersUpdatedCB)
 
-		unhook := c.chainRecordRegistryProvider.Events().ChainRecordModified.Hook(func(event *registry.ChainRecordModifiedEvent) {
+		unhook := c.chainRecordRegistry.Events().ChainRecordModified.Hook(func(event *registry.ChainRecordModifiedEvent) {
 			c.mutex.RLock()
 			defer c.mutex.RUnlock()
 			if chain, exists := c.allChains.Get(event.ChainRecord.ChainID()); exists {
@@ -351,7 +351,7 @@ func (c *Chains) chainAccessUpdatedCB(chainID isc.ChainID, accessNodes []*crypto
 
 func (c *Chains) activateAllFromRegistry(mode ChainMode) error {
 	var innerErr error
-	if err := c.chainRecordRegistryProvider.ForEachActiveChainRecord(func(chainRecord *registry.ChainRecord) bool {
+	if err := c.chainRecordRegistry.ForEachActiveChainRecord(func(chainRecord *registry.ChainRecord) bool {
 		chainID := chainRecord.ChainID()
 		if err := c.activateWithoutLocking(chainID, mode); err != nil {
 			innerErr = fmt.Errorf("cannot activate chain %s: %w", chainRecord.ChainID(), err)
@@ -380,12 +380,12 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID, mode ChainMode) err
 	}
 
 	// Activate the chain in the persistent store, if it is not activated yet.
-	chainRecord, err := c.chainRecordRegistryProvider.ChainRecord(chainID)
+	chainRecord, err := c.chainRecordRegistry.ChainRecord(chainID)
 	if err != nil {
 		return fmt.Errorf("cannot get chain record for %v: %w", chainID, err)
 	}
 	if !chainRecord.Active {
-		if _, err2 := c.chainRecordRegistryProvider.ActivateChainRecord(chainID); err2 != nil {
+		if _, err2 := c.chainRecordRegistry.ActivateChainRecord(chainID); err2 != nil {
 			return fmt.Errorf("cannot activate chain: %w", err2)
 		}
 	}
@@ -427,7 +427,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID, mode ChainMode) err
 		c.nodeConnection,
 		c.nodeIdentityProvider.NodeIdentity(),
 		c.processorConfig,
-		c.dkShareRegistryProvider,
+		c.dkShareRegistry,
 		c.consensusStateRegistry,
 		c.walLoadToStore,
 		components.WAL,
@@ -604,7 +604,7 @@ func (c *Chains) Deactivate(chainID isc.ChainID) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	if _, err := c.chainRecordRegistryProvider.DeactivateChainRecord(chainID); err != nil {
+	if _, err := c.chainRecordRegistry.DeactivateChainRecord(chainID); err != nil {
 		return fmt.Errorf("cannot deactivate chain %v: %w", chainID, err)
 	}
 

@@ -40,9 +40,9 @@ func provide(c *dig.Container) error {
 	type networkDeps struct {
 		dig.In
 
-		NodeIdentityProvider         registry.NodeIdentityProvider
-		TrustedPeersRegistryProvider registry.TrustedPeersRegistryProvider
-		PeeringMetricsProvider       *metrics.PeeringMetricsProvider
+		NodeIdentityProvider   registry.NodeIdentityProvider
+		TrustedPeersRegistry   registry.TrustedPeersRegistry
+		PeeringMetricsProvider *metrics.PeeringMetricsProvider
 	}
 
 	type networkResult struct {
@@ -58,7 +58,7 @@ func provide(c *dig.Container) error {
 			ParamsPeering.PeeringURL,
 			ParamsPeering.Port,
 			nodeIdentity,
-			deps.TrustedPeersRegistryProvider,
+			deps.TrustedPeersRegistry,
 			deps.PeeringMetricsProvider,
 			Component.Logger,
 		)

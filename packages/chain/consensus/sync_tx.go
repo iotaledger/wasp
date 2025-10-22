@@ -13,30 +13,23 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/state"
 )
 
-type SyncTX interface {
-	AnchorDecided(ao *isc.StateAnchor) gpa.OutMessages
-	UnsignedTXReceived(unsignedTX *iotago.TransactionData) gpa.OutMessages
-	SignatureReceived(signature []byte) gpa.OutMessages
-	BlockSaved(block state.Block) gpa.OutMessages
-	String() string
-}
+type SyncTX struct {
+	c *consensusImpl
 
-type syncTXImpl struct {
 	decidedAnchor *isc.StateAnchor
 	unsignedTX    *iotago.TransactionData
 	signature     []byte
 	blockSaved    bool
 	block         state.Block
 
-	inputsReady   bool
-	inputsReadyCB func(decidedAnchor *isc.StateAnchor, unsignedTX *iotago.TransactionData, block state.Block, signature []byte) gpa.OutMessages
+	inputsReady bool
 }
 
-func NewSyncTX(inputsReadyCB func(decidedAnchor *isc.StateAnchor, unsignedTX *iotago.TransactionData, block state.Block, signature []byte) gpa.OutMessages) SyncTX {
-	return &syncTXImpl{inputsReadyCB: inputsReadyCB}
+func NewSyncTX(c *consensusImpl) *SyncTX {
+	return &SyncTX{c: c}
 }
 
-func (sub *syncTXImpl) AnchorDecided(ao *isc.StateAnchor) gpa.OutMessages {
+func (sub *SyncTX) AnchorDecided(ao *isc.StateAnchor) gpa.OutMessages {
 	if sub.decidedAnchor != nil || ao == nil {
 		return nil
 	}
@@ -44,7 +37,7 @@ func (sub *syncTXImpl) AnchorDecided(ao *isc.StateAnchor) gpa.OutMessages {
 	return sub.tryCompleteInputs()
 }
 
-func (sub *syncTXImpl) UnsignedTXReceived(unsignedTX *iotago.TransactionData) gpa.OutMessages {
+func (sub *SyncTX) UnsignedTXReceived(unsignedTX *iotago.TransactionData) gpa.OutMessages {
 	if sub.unsignedTX != nil || unsignedTX == nil {
 		return nil
 	}
@@ -52,7 +45,7 @@ func (sub *syncTXImpl) UnsignedTXReceived(unsignedTX *iotago.TransactionData) gp
 	return sub.tryCompleteInputs()
 }
 
-func (sub *syncTXImpl) SignatureReceived(signature []byte) gpa.OutMessages {
+func (sub *SyncTX) SignatureReceived(signature []byte) gpa.OutMessages {
 	if sub.signature != nil || signature == nil {
 		return nil
 	}
@@ -60,7 +53,7 @@ func (sub *syncTXImpl) SignatureReceived(signature []byte) gpa.OutMessages {
 	return sub.tryCompleteInputs()
 }
 
-func (sub *syncTXImpl) BlockSaved(block state.Block) gpa.OutMessages {
+func (sub *SyncTX) BlockSaved(block state.Block) gpa.OutMessages {
 	if sub.blockSaved {
 		return nil
 	}
@@ -69,16 +62,16 @@ func (sub *syncTXImpl) BlockSaved(block state.Block) gpa.OutMessages {
 	return sub.tryCompleteInputs()
 }
 
-func (sub *syncTXImpl) tryCompleteInputs() gpa.OutMessages {
+func (sub *SyncTX) tryCompleteInputs() gpa.OutMessages {
 	if sub.inputsReady || sub.decidedAnchor == nil || sub.unsignedTX == nil || sub.signature == nil || !sub.blockSaved {
 		return nil
 	}
 	sub.inputsReady = true
-	return sub.inputsReadyCB(sub.decidedAnchor, sub.unsignedTX, sub.block, sub.signature)
+	return sub.c.uponTXInputsReady(sub.decidedAnchor, sub.unsignedTX, sub.block, sub.signature)
 }
 
-// Try to provide useful human-readable compact status.
-func (sub *syncTXImpl) String() string {
+// String tries to provide useful human-readable compact status.
+func (sub *SyncTX) String() string {
 	str := "TX"
 	if sub.inputsReady {
 		str += statusStrOK

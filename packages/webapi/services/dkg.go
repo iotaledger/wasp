@@ -20,16 +20,16 @@ const (
 )
 
 type DistributedKeyGenerationService struct {
-	dkShareRegistryProvider registry.DKShareRegistryProvider
-	distKeyGenNodeProvider  distkeygen.NodeProvider
-	trustedNetworkManager   peering.TrustedNetworkManager
+	dkShareRegistry        registry.DKShareRegistry
+	distKeyGenNodeProvider distkeygen.NodeProvider
+	trustedNetworkManager  peering.TrustedNetworkManager
 }
 
-func NewDistributedKeyGenerationService(dkShareRegistryProvider registry.DKShareRegistryProvider, distKeyGenNodeProvider distkeygen.NodeProvider, trustedNetworkManager peering.TrustedNetworkManager) *DistributedKeyGenerationService {
+func NewDistributedKeyGenerationService(dkShareRegistry registry.DKShareRegistry, distKeyGenNodeProvider distkeygen.NodeProvider, trustedNetworkManager peering.TrustedNetworkManager) *DistributedKeyGenerationService {
 	return &DistributedKeyGenerationService{
-		dkShareRegistryProvider: dkShareRegistryProvider,
-		distKeyGenNodeProvider:  distKeyGenNodeProvider,
-		trustedNetworkManager:   trustedNetworkManager,
+		dkShareRegistry:        dkShareRegistry,
+		distKeyGenNodeProvider: distKeyGenNodeProvider,
+		trustedNetworkManager:  trustedNetworkManager,
 	}
 }
 
@@ -56,7 +56,7 @@ func (d *DistributedKeyGenerationService) GenerateDistributedKey(peerPubKeysOrNa
 }
 
 func (d *DistributedKeyGenerationService) GetShares(sharedAddress *cryptolib.Address) (*models.DKSharesInfo, error) {
-	dkShare, err := d.dkShareRegistryProvider.LoadDKShare(sharedAddress)
+	dkShare, err := d.dkShareRegistry.LoadDKShare(sharedAddress)
 	if err != nil {
 		return nil, err
 	}

@@ -26,12 +26,12 @@ type testDssSigner struct {
 
 func NewTestDistributedSignatureSigner(
 	addr *cryptolib.Address,
-	reg []registry.DKShareRegistryProvider,
+	reg []registry.DKShareRegistry,
 	nodeIDs []gpa.NodeID,
 	nodeKeys []*cryptolib.KeyPair,
 	log log.Logger,
 ) cryptolib.Signer {
-	dkShares := lo.Map(reg, func(prov registry.DKShareRegistryProvider, index int) tcrypto.DKShare {
+	dkShares := lo.Map(reg, func(prov registry.DKShareRegistry, index int) tcrypto.DKShare {
 		return lo.Must(prov.LoadDKShare(addr))
 	})
 

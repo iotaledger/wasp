@@ -8,75 +8,58 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
-type SyncMempool interface {
-	BaseAnchorReceived(baseAnchor *isc.StateAnchor) gpa.OutMessages
-	ProposalReceived(requestRefs []*isc.RequestRef) gpa.OutMessages
-	RequestsNeeded(requestRefs []*isc.RequestRef) gpa.OutMessages
-	RequestsReceived(requests []isc.Request) gpa.OutMessages
-	String() string
-}
-
-type syncMempoolImpl struct {
-	baseAnchor            *isc.StateAnchor
-	baseAnchorReceived    bool
-	proposalInputsReadyCB func(baseAnchor *isc.StateAnchor) gpa.OutMessages
-	proposalReceived      bool
-	proposalReceivedCB    func(requestRefs []*isc.RequestRef) gpa.OutMessages
-	requestsNeeded        bool
-	requestsNeededCB      func(requestIDs []*isc.RequestRef) gpa.OutMessages
-	requestsReceived      bool
-	requestsReceivedCB    func(requests []isc.Request) gpa.OutMessages
+type SyncMempool struct {
+	c                  *consensusImpl
+	baseAnchor         *isc.StateAnchor
+	baseAnchorReceived bool
+	proposalReceived   bool
+	requestsNeeded     bool
+	requestsReceived   bool
 }
 
 func NewSyncMempool(
-	proposalInputsReadyCB func(baseAnchor *isc.StateAnchor) gpa.OutMessages,
-	proposalReceivedCB func(requestRefs []*isc.RequestRef) gpa.OutMessages,
-	requestsNeededCB func(requestIDs []*isc.RequestRef) gpa.OutMessages,
-	requestsReceivedCB func(requests []isc.Request) gpa.OutMessages,
-) SyncMempool {
-	return &syncMempoolImpl{
-		proposalInputsReadyCB: proposalInputsReadyCB,
-		proposalReceivedCB:    proposalReceivedCB,
-		requestsNeededCB:      requestsNeededCB,
-		requestsReceivedCB:    requestsReceivedCB,
+	c *consensusImpl,
+) *SyncMempool {
+	return &SyncMempool{
+		c: c,
 	}
 }
 
-func (s *syncMempoolImpl) BaseAnchorReceived(baseAnchor *isc.StateAnchor) gpa.OutMessages {
+func (s *SyncMempool) BaseAnchorReceived(baseAnchor *isc.StateAnchor) gpa.OutMessages {
 	if s.baseAnchorReceived {
 		return nil
 	}
 	s.baseAnchor = baseAnchor
 	s.baseAnchorReceived = true
-	return s.proposalInputsReadyCB(s.baseAnchor)
+	return s.c.uponMempoolProposalInputsReady(s.baseAnchor)
 }
 
-func (s *syncMempoolImpl) ProposalReceived(requestRefs []*isc.RequestRef) gpa.OutMessages {
+func (s *SyncMempool) ProposalReceived(requestRefs []*isc.RequestRef) gpa.OutMessages {
 	if s.proposalReceived {
 		return nil
 	}
 	s.proposalReceived = true
-	return s.proposalReceivedCB(requestRefs)
+	return s.c.uponMempoolProposalReceived(requestRefs)
 }
 
-func (s *syncMempoolImpl) RequestsNeeded(requestRefs []*isc.RequestRef) gpa.OutMessages {
+func (s *SyncMempool) RequestsNeeded(requestRefs []*isc.RequestRef) gpa.OutMessages {
 	if s.requestsNeeded {
 		return nil
 	}
 	s.requestsNeeded = true
-	return s.requestsNeededCB(requestRefs)
+	return s.c.uponMempoolRequestsNeeded(requestRefs)
 }
 
-func (s *syncMempoolImpl) RequestsReceived(requests []isc.Request) gpa.OutMessages {
+func (s *SyncMempool) RequestsReceived(requests []isc.Request) gpa.OutMessages {
 	if s.requestsReceived {
 		return nil
 	}
 	s.requestsReceived = true
-	return s.requestsReceivedCB(requests)
+	return s.c.uponMempoolRequestsReceived(requests)
 }
 
-// Try to provide useful human-readable compact status.
-func (s *syncMempoolImpl) String() string {
+// String tries to provide useful human-readable compact status.
+func (s *SyncMempool) String() string {
 	str := "MP"
 	if s.proposalReceived && s.requestsReceived {
 		return str + statusStrOK

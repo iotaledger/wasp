@@ -11,50 +11,29 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/gpa"
 )
 
-type SyncDistributedSignature interface {
-	InitialInputReceived() gpa.OutMessages
-	DistributedSignatureReady(output gpa.Output) gpa.OutMessages
-	DecidedIndexProposalsReceived(decidedIndexProposals map[gpa.NodeID][]int) gpa.OutMessages
-	MessageToSignReceived(messageToSign []byte) gpa.OutMessages
-	String() string
-}
-
-type syncDistributedSignatureImpl struct {
+type SyncDistributedSignature struct {
+	c                     *consensusImpl
 	DecidedIndexProposals map[gpa.NodeID][]int
 	MessageToSign         []byte
 	initialInputsReady    bool
-	initialInputsReadyCB  func() gpa.OutMessages
 	indexProposalReady    bool
-	indexProposalReadyCB  func(indexProposal []int) gpa.OutMessages
 	signingInputsReady    bool
-	signingInputsReadyCB  func(decidedIndexProposals map[gpa.NodeID][]int, messageToSign []byte) gpa.OutMessages
 	outputReady           bool
-	outputReadyCB         func(signature []byte) gpa.OutMessages
 }
 
-func NewSyncDistributedSignature(
-	initialInputsReadyCB func() gpa.OutMessages,
-	indexProposalReadyCB func(indexProposals []int) gpa.OutMessages,
-	signingInputsReadyCB func(decidedIndexProposals map[gpa.NodeID][]int, messageToSign []byte) gpa.OutMessages,
-	outputReadyCB func(signature []byte) gpa.OutMessages,
-) SyncDistributedSignature {
-	return &syncDistributedSignatureImpl{
-		initialInputsReadyCB: initialInputsReadyCB,
-		signingInputsReadyCB: signingInputsReadyCB,
-		indexProposalReadyCB: indexProposalReadyCB,
-		outputReadyCB:        outputReadyCB,
-	}
+func NewSyncDistributedSignature(c *consensusImpl) *SyncDistributedSignature {
+	return &SyncDistributedSignature{c: c}
 }
 
-func (sub *syncDistributedSignatureImpl) InitialInputReceived() gpa.OutMessages {
+func (sub *SyncDistributedSignature) InitialInputReceived() gpa.OutMessages {
 	if sub.initialInputsReady {
 		return nil
 	}
 	sub.initialInputsReady = true
-	return sub.initialInputsReadyCB()
+	return sub.c.uponDistributedSignatureInitialInputsReady()
 }
 
-func (sub *syncDistributedSignatureImpl) DistributedSignatureReady(output gpa.Output) gpa.OutMessages {
+func (sub *SyncDistributedSignature) DistributedSignatureReady(output gpa.Output) gpa.OutMessages {
 	if output == nil || (sub.indexProposalReady && sub.outputReady) {
 		return nil
 	}
@@ -62,16 +41,16 @@ func (sub *syncDistributedSignatureImpl) DistributedSignatureReady(output gpa.Ou
 	distSignOutput := output.(*distsign.Output)
 	if !sub.indexProposalReady && distSignOutput.ProposedIndexes != nil {
 		sub.indexProposalReady = true
-		msgs.AddAll(sub.indexProposalReadyCB(distSignOutput.ProposedIndexes))
+		msgs.AddAll(sub.c.uponDistributedSignatureIndexProposalReady(distSignOutput.ProposedIndexes))
 	}
 	if !sub.outputReady && distSignOutput.Signature != nil {
 		sub.outputReady = true
-		msgs.AddAll(sub.outputReadyCB(distSignOutput.Signature))
+		msgs.AddAll(sub.c.uponDistributedSignatureOutputReady(distSignOutput.Signature))
 	}
 	return msgs
 }
 
-func (sub *syncDistributedSignatureImpl) DecidedIndexProposalsReceived(decidedIndexProposals map[gpa.NodeID][]int) gpa.OutMessages {
+func (sub *SyncDistributedSignature) DecidedIndexProposalsReceived(decidedIndexProposals map[gpa.NodeID][]int) gpa.OutMessages {
 	if sub.DecidedIndexProposals != nil || decidedIndexProposals == nil {
 		return nil
 	}
@@ -79,7 +58,7 @@ func (sub *syncDistributedSignatureImpl) DecidedIndexProposalsReceived(decidedIn
 	return sub.tryCompleteSigning()
 }
 
-func (sub *syncDistributedSignatureImpl) MessageToSignReceived(messageToSign []byte) gpa.OutMessages {
+func (sub *SyncDistributedSignature) MessageToSignReceived(messageToSign []byte) gpa.OutMessages {
 	if sub.MessageToSign != nil || messageToSign == nil {
 		return nil
 	}
@@ -87,16 +66,16 @@ func (sub *syncDistributedSignatureImpl) MessageToSignReceived(messageToSign []b
 	return sub.tryCompleteSigning()
 }
 
-func (sub *syncDistributedSignatureImpl) tryCompleteSigning() gpa.OutMessages {
+func (sub *SyncDistributedSignature) tryCompleteSigning() gpa.OutMessages {
 	if sub.signingInputsReady || sub.MessageToSign == nil || sub.DecidedIndexProposals == nil {
 		return nil
 	}
 	sub.signingInputsReady = true
-	return sub.signingInputsReadyCB(sub.DecidedIndexProposals, sub.MessageToSign)
+	return sub.c.uponDistributedSignatureSigningInputsReceived(sub.DecidedIndexProposals, sub.MessageToSign)
 }
 
-// Try to provide useful human-readable compact status.
-func (sub *syncDistributedSignatureImpl) String() string {
+// String tries to provide useful human-readable compact status.
+func (sub *SyncDistributedSignature) String() string {
 	str := "DistributedSignature"
 	if sub.indexProposalReady && sub.outputReady {
 		return str + statusStrOK

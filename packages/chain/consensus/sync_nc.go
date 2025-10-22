@@ -10,38 +10,29 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/parameters"
 )
 
-type SyncNodeconn interface {
-	HaveInputAnchor(anchor *isc.StateAnchor) gpa.OutMessages
-	HaveState() gpa.OutMessages
-	HaveRequests() gpa.OutMessages
-	HaveL1Info(gasCoins []*coin.CoinWithRef, l1params *parameters.L1Params) gpa.OutMessages
-	String() string
-}
+type SyncNodeconn struct {
+	c *consensusImpl
 
-type syncNodeconnImpl struct {
+	inputProcessed      bool
 	inputAnchor         *isc.StateAnchor
 	inputAnchorReceived bool
 	stateReceived       bool
 	requestsReceived    bool
-	inputCB             func(anchor *isc.StateAnchor) gpa.OutMessages
 
-	gasCoins []*coin.CoinWithRef
-	l1params *parameters.L1Params
-	outputCB func(gasCoins []*coin.CoinWithRef, l1params *parameters.L1Params) gpa.OutMessages
+	outputProcessed bool
+	gasCoins        []*coin.CoinWithRef
+	l1params        *parameters.L1Params
 }
 
-func NewSyncNodeconn(
-	inputCB func(anchor *isc.StateAnchor) gpa.OutMessages,
-	outputCB func(gasCoins []*coin.CoinWithRef, l1params *parameters.L1Params) gpa.OutMessages,
-) SyncNodeconn {
-	return &syncNodeconnImpl{inputCB: inputCB, outputCB: outputCB}
+func NewSyncNodeconn(c *consensusImpl) *SyncNodeconn {
+	return &SyncNodeconn{c: c}
 }
 
-func (s *syncNodeconnImpl) String() string {
+func (s *SyncNodeconn) String() string {
 	str := "NC"
-	if s.outputCB == nil {
+	if s.outputProcessed {
 		str += statusStrOK
-	} else if s.inputCB == nil {
+	} else if s.inputProcessed {
 		str += "/WAIT[NC to respond]"
 	} else {
 		wait := []string{}
@@ -59,7 +50,7 @@ func (s *syncNodeconnImpl) String() string {
 	return str
 }
 
-func (s *syncNodeconnImpl) HaveInputAnchor(anchor *isc.StateAnchor) gpa.OutMessages {
+func (s *SyncNodeconn) HaveInputAnchor(anchor *isc.StateAnchor) gpa.OutMessages {
 	if s.inputAnchorReceived {
 		return nil
 	}
@@ -68,7 +59,7 @@ func (s *syncNodeconnImpl) HaveInputAnchor(anchor *isc.StateAnchor) gpa.OutMessa
 	return s.tryCompleteInputs()
 }
 
-func (s *syncNodeconnImpl) HaveState() gpa.OutMessages {
+func (s *SyncNodeconn) HaveState() gpa.OutMessages {
 	if s.stateReceived {
 		return nil
 	}
@@ -76,7 +67,7 @@ func (s *syncNodeconnImpl) HaveState() gpa.OutMessages {
 	return s.tryCompleteInputs()
 }
 
-func (s *syncNodeconnImpl) HaveRequests() gpa.OutMessages {
+func (s *SyncNodeconn) HaveRequests() gpa.OutMessages {
 	if s.requestsReceived {
 		return nil
 	}
@@ -84,16 +75,15 @@ func (s *syncNodeconnImpl) HaveRequests() gpa.OutMessages {
 	return s.tryCompleteInputs()
 }
 
-func (s *syncNodeconnImpl) tryCompleteInputs() gpa.OutMessages {
-	if !s.inputAnchorReceived || !s.stateReceived || !s.requestsReceived || s.inputCB == nil {
+func (s *SyncNodeconn) tryCompleteInputs() gpa.OutMessages {
+	if !s.inputAnchorReceived || !s.stateReceived || !s.requestsReceived || s.inputProcessed {
 		return nil
 	}
-	cb := s.inputCB
-	s.inputCB = nil
-	return cb(s.inputAnchor)
+	s.inputProcessed = true
+	return s.c.uponNodeconnInputsReady(s.inputAnchor)
 }
 
-func (s *syncNodeconnImpl) HaveL1Info(gasCoins []*coin.CoinWithRef, l1params *parameters.L1Params) gpa.OutMessages {
+func (s *SyncNodeconn) HaveL1Info(gasCoins []*coin.CoinWithRef, l1params *parameters.L1Params) gpa.OutMessages {
 	if s.gasCoins == nil && gasCoins != nil {
 		s.gasCoins = gasCoins
 	}
@@ -103,11 +93,10 @@ func (s *syncNodeconnImpl) HaveL1Info(gasCoins []*coin.CoinWithRef, l1params *pa
 	return s.tryCompleteOutput()
 }
 
-func (s *syncNodeconnImpl) tryCompleteOutput() gpa.OutMessages {
-	if s.outputCB == nil || s.gasCoins == nil || s.l1params == nil {
+func (s *SyncNodeconn) tryCompleteOutput() gpa.OutMessages {
+	if s.outputProcessed || s.gasCoins == nil || s.l1params == nil {
 		return nil
 	}
-	cb := s.outputCB
-	s.outputCB = nil
-	return cb(s.gasCoins, s.l1params)
+	s.outputProcessed = true
+	return s.c.uponNodeconnOutputReady(s.gasCoins, s.l1params)
 }
