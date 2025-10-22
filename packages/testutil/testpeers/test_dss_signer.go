@@ -59,7 +59,7 @@ func (sig *testDssSigner) Sign(messageToSign []byte) (*cryptolib.Signature, erro
 
 	//
 	// Setup nodes.
-	distributedSignatures := map[gpa.NodeID]distsign.DistributedSignature{}
+	distributedSignatures := map[gpa.NodeID]*distsign.DistributedSignature{}
 	gpas := map[gpa.NodeID]gpa.GPA{}
 	for idx, nid := range sig.nodeIDs {
 		dks := sig.dkShares[idx]

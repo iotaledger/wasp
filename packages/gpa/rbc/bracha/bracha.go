@@ -94,7 +94,7 @@ func New(peers []gpa.NodeID, f int, me, broadcaster gpa.NodeID, maxMsgSize int, 
 	return gpa.NewOwnHandler(me, r)
 }
 
-// Implements the GPA interface.
+// Input implements the GPA interface.
 //
 //	01: // only broadcaster node
 //	02: input 𝑀

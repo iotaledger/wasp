@@ -10,7 +10,7 @@ import (
 )
 
 type SyncStateMgr struct {
-	c *consensusImpl
+	c *Consensus
 	//
 	// Query for a proposal.
 	proposedBaseAnchor         *isc.StateAnchor
@@ -28,7 +28,7 @@ type SyncStateMgr struct {
 }
 
 func NewSyncStateMgr(
-	c *consensusImpl,
+	c *Consensus,
 ) *SyncStateMgr {
 	return &SyncStateMgr{c: c}
 }

@@ -16,7 +16,7 @@ import (
 )
 
 type SyncVM struct {
-	c                   *consensusImpl
+	c                   *Consensus
 	aggregatedProposals *batchproposal.AggregatedBatchProposals
 	chainState          state.State
 	randomness          *hashing.HashValue
@@ -27,7 +27,7 @@ type SyncVM struct {
 }
 
 func NewSyncVM(
-	c *consensusImpl,
+	c *Consensus,
 ) *SyncVM {
 	return &SyncVM{c: c}
 }

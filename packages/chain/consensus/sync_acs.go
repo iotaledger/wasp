@@ -20,7 +20,7 @@ import (
 // >     Start the ACS.
 
 type SyncACS struct {
-	c *consensusImpl
+	c *Consensus
 
 	baseStateAnchor                   *isc.StateAnchor
 	baseStateAnchorReceived           bool
@@ -37,7 +37,7 @@ type SyncACS struct {
 }
 
 func NewSyncACS(
-	c *consensusImpl,
+	c *Consensus,
 ) *SyncACS {
 	return &SyncACS{
 		c: c,

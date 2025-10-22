@@ -11,7 +11,7 @@ const (
 	msgTypeWrapped gpa.MessageType = iota
 )
 
-func (a *acsImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
+func (a *ACS) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	return gpa.UnmarshalMessage(data, gpa.Mapper{}, gpa.Fallback{
 		msgTypeWrapped: a.msgWrapper.UnmarshalMessage,
 	})

@@ -12,7 +12,7 @@ const (
 	msgTypeWrapped
 )
 
-func (c *consensusImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
+func (c *Consensus) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	return gpa.UnmarshalMessage(data, gpa.Mapper{
 		msgTypeBLSShare: func() gpa.Message { return &msgBLSPartialSig{blsSuite: c.blsSuite} },
 	}, gpa.Fallback{
