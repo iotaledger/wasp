@@ -127,7 +127,7 @@ func readAndDecodeTxBytes(txBytesFile string) ([]byte, error) {
 }
 
 // collectDKComponents scans the committee keys directory and builds the DK registries and identities.
-func collectDKComponents(committeeKeysDir, committeeAddressStr string) ([]gpa.NodeID, []*cryptolib.KeyPair, []registry.DKShareRegistryProvider, error) {
+func collectDKComponents(committeeKeysDir, committeeAddressStr string) ([]gpa.NodeID, []*cryptolib.KeyPair, []registry.DKShareRegistry, error) {
 	stat, err := os.Stat(committeeKeysDir)
 	if err != nil || !stat.IsDir() {
 		return nil, nil, nil, fmt.Errorf("committee keys must be a directory: %s", committeeKeysDir)
@@ -138,7 +138,7 @@ func collectDKComponents(committeeKeysDir, committeeAddressStr string) ([]gpa.No
 	}
 	var nodeIDs []gpa.NodeID
 	var peerIdentities []*cryptolib.KeyPair
-	var dkRegistries []registry.DKShareRegistryProvider
+	var dkRegistries []registry.DKShareRegistry
 	for _, entry := range entries {
 		if !entry.IsDir() {
 			continue
@@ -158,7 +158,7 @@ func collectDKComponents(committeeKeysDir, committeeAddressStr string) ([]gpa.No
 
 // loadNodeComponents tries to load identity and dkshare registry from a node subdirectory.
 // It returns ok=false if the directory doesn't contain the expected files or keys couldn't be loaded.
-func loadNodeComponents(nodeDir, committeeAddressStr string) (gpa.NodeID, *cryptolib.KeyPair, registry.DKShareRegistryProvider, bool) {
+func loadNodeComponents(nodeDir, committeeAddressStr string) (gpa.NodeID, *cryptolib.KeyPair, registry.DKShareRegistry, bool) {
 	identityPath := filepath.Join(nodeDir, "identity", "identity.key")
 	if st, err := os.Stat(identityPath); err != nil || st.IsDir() {
 		return gpa.NodeID{}, nil, nil, false

@@ -65,8 +65,8 @@ func provide(c *dig.Container) error {
 	type databaseManagerDeps struct {
 		dig.In
 
-		ChainRecordRegistryProvider registry.ChainRecordRegistryProvider
-		DatabaseEngine              hivedb.Engine `name:"databaseEngine"`
+		ChainRecordRegistry registry.ChainRecordRegistry
+		DatabaseEngine      hivedb.Engine `name:"databaseEngine"`
 
 		// NodeConnection is essential, even if it doesn't seem to be used.
 		// If we don't have that as a dependency, the L1 parameters would be unknown,
@@ -86,7 +86,7 @@ func provide(c *dig.Container) error {
 			path = readonly.DataDir(ParamsDatabase.ReadOnlyFilePath)
 		}
 		manager, err := database.NewChainStateDatabaseManager(
-			deps.ChainRecordRegistryProvider,
+			deps.ChainRecordRegistry,
 			database.WithEngine(deps.DatabaseEngine),
 			database.WithPath(path),
 			database.WithCacheSize(ParamsDatabase.ChainState.CacheSize),

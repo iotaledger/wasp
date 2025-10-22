@@ -17,16 +17,16 @@ import (
 var ErrNotInCommittee = errors.New("this node is not in the committee for the chain")
 
 type CommitteeService struct {
-	chainsProvider          chains.Provider
-	networkProvider         peering.NetworkProvider
-	dkShareRegistryProvider registry.DKShareRegistryProvider
+	chainsProvider  chains.Provider
+	networkProvider peering.NetworkProvider
+	dkShareRegistry registry.DKShareRegistry
 }
 
-func NewCommitteeService(chainsProvider chains.Provider, networkProvider peering.NetworkProvider, dkShareRegistryProvider registry.DKShareRegistryProvider) interfaces.CommitteeService {
+func NewCommitteeService(chainsProvider chains.Provider, networkProvider peering.NetworkProvider, dkShareRegistry registry.DKShareRegistry) interfaces.CommitteeService {
 	return &CommitteeService{
-		chainsProvider:          chainsProvider,
-		networkProvider:         networkProvider,
-		dkShareRegistryProvider: dkShareRegistryProvider,
+		chainsProvider:  chainsProvider,
+		networkProvider: networkProvider,
+		dkShareRegistry: dkShareRegistry,
 	}
 }
 
@@ -45,7 +45,7 @@ func (c *CommitteeService) GetCommitteeInfo(chainID isc.ChainID) (*dto.ChainNode
 		return nil, ErrNotInCommittee
 	}
 
-	dkShare, err := c.dkShareRegistryProvider.LoadDKShare(committeeInfo.Address)
+	dkShare, err := c.dkShareRegistry.LoadDKShare(committeeInfo.Address)
 	if err != nil {
 		return nil, err
 	}

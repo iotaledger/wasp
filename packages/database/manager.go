@@ -59,7 +59,7 @@ func WithBloomFilter(bitsPerKey float64) options.Option[ChainStateDatabaseManage
 	}
 }
 
-func NewChainStateDatabaseManager(chainRecordRegistryProvider registry.ChainRecordRegistryProvider, opts ...options.Option[ChainStateDatabaseManager]) (*ChainStateDatabaseManager, error) {
+func NewChainStateDatabaseManager(chainRecordRegistry registry.ChainRecordRegistry, opts ...options.Option[ChainStateDatabaseManager]) (*ChainStateDatabaseManager, error) {
 	m := options.Apply(&ChainStateDatabaseManager{
 		engine:       hivedb.EngineAuto,
 		databasePath: "waspdb/chains/data",
@@ -68,7 +68,7 @@ func NewChainStateDatabaseManager(chainRecordRegistryProvider registry.ChainReco
 
 	// load all active chain state databases
 	var innerErr error
-	if err := chainRecordRegistryProvider.ForEachActiveChainRecord(func(cr *registry.ChainRecord) bool {
+	if err := chainRecordRegistry.ForEachActiveChainRecord(func(cr *registry.ChainRecord) bool {
 		_, err := m.createDatabase(cr.ChainID())
 		if err != nil {
 			innerErr = err

@@ -151,7 +151,7 @@ type ChainRecordRegistryImpl struct {
 	filePath string
 }
 
-var _ ChainRecordRegistryProvider = &ChainRecordRegistryImpl{}
+var _ ChainRecordRegistry = &ChainRecordRegistryImpl{}
 
 // NewChainRecordRegistryImpl creates new instance of the chain registry implementation.
 func NewChainRecordRegistryImpl(filePath string) (*ChainRecordRegistryImpl, error) {

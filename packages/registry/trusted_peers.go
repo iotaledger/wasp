@@ -30,7 +30,7 @@ type TrustedPeersRegistryImpl struct {
 	filePath string
 }
 
-var _ TrustedPeersRegistryProvider = &TrustedPeersRegistryImpl{}
+var _ TrustedPeersRegistry = &TrustedPeersRegistryImpl{}
 
 // NewTrustedPeersRegistryImpl creates new instance of the trusted peers registry implementation.
 func NewTrustedPeersRegistryImpl(filePath string) (*TrustedPeersRegistryImpl, error) {

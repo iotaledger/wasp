@@ -15,16 +15,16 @@ import (
 )
 
 type NodeService struct {
-	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
-	nodeIdentityProvider        registry.NodeIdentityProvider
-	chainsProvider              chains.Provider
-	shutdownHandler             *shutdown.ShutdownHandler
-	trustedNetworkManager       peering.TrustedNetworkManager
-	l1ParamsFetcher             parameters.L1ParamsFetcher
+	chainRecordRegistry   registry.ChainRecordRegistry
+	nodeIdentityProvider  registry.NodeIdentityProvider
+	chainsProvider        chains.Provider
+	shutdownHandler       *shutdown.ShutdownHandler
+	trustedNetworkManager peering.TrustedNetworkManager
+	l1ParamsFetcher       parameters.L1ParamsFetcher
 }
 
 func NewNodeService(
-	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
+	chainRecordRegistry registry.ChainRecordRegistry,
 	nodeIdentityProvider registry.NodeIdentityProvider,
 	chainsProvider chains.Provider,
 	shutdownHandler *shutdown.ShutdownHandler,
@@ -32,12 +32,12 @@ func NewNodeService(
 	l1ParamsFetcher parameters.L1ParamsFetcher,
 ) interfaces.NodeService {
 	return &NodeService{
-		chainRecordRegistryProvider: chainRecordRegistryProvider,
-		nodeIdentityProvider:        nodeIdentityProvider,
-		chainsProvider:              chainsProvider,
-		shutdownHandler:             shutdownHandler,
-		trustedNetworkManager:       trustedNetworkManager,
-		l1ParamsFetcher:             l1ParamsFetcher,
+		chainRecordRegistry:   chainRecordRegistry,
+		nodeIdentityProvider:  nodeIdentityProvider,
+		chainsProvider:        chainsProvider,
+		shutdownHandler:       shutdownHandler,
+		trustedNetworkManager: trustedNetworkManager,
+		l1ParamsFetcher:       l1ParamsFetcher,
 	}
 }
 
@@ -47,7 +47,7 @@ func (n *NodeService) AddAccessNode(chainID isc.ChainID, peerPubKeyOrName string
 		return err
 	}
 
-	if _, err = n.chainRecordRegistryProvider.UpdateChainRecord(chainID, func(rec *registry.ChainRecord) bool {
+	if _, err = n.chainRecordRegistry.UpdateChainRecord(chainID, func(rec *registry.ChainRecord) bool {
 		return rec.AddAccessNode(peers[0].PubKey())
 	}); err != nil {
 		return errors.New("error saving chain record")
@@ -62,7 +62,7 @@ func (n *NodeService) DeleteAccessNode(chainID isc.ChainID, peerPubKeyOrName str
 		return err
 	}
 
-	if _, err := n.chainRecordRegistryProvider.UpdateChainRecord(chainID, func(rec *registry.ChainRecord) bool {
+	if _, err := n.chainRecordRegistry.UpdateChainRecord(chainID, func(rec *registry.ChainRecord) bool {
 		return rec.RemoveAccessNode(peers[0].PubKey())
 	}); err != nil {
 		return errors.New("error saving chain record")

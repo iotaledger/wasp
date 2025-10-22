@@ -26,28 +26,28 @@ import (
 )
 
 type ChainService struct {
-	log                         log.Logger
-	chainsProvider              chains.Provider
-	chainMetricsProvider        *metrics.ChainMetricsProvider
-	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
+	log                  log.Logger
+	chainsProvider       chains.Provider
+	chainMetricsProvider *metrics.ChainMetricsProvider
+	chainRecordRegistry  registry.ChainRecordRegistry
 }
 
 func NewChainService(
 	logger log.Logger,
 	chainsProvider chains.Provider,
 	chainMetricsProvider *metrics.ChainMetricsProvider,
-	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
+	chainRecordRegistry registry.ChainRecordRegistry,
 ) interfaces.ChainService {
 	return &ChainService{
-		log:                         logger,
-		chainsProvider:              chainsProvider,
-		chainMetricsProvider:        chainMetricsProvider,
-		chainRecordRegistryProvider: chainRecordRegistryProvider,
+		log:                  logger,
+		chainsProvider:       chainsProvider,
+		chainMetricsProvider: chainMetricsProvider,
+		chainRecordRegistry:  chainRecordRegistry,
 	}
 }
 
 func (c *ChainService) ActivateChain(chainID isc.ChainID) error {
-	_, err := c.chainRecordRegistryProvider.ActivateChainRecord(chainID)
+	_, err := c.chainRecordRegistry.ActivateChainRecord(chainID)
 	if err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func (c *ChainService) ActivateChain(chainID isc.ChainID) error {
 }
 
 func (c *ChainService) DeactivateChain(chainID isc.ChainID) error {
-	_, err := c.chainRecordRegistryProvider.DeactivateChainRecord(chainID)
+	_, err := c.chainRecordRegistry.DeactivateChainRecord(chainID)
 	if err != nil {
 		return err
 	}
@@ -65,7 +65,7 @@ func (c *ChainService) DeactivateChain(chainID isc.ChainID) error {
 }
 
 func (c *ChainService) SetChainRecord(chainRecord *registry.ChainRecord) error {
-	storedChainRec, err := c.chainRecordRegistryProvider.ChainRecord(chainRecord.ChainID())
+	storedChainRec, err := c.chainRecordRegistry.ChainRecord(chainRecord.ChainID())
 	if err != nil {
 		return err
 	}
@@ -73,7 +73,7 @@ func (c *ChainService) SetChainRecord(chainRecord *registry.ChainRecord) error {
 	c.log.LogInfof("StoredChainRec %v %v", storedChainRec, err)
 
 	if storedChainRec != nil {
-		_, err = c.chainRecordRegistryProvider.UpdateChainRecord(
+		_, err = c.chainRecordRegistry.UpdateChainRecord(
 			chainRecord.ChainID(),
 			func(rec *registry.ChainRecord) bool {
 				rec.AccessNodes = chainRecord.AccessNodes
@@ -87,7 +87,7 @@ func (c *ChainService) SetChainRecord(chainRecord *registry.ChainRecord) error {
 			return err
 		}
 	} else {
-		if err := c.chainRecordRegistryProvider.AddChainRecord(chainRecord); err != nil {
+		if err := c.chainRecordRegistry.AddChainRecord(chainRecord); err != nil {
 			c.log.LogInfof("AddChainRec %v %v", chainRecord, err)
 
 			return err
@@ -127,7 +127,7 @@ func (c *ChainService) GetEVMChainID(blockIndexOrTrieRoot string) (uint16, error
 }
 
 func (c *ChainService) GetAllChainIDs() ([]isc.ChainID, error) {
-	records, err := c.chainRecordRegistryProvider.ChainRecords()
+	records, err := c.chainRecordRegistry.ChainRecords()
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +147,7 @@ func (c *ChainService) GetChainInfo(blockIndexOrTrieRoot string) (*dto.ChainInfo
 		return nil, err
 	}
 
-	chainRecord, err := c.chainRecordRegistryProvider.ChainRecord(ch.ID())
+	chainRecord, err := c.chainRecordRegistry.ChainRecord(ch.ID())
 	if err != nil {
 		return nil, err
 	}

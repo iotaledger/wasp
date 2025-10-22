@@ -262,7 +262,7 @@ func New(
 	nodeConn NodeConnection,
 	nodeIdentity *cryptolib.KeyPair,
 	processorConfig *processors.Config,
-	dkShareRegistryProvider registry.DKShareRegistryProvider,
+	dkShareRegistry registry.DKShareRegistry,
 	consensusStateRegistry committeelog.ConsensusStateRegistry,
 	recoverFromWAL bool,
 	blockWAL utils.BlockWAL,
@@ -304,7 +304,7 @@ func New(
 	if mode == OperationalMode {
 		return initializeOperationalChain(
 			ctx, cni, netPeeringID, chainID, chainStore, nodeConn, nodeIdentity,
-			consensusStateRegistry, dkShareRegistryProvider, recoverFromWAL, blockWAL,
+			consensusStateRegistry, dkShareRegistry, recoverFromWAL, blockWAL,
 			net, snapshotManager, chainMetrics, shutdownCoordinator, smParameters,
 			mempoolSettings, mempoolBroadcastInterval, accessNodesFromNode,
 			deriveAnchorByQuorum, pipeliningLimit, postponeRecoveryMilestones,
@@ -1206,7 +1206,7 @@ func initializeOperationalChain(
 	nodeConn NodeConnection,
 	nodeIdentity *cryptolib.KeyPair,
 	consensusStateRegistry committeelog.ConsensusStateRegistry,
-	dkShareRegistryProvider registry.DKShareRegistryProvider,
+	dkShareRegistry registry.DKShareRegistry,
 	recoverFromWAL bool,
 	blockWAL utils.BlockWAL,
 	net peering.NetworkProvider,
@@ -1239,7 +1239,7 @@ func initializeOperationalChain(
 	cni.me = cni.pubKeyAsNodeID(nodeIdentity.GetPublicKey())
 
 	// Create chain manager
-	chainMgr, err := createChainManager(ctx, cni, consensusStateRegistry, dkShareRegistryProvider,
+	chainMgr, err := createChainManager(ctx, cni, consensusStateRegistry, dkShareRegistry,
 		deriveAnchorByQuorum, pipeliningLimit, postponeRecoveryMilestones, log)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create chainMgr: %w", err)
@@ -1341,7 +1341,7 @@ func createChainManager(
 	ctx context.Context,
 	cni *chainNodeImpl,
 	consensusStateRegistry committeelog.ConsensusStateRegistry,
-	dkShareRegistryProvider registry.DKShareRegistryProvider,
+	dkShareRegistry registry.DKShareRegistry,
 	deriveAnchorByQuorum bool,
 	pipeliningLimit int,
 	postponeRecoveryMilestones int,
@@ -1352,7 +1352,7 @@ func createChainManager(
 		cni.chainID,
 		cni.chainStore,
 		consensusStateRegistry,
-		dkShareRegistryProvider,
+		dkShareRegistry,
 		cni.pubKeyAsNodeID,
 		func(upd *chainmanager.NeedConsensusMap) {
 			log.LogDebugf("needConsensusCB called with %v", upd)
