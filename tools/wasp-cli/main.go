@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/setup"
+	cliwallet "github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/codec"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/disrec"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/inspection"
@@ -79,6 +80,8 @@ func init() {
 	rootCmd = initRootCmd(waspVersion)
 	rootCmd.PersistentFlags().BoolVar(&cliclients.SkipCheckVersions, "skip-version-check", true, "skip-version-check")
 	rootCmd.PersistentFlags().BoolVar(&config.PrettyPrintConfig, "format-config", true, "format the config file when saving")
+	// Make address index available to all subcommands (wallet, chain, etc.)
+	rootCmd.PersistentFlags().Uint32VarP(&cliwallet.AddressIndex, "address-index", "i", 0, "address index")
 
 	log.Init(rootCmd)
 	rootCmd.AddCommand(&cobra.Command{
