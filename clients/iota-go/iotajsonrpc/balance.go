@@ -109,6 +109,14 @@ type Balance struct {
 	LockedBalance   map[EpochId]Uint128 `json:"lockedBalance"`
 }
 
+func (balance *Balance) String() string {
+	b, err := json.Marshal(balance)
+	if err != nil {
+		panic(err)
+	}
+	return string(b)
+}
+
 type MoveUID struct {
 	ID *iotago.ObjectID `json:"id"`
 }
