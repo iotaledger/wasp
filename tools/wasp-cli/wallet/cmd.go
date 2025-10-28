@@ -4,8 +4,6 @@ package wallet
 
 import (
 	"github.com/spf13/cobra"
-
-	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/wallet"
 )
 
 func Init(rootCmd *cobra.Command) {
@@ -19,8 +17,6 @@ func Init(rootCmd *cobra.Command) {
 	walletCmd.AddCommand(initRequestFundsCmd())
 	walletCmd.AddCommand(initWalletProviderCmd())
 	walletCmd.AddCommand(initMergeCmd())
-
-	walletCmd.PersistentFlags().Uint32VarP(&wallet.AddressIndex, "address-index", "i", 0, "address index")
 
 	rootCmd.AddCommand(deprecated("init", "use 'wallet init' instead"))
 	rootCmd.AddCommand(deprecated("address", "use 'wallet address' instead"))

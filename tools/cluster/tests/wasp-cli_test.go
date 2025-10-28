@@ -130,7 +130,7 @@ func TestZeroGasFee(t *testing.T) {
 
 	t.Run("deposit directly to EVM", func(t *testing.T) {
 		alternativeAddress := getAddressFromJSON(w.MustRun("wallet", "address", "--address-index=1", "--json"))
-		w.MustRun("wallet", "send-funds", "-s", alternativeAddress, "base|1000000")
+		w.MustRun("wallet", "send-funds", alternativeAddress, "base|1000000")
 		outs := w.MustRun("wallet", "balance", "--address-index=1")
 		_, eth := newEthereumAccount()
 		w.MustRun("chain", "deposit", eth.String(), "base|1000000", "--node=0", "--address-index=1")
@@ -227,13 +227,7 @@ func getAddressFromJSON(out []string) string {
 	}
 
 	// Extract the data section
-	data, ok := addressResult["data"].(map[string]interface{})
-	if !ok {
-		panic("data field should be an object")
-	}
-
-	// Extract the address
-	address, ok := data["address"].(string)
+	address, ok := addressResult["address"].(string)
 	if !ok || address == "" {
 		panic("address field should be a non-empty string")
 	}
@@ -268,7 +262,7 @@ func TestWaspCLIDeposit(t *testing.T) {
 	// fund an alternative address to deposit from (so we can test the fees,
 	// since --address-index=0 is the chain admin / default payoutAddress)
 	alternativeAddress := getAddressFromJSON(w.MustRun("wallet", "address", "--address-index=1", "--json"))
-	w.MustRun("wallet", "send-funds", "-s", alternativeAddress, "base|10000000", "--address-index=1")
+	w.MustRun("wallet", "send-funds", alternativeAddress, "base|10000000", "--address-index=1")
 
 	outs = w.MustRun("wallet", "balance")
 	minFee := gas.DefaultFeePolicy().MinFee(nil, parameters.BaseTokenDecimals)
@@ -431,7 +425,7 @@ func TestWaspCLIBlockLog(t *testing.T) {
 	require.True(t, found)
 
 	// try an unsuccessful request (missing params)
-	out = w.MustRun("chain", "post-request", "-s", "root", "deployContract", "string", "foo", "string", "bar", "--node=0")
+	out = w.MustRun("chain", "post-request", "root", "deployContract", "string", "foo", "string", "bar", "--node=0")
 	reqID = findRequestIDInOutput(out)
 	require.NotEmpty(t, reqID)
 
