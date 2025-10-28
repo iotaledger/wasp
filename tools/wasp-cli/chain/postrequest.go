@@ -98,7 +98,7 @@ func (p *postRequestParams) initFlags(cmd *cobra.Command) {
 	cmd.Flags().StringSliceVarP(&p.allowance, "allowance", "l", []string{},
 		"include allowance as part of the transaction. Format: <token-id1>|<amount1>, <token-id2>|<amount2> ...")
 
-	cmd.Flags().StringSliceVarP(&p.transfer, "transfer", "t", []string{},
+	cmd.Flags().StringSliceVarP(&p.transfer, "transfer", "x", []string{},
 		"include a funds transfer as part of the transaction. Format: <token-id1>|<amount1>, <token-id2>|<amount2> ...",
 	)
 	cmd.Flags().BoolVarP(&p.offLedger, "off-ledger", "o", false,
