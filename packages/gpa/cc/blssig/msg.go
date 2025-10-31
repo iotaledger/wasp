@@ -8,8 +8,8 @@ const (
 	msgTypeSigShare gpa.MessageType = iota
 )
 
-func (cc *ccImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
-	return gpa.UnmarshalMessage(data, gpa.Mapper{
-		msgTypeSigShare: func() gpa.Message { return new(msgSigShare) },
+func (cc *ccImpl) UnmarshalPayload(data []byte) (gpa.MessagePayload, error) {
+	return gpa.UnmarshalPayload(data, gpa.PayloadAllocator{
+		msgTypeSigShare: func() gpa.MessagePayload { return new(msgSigShare) },
 	})
 }

@@ -17,12 +17,11 @@ import (
 )
 
 type msgPartialSig struct {
-	gpa.BasicMessage
 	suite      suites.Suite // Transient, for un-marshaling only.
 	partialSig *dss.PartialSig
 }
 
-var _ gpa.Message = new(msgPartialSig)
+var _ gpa.MessagePayload = new(msgPartialSig)
 
 func (m *msgPartialSig) MsgType() gpa.MessageType {
 	return msgTypePartialSig

@@ -11,11 +11,11 @@ const (
 	msgTypeRBCCEPayload
 )
 
-func (a *acssImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
-	return gpa.UnmarshalMessage(data, gpa.Mapper{
-		msgTypeImplicateRecover: func() gpa.Message { return new(msgImplicateRecover) },
-		msgTypeVote:             func() gpa.Message { return new(msgVote) },
-	}, gpa.Fallback{
-		msgTypeWrapped: a.msgWrapper.UnmarshalMessage,
+func (a *acssImpl) UnmarshalPayload(data []byte) (gpa.MessagePayload, error) {
+	return gpa.UnmarshalPayload(data, gpa.PayloadAllocator{
+		msgTypeImplicateRecover: func() gpa.MessagePayload { return new(msgImplicateRecover) },
+		msgTypeVote:             func() gpa.MessagePayload { return new(msgVote) },
+	}, gpa.PayloadFallback{
+		msgTypeWrapped: a.msgWrapper.UnmarshalPayload,
 	})
 }

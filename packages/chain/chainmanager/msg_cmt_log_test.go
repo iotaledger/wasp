@@ -7,7 +7,6 @@ import (
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/packages/chain/committeelog"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
-	"github.com/iotaledger/wasp/v2/packages/gpa"
 )
 
 func TestMsgCommitteeLogSerialization(t *testing.T) {
@@ -15,7 +14,6 @@ func TestMsgCommitteeLogSerialization(t *testing.T) {
 	msg := &msgCommitteeLog{
 		*address,
 		&committeelog.MsgNextLogIndex{
-			BasicMessage: gpa.BasicMessage{},
 			NextLogIndex: committeelog.LogIndex(rand.Int31()),
 			PleaseRepeat: false,
 		},
@@ -26,7 +24,6 @@ func TestMsgCommitteeLogSerialization(t *testing.T) {
 	msg = &msgCommitteeLog{
 		*cryptolib.TestAddress,
 		&committeelog.MsgNextLogIndex{
-			BasicMessage: gpa.BasicMessage{},
 			NextLogIndex: committeelog.LogIndex(1234567890),
 			PleaseRepeat: false,
 		},

@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testval"
 )
 
@@ -20,7 +19,6 @@ func TestMsgBrachaSerialization(t *testing.T) {
 		_, err := rand.Read(b)
 		require.NoError(t, err)
 		msg := &msgBracha{
-			gpa.BasicMessage{},
 			msgBrachaTypePropose,
 			b,
 		}
@@ -29,7 +27,6 @@ func TestMsgBrachaSerialization(t *testing.T) {
 	}
 	{
 		msg := &msgBracha{
-			gpa.BasicMessage{},
 			msgBrachaTypePropose,
 			testval.TestBytes(10),
 		}
@@ -41,7 +38,6 @@ func TestMsgBrachaSerialization(t *testing.T) {
 		_, err := rand.Read(b)
 		require.NoError(t, err)
 		msg := &msgBracha{
-			gpa.BasicMessage{},
 			msgBrachaTypeEcho,
 			b,
 		}
@@ -50,7 +46,6 @@ func TestMsgBrachaSerialization(t *testing.T) {
 	}
 	{
 		msg := &msgBracha{
-			gpa.BasicMessage{},
 			msgBrachaTypeEcho,
 			testval.TestBytes(10),
 		}
@@ -62,7 +57,6 @@ func TestMsgBrachaSerialization(t *testing.T) {
 		_, err := rand.Read(b)
 		require.NoError(t, err)
 		msg := &msgBracha{
-			gpa.BasicMessage{},
 			msgBrachaTypeReady,
 			b,
 		}
@@ -71,7 +65,6 @@ func TestMsgBrachaSerialization(t *testing.T) {
 	}
 	{
 		msg := &msgBracha{
-			gpa.BasicMessage{},
 			msgBrachaTypeReady,
 			testval.TestBytes(10),
 		}

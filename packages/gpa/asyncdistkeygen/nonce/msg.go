@@ -19,8 +19,8 @@ func (n *nonceDistributedKeyGenerationImpl) subsystemFunc(subsystem byte, index 
 	return nil, fmt.Errorf("unexpected subsystem: %v", subsystem)
 }
 
-func (n *nonceDistributedKeyGenerationImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
-	return gpa.UnmarshalMessage(data, gpa.Mapper{}, gpa.Fallback{
-		msgTypeWrapped: n.wrapper.UnmarshalMessage,
+func (n *nonceDistributedKeyGenerationImpl) UnmarshalPayload(data []byte) (gpa.MessagePayload, error) {
+	return gpa.UnmarshalPayload(data, gpa.PayloadAllocator{}, gpa.PayloadFallback{
+		msgTypeWrapped: n.wrapper.UnmarshalPayload,
 	})
 }

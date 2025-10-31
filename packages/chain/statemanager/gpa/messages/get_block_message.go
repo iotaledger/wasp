@@ -6,21 +6,19 @@ import (
 )
 
 type GetBlockMessage struct {
-	gpa.BasicMessage
 	commitment *state.L1Commitment `bcs:"export"`
 }
 
-var _ gpa.Message = new(GetBlockMessage)
+var _ gpa.MessagePayload = new(GetBlockMessage)
 
-func NewGetBlockMessage(commitment *state.L1Commitment, to gpa.NodeID) *GetBlockMessage {
+func NewGetBlockMessage(commitment *state.L1Commitment) *GetBlockMessage {
 	return &GetBlockMessage{
-		BasicMessage: gpa.NewBasicMessage(to),
-		commitment:   commitment,
+		commitment: commitment,
 	}
 }
 
 func NewEmptyGetBlockMessage() *GetBlockMessage {
-	return NewGetBlockMessage(&state.L1Commitment{}, gpa.NodeID{})
+	return NewGetBlockMessage(&state.L1Commitment{})
 }
 
 func (msg *GetBlockMessage) GetL1Commitment() *state.L1Commitment {

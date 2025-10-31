@@ -15,11 +15,11 @@ func MakeTestSilentNode() GPA {
 	return &silentNode{}
 }
 
-func (s *silentNode) Input(input Input) OutMessages {
+func (s *silentNode) Input(input Input) []*MessageOut {
 	return nil
 }
 
-func (s *silentNode) Message(msg Message) OutMessages {
+func (s *silentNode) Message(msg *MessageIn) []*MessageOut {
 	return nil
 }
 
@@ -31,6 +31,6 @@ func (s *silentNode) StatusString() string {
 	return "{silentNode}"
 }
 
-func (s *silentNode) UnmarshalMessage(data []byte) (Message, error) {
+func (s *silentNode) UnmarshalPayload(data []byte) (MessagePayload, error) {
 	return nil, errors.New("not implemented")
 }

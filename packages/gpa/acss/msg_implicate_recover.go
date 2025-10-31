@@ -16,22 +16,12 @@ const (
 
 // The <IMPLICATE, i, skᵢ> and <RECOVER, i, skᵢ> messages.
 type msgImplicateRecover struct {
-	sender    gpa.NodeID
-	recipient gpa.NodeID
-	kind      msgImplicateKind `bcs:"export"`
-	i         int              `bcs:"export,type=u16"`
-	data      []byte           `bcs:"export"` // Either implication or the recovered secret.
+	kind msgImplicateKind `bcs:"export"`
+	i    int              `bcs:"export,type=u16"`
+	data []byte           `bcs:"export"` // Either implication or the recovered secret.
 }
 
-var _ gpa.Message = new(msgImplicateRecover)
-
-func (msg *msgImplicateRecover) Recipient() gpa.NodeID {
-	return msg.recipient
-}
-
-func (msg *msgImplicateRecover) SetSender(sender gpa.NodeID) {
-	msg.sender = sender
-}
+var _ gpa.MessagePayload = new(msgImplicateRecover)
 
 func (msg *msgImplicateRecover) MsgType() gpa.MessageType {
 	return msgTypeImplicateRecover

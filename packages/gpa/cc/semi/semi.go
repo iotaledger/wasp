@@ -25,7 +25,7 @@ func New(index int, target gpa.GPA) gpa.GPA {
 	return &ccSemi{index: index, target: target}
 }
 
-func (cc *ccSemi) Input(input gpa.Input) gpa.OutMessages {
+func (cc *ccSemi) Input(input gpa.Input) []*gpa.MessageOut {
 	if input != nil {
 		panic(errors.New("input must be nil"))
 	}
@@ -40,25 +40,27 @@ func (cc *ccSemi) Input(input gpa.Input) gpa.OutMessages {
 		cc.output = &coin
 		return nil
 	}
-	return cc.checkOutput(cc.target.Input(input))
+	msgs := cc.target.Input(input)
+	cc.checkOutput()
+	return msgs
 }
 
-func (cc *ccSemi) Message(msg gpa.Message) gpa.OutMessages {
+func (cc *ccSemi) Message(msg *gpa.MessageIn) []*gpa.MessageOut {
 	if cc.output != nil {
 		return nil
 	}
-	return cc.checkOutput(cc.target.Message(msg))
+	msgs := cc.target.Message(msg)
+	cc.checkOutput()
+	return msgs
 }
 
-func (cc *ccSemi) checkOutput(msgs gpa.OutMessages) gpa.OutMessages {
+func (cc *ccSemi) checkOutput() {
 	if cc.output != nil {
-		return msgs
+		return
 	}
-	out := cc.target.Output()
-	if out != nil {
+	if out := cc.target.Output(); out != nil {
 		cc.output = out.(*bool)
 	}
-	return msgs
 }
 
 func (cc *ccSemi) Output() gpa.Output {
@@ -76,6 +78,6 @@ func (cc *ccSemi) StatusString() string {
 	return fmt.Sprintf("{CC:semi, index=%v, output=%v, target=%v}", cc.index, cc.output, cc.target.StatusString())
 }
 
-func (cc *ccSemi) UnmarshalMessage(data []byte) (gpa.Message, error) {
-	return cc.target.UnmarshalMessage(data)
+func (cc *ccSemi) UnmarshalPayload(data []byte) (gpa.MessagePayload, error) {
+	return cc.target.UnmarshalPayload(data)
 }

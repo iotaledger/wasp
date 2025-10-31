@@ -8,7 +8,6 @@ import (
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
-	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/isc/isctest"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/governance"
@@ -23,14 +22,12 @@ func TestMsgMissingRequestSerialization(t *testing.T) {
 	req := isc.NewOffLedgerRequest(isctest.RandomChainID(), isc.NewMessage(contract, entryPoint, nil), 0, gasBudget).Sign(senderKP)
 
 	msg := &msgMissingRequest{
-		gpa.BasicMessage{},
 		isc.RequestRefFromRequest(req),
 	}
 
 	bcs.TestCodec(t, msg)
 
 	msg = &msgMissingRequest{
-		gpa.BasicMessage{},
 		isc.RequestRefFromRequest(
 			isc.NewOffLedgerRequest(
 				isctest.TestChainID,

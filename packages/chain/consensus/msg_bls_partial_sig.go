@@ -10,19 +10,17 @@ import (
 )
 
 type msgBLSPartialSig struct {
-	gpa.BasicMessage
 	blsSuite   suites.Suite
 	partialSig []byte `bcs:"export"`
 }
 
-var _ gpa.Message = new(msgBLSPartialSig)
+var _ gpa.MessagePayload = new(msgBLSPartialSig)
 
-func newMsgBLSPartialSig(blsSuite suites.Suite, recipient gpa.NodeID, partialSig []byte) *msgBLSPartialSig {
-	return &msgBLSPartialSig{
-		BasicMessage: gpa.NewBasicMessage(recipient),
-		blsSuite:     blsSuite,
-		partialSig:   partialSig,
-	}
+func newMsgBLSPartialSig(blsSuite suites.Suite, recipient gpa.NodeID, partialSig []byte) *gpa.MessageOut {
+	return gpa.NewMessageOut(recipient, &msgBLSPartialSig{
+		blsSuite:   blsSuite,
+		partialSig: partialSig,
+	})
 }
 
 func (msg *msgBLSPartialSig) MsgType() gpa.MessageType {

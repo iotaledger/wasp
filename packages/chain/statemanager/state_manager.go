@@ -311,13 +311,12 @@ func (smT *stateManager) handleInput(input gpa.Input) {
 }
 
 func (smT *stateManager) handleMessage(peerMsg *peering.PeerMessageIn) {
-	msg, err := smT.stateManagerGPA.UnmarshalMessage(peerMsg.MsgData)
+	msg, err := smT.stateManagerGPA.UnmarshalPayload(peerMsg.MsgData)
 	if err != nil {
 		smT.log.LogWarnf("Parsing message failed: %v", err)
 		return
 	}
-	msg.SetSender(gpa.NodeIDFromPublicKey(peerMsg.SenderPubKey))
-	outMsgs := smT.stateManagerGPA.Message(msg)
+	outMsgs := smT.stateManagerGPA.Message(gpa.NewMessageIn(gpa.NodeIDFromPublicKey(peerMsg.SenderPubKey), msg))
 	smT.sendMessages(outMsgs)
 	smT.handleOutput()
 }
@@ -386,18 +385,15 @@ func (smT *stateManager) handleTimerTick(now time.Time) {
 	smT.handleInput(inputs.NewStateManagerTimerTick(now))
 }
 
-func (smT *stateManager) sendMessages(outMsgs gpa.OutMessages) {
-	if outMsgs == nil {
-		return
-	}
-	outMsgs.MustIterate(func(msg gpa.Message) {
-		msgBytes := lo.Must(gpa.MarshalMessage(msg))
+func (smT *stateManager) sendMessages(outMsgs []*gpa.MessageOut) {
+	for _, msg := range outMsgs {
+		msgBytes := lo.Must(gpa.MarshalPayload(msg.Payload))
 		pm := peering.NewPeerMessageData(smT.netPeeringID, peering.ReceiverStateManager, constMsgTypeStm, msgBytes)
-		recipientPubKey, ok := smT.nodeIDToPubKey[msg.Recipient()]
+		recipientPubKey, ok := smT.nodeIDToPubKey[msg.Recipient]
 		if !ok {
-			smT.log.LogDebugf("Dropping outgoing message, because NodeID=%s it is not in the NodeList.", msg.Recipient().ShortString())
+			smT.log.LogDebugf("Dropping outgoing message, because NodeID=%s it is not in the NodeList.", msg.Recipient.ShortString())
 			return
 		}
 		smT.net.SendMsgByPubKey(recipientPubKey, pm)
-	})
+	}
 }

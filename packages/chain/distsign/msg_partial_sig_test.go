@@ -11,7 +11,6 @@ import (
 	"go.dedis.ch/kyber/v3/sign/dss"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/tcrypto"
 )
 
@@ -33,7 +32,6 @@ func TestMsgPartialSigSerialization(t *testing.T) {
 	require.NoError(t, err)
 
 	msg := &msgPartialSig{
-		gpa.BasicMessage{},
 		s,
 		partialSig,
 	}

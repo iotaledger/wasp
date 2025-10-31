@@ -14,7 +14,6 @@ import (
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/log"
-
 	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/util"
@@ -81,7 +80,7 @@ func New(
 	}
 }
 
-func (dsi *distSyncImpl) Input(input gpa.Input) gpa.OutMessages {
+func (dsi *distSyncImpl) Input(input gpa.Input) []*gpa.MessageOut {
 	dsi.log.LogDebugf("Input %T: %+v", input, input)
 	switch input := input.(type) {
 	case *inputServerNodes:
@@ -98,12 +97,12 @@ func (dsi *distSyncImpl) Input(input gpa.Input) gpa.OutMessages {
 	panic(fmt.Errorf("unexpected input type %T: %+v", input, input))
 }
 
-func (dsi *distSyncImpl) Message(msg gpa.Message) gpa.OutMessages {
-	switch msg := msg.(type) {
+func (dsi *distSyncImpl) Message(msg *gpa.MessageIn) []*gpa.MessageOut {
+	switch msg.Payload.(type) {
 	case *msgMissingRequest:
-		return dsi.handleMsgMissingRequest(msg)
+		return dsi.handleMsgMissingRequest(gpa.AsTypedMessageIn[*msgMissingRequest](msg))
 	case *msgShareRequest:
-		return dsi.handleMsgShareRequest(msg)
+		return dsi.handleMsgShareRequest(gpa.AsTypedMessageIn[*msgShareRequest](msg))
 	}
 	dsi.log.LogWarnf("unexpected message %T: %+v", msg, msg)
 	return nil
@@ -117,7 +116,7 @@ func (dsi *distSyncImpl) StatusString() string {
 	return fmt.Sprintf("{MP, neededReqs=%v, nodeCountToShare=%v}", dsi.needed.Size(), dsi.nodeCountToShare)
 }
 
-func (dsi *distSyncImpl) handleInputServerNodes(input *inputServerNodes) gpa.OutMessages {
+func (dsi *distSyncImpl) handleInputServerNodes(input *inputServerNodes) []*gpa.MessageOut {
 	dsi.log.LogDebugf("handleInputServerNodes: %v", input)
 	dsi.handleCommitteeNodes(input.committeeNodes)
 	dsi.serverNodes = input.serverNodes
@@ -129,7 +128,7 @@ func (dsi *distSyncImpl) handleInputServerNodes(input *inputServerNodes) gpa.Out
 	return dsi.handleInputTimeTick() // Re-send requests if node set has changed.
 }
 
-func (dsi *distSyncImpl) handleInputAccessNodes(input *inputAccessNodes) gpa.OutMessages {
+func (dsi *distSyncImpl) handleInputAccessNodes(input *inputAccessNodes) []*gpa.MessageOut {
 	dsi.log.LogDebugf("handleInputAccessNodes: %v", input)
 	dsi.handleCommitteeNodes(input.committeeNodes)
 	dsi.accessNodes = input.accessNodes
@@ -154,7 +153,7 @@ func (dsi *distSyncImpl) handleCommitteeNodes(committeeNodes []gpa.NodeID) {
 
 // In the current algorithm, for sharing a message:
 //   - Just send a message to all the committee nodes (or server nodes, if committee is not known).
-func (dsi *distSyncImpl) handleInputPublishRequest(input *inputPublishRequest) gpa.OutMessages {
+func (dsi *distSyncImpl) handleInputPublishRequest(input *inputPublishRequest) []*gpa.MessageOut {
 	msgs := dsi.propagateRequest(input.request)
 	//
 	// Delete the it from the "needed" list, if any.
@@ -166,8 +165,7 @@ func (dsi *distSyncImpl) handleInputPublishRequest(input *inputPublishRequest) g
 	return msgs
 }
 
-func (dsi *distSyncImpl) propagateRequest(request isc.Request) gpa.OutMessages {
-	msgs := gpa.NoMessages()
+func (dsi *distSyncImpl) propagateRequest(request isc.Request) []*gpa.MessageOut {
 	var publishToNodes []gpa.NodeID
 	if len(dsi.committeeNodes) > 0 {
 		publishToNodes = dsi.committeeNodes
@@ -176,8 +174,9 @@ func (dsi *distSyncImpl) propagateRequest(request isc.Request) gpa.OutMessages {
 		dsi.log.LogDebugf("Forwarding request %v to server nodes: %v", request.ID(), dsi.serverNodes)
 		publishToNodes = dsi.serverNodes
 	}
+	var msgs []*gpa.MessageOut
 	for i := range publishToNodes {
-		msgs.Add(newMsgShareRequest(request, 0, publishToNodes[i]))
+		msgs = append(msgs, newMsgShareRequest(request, 0, publishToNodes[i]))
 	}
 	return msgs
 }
@@ -185,7 +184,7 @@ func (dsi *distSyncImpl) propagateRequest(request isc.Request) gpa.OutMessages {
 // For querying a message:
 //   - First ask all the committee for the message.
 //   - ...
-func (dsi *distSyncImpl) handleInputRequestNeeded(input *inputRequestNeeded) gpa.OutMessages {
+func (dsi *distSyncImpl) handleInputRequestNeeded(input *inputRequestNeeded) []*gpa.MessageOut {
 	reqRefKey := input.requestRef.AsKey()
 	reqNeeded, have := dsi.needed.Get(reqRefKey)
 	if have {
@@ -202,9 +201,9 @@ func (dsi *distSyncImpl) handleInputRequestNeeded(input *inputRequestNeeded) gpa
 	if dsi.needed.Set(reqRefKey, reqNeeded) {
 		dsi.missingReqsMetric(dsi.needed.Size())
 	}
-	msgs := gpa.NoMessages()
+	var msgs []*gpa.MessageOut
 	for _, nid := range dsi.committeeNodes {
-		msgs.Add(newMsgMissingRequest(input.requestRef, nid))
+		msgs = append(msgs, newMsgMissingRequest(input.requestRef, nid))
 	}
 	return msgs
 }
@@ -212,7 +211,7 @@ func (dsi *distSyncImpl) handleInputRequestNeeded(input *inputRequestNeeded) gpa
 // For querying a message:
 //   - ...
 //   - If response not received, ask random subsets of server nodes.
-func (dsi *distSyncImpl) handleInputTimeTick() gpa.OutMessages {
+func (dsi *distSyncImpl) handleInputTimeTick() []*gpa.MessageOut {
 	if dsi.needed.Size() == 0 {
 		return nil
 	}
@@ -220,7 +219,7 @@ func (dsi *distSyncImpl) handleInputTimeTick() gpa.OutMessages {
 	if nodeCount == 0 {
 		return nil
 	}
-	msgs := gpa.NoMessages()
+	var msgs []*gpa.MessageOut
 	nodePerm := dsi.rnd.Perm(nodeCount)
 	counter := 0
 	dsi.needed.ForEach(func(reqRefKey isc.RequestRefKey, reqNeeded *distSyncReqNeeded) bool { // Access is randomized.
@@ -232,7 +231,7 @@ func (dsi *distSyncImpl) handleInputTimeTick() gpa.OutMessages {
 		}
 		recipient := dsi.serverNodes[nodePerm[counter%nodeCount]]
 		dsi.log.LogDebugf("Sending MsgMissingRequest for %v to %v", reqNeeded.reqRef, recipient)
-		msgs.Add(newMsgMissingRequest(reqNeeded.reqRef, recipient))
+		msgs = append(msgs, newMsgMissingRequest(reqNeeded.reqRef, recipient))
 		counter++
 		return counter <= dsi.maxMsgsPerTick
 	})
@@ -240,20 +239,18 @@ func (dsi *distSyncImpl) handleInputTimeTick() gpa.OutMessages {
 	return msgs
 }
 
-func (dsi *distSyncImpl) handleMsgMissingRequest(msg *msgMissingRequest) gpa.OutMessages {
-	req := dsi.requestNeededCB(msg.requestRef)
+func (dsi *distSyncImpl) handleMsgMissingRequest(msg *gpa.TypedMessageIn[*msgMissingRequest]) []*gpa.MessageOut {
+	req := dsi.requestNeededCB(msg.Payload.requestRef)
 	if req != nil {
-		msgs := gpa.NoMessages()
-		msgs.Add(newMsgShareRequest(req, 0, msg.Sender()))
-		return msgs
+		return []*gpa.MessageOut{newMsgShareRequest(req, 0, msg.Sender)}
 	}
 	return nil
 }
 
-func (dsi *distSyncImpl) handleMsgShareRequest(msg *msgShareRequest) gpa.OutMessages {
-	msgs := gpa.NoMessages()
-	reqRefKey := isc.RequestRefFromRequest(msg.request).AsKey()
-	added := dsi.requestReceivedCB(msg.request)
+func (dsi *distSyncImpl) handleMsgShareRequest(msg *gpa.TypedMessageIn[*msgShareRequest]) []*gpa.MessageOut {
+	var msgs []*gpa.MessageOut
+	reqRefKey := isc.RequestRefFromRequest(msg.Payload.request).AsKey()
+	added := dsi.requestReceivedCB(msg.Payload.request)
 	if dsi.needed.Delete(reqRefKey) {
 		dsi.missingReqsMetric(dsi.needed.Size())
 	}
@@ -262,19 +259,19 @@ func (dsi *distSyncImpl) handleMsgShareRequest(msg *msgShareRequest) gpa.OutMess
 	// The "outside of the committee" condition is used here to decrease echo-factor of the synchronization.
 	// Each fair committee will send the request to all the committee nodes, thus we can avoid repeating it.
 	// Follow the logic as if the message is received via the API.
-	if added && !lo.Contains(dsi.committeeNodes, msg.Sender()) {
-		msgs.AddAll(dsi.propagateRequest(msg.request))
+	if added && !lo.Contains(dsi.committeeNodes, msg.Sender) {
+		msgs = slices.Concat(msgs, dsi.propagateRequest(msg.Payload.request))
 	}
 	//
 	// The following is de-factor unused, as TTL is always 0 currently.
-	if msg.ttl > 0 {
-		ttl := msg.ttl
+	if msg.Payload.ttl > 0 {
+		ttl := msg.Payload.ttl
 		if ttl > maxTTL {
 			ttl = maxTTL
 		}
 		perm := dsi.rnd.Perm(len(dsi.committeeNodes))
 		for i := 0; i < dsi.nodeCountToShare; i++ {
-			msgs.Add(newMsgShareRequest(msg.request, ttl-1, dsi.committeeNodes[perm[i]]))
+			msgs = append(msgs, newMsgShareRequest(msg.Payload.request, ttl-1, dsi.committeeNodes[perm[i]]))
 		}
 		return msgs
 	}

@@ -11,12 +11,12 @@ const (
 	msgTypeNextLogIndex gpa.MessageType = iota
 )
 
-func (cl *CommitteeLog) UnmarshalMessage(data []byte) (gpa.Message, error) {
-	return UnmarshalMessage(data)
+func (cl *CommitteeLog) UnmarshalPayload(data []byte) (gpa.MessagePayload, error) {
+	return UnmarshalPayload(data)
 }
 
-func UnmarshalMessage(data []byte) (gpa.Message, error) {
-	return gpa.UnmarshalMessage(data, gpa.Mapper{
-		msgTypeNextLogIndex: func() gpa.Message { return new(MsgNextLogIndex) },
+func UnmarshalPayload(data []byte) (gpa.MessagePayload, error) {
+	return gpa.UnmarshalPayload(data, gpa.PayloadAllocator{
+		msgTypeNextLogIndex: func() gpa.MessagePayload { return new(MsgNextLogIndex) },
 	})
 }

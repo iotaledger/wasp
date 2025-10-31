@@ -44,7 +44,7 @@ func NewSyncACS(
 	}
 }
 
-func (sub *SyncACS) StateProposalReceived(proposedBaseAnchor *isc.StateAnchor) gpa.OutMessages {
+func (sub *SyncACS) StateProposalReceived(proposedBaseAnchor *isc.StateAnchor) []*gpa.MessageOut {
 	if sub.baseStateAnchorReceived {
 		return nil
 	}
@@ -53,7 +53,7 @@ func (sub *SyncACS) StateProposalReceived(proposedBaseAnchor *isc.StateAnchor) g
 	return sub.tryCompleteInput()
 }
 
-func (sub *SyncACS) MempoolRequestsReceived(requestRefs []*isc.RequestRef) gpa.OutMessages {
+func (sub *SyncACS) MempoolRequestsReceived(requestRefs []*isc.RequestRef) []*gpa.MessageOut {
 	if sub.RequestRefs != nil {
 		return nil
 	}
@@ -61,7 +61,7 @@ func (sub *SyncACS) MempoolRequestsReceived(requestRefs []*isc.RequestRef) gpa.O
 	return sub.tryCompleteInput()
 }
 
-func (sub *SyncACS) DistributedSignatureIndexProposalReceived(distSignIndexProposal []int) gpa.OutMessages {
+func (sub *SyncACS) DistributedSignatureIndexProposalReceived(distSignIndexProposal []int) []*gpa.MessageOut {
 	if sub.DistributedSignatureIndexProposal != nil {
 		return nil
 	}
@@ -69,7 +69,7 @@ func (sub *SyncACS) DistributedSignatureIndexProposalReceived(distSignIndexPropo
 	return sub.tryCompleteInput()
 }
 
-func (sub *SyncACS) TimeDataReceived(timeData time.Time) gpa.OutMessages {
+func (sub *SyncACS) TimeDataReceived(timeData time.Time) []*gpa.MessageOut {
 	if timeData.After(sub.TimeData) {
 		sub.TimeData = timeData
 		return sub.tryCompleteInput()
@@ -77,7 +77,7 @@ func (sub *SyncACS) TimeDataReceived(timeData time.Time) gpa.OutMessages {
 	return nil
 }
 
-func (sub *SyncACS) L1InfoReceived(gasCoins []*coin.CoinWithRef, l1params *parameters.L1Params) gpa.OutMessages {
+func (sub *SyncACS) L1InfoReceived(gasCoins []*coin.CoinWithRef, l1params *parameters.L1Params) []*gpa.MessageOut {
 	if sub.l1InfoReceived {
 		return nil
 	}
@@ -87,7 +87,7 @@ func (sub *SyncACS) L1InfoReceived(gasCoins []*coin.CoinWithRef, l1params *param
 	return sub.tryCompleteInput()
 }
 
-func (sub *SyncACS) tryCompleteInput() gpa.OutMessages {
+func (sub *SyncACS) tryCompleteInput() []*gpa.MessageOut {
 	if sub.inputsReady || !sub.baseStateAnchorReceived {
 		return nil
 	}
@@ -98,7 +98,7 @@ func (sub *SyncACS) tryCompleteInput() gpa.OutMessages {
 	return sub.c.uponACSInputsReceived(sub.baseStateAnchor, sub.RequestRefs, sub.DistributedSignatureIndexProposal, sub.TimeData, sub.gasCoins, sub.l1params)
 }
 
-func (sub *SyncACS) ACSOutputReceived(output gpa.Output) gpa.OutMessages {
+func (sub *SyncACS) ACSOutputReceived(output gpa.Output) []*gpa.MessageOut {
 	if output == nil {
 		return nil
 	}

@@ -29,31 +29,35 @@ func TestMsgWrapper(t *testing.T) {
 		return nil, fmt.Errorf("unknown subsystem %d index %d", subsystem, index)
 	})
 
-	msg1 := &TestWrappedMessage1{V: 42}
-	msg2 := &TestWrappedMessage2{V: "hello"}
-	wrapped1 := wrapper.WrapMessage(2, 3, msg1)
-	wrapped2 := wrapper.WrapMessage(4, 5, msg2)
+	sender := gpa.NodeID{1}
+	recipient := gpa.NodeID{2}
 
-	wrapped1Enc := bcs.MustMarshal(lo.ToPtr[any](wrapped1))
-	wrapped2Enc := bcs.MustMarshal(lo.ToPtr[any](wrapped2))
+	msg1 := gpa.NewMessageIn(sender, &TestWrappedMessage1{V: 42})
+	msg2 := gpa.NewMessageOut(recipient, &TestWrappedMessage2{V: "hello"})
 
-	unwrapped1, err := wrapper.UnmarshalMessage(wrapped1Enc)
+	wrapped1 := wrapper.WrapMessageIn(2, 3, msg1)
+	wrapped2 := wrapper.WrapMessageOut(4, 5, msg2)
+
+	wrapped1Enc := bcs.MustMarshal(lo.ToPtr[any](wrapped1.Payload))
+	wrapped2Enc := bcs.MustMarshal(lo.ToPtr[any](wrapped2.Payload))
+
+	unwrapped1, err := wrapper.UnmarshalPayload(wrapped1Enc)
 	require.NoError(t, err)
-	require.Equal(t, msg1, unwrapped1.(*gpa.WrappingMsg).Wrapped())
+	require.Equal(t, msg1, unwrapped1.(*gpa.WrappingMsg).WrappedIn(msg1.Sender))
 
-	unwrapped2, err := wrapper.UnmarshalMessage(wrapped2Enc)
+	unwrapped2, err := wrapper.UnmarshalPayload(wrapped2Enc)
 	require.NoError(t, err)
-	require.Equal(t, msg2, unwrapped2.(*gpa.WrappingMsg).Wrapped())
+	require.Equal(t, msg2, unwrapped2.(*gpa.WrappingMsg).WrappedOut(msg2.Recipient))
 
-	unknownSubsystem := wrapper.WrapMessage(2, 4, msg1)
-	wrongSubsystem := wrapper.WrapMessage(2, 3, msg2)
+	unknownSubsystem := wrapper.WrapMessageIn(2, 4, msg1)
+	wrongSubsystem := wrapper.WrapMessageOut(2, 3, msg2)
 
-	unknownSubsystemEnc := bcs.MustMarshal(lo.ToPtr[any](unknownSubsystem))
-	wrongSubsystemEnc := bcs.MustMarshal(lo.ToPtr[any](wrongSubsystem))
+	unknownSubsystemEnc := bcs.MustMarshal(lo.ToPtr[any](unknownSubsystem.Payload))
+	wrongSubsystemEnc := bcs.MustMarshal(lo.ToPtr[any](wrongSubsystem.Payload))
 
-	_, err = wrapper.UnmarshalMessage(unknownSubsystemEnc)
+	_, err = wrapper.UnmarshalPayload(unknownSubsystemEnc)
 	require.Error(t, err)
-	_, err = wrapper.UnmarshalMessage(wrongSubsystemEnc)
+	_, err = wrapper.UnmarshalPayload(wrongSubsystemEnc)
 	require.Error(t, err)
 }
 
@@ -61,16 +65,15 @@ type subsystemGPA1 struct {
 	testGPABase[*TestWrappedMessage1]
 }
 
-func (g *subsystemGPA1) UnmarshalMessage(data []byte) (gpa.Message, error) {
-	return gpa.UnmarshalMessage(data,
-		gpa.Mapper{
-			1: func() gpa.Message { return new(TestWrappedMessage1) },
+func (g *subsystemGPA1) UnmarshalPayload(data []byte) (gpa.MessagePayload, error) {
+	return gpa.UnmarshalPayload(data,
+		gpa.PayloadAllocator{
+			1: func() gpa.MessagePayload { return &TestWrappedMessage1{} },
 		},
 	)
 }
 
 type TestWrappedMessage1 struct {
-	gpa.BasicMessage
 	V int
 }
 
@@ -82,16 +85,15 @@ type subsystemGPA2 struct {
 	testGPABase[*TestWrappedMessage2]
 }
 
-func (g *subsystemGPA2) UnmarshalMessage(data []byte) (gpa.Message, error) {
-	return gpa.UnmarshalMessage(data,
-		gpa.Mapper{
-			2: func() gpa.Message { return new(TestWrappedMessage2) },
+func (g *subsystemGPA2) UnmarshalPayload(data []byte) (gpa.MessagePayload, error) {
+	return gpa.UnmarshalPayload(data,
+		gpa.PayloadAllocator{
+			2: func() gpa.MessagePayload { return &TestWrappedMessage2{} },
 		},
 	)
 }
 
 type TestWrappedMessage2 struct {
-	gpa.BasicMessage
 	V string
 }
 
@@ -99,9 +101,9 @@ func (m *TestWrappedMessage2) MsgType() gpa.MessageType {
 	return 2
 }
 
-type testGPABase[MsgType gpa.Message] struct{}
+type testGPABase[MsgType gpa.MessagePayload] struct{}
 
-func (testGPABase[_]) Input(inp gpa.Input) gpa.OutMessages     { return nil }
-func (testGPABase[_]) Message(msg gpa.Message) gpa.OutMessages { return nil }
-func (testGPABase[_]) Output() gpa.Output                      { return nil }
-func (testGPABase[_]) StatusString() string                    { return "" }
+func (testGPABase[_]) Input(inp gpa.Input) []*gpa.MessageOut        { return nil }
+func (testGPABase[_]) Message(msg *gpa.MessageIn) []*gpa.MessageOut { return nil }
+func (testGPABase[_]) Output() gpa.Output                           { return nil }
+func (testGPABase[_]) StatusString() string                         { return "" }

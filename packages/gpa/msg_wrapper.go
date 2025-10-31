@@ -6,6 +6,8 @@ package gpa
 import (
 	"fmt"
 
+	"github.com/samber/lo"
+
 	bcs "github.com/iotaledger/bcs-go"
 )
 
@@ -20,38 +22,50 @@ func NewMsgWrapper(msgType MessageType, subsystemFunc func(subsystem byte, index
 	return &MsgWrapper{msgType, subsystemFunc}
 }
 
-func (w *MsgWrapper) WrapMessage(subsystem byte, index int, msg Message) Message {
-	return &WrappingMsg{w.msgType, subsystem, index, msg}
+func (w *MsgWrapper) WrapMessageOut(subsystem byte, index int, msg *MessageOut) *MessageOut {
+	return NewMessageOut(
+		msg.Recipient,
+		&WrappingMsg{w.msgType, subsystem, index, msg.Payload},
+	)
 }
 
-func (w *MsgWrapper) WrapMessages(subsystem byte, index int, msgs OutMessages) OutMessages {
-	if msgs == nil {
-		return nil
-	}
-	wrapped := NoMessages()
-	msgs.MustIterate(func(msg Message) {
-		wrapped.Add(w.WrapMessage(subsystem, index, msg))
+func (w *MsgWrapper) WrapMessagesOut(subsystem byte, index int, msgs []*MessageOut) []*MessageOut {
+	return lo.Map(msgs, func(msg *MessageOut, _ int) *MessageOut {
+		return w.WrapMessageOut(subsystem, index, msg)
 	})
-	return wrapped
 }
 
-func (w *MsgWrapper) DelegateInput(subsystem byte, index int, input Input) (GPA, OutMessages, error) {
+func (w *MsgWrapper) WrapMessageIn(subsystem byte, index int, msg *MessageIn) *MessageIn {
+	return NewMessageIn(
+		msg.Sender,
+		&WrappingMsg{w.msgType, subsystem, index, msg.Payload},
+	)
+}
+
+func (w *MsgWrapper) WrapMessagesIn(subsystem byte, index int, msgs []*MessageIn) []*MessageIn {
+	return lo.Map(msgs, func(msg *MessageIn, _ int) *MessageIn {
+		return w.WrapMessageIn(subsystem, index, msg)
+	})
+}
+
+func (w *MsgWrapper) DelegateInput(subsystem byte, index int, input Input) (GPA, []*MessageOut, error) {
 	sub, err := w.subsystemFunc(subsystem, index)
 	if err != nil {
 		return nil, nil, err
 	}
-	return sub, w.WrapMessages(subsystem, index, sub.Input(input)), nil
+	return sub, w.WrapMessagesOut(subsystem, index, sub.Input(input)), nil
 }
 
-func (w *MsgWrapper) DelegateMessage(msg *WrappingMsg) (GPA, OutMessages, error) {
-	sub, err := w.subsystemFunc(msg.Subsystem(), msg.Index())
+func (w *MsgWrapper) DelegateMessage(msg *TypedMessageIn[*WrappingMsg]) (GPA, []*MessageOut, error) {
+	sub, err := w.subsystemFunc(msg.Payload.subsystem, msg.Payload.index)
 	if err != nil {
 		return nil, nil, err
 	}
-	return sub, w.WrapMessages(msg.Subsystem(), msg.Index(), sub.Message(msg.Wrapped())), nil
+	subOut := sub.Message(NewMessageIn(msg.Sender, msg.Payload.wrapped))
+	return sub, w.WrapMessagesOut(msg.Payload.subsystem, msg.Payload.index, subOut), nil
 }
 
-func (w *MsgWrapper) UnmarshalMessage(data []byte) (Message, error) {
+func (w *MsgWrapper) UnmarshalPayload(data []byte) (MessagePayload, error) {
 	rawMsg, err := bcs.Unmarshal[rawWrappingMsg](data)
 	if err != nil {
 		return nil, fmt.Errorf("unmarshaling wrapping msg: %w", err)
@@ -62,11 +76,10 @@ func (w *MsgWrapper) UnmarshalMessage(data []byte) (Message, error) {
 		return nil, fmt.Errorf("retrieving subsystem GPA %v/%v: %w", rawMsg.Subsystem, rawMsg.Index, err)
 	}
 
-	wrapped, err := subGPA.UnmarshalMessage(rawMsg.WrappedMsgBytes)
+	wrapped, err := subGPA.UnmarshalPayload(rawMsg.WrappedMsgBytes)
 	if err != nil {
 		return nil, fmt.Errorf("unmarshalling wrapped message: subsystem %v index %v: %w", rawMsg.Subsystem, rawMsg.Index, err)
 	}
-
 	return &WrappingMsg{
 		msgType:   w.msgType,
 		subsystem: rawMsg.Subsystem,
@@ -75,15 +88,15 @@ func (w *MsgWrapper) UnmarshalMessage(data []byte) (Message, error) {
 	}, nil
 }
 
-// WrappingMsg is the message that contains another, and its routing info.
+// WrappingMsg is a message that contains another, and its routing info.
 type WrappingMsg struct {
 	msgType   MessageType
 	subsystem byte
 	index     int
-	wrapped   Message
+	wrapped   MessagePayload
 }
 
-var _ Message = new(WrappingMsg)
+var _ MessagePayload = new(WrappingMsg)
 
 func (msg *WrappingMsg) MsgType() MessageType {
 	return msg.msgType
@@ -97,31 +110,29 @@ func (msg *WrappingMsg) Index() int {
 	return msg.index
 }
 
-func (msg *WrappingMsg) Wrapped() Message {
-	return msg.wrapped
+func (msg *WrappingMsg) WrappedIn(sender NodeID) *MessageIn {
+	return NewMessageIn(sender, msg.wrapped)
 }
 
-func (msg *WrappingMsg) Recipient() NodeID {
-	return msg.wrapped.Recipient()
-}
-
-func (msg *WrappingMsg) SetSender(sender NodeID) {
-	msg.wrapped.SetSender(sender)
+func (msg *WrappingMsg) WrappedOut(receipient NodeID) *MessageOut {
+	return NewMessageOut(receipient, msg.wrapped)
 }
 
 func (msg *WrappingMsg) MarshalBCS(e *bcs.Encoder) error {
-	wrappedMsgBytes, err := MarshalMessage(msg.wrapped)
+	wrappedMsgBytes, err := MarshalPayload(msg.wrapped)
 	if err != nil {
 		return fmt.Errorf("marshaling wrapped message: %w", err)
 	}
-
 	e.Encode(rawWrappingMsg{
 		Subsystem:       msg.subsystem,
 		Index:           msg.index,
 		WrappedMsgBytes: wrappedMsgBytes,
 	})
-
 	return nil
+}
+
+func (msg *WrappingMsg) String() string {
+	return fmt.Sprintf("WrappingMsg{subsystem=%v, index=%v, wrapped=%s}", msg.subsystem, msg.index, msg.wrapped)
 }
 
 type rawWrappingMsg struct {
