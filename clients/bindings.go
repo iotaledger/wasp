@@ -2,6 +2,8 @@ package clients
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -157,6 +159,179 @@ func iotagoOwnerToObjectOwner(owner *iotago.Owner) iotajsonrpc.ObjectOwner {
 	}
 
 	return iotajsonrpc.ObjectOwner{ObjectOwnerInternal: ownerInternal}
+}
+
+type systemStateValueWrapper struct {
+	Value string `json:"value"`
+}
+
+type systemStateParametersJSON struct {
+	EpochDurationMs                string `json:"epoch_duration_ms"`
+	MaxValidatorCount              string `json:"max_validator_count"`
+	MinValidatorCount              string `json:"min_validator_count"`
+	MinValidatorJoiningStake       string `json:"min_validator_joining_stake"`
+	ValidatorLowStakeGracePeriod   string `json:"validator_low_stake_grace_period"`
+	ValidatorLowStakeThreshold     string `json:"validator_low_stake_threshold"`
+	ValidatorVeryLowStakeThreshold string `json:"validator_very_low_stake_threshold"`
+}
+
+type systemStateIDSizeJSON struct {
+	ID   string `json:"id"`
+	Size string `json:"size"`
+}
+
+type systemStatePendingActiveValidatorsJSON struct {
+	Contents *systemStateIDSizeJSON `json:"contents"`
+}
+
+type systemStateURLJSON struct {
+	URL string `json:"url"`
+}
+
+type systemStateValidatorMetadataJSON struct {
+	AuthorityPubkeyBytes          []int               `json:"authority_pubkey_bytes"`
+	Description                   string              `json:"description"`
+	ImageURL                      *systemStateURLJSON `json:"image_url"`
+	IotaAddress                   string              `json:"iota_address"`
+	Name                          string              `json:"name"`
+	NetAddress                    string              `json:"net_address"`
+	NetworkPubkeyBytes            []int               `json:"network_pubkey_bytes"`
+	NextEpochAuthorityPubkeyBytes []int               `json:"next_epoch_authority_pubkey_bytes"`
+	NextEpochNetAddress           *string             `json:"next_epoch_net_address"`
+	NextEpochNetworkPubkeyBytes   []int               `json:"next_epoch_network_pubkey_bytes"`
+	NextEpochP2pAddress           *string             `json:"next_epoch_p2p_address"`
+	NextEpochPrimaryAddress       *string             `json:"next_epoch_primary_address"`
+	NextEpochProofOfPossession    []int               `json:"next_epoch_proof_of_possession"`
+	NextEpochProtocolPubkeyBytes  []int               `json:"next_epoch_protocol_pubkey_bytes"`
+	NextEpochWorkerPubkeyBytes    []int               `json:"next_epoch_worker_pubkey_bytes"`
+	NextEpochWorkerAddress        *string             `json:"next_epoch_worker_address"`
+	P2pAddress                    string              `json:"p2p_address"`
+	PrimaryAddress                string              `json:"primary_address"`
+	ProjectURL                    *systemStateURLJSON `json:"project_url"`
+	ProofOfPossession             []int               `json:"proof_of_possession"`
+	ProtocolPubkeyBytes           []int               `json:"protocol_pubkey_bytes"`
+	WorkerAddress                 string              `json:"worker_address"`
+	WorkerPubkeyBytes             []int               `json:"worker_pubkey_bytes"`
+	ImageUrlDeprecated            string              `json:"image_url_deprecated"`
+}
+
+type systemStateRewardsPoolJSON struct {
+	Value string `json:"value"`
+}
+
+type systemStateValidatorStakingPoolJSON struct {
+	ActivationEpoch          string                     `json:"activation_epoch"`
+	DeactivationEpoch        *string                    `json:"deactivation_epoch"`
+	ExchangeRates            systemStateIDSizeJSON      `json:"exchange_rates"`
+	ID                       string                     `json:"id"`
+	IotaBalance              string                     `json:"iota_balance"`
+	PendingPoolTokenWithdraw string                     `json:"pending_pool_token_withdraw"`
+	PendingStake             string                     `json:"pending_stake"`
+	PendingTotalIotaWithdraw string                     `json:"pending_total_iota_withdraw"`
+	PoolTokenBalance         string                     `json:"pool_token_balance"`
+	RewardsPool              systemStateRewardsPoolJSON `json:"rewards_pool"`
+}
+
+type systemStateActiveValidatorJSON struct {
+	CommissionRate          string                               `json:"commission_rate"`
+	GasPrice                string                               `json:"gas_price"`
+	Metadata                *systemStateValidatorMetadataJSON    `json:"metadata"`
+	NextEpochCommissionRate *string                              `json:"next_epoch_commission_rate"`
+	NextEpochGasPrice       *string                              `json:"next_epoch_gas_price"`
+	NextEpochStake          *string                              `json:"next_epoch_stake"`
+	OperationCapID          string                               `json:"operation_cap_id"`
+	StakingPool             *systemStateValidatorStakingPoolJSON `json:"staking_pool"`
+	VotingPower             string                               `json:"voting_power"`
+}
+
+type systemStateValidatorsJSON struct {
+	ActiveValidators        []systemStateActiveValidatorJSON       `json:"active_validators"`
+	AtRiskValidators        json.RawMessage                        `json:"at_risk_validators"`
+	InactiveValidators      systemStateIDSizeJSON                  `json:"inactive_validators"`
+	PendingActiveValidators systemStatePendingActiveValidatorsJSON `json:"pending_active_validators"`
+	PendingRemovals         json.RawMessage                        `json:"pending_removals"`
+	StakingPoolMappings     systemStateIDSizeJSON                  `json:"staking_pool_mappings"`
+	TotalStake              string                                 `json:"total_stake"`
+	ValidatorCandidates     systemStateIDSizeJSON                  `json:"validator_candidates"`
+}
+
+type systemStateStorageFundJSON struct {
+	NonRefundableBalance      systemStateValueWrapper `json:"non_refundable_balance"`
+	TotalObjectStorageRebates systemStateValueWrapper `json:"total_object_storage_rebates"`
+}
+
+type systemStateSummaryJSON struct {
+	Epoch                           string                     `json:"epoch"`
+	EpochStartTimestampMs           string                     `json:"epoch_start_timestamp_ms"`
+	Parameters                      systemStateParametersJSON  `json:"parameters"`
+	ProtocolVersion                 string                     `json:"protocol_version"`
+	ReferenceGasPrice               string                     `json:"reference_gas_price"`
+	SafeMode                        bool                       `json:"safe_mode"`
+	SafeModeComputationCharges      systemStateValueWrapper    `json:"safe_mode_computation_charges"`
+	SafeModeNonRefundableStorageFee string                     `json:"safe_mode_non_refundable_storage_fee"`
+	SafeModeStorageCharges          systemStateValueWrapper    `json:"safe_mode_storage_charges"`
+	SafeModeStorageRebates          string                     `json:"safe_mode_storage_rebates"`
+	StorageFund                     systemStateStorageFundJSON `json:"storage_fund"`
+	SystemStateVersion              string                     `json:"system_state_version"`
+	ValidatorReportRecords          json.RawMessage            `json:"validator_report_records"`
+	Validators                      systemStateValidatorsJSON  `json:"validators"`
+}
+
+func decimalStringToBigInt(str string) (*iotajsonrpc.BigInt, error) {
+	if strings.TrimSpace(str) == "" {
+		return nil, nil
+	}
+	bi := &iotajsonrpc.BigInt{Int: new(big.Int)}
+	if _, ok := bi.SetString(str, 10); !ok {
+		return nil, fmt.Errorf("invalid decimal value %q", str)
+	}
+	return bi, nil
+}
+
+func decimalStringPtrToBigInt(str *string) (*iotajsonrpc.BigInt, error) {
+	if str == nil {
+		return nil, nil
+	}
+	return decimalStringToBigInt(*str)
+}
+
+func objectIDFromHexString(str string) (iotago.ObjectID, error) {
+	var zero iotago.ObjectID
+	if strings.TrimSpace(str) == "" {
+		return zero, nil
+	}
+	obj, err := iotago.ObjectIDFromHex(str)
+	if err != nil {
+		return zero, err
+	}
+	return *obj, nil
+}
+
+func addressFromHexString(str string) (iotago.Address, error) {
+	var zero iotago.Address
+	if strings.TrimSpace(str) == "" {
+		return zero, nil
+	}
+	addr, err := iotago.AddressFromHex(str)
+	if err != nil {
+		return zero, err
+	}
+	return *addr, nil
+}
+
+func intsToBase64Data(nums []int) (*iotago.Base64Data, error) {
+	if len(nums) == 0 {
+		return nil, nil
+	}
+	bytes := make([]byte, len(nums))
+	for i, n := range nums {
+		if n < 0 || n > 255 {
+			return nil, fmt.Errorf("byte value %d out of range", n)
+		}
+		bytes[i] = byte(n)
+	}
+	encoded := base64.StdEncoding.EncodeToString(bytes)
+	return iotago.NewBase64Data(encoded)
 }
 
 func toFfiTypeTag(tag *iotago.TypeTag) (*iota_sdk_ffi.TypeTag, error) {
@@ -1151,130 +1326,327 @@ func (c *BindingClient) GetCommitteeInfo(ctx context.Context, epoch *iotajsonrpc
 }
 
 func (c *BindingClient) GetLatestIotaSystemState(ctx context.Context) (*iotajsonrpc.IotaSystemStateSummary, error) {
-	epoch, err := c.qclient.Epoch(nil)
+	objId, err := toFfiObjectID(iotago.MustAddressFromHex("0x5"))
+	if err != nil {
+		return nil, err
+	}
+
+	systemObjectDynamicFieldsPages, err := c.qclient.DynamicFields(objId.ToAddress(), nil)
 	if err.(*iota_sdk_ffi.SdkFfiError) != nil {
-		return nil, fmt.Errorf("GraphQL GetLatestIotaSystemState failed: %w", err)
+		return nil, err
 	}
 
-	// Helper function to convert string pointer to BigInt
-	strToBigInt := func(s *string) *iotajsonrpc.BigInt {
-		if s == nil {
-			return nil
-		}
-		bi := &iotajsonrpc.BigInt{Int: new(big.Int)}
-		bi.SetString(*s, 10)
-		return bi
+	if len(systemObjectDynamicFieldsPages.Data) == 0 {
+		return nil, fmt.Errorf("no dynamic fields returned for system object")
 	}
 
-	// Convert ObjectId pointer to iotago.ObjectID
-	objIDConv := func(id **iota_sdk_ffi.ObjectId) iotago.ObjectID {
-		if id == nil || *id == nil {
-			return iotago.ObjectID{}
-		}
-		bytes := (*id).ToBytes()
-		if len(bytes) != 32 {
-			return iotago.ObjectID{}
-		}
-		var arr [32]byte
-		copy(arr[:], bytes)
-		return iotago.ObjectID(arr)
+	data := systemObjectDynamicFieldsPages.Data[0]
+	if data.ValueAsJson == nil {
+		return nil, fmt.Errorf("system state dynamic field missing json value")
 	}
 
-	// Convert int32 pointer to BigInt
-	int32ToBigInt := func(i *int32) *iotajsonrpc.BigInt {
-		if i == nil {
-			return nil
-		}
-		return iotajsonrpc.NewBigIntInt64(int64(*i))
+	var payload systemStateSummaryJSON
+	if err := json.Unmarshal([]byte(*data.ValueAsJson), &payload); err != nil {
+		return nil, fmt.Errorf("decode system state summary: %w", err)
 	}
 
-	// Convert []int32 pointer to []*BigInt
-	int32SliceToBigIntSlice := func(s *[]int32) []*iotajsonrpc.BigInt {
-		if s == nil {
-			return nil
-		}
-		result := make([]*iotajsonrpc.BigInt, len(*s))
-		for i, v := range *s {
-			result[i] = iotajsonrpc.NewBigIntInt64(int64(v))
-		}
-		return result
+	summary := &iotajsonrpc.IotaSystemStateSummary{SafeMode: payload.SafeMode}
+
+	if summary.Epoch, err = decimalStringToBigInt(payload.Epoch); err != nil {
+		return nil, fmt.Errorf("parse epoch: %w", err)
+	}
+	if summary.ReferenceGasPrice, err = decimalStringToBigInt(payload.ReferenceGasPrice); err != nil {
+		return nil, fmt.Errorf("parse reference gas price: %w", err)
+	}
+	if summary.EpochStartTimestampMs, err = decimalStringToBigInt(payload.EpochStartTimestampMs); err != nil {
+		return nil, fmt.Errorf("parse epoch start timestamp: %w", err)
+	}
+	if summary.ProtocolVersion, err = decimalStringToBigInt(payload.ProtocolVersion); err != nil {
+		return nil, fmt.Errorf("parse protocol version: %w", err)
+	}
+	if summary.SystemStateVersion, err = decimalStringToBigInt(payload.SystemStateVersion); err != nil {
+		return nil, fmt.Errorf("parse system state version: %w", err)
+	}
+	if summary.SafeModeStorageCharges, err = decimalStringToBigInt(payload.SafeModeStorageCharges.Value); err != nil {
+		return nil, fmt.Errorf("parse safe mode storage charges: %w", err)
+	}
+	if summary.SafeModeStorageRebates, err = decimalStringToBigInt(payload.SafeModeStorageRebates); err != nil {
+		return nil, fmt.Errorf("parse safe mode storage rebates: %w", err)
+	}
+	if summary.SafeModeNonRefundableStorageFee, err = decimalStringToBigInt(payload.SafeModeNonRefundableStorageFee); err != nil {
+		return nil, fmt.Errorf("parse safe mode non refundable storage fee: %w", err)
+	}
+	if summary.SafeModeComputationRewards, err = decimalStringToBigInt(payload.SafeModeComputationCharges.Value); err != nil {
+		return nil, fmt.Errorf("parse safe mode computation charges: %w", err)
+	}
+	if summary.StorageFundTotalObjectStorageRebates, err = decimalStringToBigInt(payload.StorageFund.TotalObjectStorageRebates.Value); err != nil {
+		return nil, fmt.Errorf("parse storage fund total rebates: %w", err)
+	}
+	if summary.StorageFundNonRefundableBalance, err = decimalStringToBigInt(payload.StorageFund.NonRefundableBalance.Value); err != nil {
+		return nil, fmt.Errorf("parse storage fund non refundable balance: %w", err)
 	}
 
-	summary := &iotajsonrpc.IotaSystemStateSummary{
-		Epoch:                 iotajsonrpc.NewBigInt(epoch.EpochId),
-		ReferenceGasPrice:     strToBigInt(epoch.ReferenceGasPrice),
-		EpochStartTimestampMs: iotajsonrpc.NewBigInt(epoch.StartTimestamp),
+	if summary.EpochDurationMs, err = decimalStringToBigInt(payload.Parameters.EpochDurationMs); err != nil {
+		return nil, fmt.Errorf("parse epoch duration: %w", err)
 	}
-
-	// Map SystemStateVersion if available
-	if epoch.SystemStateVersion != nil {
-		summary.SystemStateVersion = iotajsonrpc.NewBigInt(*epoch.SystemStateVersion)
-	}
-
-	// Map ProtocolVersion from ProtocolConfigs if available
-	if epoch.ProtocolConfigs != nil {
-		summary.ProtocolVersion = iotajsonrpc.NewBigInt(epoch.ProtocolConfigs.ProtocolVersion)
-
-		// Extract config attributes from ProtocolConfigs.Configs
-		for _, attr := range epoch.ProtocolConfigs.Configs {
-			if attr.Value == nil {
-				continue
-			}
-
-			switch attr.Key {
-			case "epoch_duration_ms", "epochDurationMs", "epoch-duration-ms":
-				if val, err := strconv.ParseUint(*attr.Value, 10, 64); err == nil {
-					summary.EpochDurationMs = iotajsonrpc.NewBigInt(val)
-				}
-			case "min_validator_count", "minValidatorCount":
-				if val, err := strconv.ParseUint(*attr.Value, 10, 64); err == nil {
-					summary.MinValidatorCount = iotajsonrpc.NewBigInt(val)
-				}
-			case "max_validator_count", "maxValidatorCount":
-				if val, err := strconv.ParseUint(*attr.Value, 10, 64); err == nil {
-					summary.MaxValidatorCount = iotajsonrpc.NewBigInt(val)
-				}
-			}
-		}
-	}
-
-	// FIXME: EpochDurationMs is not available in the current GraphQL API response.
-	// The epoch_duration_ms key does not exist in ProtocolConfigs.Configs attributes.
-	// Using a hardcoded default value of 24 hours (86400000 ms) as a workaround.
-	// This should be replaced with the actual value from the protocol config once available.
 	if summary.EpochDurationMs == nil {
-		summary.EpochDurationMs = iotajsonrpc.NewBigInt(86400000) // 24 hours in milliseconds
+		summary.EpochDurationMs = iotajsonrpc.NewBigInt(86400000)
 	}
 
-	// Map ValidatorSet fields if available
-	if epoch.ValidatorSet != nil {
-		vs := epoch.ValidatorSet
-		summary.TotalStake = strToBigInt(vs.TotalStake)
-		summary.PendingActiveValidatorsId = objIDConv(vs.PendingActiveValidatorsId)
-		summary.PendingActiveValidatorsSize = int32ToBigInt(vs.PendingActiveValidatorsSize)
-		summary.PendingRemovals = int32SliceToBigIntSlice(vs.PendingRemovals)
-		summary.StakingPoolMappingsId = objIDConv(vs.StakingPoolMappingsId)
-		summary.StakingPoolMappingsSize = int32ToBigInt(vs.StakingPoolMappingsSize)
-		summary.InactivePoolsId = objIDConv(vs.InactivePoolsId)
-		summary.InactivePoolsSize = int32ToBigInt(vs.InactivePoolsSize)
-		summary.ValidatorCandidatesId = objIDConv(vs.ValidatorCandidatesId)
-		summary.ValidatorCandidatesSize = int32ToBigInt(vs.ValidatorCandidatesSize)
+	if summary.MinValidatorCount, err = decimalStringToBigInt(payload.Parameters.MinValidatorCount); err != nil {
+		return nil, fmt.Errorf("parse min validator count: %w", err)
+	}
+	if summary.MaxValidatorCount, err = decimalStringToBigInt(payload.Parameters.MaxValidatorCount); err != nil {
+		return nil, fmt.Errorf("parse max validator count: %w", err)
+	}
+	if summary.MinValidatorJoiningStake, err = decimalStringToBigInt(payload.Parameters.MinValidatorJoiningStake); err != nil {
+		return nil, fmt.Errorf("parse min validator joining stake: %w", err)
+	}
+	if summary.ValidatorLowStakeThreshold, err = decimalStringToBigInt(payload.Parameters.ValidatorLowStakeThreshold); err != nil {
+		return nil, fmt.Errorf("parse low stake threshold: %w", err)
+	}
+	if summary.ValidatorVeryLowStakeThreshold, err = decimalStringToBigInt(payload.Parameters.ValidatorVeryLowStakeThreshold); err != nil {
+		return nil, fmt.Errorf("parse very low stake threshold: %w", err)
+	}
+	if summary.ValidatorLowStakeGracePeriod, err = decimalStringToBigInt(payload.Parameters.ValidatorLowStakeGracePeriod); err != nil {
+		return nil, fmt.Errorf("parse low stake grace period: %w", err)
+	}
+
+	if summary.TotalStake, err = decimalStringToBigInt(payload.Validators.TotalStake); err != nil {
+		return nil, fmt.Errorf("parse total stake: %w", err)
+	}
+
+	if payload.Validators.PendingActiveValidators.Contents != nil {
+		pending := payload.Validators.PendingActiveValidators.Contents
+		if summary.PendingActiveValidatorsSize, err = decimalStringToBigInt(pending.Size); err != nil {
+			return nil, fmt.Errorf("parse pending active validators size: %w", err)
+		}
+		summary.PendingActiveValidatorsId, err = objectIDFromHexString(pending.ID)
+		if err != nil {
+			return nil, fmt.Errorf("parse pending active validators id: %w", err)
+		}
+	}
+
+	if summary.StakingPoolMappingsSize, err = decimalStringToBigInt(payload.Validators.StakingPoolMappings.Size); err != nil {
+		return nil, fmt.Errorf("parse staking pool mappings size: %w", err)
+	}
+	summary.StakingPoolMappingsId, err = objectIDFromHexString(payload.Validators.StakingPoolMappings.ID)
+	if err != nil {
+		return nil, fmt.Errorf("parse staking pool mappings id: %w", err)
+	}
+
+	if summary.InactivePoolsSize, err = decimalStringToBigInt(payload.Validators.InactiveValidators.Size); err != nil {
+		return nil, fmt.Errorf("parse inactive pools size: %w", err)
+	}
+	summary.InactivePoolsId, err = objectIDFromHexString(payload.Validators.InactiveValidators.ID)
+	if err != nil {
+		return nil, fmt.Errorf("parse inactive pools id: %w", err)
+	}
+
+	if summary.ValidatorCandidatesSize, err = decimalStringToBigInt(payload.Validators.ValidatorCandidates.Size); err != nil {
+		return nil, fmt.Errorf("parse validator candidates size: %w", err)
+	}
+	summary.ValidatorCandidatesId, err = objectIDFromHexString(payload.Validators.ValidatorCandidates.ID)
+	if err != nil {
+		return nil, fmt.Errorf("parse validator candidates id: %w", err)
+	}
+
+	if len(payload.Validators.PendingRemovals) > 0 {
+		var removals []interface{}
+		if err := json.Unmarshal(payload.Validators.PendingRemovals, &removals); err != nil {
+			return nil, fmt.Errorf("decode pending removals: %w", err)
+		}
+		for _, removal := range removals {
+			switch v := removal.(type) {
+			case string:
+				bi, err := decimalStringToBigInt(v)
+				if err != nil {
+					return nil, fmt.Errorf("parse pending removal: %w", err)
+				}
+				summary.PendingRemovals = append(summary.PendingRemovals, bi)
+			case float64:
+				summary.PendingRemovals = append(summary.PendingRemovals, iotajsonrpc.NewBigIntInt64(int64(v)))
+			}
+		}
+	}
+
+	if len(payload.Validators.AtRiskValidators) > 0 {
+		var atRisk interface{}
+		if err := json.Unmarshal(payload.Validators.AtRiskValidators, &atRisk); err != nil {
+			return nil, fmt.Errorf("decode at risk validators: %w", err)
+		}
+		summary.AtRiskValidators = atRisk
+	}
+
+	if len(payload.ValidatorReportRecords) > 0 {
+		var reports interface{}
+		if err := json.Unmarshal(payload.ValidatorReportRecords, &reports); err != nil {
+			return nil, fmt.Errorf("decode validator report records: %w", err)
+		}
+		summary.ValidatorReportRecords = reports
+	}
+
+	for _, validatorJSON := range payload.Validators.ActiveValidators {
+		validatorSummary := iotajsonrpc.IotaValidatorSummary{}
+
+		if validatorSummary.VotingPower, err = decimalStringToBigInt(validatorJSON.VotingPower); err != nil {
+			return nil, fmt.Errorf("parse validator voting power: %w", err)
+		}
+		if validatorSummary.GasPrice, err = decimalStringToBigInt(validatorJSON.GasPrice); err != nil {
+			return nil, fmt.Errorf("parse validator gas price: %w", err)
+		}
+		if validatorSummary.CommissionRate, err = decimalStringToBigInt(validatorJSON.CommissionRate); err != nil {
+			return nil, fmt.Errorf("parse validator commission rate: %w", err)
+		}
+		if validatorSummary.NextEpochStake, err = decimalStringPtrToBigInt(validatorJSON.NextEpochStake); err != nil {
+			return nil, fmt.Errorf("parse validator next epoch stake: %w", err)
+		}
+		if validatorSummary.NextEpochGasPrice, err = decimalStringPtrToBigInt(validatorJSON.NextEpochGasPrice); err != nil {
+			return nil, fmt.Errorf("parse validator next epoch gas price: %w", err)
+		}
+		if validatorSummary.NextEpochCommissionRate, err = decimalStringPtrToBigInt(validatorJSON.NextEpochCommissionRate); err != nil {
+			return nil, fmt.Errorf("parse validator next epoch commission rate: %w", err)
+		}
+
+		if validatorJSON.Metadata != nil {
+			meta := validatorJSON.Metadata
+			protocolSet := false
+			if base64Data, err := intsToBase64Data(meta.ProtocolPubkeyBytes); err != nil {
+				return nil, fmt.Errorf("convert protocol pubkey bytes: %w", err)
+			} else if base64Data != nil {
+				validatorSummary.ProtocolPubkeyBytes = *base64Data
+				protocolSet = true
+			}
+			if base64Data, err := intsToBase64Data(meta.NetworkPubkeyBytes); err != nil {
+				return nil, fmt.Errorf("convert network pubkey bytes: %w", err)
+			} else if base64Data != nil {
+				validatorSummary.NetworkPubkeyBytes = *base64Data
+			}
+			if base64Data, err := intsToBase64Data(meta.WorkerPubkeyBytes); err != nil {
+				return nil, fmt.Errorf("convert worker pubkey bytes: %w", err)
+			} else if base64Data != nil {
+				validatorSummary.WorkerPubkeyBytes = *base64Data
+			}
+			if base64Data, err := intsToBase64Data(meta.ProofOfPossession); err != nil {
+				return nil, fmt.Errorf("convert proof of possession: %w", err)
+			} else if base64Data != nil {
+				validatorSummary.ProofOfPossessionBytes = *base64Data
+			}
+			if base64Data, err := intsToBase64Data(meta.AuthorityPubkeyBytes); err != nil {
+				return nil, fmt.Errorf("convert authority pubkey bytes: %w", err)
+			} else if base64Data != nil && !protocolSet {
+				validatorSummary.ProtocolPubkeyBytes = *base64Data
+				protocolSet = true
+			}
+			if base64Data, err := intsToBase64Data(meta.NextEpochProtocolPubkeyBytes); err != nil {
+				return nil, fmt.Errorf("convert next epoch protocol pubkey bytes: %w", err)
+			} else if base64Data != nil {
+				validatorSummary.NextEpochProtocolPubkeyBytes = *base64Data
+			}
+			if base64Data, err := intsToBase64Data(meta.NextEpochProofOfPossession); err != nil {
+				return nil, fmt.Errorf("convert next epoch proof of possession: %w", err)
+			} else if base64Data != nil {
+				validatorSummary.NextEpochProofOfPossession = *base64Data
+			}
+			if base64Data, err := intsToBase64Data(meta.NextEpochNetworkPubkeyBytes); err != nil {
+				return nil, fmt.Errorf("convert next epoch network pubkey bytes: %w", err)
+			} else if base64Data != nil {
+				validatorSummary.NextEpochNetworkPubkeyBytes = *base64Data
+			}
+			if base64Data, err := intsToBase64Data(meta.NextEpochWorkerPubkeyBytes); err != nil {
+				return nil, fmt.Errorf("convert next epoch worker pubkey bytes: %w", err)
+			} else if base64Data != nil {
+				validatorSummary.NextEpochWorkerPubkeyBytes = *base64Data
+			}
+			if meta.ImageURL != nil {
+				validatorSummary.ImageUrl = meta.ImageURL.URL
+			}
+			if meta.ProjectURL != nil {
+				validatorSummary.ProjectUrl = meta.ProjectURL.URL
+			}
+			validatorSummary.Description = meta.Description
+			validatorSummary.Name = meta.Name
+			validatorSummary.NetAddress = meta.NetAddress
+			validatorSummary.P2pAddress = meta.P2pAddress
+			validatorSummary.PrimaryAddress = meta.PrimaryAddress
+			validatorSummary.WorkerAddress = meta.WorkerAddress
+			if meta.NextEpochNetAddress != nil {
+				validatorSummary.NextEpochNetAddress = *meta.NextEpochNetAddress
+			}
+			if meta.NextEpochP2pAddress != nil {
+				validatorSummary.NextEpochP2pAddress = *meta.NextEpochP2pAddress
+			}
+			if meta.NextEpochPrimaryAddress != nil {
+				validatorSummary.NextEpochPrimaryAddress = *meta.NextEpochPrimaryAddress
+			}
+			if meta.NextEpochWorkerAddress != nil {
+				validatorSummary.NextEpochWorkerAddress = *meta.NextEpochWorkerAddress
+			}
+			if addr, err := addressFromHexString(meta.IotaAddress); err != nil {
+				return nil, fmt.Errorf("parse validator iota address: %w", err)
+			} else {
+				validatorSummary.IotaAddress = addr
+			}
+		}
+
+		if validatorJSON.OperationCapID != "" {
+			validatorSummary.OperationCapId, err = objectIDFromHexString(validatorJSON.OperationCapID)
+			if err != nil {
+				return nil, fmt.Errorf("parse validator operation cap id: %w", err)
+			}
+		}
+
+		if validatorJSON.StakingPool != nil {
+			pool := validatorJSON.StakingPool
+			if validatorSummary.StakingPoolActivationEpoch, err = decimalStringToBigInt(pool.ActivationEpoch); err != nil {
+				return nil, fmt.Errorf("parse staking pool activation epoch: %w", err)
+			}
+			if validatorSummary.StakingPoolDeactivationEpoch, err = decimalStringPtrToBigInt(pool.DeactivationEpoch); err != nil {
+				return nil, fmt.Errorf("parse staking pool deactivation epoch: %w", err)
+			}
+			if validatorSummary.StakingPoolIotaBalance, err = decimalStringToBigInt(pool.IotaBalance); err != nil {
+				return nil, fmt.Errorf("parse staking pool iota balance: %w", err)
+			}
+			if validatorSummary.PendingStake, err = decimalStringToBigInt(pool.PendingStake); err != nil {
+				return nil, fmt.Errorf("parse pending stake: %w", err)
+			}
+			if validatorSummary.PendingPoolTokenWithdraw, err = decimalStringToBigInt(pool.PendingPoolTokenWithdraw); err != nil {
+				return nil, fmt.Errorf("parse pending pool token withdraw: %w", err)
+			}
+			if validatorSummary.PendingTotalIotaWithdraw, err = decimalStringToBigInt(pool.PendingTotalIotaWithdraw); err != nil {
+				return nil, fmt.Errorf("parse pending total iota withdraw: %w", err)
+			}
+			if validatorSummary.PoolTokenBalance, err = decimalStringToBigInt(pool.PoolTokenBalance); err != nil {
+				return nil, fmt.Errorf("parse pool token balance: %w", err)
+			}
+			if validatorSummary.RewardsPool, err = decimalStringToBigInt(pool.RewardsPool.Value); err != nil {
+				return nil, fmt.Errorf("parse staking pool rewards pool: %w", err)
+			}
+			if validatorSummary.ExchangeRatesSize, err = decimalStringToBigInt(pool.ExchangeRates.Size); err != nil {
+				return nil, fmt.Errorf("parse exchange rates size: %w", err)
+			}
+			validatorSummary.StakingPoolId, err = objectIDFromHexString(pool.ID)
+			if err != nil {
+				return nil, fmt.Errorf("parse staking pool id: %w", err)
+			}
+			validatorSummary.ExchangeRatesId, err = objectIDFromHexString(pool.ExchangeRates.ID)
+			if err != nil {
+				return nil, fmt.Errorf("parse exchange rates id: %w", err)
+			}
+		}
+
+		summary.ActiveValidators = append(summary.ActiveValidators, validatorSummary)
 	}
 
 	metadata, err := c.qclient.CoinMetadata("0x2::iota::IOTA")
 	if err.(*iota_sdk_ffi.SdkFfiError) != nil {
 		return nil, fmt.Errorf("GraphQL CoinMetadata failed: %w", err)
 	}
-	summary.IotaTotalSupply = iotajsonrpc.NewBigIntFromString(*metadata.Supply)
-	// Note: Many fields in IotaSystemStateSummary don't have corresponding fields in Epoch
-	// and are left as nil or use defaults:
-	// - StorageFundTotalObjectStorageRebates, StorageFundNonRefundableBalance
-	// - SafeMode, SafeModeStorageCharges, SafeModeStorageRewards, SafeModeComputationRewards
-	// - SafeModeStorageRebates, SafeModeNonRefundableStorageFee
-	// - EpochDurationMs (using hardcoded 24h default - see FIXME above)
-	// - MinValidatorCount, MaxValidatorCount (may not be available in ProtocolConfigs)
-	// - StakeSubsidy* fields, Validator* threshold fields
-	// - ActiveValidators, AtRiskValidators, ValidatorReportRecords
+	if metadata.Supply != nil {
+		if summary.IotaTotalSupply, err = decimalStringToBigInt(*metadata.Supply); err != nil {
+			return nil, fmt.Errorf("parse IOTA total supply: %w", err)
+		}
+	}
 
 	return summary, nil
 }
@@ -3681,6 +4053,9 @@ func (c *BindingClient) L2() L2Client {
 	return NewBindingClientL2(c.RpcURL, c)
 }
 
+func (c *BindingClient) GetISCPackageIDForAnchor(ctx context.Context, anchor iotago.ObjectID) (iotago.PackageID, error) {
+	panic("TODO")
+}
 func (c *BindingClient) IotaClient() L1Client {
 	return c
 }
