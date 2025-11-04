@@ -289,31 +289,21 @@ func TestWaspCLIDeposit(t *testing.T) {
 	})
 
 	t.Run("deposit to own account, then to EVM", func(t *testing.T) {
-		t.Fatal("gas on L2 has problem")
-		w.MustRun("chain", "deposit", "base|1000000", "--node=0")
-		outs = w.MustRun("chain", "balance", "--node=0")
-		// The default wallet (address-index=0) is the chain admin and payout address.
-		// Gas fees are charged from the sender then paid to the payout account.
-		// Since sender == payout for admin, net effect is zero; balance remains 1,000,000.
-		checkL2Balance(t, outs, 1000000)
+		const depositAmount = int64(1_000_000)
+		w.MustRun("wallet", "request-funds", "--address-index=2")
+		outs = w.MustRun("chain", "deposit", "base|1000000", "--address-index=2", "--node=0", "--print-receipt")
+		l2GasFee := getL2GasFee(t, outs)
+		outs = w.MustRun("chain", "balance", "--address-index=2", "--node=0")
+		checkL2Balance(t, outs, int(depositAmount-l2GasFee))
+		outs := w.MustRun("wallet", "balance", "--address-index=2", "--json")
 		_, eth := newEthereumAccount()
-		outs = w.MustRun("chain", "deposit", eth.String(), "base|1000000", "--node=0", "--print-receipt")
-
-		re := regexp.MustCompile(`Gas fee charged:\s*(\d+)`)
-		var l2GasFee int64
-		for _, line := range outs {
-			matches := re.FindStringSubmatch(line)
-			if len(matches) > 1 {
-				l2GasFee, err = strconv.ParseInt(matches[1], 10, 64)
-				require.NoError(t, err)
-			}
-		}
+		outs = w.MustRun("chain", "deposit", eth.String(), "base|1000000", "--address-index=2", "--node=0", "--print-receipt")
+		l2GasFee = getL2GasFee(t, outs)
 		outs = w.MustRun("chain", "balance", eth.String(), "--node=0")
 		checkL2Balance(t, outs, 1000000) // receiver gets full amount
-		outs = w.MustRun("chain", "balance", "--node=0")
-		fmt.Println("l2GasFee: ", l2GasFee)
-		fmt.Println("minFee: ", minFee)
-		checkL2Balance(t, outs, 1000000)
+		outs = w.MustRun("chain", "balance", "--address-index=2", "--node=0")
+		expectedL2Balance := int(depositAmount - l2GasFee - int64(minFee))
+		checkL2Balance(t, outs, expectedL2Balance)
 	})
 
 	// t.Run("mint and deposit native tokens to an ethereum account", func(t *testing.T) {
@@ -390,6 +380,21 @@ func TestWaspCLIDeposit(t *testing.T) {
 	// 	out = w.MustRun("balance")
 	// 	require.NotContains(t, strings.Join(out, ""), tokenID)
 	// })
+}
+
+func getL2GasFee(t *testing.T, outs []string) int64 {
+	var err error
+	var l2GasFee int64
+	re := regexp.MustCompile(`Gas fee charged:\s*(\d+)`)
+
+	for _, line := range outs {
+		matches := re.FindStringSubmatch(line)
+		if len(matches) > 1 {
+			l2GasFee, err = strconv.ParseInt(matches[1], 10, 64)
+			require.NoError(t, err)
+		}
+	}
+	return l2GasFee
 }
 
 func findRequestIDInOutput(out []string) string {
