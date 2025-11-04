@@ -1,3 +1,4 @@
+// Package test provides a testing harness and helpers for wasp-cli command tests.
 package test
 
 import (
@@ -132,7 +133,7 @@ func (h *TestHarness) RunCommand(args ...string) (string, error) {
 	stderr := strings.TrimSpace(h.stderr.String())
 
 	// Combine stdout and stderr for output
-	output := strings.TrimSpace(strings.Join([]string{stdout, stderr}, "\n"))
+	output := strings.TrimSpace(stdout + "\n" + stderr)
 	output = strings.Trim(output, "\n ")
 
 	// If JSON flags are present, format output similar to production behavior
@@ -197,7 +198,9 @@ func (h *TestHarness) SetupTestConfig() {
 
 // CleanupTestConfig cleans up test configuration
 func (h *TestHarness) CleanupTestConfig() {
-	os.Unsetenv("WASP_CLI_TEST_MODE")
+	if err := os.Unsetenv("WASP_CLI_TEST_MODE"); err != nil {
+		require.NoError(h.t, err, "failed to unset WASP_CLI_TEST_MODE")
+	}
 }
 
 // AssertOutputContains checks that the output contains the expected string
@@ -345,8 +348,8 @@ func (h *TestHarness) AssertPrettyJSON(output string) {
 
 // RunCommandWithJSON runs a command with the --json flag
 func (h *TestHarness) RunCommandWithJSON(args ...string) (string, error) {
-	jsonArgs := append(args, "--json")
-	return h.RunCommand(jsonArgs...)
+	args = append(args, "--json")
+	return h.RunCommand(args...)
 }
 
 // MustRunCommandWithJSON runs a command with the --json flag and requires it to succeed
@@ -358,8 +361,8 @@ func (h *TestHarness) MustRunCommandWithJSON(args ...string) string {
 
 // RunCommandWithJSONCompact runs a command with the --json-compact flag
 func (h *TestHarness) RunCommandWithJSONCompact(args ...string) (string, error) {
-	jsonArgs := append(args, "--json-compact")
-	return h.RunCommand(jsonArgs...)
+	args = append(args, "--json-compact")
+	return h.RunCommand(args...)
 }
 
 // MustRunCommandWithJSONCompact runs a command with the --json-compact flag and requires it to succeed
