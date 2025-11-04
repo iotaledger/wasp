@@ -24,7 +24,7 @@ import (
 func initSendFundsCmd() *cobra.Command { //nolint:funlen
 	cmd := &cobra.Command{
 		Use:   "send-funds <target-address> <token-id1>|<amount1> <token-id2>|<amount2> ...",
-		Short: "Transfer L1 tokens",
+		Short: "Transfer L1 tokens on L1",
 		Args:  cobra.MinimumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			targetAddress, err := cryptolib.NewAddressFromHexString(args[0])
