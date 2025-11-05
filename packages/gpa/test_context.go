@@ -202,7 +202,7 @@ func (tc *TestContext) tryProcessMessage() {
 	if rand.Float64() <= tc.msgDeliveryProb { // Deliver some messages.
 		if tc.msgSerialize {
 			msgBytes := lo.Must(MarshalPayload(msg.Payload))
-			tc.bytesRecv += int(len(msgBytes))
+			tc.bytesRecv += len(msgBytes)
 			if m, err := tc.nodes[nid].UnmarshalPayload(msgBytes); err == nil {
 				msg = NewMessageIn(msg.Sender, m)
 			} else {

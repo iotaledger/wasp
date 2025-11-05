@@ -26,7 +26,7 @@ func TestQuorumCounter(t *testing.T) {
 	makeVote := func(from gpa.NodeID, li committeelog.LogIndex) *gpa.TypedMessageIn[*committeelog.MsgNextLogIndex] {
 		vote := committeelog.NewMsgNextLogIndex(li, committeelog.MsgNextLogIndexCauseStarted, false)
 		return &gpa.TypedMessageIn[*committeelog.MsgNextLogIndex]{
-			Sender:  nodeIDs[0],
+			Sender:  from,
 			Payload: vote,
 		}
 	}

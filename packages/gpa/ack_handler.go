@@ -5,10 +5,10 @@ package gpa
 
 import (
 	"fmt"
-	"math"
 	"slices"
 	"time"
 
+	"fortio.org/safecast"
 	"github.com/samber/lo"
 
 	bcs "github.com/iotaledger/bcs-go"
@@ -330,10 +330,11 @@ func (msg *ackHandlerBatch) MsgType() MessageType {
 func (msg *ackHandlerBatch) MarshalBCS(e *bcs.Encoder) error {
 	e.EncodeOptional(msg.id)
 
-	if len(msg.msgs) > math.MaxUint16 {
-		return fmt.Errorf("too many nested messages: %d", len(msg.msgs))
+	n, err := safecast.Convert[uint16](len(msg.msgs))
+	if err != nil {
+		return fmt.Errorf("too many nested messages to marshal: %w", err)
 	}
-	e.Encode(uint16(len(msg.msgs)))
+	e.Encode(n)
 	for _, p := range msg.msgs {
 		msgBytes, err := MarshalPayload(p)
 		if err != nil {
