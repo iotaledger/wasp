@@ -6,13 +6,15 @@ package gpa
 import (
 	"bytes"
 	"math/rand"
-	"slices"
 	"sort"
 
 	"github.com/samber/lo"
 )
 
-type PendingMessage = lo.Tuple2[NodeID, *MessageIn]
+type PendingMessage = struct {
+	recipient NodeID
+	msg       *MessageIn
+}
 
 // TestContext imitates a cluster of nodes and the medium performing the message exchange.
 // Inputs are processes in-order for each node individually.
@@ -43,7 +45,7 @@ func NewTestContext(nodes map[NodeID]GPA) *TestContext {
 		inputProb:       1.0,
 		inputCount:      0,
 		msgDeliveryProb: 1.0,
-		msgs:            nil,
+		msgs:            []PendingMessage{},
 	}
 	return &tc
 }
@@ -93,19 +95,19 @@ func (tc *TestContext) WithMessageDeliveryProbability(msgDeliveryProb float64) *
 
 func (tc *TestContext) WithMessages(recipient NodeID, msgs []*MessageIn) *TestContext {
 	tc.addMessages(lo.Map(msgs, func(m *MessageIn, _ int) PendingMessage {
-		return lo.T2(recipient, m)
+		return PendingMessage{recipient: recipient, msg: m}
 	}))
 	return tc
 }
 
 func (tc *TestContext) addMessages(msgs []PendingMessage) {
 	tc.msgsSent += len(msgs)
-	tc.msgs = slices.Concat(tc.msgs, msgs)
+	tc.msgs = append(tc.msgs, msgs...)
 }
 
 func (tc *TestContext) WithMessage(recipient NodeID, msg *MessageIn) *TestContext {
 	tc.msgsSent++
-	tc.msgs = append(tc.msgs, lo.T2(recipient, msg))
+	tc.msgs = append(tc.msgs, PendingMessage{recipient: recipient, msg: msg})
 	return tc
 }
 
@@ -177,7 +179,7 @@ func (tc *TestContext) tryProcessInput() {
 		// fmt.Printf("-> %s :: INPUT %s\n", rndNID.ShortString(), rndInp)
 		msgs := tc.nodes[rndNID].Input(rndInp)
 		tc.addMessages(lo.Map(msgs, func(m *MessageOut, _ int) PendingMessage {
-			return lo.T2(m.Recipient, NewMessageIn(rndNID, m.Payload))
+			return PendingMessage{recipient: m.Recipient, msg: NewMessageIn(rndNID, m.Payload)}
 		}))
 		tc.tryCallOutputHandler(rndNID)
 	}
@@ -187,10 +189,15 @@ func (tc *TestContext) tryProcessMessage() {
 	if len(tc.msgs) == 0 {
 		return
 	}
-	msgIdx := rand.Intn(len(tc.msgs))
-	nid := tc.msgs[msgIdx].A
-	msg := tc.msgs[msgIdx].B
-	tc.msgs = append(tc.msgs[:msgIdx], tc.msgs[msgIdx+1:]...)
+
+	// select a random message, swap it with the last one and decrease the slice length
+	rnd := rand.Intn(len(tc.msgs))
+	pendingMsg := tc.msgs[rnd]
+	tc.msgs[rnd] = tc.msgs[len(tc.msgs)-1]
+	tc.msgs = tc.msgs[:len(tc.msgs)-1]
+
+	nid := pendingMsg.recipient
+	msg := pendingMsg.msg
 	tc.msgsRecv++
 	if rand.Float64() <= tc.msgDeliveryProb { // Deliver some messages.
 		if tc.msgSerialize {
@@ -207,7 +214,7 @@ func (tc *TestContext) tryProcessMessage() {
 			// fmt.Printf("%s -> %s :: %s (count: %d / %d bytes)\n", msg.Sender.ShortString(), nid.ShortString(), msg.Payload, tc.msgsRecv, tc.bytesRecv)
 			msgs := tc.nodes[nid].Message(msg)
 			tc.addMessages(lo.Map(msgs, func(m *MessageOut, _ int) PendingMessage {
-				return lo.T2(m.Recipient, NewMessageIn(nid, m.Payload))
+				return PendingMessage{recipient: m.Recipient, msg: NewMessageIn(nid, m.Payload)}
 			}))
 			tc.tryCallOutputHandler(nid)
 		}
