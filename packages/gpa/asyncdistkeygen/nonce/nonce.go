@@ -122,7 +122,7 @@ func New(
 	return gpa.NewOwnHandler(me, n)
 }
 
-func (n *nonceDistributedKeyGenerationImpl) Input(input gpa.Input) []*gpa.MessageOut {
+func (n *nonceDistributedKeyGenerationImpl) Input(input gpa.Input) []gpa.MessageOut {
 	switch input := input.(type) {
 	case *inputStart:
 		secret := n.suite.Scalar().Pick(n.suite.RandomStream())
@@ -134,7 +134,7 @@ func (n *nonceDistributedKeyGenerationImpl) Input(input gpa.Input) []*gpa.Messag
 	panic(fmt.Errorf("unexpected input %T: %+v", input, input))
 }
 
-func (n *nonceDistributedKeyGenerationImpl) Message(msg *gpa.MessageIn) []*gpa.MessageOut {
+func (n *nonceDistributedKeyGenerationImpl) Message(msg gpa.MessageIn) []gpa.MessageOut {
 	switch msgT := msg.Payload.(type) {
 	case *gpa.WrappingMsg:
 		switch msgT.Subsystem() {
@@ -161,14 +161,14 @@ func (n *nonceDistributedKeyGenerationImpl) StatusString() string {
 	return fmt.Sprintf("{ADKG:Nonce, acss: %s}", acssStats)
 }
 
-func (n *nonceDistributedKeyGenerationImpl) handleACSSMessage(msg *gpa.TypedMessageIn[*gpa.WrappingMsg]) []*gpa.MessageOut {
+func (n *nonceDistributedKeyGenerationImpl) handleACSSMessage(msg gpa.TypedMessageIn[*gpa.WrappingMsg]) []gpa.MessageOut {
 	msgIndex := msg.Payload.Index()
 	msgsOut := n.acss[msgIndex].Message(msg.Payload.WrappedIn(msg.Sender))
 	wrappedMsgsOut := n.wrapper.WrapMessagesOut(msgWrapperACSS, msgIndex, msgsOut)
 	return slices.Concat(wrappedMsgsOut, n.tryHandleACSSTermination(msgIndex))
 }
 
-func (n *nonceDistributedKeyGenerationImpl) tryHandleACSSTermination(acssIndex int) []*gpa.MessageOut {
+func (n *nonceDistributedKeyGenerationImpl) tryHandleACSSTermination(acssIndex int) []gpa.MessageOut {
 	out := n.acss[acssIndex].Output()
 	if out != nil && n.st[acssIndex] == nil {
 		acssOutput, ok := out.(*acss.Output)
@@ -180,7 +180,7 @@ func (n *nonceDistributedKeyGenerationImpl) tryHandleACSSTermination(acssIndex i
 	return nil
 }
 
-func (n *nonceDistributedKeyGenerationImpl) handleACSSOutput(index int, priShare *share.PriShare, commits []kyber.Point) []*gpa.MessageOut {
+func (n *nonceDistributedKeyGenerationImpl) handleACSSOutput(index int, priShare *share.PriShare, commits []kyber.Point) []gpa.MessageOut {
 	j := index
 	if _, ok := n.st[j]; ok {
 		// Already set. Ignore the duplicate messages.
@@ -202,7 +202,7 @@ func (n *nonceDistributedKeyGenerationImpl) handleACSSOutput(index int, priShare
 	return n.tryMakeFinalOutput()
 }
 
-func (n *nonceDistributedKeyGenerationImpl) handleAgreementResult(input *inputAgreementResult) []*gpa.MessageOut {
+func (n *nonceDistributedKeyGenerationImpl) handleAgreementResult(input *inputAgreementResult) []gpa.MessageOut {
 	if n.agreedT != nil {
 		return nil
 	}
@@ -242,7 +242,7 @@ func (n *nonceDistributedKeyGenerationImpl) handleAgreementResult(input *inputAg
 	return n.tryMakeFinalOutput()
 }
 
-func (n *nonceDistributedKeyGenerationImpl) tryMakeFinalOutput() []*gpa.MessageOut {
+func (n *nonceDistributedKeyGenerationImpl) tryMakeFinalOutput() []gpa.MessageOut {
 	if n.agreedT == nil {
 		return nil
 	}

@@ -101,7 +101,7 @@ func New(peers []gpa.NodeID, f int, me, broadcaster gpa.NodeID, maxMsgSize int, 
 //	01: // only broadcaster node
 //	02: input 𝑀
 //	03: send ⟨PROPOSE, 𝑀⟩ to all
-func (r *rbc) Input(input gpa.Input) []*gpa.MessageOut {
+func (r *rbc) Input(input gpa.Input) []gpa.MessageOut {
 	if r.broadcaster != r.me {
 		panic(errors.New("only broadcaster is allowed to take an input"))
 	}
@@ -115,7 +115,7 @@ func (r *rbc) Input(input gpa.Input) []*gpa.MessageOut {
 }
 
 // Implements the GPA interface.
-func (r *rbc) Message(msg *gpa.MessageIn) []*gpa.MessageOut {
+func (r *rbc) Message(msg gpa.MessageIn) []gpa.MessageOut {
 	switch msg.Payload.(type) {
 	case *msgBracha:
 		msgT := gpa.AsTypedMessageIn[*msgBracha](msg)
@@ -143,7 +143,7 @@ func (r *rbc) Message(msg *gpa.MessageIn) []*gpa.MessageOut {
 //	06: upon receiving ⟨PROPOSE, 𝑀⟩ from the broadcaster do
 //	07:     if 𝑃(𝑀) then
 //	08:         send ⟨ECHO, 𝑀⟩ to all
-func (r *rbc) handlePropose(msg *gpa.TypedMessageIn[*msgBracha]) []*gpa.MessageOut {
+func (r *rbc) handlePropose(msg gpa.TypedMessageIn[*msgBracha]) []gpa.MessageOut {
 	if msg.Sender != r.broadcaster {
 		// PROPOSE messages can only be sent by the broadcaster process.
 		// Ignore all the rest.
@@ -161,7 +161,7 @@ func (r *rbc) handlePropose(msg *gpa.TypedMessageIn[*msgBracha]) []*gpa.MessageO
 //
 //	09: upon receiving 2𝑡 + 1 ⟨ECHO, 𝑀⟩ messages and not having sent a READY message do
 //	10:     send ⟨READY, 𝑀⟩ to all
-func (r *rbc) handleEcho(msg *gpa.TypedMessageIn[*msgBracha]) []*gpa.MessageOut {
+func (r *rbc) handleEcho(msg gpa.TypedMessageIn[*msgBracha]) []gpa.MessageOut {
 	//
 	// Mark the message as received.
 	h := r.valueHash(msg)
@@ -182,7 +182,7 @@ func (r *rbc) handleEcho(msg *gpa.TypedMessageIn[*msgBracha]) []*gpa.MessageOut 
 //	12:     send ⟨READY, 𝑀⟩ to all
 //	13: upon receiving 2𝑡 + 1 ⟨READY, 𝑀⟩ messages do
 //	14:     output 𝑀
-func (r *rbc) handleReady(msg *gpa.TypedMessageIn[*msgBracha]) []*gpa.MessageOut {
+func (r *rbc) handleReady(msg gpa.TypedMessageIn[*msgBracha]) []gpa.MessageOut {
 	//
 	// Mark the message as received.
 	h := r.valueHash(msg)
@@ -202,7 +202,7 @@ func (r *rbc) handleReady(msg *gpa.TypedMessageIn[*msgBracha]) []*gpa.MessageOut
 	return nil
 }
 
-func (r *rbc) checkMsgRecv(msg *gpa.TypedMessageIn[*msgBracha]) bool {
+func (r *rbc) checkMsgRecv(msg gpa.TypedMessageIn[*msgBracha]) bool {
 	if msg.Payload.value == nil || len(msg.Payload.value) > r.maxMsgSize {
 		return false // Value not set, or is to big.
 	}
@@ -216,21 +216,21 @@ func (r *rbc) checkMsgRecv(msg *gpa.TypedMessageIn[*msgBracha]) bool {
 	return false // Unknown peer has sent it.
 }
 
-func (r *rbc) markEchoRecv(h hashing.HashValue, msg *gpa.TypedMessageIn[*msgBracha]) {
+func (r *rbc) markEchoRecv(h hashing.HashValue, msg gpa.TypedMessageIn[*msgBracha]) {
 	if _, ok := r.echoRecv[h]; !ok {
 		r.echoRecv[h] = map[gpa.NodeID]bool{}
 	}
 	r.echoRecv[h][msg.Sender] = true
 }
 
-func (r *rbc) markReadyRecv(h hashing.HashValue, msg *gpa.TypedMessageIn[*msgBracha]) {
+func (r *rbc) markReadyRecv(h hashing.HashValue, msg gpa.TypedMessageIn[*msgBracha]) {
 	if _, ok := r.readyRecv[h]; !ok {
 		r.readyRecv[h] = map[gpa.NodeID]bool{}
 	}
 	r.readyRecv[h][msg.Sender] = true
 }
 
-func (r *rbc) maybeSendReady(v []byte) []*gpa.MessageOut {
+func (r *rbc) maybeSendReady(v []byte) []gpa.MessageOut {
 	if r.readySent {
 		return nil
 	}
@@ -239,8 +239,8 @@ func (r *rbc) maybeSendReady(v []byte) []*gpa.MessageOut {
 	return msgs
 }
 
-func (r *rbc) sendToAll(brachaType msgBrachaType, value []byte) []*gpa.MessageOut {
-	return lo.Map(r.peers, func(peer gpa.NodeID, _ int) *gpa.MessageOut {
+func (r *rbc) sendToAll(brachaType msgBrachaType, value []byte) []gpa.MessageOut {
+	return lo.Map(r.peers, func(peer gpa.NodeID, _ int) gpa.MessageOut {
 		return gpa.NewMessageOut(peer, &msgBracha{
 			brachaType: brachaType,
 			value:      value,
@@ -248,7 +248,7 @@ func (r *rbc) sendToAll(brachaType msgBrachaType, value []byte) []*gpa.MessageOu
 	})
 }
 
-func (r *rbc) valueHash(msg *gpa.TypedMessageIn[*msgBracha]) hashing.HashValue {
+func (r *rbc) valueHash(msg gpa.TypedMessageIn[*msgBracha]) hashing.HashValue {
 	return hashing.HashData(msg.Payload.value)
 }
 

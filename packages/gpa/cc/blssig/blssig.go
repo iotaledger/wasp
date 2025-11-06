@@ -70,7 +70,7 @@ func New(
 	return cc
 }
 
-func (cc *ccImpl) Input(input gpa.Input) []*gpa.MessageOut {
+func (cc *ccImpl) Input(input gpa.Input) []gpa.MessageOut {
 	if input != nil {
 		panic(errors.New("input must be nil"))
 	}
@@ -89,7 +89,7 @@ func (cc *ccImpl) Input(input gpa.Input) []*gpa.MessageOut {
 		return nil
 	}
 	cc.tryOutput()
-	var msgs []*gpa.MessageOut
+	var msgs []gpa.MessageOut
 	for _, nodeID := range cc.nodeIDs {
 		if nodeID != cc.me {
 			msgs = append(msgs, gpa.NewMessageOut(nodeID, &msgSigShare{
@@ -100,7 +100,7 @@ func (cc *ccImpl) Input(input gpa.Input) []*gpa.MessageOut {
 	return msgs
 }
 
-func (cc *ccImpl) Message(msg *gpa.MessageIn) []*gpa.MessageOut {
+func (cc *ccImpl) Message(msg gpa.MessageIn) []gpa.MessageOut {
 	if cc.output != nil {
 		// Decided, don't need to process messages anymore.
 		return nil

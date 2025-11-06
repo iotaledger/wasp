@@ -385,7 +385,7 @@ func (smT *stateManager) handleTimerTick(now time.Time) {
 	smT.handleInput(inputs.NewStateManagerTimerTick(now))
 }
 
-func (smT *stateManager) sendMessages(outMsgs []*gpa.MessageOut) {
+func (smT *stateManager) sendMessages(outMsgs []gpa.MessageOut) {
 	for _, msg := range outMsgs {
 		msgBytes := lo.Must(gpa.MarshalPayload(msg.Payload))
 		pm := peering.NewPeerMessageData(smT.netPeeringID, peering.ReceiverStateManager, constMsgTypeStm, msgBytes)

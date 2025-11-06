@@ -119,19 +119,19 @@ type acssImpl struct {
 	mySK          kyber.Scalar
 	myPK          kyber.Point
 	myIdx         int
-	dealer        gpa.NodeID                                  // A node that is recognized as a dealer.
-	dealCB        func(int, []byte) []byte                    // Callback to be called on the encrypted deals (for tests actually).
-	peerPKs       map[gpa.NodeID]kyber.Point                  // Peer public keys.
-	peerIdx       []gpa.NodeID                                // Particular order of the nodes (position in the polynomial).
-	rbc           gpa.GPA                                     // RBC to share `C||E`.
-	rbcOut        *crypto.Deal                                // Deal broadcasted by the dealer.
-	voteOKRecv    map[gpa.NodeID]bool                         // A set of received OK votes.
-	voteREADYRecv map[gpa.NodeID]bool                         // A set of received READY votes.
-	voteREADYSent bool                                        // Have we sent our READY vote?
-	pendingIRMsgs []*gpa.TypedMessageIn[*msgImplicateRecover] // I/R messages are buffered, if the RBC is not completed yet.
-	implicateRecv map[gpa.NodeID]bool                         // To check, that implicate only received once from a node.
-	recoverRecv   map[gpa.NodeID]*share.PriShare              // Private shares from the RECOVER messages.
-	outS          *share.PriShare                             // Our share of the secret (decrypted from rbcOutE).
+	dealer        gpa.NodeID                                 // A node that is recognized as a dealer.
+	dealCB        func(int, []byte) []byte                   // Callback to be called on the encrypted deals (for tests actually).
+	peerPKs       map[gpa.NodeID]kyber.Point                 // Peer public keys.
+	peerIdx       []gpa.NodeID                               // Particular order of the nodes (position in the polynomial).
+	rbc           gpa.GPA                                    // RBC to share `C||E`.
+	rbcOut        *crypto.Deal                               // Deal broadcasted by the dealer.
+	voteOKRecv    map[gpa.NodeID]bool                        // A set of received OK votes.
+	voteREADYRecv map[gpa.NodeID]bool                        // A set of received READY votes.
+	voteREADYSent bool                                       // Have we sent our READY vote?
+	pendingIRMsgs []gpa.TypedMessageIn[*msgImplicateRecover] // I/R messages are buffered, if the RBC is not completed yet.
+	implicateRecv map[gpa.NodeID]bool                        // To check, that implicate only received once from a node.
+	recoverRecv   map[gpa.NodeID]*share.PriShare             // Private shares from the RECOVER messages.
+	outS          *share.PriShare                            // Our share of the secret (decrypted from rbcOutE).
 	output        bool
 	msgWrapper    *gpa.MsgWrapper
 	log           log.Logger
@@ -171,7 +171,7 @@ func New(
 		voteOKRecv:    map[gpa.NodeID]bool{},
 		voteREADYRecv: map[gpa.NodeID]bool{},
 		voteREADYSent: false,
-		pendingIRMsgs: []*gpa.TypedMessageIn[*msgImplicateRecover]{},
+		pendingIRMsgs: []gpa.TypedMessageIn[*msgImplicateRecover]{},
 		implicateRecv: map[gpa.NodeID]bool{},
 		recoverRecv:   map[gpa.NodeID]*share.PriShare{},
 		outS:          nil,
@@ -195,7 +195,7 @@ func New(
 
 // Input for the algorithm is the secret to share.
 // It can be provided by the dealer only.
-func (a *acssImpl) Input(input gpa.Input) []*gpa.MessageOut {
+func (a *acssImpl) Input(input gpa.Input) []gpa.MessageOut {
 	if a.me != a.dealer {
 		panic(errors.New("only dealer can initiate the sharing"))
 	}
@@ -206,7 +206,7 @@ func (a *acssImpl) Input(input gpa.Input) []*gpa.MessageOut {
 }
 
 // Receive all the messages and route them to the appropriate handlers.
-func (a *acssImpl) Message(msg *gpa.MessageIn) []*gpa.MessageOut {
+func (a *acssImpl) Message(msg gpa.MessageIn) []gpa.MessageOut {
 	switch m := msg.Payload.(type) {
 	case *gpa.WrappingMsg:
 		switch m.Subsystem() {
@@ -240,7 +240,7 @@ func (a *acssImpl) Message(msg *gpa.MessageIn) []*gpa.MessageOut {
 // >
 // > // party i (including the dealer)
 // > RBC(C||E)
-func (a *acssImpl) handleInput(secretToShare kyber.Scalar) []*gpa.MessageOut {
+func (a *acssImpl) handleInput(secretToShare kyber.Scalar) []gpa.MessageOut {
 	pubKeys := make([]kyber.Point, 0)
 	for _, peerID := range a.peerIdx {
 		pubKeys = append(pubKeys, a.peerPKs[peerID])
@@ -261,13 +261,13 @@ func (a *acssImpl) handleInput(secretToShare kyber.Scalar) []*gpa.MessageOut {
 //
 // > // party i (including the dealer)
 // > RBC(C||E)
-func (a *acssImpl) handleRBCMessage(m *gpa.TypedMessageIn[*gpa.WrappingMsg]) []*gpa.MessageOut {
+func (a *acssImpl) handleRBCMessage(m gpa.TypedMessageIn[*gpa.WrappingMsg]) []gpa.MessageOut {
 	wasOut := a.rbc.Output() != nil // To send the msgRBCCEOutput message once (for perf reasons).
 	msgs := a.msgWrapper.WrapMessagesOut(subsystemRBC, 0, a.rbc.Message(m.Payload.WrappedIn(m.Sender)))
 	return slices.Concat(msgs, a.tryHandleRBCTermination(wasOut))
 }
 
-func (a *acssImpl) tryHandleRBCTermination(wasOut bool) []*gpa.MessageOut {
+func (a *acssImpl) tryHandleRBCTermination(wasOut bool) []gpa.MessageOut {
 	if out := a.rbc.Output(); !wasOut && out != nil {
 		// Send the result for self as a message (maybe the code will look nicer this way).
 		outParsed, err := bcs.UnmarshalInto(out.([]byte), &msgRBCCEPayload{suite: a.suite})
@@ -286,7 +286,7 @@ func (a *acssImpl) tryHandleRBCTermination(wasOut bool) []*gpa.MessageOut {
 // >   send <IMPLICATE, i, skᵢ> to all parties
 // > else:
 // >   send <OK>
-func (a *acssImpl) handleRBCOutput(rbcOutput *msgRBCCEPayload) []*gpa.MessageOut {
+func (a *acssImpl) handleRBCOutput(rbcOutput *msgRBCCEPayload) []gpa.MessageOut {
 	if a.outS != nil || a.rbcOut != nil {
 		// Take the first RBC output only.
 		return nil
@@ -320,7 +320,7 @@ func (a *acssImpl) handleRBCOutput(rbcOutput *msgRBCCEPayload) []*gpa.MessageOut
 
 // > on receiving <OK> from n-f parties:
 // >   send <READY> to all parties
-func (a *acssImpl) handleVoteOK(msg *gpa.TypedMessageIn[*msgVote]) []*gpa.MessageOut {
+func (a *acssImpl) handleVoteOK(msg gpa.TypedMessageIn[*msgVote]) []gpa.MessageOut {
 	a.voteOKRecv[msg.Sender] = true
 	count := len(a.voteOKRecv)
 	if !a.voteREADYSent && count >= (a.n-a.f) {
@@ -337,10 +337,10 @@ func (a *acssImpl) handleVoteOK(msg *gpa.TypedMessageIn[*msgVote]) []*gpa.Messag
 // >   if sᵢ is valid:
 // >     out = true
 // >     output sᵢ
-func (a *acssImpl) handleVoteREADY(msg *gpa.TypedMessageIn[*msgVote]) []*gpa.MessageOut {
+func (a *acssImpl) handleVoteREADY(msg gpa.TypedMessageIn[*msgVote]) []gpa.MessageOut {
 	a.voteREADYRecv[msg.Sender] = true
 	count := len(a.voteREADYRecv)
-	var msgs []*gpa.MessageOut
+	var msgs []gpa.MessageOut
 	if !a.voteREADYSent && count >= (a.f+1) {
 		msgs = a.broadcastVote(msgVoteREADY)
 		a.voteREADYSent = true
@@ -351,7 +351,7 @@ func (a *acssImpl) handleVoteREADY(msg *gpa.TypedMessageIn[*msgVote]) []*gpa.Mes
 
 // It is possible that we are receiving IMPLICATE/RECOVER messages before our RBC is completed.
 // We store these messages for processing after that, if RBC is not done and process it otherwise.
-func (a *acssImpl) handleImplicateRecoverReceived(msg *gpa.TypedMessageIn[*msgImplicateRecover]) []*gpa.MessageOut {
+func (a *acssImpl) handleImplicateRecoverReceived(msg gpa.TypedMessageIn[*msgImplicateRecover]) []gpa.MessageOut {
 	if a.rbcOut == nil {
 		a.pendingIRMsgs = append(a.pendingIRMsgs, msg)
 		return nil
@@ -367,14 +367,14 @@ func (a *acssImpl) handleImplicateRecoverReceived(msg *gpa.TypedMessageIn[*msgIm
 	}
 }
 
-func (a *acssImpl) handleImplicateRecoverPending() []*gpa.MessageOut {
+func (a *acssImpl) handleImplicateRecoverPending() []gpa.MessageOut {
 	//
 	// Only process the IMPLICATE/RECOVER messages, if this node has RBC completed.
 	if a.rbcOut == nil {
 		return nil
 	}
-	postponedIRMsgs := []*gpa.TypedMessageIn[*msgImplicateRecover]{}
-	var msgs []*gpa.MessageOut
+	postponedIRMsgs := []gpa.TypedMessageIn[*msgImplicateRecover]{}
+	var msgs []gpa.MessageOut
 	for _, m := range a.pendingIRMsgs {
 		switch m.Payload.kind {
 		case msgImplicateRecoverKindIMPLICATE:
@@ -410,7 +410,7 @@ func (a *acssImpl) handleImplicateRecoverPending() []*gpa.MessageOut {
 // >       return
 //
 // NOTE: We assume `if out == true:` stands for a wait for such condition.
-func (a *acssImpl) handleImplicate(msg *gpa.TypedMessageIn[*msgImplicateRecover]) []*gpa.MessageOut {
+func (a *acssImpl) handleImplicate(msg gpa.TypedMessageIn[*msgImplicateRecover]) []gpa.MessageOut {
 	peerIndex := a.peerIndex(msg.Sender)
 	if peerIndex == -1 {
 		a.log.LogWarnf("implicate received from unknown peer: %v", msg.Sender)
@@ -451,7 +451,7 @@ func (a *acssImpl) handleImplicate(msg *gpa.TypedMessageIn[*msgImplicateRecover]
 // >       sᵢ = SSS.Recover(T, f+1, n)(i)
 // >       out = true
 // >       output sᵢ
-func (a *acssImpl) handleRecover(msg *gpa.TypedMessageIn[*msgImplicateRecover]) []*gpa.MessageOut {
+func (a *acssImpl) handleRecover(msg gpa.TypedMessageIn[*msgImplicateRecover]) []gpa.MessageOut {
 	if a.output {
 		// Ignore the RECOVER messages, if we are done with the output.
 		return nil
@@ -495,27 +495,27 @@ func (a *acssImpl) handleRecover(msg *gpa.TypedMessageIn[*msgImplicateRecover]) 
 	return nil
 }
 
-func (a *acssImpl) broadcastVote(voteKind msgVoteKind) []*gpa.MessageOut {
-	return lo.Map(a.peerIdx, func(peer gpa.NodeID, _ int) *gpa.MessageOut {
+func (a *acssImpl) broadcastVote(voteKind msgVoteKind) []gpa.MessageOut {
+	return lo.Map(a.peerIdx, func(peer gpa.NodeID, _ int) gpa.MessageOut {
 		return gpa.NewMessageOut(peer, &msgVote{
 			kind: voteKind,
 		})
 	})
 }
 
-func (a *acssImpl) broadcastImplicate(reason error) []*gpa.MessageOut {
+func (a *acssImpl) broadcastImplicate(reason error) []gpa.MessageOut {
 	a.log.LogWarnf("Sending implicate because of: %v", reason)
 	implicate := crypto.Implicate(a.suite, a.rbcOut.PubKey, a.mySK)
 	return a.broadcastImplicateRecover(msgImplicateRecoverKindIMPLICATE, implicate)
 }
 
-func (a *acssImpl) broadcastRecover() []*gpa.MessageOut {
+func (a *acssImpl) broadcastRecover() []gpa.MessageOut {
 	secret := crypto.Secret(a.suite, a.rbcOut.PubKey, a.mySK)
 	return a.broadcastImplicateRecover(msgImplicateRecoverKindRECOVER, secret)
 }
 
-func (a *acssImpl) broadcastImplicateRecover(kind msgImplicateKind, data []byte) []*gpa.MessageOut {
-	return lo.Map(a.peerIdx, func(peer gpa.NodeID, _ int) *gpa.MessageOut {
+func (a *acssImpl) broadcastImplicateRecover(kind msgImplicateKind, data []byte) []gpa.MessageOut {
+	return lo.Map(a.peerIdx, func(peer gpa.NodeID, _ int) gpa.MessageOut {
 		return gpa.NewMessageOut(peer, &msgImplicateRecover{
 			kind: kind,
 			i:    a.myIdx,

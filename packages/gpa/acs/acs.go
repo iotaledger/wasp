@@ -131,7 +131,7 @@ func (a *ACS) AsGPA() gpa.GPA {
 
 // Input implements the gpa.GPA interface:
 // >   • upon receiving input v_i, input v_i to RBC_i
-func (a *ACS) Input(input gpa.Input) []*gpa.MessageOut {
+func (a *ACS) Input(input gpa.Input) []gpa.MessageOut {
 	if _, ok := input.([]byte); !ok {
 		panic("input has to be []byte")
 	}
@@ -149,7 +149,7 @@ func (a *ACS) Input(input gpa.Input) []*gpa.MessageOut {
 	)
 }
 
-func (a *ACS) Message(msg *gpa.MessageIn) []*gpa.MessageOut {
+func (a *ACS) Message(msg gpa.MessageIn) []gpa.MessageOut {
 	msgT, ok := msg.Payload.(*gpa.WrappingMsg)
 	if !ok {
 		a.log.LogWarnf("unexpected message of type %T: %+v", msg, msg)
@@ -173,7 +173,7 @@ func (a *ACS) Message(msg *gpa.MessageIn) []*gpa.MessageOut {
 
 // >   • upon delivery of v_j from RBC_j, if input has not yet been
 // >     provided to BA_j, then provide input 1 to BA_j.
-func (a *ACS) tryHandleRBCOutput(nodeID gpa.NodeID, rbcInst gpa.GPA) []*gpa.MessageOut {
+func (a *ACS) tryHandleRBCOutput(nodeID gpa.NodeID, rbcInst gpa.GPA) []gpa.MessageOut {
 	out := rbcInst.Output()
 	if out == nil {
 		return nil // Output not ready yet.
@@ -201,13 +201,13 @@ func (a *ACS) tryHandleRBCOutput(nodeID gpa.NodeID, rbcInst gpa.GPA) []*gpa.Mess
 // >   • upon delivery of value 1 from at least N − f instances of BA,
 // >     provide input 0 to each instance of BA that has not yet been
 // >     provided input.
-func (a *ACS) tryHandleABAOutput(nodeID gpa.NodeID, abaInst gpa.GPA) []*gpa.MessageOut {
+func (a *ACS) tryHandleABAOutput(nodeID gpa.NodeID, abaInst gpa.GPA) []gpa.MessageOut {
 	out := abaInst.Output()
 	if out == nil {
 		return nil // Output not ready yet.
 	}
 	abaOut := out.(*mostefaoui.Output)
-	var msgs []*gpa.MessageOut
+	var msgs []gpa.MessageOut
 	if abaOut.Terminated {
 		msgs = a.termCond.abaTerminated(nodeID)
 	}
@@ -274,7 +274,7 @@ func (a *ACS) tryOutput() {
 	}
 }
 
-func (a *ACS) uponTermCondition() []*gpa.MessageOut {
+func (a *ACS) uponTermCondition() []gpa.MessageOut {
 	if a.output != nil {
 		a.output.Terminated = true
 	}

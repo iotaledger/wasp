@@ -14,7 +14,7 @@ type msgMissingRequest struct {
 
 var _ gpa.MessagePayload = new(msgMissingRequest)
 
-func newMsgMissingRequest(requestRef *isc.RequestRef, recipient gpa.NodeID) *gpa.MessageOut {
+func newMsgMissingRequest(requestRef *isc.RequestRef, recipient gpa.NodeID) gpa.MessageOut {
 	return gpa.NewMessageOut(recipient, &msgMissingRequest{
 		requestRef: requestRef,
 	})

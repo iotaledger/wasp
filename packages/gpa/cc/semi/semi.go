@@ -25,7 +25,7 @@ func New(index int, target gpa.GPA) gpa.GPA {
 	return &ccSemi{index: index, target: target}
 }
 
-func (cc *ccSemi) Input(input gpa.Input) []*gpa.MessageOut {
+func (cc *ccSemi) Input(input gpa.Input) []gpa.MessageOut {
 	if input != nil {
 		panic(errors.New("input must be nil"))
 	}
@@ -45,7 +45,7 @@ func (cc *ccSemi) Input(input gpa.Input) []*gpa.MessageOut {
 	return msgs
 }
 
-func (cc *ccSemi) Message(msg *gpa.MessageIn) []*gpa.MessageOut {
+func (cc *ccSemi) Message(msg gpa.MessageIn) []gpa.MessageOut {
 	if cc.output != nil {
 		return nil
 	}

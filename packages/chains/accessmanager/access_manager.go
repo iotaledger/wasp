@@ -202,7 +202,7 @@ func (ami *AccessMgr) handleNetMessage(recv *peering.PeerMessageIn) {
 	ami.sendMessages(outMsgs)
 }
 
-func (ami *AccessMgr) sendMessages(outMsgs []*gpa.MessageOut) {
+func (ami *AccessMgr) sendMessages(outMsgs []gpa.MessageOut) {
 	if len(ami.dismissPeerBuf) != 0 {
 		for _, dismissPeerPub := range ami.dismissPeerBuf {
 			ami.dist.DismissPeer(ami.pubKeyAsNodeID(dismissPeerPub))

@@ -968,7 +968,7 @@ func (mpi *mempoolImpl) tryCleanupProcessed(chainState state.State) {
 	mpi.offLedgerPool.Cleanup(unprocessedPredicate[isc.OffLedgerRequest](chainState, mpi.log))
 }
 
-func (mpi *mempoolImpl) sendMessages(outMsgs []*gpa.MessageOut) {
+func (mpi *mempoolImpl) sendMessages(outMsgs []gpa.MessageOut) {
 	if outMsgs == nil {
 		return
 	}

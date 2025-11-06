@@ -28,12 +28,12 @@ func NewOwnHandler(me NodeID, target GPA) GPA {
 	return NewOwnHandlerWithOutPredicate(me, target)
 }
 
-func (o *OwnHandler) Input(input Input) []*MessageOut {
+func (o *OwnHandler) Input(input Input) []MessageOut {
 	msgs := o.target.Input(input)
 	return o.handleMsgs(msgs)
 }
 
-func (o *OwnHandler) Message(msg *MessageIn) []*MessageOut {
+func (o *OwnHandler) Message(msg MessageIn) []MessageOut {
 	msgs := o.target.Message(msg)
 	return o.handleMsgs(msgs)
 }
@@ -50,10 +50,10 @@ func (o *OwnHandler) UnmarshalPayload(data []byte) (MessagePayload, error) {
 	return o.target.UnmarshalPayload(data)
 }
 
-func (o *OwnHandler) handleMsgs(msgs []*MessageOut) []*MessageOut {
-	var outMsgs []*MessageOut
+func (o *OwnHandler) handleMsgs(msgs []MessageOut) []MessageOut {
+	var outMsgs []MessageOut
 	for len(msgs) > 0 {
-		var msg *MessageOut
+		var msg MessageOut
 		msg, msgs = msgs[0], msgs[1:]
 		if msg.Recipient == o.me {
 			msgs = slices.Concat(msgs, o.target.Message(NewMessageIn(o.me, msg.Payload)))

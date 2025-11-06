@@ -460,7 +460,7 @@ func (r *ConsensusRunner) provideOutput(output *consensus.Output) {
 	}
 }
 
-func (r *ConsensusRunner) sendMessages(outMsgs []*gpa.MessageOut) {
+func (r *ConsensusRunner) sendMessages(outMsgs []gpa.MessageOut) {
 	if outMsgs == nil {
 		return
 	}

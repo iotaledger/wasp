@@ -29,7 +29,7 @@ func NewSyncTX(c *Consensus) *SyncTX {
 	return &SyncTX{c: c}
 }
 
-func (sub *SyncTX) AnchorDecided(ao *isc.StateAnchor) []*gpa.MessageOut {
+func (sub *SyncTX) AnchorDecided(ao *isc.StateAnchor) []gpa.MessageOut {
 	if sub.decidedAnchor != nil || ao == nil {
 		return nil
 	}
@@ -37,7 +37,7 @@ func (sub *SyncTX) AnchorDecided(ao *isc.StateAnchor) []*gpa.MessageOut {
 	return sub.tryCompleteInputs()
 }
 
-func (sub *SyncTX) UnsignedTXReceived(unsignedTX *iotago.TransactionData) []*gpa.MessageOut {
+func (sub *SyncTX) UnsignedTXReceived(unsignedTX *iotago.TransactionData) []gpa.MessageOut {
 	if sub.unsignedTX != nil || unsignedTX == nil {
 		return nil
 	}
@@ -45,7 +45,7 @@ func (sub *SyncTX) UnsignedTXReceived(unsignedTX *iotago.TransactionData) []*gpa
 	return sub.tryCompleteInputs()
 }
 
-func (sub *SyncTX) SignatureReceived(signature []byte) []*gpa.MessageOut {
+func (sub *SyncTX) SignatureReceived(signature []byte) []gpa.MessageOut {
 	if sub.signature != nil || signature == nil {
 		return nil
 	}
@@ -53,7 +53,7 @@ func (sub *SyncTX) SignatureReceived(signature []byte) []*gpa.MessageOut {
 	return sub.tryCompleteInputs()
 }
 
-func (sub *SyncTX) BlockSaved(block state.Block) []*gpa.MessageOut {
+func (sub *SyncTX) BlockSaved(block state.Block) []gpa.MessageOut {
 	if sub.blockSaved {
 		return nil
 	}
@@ -62,7 +62,7 @@ func (sub *SyncTX) BlockSaved(block state.Block) []*gpa.MessageOut {
 	return sub.tryCompleteInputs()
 }
 
-func (sub *SyncTX) tryCompleteInputs() []*gpa.MessageOut {
+func (sub *SyncTX) tryCompleteInputs() []gpa.MessageOut {
 	if sub.inputsReady || sub.decidedAnchor == nil || sub.unsignedTX == nil || sub.signature == nil || !sub.blockSaved {
 		return nil
 	}

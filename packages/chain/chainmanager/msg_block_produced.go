@@ -19,7 +19,7 @@ type msgBlockProduced struct {
 
 var _ gpa.MessagePayload = new(msgBlockProduced)
 
-func NewMsgBlockProduced(recipient gpa.NodeID, tx *iotasigner.SignedTransaction, block state.Block) *gpa.MessageOut {
+func NewMsgBlockProduced(recipient gpa.NodeID, tx *iotasigner.SignedTransaction, block state.Block) gpa.MessageOut {
 	return gpa.NewMessageOut(recipient, &msgBlockProduced{
 		tx:    tx,
 		block: block,

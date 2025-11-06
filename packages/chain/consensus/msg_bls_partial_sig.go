@@ -16,7 +16,7 @@ type msgBLSPartialSig struct {
 
 var _ gpa.MessagePayload = new(msgBLSPartialSig)
 
-func newMsgBLSPartialSig(blsSuite suites.Suite, recipient gpa.NodeID, partialSig []byte) *gpa.MessageOut {
+func newMsgBLSPartialSig(blsSuite suites.Suite, recipient gpa.NodeID, partialSig []byte) gpa.MessageOut {
 	return gpa.NewMessageOut(recipient, &msgBLSPartialSig{
 		blsSuite:   blsSuite,
 		partialSig: partialSig,

@@ -103,7 +103,7 @@ func (m *TestWrappedMessage2) MsgType() gpa.MessageType {
 
 type testGPABase[MsgType gpa.MessagePayload] struct{}
 
-func (testGPABase[_]) Input(inp gpa.Input) []*gpa.MessageOut        { return nil }
-func (testGPABase[_]) Message(msg *gpa.MessageIn) []*gpa.MessageOut { return nil }
-func (testGPABase[_]) Output() gpa.Output                           { return nil }
-func (testGPABase[_]) StatusString() string                         { return "" }
+func (testGPABase[_]) Input(inp gpa.Input) []gpa.MessageOut       { return nil }
+func (testGPABase[_]) Message(msg gpa.MessageIn) []gpa.MessageOut { return nil }
+func (testGPABase[_]) Output() gpa.Output                         { return nil }
+func (testGPABase[_]) StatusString() string                       { return "" }

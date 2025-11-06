@@ -834,7 +834,7 @@ func (cni *chainNodeImpl) cleanupPublishingTXes(neededPostTXes *shrinkingmap.Shr
 	})
 }
 
-func (cni *chainNodeImpl) sendMessages(outMsgs []*gpa.MessageOut) {
+func (cni *chainNodeImpl) sendMessages(outMsgs []gpa.MessageOut) {
 	for _, msg := range outMsgs {
 		recipientPubKey, ok := cni.netPeerPubs[msg.Recipient]
 		if !ok {

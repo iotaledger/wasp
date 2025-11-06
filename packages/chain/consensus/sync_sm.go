@@ -33,7 +33,7 @@ func NewSyncStateMgr(
 	return &SyncStateMgr{c: c}
 }
 
-func (s *SyncStateMgr) ProposedBaseAnchorReceived(baseAnchor *isc.StateAnchor) []*gpa.MessageOut {
+func (s *SyncStateMgr) ProposedBaseAnchorReceived(baseAnchor *isc.StateAnchor) []gpa.MessageOut {
 	if s.proposedBaseAnchorReceived {
 		return nil
 	}
@@ -42,7 +42,7 @@ func (s *SyncStateMgr) ProposedBaseAnchorReceived(baseAnchor *isc.StateAnchor) [
 	return s.c.uponStateMgrStateProposalQueryInputsReady(s.proposedBaseAnchor)
 }
 
-func (s *SyncStateMgr) StateProposalConfirmedByStateMgr() []*gpa.MessageOut {
+func (s *SyncStateMgr) StateProposalConfirmedByStateMgr() []gpa.MessageOut {
 	if s.stateProposalReceived {
 		return nil
 	}
@@ -50,7 +50,7 @@ func (s *SyncStateMgr) StateProposalConfirmedByStateMgr() []*gpa.MessageOut {
 	return s.c.uponStateMgrStateProposalReceived(s.proposedBaseAnchor)
 }
 
-func (s *SyncStateMgr) DecidedVirtualStateNeeded(decidedBaseAnchor *isc.StateAnchor) []*gpa.MessageOut {
+func (s *SyncStateMgr) DecidedVirtualStateNeeded(decidedBaseAnchor *isc.StateAnchor) []gpa.MessageOut {
 	if s.decidedBaseAnchor != nil {
 		return nil
 	}
@@ -60,7 +60,7 @@ func (s *SyncStateMgr) DecidedVirtualStateNeeded(decidedBaseAnchor *isc.StateAnc
 
 func (s *SyncStateMgr) DecidedVirtualStateReceived(
 	chainState state.State,
-) []*gpa.MessageOut {
+) []gpa.MessageOut {
 	if s.decidedStateReceived {
 		return nil
 	}
@@ -68,7 +68,7 @@ func (s *SyncStateMgr) DecidedVirtualStateReceived(
 	return s.c.uponStateMgrDecidedStateReceived(chainState)
 }
 
-func (s *SyncStateMgr) BlockProduced(block state.StateDraft) []*gpa.MessageOut {
+func (s *SyncStateMgr) BlockProduced(block state.StateDraft) []gpa.MessageOut {
 	if s.producedBlockReceived {
 		return nil
 	}
@@ -77,7 +77,7 @@ func (s *SyncStateMgr) BlockProduced(block state.StateDraft) []*gpa.MessageOut {
 	return s.c.uponStateMgrSaveProducedBlockInputsReady(s.producedBlock)
 }
 
-func (s *SyncStateMgr) BlockSaved(block state.Block) []*gpa.MessageOut {
+func (s *SyncStateMgr) BlockSaved(block state.Block) []gpa.MessageOut {
 	if s.saveProducedBlockDone {
 		return nil
 	}

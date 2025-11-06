@@ -13,7 +13,7 @@ import (
 
 type PendingMessage = struct {
 	recipient NodeID
-	msg       *MessageIn
+	msg       MessageIn
 }
 
 // TestContext imitates a cluster of nodes and the medium performing the message exchange.
@@ -93,8 +93,8 @@ func (tc *TestContext) WithMessageDeliveryProbability(msgDeliveryProb float64) *
 	return tc
 }
 
-func (tc *TestContext) WithMessages(recipient NodeID, msgs []*MessageIn) *TestContext {
-	tc.addMessages(lo.Map(msgs, func(m *MessageIn, _ int) PendingMessage {
+func (tc *TestContext) WithMessages(recipient NodeID, msgs []MessageIn) *TestContext {
+	tc.addMessages(lo.Map(msgs, func(m MessageIn, _ int) PendingMessage {
 		return PendingMessage{recipient: recipient, msg: m}
 	}))
 	return tc
@@ -105,7 +105,7 @@ func (tc *TestContext) addMessages(msgs []PendingMessage) {
 	tc.msgs = append(tc.msgs, msgs...)
 }
 
-func (tc *TestContext) WithMessage(recipient NodeID, msg *MessageIn) *TestContext {
+func (tc *TestContext) WithMessage(recipient NodeID, msg MessageIn) *TestContext {
 	tc.msgsSent++
 	tc.msgs = append(tc.msgs, PendingMessage{recipient: recipient, msg: msg})
 	return tc
@@ -178,7 +178,7 @@ func (tc *TestContext) tryProcessInput() {
 
 		// fmt.Printf("-> %s :: INPUT %s\n", rndNID.ShortString(), rndInp)
 		msgs := tc.nodes[rndNID].Input(rndInp)
-		tc.addMessages(lo.Map(msgs, func(m *MessageOut, _ int) PendingMessage {
+		tc.addMessages(lo.Map(msgs, func(m MessageOut, _ int) PendingMessage {
 			return PendingMessage{recipient: m.Recipient, msg: NewMessageIn(rndNID, m.Payload)}
 		}))
 		tc.tryCallOutputHandler(rndNID)
@@ -203,21 +203,19 @@ func (tc *TestContext) tryProcessMessage() {
 		if tc.msgSerialize {
 			msgBytes := lo.Must(MarshalPayload(msg.Payload))
 			tc.bytesRecv += len(msgBytes)
-			if m, err := tc.nodes[nid].UnmarshalPayload(msgBytes); err == nil {
-				msg = NewMessageIn(msg.Sender, m)
-			} else {
+			m, err := tc.nodes[nid].UnmarshalPayload(msgBytes)
+			if err != nil {
 				// E.g. silent node cannot decode messages.
-				msg = nil
+				return
 			}
+			msg = NewMessageIn(msg.Sender, m)
 		}
-		if msg != nil {
-			// fmt.Printf("%s -> %s :: %s (count: %d / %d bytes)\n", msg.Sender.ShortString(), nid.ShortString(), msg.Payload, tc.msgsRecv, tc.bytesRecv)
-			msgs := tc.nodes[nid].Message(msg)
-			tc.addMessages(lo.Map(msgs, func(m *MessageOut, _ int) PendingMessage {
-				return PendingMessage{recipient: m.Recipient, msg: NewMessageIn(nid, m.Payload)}
-			}))
-			tc.tryCallOutputHandler(nid)
-		}
+		// fmt.Printf("%s -> %s :: %s (count: %d / %d bytes)\n", msg.Sender.ShortString(), nid.ShortString(), msg.Payload, tc.msgsRecv, tc.bytesRecv)
+		msgs := tc.nodes[nid].Message(msg)
+		tc.addMessages(lo.Map(msgs, func(m MessageOut, _ int) PendingMessage {
+			return PendingMessage{recipient: m.Recipient, msg: NewMessageIn(nid, m.Payload)}
+		}))
+		tc.tryCallOutputHandler(nid)
 	}
 }
 

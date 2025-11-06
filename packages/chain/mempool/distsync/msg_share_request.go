@@ -15,7 +15,7 @@ type msgShareRequest struct {
 
 var _ gpa.MessagePayload = new(msgShareRequest)
 
-func newMsgShareRequest(request isc.Request, ttl byte, recipient gpa.NodeID) *gpa.MessageOut {
+func newMsgShareRequest(request isc.Request, ttl byte, recipient gpa.NodeID) gpa.MessageOut {
 	return gpa.NewMessageOut(recipient, &msgShareRequest{
 		request: request,
 		ttl:     ttl,

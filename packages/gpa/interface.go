@@ -57,8 +57,8 @@ type TypedMessageIn[T MessagePayload] struct {
 	Payload T
 }
 
-func NewMessageIn(sender NodeID, payload MessagePayload) *TypedMessageIn[MessagePayload] {
-	return &TypedMessageIn[MessagePayload]{
+func NewMessageIn(sender NodeID, payload MessagePayload) TypedMessageIn[MessagePayload] {
+	return TypedMessageIn[MessagePayload]{
 		Sender:  sender,
 		Payload: payload,
 	}
@@ -69,8 +69,8 @@ type TypedMessageOut[T MessagePayload] struct {
 	Payload   MessagePayload
 }
 
-func NewMessageOut(recipient NodeID, payload MessagePayload) *TypedMessageOut[MessagePayload] {
-	return &TypedMessageOut[MessagePayload]{
+func NewMessageOut(recipient NodeID, payload MessagePayload) TypedMessageOut[MessagePayload] {
+	return TypedMessageOut[MessagePayload]{
 		Recipient: recipient,
 		Payload:   payload,
 	}
@@ -81,8 +81,8 @@ type (
 	MessageOut = TypedMessageOut[MessagePayload]
 )
 
-func AsTypedMessageIn[T MessagePayload](msg *MessageIn) *TypedMessageIn[T] {
-	return &TypedMessageIn[T]{
+func AsTypedMessageIn[T MessagePayload](msg MessageIn) TypedMessageIn[T] {
+	return TypedMessageIn[T]{
 		Sender:  msg.Sender,
 		Payload: msg.Payload.(T),
 	}
@@ -95,8 +95,8 @@ type Output interface{}
 // GPA is a generic interface for functional style distributed algorithms.
 // GPA stands for Generic Pure Algorithm.
 type GPA interface {
-	Input(inp Input) []*MessageOut
-	Message(msg *MessageIn) []*MessageOut
+	Input(inp Input) []MessageOut
+	Message(msg MessageIn) []MessageOut
 	Output() Output
 	StatusString() string // Status of the protocol as a string.
 	UnmarshalPayload(data []byte) (MessagePayload, error)

@@ -15,8 +15,8 @@ type msgDone struct {
 
 var _ gpa.MessagePayload = new(msgDone)
 
-func multicastMsgDone(recipients []gpa.NodeID, me gpa.NodeID, round int) []*gpa.MessageOut {
-	var msgs []*gpa.MessageOut
+func multicastMsgDone(recipients []gpa.NodeID, me gpa.NodeID, round int) []gpa.MessageOut {
+	var msgs []gpa.MessageOut
 	for _, recipient := range recipients {
 		if recipient != me {
 			msgs = append(msgs, gpa.NewMessageOut(recipient, &msgDone{

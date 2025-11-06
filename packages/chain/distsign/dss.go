@@ -107,7 +107,7 @@ func (d *DistributedSignature) AsGPA() gpa.GPA {
 }
 
 // Input handles the input to the protocol.
-func (d *DistributedSignature) Input(input gpa.Input) []*gpa.MessageOut {
+func (d *DistributedSignature) Input(input gpa.Input) []gpa.MessageOut {
 	d.log.LogDebugf("Input %+v", input)
 	switch input := input.(type) {
 	case *inputStart:
@@ -120,7 +120,7 @@ func (d *DistributedSignature) Input(input gpa.Input) []*gpa.MessageOut {
 }
 
 // Message handles the messages.
-func (d *DistributedSignature) Message(msg *gpa.MessageIn) []*gpa.MessageOut {
+func (d *DistributedSignature) Message(msg gpa.MessageIn) []gpa.MessageOut {
 	switch msgT := msg.Payload.(type) {
 	case *msgPartialSig:
 		d.log.LogDebugf("Message %+v", msg)
@@ -148,12 +148,12 @@ func (d *DistributedSignature) Output() gpa.Output {
 	}
 }
 
-func (d *DistributedSignature) tryHandleDistributedKeyGenerationOutput() []*gpa.MessageOut {
+func (d *DistributedSignature) tryHandleDistributedKeyGenerationOutput() []gpa.MessageOut {
 	distKeyGenOut := d.distributedKeyGen.Output()
 	if d.distKeyGenOutIndexes == nil && distKeyGenOut != nil && distKeyGenOut.(*nonce.Output).Indexes != nil {
 		d.distKeyGenOutIndexes = distKeyGenOut.(*nonce.Output).Indexes
 	}
-	var msgs []*gpa.MessageOut
+	var msgs []gpa.MessageOut
 	if d.distKeyGenOutNonce == nil && distKeyGenOut != nil && distKeyGenOut.(*nonce.Output).PriShare != nil {
 		d.distKeyGenOutNonce = tcrypto.NewDistKeyShare(
 			distKeyGenOut.(*nonce.Output).PriShare,
@@ -212,7 +212,7 @@ func (d *DistributedSignature) tryHandleDistributedKeyGenerationOutput() []*gpa.
 	return msgs
 }
 
-func (d *DistributedSignature) handlePartialSig(msg *gpa.TypedMessageIn[*msgPartialSig]) []*gpa.MessageOut {
+func (d *DistributedSignature) handlePartialSig(msg gpa.TypedMessageIn[*msgPartialSig]) []gpa.MessageOut {
 	if d.signature != nil {
 		// Signature already aggregated, ignore the remaining shares.
 		return nil
@@ -246,7 +246,7 @@ func (d *DistributedSignature) handlePartialSig(msg *gpa.TypedMessageIn[*msgPart
 	return nil
 }
 
-func (d *DistributedSignature) handleDecided(input *inputDecided) []*gpa.MessageOut {
+func (d *DistributedSignature) handleDecided(input *inputDecided) []gpa.MessageOut {
 	if d.distKeyGenDecidedIndexProposals != nil {
 		d.log.LogWarn("Duplicate will be dropped: DecidedIndexes=%+v", input.decidedIndexProposals)
 		return nil
