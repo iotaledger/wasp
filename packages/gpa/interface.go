@@ -11,7 +11,6 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	bcs "github.com/iotaledger/bcs-go"
-
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/util"
 )
@@ -88,9 +87,10 @@ func AsTypedMessageIn[T MessagePayload](msg MessageIn) TypedMessageIn[T] {
 	}
 }
 
-type Input interface{}
-
-type Output interface{}
+type (
+	Input  any
+	Output any
+)
 
 // GPA is a generic interface for functional style distributed algorithms.
 // GPA stands for Generic Pure Algorithm.

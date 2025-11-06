@@ -196,27 +196,30 @@ func (tc *TestContext) tryProcessMessage() {
 	tc.msgs[rnd] = tc.msgs[len(tc.msgs)-1]
 	tc.msgs = tc.msgs[:len(tc.msgs)-1]
 
+	tc.msgsRecv++
+	if rand.Float64() > tc.msgDeliveryProb {
+		// message dropped
+		return
+	}
+
 	nid := pendingMsg.recipient
 	msg := pendingMsg.msg
-	tc.msgsRecv++
-	if rand.Float64() <= tc.msgDeliveryProb { // Deliver some messages.
-		if tc.msgSerialize {
-			msgBytes := lo.Must(MarshalPayload(msg.Payload))
-			tc.bytesRecv += len(msgBytes)
-			m, err := tc.nodes[nid].UnmarshalPayload(msgBytes)
-			if err != nil {
-				// E.g. silent node cannot decode messages.
-				return
-			}
-			msg = NewMessageIn(msg.Sender, m)
+	if tc.msgSerialize {
+		msgBytes := lo.Must(MarshalPayload(msg.Payload))
+		tc.bytesRecv += len(msgBytes)
+		m, err := tc.nodes[nid].UnmarshalPayload(msgBytes)
+		if err != nil {
+			// E.g. silent node cannot decode messages.
+			return
 		}
-		// fmt.Printf("%s -> %s :: %s (count: %d / %d bytes)\n", msg.Sender.ShortString(), nid.ShortString(), msg.Payload, tc.msgsRecv, tc.bytesRecv)
-		msgs := tc.nodes[nid].Message(msg)
-		tc.addMessages(lo.Map(msgs, func(m MessageOut, _ int) PendingMessage {
-			return PendingMessage{recipient: m.Recipient, msg: NewMessageIn(nid, m.Payload)}
-		}))
-		tc.tryCallOutputHandler(nid)
+		msg = NewMessageIn(msg.Sender, m)
 	}
+	// fmt.Printf("%s -> %s :: %s (count: %d / %d bytes)\n", msg.Sender.ShortString(), nid.ShortString(), msg.Payload, tc.msgsRecv, tc.bytesRecv)
+	msgs := tc.nodes[nid].Message(msg)
+	tc.addMessages(lo.Map(msgs, func(m MessageOut, _ int) PendingMessage {
+		return PendingMessage{recipient: m.Recipient, msg: NewMessageIn(nid, m.Payload)}
+	}))
+	tc.tryCallOutputHandler(nid)
 }
 
 func (tc *TestContext) tryCallOutputHandler(nid NodeID) {
