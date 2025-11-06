@@ -1,0 +1,29 @@
+schema:
+  - ./schema.graphql
+operations:
+  - ./queries/*.graphql
+generated: ./generated.go
+package: iotagraphql
+
+# FIXME we need to go through the following bindings and make sure they are the best ones for the types
+bindings:
+  IotaAddress:
+    type: github.com/iotaledger/wasp/v2/clients/iota-go/iotago.Address
+  Base64:
+    type: github.com/iotaledger/wasp/v2/clients/iota-go/iotago.Base64Data
+  UInt53:
+    type: uint64
+  JSON:
+    type: encoding/json.RawMessage
+  BigInt:
+    type: github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc.BigInt
+  DateTime:
+    type: time.Time
+  OpenMoveTypeSignature:
+    type: encoding/json.RawMessage
+  MoveTypeSignature:
+    type: encoding/json.RawMessage
+  MoveTypeLayout:
+    type: encoding/json.RawMessage
+  MoveData:
+    type: encoding/json.RawMessage

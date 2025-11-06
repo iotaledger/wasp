@@ -1,0 +1,65 @@
+query GetStakes(
+	$owner: IotaAddress!,
+	# @genqlient(pointer: true)
+	$limit: Int,
+	# @genqlient(pointer: true)
+	$cursor: String,
+) {
+	address(address: $owner) {
+		stakedIotas(first: $limit, after: $cursor) {
+			pageInfo {
+				hasNextPage
+				endCursor
+			}
+			nodes {
+				...RPC_STAKE_FIELDS
+			}
+		}
+	}
+}
+
+query GetStakesByIds(
+	$ids: [IotaAddress!]!,
+	# @genqlient(pointer: true)
+	$limit: Int,
+	# @genqlient(pointer: true)
+	$cursor: String,
+) {
+	objects(first: $limit, after: $cursor, filter: { objectIds: $ids }) {
+		pageInfo {
+			hasNextPage
+			endCursor
+		}
+		nodes {
+			asMoveObject {
+				asStakedIota {
+					...RPC_STAKE_FIELDS
+				}
+			}
+		}
+	}
+}
+
+fragment RPC_STAKE_FIELDS on StakedIota {
+	principal
+	activatedEpoch {
+		epochId
+		referenceGasPrice
+	}
+	stakeStatus
+	requestedEpoch {
+		epochId
+	}
+	# activatedEpoch {
+	# 	epochId
+	# }
+	# staking pool can be read from contents
+	contents {
+		json
+	}
+
+	address
+	estimatedReward
+
+	# validatorAddress?
+}

@@ -1,0 +1,6 @@
+query GetTotalSupply($coinType: String!) {
+	coinMetadata(coinType: $coinType) {
+		supply
+		decimals
+	}
+}

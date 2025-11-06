@@ -49,9 +49,9 @@ func (c *Client) GetCoinMetadata(ctx context.Context, coinType string) (*iotajso
 
 type GetCoinsRequest struct {
 	Owner    *iotago.Address
-	CoinType *string          // optional
-	Cursor   *iotago.ObjectID // optional
-	Limit    uint             // optional
+	CoinType *string // optional
+	Cursor   *string // optional
+	Limit    uint    // optional
 }
 
 // GetCoins to use default iotago coin(0x2::iota::IOTA) when coinType is nil

@@ -1,0 +1,14 @@
+query GetMoveFunctionArgTypes($packageId: IotaAddress!, $module: String!, $function: String!) {
+	object(address: $packageId) {
+		asMovePackage {
+			module(name: $module) {
+				fileFormatVersion
+				function(name: $function) {
+					parameters {
+						signature
+					}
+				}
+			}
+		}
+	}
+}

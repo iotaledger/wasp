@@ -1,0 +1,51 @@
+query GetTypeLayout($targetType: String!) {
+	type(type: $targetType) {
+		layout
+	}
+}
+
+# query GetDynamicFieldObject($parentId: IotaAddress!,	$name: DynamicFieldName!) {
+# 	owner(address: $parentId) {
+# 		dynamicObjectField(name: $name) {
+# 			value {
+# 				__typename
+# 				... on MoveObject {
+# 					owner {
+# 						__typename
+# 						... on Parent {
+# 							parent {
+# 								objects {
+# 									address
+# 									digest
+# 									version
+# 									storageRebate
+# 									owner {
+# 										__typename
+# 										... on Parent {
+# 											parent {
+# 												address
+# 											}
+# 										}
+# 									}
+# 									previousTransactionBlock {
+# 										digest
+# 									}
+# 									asMoveObject {
+# 										contents {
+# 											data
+# 											type {
+# 												repr
+# 												layout
+# 											}
+# 										}
+# 										hasPublicTransfer
+# 									}
+# 								}
+# 							}
+# 						}
+# 					}
+# 				}
+# 			}
+# 		}
+# 	}
+# }

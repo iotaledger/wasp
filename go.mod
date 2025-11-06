@@ -12,6 +12,7 @@ replace (
 require (
 	filippo.io/edwards25519 v1.1.0
 	fortio.org/safecast v1.0.0
+	github.com/Khan/genqlient v0.8.1
 	github.com/VictoriaMetrics/fastcache v1.12.2
 	github.com/btcsuite/btcd/btcutil v1.1.6
 	github.com/bygui86/multi-profile/v2 v2.1.0
@@ -227,6 +228,7 @@ require (
 	github.com/tklauser/numcpus v0.10.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
+	github.com/vektah/gqlparser/v2 v2.5.19 // indirect
 	github.com/wlynxg/anet v0.0.5 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.dedis.ch/fixbuf v1.0.3 // indirect
