@@ -96,7 +96,7 @@ func New(
 		log:                             log,
 	}
 	d.msgWrapper = gpa.NewMsgWrapper(msgTypeWrapped, d.msgWrapperFunc)
-	d.withWrappers = d
+	d.withWrappers = gpa.NewOwnHandler(me, d)
 	return d
 }
 

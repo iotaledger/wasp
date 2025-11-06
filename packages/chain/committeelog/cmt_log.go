@@ -144,7 +144,7 @@ func New(
 		log.LogDebugf("VarLocalView: Output received, %v", ao)
 		return cl.varConsInsts.LatestL1Anchor(ao, cl.varLogIndex.ConsensusStarted)
 	}, log.NewChildLogger("VLV"))
-	cl.asGPA = cl
+	cl.asGPA = gpa.NewOwnHandler(me, cl)
 	return cl, nil
 }
 

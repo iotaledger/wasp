@@ -23,7 +23,7 @@ type testRound struct {
 var _ GPA = &testRound{}
 
 func NewTestRound(nodeIDs []NodeID, me NodeID) GPA {
-	return &testRound{me: me, nodeIDs: nodeIDs, received: map[NodeID]bool{}}
+	return NewOwnHandler(me, &testRound{me: me, nodeIDs: nodeIDs, received: map[NodeID]bool{}})
 }
 
 func (tr *testRound) Input(input Input) OutMessages {
