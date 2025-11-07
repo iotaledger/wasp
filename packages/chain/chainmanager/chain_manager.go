@@ -607,6 +607,9 @@ func (cmi *ChainMgr) StatusString() string { // TODO: Call it periodically. Show
 
 func (cmi *ChainMgr) wrapCommitteeLogMsgs(cli *committeeLogInst, outMsgs gpa.OutMessages) gpa.OutMessages {
 	wrappedMsgs := gpa.NoMessages()
+	if outMsgs == nil {
+		return wrappedMsgs
+	}
 	outMsgs.MustIterate(func(msg gpa.Message) {
 		wrappedMsgs.Add(NewMsgCommitteeLog(cli.committeeAddr, msg))
 	})

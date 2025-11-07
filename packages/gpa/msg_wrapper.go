@@ -25,13 +25,12 @@ func (w *MsgWrapper) WrapMessage(subsystem byte, index int, msg Message) Message
 }
 
 func (w *MsgWrapper) WrapMessages(subsystem byte, index int, msgs OutMessages) OutMessages {
-	if msgs == nil {
-		return nil
-	}
 	wrapped := NoMessages()
-	msgs.MustIterate(func(msg Message) {
-		wrapped.Add(w.WrapMessage(subsystem, index, msg))
-	})
+	if msgs != nil {
+		msgs.MustIterate(func(msg Message) {
+			wrapped.Add(w.WrapMessage(subsystem, index, msg))
+		})
+	}
 	return wrapped
 }
 
