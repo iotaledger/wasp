@@ -19,7 +19,7 @@ require (
 	github.com/go-go-golems/glazed v0.6.10
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-version v1.7.0
-	github.com/iotaledger/bcs-go v0.0.0-20250716100925-71f848cac593
+	github.com/iotaledger/bcs-go v0.0.0-20251107161402-980e31f7d5f7
 	github.com/iotaledger/hive.go/crypto v0.0.0-20251001162450-d572d7955f11
 	github.com/iotaledger/hive.go/db v0.0.0-20251001162450-d572d7955f11
 	github.com/iotaledger/hive.go/log v0.0.0-20251001162450-d572d7955f11

@@ -5,6 +5,9 @@ import (
 	"encoding/hex"
 	"io"
 
+	"github.com/samber/lo"
+
+	"github.com/iotaledger/wasp/v2/packages/testutil/testval"
 	"github.com/iotaledger/wasp/v2/packages/util/rwutil"
 )
 
@@ -83,3 +86,5 @@ func RandomHash() Hash {
 	_, _ = rand.Read(h[:])
 	return h
 }
+
+var TestHash = lo.Must(HashFromBytes(testval.TestBytes(HashSizeBytes)))
