@@ -153,11 +153,11 @@ func (cl *CommitteeLog) Input(input gpa.Input) OutMessages {
 		cl.log.LogDebugf("Input %T: %+v", input, input)
 	}
 	switch input := input.(type) {
-	case *inputAnchorConfirmed:
+	case *InputAnchorConfirmed:
 		return cl.handleInputAnchorConfirmed(input)
 	case *inputConsensusOutputSkip:
 		return cl.handleInputConsensusOutputSkip(input)
-	case *inputConsensusOutputConfirmed:
+	case *InputConsensusOutputConfirmed:
 		return cl.handleInputConsensusOutputConfirmed(input)
 	case *inputConsensusOutputRejected:
 		return cl.handleInputConsensusOutputRejected(input)
@@ -173,7 +173,7 @@ func (cl *CommitteeLog) Input(input gpa.Input) OutMessages {
 }
 
 // The latest anchor object's version confirmed at the L1.
-func (cl *CommitteeLog) handleInputAnchorConfirmed(input *inputAnchorConfirmed) OutMessages {
+func (cl *CommitteeLog) handleInputAnchorConfirmed(input *InputAnchorConfirmed) OutMessages {
 	cl.suspended = false
 	return cl.varLocalView.AnchorConfirmed(input.anchor)
 }
@@ -184,7 +184,7 @@ func (cl *CommitteeLog) handleInputConsensusOutputSkip(input *inputConsensusOutp
 }
 
 // Consensus has decided, produced a TX and it is now confirmed by L1.
-func (cl *CommitteeLog) handleInputConsensusOutputConfirmed(input *inputConsensusOutputConfirmed) OutMessages {
+func (cl *CommitteeLog) handleInputConsensusOutputConfirmed(input *InputConsensusOutputConfirmed) OutMessages {
 	return cl.varConsInsts.ConsOutputDone(input.logIndex, input.nextAnchor, cl.varLogIndex.ConsensusStarted)
 }
 
