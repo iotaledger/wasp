@@ -31,8 +31,6 @@ type MsgNextLogIndex struct {
 	PleaseRepeat bool                 // If true, the receiver should resend its latest message back to the sender.
 }
 
-var _ gpa.Message = new(MsgNextLogIndex)
-
 func NewMsgNextLogIndex(recipient gpa.NodeID, nextLogIndex LogIndex, cause MsgNextLogIndexCause, pleaseRepeat bool) *MsgNextLogIndex {
 	return &MsgNextLogIndex{
 		BasicMessage: gpa.NewBasicMessage(recipient),
@@ -51,10 +49,6 @@ func (msg *MsgNextLogIndex) AsResent() *MsgNextLogIndex {
 		Cause:        msg.Cause,
 		PleaseRepeat: false,
 	}
-}
-
-func (msg *MsgNextLogIndex) MsgType() gpa.MessageType {
-	return msgTypeNextLogIndex
 }
 
 func (msg *MsgNextLogIndex) String() string {

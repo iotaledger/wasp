@@ -3,20 +3,19 @@
 
 package committeelog
 
-import (
-	"github.com/iotaledger/wasp/v2/packages/gpa"
-)
-
-const (
-	msgTypeNextLogIndex gpa.MessageType = iota
-)
-
-func (cl *CommitteeLog) UnmarshalMessage(data []byte) (gpa.Message, error) {
-	return UnmarshalMessage(data)
+// This is done just to decrease number of diff lines in PR. We can change it after demo of idea.
+type OutMessages *OutMessagesV
+type OutMessagesV struct {
+	NextLogIndex []MsgNextLogIndex
 }
 
-func UnmarshalMessage(data []byte) (gpa.Message, error) {
-	return gpa.UnmarshalMessage(data, gpa.Mapper{
-		msgTypeNextLogIndex: func() gpa.Message { return new(MsgNextLogIndex) },
-	})
+func (m *OutMessagesV) AddAll(msgs OutMessages) OutMessages {
+	if msgs != nil {
+		m.NextLogIndex = append(m.NextLogIndex, msgs.NextLogIndex...)
+	}
+	return m
+}
+
+func NoMessages() *OutMessagesV {
+	return &OutMessagesV{}
 }

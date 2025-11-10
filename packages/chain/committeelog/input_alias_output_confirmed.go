@@ -6,20 +6,19 @@ package committeelog
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
-type inputAnchorConfirmed struct {
+type InputAnchorConfirmed struct {
 	anchor *isc.StateAnchor
 }
 
-func NewInputAnchorConfirmed(anchor *isc.StateAnchor) gpa.Input {
-	return &inputAnchorConfirmed{
+func NewInputAnchorConfirmed(anchor *isc.StateAnchor) *InputAnchorConfirmed {
+	return &InputAnchorConfirmed{
 		anchor: anchor,
 	}
 }
 
-func (inp *inputAnchorConfirmed) String() string {
+func (inp *InputAnchorConfirmed) String() string {
 	return fmt.Sprintf("{committeeLog.inputAnchorConfirmed, %v}", inp.anchor)
 }

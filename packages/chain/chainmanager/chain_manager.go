@@ -185,8 +185,8 @@ func (npt *NeedPublishTX) String() string {
 type committeeLogInst struct {
 	committeeAddr cryptolib.Address
 	dkShare       tcrypto.DKShare
-	gpaInstance   gpa.GPA
 	pendingMsgs   []gpa.Message
+	gpaInstance   *committeelog.CommitteeLog
 }
 
 type ChainMgr struct {
@@ -293,8 +293,8 @@ func (cmi *ChainMgr) Input(input gpa.Input) gpa.OutMessages {
 // Message implements the gpa.GPA interface.
 func (cmi *ChainMgr) Message(msg gpa.Message) gpa.OutMessages {
 	switch msg := msg.(type) {
-	case *msgCommitteeLog:
-		return cmi.handleMsgCommitteeLog(msg)
+	case *msgNextLogIndex:
+		return cmi.handleMsgNextLogIndex(msg)
 	case *msgBlockProduced:
 		return cmi.handleMsgBlockProduced(msg)
 	}
@@ -366,13 +366,13 @@ func (cmi *ChainMgr) handleInputChainTxPublishResult(input *inputChainTxPublishR
 	if input.confirmed {
 		// >     If result.confirmed = false THEN ... ELSE
 		// >         NOP // Anchor has to be received as Confirmed Anchor. // TODO: Not true, anymore.
-		return cmi.withCommitteeLog(input.committeeAddr, func(cl gpa.GPA) gpa.OutMessages {
+		return cmi.withCommitteeLog(input.committeeAddr, func(cl *committeelog.CommitteeLog) committeelog.OutMessages {
 			return cl.Input(committeelog.NewInputConsensusOutputConfirmed(input.anchor, input.logIndex))
 		})
 	}
 	// >     If result.confirmed = false THEN
 	// >         Forward it to ChainMgr; HandleCommitteeLogOutput.
-	return cmi.withCommitteeLog(input.committeeAddr, func(cl gpa.GPA) gpa.OutMessages {
+	return cmi.withCommitteeLog(input.committeeAddr, func(cl *committeelog.CommitteeLog) committeelog.OutMessages {
 		return cl.Input(committeelog.NewInputConsensusOutputRejected(input.anchor, input.logIndex))
 	})
 }
@@ -433,7 +433,7 @@ func (cmi *ChainMgr) handleInputConsensusOutputDone(input *inputConsensusOutputD
 // > UPON Reception of Consensus Output/SKIP:
 // >     Forward the message to the corresponding CommitteeLog; HandleCommitteeLogOutput.
 func (cmi *ChainMgr) handleInputConsensusOutputSkip(input *inputConsensusOutputSkip) gpa.OutMessages {
-	return cmi.withCommitteeLog(input.committeeAddr, func(cl gpa.GPA) gpa.OutMessages {
+	return cmi.withCommitteeLog(input.committeeAddr, func(cl *committeelog.CommitteeLog) committeelog.OutMessages {
 		return cl.Input(committeelog.NewInputConsensusOutputSkip(input.logIndex))
 	})
 }
@@ -442,24 +442,24 @@ func (cmi *ChainMgr) handleInputConsensusOutputSkip(input *inputConsensusOutputS
 // >     Forward the message to the corresponding CommitteeLog; HandleCommitteeLogOutput.
 func (cmi *ChainMgr) handleInputConsensusTimeout(input *inputConsensusTimeout) gpa.OutMessages {
 	cmi.log.LogDebugf("handleInputConsensusTimeout: %+v", input)
-	return cmi.withCommitteeLog(input.committeeAddr, func(cl gpa.GPA) gpa.OutMessages {
+	return cmi.withCommitteeLog(input.committeeAddr, func(cl *committeelog.CommitteeLog) committeelog.OutMessages {
 		return cl.Input(committeelog.NewInputConsensusTimeout(input.logIndex))
 	})
 }
 
 func (cmi *ChainMgr) handleInputCanPropose() gpa.OutMessages {
 	cmi.log.LogDebugf("handleInputCanPropose")
-	return cmi.withAllCommitteeLogs(func(cl gpa.GPA) gpa.OutMessages {
+	return cmi.withAllCommitteeLogs(func(cl *committeelog.CommitteeLog) committeelog.OutMessages {
 		return cl.Input(committeelog.NewInputCanPropose())
 	})
 }
 
 // > UPON Reception of CommitteeLog.NextLI message:
 // >     Forward it to the corresponding CommitteeLog; HandleCommitteeLogOutput.
-func (cmi *ChainMgr) handleMsgCommitteeLog(msg *msgCommitteeLog) gpa.OutMessages {
-	cmi.log.LogDebugf("handleMsgCommitteeLog: %+v", msg)
-	return cmi.withCommitteeLog(msg.committeeAddr, func(cl gpa.GPA) gpa.OutMessages {
-		return cl.Message(msg.wrapped)
+func (cmi *ChainMgr) handleMsgNextLogIndex(msg *msgNextLogIndex) gpa.OutMessages {
+	cmi.log.LogDebugf("handleMsgNextLogIndex: %+v", msg)
+	return cmi.withCommitteeLog(msg.CommitteeAddr, func(cl *committeelog.CommitteeLog) committeelog.OutMessages {
+		return cl.HandleMsgNextLogIndex(&msg.MsgForCommitteeLog)
 	})
 }
 
@@ -497,7 +497,7 @@ func (cmi *ChainMgr) handleMsgBlockProduced(msg *msgBlockProduced) gpa.OutMessag
 // >             Suspend(LatestActiveCmt)
 // >         Set LatestActiveCmt <- cmt
 // >         Set NeedConsensus <- output.NeedConsensus
-func (cmi *ChainMgr) handleCommitteeLogOutput(cli *committeeLogInst, cliMsgs gpa.OutMessages) gpa.OutMessages {
+func (cmi *ChainMgr) handleCommitteeLogOutput(cli *committeeLogInst, cliMsgs committeelog.OutMessages) gpa.OutMessages {
 	//
 	// >     Wrap out messages.
 	msgs := gpa.NoMessages()
@@ -605,11 +605,16 @@ func (cmi *ChainMgr) StatusString() string { // TODO: Call it periodically. Show
 ////////////////////////////////////////////////////////////////////////////////
 // Helper functions.
 
-func (cmi *ChainMgr) wrapCommitteeLogMsgs(cli *committeeLogInst, outMsgs gpa.OutMessages) gpa.OutMessages {
+func (cmi *ChainMgr) wrapCommitteeLogMsgs(cli *committeeLogInst, outMsgs committeelog.OutMessages) gpa.OutMessages {
 	wrappedMsgs := gpa.NoMessages()
-	outMsgs.MustIterate(func(msg gpa.Message) {
-		wrappedMsgs.Add(NewMsgCommitteeLog(cli.committeeAddr, msg))
-	})
+	if outMsgs == nil {
+		return wrappedMsgs
+	}
+
+	for _, msg := range outMsgs.NextLogIndex {
+		wrappedMsgs.Add(NewMsgNextLogIndex(cli.committeeAddr, msg))
+	}
+
 	return wrappedMsgs
 }
 
@@ -623,7 +628,7 @@ func (cmi *ChainMgr) suspendCommittee(committeeAddr *cryptolib.Address) gpa.OutM
 	return nil
 }
 
-func (cmi *ChainMgr) withCommitteeLog(committeeAddr cryptolib.Address, handler func(cl gpa.GPA) gpa.OutMessages) gpa.OutMessages {
+func (cmi *ChainMgr) withCommitteeLog(committeeAddr cryptolib.Address, handler func(cl *committeelog.CommitteeLog) committeelog.OutMessages) gpa.OutMessages {
 	cli, err := cmi.ensureCommitteeLog(committeeAddr)
 	if err != nil {
 		cmi.log.LogWarnf("cannot find committee: %v", committeeAddr)
@@ -632,7 +637,7 @@ func (cmi *ChainMgr) withCommitteeLog(committeeAddr cryptolib.Address, handler f
 	return gpa.NoMessages().AddAll(cmi.handleCommitteeLogOutput(cli, handler(cli.gpaInstance)))
 }
 
-func (cmi *ChainMgr) withAllCommitteeLogs(handler func(cl gpa.GPA) gpa.OutMessages) gpa.OutMessages {
+func (cmi *ChainMgr) withAllCommitteeLogs(handler func(cl *committeelog.CommitteeLog) committeelog.OutMessages) gpa.OutMessages {
 	msgs := gpa.NoMessages()
 	for _, cli := range cmi.committeeLogs {
 		msgs.AddAll(cmi.handleCommitteeLogOutput(cli, handler(cli.gpaInstance)))
@@ -682,11 +687,10 @@ func (cmi *ChainMgr) ensureCommitteeLog(committeeAddr cryptolib.Address) (*commi
 	if err != nil {
 		return nil, fmt.Errorf("cannot create committeeLog for committeeAddress=%v: %w", committeeAddr, err)
 	}
-	clGPA := clInst.AsGPA()
 	cli := &committeeLogInst{
 		committeeAddr: committeeAddr,
 		dkShare:       dkShare,
-		gpaInstance:   clGPA,
+		gpaInstance:   clInst,
 		pendingMsgs:   []gpa.Message{},
 	}
 	cmi.committeeLogs[committeeAddr.Key()] = cli

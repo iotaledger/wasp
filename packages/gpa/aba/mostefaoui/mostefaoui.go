@@ -136,7 +136,7 @@ func New(nodeIDs []gpa.NodeID, me gpa.NodeID, f int, ccCreateFun func(round int)
 	a.varDone = newVarDone(nodeIDs, me, f, a.uponTerminationCondition, log)
 	a.uponDecisionInputs = newUponDecisionInputs(a.uponDecisionInputsReceived)
 	a.msgWrapper = gpa.NewMsgWrapper(msgTypeWrapped, a.selectSubsystem)
-	a.asGPA = gpa.NewOwnHandler(me, a)
+	a.asGPA = a
 	return a
 }
 

@@ -187,7 +187,7 @@ func New(
 	if a.myIdx = a.peerIndex(me); a.myIdx == -1 {
 		panic("i'm not in the peer list")
 	}
-	return gpa.NewOwnHandler(me, &a)
+	return &a
 }
 
 // Input for the algorithm is the secret to share.
@@ -265,6 +265,10 @@ func (a *acssImpl) handleRBCMessage(m *gpa.WrappingMsg) gpa.OutMessages {
 }
 
 func (a *acssImpl) tryHandleRBCTermination(wasOut bool, msgs gpa.OutMessages) gpa.OutMessages {
+	if msgs == nil {
+		msgs = gpa.NoMessages()
+	}
+
 	if out := a.rbc.Output(); !wasOut && out != nil {
 		// Send the result for self as a message (maybe the code will look nicer this way).
 		outParsed, err := bcs.UnmarshalInto(out.([]byte), &msgRBCCEPayload{suite: a.suite})
