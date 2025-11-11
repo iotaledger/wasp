@@ -2,26 +2,42 @@ package tests
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"errors"
 	"fmt"
+	"math/big"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/v2/clients/apiclient"
 	"github.com/iotaledger/wasp/v2/clients/apiextensions"
+	"github.com/iotaledger/wasp/v2/clients/chainclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/packages/coin"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/evm/evmtest"
+	"github.com/iotaledger/wasp/v2/packages/evm/jsonrpc/jsonrpctest"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/corecontracts"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/root"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/testcore/contracts/inccounter"
 	"github.com/iotaledger/wasp/v2/packages/webapi/models"
+	"github.com/iotaledger/wasp/v2/tools/cluster"
 )
 
 func (e *ChainEnv) checkCoreContracts() {
@@ -180,6 +196,7 @@ func (e *ChainEnv) balanceEquals(agentID isc.AgentID, amount int) conditionFn {
 		}
 
 		balance, err := accounts.ViewBalanceBaseToken.DecodeOutput(ret)
+		require.NoError(e.t, err)
 
 		fmt.Printf("CURRENT BALANCE: %d, EXPECTED: %d\n", balance, amount)
 
@@ -187,24 +204,113 @@ func (e *ChainEnv) balanceEquals(agentID isc.AgentID, amount int) conditionFn {
 	}
 }
 
-func (e *ChainEnv) counterEquals(expected int64) conditionFn {
-	return func(t *testing.T, nodeIndex int) bool {
-		ret, err := apiextensions.CallView(
-			context.Background(),
-			e.Chain.Cluster.WaspClient(nodeIndex),
-			apiclient.ContractCallViewRequest{
-				ContractHName: inccounter.Contract.Hname().String(),
-				FunctionHName: inccounter.ViewGetCounter.Hname().String(),
-			})
-		if err != nil {
-			e.t.Logf("chainEnv::counterEquals: failed to call GetCounter: %v", err)
-			return false
-		}
-		counter, err := inccounter.ViewGetCounter.DecodeOutput(ret)
-		require.NoError(t, err)
-		t.Logf("chainEnv::counterEquals: node %d: counter: %d, waiting for: %d", nodeIndex, counter, expected)
-		return counter == expected
+func (e *ChainEnv) checkNRequests(clusterTestEnv *clusterTestEnv, numRequests int64, writeNodeIndex int, readNodeIndexes []int, sleepBeforeVerify time.Duration) error {
+	storageContractAddr, transactions, err := e.sendNRequests(clusterTestEnv, numRequests, writeNodeIndex, true)
+	if err != nil {
+		return err
 	}
+
+	time.Sleep(sleepBeforeVerify)
+
+	err = e.verifyNRequests(context.Background(), transactions, numRequests, readNodeIndexes, storageContractAddr, nil)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (e *ChainEnv) sendNRequests(clusterTestEnv *clusterTestEnv, numRequests int64, writeNodeIndex int, buffered bool) (storageContractAddr common.Address, transactions chan *types.Transaction, err error) {
+	evmPvtKey, evmAddr := clusterTestEnv.NewAccountWithL2Funds()
+
+	storageContractAddr, storageContractABI := e.DeploySolidityContract(evmPvtKey, evmtest.StorageContractABI, evmtest.StorageContractBytecode, uint32(0))
+
+	jsonRPCClient := e.EVMJSONRPClient(writeNodeIndex)
+	nonce := e.GetNonceEVM(evmAddr)
+
+	if buffered {
+		transactions = make(chan *types.Transaction, numRequests)
+	} else {
+		transactions = make(chan *types.Transaction)
+	}
+
+	go func() {
+		defer close(transactions)
+		for i := range numRequests {
+			callArguments, err := storageContractABI.Pack("increment")
+			if err != nil {
+				e.t.Logf("sendNRequests: failed to send transaction: %v", err)
+				return
+			}
+			tx, err := types.SignTx(
+				types.NewTransaction(nonce+uint64(i), storageContractAddr, big.NewInt(0), 100000, e.GetGasPriceEVM(), callArguments),
+				EVMSigner(),
+				evmPvtKey,
+			)
+			if err != nil {
+				e.t.Logf("sendNRequests: failed to send transaction: %v", err)
+				return
+			}
+			err = jsonRPCClient.SendTransaction(context.Background(), tx)
+			if err != nil {
+				e.t.Logf("sendNRequests: failed to send transaction: %v", err)
+				return
+			}
+			transactions <- tx
+		}
+	}()
+
+	return storageContractAddr, transactions, nil
+}
+
+func (e *ChainEnv) verifyNRequests(ctx context.Context, transactions chan *types.Transaction, numRequests int64, readNodeIndexes []int, storageContractAddr common.Address, cb func(tx *types.Transaction)) error {
+
+outer:
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case tx, ok := <-transactions:
+			if !ok {
+				break outer
+			}
+			_, err := e.Clu.MultiClient().WaitUntilEVMRequestProcessedSuccessfully(ctx, e.Chain.ChainID, tx.Hash(), false, 90*time.Second)
+			if err != nil {
+				return err
+			}
+			if cb != nil {
+				cb(tx)
+			}
+		}
+	}
+
+	// read the counter value from Storage.sol via retrieve()
+	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
+	if err != nil {
+		return err
+	}
+
+	callData, err := contractABI.Pack("retrieve")
+	if err != nil {
+		return err
+	}
+
+	for _, nodeIndex := range readNodeIndexes {
+		jsonRPCClient := e.EVMJSONRPClient(nodeIndex)
+		callMsg := ethereum.CallMsg{To: &storageContractAddr, Data: callData}
+		ret, err := jsonRPCClient.CallContract(context.Background(), callMsg, nil)
+		if err != nil {
+			return err
+		}
+		out, err := contractABI.Unpack("retrieve", ret)
+		if err != nil {
+			return err
+		}
+		counter := out[0].(uint32)
+		if counter != uint32(numRequests) {
+			return fmt.Errorf("unexpected counter value on node %d", nodeIndex)
+		}
+	}
+	return nil
 }
 
 func (e *ChainEnv) accountExists(agentID isc.AgentID) conditionFn {
@@ -247,7 +353,7 @@ func waitUntil(t *testing.T, fn conditionFn, nodeIndexes []int, timeout time.Dur
 
 // endregion ///////////////////////////////////////////////////////////////
 
-func setupNativeInccounterTest(t *testing.T, clusterSize int, committee []int, dirnameOpt ...string) *ChainEnv {
+func setupClusterTest(t *testing.T, clusterSize int, committee []int, dirnameOpt ...string) *ChainEnv {
 	quorum := uint16((2*len(committee))/3 + 1)
 
 	dirname := ""
@@ -264,7 +370,7 @@ func setupNativeInccounterTest(t *testing.T, clusterSize int, committee []int, d
 
 	t.Logf("generated state address: %s", addr.String())
 
-	chain, err := clu.DeployChain(clu.Config.AllNodes(), committee, quorum, addr)
+	chain, err := clu.DeployChain(clu.Config.AllNodes(), committee, quorum, addr, false)
 	require.NoError(t, err)
 	t.Logf("deployed chainID: %s", chain.ChainID)
 
@@ -275,4 +381,87 @@ func setupNativeInccounterTest(t *testing.T, clusterSize int, committee []int, d
 	}
 
 	return e
+}
+
+func newClusterTestEnv(t *testing.T, env *ChainEnv, nodeIndex int) *clusterTestEnv {
+	evmJSONRPCPath := "/v1/chain/evm"
+	jsonRPCEndpoint := env.Clu.Config.APIHost(nodeIndex) + evmJSONRPCPath
+	rawClient, err := rpc.DialHTTP(jsonRPCEndpoint)
+	require.NoError(t, err)
+	client := ethclient.NewClient(rawClient)
+	t.Cleanup(client.Close)
+
+	waitTxConfirmed := func(txHash common.Hash) error {
+		c := env.Chain.Client(nil, nodeIndex)
+		reqID := isc.RequestIDFromEVMTxHash(txHash)
+		receipt, _, err := c.WaspClient.ChainsAPI.
+			WaitForRequest(context.Background(), reqID.String()).
+			TimeoutSeconds(10).
+			Execute()
+		if err != nil {
+			return err
+		}
+
+		if receipt.ErrorMessage != nil {
+			return errors.New(*receipt.ErrorMessage)
+		}
+
+		return nil
+	}
+
+	e := &clusterTestEnv{
+		Env: jsonrpctest.Env{
+			T:               t,
+			Client:          client,
+			RawClient:       rawClient,
+			ChainID:         evm.DefaultChainID,
+			WaitTxConfirmed: waitTxConfirmed,
+		},
+		ChainEnv: *env,
+	}
+	e.Env.NewAccountWithL2Funds = e.newEthereumAccountWithL2Funds
+	return e
+}
+
+const transferAllowanceToGasBudgetBaseTokens = 1 * isc.Million
+
+func (e *clusterTestEnv) newEthereumAccountWithL2Funds(baseTokens ...coin.Value) (*ecdsa.PrivateKey, common.Address) {
+	ethKey, ethAddr := newEthereumAccount()
+
+	var walletKey *cryptolib.KeyPair
+	var walletAddr *cryptolib.Address
+	var err error
+	err = cluster.Retry(func() error {
+		walletKey, walletAddr, err = e.Clu.NewKeyPairWithFunds()
+		return err
+	}, 7)
+	require.NoError(e.T, err)
+
+	var amount coin.Value
+	if len(baseTokens) > 0 {
+		amount = baseTokens[0]
+	} else {
+		amount = e.Clu.L1BaseTokens(walletAddr) - transferAllowanceToGasBudgetBaseTokens - iotaclient.DefaultGasBudget
+	}
+	tx, err := e.Chain.Client(walletKey).PostRequest(
+		context.Background(),
+		accounts.FuncTransferAllowanceTo.Message(isc.NewEthereumAddressAgentID(ethAddr)),
+		chainclient.PostRequestParams{
+			Transfer:  isc.NewAssets(amount + transferAllowanceToGasBudgetBaseTokens),
+			Allowance: isc.NewAssets(amount),
+			GasBudget: iotaclient.DefaultGasBudget,
+		},
+	)
+	require.NoError(e.T, err)
+
+	// We have to wait not only for the committee to process the request, but also for access nodes to get that info.
+	_, err = e.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, tx, false, 30*time.Second)
+	require.NoError(e.T, err)
+
+	return ethKey, ethAddr
+}
+
+type clusterTestEnv struct {
+	jsonrpctest.Env
+	ChainEnv
 }

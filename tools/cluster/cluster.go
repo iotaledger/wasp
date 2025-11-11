@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"math/rand"
 	"net/http"
 	"os"
@@ -67,6 +68,19 @@ var BaseTokensForL2Gas = gas.FeeFromGasWithGasPerToken(gas.LimitsDefault.MaxGasP
 type waspCmd struct {
 	cmd        *exec.Cmd
 	logScanner sync.WaitGroup
+}
+
+func Retry(fn func() error, retries int) error {
+	var err error
+	for i := 0; i < retries; i++ {
+		err = fn()
+		if err != nil {
+			time.Sleep(time.Duration(math.Pow(2, float64(i))) * 500 * time.Millisecond) // Exponential backoff
+			continue
+		}
+		break
+	}
+	return err
 }
 
 func New(name string, config *ClusterConfig, dataPath string, t *testing.T, log log.Logger, l1PacakgeID *iotago.PackageID) *Cluster {
@@ -209,26 +223,37 @@ func (clu *Cluster) InitDistributedKeyGeneration(committeeNodeCount int) ([]int,
 }
 
 func (clu *Cluster) RunDistributedKeyGeneration(committeeNodes []int, threshold uint16, timeout ...time.Duration) (*cryptolib.Address, error) {
-	if threshold == 0 {
-		threshold = (uint16(len(committeeNodes))*2)/3 + 1
-	}
-	apiHosts := clu.Config.APIHosts(committeeNodes)
+	var addr *cryptolib.Address
+	var err error
+	err = Retry(func() error {
+		if threshold == 0 {
+			threshold = (uint16(len(committeeNodes))*2)/3 + 1
+		}
+		apiHosts := clu.Config.APIHosts(committeeNodes)
 
-	peerPubKeys := make([]string, 0)
-	for _, i := range committeeNodes {
-		//nolint:bodyclose // false positive
-		peeringNodeInfo, _, err := clu.WaspClient(i).NodeAPI.GetPeeringIdentity(context.Background()).Execute()
-		if err != nil {
-			return nil, err
+		peerPubKeys := make([]string, 0)
+		for _, i := range committeeNodes {
+			//nolint:bodyclose // false positive
+			peeringNodeInfo, _, err := clu.WaspClient(i).NodeAPI.GetPeeringIdentity(context.Background()).Execute()
+			if err != nil {
+				return err
+			}
+
+			peerPubKeys = append(peerPubKeys, peeringNodeInfo.PublicKey)
 		}
 
-		peerPubKeys = append(peerPubKeys, peeringNodeInfo.PublicKey)
+		distKeyGenInitiatorIndex := rand.Intn(len(apiHosts))
+		client := clu.WaspClientFromHostName(apiHosts[distKeyGenInitiatorIndex])
+
+		addr, err = apilib.RunDistributedKeyGeneration(context.Background(), client, peerPubKeys, threshold, timeout...)
+		return err
+	}, 5)
+
+	if err != nil {
+		return nil, err
 	}
 
-	distKeyGenInitiatorIndex := rand.Intn(len(apiHosts))
-	client := clu.WaspClientFromHostName(apiHosts[distKeyGenInitiatorIndex])
-
-	return apilib.RunDistributedKeyGeneration(context.Background(), client, peerPubKeys, threshold, timeout...)
+	return addr, nil
 }
 
 func (clu *Cluster) DeployChainWithDistKeyGen(allPeers, committeeNodes []int, quorum uint16, blockKeepAmount ...int32) (*Chain, error) {
@@ -236,10 +261,10 @@ func (clu *Cluster) DeployChainWithDistKeyGen(allPeers, committeeNodes []int, qu
 	if err != nil {
 		return nil, err
 	}
-	return clu.DeployChain(allPeers, committeeNodes, quorum, stateAddr, blockKeepAmount...)
+	return clu.DeployChain(allPeers, committeeNodes, quorum, stateAddr, false, blockKeepAmount...)
 }
 
-func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, stateAddr *cryptolib.Address, blockKeepAmount ...int32) (*Chain, error) {
+func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, stateAddr *cryptolib.Address, deployTestContracts bool, blockKeepAmount ...int32) (*Chain, error) {
 	if len(allPeers) == 0 {
 		allPeers = clu.Config.AllNodes()
 	}
@@ -279,7 +304,7 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 		isc.NewAddressAgentID(chain.OriginatorAddress()),
 		1074,
 		blockKeepAmountVal,
-		false,
+		deployTestContracts,
 	).Encode()
 
 	getCoinsRes, err := l1Client.GetCoins(

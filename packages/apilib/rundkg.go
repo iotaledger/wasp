@@ -19,7 +19,7 @@ import (
 // RunDistributedKeyGeneration runs DKG procedure on specific Wasp hosts: generates new keys and puts corresponding committee records
 // into nodes. In case of success, generated address is returned
 func RunDistributedKeyGeneration(ctx context.Context, client *apiclient.APIClient, peerPubKeys []string, threshold uint16, timeout ...time.Duration) (*cryptolib.Address, error) {
-	to := uint32(60 * 1000)
+	to := uint32(120 * 1000)
 	if len(timeout) > 0 {
 		n := timeout[0].Milliseconds()
 		if n < int64(math.MaxUint16) {

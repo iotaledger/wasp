@@ -20,7 +20,10 @@ import (
 )
 
 func TestValidatorFees(t *testing.T) {
-	t.Skip("TODO: fix test")
+	if testing.Short() {
+		t.Skip("Skipping cluster tests in short mode")
+	}
+
 	validatorKps := []*cryptolib.KeyPair{
 		cryptolib.NewKeyPair(),
 		cryptolib.NewKeyPair(),
@@ -42,24 +45,21 @@ func TestValidatorFees(t *testing.T) {
 	chEnv := newChainEnv(t, clu, chain)
 
 	// set validator split fees to 50/50
-	{
-		originatorSCClient := chain.Client(chain.OriginatorKeyPair)
-		newGasFeePolicy := &gas.FeePolicy{
-			GasPerToken:       util.Ratio32{A: 1, B: 10},
-			ValidatorFeeShare: 50,
-			EVMGasRatio:       gas.DefaultEVMGasRatio,
-		}
-		req, err2 := originatorSCClient.PostOffLedgerRequest(
-			context.Background(),
-			governance.FuncSetFeePolicy.Message(newGasFeePolicy),
-			chainclient.PostRequestParams{Nonce: 0},
-		)
-		require.NoError(t, err2)
-		_, err2 = clu.MultiClient().WaitUntilRequestProcessedSuccessfully(context.Background(), chain.ChainID, req.ID(), false, 30*time.Second)
-		require.NoError(t, err2)
+	newGasFeePolicy := &gas.FeePolicy{
+		GasPerToken:       util.Ratio32{A: 1, B: 10},
+		ValidatorFeeShare: 50,
+		EVMGasRatio:       gas.DefaultEVMGasRatio,
 	}
-	// send a bunch of requests
+	govClient := chain.Client(chain.OriginatorKeyPair)
+	reqTx, err := govClient.PostRequest(context.Background(), governance.FuncSetFeePolicy.Message(newGasFeePolicy), chainclient.PostRequestParams{
+		Transfer:  isc.NewAssets(iotaclient.DefaultGasBudget + 10),
+		GasBudget: iotaclient.DefaultGasBudget,
+	})
+	require.NoError(t, err)
+	_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chain.ChainID, reqTx, false, 30*time.Second)
+	require.NoError(t, err)
 
+	// send a bunch of requests
 	// assert each validator has received fees
 	userWallet, _, err := chEnv.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)

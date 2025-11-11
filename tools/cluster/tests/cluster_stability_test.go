@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/chainclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 
+	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/testutil"
 	"github.com/iotaledger/wasp/v2/packages/util"
@@ -26,6 +27,51 @@ type SabotageEnv struct {
 	chainEnv      *ChainEnv
 	NumValidators int
 	SabotageList  []int
+}
+
+func TestDepositWithMildInstability(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping cluster tests in short mode")
+	}
+
+	const clusterSize = 10
+	const numValidators = 9
+	const numBrokenNodes = 2
+	const numRequests = 35
+
+	env := initializeStabilityTest(t, numValidators, clusterSize)
+	env.setSabotageValidators(numBrokenNodes)
+
+	wg := env.sabotageNodes(4*time.Second, 1*time.Second)
+	client, expectedBalance := env.sendRequests(numRequests, time.Millisecond*250)
+
+	wg.Wait()
+	waitUntil(t, env.chainEnv.balanceEquals(isc.NewAddressAgentID(client.KeyPair.Address()), expectedBalance), env.getActiveNodeList(), 120*time.Second, "balance matches expectation")
+}
+
+func TestDepositFailsAsQuorumNotMet(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping cluster tests in short mode")
+	}
+
+	t.Run("cluster=3,numValidators=2,numBrokenNodes=2,req=35", func(t *testing.T) {
+		const clusterSize = 3
+		const numValidators = 2
+		const numBrokenNodes = 2
+		const numRequests = 35
+
+		runTestFailsIncCounterIncreaseAsQuorumNotMet(t, clusterSize, numValidators, numBrokenNodes, numRequests)
+	})
+
+	t.Run("cluster=14,numValidators=12,numBrokenNodes=11,req=35", func(t *testing.T) {
+		testutil.RunHeavy(t)
+		const clusterSize = 14
+		const numValidators = 12
+		const numBrokenNodes = 11
+		const numRequests = 35
+
+		runTestFailsIncCounterIncreaseAsQuorumNotMet(t, clusterSize, numValidators, numBrokenNodes, numRequests)
+	})
 }
 
 func initializeStabilityTest(t *testing.T, numValidators, clusterSize int) *SabotageEnv {
@@ -75,8 +121,6 @@ func (e *SabotageEnv) setSabotageAll(breakCount int) {
 }
 
 func (e *SabotageEnv) sabotageNodes(startDelay, inBetweenDelay time.Duration) *sync.WaitGroup {
-	// Give the test time to start
-
 	var wg sync.WaitGroup
 	wg.Add(1)
 
@@ -118,78 +162,16 @@ func (e *SabotageEnv) getActiveNodeList() []int {
 	return activeNodeList
 }
 
-func TestSuccessfulIncCounterIncreaseWithoutInstability(t *testing.T) {
-	if testing.Short() {
-		t.SkipNow()
-	}
-
-	const clusterSize = 8
-	const numValidators = 6
-	const numRequests = 35
-
-	env := initializeStabilityTest(t, numValidators, clusterSize)
-	client, expectedBalance := env.sendRequests(numRequests, time.Millisecond*250)
-
-	waitUntil(t, env.chainEnv.balanceEquals(isc.NewAddressAgentID(client.KeyPair.Address()), expectedBalance), env.chainEnv.Clu.Config.AllNodes(), 120*time.Second, "incCounter matches expectation")
-}
-
-func TestSuccessfulIncCounterIncreaseWithMildInstability(t *testing.T) {
-	if testing.Short() {
-		t.SkipNow()
-	}
-	testutil.RunHeavy(t)
-
-	const clusterSize = 10
-	const numValidators = 9
-	const numBrokenNodes = 2
-	const numRequests = 35
-
-	env := initializeStabilityTest(t, numValidators, clusterSize)
-	env.setSabotageValidators(numBrokenNodes)
-
-	wg := env.sabotageNodes(4*time.Second, 1*time.Second)
-	client, expectedBalance := env.sendRequests(numRequests, time.Millisecond*250)
-
-	wg.Wait()
-
-	waitUntil(t, env.chainEnv.balanceEquals(isc.NewAddressAgentID(client.KeyPair.Address()), expectedBalance), env.getActiveNodeList(), 120*time.Second, "incCounter matches expectation")
-}
-
 func runTestFailsIncCounterIncreaseAsQuorumNotMet(t *testing.T, clusterSize, numValidators, numBrokenNodes, numRequests int) {
 	env := initializeStabilityTest(t, numValidators, clusterSize)
 	env.setSabotageAll(numBrokenNodes)
 
 	wg := env.sabotageNodes(5*time.Second, 500*time.Millisecond)
-	env.sendRequests(numRequests, time.Millisecond*250)
+	client, expectedBalance := env.sendRequests(numRequests, time.Millisecond*250)
 
 	wg.Wait()
-	// quorum is not met, incCounter should not equal numRequests
+	// quorum is not met, balance should not equal numRequests
 	time.Sleep(time.Second * 25)
-	// counter := env.chainEnv.getNativeContractCounter()
-	// require.NotEqual(t, numRequests, int(counter))
-}
-
-func TestFailsIncCounterIncreaseAsQuorumNotMet(t *testing.T) {
-	if testing.Short() {
-		t.SkipNow()
-	}
-
-	t.Run("cluster=3,numValidators=2,numBrokenNodes=2,req=35", func(t *testing.T) {
-		const clusterSize = 3
-		const numValidators = 2
-		const numBrokenNodes = 2
-		const numRequests = 35
-
-		runTestFailsIncCounterIncreaseAsQuorumNotMet(t, clusterSize, numValidators, numBrokenNodes, numRequests)
-	})
-
-	t.Run("cluster=14,numValidators=12,numBrokenNodes=11,req=35", func(t *testing.T) {
-		testutil.RunHeavy(t)
-		const clusterSize = 14
-		const numValidators = 12
-		const numBrokenNodes = 11
-		const numRequests = 35
-
-		runTestFailsIncCounterIncreaseAsQuorumNotMet(t, clusterSize, numValidators, numBrokenNodes, numRequests)
-	})
+	balance := env.chainEnv.GetL2Balance(isc.NewAddressAgentID(client.KeyPair.Address()), coin.BaseTokenType)
+	require.NotEqual(t, uint64(expectedBalance), balance.Uint64())
 }
