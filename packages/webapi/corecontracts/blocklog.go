@@ -84,19 +84,3 @@ func IsRequestProcessed(ch chain.Chain, requestID isc.RequestID, blockIndexOrTri
 	}
 	return blocklog.ViewIsRequestProcessed.DecodeOutput(ret)
 }
-
-func GetEventsForRequest(ch chain.Chain, requestID isc.RequestID, blockIndexOrTrieRoot string) ([]*isc.Event, error) {
-	ret, err := common.CallView(ch, blocklog.ViewGetEventsForRequest.Message(requestID), blockIndexOrTrieRoot)
-	if err != nil {
-		return nil, err
-	}
-	return blocklog.ViewGetEventsForRequest.DecodeOutput(ret)
-}
-
-func GetEventsForBlock(ch chain.Chain, blockIndex uint32, blockIndexOrTrieRoot string) (uint32, []*isc.Event, error) {
-	ret, err := common.CallView(ch, blocklog.ViewGetEventsForBlock.Message(&blockIndex), blockIndexOrTrieRoot)
-	if err != nil {
-		return 0, nil, err
-	}
-	return blocklog.ViewGetEventsForBlock.DecodeOutput(ret)
-}

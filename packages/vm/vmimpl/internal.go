@@ -1,7 +1,6 @@
 package vmimpl
 
 import (
-	"math"
 	"math/big"
 
 	"github.com/samber/lo"
@@ -10,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/kv"
 	"github.com/iotaledger/wasp/v2/packages/parameters"
-	"github.com/iotaledger/wasp/v2/packages/vm"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/corecontracts"
@@ -117,10 +115,6 @@ func (reqctx *requestContext) requestLookupKey() blocklog.RequestLookupKey {
 	return blocklog.NewRequestLookupKey(reqctx.vm.stateDraft.BlockIndex(), reqctx.requestIndex)
 }
 
-func (reqctx *requestContext) eventLookupKey() *blocklog.EventLookupKey {
-	return blocklog.NewEventLookupKey(reqctx.vm.stateDraft.BlockIndex(), reqctx.requestIndex, reqctx.requestEventIndex)
-}
-
 func (reqctx *requestContext) writeReceiptToBlockLog(vmError *isc.VMError) *blocklog.RequestReceipt {
 	receipt := &blocklog.RequestReceipt{
 		Request:       reqctx.req,
@@ -129,7 +123,7 @@ func (reqctx *requestContext) writeReceiptToBlockLog(vmError *isc.VMError) *bloc
 		GasFeeCharged: reqctx.gas.feeCharged,
 		GasBurnLog:    reqctx.gas.burnLog,
 		BlockIndex:    reqctx.vm.stateDraft.BlockIndex(),
-		RequestIndex:  reqctx.requestEventIndex,
+		RequestIndex:  reqctx.requestIndex,
 	}
 
 	if vmError != nil {
@@ -156,25 +150,6 @@ func (reqctx *requestContext) writeReceiptToBlockLog(vmError *isc.VMError) *bloc
 		})
 	}
 	return receipt
-}
-
-func (reqctx *requestContext) mustSaveEvent(hContract isc.Hname, topic string, payload []byte) {
-	if reqctx.requestEventIndex == math.MaxUint16 {
-		panic(vm.ErrTooManyEvents)
-	}
-	reqctx.Debugf("MustSaveEvent/%s: topic: '%s'", hContract.String(), topic)
-
-	event := &isc.Event{
-		ContractID: hContract,
-		Topic:      topic,
-		Payload:    payload,
-		Timestamp:  uint64(reqctx.Timestamp().UnixNano()), //nolint: gosec //todo: verify fixing this wont break everything
-	}
-	eventKey := reqctx.eventLookupKey().Bytes()
-	reqctx.callCore(blocklog.Contract, func(s kv.KVStore) {
-		blocklog.NewStateWriter(s).SaveEvent(eventKey, event)
-	})
-	reqctx.requestEventIndex++
 }
 
 // updateOffLedgerRequestNonce updates stored nonce for ISC off ledger requests

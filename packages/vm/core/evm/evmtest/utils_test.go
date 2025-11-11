@@ -21,14 +21,6 @@ func (i *iscTestContractInstance) getChainID() isc.ChainID {
 	return v
 }
 
-func (i *iscTestContractInstance) triggerEvent(s string) (res CallFnResult, err error) {
-	return i.CallFn(nil, "triggerEvent", s)
-}
-
-func (i *iscTestContractInstance) triggerEventFail(s string, opts ...ethCallOptions) (res CallFnResult, err error) {
-	return i.CallFn(opts, "triggerEventFail", s)
-}
-
 func (s *storageContractInstance) retrieve() uint32 {
 	var v uint32
 	require.NoError(s.chain.t, s.callView("retrieve", nil, &v))

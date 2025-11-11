@@ -44,7 +44,3 @@ type RequestProcessedResponse struct {
 	RequestID   string `json:"requestId" swagger:"required"`
 	IsProcessed bool   `json:"isProcessed" swagger:"required"`
 }
-
-type EventsResponse struct {
-	Events []*EventJSON `json:"events" swagger:"required"`
-}

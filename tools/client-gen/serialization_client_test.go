@@ -100,7 +100,7 @@ func TestB(t *testing.T) {
 	t.Skip()
 
 	gen := NewTypeGenerator()
-	gen.GenerateFunction(constructCoreContractFunction(&blocklog.ViewGetEventsForRequest))
+	gen.GenerateFunction(constructCoreContractFunction(&blocklog.ViewGetBlockInfo))
 
 	t.Log(gen.GetOutput())
 }
@@ -126,8 +126,6 @@ func TestDumpJson(t *testing.T) {
 		constructCoreContractFunction(&blocklog.ViewGetRequestReceipt),
 		constructCoreContractFunction(&blocklog.ViewGetRequestReceiptsForBlock),
 		constructCoreContractFunction(&blocklog.ViewIsRequestProcessed),
-		constructCoreContractFunction(&blocklog.ViewGetEventsForRequest),
-		constructCoreContractFunction(&blocklog.ViewGetEventsForBlock),
 		constructCoreContractFunction(&errors.FuncRegisterError),
 		constructCoreContractFunction(&errors.ViewGetErrorMessageFormat),
 		constructCoreContractFunction(&evm.FuncSendTransaction),
@@ -192,8 +190,6 @@ func TestA(t *testing.T) {
 		constructCoreContractFunction(&blocklog.ViewGetRequestReceipt),
 		constructCoreContractFunction(&blocklog.ViewGetRequestReceiptsForBlock),
 		constructCoreContractFunction(&blocklog.ViewIsRequestProcessed),
-		constructCoreContractFunction(&blocklog.ViewGetEventsForRequest),
-		constructCoreContractFunction(&blocklog.ViewGetEventsForBlock),
 		constructCoreContractFunction(&errors.FuncRegisterError),
 		constructCoreContractFunction(&errors.ViewGetErrorMessageFormat),
 		constructCoreContractFunction(&evm.FuncSendTransaction),

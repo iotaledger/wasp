@@ -258,8 +258,6 @@ func provide(c *dig.Container) error {
 		websocketService := websocket.NewWebsocketService(logger, hub, []publisher.ISCEventType{
 			publisher.ISCEventKindNewBlock,
 			publisher.ISCEventKindReceipt,
-			publisher.ISCEventIssuerVM,
-			publisher.ISCEventKindBlockEvents,
 		}, deps.Publisher, websocket.WithMaxTopicSubscriptionsPerClient(ParamsWebAPI.Limits.MaxTopicSubscriptionsPerClient))
 
 		if ParamsWebAPI.DebugRequestLoggerEnabled {

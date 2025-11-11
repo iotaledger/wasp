@@ -52,9 +52,6 @@ func (c *CommitteeService) GetCommitteeInfo(chainID isc.ChainID) (*dto.ChainNode
 
 	peeringStatus := peeringStatusIncludeSelf(c.networkProvider)
 	candidateNodes := c.getCandidateNodesAccessNodeInfo(chain.GetCandidateNodes())
-	if err != nil {
-		return nil, err
-	}
 	chainNodes := chain.GetChainNodes()
 	inChainNodes := make(map[cryptolib.PublicKeyKey]bool)
 
@@ -70,9 +67,6 @@ func (c *CommitteeService) GetCommitteeInfo(chainID isc.ChainID) (*dto.ChainNode
 	// Candidate nodes have supplied applications, but are not included
 	// in the committee and to the set of the access nodes.
 	filteredCandidateNodes := c.getCandidateNodes(peeringStatus, candidateNodes, inChainNodes)
-	if err != nil {
-		return nil, err
-	}
 
 	chainNodeInfo := dto.ChainNodeInfo{
 		Address:        committeeInfo.Address,

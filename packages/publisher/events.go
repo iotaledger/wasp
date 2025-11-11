@@ -17,10 +17,8 @@ import (
 type ISCEventType string
 
 const (
-	ISCEventKindNewBlock    ISCEventType = "new_block"
-	ISCEventKindReceipt     ISCEventType = "receipt" // issuer will be the request sender
-	ISCEventKindBlockEvents ISCEventType = "block_events"
-	ISCEventIssuerVM        ISCEventType = "vm"
+	ISCEventKindNewBlock ISCEventType = "new_block"
+	ISCEventKindReceipt  ISCEventType = "receipt" // issuer will be the request sender
 )
 
 type ISCEvent[T any] struct {
@@ -118,21 +116,4 @@ func PublishBlockEvents(blockApplied *blockApplied, events *Events, log log.Logg
 			})
 		}
 	}
-
-	// Publish contract-issued events.
-	blockEvents := blocklogState.GetEventsByBlockIndex(blockIndex, blockInfo.TotalRequests)
-	var payload []*isc.Event
-	for _, eventData := range blockEvents {
-		event, err := isc.EventFromBytes(eventData)
-		if err != nil {
-			panic(err)
-		}
-		payload = append(payload, event)
-	}
-	triggerEvent(events, events.BlockEvents, &ISCEvent[[]*isc.Event]{
-		Kind:    ISCEventKindBlockEvents,
-		Issuer:  &isc.NilAgentID{},
-		Payload: payload,
-		ChainID: chainID,
-	})
 }

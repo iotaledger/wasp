@@ -463,38 +463,6 @@ func TestISCCallView(t *testing.T) {
 	require.NotEmpty(t, ret)
 }
 
-func TestISCTriggerEvent(t *testing.T) {
-	env := InitEVM(t)
-	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
-	iscTest := env.deployISCTestContract(ethKey)
-
-	// call ISCTest.triggerEvent(string) function of isc-test.sol which in turn:
-	//  calls the ISC.iscTriggerEvent(string) function of isc.sol at 0x1074..., which:
-	//   triggers an ISC event with the given string parameter
-	res, err := iscTest.triggerEvent("Hi from EVM!")
-	require.NoError(t, err)
-	require.Equal(t, types.ReceiptStatusSuccessful, res.EVMReceipt.Status)
-	events, err := env.Chain.GetEventsForBlock(env.Chain.GetLatestBlockInfo().BlockIndex)
-	require.NoError(t, err)
-	require.Len(t, events, 1)
-	require.Equal(t, string(events[0].Payload), "Hi from EVM!")
-}
-
-func TestISCTriggerEventThenFail(t *testing.T) {
-	env := InitEVM(t)
-	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
-	iscTest := env.deployISCTestContract(ethKey)
-
-	// test that triggerEvent() followed by revert() does not actually trigger the event
-	_, err := iscTest.triggerEventFail("Hi from EVM!", ethCallOptions{
-		gasLimit: 100_000, // skip estimate gas (which will fail)
-	})
-	require.Error(t, err)
-	events, err := env.Chain.GetEventsForBlock(env.Chain.GetLatestBlockInfo().BlockIndex)
-	require.NoError(t, err)
-	require.Len(t, events, 0)
-}
-
 func TestISCEntropy(t *testing.T) {
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
@@ -1310,15 +1278,8 @@ func TestStaticCall(t *testing.T) {
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 
-	res, err := iscTest.CallFn([]ethCallOptions{{
-		sender: ethKey,
-	}}, "testStaticCall")
+	_, err := iscTest.CallFn(nil, "testStaticCall")
 	require.NoError(t, err)
-	require.Equal(t, types.ReceiptStatusSuccessful, res.EVMReceipt.Status)
-	events, err := env.Chain.GetEventsForBlock(env.Chain.GetLatestBlockInfo().BlockIndex)
-	require.NoError(t, err)
-	require.Len(t, events, 1)
-	require.Equal(t, string(events[0].Payload), "non-static")
 }
 
 func TestSelfDestruct(t *testing.T) {
@@ -1530,8 +1491,7 @@ func TestTraceTransaction(t *testing.T) {
 	}
 	{
 		iscTest := env.deployISCTestContract(ethKey)
-		_, err := iscTest.triggerEvent("Hi from EVM!")
-		require.NoError(t, err)
+		_ = iscTest.CallFnExpectEvent(nil, "EntropyEvent(bytes32)", nil, "emitEntropy")
 		trace := traceLatestTx()
 		require.EqualValues(t, ethAddr, trace.From)
 		require.EqualValues(t, iscTest.address, *trace.To)

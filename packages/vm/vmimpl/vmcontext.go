@@ -45,15 +45,14 @@ type blockGas struct {
 type requestContext struct {
 	vm *vmContext
 
-	uncommittedState  *buffered.BufferedKVStore
-	callStack         []*callContext
-	req               isc.Request
-	numPostedOutputs  int
-	requestIndex      uint16
-	requestEventIndex uint16
-	entropy           hashing.HashValue
-	onWriteReceipt    []coreCallbackFunc
-	gas               requestGas
+	uncommittedState *buffered.BufferedKVStore
+	callStack        []*callContext
+	req              isc.Request
+	numPostedOutputs int
+	requestIndex     uint16
+	entropy          hashing.HashValue
+	onWriteReceipt   []coreCallbackFunc
+	gas              requestGas
 	// snapshots taken via ctx.TakeStateSnapshot()
 	snapshots []stateSnapshot
 }

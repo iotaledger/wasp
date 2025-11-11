@@ -13,8 +13,6 @@ import (
 
 var Processor = Contract.Processor(nil,
 	ViewGetBlockInfo.WithHandler(viewGetBlockInfo),
-	ViewGetEventsForBlock.WithHandler(viewGetEventsForBlock),
-	ViewGetEventsForRequest.WithHandler(viewGetEventsForRequest),
 	ViewGetRequestIDsForBlock.WithHandler(viewGetRequestIDsForBlock),
 	ViewGetRequestReceipt.WithHandler(viewGetRequestReceipt),
 	ViewGetRequestReceiptsForBlock.WithHandler(viewGetRequestReceiptsForBlock),
@@ -105,32 +103,4 @@ func viewIsRequestProcessed(ctx isc.SandboxView, requestID isc.RequestID) bool {
 	requestReceipt, err := NewStateReaderFromSandbox(ctx).GetRequestReceipt(requestID)
 	ctx.RequireNoError(err)
 	return requestReceipt != nil
-}
-
-// viewGetEventsForRequest returns a list of events for a given request.
-func viewGetEventsForRequest(ctx isc.SandboxView, requestID isc.RequestID) []*isc.Event {
-	events, err := NewStateReaderFromSandbox(ctx).getRequestEventsInternal(requestID)
-	ctx.RequireNoError(err)
-	return lo.Map(events, func(b []byte, _ int) *isc.Event {
-		return lo.Must(isc.EventFromBytes(b))
-	})
-}
-
-// viewGetEventsForBlock returns a list of events for a given block.
-func viewGetEventsForBlock(ctx isc.SandboxView, blockIndexOptional *uint32) (uint32, []*isc.Event) {
-	blockIndex := getBlockIndexParams(ctx, blockIndexOptional)
-
-	if blockIndex == 0 {
-		// block 0 is an empty state
-		return 0, nil
-	}
-
-	state := NewStateReaderFromSandbox(ctx)
-	blockInfo, ok := state.GetBlockInfo(blockIndex)
-	ctx.Requiref(ok, "block not found: %d", blockIndex)
-	events := state.GetEventsByBlockIndex(blockIndex, blockInfo.TotalRequests)
-
-	return blockIndex, lo.Map(events, func(b []byte, _ int) *isc.Event {
-		return lo.Must(isc.EventFromBytes(b))
-	})
 }

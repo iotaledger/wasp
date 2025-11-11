@@ -10,15 +10,6 @@ contract ISCTest {
         return ISC.sandbox.getChainID();
     }
 
-    function triggerEvent(string memory s) public {
-        ISC.sandbox.triggerEvent(s);
-    }
-
-    function triggerEventFail(string memory s) public {
-        ISC.sandbox.triggerEvent(s);
-        revert();
-    }
-
     event EntropyEvent(bytes32 entropy);
 
     function emitEntropy() public {
@@ -156,13 +147,22 @@ contract ISCTest {
         bool success;
         bytes memory result;
 
-        (success, result) = address(ISC.sandbox).call(abi.encodeWithSignature("triggerEvent(string)", "non-static"));
+        string memory allowSelector = "allow(address,((string,uint64)[],(bytes32,string)[]))"; // non-view
+        address addr;
+        ISCAssets memory allowance;
+        allowance.coins = new CoinBalance[](1);
+        allowance.coins[0].coinType = ISC.sandbox.getBaseTokenInfo().coinType;
+        allowance.coins[0].amount = 1;
+
+        string memory getChainIDSelector = "getChainID()"; // view
+
+        (success, result) = address(ISC.sandbox).call(abi.encodeWithSignature(allowSelector, addr, allowance));
         require(success, "call should succeed");
 
-        (success, result) = address(ISC.sandbox).staticcall(abi.encodeWithSignature("getChainID()"));
+        (success, result) = address(ISC.sandbox).staticcall(abi.encodeWithSignature(getChainIDSelector));
         require(success, "staticcall to view should succeed");
 
-        (success, result) = address(ISC.sandbox).staticcall(abi.encodeWithSignature("triggerEvent(string)", "static"));
+        (success, result) = address(ISC.sandbox).staticcall(abi.encodeWithSignature(allowSelector, addr, allowance));
         require(!success, "staticcall to non-view should fail");
     }
 

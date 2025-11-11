@@ -24,12 +24,6 @@ interface ISCSandbox {
     function getSenderAccount() external view returns (ISCAgentID memory);
 
     /**
-     * @notice Triggers an event with the given string parameter.
-     * @param s The string parameter that will be used to trigger the event.
-     */
-    function triggerEvent(string memory s) external;
-
-    /**
      * @notice Retrieves a 32-byte entropy value.
      * @return A 32-byte value representing the entropy.
      */

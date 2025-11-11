@@ -42,7 +42,6 @@ func incCounter(ctx isc.Sandbox, incOpt *int64) {
 	}
 	ctx.Log().Infof("incCounter: allowance available: %s", tra)
 	ctx.State().Set(VarCounter, codec.Encode(val+inc))
-	eventCounter(ctx, val+inc)
 }
 
 func getCounter(ctx isc.SandboxView) int64 {

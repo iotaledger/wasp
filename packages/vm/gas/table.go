@@ -12,7 +12,7 @@ const (
 	BurnCodeGetBalance
 	BurnCodeGetCoinInfo
 	BurnCodeCallContract
-	BurnCodeEmitEvent1P
+	BurnCodeEmitEvent1PDeprecated
 	BurnCodeTransferAllowance
 	BurnCodeSendL1Request
 
@@ -40,7 +40,7 @@ var burnTable = BurnTable{
 	BurnCodeGetBalance:                 {"balance", constValue(20)},
 	BurnCodeGetCoinInfo:                {"coin info", constValue(10)},
 	BurnCodeCallContract:               {"call", constValue(100)},
-	BurnCodeEmitEvent1P:                {"event", linear(1)}, // 1 gas per byte
+	BurnCodeEmitEvent1PDeprecated:      {"event", linear(1)}, // 1 gas per byte
 	BurnCodeGetAllowance:               {"allowance", constValue(10)},
 	BurnCodeTransferAllowance:          {"transfer", constValue(10)},
 	BurnCodeSendL1Request:              {"send", linear(Coef1Send)},

@@ -23,11 +23,6 @@ func (h *magicContractHandler) GetEntropy() hashing.HashValue {
 	return h.ctx.GetEntropy()
 }
 
-// handler for ISCSandbox::triggerEvent
-func (h *magicContractHandler) TriggerEvent(s string) {
-	h.ctx.Event("evm.event", []byte(s))
-}
-
 // handler for ISCSandbox::getRequestID
 func (h *magicContractHandler) GetRequestID() isc.RequestID {
 	return h.ctx.Request().ID()
