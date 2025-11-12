@@ -25,17 +25,17 @@ func NewQuorumCounter(msgCause MsgNextLogIndexCause, nodeIDs []gpa.NodeID, log l
 	}
 }
 
-func (qc *QuorumCounter) MaybeSendVote(li LogIndex) []gpa.MessageOut {
+func (qc *QuorumCounter) MaybeSendVote(li LogIndex) OutMessages {
 	if li <= qc.myLastVoteLI {
 		return nil
 	}
 	qc.myLastVoteLI = li
-	var msgs []gpa.MessageOut
+	msgs := NoMessages()
 	for _, nodeID := range qc.nodeIDs {
 		_, haveMsgFrom := qc.maxPeerVotes[nodeID] // It might happen, that we rebooted and lost the state.
 		msg := NewMsgNextLogIndex(li, qc.msgCause, !haveMsgFrom)
 		qc.lastSentMsgs[nodeID] = msg
-		msgs = append(msgs, gpa.NewMessageOut(nodeID, msg))
+		msgs.NextLogIndex = append(msgs.NextLogIndex, gpa.NewPayloadOut(nodeID, *msg))
 	}
 	return msgs
 }
@@ -44,14 +44,16 @@ func (qc *QuorumCounter) MyLastVote() LogIndex {
 	return qc.myLastVoteLI
 }
 
-func (qc *QuorumCounter) LastMessageForPeer(peer gpa.NodeID) []gpa.MessageOut {
+func (qc *QuorumCounter) LastMessageForPeer(peer gpa.NodeID) OutMessages {
 	if msg, ok := qc.lastSentMsgs[peer]; ok {
-		return []gpa.MessageOut{gpa.NewMessageOut(peer, msg.AsResent())}
+		res := NoMessages()
+		res.NextLogIndex = append(res.NextLogIndex, gpa.NewPayloadOut(peer, *msg.AsResent()))
+		return res
 	}
 	return nil
 }
 
-func (qc *QuorumCounter) VoteReceived(vote gpa.TypedMessageIn[*MsgNextLogIndex]) {
+func (qc *QuorumCounter) VoteReceived(vote gpa.PayloadIn[MsgNextLogIndex]) {
 	sender := vote.Sender
 	var prevPeerLI LogIndex
 	if prevPeerNLI, ok := qc.maxPeerVotes[sender]; ok {
@@ -62,7 +64,7 @@ func (qc *QuorumCounter) VoteReceived(vote gpa.TypedMessageIn[*MsgNextLogIndex])
 	if prevPeerLI.AsUint32() >= vote.Payload.NextLogIndex.AsUint32() {
 		return
 	}
-	qc.maxPeerVotes[sender] = vote.Payload
+	qc.maxPeerVotes[sender] = &vote.Payload
 }
 
 func (qc *QuorumCounter) HaveVoteFrom(from gpa.NodeID) bool {

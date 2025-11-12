@@ -3,15 +3,13 @@ package committeelog
 import (
 	"fmt"
 	"maps"
-	"slices"
 
 	"github.com/iotaledger/hive.go/log"
 
-	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
-type onLIInc = func(li LogIndex) []gpa.MessageOut
+type onLIInc = func(li LogIndex) OutMessages
 
 // VarConsInsts implements the algorithm modeled in WaspChainCommitteeLogSUI.tla
 type VarConsInsts struct {
@@ -55,13 +53,13 @@ func NewVarConsInsts(
 }
 
 // ConsOutputDone - Consensus at LI produced a TX.
-func (vci *VarConsInsts) ConsOutputDone(li LogIndex, producedAnchor *isc.StateAnchor, cb onLIInc) []gpa.MessageOut {
+func (vci *VarConsInsts) ConsOutputDone(li LogIndex, producedAnchor *isc.StateAnchor, cb onLIInc) OutMessages {
 	vci.haveConsOut = true
 	return vci.trySet(li.Next(), producedAnchor, cb)
 }
 
 // ConsOutputSkip - Consensus at LI terminate with a SKIP/⊥ decision.
-func (vci *VarConsInsts) ConsOutputSkip(li LogIndex, cb onLIInc) []gpa.MessageOut {
+func (vci *VarConsInsts) ConsOutputSkip(li LogIndex, cb onLIInc) OutMessages {
 	vci.haveConsOut = true
 	if vci.lastAnchor == nil {
 		vci.lastLI = li.Next() // Will be set in LatestL1Anchor.
@@ -71,13 +69,14 @@ func (vci *VarConsInsts) ConsOutputSkip(li LogIndex, cb onLIInc) []gpa.MessageOu
 }
 
 // ConsOutputTimeout - Consensus at LI indicated a timeout.
-func (vci *VarConsInsts) ConsOutputTimeout(li LogIndex, cb onLIInc) []gpa.MessageOut {
+func (vci *VarConsInsts) ConsOutputTimeout(li LogIndex, cb onLIInc) OutMessages {
 	return vci.trySet(li.Next(), nil, cb)
 }
 
 // LatestSeenLI - If we see consensus proposals from F+1 nodes at seenLI...
-func (vci *VarConsInsts) LatestSeenLI(seenLI LogIndex, cb onLIInc) []gpa.MessageOut {
-	msgs := vci.trySet(seenLI.Prev(), nil, cb)
+func (vci *VarConsInsts) LatestSeenLI(seenLI LogIndex, cb onLIInc) OutMessages {
+	msgs := NoMessages()
+	msgs.AddAll(vci.trySet(seenLI.Prev(), nil, cb))
 	if !vci.haveConsOut {
 		// Still don't have the initial round succeeded, thus keep proposing the NIL.
 		// A race condition is possible between receiving the next LI from the VarLogIndex,
@@ -90,12 +89,12 @@ func (vci *VarConsInsts) LatestSeenLI(seenLI LogIndex, cb onLIInc) []gpa.Message
 }
 
 // LatestL1Anchor - Here we get the latest L1 state.
-func (vci *VarConsInsts) LatestL1Anchor(ao *isc.StateAnchor, cb onLIInc) []gpa.MessageOut {
+func (vci *VarConsInsts) LatestL1Anchor(ao *isc.StateAnchor, cb onLIInc) OutMessages {
 	vci.lastAnchor = ao
 	return vci.trySet(vci.lastLI, ao, cb) // Finish ConsOutputSkipBase, if pending.
 }
 
-func (vci *VarConsInsts) Tick(cb onLIInc) []gpa.MessageOut {
+func (vci *VarConsInsts) Tick(cb onLIInc) OutMessages {
 	n := len(vci.delayed)
 	last := vci.delayed[n-1]
 	for i := n - 1; i > 0; i-- {
@@ -108,7 +107,7 @@ func (vci *VarConsInsts) Tick(cb onLIInc) []gpa.MessageOut {
 	return vci.trySet(last, nil, cb)
 }
 
-func (vci *VarConsInsts) trySet(li LogIndex, ao *isc.StateAnchor, cb onLIInc) []gpa.MessageOut {
+func (vci *VarConsInsts) trySet(li LogIndex, ao *isc.StateAnchor, cb onLIInc) OutMessages {
 	//
 	// Is it outdated?
 	if li < vci.minLI {
@@ -124,12 +123,12 @@ func (vci *VarConsInsts) trySet(li LogIndex, ao *isc.StateAnchor, cb onLIInc) []
 	vci.lis[li] = ao
 	//
 	// Track the max.
-	var msgs []gpa.MessageOut
+	msgs := NoMessages()
 	if li > vci.maxLI {
 		vci.persistCB(li)
 		vci.maxLI = li
 		vci.minLI = MaxLogIndex(vci.minLI, vci.maxLI.Sub(vci.hist))
-		msgs = slices.Concat(msgs, cb(li))
+		msgs.AddAll(cb(li))
 	}
 	//
 	// Cleanup old instances.

@@ -11,9 +11,9 @@ import (
 
 func TestMsgCommitteeLogSerialization(t *testing.T) {
 	address := cryptolib.NewRandomAddress()
-	msg := &msgCommitteeLog{
+	msg := &msgNextLogIndex{
 		*address,
-		&committeelog.MsgNextLogIndex{
+		committeelog.MsgNextLogIndex{
 			NextLogIndex: committeelog.LogIndex(rand.Int31()),
 			PleaseRepeat: false,
 		},
@@ -21,9 +21,9 @@ func TestMsgCommitteeLogSerialization(t *testing.T) {
 
 	bcs.TestCodec(t, msg)
 
-	msg = &msgCommitteeLog{
+	msg = &msgNextLogIndex{
 		*cryptolib.TestAddress,
-		&committeelog.MsgNextLogIndex{
+		committeelog.MsgNextLogIndex{
 			NextLogIndex: committeelog.LogIndex(1234567890),
 			PleaseRepeat: false,
 		},

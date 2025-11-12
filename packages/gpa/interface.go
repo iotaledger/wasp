@@ -87,6 +87,38 @@ func AsTypedMessageIn[T MessagePayload](msg MessageIn) TypedMessageIn[T] {
 	}
 }
 
+func NewPayloadIn[Payload any](sender NodeID, payload Payload) PayloadIn[Payload] {
+	return PayloadIn[Payload]{
+		Sender:  sender,
+		Payload: payload,
+	}
+}
+
+// PayloadIn is not full in message - it is just a payload value with sender.
+//
+// TODO: Revisit "Message" and "Payload" namings according to new gpa message design.
+// For now I'm adding this just to be able to merge branches.
+type PayloadIn[Payload any] struct {
+	Sender  NodeID
+	Payload Payload
+}
+
+func NewPayloadOut[Payload any](recipient NodeID, payload Payload) PayloadOut[Payload] {
+	return PayloadOut[Payload]{
+		Recipient: recipient,
+		Payload:   payload,
+	}
+}
+
+// PayloadOut is not full out message - it is just a payload value with recipient.
+//
+// TODO: Revisit "Message" and "Payload" namings according to new gpa message design.
+// For now I'm adding this just to be able to merge branches.
+type PayloadOut[Payload any] struct {
+	Recipient NodeID
+	Payload   Payload
+}
+
 type (
 	Input  any
 	Output any

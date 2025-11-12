@@ -190,7 +190,7 @@ func New(
 	if a.myIdx = a.peerIndex(me); a.myIdx == -1 {
 		panic("i'm not in the peer list")
 	}
-	return gpa.NewOwnHandler(me, &a)
+	return &a
 }
 
 // Input for the algorithm is the secret to share.

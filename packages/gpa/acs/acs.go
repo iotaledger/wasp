@@ -106,7 +106,7 @@ func New(nodeIDs []gpa.NodeID, me gpa.NodeID, f int, ccCreateFun func(node gpa.N
 	}
 	a.termCond = newUponTermCondition(n, a.uponTermCondition)
 	a.msgWrapper = gpa.NewMsgWrapper(msgTypeWrapped, a.selectSubsystem)
-	a.asGPA = gpa.NewOwnHandler(me, a)
+	a.asGPA = a
 	return a
 }
 

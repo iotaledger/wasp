@@ -52,7 +52,6 @@ import (
 	"github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
-	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
@@ -70,12 +69,12 @@ type VarLocalView struct {
 	// Transactions that are ready to be posted.
 	pendingTXes *shrinkingmap.ShrinkingMap[uint32, []*varLocalViewEntry]
 	// Callback for the TIP changes.
-	tipUpdatedCB func(ao *isc.StateAnchor) []gpa.MessageOut
+	tipUpdatedCB func(ao *isc.StateAnchor) OutMessages
 	// Just a logger.
 	log log.Logger
 }
 
-func NewVarLocalView(pipeliningLimit int, tipUpdatedCB func(ao *isc.StateAnchor) []gpa.MessageOut, log log.Logger) *VarLocalView {
+func NewVarLocalView(pipeliningLimit int, tipUpdatedCB func(ao *isc.StateAnchor) OutMessages, log log.Logger) *VarLocalView {
 	log.LogDebugf("NewVarLocalView, pipeliningLimit=%v", pipeliningLimit)
 	return &VarLocalView{
 		latestTip:       nil,
@@ -86,12 +85,12 @@ func NewVarLocalView(pipeliningLimit int, tipUpdatedCB func(ao *isc.StateAnchor)
 	}
 }
 
-func (lvi *VarLocalView) AnchorConfirmed(confirmedAnchor *isc.StateAnchor) []gpa.MessageOut {
+func (lvi *VarLocalView) AnchorConfirmed(confirmedAnchor *isc.StateAnchor) OutMessages {
 	lvi.confirmedAnchor = confirmedAnchor
 	return lvi.processIt()
 }
 
-func (lvi *VarLocalView) TransactionProduced(logIndex LogIndex, consumedAnchor *isc.StateAnchor, tx *iotasigner.SignedTransaction) []gpa.MessageOut {
+func (lvi *VarLocalView) TransactionProduced(logIndex LogIndex, consumedAnchor *isc.StateAnchor, tx *iotasigner.SignedTransaction) OutMessages {
 	stateIndex := consumedAnchor.GetStateIndex()
 	stateIndexEntries, _ := lvi.pendingTXes.GetOrCreate(stateIndex, func() []*varLocalViewEntry { return []*varLocalViewEntry{} })
 	contains := lo.ContainsBy(stateIndexEntries, func(entry *varLocalViewEntry) bool {
@@ -108,7 +107,7 @@ func (lvi *VarLocalView) TransactionProduced(logIndex LogIndex, consumedAnchor *
 	return lvi.processIt()
 }
 
-func (lvi *VarLocalView) TransactionRejected(logIndex LogIndex) []gpa.MessageOut {
+func (lvi *VarLocalView) TransactionRejected(logIndex LogIndex) OutMessages {
 	lvi.pendingTXes.ForEach(func(stateIndex uint32, entries []*varLocalViewEntry) bool {
 		entries = lo.Filter(entries, func(entry *varLocalViewEntry, index int) bool {
 			return entry.logIndex != logIndex
@@ -127,7 +126,7 @@ func (lvi *VarLocalView) StatusString() string {
 	return fmt.Sprintf("{varLocalView: confirmedAnchor=%v, |pendingTxIndexes|=%v}", lvi.confirmedAnchor, lvi.pendingTXes.Size())
 }
 
-func (lvi *VarLocalView) processIt() []gpa.MessageOut {
+func (lvi *VarLocalView) processIt() OutMessages {
 	if lvi.confirmedAnchor == nil {
 		lvi.updateVal(nil)
 		return nil
@@ -151,7 +150,7 @@ func (lvi *VarLocalView) processIt() []gpa.MessageOut {
 	return lvi.updateVal(lvi.confirmedAnchor)
 }
 
-func (lvi *VarLocalView) updateVal(tip *isc.StateAnchor) []gpa.MessageOut {
+func (lvi *VarLocalView) updateVal(tip *isc.StateAnchor) OutMessages {
 	if tip == nil && lvi.latestTip == nil {
 		return nil
 	}

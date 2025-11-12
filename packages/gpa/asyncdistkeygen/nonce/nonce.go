@@ -119,7 +119,7 @@ func New(
 	for i := range n.acss {
 		n.acss[i] = acss.New(suite, nodeIDs, peerPKs, f, me, mySK, nodeIDs[i], nil, log)
 	}
-	return gpa.NewOwnHandler(me, n)
+	return n
 }
 
 func (n *nonceDistributedKeyGenerationImpl) Input(input gpa.Input) []gpa.MessageOut {

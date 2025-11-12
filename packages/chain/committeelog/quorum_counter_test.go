@@ -23,11 +23,11 @@ func TestQuorumCounter(t *testing.T) {
 
 	require.Equal(t, lin, qc.EnoughVotes(f+1))
 
-	makeVote := func(from gpa.NodeID, li committeelog.LogIndex) gpa.TypedMessageIn[*committeelog.MsgNextLogIndex] {
+	makeVote := func(from gpa.NodeID, li committeelog.LogIndex) gpa.PayloadIn[committeelog.MsgNextLogIndex] {
 		vote := committeelog.NewMsgNextLogIndex(li, committeelog.MsgNextLogIndexCauseStarted, false)
-		return gpa.TypedMessageIn[*committeelog.MsgNextLogIndex]{
+		return gpa.PayloadIn[committeelog.MsgNextLogIndex]{
 			Sender:  from,
-			Payload: vote,
+			Payload: *vote,
 		}
 	}
 

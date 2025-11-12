@@ -7,6 +7,7 @@ import (
 	"io"
 	"time"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/kv"
 	"github.com/iotaledger/wasp/v2/packages/kv/buffered"
@@ -111,6 +112,17 @@ type Block interface {
 	Equals(Block) bool
 	Bytes() []byte
 }
+
+var (
+	_ = bcs.AddCustomEncoder(func(e *bcs.Encoder, b Block) error {
+		e.Encode(b.(*block))
+		return nil
+	})
+	_ = bcs.AddCustomDecoder(func(d *bcs.Decoder, b *Block) error {
+		*b = bcs.Decode[*block](d)
+		return nil
+	})
+)
 
 type StateCommonValues interface {
 	BlockIndex() uint32

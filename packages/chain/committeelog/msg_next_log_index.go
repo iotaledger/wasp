@@ -5,8 +5,6 @@ package committeelog
 
 import (
 	"fmt"
-
-	"github.com/iotaledger/wasp/v2/packages/gpa"
 )
 
 type MsgNextLogIndexCause byte
@@ -30,8 +28,6 @@ type MsgNextLogIndex struct {
 	PleaseRepeat bool                 // If true, the receiver should resend its latest message back to the sender.
 }
 
-var _ gpa.MessagePayload = new(MsgNextLogIndex)
-
 func NewMsgNextLogIndex(nextLogIndex LogIndex, cause MsgNextLogIndexCause, pleaseRepeat bool) *MsgNextLogIndex {
 	return &MsgNextLogIndex{
 		NextLogIndex: nextLogIndex,
@@ -48,10 +44,6 @@ func (msg *MsgNextLogIndex) AsResent() *MsgNextLogIndex {
 		Cause:        msg.Cause,
 		PleaseRepeat: false,
 	}
-}
-
-func (msg *MsgNextLogIndex) MsgType() gpa.MessageType {
-	return msgTypeNextLogIndex
 }
 
 func (msg *MsgNextLogIndex) String() string {

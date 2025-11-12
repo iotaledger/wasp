@@ -93,7 +93,7 @@ func New(peers []gpa.NodeID, f int, me, broadcaster gpa.NodeID, maxMsgSize int, 
 	for i := range peers {
 		r.msgRecv[peers[i]] = map[msgBrachaType]bool{}
 	}
-	return gpa.NewOwnHandler(me, r)
+	return r
 }
 
 // Input implements the GPA interface.

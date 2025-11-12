@@ -6,22 +6,21 @@ package committeelog
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
-type inputConsensusOutputConfirmed struct {
+type InputConsensusOutputConfirmed struct {
 	nextAnchor *isc.StateAnchor
 	logIndex   LogIndex
 }
 
-func NewInputConsensusOutputConfirmed(nextAnchor *isc.StateAnchor, logIndex LogIndex) gpa.Input {
-	return &inputConsensusOutputConfirmed{
+func NewInputConsensusOutputConfirmed(nextAnchor *isc.StateAnchor, logIndex LogIndex) *InputConsensusOutputConfirmed {
+	return &InputConsensusOutputConfirmed{
 		nextAnchor: nextAnchor,
 		logIndex:   logIndex,
 	}
 }
 
-func (inp *inputConsensusOutputConfirmed) String() string {
+func (inp *InputConsensusOutputConfirmed) String() string {
 	return fmt.Sprintf("{committeeLog.inputConsensusOutputConfirmed, result=%v, li=%v}", inp.nextAnchor, inp.logIndex)
 }
