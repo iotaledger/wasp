@@ -34,6 +34,7 @@ import (
 	"github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/v2/packages/gpa"
+	"github.com/iotaledger/wasp/v2/packages/gpa/acss"
 	"github.com/iotaledger/wasp/v2/packages/gpa/asyncdistkeygen/nonce"
 	"github.com/iotaledger/wasp/v2/packages/tcrypto"
 )
@@ -49,14 +50,13 @@ const (
 
 type DistributedSignature struct {
 	suite                           suites.Suite
-	withWrappers                    gpa.GPA // This instance, with all the wrappers.
 	me                              gpa.NodeID
 	mySK                            kyber.Scalar
 	nodeIDs                         []gpa.NodeID
 	nodePKs                         map[gpa.NodeID]kyber.Point
 	f                               int
 	longTermSecretShare             tcrypto.SecretShare
-	distributedKeyGen               gpa.GPA
+	distributedKeyGen               *nonce.NonceDistributedKeyGeneration
 	distKeyGenOutIndexes            []int                // Intermediate DKG output.
 	distKeyGenDecidedIndexProposals map[gpa.NodeID][]int // ACS decision.
 	distKeyGenOutNonce              dss.DistKeyShare     // Final DKG output.
@@ -64,7 +64,6 @@ type DistributedSignature struct {
 	distSignPartialSigBuffer        *shrinkingmap.ShrinkingMap[gpa.NodeID, *dss.PartialSig] // Accumulate early partial signatures
 	distributedSignatureSigner      *dss.DSS
 	signature                       []byte // The output.
-	msgWrapper                      *gpa.MsgWrapper
 	log                             log.Logger
 }
 
@@ -80,7 +79,6 @@ func New(
 ) *DistributedSignature {
 	d := &DistributedSignature{
 		suite:                           suite,
-		withWrappers:                    nil, // Set bellow.
 		me:                              me,
 		mySK:                            mySK,
 		nodeIDs:                         nodeIDs,
@@ -96,22 +94,15 @@ func New(
 		distributedSignatureSigner:      nil, // Will be created when indexProposals and message to sign will be created.
 		log:                             log,
 	}
-	d.msgWrapper = gpa.NewMsgWrapper(msgTypeWrapped, d.msgWrapperFunc)
-	d.withWrappers = d
 	return d
 }
 
-// AsGPA implements DSS Specific Interface: Get a GPA instance to pass messages with all the intermediate layers.
-func (d *DistributedSignature) AsGPA() gpa.GPA {
-	return d.withWrappers
-}
-
 // Input handles the input to the protocol.
-func (d *DistributedSignature) Input(input gpa.Input) []gpa.MessageOut {
+func (d *DistributedSignature) Input(input gpa.Input) []gpa.PayloadOut {
 	d.log.LogDebugf("Input %+v", input)
 	switch input := input.(type) {
 	case *inputStart:
-		msgs := d.msgWrapper.WrapMessagesOut(subsystemDistributedKeyGeneration, 0, d.distributedKeyGen.Input(nonce.NewInputStart()))
+		msgs := d.distributedKeyGen.Input(nonce.NewInputStart())
 		return slices.Concat(msgs, d.tryHandleDistributedKeyGenerationOutput())
 	case *inputDecided:
 		return d.handleDecided(input)
@@ -119,22 +110,14 @@ func (d *DistributedSignature) Input(input gpa.Input) []gpa.MessageOut {
 	panic(fmt.Errorf("unexpected input: %T: %+v", input, input))
 }
 
-// Message handles the messages.
-func (d *DistributedSignature) Message(msg gpa.MessageIn) []gpa.MessageOut {
-	switch msgT := msg.Payload.(type) {
-	case *msgPartialSig:
-		d.log.LogDebugf("Message %+v", msg)
-		return d.handlePartialSig(gpa.AsTypedMessageIn[*msgPartialSig](msg))
-	case *gpa.WrappingMsg:
-		if msgT.Subsystem() == subsystemDistributedKeyGeneration && msgT.Index() == 0 {
-			msgs := d.msgWrapper.WrapMessagesOut(subsystemDistributedKeyGeneration, 0, d.distributedKeyGen.Message(msgT.WrappedIn(msg.Sender)))
-			return slices.Concat(msgs, d.tryHandleDistributedKeyGenerationOutput())
-		}
-		d.log.LogWarnf("unknown wrapped message %T: %+v", msgT, msgT)
-		return nil
-	default:
-		panic(fmt.Errorf("unknown message %T: %v", msg, msg))
-	}
+func (d *DistributedSignature) HandlegACSSMsgVote(acssIndex int, msg gpa.PayloadIn[acss.MsgVote]) []gpa.PayloadOut {
+	outMsgs := d.distributedKeyGen.HandlegACSSMsgVote(acssIndex, msg)
+	return slices.Concat(outMsgs, d.tryHandleDistributedKeyGenerationOutput())
+}
+
+func (d *DistributedSignature) HandlegACSSMsgImplicateRecover(acssIndex int, msg gpa.PayloadIn[acss.MsgImplicateRecover]) []gpa.PayloadOut {
+	outMsgs := d.distributedKeyGen.HandlegACSSMsgImplicateRecover(acssIndex, msg)
+	return slices.Concat(outMsgs, d.tryHandleDistributedKeyGenerationOutput())
 }
 
 // Output provides the output, if any.
@@ -148,12 +131,12 @@ func (d *DistributedSignature) Output() gpa.Output {
 	}
 }
 
-func (d *DistributedSignature) tryHandleDistributedKeyGenerationOutput() []gpa.MessageOut {
+func (d *DistributedSignature) tryHandleDistributedKeyGenerationOutput() []gpa.PayloadOut {
 	distKeyGenOut := d.distributedKeyGen.Output()
 	if d.distKeyGenOutIndexes == nil && distKeyGenOut != nil && distKeyGenOut.(*nonce.Output).Indexes != nil {
 		d.distKeyGenOutIndexes = distKeyGenOut.(*nonce.Output).Indexes
 	}
-	var msgs []gpa.MessageOut
+	var msgs []gpa.PayloadOut
 	if d.distKeyGenOutNonce == nil && distKeyGenOut != nil && distKeyGenOut.(*nonce.Output).PriShare != nil {
 		d.distKeyGenOutNonce = tcrypto.NewDistKeyShare(
 			distKeyGenOut.(*nonce.Output).PriShare,
@@ -193,7 +176,7 @@ func (d *DistributedSignature) tryHandleDistributedKeyGenerationOutput() []gpa.M
 			if d.nodeIDs[i] == d.me {
 				continue
 			}
-			msgs = append(msgs, gpa.NewMessageOut(d.nodeIDs[i], &msgPartialSig{
+			msgs = append(msgs, gpa.NewPayloadOut(d.nodeIDs[i], &MsgPartialSig{
 				suite:      d.suite,
 				partialSig: partialSig,
 			}))
@@ -212,7 +195,7 @@ func (d *DistributedSignature) tryHandleDistributedKeyGenerationOutput() []gpa.M
 	return msgs
 }
 
-func (d *DistributedSignature) handlePartialSig(msg gpa.TypedMessageIn[*msgPartialSig]) []gpa.MessageOut {
+func (d *DistributedSignature) HandleMsgPartialSig(msg gpa.PayloadIn[MsgPartialSig]) []gpa.PayloadOut {
 	if d.signature != nil {
 		// Signature already aggregated, ignore the remaining shares.
 		return nil
@@ -246,7 +229,7 @@ func (d *DistributedSignature) handlePartialSig(msg gpa.TypedMessageIn[*msgParti
 	return nil
 }
 
-func (d *DistributedSignature) handleDecided(input *inputDecided) []gpa.MessageOut {
+func (d *DistributedSignature) handleDecided(input *inputDecided) []gpa.PayloadOut {
 	if d.distKeyGenDecidedIndexProposals != nil {
 		d.log.LogWarn("Duplicate will be dropped: DecidedIndexes=%+v", input.decidedIndexProposals)
 		return nil
@@ -255,7 +238,7 @@ func (d *DistributedSignature) handleDecided(input *inputDecided) []gpa.MessageO
 	d.messageToSign = input.messageToSign
 
 	decisionInput := nonce.NewInputAgreementResult(input.decidedIndexProposals)
-	msgs := d.msgWrapper.WrapMessagesOut(subsystemDistributedKeyGeneration, 0, d.distributedKeyGen.Input(decisionInput))
+	msgs := d.distributedKeyGen.Input(decisionInput)
 	return slices.Concat(msgs, d.tryHandleDistributedKeyGenerationOutput())
 }
 

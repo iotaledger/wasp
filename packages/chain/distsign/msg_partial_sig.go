@@ -13,21 +13,14 @@ import (
 	"go.dedis.ch/kyber/v3/suites"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/v2/packages/gpa"
 )
 
-type msgPartialSig struct {
+type MsgPartialSig struct {
 	suite      suites.Suite // Transient, for un-marshaling only.
 	partialSig *dss.PartialSig
 }
 
-var _ gpa.MessagePayload = new(msgPartialSig)
-
-func (m *msgPartialSig) MsgType() gpa.MessageType {
-	return msgTypePartialSig
-}
-
-func (m *msgPartialSig) MarshalBCS(e *bcs.Encoder) error {
+func (m *MsgPartialSig) MarshalBCS(e *bcs.Encoder) error {
 	val, err := safecast.Convert[uint16](m.partialSig.Partial.I)
 	if err != nil {
 		return err
@@ -44,7 +37,7 @@ func (m *msgPartialSig) MarshalBCS(e *bcs.Encoder) error {
 	return nil
 }
 
-func (m *msgPartialSig) UnmarshalBCS(d *bcs.Decoder) error {
+func (m *MsgPartialSig) UnmarshalBCS(d *bcs.Decoder) error {
 	m.partialSig = &dss.PartialSig{Partial: &share.PriShare{}}
 	m.partialSig.Partial.I = int(d.ReadUint16())
 

@@ -3,16 +3,6 @@
 
 package blssig
 
-import (
-	"github.com/iotaledger/wasp/v2/packages/gpa"
-)
-
-type msgSigShare struct {
+type MsgSigShare struct {
 	sigShare []byte `bcs:"export"`
-}
-
-var _ gpa.MessagePayload = new(msgSigShare)
-
-func (msg *msgSigShare) MsgType() gpa.MessageType {
-	return msgTypeSigShare
 }

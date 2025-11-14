@@ -87,14 +87,14 @@ func testCommitteeLogBasic(t *testing.T, n, f int) {
 	}
 
 	gpaTC := gpa.NewTestContextNew(gpaNodes, gpa.TestContextNewFunctors[*committeelog.CommitteeLog, any, any]{
-		ApplyInput: func(obj *committeelog.CommitteeLog, input any) []gpa.PayloadOut[any] {
+		ApplyInput: func(obj *committeelog.CommitteeLog, input any) []gpa.TypedPayloadOut[any] {
 			outMsgs := obj.Input(input.(gpa.Input))
 			if outMsgs == nil {
 				return nil
 			}
 			return gpa.ToAnyPayloadsOut(outMsgs.NextLogIndex)
 		},
-		ApplyMessage: func(obj *committeelog.CommitteeLog, sender gpa.NodeID, msg any) []gpa.PayloadOut[any] {
+		ApplyMessage: func(obj *committeelog.CommitteeLog, sender gpa.NodeID, msg any) []gpa.TypedPayloadOut[any] {
 			switch m := msg.(type) {
 			case committeelog.MsgNextLogIndex:
 				outMsgs := obj.HandleMsgNextLogIndex(gpa.NewPayloadIn(sender, m))

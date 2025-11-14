@@ -17,7 +17,7 @@ func TestMsgRBCCEPayloadSerialization(t *testing.T) {
 	b := make([]byte, 10)
 	_, err := rand.Read(b)
 	require.NoError(t, err)
-	msg := &msgRBCCEPayload{
+	msg := &MsgRBCCEPayload{
 		nil,
 		b,
 		nil,
@@ -25,7 +25,7 @@ func TestMsgRBCCEPayloadSerialization(t *testing.T) {
 
 	bcs.TestCodec(t, msg)
 
-	msg = &msgRBCCEPayload{
+	msg = &MsgRBCCEPayload{
 		nil,
 		testval.TestBytes(10),
 		nil,

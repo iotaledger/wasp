@@ -14,15 +14,9 @@ type msgBLSPartialSig struct {
 	partialSig []byte `bcs:"export"`
 }
 
-var _ gpa.MessagePayload = new(msgBLSPartialSig)
-
-func newMsgBLSPartialSig(blsSuite suites.Suite, recipient gpa.NodeID, partialSig []byte) gpa.MessageOut {
-	return gpa.NewMessageOut(recipient, &msgBLSPartialSig{
+func newMsgBLSPartialSig(blsSuite suites.Suite, recipient gpa.NodeID, partialSig []byte) gpa.PayloadOut {
+	return gpa.NewPayloadOut(recipient, &msgBLSPartialSig{
 		blsSuite:   blsSuite,
 		partialSig: partialSig,
 	})
-}
-
-func (msg *msgBLSPartialSig) MsgType() gpa.MessageType {
-	return msgTypeBLSShare
 }

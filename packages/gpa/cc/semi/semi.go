@@ -11,21 +11,20 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/v2/packages/gpa"
+	"github.com/iotaledger/wasp/v2/packages/gpa/cc/blssig"
 )
 
-type ccSemi struct {
-	target gpa.GPA
+type CCSemi struct {
+	target *blssig.CC
 	index  int
 	output *bool
 }
 
-var _ gpa.GPA = &ccSemi{}
-
-func New(index int, target gpa.GPA) gpa.GPA {
-	return &ccSemi{index: index, target: target}
+func New(index int, target *blssig.CC) *CCSemi {
+	return &CCSemi{index: index, target: target}
 }
 
-func (cc *ccSemi) Input(input gpa.Input) []gpa.MessageOut {
+func (cc *CCSemi) Input(input gpa.Input) []gpa.PayloadOut {
 	if input != nil {
 		panic(errors.New("input must be nil"))
 	}
@@ -45,16 +44,16 @@ func (cc *ccSemi) Input(input gpa.Input) []gpa.MessageOut {
 	return msgs
 }
 
-func (cc *ccSemi) Message(msg gpa.MessageIn) []gpa.MessageOut {
+func (cc *CCSemi) HandleMsgSigShare(msg gpa.PayloadIn[blssig.MsgSigShare]) []gpa.PayloadOut {
 	if cc.output != nil {
 		return nil
 	}
-	msgs := cc.target.Message(msg)
+	msgs := cc.target.HandleMsgSigShare(msg)
 	cc.checkOutput()
 	return msgs
 }
 
-func (cc *ccSemi) checkOutput() {
+func (cc *CCSemi) checkOutput() {
 	if cc.output != nil {
 		return
 	}
@@ -63,21 +62,17 @@ func (cc *ccSemi) checkOutput() {
 	}
 }
 
-func (cc *ccSemi) Output() gpa.Output {
+func (cc *CCSemi) Output() gpa.Output {
 	if cc.output == nil {
 		return nil // Untyped nil.
 	}
 	return cc.output
 }
 
-func (cc *ccSemi) StatusString() string {
+func (cc *CCSemi) StatusString() string {
 	if cc.output != nil {
 		// Try produce compact output.
 		return fmt.Sprintf("{CC:semi, index=%v, output=%v}", cc.index, *cc.output)
 	}
 	return fmt.Sprintf("{CC:semi, index=%v, output=%v, target=%v}", cc.index, cc.output, cc.target.StatusString())
-}
-
-func (cc *ccSemi) UnmarshalPayload(data []byte) (gpa.MessagePayload, error) {
-	return cc.target.UnmarshalPayload(data)
 }

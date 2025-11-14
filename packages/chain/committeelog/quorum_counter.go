@@ -35,7 +35,7 @@ func (qc *QuorumCounter) MaybeSendVote(li LogIndex) OutMessages {
 		_, haveMsgFrom := qc.maxPeerVotes[nodeID] // It might happen, that we rebooted and lost the state.
 		msg := NewMsgNextLogIndex(li, qc.msgCause, !haveMsgFrom)
 		qc.lastSentMsgs[nodeID] = msg
-		msgs.NextLogIndex = append(msgs.NextLogIndex, gpa.NewPayloadOut(nodeID, *msg))
+		msgs.NextLogIndex = append(msgs.NextLogIndex, gpa.NewTypedPayloadOut(nodeID, *msg))
 	}
 	return msgs
 }
@@ -47,7 +47,7 @@ func (qc *QuorumCounter) MyLastVote() LogIndex {
 func (qc *QuorumCounter) LastMessageForPeer(peer gpa.NodeID) OutMessages {
 	if msg, ok := qc.lastSentMsgs[peer]; ok {
 		res := NoMessages()
-		res.NextLogIndex = append(res.NextLogIndex, gpa.NewPayloadOut(peer, *msg.AsResent()))
+		res.NextLogIndex = append(res.NextLogIndex, gpa.NewTypedPayloadOut(peer, *msg.AsResent()))
 		return res
 	}
 	return nil

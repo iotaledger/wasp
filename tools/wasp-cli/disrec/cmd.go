@@ -3,8 +3,6 @@
 package disrec
 
 import (
-	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,17 +10,12 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	hivep2p "github.com/iotaledger/hive.go/crypto/p2p"
-	hivelog "github.com/iotaledger/hive.go/log"
 
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
-	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/registry"
-	"github.com/iotaledger/wasp/v2/packages/testutil/testpeers"
 )
 
 func initDisrecCmd() *cobra.Command {
@@ -57,57 +50,57 @@ func initSignAndPostCmd() *cobra.Command {
 
 // runSignAndPost executes the sign_post command logic.
 func runSignAndPost(cmd *cobra.Command, args []string) error {
-	// Read and decode the serialized TX Data.
-	txBytes, err := readAndDecodeTxBytes(args[0])
-	if err != nil {
-		return err
-	}
+	// // Read and decode the serialized TX Data.
+	// txBytes, err := readAndDecodeTxBytes(args[0])
+	// if err != nil {
+	// 	return err
+	// }
 
-	// Parse the committee address.
-	committeeAddressStr := args[1]
-	committeeAddress, err := cryptolib.AddressFromHex(committeeAddressStr)
-	if err != nil {
-		return fmt.Errorf("invalid committee address '%s': %w", committeeAddressStr, err)
-	}
+	// // Parse the committee address.
+	// committeeAddressStr := args[1]
+	// committeeAddress, err := cryptolib.AddressFromHex(committeeAddressStr)
+	// if err != nil {
+	// 	return fmt.Errorf("invalid committee address '%s': %w", committeeAddressStr, err)
+	// }
 
-	// Build signer from committee keys.
-	nodeIDs, peerIdentities, dkRegistries, err := collectDKComponents(args[2], committeeAddressStr)
-	if err != nil {
-		return err
-	}
-	log := hivelog.NewLogger(hivelog.WithName("disrec"))
-	signer := testpeers.NewTestDistributedSignatureSigner(committeeAddress, dkRegistries, nodeIDs, peerIdentities, log)
+	// // Build signer from committee keys.
+	// nodeIDs, peerIdentities, dkRegistries, err := collectDKComponents(args[2], committeeAddressStr)
+	// if err != nil {
+	// 	return err
+	// }
+	// log := hivelog.NewLogger(hivelog.WithName("disrec"))
+	// signer := testpeers.NewTestDistributedSignatureSigner(committeeAddress, dkRegistries, nodeIDs, peerIdentities, log)
 
-	// Sign and Post the TX to the L1.
-	iotaL1ClientURL := args[3]
-	ctx := context.Background()
-	httpClient := iscmoveclient.NewHTTPClient(iotaL1ClientURL, "", iotaclient.WaitForEffectsEnabled)
-	res, execErr := httpClient.SignAndExecuteTransaction(ctx, &iotaclient.SignAndExecuteTransactionRequest{
-		TxDataBytes: txBytes,
-		Signer:      cryptolib.SignerToIotaSigner(signer),
-		Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
-			ShowEffects:        true,
-			ShowObjectChanges:  true,
-			ShowBalanceChanges: true,
-			ShowEvents:         true,
-		},
-	})
-	if execErr != nil {
-		return fmt.Errorf("error executing tx: %w, res: %v", execErr, res)
-	}
-	if !res.Effects.Data.IsSuccess() {
-		return fmt.Errorf("error executing tx: %s, digest: %s", res.Effects.Data.V1.Status.Error, res.Digest)
-	}
+	// // Sign and Post the TX to the L1.
+	// iotaL1ClientURL := args[3]
+	// ctx := context.Background()
+	// httpClient := iscmoveclient.NewHTTPClient(iotaL1ClientURL, "", iotaclient.WaitForEffectsEnabled)
+	// res, execErr := httpClient.SignAndExecuteTransaction(ctx, &iotaclient.SignAndExecuteTransactionRequest{
+	// 	TxDataBytes: txBytes,
+	// 	Signer:      cryptolib.SignerToIotaSigner(signer),
+	// 	Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+	// 		ShowEffects:        true,
+	// 		ShowObjectChanges:  true,
+	// 		ShowBalanceChanges: true,
+	// 		ShowEvents:         true,
+	// 	},
+	// })
+	// if execErr != nil {
+	// 	return fmt.Errorf("error executing tx: %w, res: %v", execErr, res)
+	// }
+	// if !res.Effects.Data.IsSuccess() {
+	// 	return fmt.Errorf("error executing tx: %s, digest: %s", res.Effects.Data.V1.Status.Error, res.Digest)
+	// }
 
-	log.LogInfof("Transaction posted! Digest: %s\n", res.Digest)
-	log.LogInfo("Transaction data:")
+	// log.LogInfof("Transaction posted! Digest: %s\n", res.Digest)
+	// log.LogInfo("Transaction data:")
 
-	if objChanges, err := json.MarshalIndent(res.ObjectChanges, "\t", " "); err == nil {
-		log.LogInfof("Object Changes:\n%v\n", string(objChanges))
-	}
-	if effects, err := json.MarshalIndent(res.Effects, "\t", " "); err == nil {
-		log.LogInfof("Effects:\n%v\n", string(effects))
-	}
+	// if objChanges, err := json.MarshalIndent(res.ObjectChanges, "\t", " "); err == nil {
+	// 	log.LogInfof("Object Changes:\n%v\n", string(objChanges))
+	// }
+	// if effects, err := json.MarshalIndent(res.Effects, "\t", " "); err == nil {
+	// 	log.LogInfof("Effects:\n%v\n", string(effects))
+	// }
 	return nil
 }
 

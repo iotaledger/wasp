@@ -12,8 +12,8 @@ import (
 )
 
 type TestContextNewFunctors[Obj any, Input any, MsgPayload any] struct {
-	ApplyInput       func(obj Obj, input Input) []PayloadOut[MsgPayload]
-	ApplyMessage     func(obj Obj, sender NodeID, msg MsgPayload) []PayloadOut[MsgPayload]
+	ApplyInput       func(obj Obj, input Input) []TypedPayloadOut[MsgPayload]
+	ApplyMessage     func(obj Obj, sender NodeID, msg MsgPayload) []TypedPayloadOut[MsgPayload]
 	Output           func(obj Obj) any
 	StatusString     func(obj Obj) string
 	MarshalPayload   func(msg MsgPayload) ([]byte, error)
@@ -189,7 +189,7 @@ func (tc *TestContextNew[Obj, Input, MsgPayload]) tryProcessInput() {
 
 		// fmt.Printf("-> %s :: INPUT %s\n", rndNID.ShortString(), rndInp)
 		msgs := tc.functors.ApplyInput(tc.nodes[rndNID], rndInp)
-		tc.addMessages(lo.Map(msgs, func(m PayloadOut[MsgPayload], _ int) pendingMessageNew[MsgPayload] {
+		tc.addMessages(lo.Map(msgs, func(m TypedPayloadOut[MsgPayload], _ int) pendingMessageNew[MsgPayload] {
 			return pendingMessageNew[MsgPayload]{Recipient: m.Recipient, Msg: NewPayloadIn(rndNID, m.Payload)}
 		}))
 		tc.tryCallOutputHandler(rndNID)
@@ -227,7 +227,7 @@ func (tc *TestContextNew[Obj, Input, MsgPayload]) tryProcessMessage() {
 	}
 	// fmt.Printf("%s -> %s :: %s (count: %d / %d bytes)\n", msg.Sender.ShortString(), nid.ShortString(), msg.Payload, tc.msgsRecv, tc.bytesRecv)
 	msgs := tc.functors.ApplyMessage(tc.nodes[nid], msg.Sender, msg.Payload)
-	tc.addMessages(lo.Map(msgs, func(m PayloadOut[MsgPayload], _ int) pendingMessageNew[MsgPayload] {
+	tc.addMessages(lo.Map(msgs, func(m TypedPayloadOut[MsgPayload], _ int) pendingMessageNew[MsgPayload] {
 		return pendingMessageNew[MsgPayload]{Recipient: m.Recipient, Msg: NewPayloadIn(nid, m.Payload)}
 	}))
 	tc.tryCallOutputHandler(nid)
@@ -283,10 +283,10 @@ func (tc *TestContextNew[Obj, Input, MsgPayload]) PrintAllStatusStrings(prefix s
 	}
 }
 
-func ToAnyPayloadsOut[Payload any](payloads []PayloadOut[Payload]) []PayloadOut[any] {
-	res := make([]PayloadOut[any], len(payloads))
+func ToAnyPayloadsOut[Payload any](payloads []TypedPayloadOut[Payload]) []TypedPayloadOut[any] {
+	res := make([]TypedPayloadOut[any], len(payloads))
 	for i, p := range payloads {
-		res[i] = PayloadOut[any]{
+		res[i] = TypedPayloadOut[any]{
 			Recipient: p.Recipient,
 			Payload:   p.Payload,
 		}

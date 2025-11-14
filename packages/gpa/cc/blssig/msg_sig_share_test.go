@@ -17,12 +17,12 @@ func TestMsgSigShareSerialization(t *testing.T) {
 	b := make([]byte, 10)
 	_, err := rand.Read(b)
 	require.NoError(t, err)
-	msg := &msgSigShare{
+	msg := &MsgSigShare{
 		b,
 	}
 	bcs.TestCodec(t, msg)
 
-	msg = &msgSigShare{
+	msg = &MsgSigShare{
 		testval.TestBytes(10),
 	}
 	bcs.TestCodecAndHash(t, msg, "9a5a2e001fcf")

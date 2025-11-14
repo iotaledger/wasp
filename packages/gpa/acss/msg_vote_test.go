@@ -11,14 +11,14 @@ import (
 
 func TestMsgVoteSerialization(t *testing.T) {
 	{
-		msg := &msgVote{
+		msg := &MsgVote{
 			msgVoteOK,
 		}
 
 		bcs.TestCodecAndHash(t, msg, "93b889cd9f71")
 	}
 	{
-		msg := &msgVote{
+		msg := &MsgVote{
 			msgVoteREADY,
 		}
 

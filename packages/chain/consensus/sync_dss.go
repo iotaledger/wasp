@@ -26,7 +26,7 @@ func NewSyncDistributedSignature(c *Consensus) *SyncDistributedSignature {
 	return &SyncDistributedSignature{c: c}
 }
 
-func (sub *SyncDistributedSignature) InitialInputReceived() []gpa.MessageOut {
+func (sub *SyncDistributedSignature) InitialInputReceived() []gpa.PayloadOut {
 	if sub.initialInputsReady {
 		return nil
 	}
@@ -34,11 +34,11 @@ func (sub *SyncDistributedSignature) InitialInputReceived() []gpa.MessageOut {
 	return sub.c.uponDistributedSignatureInitialInputsReady()
 }
 
-func (sub *SyncDistributedSignature) DistributedSignatureReady(output gpa.Output) []gpa.MessageOut {
+func (sub *SyncDistributedSignature) DistributedSignatureReady(output gpa.Output) []gpa.PayloadOut {
 	if output == nil || (sub.indexProposalReady && sub.outputReady) {
 		return nil
 	}
-	var msgs []gpa.MessageOut
+	var msgs []gpa.PayloadOut
 	distSignOutput := output.(*distsign.Output)
 	if !sub.indexProposalReady && distSignOutput.ProposedIndexes != nil {
 		sub.indexProposalReady = true
@@ -51,7 +51,7 @@ func (sub *SyncDistributedSignature) DistributedSignatureReady(output gpa.Output
 	return msgs
 }
 
-func (sub *SyncDistributedSignature) DecidedIndexProposalsReceived(decidedIndexProposals map[gpa.NodeID][]int) []gpa.MessageOut {
+func (sub *SyncDistributedSignature) DecidedIndexProposalsReceived(decidedIndexProposals map[gpa.NodeID][]int) []gpa.PayloadOut {
 	if sub.DecidedIndexProposals != nil || decidedIndexProposals == nil {
 		return nil
 	}
@@ -59,7 +59,7 @@ func (sub *SyncDistributedSignature) DecidedIndexProposalsReceived(decidedIndexP
 	return sub.tryCompleteSigning()
 }
 
-func (sub *SyncDistributedSignature) MessageToSignReceived(messageToSign []byte) []gpa.MessageOut {
+func (sub *SyncDistributedSignature) MessageToSignReceived(messageToSign []byte) []gpa.PayloadOut {
 	if sub.MessageToSign != nil || messageToSign == nil {
 		return nil
 	}
@@ -67,7 +67,7 @@ func (sub *SyncDistributedSignature) MessageToSignReceived(messageToSign []byte)
 	return sub.tryCompleteSigning()
 }
 
-func (sub *SyncDistributedSignature) tryCompleteSigning() []gpa.MessageOut {
+func (sub *SyncDistributedSignature) tryCompleteSigning() []gpa.PayloadOut {
 	if sub.signingInputsReady || sub.MessageToSign == nil || sub.DecidedIndexProposals == nil {
 		return nil
 	}

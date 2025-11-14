@@ -31,11 +31,11 @@ func TestMsgPartialSigSerialization(t *testing.T) {
 	partialSig, err := dss.PartialSig()
 	require.NoError(t, err)
 
-	msg := &msgPartialSig{
+	msg := &MsgPartialSig{
 		s,
 		partialSig,
 	}
 
 	msgEnv := bcs.MustMarshal(msg)
-	bcs.MustUnmarshalInto(msgEnv, &msgPartialSig{suite: s})
+	bcs.MustUnmarshalInto(msgEnv, &MsgPartialSig{suite: s})
 }

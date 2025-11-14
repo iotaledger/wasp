@@ -8,7 +8,7 @@ import "github.com/iotaledger/wasp/v2/packages/gpa"
 // This is done just to decrease number of diff lines in PR. We can change it after demo of idea.
 type OutMessages *OutMessagesV
 type OutMessagesV struct {
-	NextLogIndex []gpa.PayloadOut[MsgNextLogIndex]
+	NextLogIndex []gpa.TypedPayloadOut[MsgNextLogIndex]
 }
 
 func (m *OutMessagesV) AddAll(msgs OutMessages) OutMessages {

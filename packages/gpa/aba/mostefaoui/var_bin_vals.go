@@ -24,7 +24,7 @@ type varBinVals struct {
 	n         int
 	f         int
 	nodeIDs   []gpa.NodeID
-	updateCB  func(binVals []bool) []gpa.MessageOut
+	updateCB  func(binVals []bool) []gpa.PayloadOut
 	round     int
 	est       bool
 	recvT     map[gpa.NodeID]bool
@@ -34,7 +34,7 @@ type varBinVals struct {
 	binValues []bool
 }
 
-func newBinVals(nodeIDs []gpa.NodeID, f int, updateCB func(binVals []bool) []gpa.MessageOut) *varBinVals {
+func newBinVals(nodeIDs []gpa.NodeID, f int, updateCB func(binVals []bool) []gpa.PayloadOut) *varBinVals {
 	v := &varBinVals{
 		n:        len(nodeIDs),
 		f:        f,
@@ -46,7 +46,7 @@ func newBinVals(nodeIDs []gpa.NodeID, f int, updateCB func(binVals []bool) []gpa
 
 // >     – multicast BVAL_r(est_r)
 // >     – bin_values_r := {}
-func (v *varBinVals) startRound(round int, est bool) []gpa.MessageOut {
+func (v *varBinVals) startRound(round int, est bool) []gpa.PayloadOut {
 	v.round = round
 	v.est = est
 	v.recvT = map[gpa.NodeID]bool{}
@@ -62,7 +62,7 @@ func (v *varBinVals) startRound(round int, est bool) []gpa.MessageOut {
 // >     – upon receiving BVAL_r(b) messages from 2f + 1 nodes,
 // >       bin_values_r := bin_values_r ∪ {b}
 // >     – wait until bin_values_r != {}, then
-func (v *varBinVals) msgVoteBVALReceived(msg gpa.TypedMessageIn[*msgVote]) []gpa.MessageOut {
+func (v *varBinVals) msgVoteBVALReceived(msg gpa.PayloadIn[MsgVote]) []gpa.PayloadOut {
 	recv := v.recv(msg.Payload.value) // NOTE: A reference to a field.
 
 	if ok := recv[msg.Sender]; ok {
@@ -70,7 +70,7 @@ func (v *varBinVals) msgVoteBVALReceived(msg gpa.TypedMessageIn[*msgVote]) []gpa
 	}
 	recv[msg.Sender] = true
 
-	var msgs []gpa.MessageOut
+	var msgs []gpa.PayloadOut
 	if len(recv) == v.f+1 {
 		msgs = v.multicast(msg.Payload.value) // This checks, if already sent.
 	}
@@ -98,7 +98,7 @@ func (v *varBinVals) recv(value bool) map[gpa.NodeID]bool {
 	return v.recvF
 }
 
-func (v *varBinVals) multicast(value bool) []gpa.MessageOut {
+func (v *varBinVals) multicast(value bool) []gpa.PayloadOut {
 	sent := v.sent(value)
 	if *sent {
 		return nil

@@ -29,17 +29,15 @@ func (v msgVoteType) String() string {
 	}
 }
 
-type msgVote struct {
+type MsgVote struct {
 	round    int         `bcs:"export,type=u16"`
 	voteType msgVoteType `bcs:"export"`
 	value    bool        `bcs:"export"`
 }
 
-var _ gpa.MessagePayload = new(msgVote)
-
-func multicastMsgVote(recipients []gpa.NodeID, round int, voteType msgVoteType, value bool) []gpa.MessageOut {
-	return lo.Map(recipients, func(recipient gpa.NodeID, _ int) gpa.MessageOut {
-		return gpa.NewMessageOut(recipient, &msgVote{
+func multicastMsgVote(recipients []gpa.NodeID, round int, voteType msgVoteType, value bool) []gpa.PayloadOut {
+	return lo.Map(recipients, func(recipient gpa.NodeID, _ int) gpa.PayloadOut {
+		return gpa.NewPayloadOut(recipient, &MsgVote{
 			round:    round,
 			voteType: voteType,
 			value:    value,
@@ -47,10 +45,6 @@ func multicastMsgVote(recipients []gpa.NodeID, round int, voteType msgVoteType, 
 	})
 }
 
-func (msg *msgVote) MsgType() gpa.MessageType {
-	return msgTypeVote
-}
-
-func (msg *msgVote) String() string {
+func (msg *MsgVote) String() string {
 	return fmt.Sprintf("mostefaoui/Vote(round=%d, type=%s, value=%t)", msg.round, msg.voteType.String(), msg.value)
 }

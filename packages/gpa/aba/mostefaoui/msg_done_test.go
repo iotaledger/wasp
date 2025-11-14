@@ -12,13 +12,13 @@ import (
 )
 
 func TestMsgDoneSerialization(t *testing.T) {
-	msg := &msgDone{
+	msg := &MsgDone{
 		int(uint16(rand.Intn(math.MaxUint16 + 1))),
 	}
 
 	bcs.TestCodec(t, msg)
 
-	msg = &msgDone{
+	msg = &MsgDone{
 		math.MaxUint16,
 	}
 

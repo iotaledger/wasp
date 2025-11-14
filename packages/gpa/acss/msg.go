@@ -1,21 +1,31 @@
 package acss
 
-import (
-	"github.com/iotaledger/wasp/v2/packages/gpa"
-)
+// type OutMessages *OutMessagesV
+// type OutMessagesV struct {
+// 	Vote             []gpa.PayloadOut[MsgVote]
+// 	RBCCEPayload     []gpa.PayloadOut[MsgRBCCEPayload]
+// 	ImplicateRecover []gpa.PayloadOut[MsgImplicateRecover]
+// 	Bracha           []gpa.PayloadOut[rbc.MsgBracha]
+// }
 
-const (
-	msgTypeImplicateRecover gpa.MessageType = iota
-	msgTypeVote
-	msgTypeWrapped
-	msgTypeRBCCEPayload
-)
+// func (m *OutMessagesV) AddAll(msgs OutMessages) OutMessages {
+// 	if msgs != nil {
+// 		m.Vote = append(m.Vote, msgs.Vote...)
+// 		m.RBCCEPayload = append(m.RBCCEPayload, msgs.RBCCEPayload...)
+// 		m.ImplicateRecover = append(m.ImplicateRecover, msgs.ImplicateRecover...)
+// 		m.Bracha = append(m.Bracha, msgs.Bracha...)
+// 	}
+// 	return m
+// }
 
-func (a *acssImpl) UnmarshalPayload(data []byte) (gpa.MessagePayload, error) {
-	return gpa.UnmarshalPayload(data, gpa.PayloadAllocator{
-		msgTypeImplicateRecover: func() gpa.MessagePayload { return new(msgImplicateRecover) },
-		msgTypeVote:             func() gpa.MessagePayload { return new(msgVote) },
-	}, gpa.PayloadFallback{
-		msgTypeWrapped: a.msgWrapper.UnmarshalPayload,
-	})
-}
+// func NoMessages() *OutMessagesV {
+// 	return &OutMessagesV{}
+// }
+
+// func ConcatMsgs(msgs ...OutMessages) OutMessages {
+// 	res := NoMessages()
+// 	for _, m := range msgs {
+// 		res.AddAll(m)
+// 	}
+// 	return res
+// }

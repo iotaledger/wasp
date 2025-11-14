@@ -8,7 +8,7 @@ import (
 )
 
 func TestMsgVoteCodec(t *testing.T) {
-	msg := &msgVote{
+	msg := &MsgVote{
 		math.MaxUint16,
 		AUX,
 		true,

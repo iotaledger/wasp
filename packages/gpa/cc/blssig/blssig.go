@@ -28,7 +28,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/gpa"
 )
 
-type ccImpl struct {
+type CC struct {
 	suite     pairing.Suite
 	nodeIDs   []gpa.NodeID
 	pubPoly   *share.PubPoly
@@ -42,8 +42,6 @@ type ccImpl struct {
 	log       log.Logger
 }
 
-var _ gpa.GPA = &ccImpl{}
-
 func New(
 	suite pairing.Suite,
 	nodeIDs []gpa.NodeID,
@@ -53,8 +51,8 @@ func New(
 	me gpa.NodeID,
 	sid []byte,
 	log log.Logger,
-) gpa.GPA {
-	cc := &ccImpl{
+) *CC {
+	cc := &CC{
 		suite:     suite,
 		nodeIDs:   nodeIDs,
 		pubPoly:   pubPoly,
@@ -70,7 +68,7 @@ func New(
 	return cc
 }
 
-func (cc *ccImpl) Input(input gpa.Input) []gpa.MessageOut {
+func (cc *CC) Input(input gpa.Input) []gpa.PayloadOut {
 	if input != nil {
 		panic(errors.New("input must be nil"))
 	}
@@ -89,10 +87,10 @@ func (cc *ccImpl) Input(input gpa.Input) []gpa.MessageOut {
 		return nil
 	}
 	cc.tryOutput()
-	var msgs []gpa.MessageOut
+	var msgs []gpa.PayloadOut
 	for _, nodeID := range cc.nodeIDs {
 		if nodeID != cc.me {
-			msgs = append(msgs, gpa.NewMessageOut(nodeID, &msgSigShare{
+			msgs = append(msgs, gpa.NewPayloadOut(nodeID, MsgSigShare{
 				sigShare: sigShare,
 			}))
 		}
@@ -100,25 +98,21 @@ func (cc *ccImpl) Input(input gpa.Input) []gpa.MessageOut {
 	return msgs
 }
 
-func (cc *ccImpl) Message(msg gpa.MessageIn) []gpa.MessageOut {
+func (cc *CC) HandleMsgSigShare(msg gpa.PayloadIn[MsgSigShare]) []gpa.PayloadOut {
 	if cc.output != nil {
 		// Decided, don't need to process messages anymore.
 		return nil
-	}
-	shareMsg, ok := msg.Payload.(*msgSigShare)
-	if !ok {
-		panic(fmt.Errorf("unexpected message: %+v", msg))
 	}
 	if _, ok := cc.sigShares[msg.Sender]; ok {
 		// Drop a duplicate.
 		return nil
 	}
-	cc.sigShares[msg.Sender] = shareMsg.sigShare
+	cc.sigShares[msg.Sender] = msg.Payload.sigShare
 	cc.tryOutput()
 	return nil
 }
 
-func (cc *ccImpl) tryOutput() {
+func (cc *CC) tryOutput() {
 	if len(cc.sigShares) < cc.t || cc.output != nil {
 		return
 	}
@@ -139,13 +133,13 @@ func (cc *ccImpl) tryOutput() {
 	cc.output = &coin
 }
 
-func (cc *ccImpl) Output() gpa.Output {
+func (cc *CC) Output() gpa.Output {
 	if cc.output == nil {
 		return nil // Untyped nil.
 	}
 	return cc.output
 }
 
-func (cc *ccImpl) StatusString() string {
+func (cc *CC) StatusString() string {
 	return fmt.Sprintf("{CC:blssig, threshold=%v, sigShares=%v/%v, output=%v}", cc.t, len(cc.sigShares), cc.n, cc.output)
 }

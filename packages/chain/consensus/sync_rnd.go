@@ -28,7 +28,7 @@ func NewSyncRND(
 	}
 }
 
-func (sub *SyncRND) CanProceed(dataToSign []byte) []gpa.MessageOut {
+func (sub *SyncRND) CanProceed(dataToSign []byte) []gpa.PayloadOut {
 	if sub.dataToSign != nil || dataToSign == nil {
 		return nil
 	}
@@ -39,7 +39,7 @@ func (sub *SyncRND) CanProceed(dataToSign []byte) []gpa.MessageOut {
 	)
 }
 
-func (sub *SyncRND) BLSPartialSigReceived(sender gpa.NodeID, partialSig []byte) []gpa.MessageOut {
+func (sub *SyncRND) BLSPartialSigReceived(sender gpa.NodeID, partialSig []byte) []gpa.PayloadOut {
 	if _, ok := sub.blsPartialSigs[sender]; ok {
 		return nil // Duplicate, ignore it.
 	}
@@ -47,7 +47,7 @@ func (sub *SyncRND) BLSPartialSigReceived(sender gpa.NodeID, partialSig []byte) 
 	return sub.tryComplete()
 }
 
-func (sub *SyncRND) tryComplete() []gpa.MessageOut {
+func (sub *SyncRND) tryComplete() []gpa.PayloadOut {
 	if sub.sigSharesReady || sub.dataToSign == nil || len(sub.blsPartialSigs) < sub.blsThreshold {
 		return nil
 	}

@@ -18,7 +18,7 @@ func TestMsgBrachaSerialization(t *testing.T) {
 		b := make([]byte, 10)
 		_, err := rand.Read(b)
 		require.NoError(t, err)
-		msg := &msgBracha{
+		msg := &MsgBracha{
 			msgBrachaTypePropose,
 			b,
 		}
@@ -26,7 +26,7 @@ func TestMsgBrachaSerialization(t *testing.T) {
 		bcs.TestCodec(t, msg)
 	}
 	{
-		msg := &msgBracha{
+		msg := &MsgBracha{
 			msgBrachaTypePropose,
 			testval.TestBytes(10),
 		}
@@ -37,7 +37,7 @@ func TestMsgBrachaSerialization(t *testing.T) {
 		b := make([]byte, 10)
 		_, err := rand.Read(b)
 		require.NoError(t, err)
-		msg := &msgBracha{
+		msg := &MsgBracha{
 			msgBrachaTypeEcho,
 			b,
 		}
@@ -45,7 +45,7 @@ func TestMsgBrachaSerialization(t *testing.T) {
 		bcs.TestCodec(t, msg)
 	}
 	{
-		msg := &msgBracha{
+		msg := &MsgBracha{
 			msgBrachaTypeEcho,
 			testval.TestBytes(10),
 		}
@@ -56,7 +56,7 @@ func TestMsgBrachaSerialization(t *testing.T) {
 		b := make([]byte, 10)
 		_, err := rand.Read(b)
 		require.NoError(t, err)
-		msg := &msgBracha{
+		msg := &MsgBracha{
 			msgBrachaTypeReady,
 			b,
 		}
@@ -64,7 +64,7 @@ func TestMsgBrachaSerialization(t *testing.T) {
 		bcs.TestCodec(t, msg)
 	}
 	{
-		msg := &msgBracha{
+		msg := &MsgBracha{
 			msgBrachaTypeReady,
 			testval.TestBytes(10),
 		}
