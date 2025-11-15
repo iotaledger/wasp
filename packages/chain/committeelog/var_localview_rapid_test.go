@@ -23,7 +23,7 @@ package committeelog_test
 // 	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
 // )
 
-// // A State Machine for for the property based test.
+// // A State Machine for the property based test.
 // // It models the chain (confirmed, pending, rejected, rejSync fields)
 // // and contains the actual instance to test (lv).
 // type varLocalViewSM struct {
