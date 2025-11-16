@@ -50,16 +50,11 @@ fragment RPC_STAKE_FIELDS on StakedIota {
 	requestedEpoch {
 		epochId
 	}
-	# activatedEpoch {
-	# 	epochId
-	# }
-	# staking pool can be read from contents
+	
 	contents {
 		json
 	}
 
 	address
 	estimatedReward
-
-	# validatorAddress?
 }

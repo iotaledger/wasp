@@ -17,7 +17,7 @@ import (
 )
 
 func TestGetAllBalances(t *testing.T) {
-	client := clients.NewGraphQLClient(iotaconn.AlphanetGraphQLEndpointURL)
+	client := clients.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
 	owner := iotago.MustAddressFromHex(testcommon.TestAddress)
 
 	balances, err := client.GetAllBalances(context.Background(), owner)
@@ -35,28 +35,21 @@ func TestGetAllBalances(t *testing.T) {
 }
 
 func TestGetAllCoins(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
-	defer cancel()
-
 	owner := iotago.MustAddressFromHex(testcommon.TestAddress)
-	faucetURL := iotaconn.AlphanetFaucetURL
-
-	require.NoError(t, iotaclient.RequestFundsFromFaucet(ctx, owner, faucetURL))
-
 	// Use longer timeout for slow network
-	client := clients.NewGraphQLClientWithTimeout(iotaconn.AlphanetGraphQLEndpointURL, 90*time.Second)
+	client := clients.NewGraphQLClientWithTimeout(iotaconn.TestnetGraphQLEndpointURL, 90*time.Second)
 
-	limit := uint(3)
-	respWithLimit, err := client.GetAllCoins(ctx, iotaclient.GetAllCoinsRequest{
+	limit := int(3)
+	respWithLimit, err := client.GetAllCoins(context.Background(), iotaclient.GetAllCoinsRequest{
 		Owner: owner,
 		Limit: limit,
 	})
 	require.NoError(t, err)
 	require.NotEmpty(t, respWithLimit.Data)
-	require.LessOrEqual(t, len(respWithLimit.Data), int(limit))
+	require.LessOrEqual(t, len(respWithLimit.Data), limit)
 	require.NotNil(t, respWithLimit.NextCursor)
 
-	respNoLimit, err := client.GetAllCoins(ctx, iotaclient.GetAllCoinsRequest{
+	respNoLimit, err := client.GetAllCoins(context.Background(), iotaclient.GetAllCoinsRequest{
 		Owner: owner,
 	})
 	require.NoError(t, err)
@@ -67,9 +60,7 @@ func TestGetBalance(t *testing.T) {
 	ctx := context.Background()
 	owner := iotago.MustAddressFromHex(testcommon.TestAddress)
 
-	require.NoError(t, iotaclient.RequestFundsFromFaucet(ctx, owner, iotaconn.AlphanetFaucetURL))
-
-	client := clients.NewGraphQLClient(iotaconn.AlphanetGraphQLEndpointURL)
+	client := clients.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
 
 	balance, err := client.GetBalance(ctx, iotaclient.GetBalanceRequest{Owner: owner})
 	require.NoError(t, err)
@@ -77,7 +68,7 @@ func TestGetBalance(t *testing.T) {
 }
 
 func TestGetCoinMetadata(t *testing.T) {
-	client := clients.NewGraphQLClient(iotaconn.AlphanetGraphQLEndpointURL)
+	client := clients.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
 	metadata, err := client.GetCoinMetadata(context.Background(), iotajsonrpc.IotaCoinType.String())
 	require.NoError(t, err)
 	require.Equal(t, "IOTA", metadata.Name)
@@ -87,12 +78,10 @@ func TestGetCoins(t *testing.T) {
 	ctx := context.Background()
 	owner := iotago.MustAddressFromHex(testcommon.TestAddress)
 
-	require.NoError(t, iotaclient.RequestFundsFromFaucet(ctx, owner, iotaconn.AlphanetFaucetURL))
-
-	client := clients.NewGraphQLClient(iotaconn.AlphanetGraphQLEndpointURL)
+	client := clients.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
 
 	fetchCoinType := iotajsonrpc.IotaCoinType.String()
-	limit := uint(5)
+	limit := int(5)
 
 	resp, err := client.GetCoins(ctx, iotaclient.GetCoinsRequest{
 		Owner:    owner,
@@ -109,11 +98,4 @@ func TestGetCoins(t *testing.T) {
 		require.Equal(t, wrappedCoinType, coin.CoinType.String())
 		require.True(t, coin.Balance.Clone().Sign() > 0)
 	}
-}
-
-func TestGetTotalSupply(t *testing.T) {
-	client := clients.NewGraphQLClient(iotaconn.AlphanetGraphQLEndpointURL)
-	supply, err := client.GetTotalSupply(context.Background(), iotajsonrpc.IotaCoinType.String())
-	require.NoError(t, err)
-	require.Truef(t, supply.Value.Clone().Sign() > 0, "total supply should be greater than zero")
 }

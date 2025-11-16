@@ -44,3 +44,50 @@ query GetDynamicFields(
 		}
 	}
 }
+
+query GetObjectDynamicFields(
+	$objectId: IotaAddress!,
+	# @genqlient(pointer: true)
+	$first: Int,
+	# @genqlient(pointer: true)
+	$cursor: String,
+) {
+	object(address: $objectId) {
+		dynamicFields(first: $first, after: $cursor) {
+			pageInfo {
+				hasNextPage
+				endCursor
+			}
+			nodes {
+				name {
+					bcs
+					json
+					type {
+						layout
+						repr
+					}
+				}
+				value {
+					__typename
+					... on MoveValue {
+						json
+						type {
+							repr
+						}
+					}
+					... on MoveObject {
+						contents {
+							type {
+								repr
+							}
+							json
+						}
+						address
+						digest
+						version
+					}
+				}
+			}
+		}
+	}
+}

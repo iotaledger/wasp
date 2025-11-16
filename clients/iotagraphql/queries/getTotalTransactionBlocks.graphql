@@ -1,5 +1,0 @@
-query GetTotalTransactionBlocks {
-	checkpoint {
-		networkTotalTransactions
-	}
-}

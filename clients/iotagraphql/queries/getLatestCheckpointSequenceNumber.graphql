@@ -1,5 +1,0 @@
-query GetLatestCheckpointSequenceNumber {
-	checkpoint {
-		sequenceNumber
-	}
-}

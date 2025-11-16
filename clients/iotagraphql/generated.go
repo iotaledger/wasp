@@ -13,19 +13,6 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 )
 
-// Filter either by the digest, or the sequence number, or neither, to get the
-// latest checkpoint.
-type CheckpointId struct {
-	Digest         string `json:"digest"`
-	SequenceNumber uint64 `json:"sequenceNumber"`
-}
-
-// GetDigest returns CheckpointId.Digest, and is useful for accessing the field via an interface.
-func (v *CheckpointId) GetDigest() string { return v.Digest }
-
-// GetSequenceNumber returns CheckpointId.SequenceNumber, and is useful for accessing the field via an interface.
-func (v *CheckpointId) GetSequenceNumber() uint64 { return v.SequenceNumber }
-
 // DevInspectTransactionBlockDryRunTransactionBlockDryRunResult includes the requested fields of the GraphQL type DryRunResult.
 type DevInspectTransactionBlockDryRunTransactionBlockDryRunResult struct {
 	// The error that occurred during dry run execution, if any.
@@ -371,9 +358,9 @@ func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultTransaction
 	return v.RPC_TRANSACTION_FIELDS.Digest
 }
 
-// GetRawTransaction returns DevInspectTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock.RawTransaction, and is useful for accessing the field via an interface.
-func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock) GetRawTransaction() iotago.Base64Data {
-	return v.RPC_TRANSACTION_FIELDS.RawTransaction
+// GetBcs returns DevInspectTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock.Bcs, and is useful for accessing the field via an interface.
+func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock) GetBcs() iotago.Base64Data {
+	return v.RPC_TRANSACTION_FIELDS.Bcs
 }
 
 // GetSender returns DevInspectTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock.Sender, and is useful for accessing the field via an interface.
@@ -419,7 +406,7 @@ func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultTransaction
 type __premarshalDevInspectTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock struct {
 	Digest string `json:"digest"`
 
-	RawTransaction iotago.Base64Data `json:"rawTransaction"`
+	Bcs iotago.Base64Data `json:"bcs"`
 
 	Sender RPC_TRANSACTION_FIELDSSenderAddress `json:"sender"`
 
@@ -440,7 +427,7 @@ func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultTransaction
 	var retval __premarshalDevInspectTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock
 
 	retval.Digest = v.RPC_TRANSACTION_FIELDS.Digest
-	retval.RawTransaction = v.RPC_TRANSACTION_FIELDS.RawTransaction
+	retval.Bcs = v.RPC_TRANSACTION_FIELDS.Bcs
 	retval.Sender = v.RPC_TRANSACTION_FIELDS.Sender
 	retval.Signatures = v.RPC_TRANSACTION_FIELDS.Signatures
 	retval.Effects = v.RPC_TRANSACTION_FIELDS.Effects
@@ -500,9 +487,9 @@ func (v *DryRunTransactionBlockDryRunTransactionBlockDryRunResultTransactionTran
 	return v.RPC_TRANSACTION_FIELDS.Digest
 }
 
-// GetRawTransaction returns DryRunTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock.RawTransaction, and is useful for accessing the field via an interface.
-func (v *DryRunTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock) GetRawTransaction() iotago.Base64Data {
-	return v.RPC_TRANSACTION_FIELDS.RawTransaction
+// GetBcs returns DryRunTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock.Bcs, and is useful for accessing the field via an interface.
+func (v *DryRunTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock) GetBcs() iotago.Base64Data {
+	return v.RPC_TRANSACTION_FIELDS.Bcs
 }
 
 // GetSender returns DryRunTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock.Sender, and is useful for accessing the field via an interface.
@@ -548,7 +535,7 @@ func (v *DryRunTransactionBlockDryRunTransactionBlockDryRunResultTransactionTran
 type __premarshalDryRunTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock struct {
 	Digest string `json:"digest"`
 
-	RawTransaction iotago.Base64Data `json:"rawTransaction"`
+	Bcs iotago.Base64Data `json:"bcs"`
 
 	Sender RPC_TRANSACTION_FIELDSSenderAddress `json:"sender"`
 
@@ -569,7 +556,7 @@ func (v *DryRunTransactionBlockDryRunTransactionBlockDryRunResultTransactionTran
 	var retval __premarshalDryRunTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock
 
 	retval.Digest = v.RPC_TRANSACTION_FIELDS.Digest
-	retval.RawTransaction = v.RPC_TRANSACTION_FIELDS.RawTransaction
+	retval.Bcs = v.RPC_TRANSACTION_FIELDS.Bcs
 	retval.Sender = v.RPC_TRANSACTION_FIELDS.Sender
 	retval.Signatures = v.RPC_TRANSACTION_FIELDS.Signatures
 	retval.Effects = v.RPC_TRANSACTION_FIELDS.Effects
@@ -603,9 +590,13 @@ func (v *DryRunTransactionBlockResponse) GetDryRunTransactionBlock() DryRunTrans
 	return v.DryRunTransactionBlock
 }
 
+// Represents optional available filters for events.
 type EventFilter struct {
-	Sender            iotago.Address `json:"sender"`
-	TransactionDigest string         `json:"transactionDigest"`
+	// Filter down to events from transactions sent by this address.
+	Sender iotago.Address `json:"sender"`
+	// Filter down to the events from this transaction (given by its
+	// transaction digest).
+	TransactionDigest string `json:"transactionDigest"`
 	// Events emitted by a particular module. An event is emitted by a
 	// particular module if some function in the module is called by a
 	// PTB and emits an event.
@@ -686,9 +677,9 @@ func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTra
 	return v.RPC_TRANSACTION_FIELDS.Digest
 }
 
-// GetRawTransaction returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsTransactionBlock.RawTransaction, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsTransactionBlock) GetRawTransaction() iotago.Base64Data {
-	return v.RPC_TRANSACTION_FIELDS.RawTransaction
+// GetBcs returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsTransactionBlock.Bcs, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsTransactionBlock) GetBcs() iotago.Base64Data {
+	return v.RPC_TRANSACTION_FIELDS.Bcs
 }
 
 // GetSender returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsTransactionBlock.Sender, and is useful for accessing the field via an interface.
@@ -734,7 +725,7 @@ func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTra
 type __premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsTransactionBlock struct {
 	Digest string `json:"digest"`
 
-	RawTransaction iotago.Base64Data `json:"rawTransaction"`
+	Bcs iotago.Base64Data `json:"bcs"`
 
 	Sender RPC_TRANSACTION_FIELDSSenderAddress `json:"sender"`
 
@@ -755,7 +746,7 @@ func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTra
 	var retval __premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsTransactionBlock
 
 	retval.Digest = v.RPC_TRANSACTION_FIELDS.Digest
-	retval.RawTransaction = v.RPC_TRANSACTION_FIELDS.RawTransaction
+	retval.Bcs = v.RPC_TRANSACTION_FIELDS.Bcs
 	retval.Sender = v.RPC_TRANSACTION_FIELDS.Sender
 	retval.Signatures = v.RPC_TRANSACTION_FIELDS.Signatures
 	retval.Effects = v.RPC_TRANSACTION_FIELDS.Effects
@@ -1103,346 +1094,6 @@ type GetBalanceResponse struct {
 // GetAddress returns GetBalanceResponse.Address, and is useful for accessing the field via an interface.
 func (v *GetBalanceResponse) GetAddress() GetBalanceAddress { return v.Address }
 
-// GetChainIdentifierResponse is returned by GetChainIdentifier on success.
-type GetChainIdentifierResponse struct {
-	// First four bytes of the network's genesis checkpoint digest (uniquely
-	// identifies the network).
-	ChainIdentifier string `json:"chainIdentifier"`
-}
-
-// GetChainIdentifier returns GetChainIdentifierResponse.ChainIdentifier, and is useful for accessing the field via an interface.
-func (v *GetChainIdentifierResponse) GetChainIdentifier() string { return v.ChainIdentifier }
-
-// GetCheckpointCheckpoint includes the requested fields of the GraphQL type Checkpoint.
-// The GraphQL type's documentation follows.
-//
-// Checkpoints contain finalized transactions and are used for node
-// synchronization and global transaction ordering.
-type GetCheckpointCheckpoint struct {
-	RPC_Checkpoint_Fields `json:"-"`
-}
-
-// GetDigest returns GetCheckpointCheckpoint.Digest, and is useful for accessing the field via an interface.
-func (v *GetCheckpointCheckpoint) GetDigest() string { return v.RPC_Checkpoint_Fields.Digest }
-
-// GetEpoch returns GetCheckpointCheckpoint.Epoch, and is useful for accessing the field via an interface.
-func (v *GetCheckpointCheckpoint) GetEpoch() RPC_Checkpoint_FieldsEpoch {
-	return v.RPC_Checkpoint_Fields.Epoch
-}
-
-// GetRollingGasSummary returns GetCheckpointCheckpoint.RollingGasSummary, and is useful for accessing the field via an interface.
-func (v *GetCheckpointCheckpoint) GetRollingGasSummary() RPC_Checkpoint_FieldsRollingGasSummaryGasCostSummary {
-	return v.RPC_Checkpoint_Fields.RollingGasSummary
-}
-
-// GetNetworkTotalTransactions returns GetCheckpointCheckpoint.NetworkTotalTransactions, and is useful for accessing the field via an interface.
-func (v *GetCheckpointCheckpoint) GetNetworkTotalTransactions() uint64 {
-	return v.RPC_Checkpoint_Fields.NetworkTotalTransactions
-}
-
-// GetPreviousCheckpointDigest returns GetCheckpointCheckpoint.PreviousCheckpointDigest, and is useful for accessing the field via an interface.
-func (v *GetCheckpointCheckpoint) GetPreviousCheckpointDigest() string {
-	return v.RPC_Checkpoint_Fields.PreviousCheckpointDigest
-}
-
-// GetSequenceNumber returns GetCheckpointCheckpoint.SequenceNumber, and is useful for accessing the field via an interface.
-func (v *GetCheckpointCheckpoint) GetSequenceNumber() uint64 {
-	return v.RPC_Checkpoint_Fields.SequenceNumber
-}
-
-// GetTimestamp returns GetCheckpointCheckpoint.Timestamp, and is useful for accessing the field via an interface.
-func (v *GetCheckpointCheckpoint) GetTimestamp() time.Time { return v.RPC_Checkpoint_Fields.Timestamp }
-
-// GetValidatorSignatures returns GetCheckpointCheckpoint.ValidatorSignatures, and is useful for accessing the field via an interface.
-func (v *GetCheckpointCheckpoint) GetValidatorSignatures() iotago.Base64Data {
-	return v.RPC_Checkpoint_Fields.ValidatorSignatures
-}
-
-// GetTransactionBlocks returns GetCheckpointCheckpoint.TransactionBlocks, and is useful for accessing the field via an interface.
-func (v *GetCheckpointCheckpoint) GetTransactionBlocks() RPC_Checkpoint_FieldsTransactionBlocksTransactionBlockConnection {
-	return v.RPC_Checkpoint_Fields.TransactionBlocks
-}
-
-// GetEndOfEpoch returns GetCheckpointCheckpoint.EndOfEpoch, and is useful for accessing the field via an interface.
-func (v *GetCheckpointCheckpoint) GetEndOfEpoch() RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnection {
-	return v.RPC_Checkpoint_Fields.EndOfEpoch
-}
-
-func (v *GetCheckpointCheckpoint) UnmarshalJSON(b []byte) error {
-
-	if string(b) == "null" {
-		return nil
-	}
-
-	var firstPass struct {
-		*GetCheckpointCheckpoint
-		graphql.NoUnmarshalJSON
-	}
-	firstPass.GetCheckpointCheckpoint = v
-
-	err := json.Unmarshal(b, &firstPass)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(
-		b, &v.RPC_Checkpoint_Fields)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-type __premarshalGetCheckpointCheckpoint struct {
-	Digest string `json:"digest"`
-
-	Epoch RPC_Checkpoint_FieldsEpoch `json:"epoch"`
-
-	RollingGasSummary RPC_Checkpoint_FieldsRollingGasSummaryGasCostSummary `json:"rollingGasSummary"`
-
-	NetworkTotalTransactions uint64 `json:"networkTotalTransactions"`
-
-	PreviousCheckpointDigest string `json:"previousCheckpointDigest"`
-
-	SequenceNumber uint64 `json:"sequenceNumber"`
-
-	Timestamp time.Time `json:"timestamp"`
-
-	ValidatorSignatures iotago.Base64Data `json:"validatorSignatures"`
-
-	TransactionBlocks RPC_Checkpoint_FieldsTransactionBlocksTransactionBlockConnection `json:"transactionBlocks"`
-
-	EndOfEpoch RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnection `json:"endOfEpoch"`
-}
-
-func (v *GetCheckpointCheckpoint) MarshalJSON() ([]byte, error) {
-	premarshaled, err := v.__premarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(premarshaled)
-}
-
-func (v *GetCheckpointCheckpoint) __premarshalJSON() (*__premarshalGetCheckpointCheckpoint, error) {
-	var retval __premarshalGetCheckpointCheckpoint
-
-	retval.Digest = v.RPC_Checkpoint_Fields.Digest
-	retval.Epoch = v.RPC_Checkpoint_Fields.Epoch
-	retval.RollingGasSummary = v.RPC_Checkpoint_Fields.RollingGasSummary
-	retval.NetworkTotalTransactions = v.RPC_Checkpoint_Fields.NetworkTotalTransactions
-	retval.PreviousCheckpointDigest = v.RPC_Checkpoint_Fields.PreviousCheckpointDigest
-	retval.SequenceNumber = v.RPC_Checkpoint_Fields.SequenceNumber
-	retval.Timestamp = v.RPC_Checkpoint_Fields.Timestamp
-	retval.ValidatorSignatures = v.RPC_Checkpoint_Fields.ValidatorSignatures
-	retval.TransactionBlocks = v.RPC_Checkpoint_Fields.TransactionBlocks
-	retval.EndOfEpoch = v.RPC_Checkpoint_Fields.EndOfEpoch
-	return &retval, nil
-}
-
-// GetCheckpointResponse is returned by GetCheckpoint on success.
-type GetCheckpointResponse struct {
-	// Fetch checkpoint information by sequence number or digest (defaults to
-	// the latest available checkpoint).
-	Checkpoint GetCheckpointCheckpoint `json:"checkpoint"`
-}
-
-// GetCheckpoint returns GetCheckpointResponse.Checkpoint, and is useful for accessing the field via an interface.
-func (v *GetCheckpointResponse) GetCheckpoint() GetCheckpointCheckpoint { return v.Checkpoint }
-
-// GetCheckpointsCheckpointsCheckpointConnection includes the requested fields of the GraphQL type CheckpointConnection.
-type GetCheckpointsCheckpointsCheckpointConnection struct {
-	// Information to aid in pagination.
-	PageInfo GetCheckpointsCheckpointsCheckpointConnectionPageInfo `json:"pageInfo"`
-	// A list of nodes.
-	Nodes []GetCheckpointsCheckpointsCheckpointConnectionNodesCheckpoint `json:"nodes"`
-}
-
-// GetPageInfo returns GetCheckpointsCheckpointsCheckpointConnection.PageInfo, and is useful for accessing the field via an interface.
-func (v *GetCheckpointsCheckpointsCheckpointConnection) GetPageInfo() GetCheckpointsCheckpointsCheckpointConnectionPageInfo {
-	return v.PageInfo
-}
-
-// GetNodes returns GetCheckpointsCheckpointsCheckpointConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *GetCheckpointsCheckpointsCheckpointConnection) GetNodes() []GetCheckpointsCheckpointsCheckpointConnectionNodesCheckpoint {
-	return v.Nodes
-}
-
-// GetCheckpointsCheckpointsCheckpointConnectionNodesCheckpoint includes the requested fields of the GraphQL type Checkpoint.
-// The GraphQL type's documentation follows.
-//
-// Checkpoints contain finalized transactions and are used for node
-// synchronization and global transaction ordering.
-type GetCheckpointsCheckpointsCheckpointConnectionNodesCheckpoint struct {
-	RPC_Checkpoint_Fields `json:"-"`
-}
-
-// GetDigest returns GetCheckpointsCheckpointsCheckpointConnectionNodesCheckpoint.Digest, and is useful for accessing the field via an interface.
-func (v *GetCheckpointsCheckpointsCheckpointConnectionNodesCheckpoint) GetDigest() string {
-	return v.RPC_Checkpoint_Fields.Digest
-}
-
-// GetEpoch returns GetCheckpointsCheckpointsCheckpointConnectionNodesCheckpoint.Epoch, and is useful for accessing the field via an interface.
-func (v *GetCheckpointsCheckpointsCheckpointConnectionNodesCheckpoint) GetEpoch() RPC_Checkpoint_FieldsEpoch {
-	return v.RPC_Checkpoint_Fields.Epoch
-}
-
-// GetRollingGasSummary returns GetCheckpointsCheckpointsCheckpointConnectionNodesCheckpoint.RollingGasSummary, and is useful for accessing the field via an interface.
-func (v *GetCheckpointsCheckpointsCheckpointConnectionNodesCheckpoint) GetRollingGasSummary() RPC_Checkpoint_FieldsRollingGasSummaryGasCostSummary {
-	return v.RPC_Checkpoint_Fields.RollingGasSummary
-}
-
-// GetNetworkTotalTransactions returns GetCheckpointsCheckpointsCheckpointConnectionNodesCheckpoint.NetworkTotalTransactions, and is useful for accessing the field via an interface.
-func (v *GetCheckpointsCheckpointsCheckpointConnectionNodesCheckpoint) GetNetworkTotalTransactions() uint64 {
-	return v.RPC_Checkpoint_Fields.NetworkTotalTransactions
-}
-
-// GetPreviousCheckpointDigest returns GetCheckpointsCheckpointsCheckpointConnectionNodesCheckpoint.PreviousCheckpointDigest, and is useful for accessing the field via an interface.
-func (v *GetCheckpointsCheckpointsCheckpointConnectionNodesCheckpoint) GetPreviousCheckpointDigest() string {
-	return v.RPC_Checkpoint_Fields.PreviousCheckpointDigest
-}
-
-// GetSequenceNumber returns GetCheckpointsCheckpointsCheckpointConnectionNodesCheckpoint.SequenceNumber, and is useful for accessing the field via an interface.
-func (v *GetCheckpointsCheckpointsCheckpointConnectionNodesCheckpoint) GetSequenceNumber() uint64 {
-	return v.RPC_Checkpoint_Fields.SequenceNumber
-}
-
-// GetTimestamp returns GetCheckpointsCheckpointsCheckpointConnectionNodesCheckpoint.Timestamp, and is useful for accessing the field via an interface.
-func (v *GetCheckpointsCheckpointsCheckpointConnectionNodesCheckpoint) GetTimestamp() time.Time {
-	return v.RPC_Checkpoint_Fields.Timestamp
-}
-
-// GetValidatorSignatures returns GetCheckpointsCheckpointsCheckpointConnectionNodesCheckpoint.ValidatorSignatures, and is useful for accessing the field via an interface.
-func (v *GetCheckpointsCheckpointsCheckpointConnectionNodesCheckpoint) GetValidatorSignatures() iotago.Base64Data {
-	return v.RPC_Checkpoint_Fields.ValidatorSignatures
-}
-
-// GetTransactionBlocks returns GetCheckpointsCheckpointsCheckpointConnectionNodesCheckpoint.TransactionBlocks, and is useful for accessing the field via an interface.
-func (v *GetCheckpointsCheckpointsCheckpointConnectionNodesCheckpoint) GetTransactionBlocks() RPC_Checkpoint_FieldsTransactionBlocksTransactionBlockConnection {
-	return v.RPC_Checkpoint_Fields.TransactionBlocks
-}
-
-// GetEndOfEpoch returns GetCheckpointsCheckpointsCheckpointConnectionNodesCheckpoint.EndOfEpoch, and is useful for accessing the field via an interface.
-func (v *GetCheckpointsCheckpointsCheckpointConnectionNodesCheckpoint) GetEndOfEpoch() RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnection {
-	return v.RPC_Checkpoint_Fields.EndOfEpoch
-}
-
-func (v *GetCheckpointsCheckpointsCheckpointConnectionNodesCheckpoint) UnmarshalJSON(b []byte) error {
-
-	if string(b) == "null" {
-		return nil
-	}
-
-	var firstPass struct {
-		*GetCheckpointsCheckpointsCheckpointConnectionNodesCheckpoint
-		graphql.NoUnmarshalJSON
-	}
-	firstPass.GetCheckpointsCheckpointsCheckpointConnectionNodesCheckpoint = v
-
-	err := json.Unmarshal(b, &firstPass)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(
-		b, &v.RPC_Checkpoint_Fields)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-type __premarshalGetCheckpointsCheckpointsCheckpointConnectionNodesCheckpoint struct {
-	Digest string `json:"digest"`
-
-	Epoch RPC_Checkpoint_FieldsEpoch `json:"epoch"`
-
-	RollingGasSummary RPC_Checkpoint_FieldsRollingGasSummaryGasCostSummary `json:"rollingGasSummary"`
-
-	NetworkTotalTransactions uint64 `json:"networkTotalTransactions"`
-
-	PreviousCheckpointDigest string `json:"previousCheckpointDigest"`
-
-	SequenceNumber uint64 `json:"sequenceNumber"`
-
-	Timestamp time.Time `json:"timestamp"`
-
-	ValidatorSignatures iotago.Base64Data `json:"validatorSignatures"`
-
-	TransactionBlocks RPC_Checkpoint_FieldsTransactionBlocksTransactionBlockConnection `json:"transactionBlocks"`
-
-	EndOfEpoch RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnection `json:"endOfEpoch"`
-}
-
-func (v *GetCheckpointsCheckpointsCheckpointConnectionNodesCheckpoint) MarshalJSON() ([]byte, error) {
-	premarshaled, err := v.__premarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(premarshaled)
-}
-
-func (v *GetCheckpointsCheckpointsCheckpointConnectionNodesCheckpoint) __premarshalJSON() (*__premarshalGetCheckpointsCheckpointsCheckpointConnectionNodesCheckpoint, error) {
-	var retval __premarshalGetCheckpointsCheckpointsCheckpointConnectionNodesCheckpoint
-
-	retval.Digest = v.RPC_Checkpoint_Fields.Digest
-	retval.Epoch = v.RPC_Checkpoint_Fields.Epoch
-	retval.RollingGasSummary = v.RPC_Checkpoint_Fields.RollingGasSummary
-	retval.NetworkTotalTransactions = v.RPC_Checkpoint_Fields.NetworkTotalTransactions
-	retval.PreviousCheckpointDigest = v.RPC_Checkpoint_Fields.PreviousCheckpointDigest
-	retval.SequenceNumber = v.RPC_Checkpoint_Fields.SequenceNumber
-	retval.Timestamp = v.RPC_Checkpoint_Fields.Timestamp
-	retval.ValidatorSignatures = v.RPC_Checkpoint_Fields.ValidatorSignatures
-	retval.TransactionBlocks = v.RPC_Checkpoint_Fields.TransactionBlocks
-	retval.EndOfEpoch = v.RPC_Checkpoint_Fields.EndOfEpoch
-	return &retval, nil
-}
-
-// GetCheckpointsCheckpointsCheckpointConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
-// The GraphQL type's documentation follows.
-//
-// Information about pagination in a connection
-type GetCheckpointsCheckpointsCheckpointConnectionPageInfo struct {
-	// When paginating backwards, the cursor to continue.
-	StartCursor string `json:"startCursor"`
-	// When paginating forwards, the cursor to continue.
-	EndCursor string `json:"endCursor"`
-	// When paginating forwards, are there more items?
-	HasNextPage bool `json:"hasNextPage"`
-	// When paginating backwards, are there more items?
-	HasPreviousPage bool `json:"hasPreviousPage"`
-}
-
-// GetStartCursor returns GetCheckpointsCheckpointsCheckpointConnectionPageInfo.StartCursor, and is useful for accessing the field via an interface.
-func (v *GetCheckpointsCheckpointsCheckpointConnectionPageInfo) GetStartCursor() string {
-	return v.StartCursor
-}
-
-// GetEndCursor returns GetCheckpointsCheckpointsCheckpointConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
-func (v *GetCheckpointsCheckpointsCheckpointConnectionPageInfo) GetEndCursor() string {
-	return v.EndCursor
-}
-
-// GetHasNextPage returns GetCheckpointsCheckpointsCheckpointConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
-func (v *GetCheckpointsCheckpointsCheckpointConnectionPageInfo) GetHasNextPage() bool {
-	return v.HasNextPage
-}
-
-// GetHasPreviousPage returns GetCheckpointsCheckpointsCheckpointConnectionPageInfo.HasPreviousPage, and is useful for accessing the field via an interface.
-func (v *GetCheckpointsCheckpointsCheckpointConnectionPageInfo) GetHasPreviousPage() bool {
-	return v.HasPreviousPage
-}
-
-// GetCheckpointsResponse is returned by GetCheckpoints on success.
-type GetCheckpointsResponse struct {
-	// The checkpoints that exist in the network.
-	Checkpoints GetCheckpointsCheckpointsCheckpointConnection `json:"checkpoints"`
-}
-
-// GetCheckpoints returns GetCheckpointsResponse.Checkpoints, and is useful for accessing the field via an interface.
-func (v *GetCheckpointsResponse) GetCheckpoints() GetCheckpointsCheckpointsCheckpointConnection {
-	return v.Checkpoints
-}
-
 // GetCoinMetadataCoinMetadata includes the requested fields of the GraphQL type CoinMetadata.
 // The GraphQL type's documentation follows.
 //
@@ -1634,522 +1285,6 @@ type GetCoinsResponse struct {
 
 // GetAddress returns GetCoinsResponse.Address, and is useful for accessing the field via an interface.
 func (v *GetCoinsResponse) GetAddress() GetCoinsAddress { return v.Address }
-
-// GetCommitteeInfoEpoch includes the requested fields of the GraphQL type Epoch.
-// The GraphQL type's documentation follows.
-//
-// Operation of the IOTA network is temporally partitioned into non-overlapping
-// epochs, and the network aims to keep epochs roughly the same duration as
-// each other. During a particular epoch the following data is fixed:
-//
-// - the protocol version
-// - the reference gas price
-// - the set of participating validators
-type GetCommitteeInfoEpoch struct {
-	// The epoch's id as a sequence number that starts at 0 and is incremented
-	// by one at every epoch change.
-	EpochId uint64 `json:"epochId"`
-	// Validator related properties, including the active validators.
-	//
-	// For epochs other than the current the data provided refer to the start
-	// of the epoch.
-	ValidatorSet GetCommitteeInfoEpochValidatorSet `json:"validatorSet"`
-}
-
-// GetEpochId returns GetCommitteeInfoEpoch.EpochId, and is useful for accessing the field via an interface.
-func (v *GetCommitteeInfoEpoch) GetEpochId() uint64 { return v.EpochId }
-
-// GetValidatorSet returns GetCommitteeInfoEpoch.ValidatorSet, and is useful for accessing the field via an interface.
-func (v *GetCommitteeInfoEpoch) GetValidatorSet() GetCommitteeInfoEpochValidatorSet {
-	return v.ValidatorSet
-}
-
-// GetCommitteeInfoEpochValidatorSet includes the requested fields of the GraphQL type ValidatorSet.
-// The GraphQL type's documentation follows.
-//
-// Representation of `0x3::validator_set::ValidatorSet`.
-type GetCommitteeInfoEpochValidatorSet struct {
-	// The current set of active validators.
-	ActiveValidators GetCommitteeInfoEpochValidatorSetActiveValidatorsValidatorConnection `json:"activeValidators"`
-}
-
-// GetActiveValidators returns GetCommitteeInfoEpochValidatorSet.ActiveValidators, and is useful for accessing the field via an interface.
-func (v *GetCommitteeInfoEpochValidatorSet) GetActiveValidators() GetCommitteeInfoEpochValidatorSetActiveValidatorsValidatorConnection {
-	return v.ActiveValidators
-}
-
-// GetCommitteeInfoEpochValidatorSetActiveValidatorsValidatorConnection includes the requested fields of the GraphQL type ValidatorConnection.
-type GetCommitteeInfoEpochValidatorSetActiveValidatorsValidatorConnection struct {
-	// Information to aid in pagination.
-	PageInfo GetCommitteeInfoEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo `json:"pageInfo"`
-	// A list of nodes.
-	Nodes []GetCommitteeInfoEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator `json:"nodes"`
-}
-
-// GetPageInfo returns GetCommitteeInfoEpochValidatorSetActiveValidatorsValidatorConnection.PageInfo, and is useful for accessing the field via an interface.
-func (v *GetCommitteeInfoEpochValidatorSetActiveValidatorsValidatorConnection) GetPageInfo() GetCommitteeInfoEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo {
-	return v.PageInfo
-}
-
-// GetNodes returns GetCommitteeInfoEpochValidatorSetActiveValidatorsValidatorConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *GetCommitteeInfoEpochValidatorSetActiveValidatorsValidatorConnection) GetNodes() []GetCommitteeInfoEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator {
-	return v.Nodes
-}
-
-// GetCommitteeInfoEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator includes the requested fields of the GraphQL type Validator.
-type GetCommitteeInfoEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator struct {
-	// Validator's set of credentials such as public keys, network addresses
-	// and others.
-	Credentials GetCommitteeInfoEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidatorCredentials `json:"credentials"`
-	// The voting power of this validator in basis points (e.g., 100 = 1%
-	// voting power).
-	VotingPower int `json:"votingPower"`
-}
-
-// GetCredentials returns GetCommitteeInfoEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.Credentials, and is useful for accessing the field via an interface.
-func (v *GetCommitteeInfoEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetCredentials() GetCommitteeInfoEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidatorCredentials {
-	return v.Credentials
-}
-
-// GetVotingPower returns GetCommitteeInfoEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.VotingPower, and is useful for accessing the field via an interface.
-func (v *GetCommitteeInfoEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetVotingPower() int {
-	return v.VotingPower
-}
-
-// GetCommitteeInfoEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidatorCredentials includes the requested fields of the GraphQL type ValidatorCredentials.
-// The GraphQL type's documentation follows.
-//
-// The credentials related fields associated with a validator.
-type GetCommitteeInfoEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidatorCredentials struct {
-	ProtocolPubKey iotago.Base64Data `json:"protocolPubKey"`
-}
-
-// GetProtocolPubKey returns GetCommitteeInfoEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidatorCredentials.ProtocolPubKey, and is useful for accessing the field via an interface.
-func (v *GetCommitteeInfoEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidatorCredentials) GetProtocolPubKey() iotago.Base64Data {
-	return v.ProtocolPubKey
-}
-
-// GetCommitteeInfoEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
-// The GraphQL type's documentation follows.
-//
-// Information about pagination in a connection
-type GetCommitteeInfoEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo struct {
-	// When paginating forwards, are there more items?
-	HasNextPage bool `json:"hasNextPage"`
-	// When paginating forwards, the cursor to continue.
-	EndCursor string `json:"endCursor"`
-}
-
-// GetHasNextPage returns GetCommitteeInfoEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
-func (v *GetCommitteeInfoEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo) GetHasNextPage() bool {
-	return v.HasNextPage
-}
-
-// GetEndCursor returns GetCommitteeInfoEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
-func (v *GetCommitteeInfoEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo) GetEndCursor() string {
-	return v.EndCursor
-}
-
-// GetCommitteeInfoResponse is returned by GetCommitteeInfo on success.
-type GetCommitteeInfoResponse struct {
-	// Fetch epoch information by ID (defaults to the latest epoch).
-	Epoch GetCommitteeInfoEpoch `json:"epoch"`
-}
-
-// GetEpoch returns GetCommitteeInfoResponse.Epoch, and is useful for accessing the field via an interface.
-func (v *GetCommitteeInfoResponse) GetEpoch() GetCommitteeInfoEpoch { return v.Epoch }
-
-// GetCurrentEpochEpoch includes the requested fields of the GraphQL type Epoch.
-// The GraphQL type's documentation follows.
-//
-// Operation of the IOTA network is temporally partitioned into non-overlapping
-// epochs, and the network aims to keep epochs roughly the same duration as
-// each other. During a particular epoch the following data is fixed:
-//
-// - the protocol version
-// - the reference gas price
-// - the set of participating validators
-type GetCurrentEpochEpoch struct {
-	// The epoch's id as a sequence number that starts at 0 and is incremented
-	// by one at every epoch change.
-	EpochId uint64 `json:"epochId"`
-	// Validator related properties, including the active validators.
-	//
-	// For epochs other than the current the data provided refer to the start
-	// of the epoch.
-	ValidatorSet GetCurrentEpochEpochValidatorSet `json:"validatorSet"`
-	// The total number of transaction blocks in this epoch.
-	TotalTransactions uint64 `json:"totalTransactions"`
-	// The epoch's corresponding checkpoints.
-	FirstCheckpoint GetCurrentEpochEpochFirstCheckpointCheckpointConnection `json:"firstCheckpoint"`
-	// The epoch's starting timestamp.
-	StartTimestamp time.Time `json:"startTimestamp"`
-	// The epoch's ending timestamp.
-	EndTimestamp time.Time `json:"endTimestamp"`
-	// The minimum gas price that a quorum of validators are guaranteed to sign
-	// a transaction for.
-	ReferenceGasPrice iotajsonrpc.BigInt `json:"referenceGasPrice"`
-}
-
-// GetEpochId returns GetCurrentEpochEpoch.EpochId, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpoch) GetEpochId() uint64 { return v.EpochId }
-
-// GetValidatorSet returns GetCurrentEpochEpoch.ValidatorSet, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpoch) GetValidatorSet() GetCurrentEpochEpochValidatorSet {
-	return v.ValidatorSet
-}
-
-// GetTotalTransactions returns GetCurrentEpochEpoch.TotalTransactions, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpoch) GetTotalTransactions() uint64 { return v.TotalTransactions }
-
-// GetFirstCheckpoint returns GetCurrentEpochEpoch.FirstCheckpoint, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpoch) GetFirstCheckpoint() GetCurrentEpochEpochFirstCheckpointCheckpointConnection {
-	return v.FirstCheckpoint
-}
-
-// GetStartTimestamp returns GetCurrentEpochEpoch.StartTimestamp, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpoch) GetStartTimestamp() time.Time { return v.StartTimestamp }
-
-// GetEndTimestamp returns GetCurrentEpochEpoch.EndTimestamp, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpoch) GetEndTimestamp() time.Time { return v.EndTimestamp }
-
-// GetReferenceGasPrice returns GetCurrentEpochEpoch.ReferenceGasPrice, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpoch) GetReferenceGasPrice() iotajsonrpc.BigInt { return v.ReferenceGasPrice }
-
-// GetCurrentEpochEpochFirstCheckpointCheckpointConnection includes the requested fields of the GraphQL type CheckpointConnection.
-type GetCurrentEpochEpochFirstCheckpointCheckpointConnection struct {
-	// A list of nodes.
-	Nodes []GetCurrentEpochEpochFirstCheckpointCheckpointConnectionNodesCheckpoint `json:"nodes"`
-}
-
-// GetNodes returns GetCurrentEpochEpochFirstCheckpointCheckpointConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpochFirstCheckpointCheckpointConnection) GetNodes() []GetCurrentEpochEpochFirstCheckpointCheckpointConnectionNodesCheckpoint {
-	return v.Nodes
-}
-
-// GetCurrentEpochEpochFirstCheckpointCheckpointConnectionNodesCheckpoint includes the requested fields of the GraphQL type Checkpoint.
-// The GraphQL type's documentation follows.
-//
-// Checkpoints contain finalized transactions and are used for node
-// synchronization and global transaction ordering.
-type GetCurrentEpochEpochFirstCheckpointCheckpointConnectionNodesCheckpoint struct {
-	// This checkpoint's position in the total order of finalized checkpoints,
-	// agreed upon by consensus.
-	SequenceNumber uint64 `json:"sequenceNumber"`
-}
-
-// GetSequenceNumber returns GetCurrentEpochEpochFirstCheckpointCheckpointConnectionNodesCheckpoint.SequenceNumber, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpochFirstCheckpointCheckpointConnectionNodesCheckpoint) GetSequenceNumber() uint64 {
-	return v.SequenceNumber
-}
-
-// GetCurrentEpochEpochValidatorSet includes the requested fields of the GraphQL type ValidatorSet.
-// The GraphQL type's documentation follows.
-//
-// Representation of `0x3::validator_set::ValidatorSet`.
-type GetCurrentEpochEpochValidatorSet struct {
-	// The current set of active validators.
-	ActiveValidators GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnection `json:"activeValidators"`
-}
-
-// GetActiveValidators returns GetCurrentEpochEpochValidatorSet.ActiveValidators, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpochValidatorSet) GetActiveValidators() GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnection {
-	return v.ActiveValidators
-}
-
-// GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnection includes the requested fields of the GraphQL type ValidatorConnection.
-type GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnection struct {
-	// Information to aid in pagination.
-	PageInfo GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo `json:"pageInfo"`
-	// A list of nodes.
-	Nodes []GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator `json:"nodes"`
-}
-
-// GetPageInfo returns GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnection.PageInfo, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnection) GetPageInfo() GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo {
-	return v.PageInfo
-}
-
-// GetNodes returns GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnection) GetNodes() []GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator {
-	return v.Nodes
-}
-
-// GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator includes the requested fields of the GraphQL type Validator.
-type GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator struct {
-	RPC_VALIDATOR_FIELDS `json:"-"`
-}
-
-// GetAtRisk returns GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.AtRisk, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetAtRisk() uint64 {
-	return v.RPC_VALIDATOR_FIELDS.AtRisk
-}
-
-// GetCommissionRate returns GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.CommissionRate, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetCommissionRate() int {
-	return v.RPC_VALIDATOR_FIELDS.CommissionRate
-}
-
-// GetExchangeRatesSize returns GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.ExchangeRatesSize, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetExchangeRatesSize() uint64 {
-	return v.RPC_VALIDATOR_FIELDS.ExchangeRatesSize
-}
-
-// GetExchangeRates returns GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.ExchangeRates, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetExchangeRates() RPC_VALIDATOR_FIELDSExchangeRatesMoveObject {
-	return v.RPC_VALIDATOR_FIELDS.ExchangeRates
-}
-
-// GetDescription returns GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.Description, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetDescription() string {
-	return v.RPC_VALIDATOR_FIELDS.Description
-}
-
-// GetGasPrice returns GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.GasPrice, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetGasPrice() iotajsonrpc.BigInt {
-	return v.RPC_VALIDATOR_FIELDS.GasPrice
-}
-
-// GetImageUrl returns GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.ImageUrl, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetImageUrl() string {
-	return v.RPC_VALIDATOR_FIELDS.ImageUrl
-}
-
-// GetName returns GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.Name, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetName() string {
-	return v.RPC_VALIDATOR_FIELDS.Name
-}
-
-// GetCredentials returns GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.Credentials, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetCredentials() RPC_VALIDATOR_FIELDSCredentialsValidatorCredentials {
-	return v.RPC_VALIDATOR_FIELDS.Credentials
-}
-
-// GetNextEpochCommissionRate returns GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.NextEpochCommissionRate, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetNextEpochCommissionRate() int {
-	return v.RPC_VALIDATOR_FIELDS.NextEpochCommissionRate
-}
-
-// GetNextEpochGasPrice returns GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.NextEpochGasPrice, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetNextEpochGasPrice() iotajsonrpc.BigInt {
-	return v.RPC_VALIDATOR_FIELDS.NextEpochGasPrice
-}
-
-// GetNextEpochCredentials returns GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.NextEpochCredentials, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetNextEpochCredentials() RPC_VALIDATOR_FIELDSNextEpochCredentialsValidatorCredentials {
-	return v.RPC_VALIDATOR_FIELDS.NextEpochCredentials
-}
-
-// GetNextEpochStake returns GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.NextEpochStake, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetNextEpochStake() iotajsonrpc.BigInt {
-	return v.RPC_VALIDATOR_FIELDS.NextEpochStake
-}
-
-// GetOperationCap returns GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.OperationCap, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetOperationCap() RPC_VALIDATOR_FIELDSOperationCapMoveObject {
-	return v.RPC_VALIDATOR_FIELDS.OperationCap
-}
-
-// GetPendingPoolTokenWithdraw returns GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.PendingPoolTokenWithdraw, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetPendingPoolTokenWithdraw() iotajsonrpc.BigInt {
-	return v.RPC_VALIDATOR_FIELDS.PendingPoolTokenWithdraw
-}
-
-// GetPendingStake returns GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.PendingStake, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetPendingStake() iotajsonrpc.BigInt {
-	return v.RPC_VALIDATOR_FIELDS.PendingStake
-}
-
-// GetPendingTotalIotaWithdraw returns GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.PendingTotalIotaWithdraw, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetPendingTotalIotaWithdraw() iotajsonrpc.BigInt {
-	return v.RPC_VALIDATOR_FIELDS.PendingTotalIotaWithdraw
-}
-
-// GetPoolTokenBalance returns GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.PoolTokenBalance, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetPoolTokenBalance() iotajsonrpc.BigInt {
-	return v.RPC_VALIDATOR_FIELDS.PoolTokenBalance
-}
-
-// GetProjectUrl returns GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.ProjectUrl, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetProjectUrl() string {
-	return v.RPC_VALIDATOR_FIELDS.ProjectUrl
-}
-
-// GetRewardsPool returns GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.RewardsPool, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetRewardsPool() iotajsonrpc.BigInt {
-	return v.RPC_VALIDATOR_FIELDS.RewardsPool
-}
-
-// GetStakingPool returns GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.StakingPool, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetStakingPool() RPC_VALIDATOR_FIELDSStakingPoolMoveObject {
-	return v.RPC_VALIDATOR_FIELDS.StakingPool
-}
-
-// GetStakingPoolActivationEpoch returns GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.StakingPoolActivationEpoch, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetStakingPoolActivationEpoch() uint64 {
-	return v.RPC_VALIDATOR_FIELDS.StakingPoolActivationEpoch
-}
-
-// GetStakingPoolIotaBalance returns GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.StakingPoolIotaBalance, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetStakingPoolIotaBalance() iotajsonrpc.BigInt {
-	return v.RPC_VALIDATOR_FIELDS.StakingPoolIotaBalance
-}
-
-// GetAddress returns GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.Address, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetAddress() RPC_VALIDATOR_FIELDSAddress {
-	return v.RPC_VALIDATOR_FIELDS.Address
-}
-
-// GetVotingPower returns GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.VotingPower, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetVotingPower() int {
-	return v.RPC_VALIDATOR_FIELDS.VotingPower
-}
-
-func (v *GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) UnmarshalJSON(b []byte) error {
-
-	if string(b) == "null" {
-		return nil
-	}
-
-	var firstPass struct {
-		*GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator
-		graphql.NoUnmarshalJSON
-	}
-	firstPass.GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator = v
-
-	err := json.Unmarshal(b, &firstPass)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(
-		b, &v.RPC_VALIDATOR_FIELDS)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-type __premarshalGetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator struct {
-	AtRisk uint64 `json:"atRisk"`
-
-	CommissionRate int `json:"commissionRate"`
-
-	ExchangeRatesSize uint64 `json:"exchangeRatesSize"`
-
-	ExchangeRates RPC_VALIDATOR_FIELDSExchangeRatesMoveObject `json:"exchangeRates"`
-
-	Description string `json:"description"`
-
-	GasPrice iotajsonrpc.BigInt `json:"gasPrice"`
-
-	ImageUrl string `json:"imageUrl"`
-
-	Name string `json:"name"`
-
-	Credentials RPC_VALIDATOR_FIELDSCredentialsValidatorCredentials `json:"credentials"`
-
-	NextEpochCommissionRate int `json:"nextEpochCommissionRate"`
-
-	NextEpochGasPrice iotajsonrpc.BigInt `json:"nextEpochGasPrice"`
-
-	NextEpochCredentials RPC_VALIDATOR_FIELDSNextEpochCredentialsValidatorCredentials `json:"nextEpochCredentials"`
-
-	NextEpochStake iotajsonrpc.BigInt `json:"nextEpochStake"`
-
-	OperationCap RPC_VALIDATOR_FIELDSOperationCapMoveObject `json:"operationCap"`
-
-	PendingPoolTokenWithdraw iotajsonrpc.BigInt `json:"pendingPoolTokenWithdraw"`
-
-	PendingStake iotajsonrpc.BigInt `json:"pendingStake"`
-
-	PendingTotalIotaWithdraw iotajsonrpc.BigInt `json:"pendingTotalIotaWithdraw"`
-
-	PoolTokenBalance iotajsonrpc.BigInt `json:"poolTokenBalance"`
-
-	ProjectUrl string `json:"projectUrl"`
-
-	RewardsPool iotajsonrpc.BigInt `json:"rewardsPool"`
-
-	StakingPool RPC_VALIDATOR_FIELDSStakingPoolMoveObject `json:"stakingPool"`
-
-	StakingPoolActivationEpoch uint64 `json:"stakingPoolActivationEpoch"`
-
-	StakingPoolIotaBalance iotajsonrpc.BigInt `json:"stakingPoolIotaBalance"`
-
-	Address RPC_VALIDATOR_FIELDSAddress `json:"address"`
-
-	VotingPower int `json:"votingPower"`
-}
-
-func (v *GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) MarshalJSON() ([]byte, error) {
-	premarshaled, err := v.__premarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(premarshaled)
-}
-
-func (v *GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) __premarshalJSON() (*__premarshalGetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator, error) {
-	var retval __premarshalGetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator
-
-	retval.AtRisk = v.RPC_VALIDATOR_FIELDS.AtRisk
-	retval.CommissionRate = v.RPC_VALIDATOR_FIELDS.CommissionRate
-	retval.ExchangeRatesSize = v.RPC_VALIDATOR_FIELDS.ExchangeRatesSize
-	retval.ExchangeRates = v.RPC_VALIDATOR_FIELDS.ExchangeRates
-	retval.Description = v.RPC_VALIDATOR_FIELDS.Description
-	retval.GasPrice = v.RPC_VALIDATOR_FIELDS.GasPrice
-	retval.ImageUrl = v.RPC_VALIDATOR_FIELDS.ImageUrl
-	retval.Name = v.RPC_VALIDATOR_FIELDS.Name
-	retval.Credentials = v.RPC_VALIDATOR_FIELDS.Credentials
-	retval.NextEpochCommissionRate = v.RPC_VALIDATOR_FIELDS.NextEpochCommissionRate
-	retval.NextEpochGasPrice = v.RPC_VALIDATOR_FIELDS.NextEpochGasPrice
-	retval.NextEpochCredentials = v.RPC_VALIDATOR_FIELDS.NextEpochCredentials
-	retval.NextEpochStake = v.RPC_VALIDATOR_FIELDS.NextEpochStake
-	retval.OperationCap = v.RPC_VALIDATOR_FIELDS.OperationCap
-	retval.PendingPoolTokenWithdraw = v.RPC_VALIDATOR_FIELDS.PendingPoolTokenWithdraw
-	retval.PendingStake = v.RPC_VALIDATOR_FIELDS.PendingStake
-	retval.PendingTotalIotaWithdraw = v.RPC_VALIDATOR_FIELDS.PendingTotalIotaWithdraw
-	retval.PoolTokenBalance = v.RPC_VALIDATOR_FIELDS.PoolTokenBalance
-	retval.ProjectUrl = v.RPC_VALIDATOR_FIELDS.ProjectUrl
-	retval.RewardsPool = v.RPC_VALIDATOR_FIELDS.RewardsPool
-	retval.StakingPool = v.RPC_VALIDATOR_FIELDS.StakingPool
-	retval.StakingPoolActivationEpoch = v.RPC_VALIDATOR_FIELDS.StakingPoolActivationEpoch
-	retval.StakingPoolIotaBalance = v.RPC_VALIDATOR_FIELDS.StakingPoolIotaBalance
-	retval.Address = v.RPC_VALIDATOR_FIELDS.Address
-	retval.VotingPower = v.RPC_VALIDATOR_FIELDS.VotingPower
-	return &retval, nil
-}
-
-// GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
-// The GraphQL type's documentation follows.
-//
-// Information about pagination in a connection
-type GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo struct {
-	// When paginating forwards, are there more items?
-	HasNextPage bool `json:"hasNextPage"`
-	// When paginating forwards, the cursor to continue.
-	EndCursor string `json:"endCursor"`
-}
-
-// GetHasNextPage returns GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo) GetHasNextPage() bool {
-	return v.HasNextPage
-}
-
-// GetEndCursor returns GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo) GetEndCursor() string {
-	return v.EndCursor
-}
-
-// GetCurrentEpochResponse is returned by GetCurrentEpoch on success.
-type GetCurrentEpochResponse struct {
-	// Fetch epoch information by ID (defaults to the latest epoch).
-	Epoch GetCurrentEpochEpoch `json:"epoch"`
-}
-
-// GetEpoch returns GetCurrentEpochResponse.Epoch, and is useful for accessing the field via an interface.
-func (v *GetCurrentEpochResponse) GetEpoch() GetCurrentEpochEpoch { return v.Epoch }
 
 // GetDynamicFieldsOwner includes the requested fields of the GraphQL type Owner.
 // The GraphQL type's documentation follows.
@@ -2609,34 +1744,6 @@ type GetDynamicFieldsResponse struct {
 // GetOwner returns GetDynamicFieldsResponse.Owner, and is useful for accessing the field via an interface.
 func (v *GetDynamicFieldsResponse) GetOwner() GetDynamicFieldsOwner { return v.Owner }
 
-// GetLatestCheckpointSequenceNumberCheckpoint includes the requested fields of the GraphQL type Checkpoint.
-// The GraphQL type's documentation follows.
-//
-// Checkpoints contain finalized transactions and are used for node
-// synchronization and global transaction ordering.
-type GetLatestCheckpointSequenceNumberCheckpoint struct {
-	// This checkpoint's position in the total order of finalized checkpoints,
-	// agreed upon by consensus.
-	SequenceNumber uint64 `json:"sequenceNumber"`
-}
-
-// GetSequenceNumber returns GetLatestCheckpointSequenceNumberCheckpoint.SequenceNumber, and is useful for accessing the field via an interface.
-func (v *GetLatestCheckpointSequenceNumberCheckpoint) GetSequenceNumber() uint64 {
-	return v.SequenceNumber
-}
-
-// GetLatestCheckpointSequenceNumberResponse is returned by GetLatestCheckpointSequenceNumber on success.
-type GetLatestCheckpointSequenceNumberResponse struct {
-	// Fetch checkpoint information by sequence number or digest (defaults to
-	// the latest available checkpoint).
-	Checkpoint GetLatestCheckpointSequenceNumberCheckpoint `json:"checkpoint"`
-}
-
-// GetCheckpoint returns GetLatestCheckpointSequenceNumberResponse.Checkpoint, and is useful for accessing the field via an interface.
-func (v *GetLatestCheckpointSequenceNumberResponse) GetCheckpoint() GetLatestCheckpointSequenceNumberCheckpoint {
-	return v.Checkpoint
-}
-
 // GetLatestIotaSystemStateEpoch includes the requested fields of the GraphQL type Epoch.
 // The GraphQL type's documentation follows.
 //
@@ -2985,264 +2092,11 @@ func (v *GetLatestIotaSystemStateEpochValidatorSet) GetInactivePoolsId() iotago.
 type GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnection struct {
 	// Information to aid in pagination.
 	PageInfo GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo `json:"pageInfo"`
-	// A list of nodes.
-	Nodes []GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator `json:"nodes"`
 }
 
 // GetPageInfo returns GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnection.PageInfo, and is useful for accessing the field via an interface.
 func (v *GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnection) GetPageInfo() GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo {
 	return v.PageInfo
-}
-
-// GetNodes returns GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnection) GetNodes() []GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator {
-	return v.Nodes
-}
-
-// GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator includes the requested fields of the GraphQL type Validator.
-type GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator struct {
-	RPC_VALIDATOR_FIELDS `json:"-"`
-}
-
-// GetAtRisk returns GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.AtRisk, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetAtRisk() uint64 {
-	return v.RPC_VALIDATOR_FIELDS.AtRisk
-}
-
-// GetCommissionRate returns GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.CommissionRate, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetCommissionRate() int {
-	return v.RPC_VALIDATOR_FIELDS.CommissionRate
-}
-
-// GetExchangeRatesSize returns GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.ExchangeRatesSize, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetExchangeRatesSize() uint64 {
-	return v.RPC_VALIDATOR_FIELDS.ExchangeRatesSize
-}
-
-// GetExchangeRates returns GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.ExchangeRates, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetExchangeRates() RPC_VALIDATOR_FIELDSExchangeRatesMoveObject {
-	return v.RPC_VALIDATOR_FIELDS.ExchangeRates
-}
-
-// GetDescription returns GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.Description, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetDescription() string {
-	return v.RPC_VALIDATOR_FIELDS.Description
-}
-
-// GetGasPrice returns GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.GasPrice, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetGasPrice() iotajsonrpc.BigInt {
-	return v.RPC_VALIDATOR_FIELDS.GasPrice
-}
-
-// GetImageUrl returns GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.ImageUrl, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetImageUrl() string {
-	return v.RPC_VALIDATOR_FIELDS.ImageUrl
-}
-
-// GetName returns GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.Name, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetName() string {
-	return v.RPC_VALIDATOR_FIELDS.Name
-}
-
-// GetCredentials returns GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.Credentials, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetCredentials() RPC_VALIDATOR_FIELDSCredentialsValidatorCredentials {
-	return v.RPC_VALIDATOR_FIELDS.Credentials
-}
-
-// GetNextEpochCommissionRate returns GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.NextEpochCommissionRate, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetNextEpochCommissionRate() int {
-	return v.RPC_VALIDATOR_FIELDS.NextEpochCommissionRate
-}
-
-// GetNextEpochGasPrice returns GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.NextEpochGasPrice, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetNextEpochGasPrice() iotajsonrpc.BigInt {
-	return v.RPC_VALIDATOR_FIELDS.NextEpochGasPrice
-}
-
-// GetNextEpochCredentials returns GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.NextEpochCredentials, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetNextEpochCredentials() RPC_VALIDATOR_FIELDSNextEpochCredentialsValidatorCredentials {
-	return v.RPC_VALIDATOR_FIELDS.NextEpochCredentials
-}
-
-// GetNextEpochStake returns GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.NextEpochStake, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetNextEpochStake() iotajsonrpc.BigInt {
-	return v.RPC_VALIDATOR_FIELDS.NextEpochStake
-}
-
-// GetOperationCap returns GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.OperationCap, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetOperationCap() RPC_VALIDATOR_FIELDSOperationCapMoveObject {
-	return v.RPC_VALIDATOR_FIELDS.OperationCap
-}
-
-// GetPendingPoolTokenWithdraw returns GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.PendingPoolTokenWithdraw, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetPendingPoolTokenWithdraw() iotajsonrpc.BigInt {
-	return v.RPC_VALIDATOR_FIELDS.PendingPoolTokenWithdraw
-}
-
-// GetPendingStake returns GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.PendingStake, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetPendingStake() iotajsonrpc.BigInt {
-	return v.RPC_VALIDATOR_FIELDS.PendingStake
-}
-
-// GetPendingTotalIotaWithdraw returns GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.PendingTotalIotaWithdraw, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetPendingTotalIotaWithdraw() iotajsonrpc.BigInt {
-	return v.RPC_VALIDATOR_FIELDS.PendingTotalIotaWithdraw
-}
-
-// GetPoolTokenBalance returns GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.PoolTokenBalance, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetPoolTokenBalance() iotajsonrpc.BigInt {
-	return v.RPC_VALIDATOR_FIELDS.PoolTokenBalance
-}
-
-// GetProjectUrl returns GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.ProjectUrl, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetProjectUrl() string {
-	return v.RPC_VALIDATOR_FIELDS.ProjectUrl
-}
-
-// GetRewardsPool returns GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.RewardsPool, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetRewardsPool() iotajsonrpc.BigInt {
-	return v.RPC_VALIDATOR_FIELDS.RewardsPool
-}
-
-// GetStakingPool returns GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.StakingPool, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetStakingPool() RPC_VALIDATOR_FIELDSStakingPoolMoveObject {
-	return v.RPC_VALIDATOR_FIELDS.StakingPool
-}
-
-// GetStakingPoolActivationEpoch returns GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.StakingPoolActivationEpoch, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetStakingPoolActivationEpoch() uint64 {
-	return v.RPC_VALIDATOR_FIELDS.StakingPoolActivationEpoch
-}
-
-// GetStakingPoolIotaBalance returns GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.StakingPoolIotaBalance, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetStakingPoolIotaBalance() iotajsonrpc.BigInt {
-	return v.RPC_VALIDATOR_FIELDS.StakingPoolIotaBalance
-}
-
-// GetAddress returns GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.Address, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetAddress() RPC_VALIDATOR_FIELDSAddress {
-	return v.RPC_VALIDATOR_FIELDS.Address
-}
-
-// GetVotingPower returns GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.VotingPower, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetVotingPower() int {
-	return v.RPC_VALIDATOR_FIELDS.VotingPower
-}
-
-func (v *GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) UnmarshalJSON(b []byte) error {
-
-	if string(b) == "null" {
-		return nil
-	}
-
-	var firstPass struct {
-		*GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator
-		graphql.NoUnmarshalJSON
-	}
-	firstPass.GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator = v
-
-	err := json.Unmarshal(b, &firstPass)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(
-		b, &v.RPC_VALIDATOR_FIELDS)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-type __premarshalGetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator struct {
-	AtRisk uint64 `json:"atRisk"`
-
-	CommissionRate int `json:"commissionRate"`
-
-	ExchangeRatesSize uint64 `json:"exchangeRatesSize"`
-
-	ExchangeRates RPC_VALIDATOR_FIELDSExchangeRatesMoveObject `json:"exchangeRates"`
-
-	Description string `json:"description"`
-
-	GasPrice iotajsonrpc.BigInt `json:"gasPrice"`
-
-	ImageUrl string `json:"imageUrl"`
-
-	Name string `json:"name"`
-
-	Credentials RPC_VALIDATOR_FIELDSCredentialsValidatorCredentials `json:"credentials"`
-
-	NextEpochCommissionRate int `json:"nextEpochCommissionRate"`
-
-	NextEpochGasPrice iotajsonrpc.BigInt `json:"nextEpochGasPrice"`
-
-	NextEpochCredentials RPC_VALIDATOR_FIELDSNextEpochCredentialsValidatorCredentials `json:"nextEpochCredentials"`
-
-	NextEpochStake iotajsonrpc.BigInt `json:"nextEpochStake"`
-
-	OperationCap RPC_VALIDATOR_FIELDSOperationCapMoveObject `json:"operationCap"`
-
-	PendingPoolTokenWithdraw iotajsonrpc.BigInt `json:"pendingPoolTokenWithdraw"`
-
-	PendingStake iotajsonrpc.BigInt `json:"pendingStake"`
-
-	PendingTotalIotaWithdraw iotajsonrpc.BigInt `json:"pendingTotalIotaWithdraw"`
-
-	PoolTokenBalance iotajsonrpc.BigInt `json:"poolTokenBalance"`
-
-	ProjectUrl string `json:"projectUrl"`
-
-	RewardsPool iotajsonrpc.BigInt `json:"rewardsPool"`
-
-	StakingPool RPC_VALIDATOR_FIELDSStakingPoolMoveObject `json:"stakingPool"`
-
-	StakingPoolActivationEpoch uint64 `json:"stakingPoolActivationEpoch"`
-
-	StakingPoolIotaBalance iotajsonrpc.BigInt `json:"stakingPoolIotaBalance"`
-
-	Address RPC_VALIDATOR_FIELDSAddress `json:"address"`
-
-	VotingPower int `json:"votingPower"`
-}
-
-func (v *GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) MarshalJSON() ([]byte, error) {
-	premarshaled, err := v.__premarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(premarshaled)
-}
-
-func (v *GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) __premarshalJSON() (*__premarshalGetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator, error) {
-	var retval __premarshalGetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator
-
-	retval.AtRisk = v.RPC_VALIDATOR_FIELDS.AtRisk
-	retval.CommissionRate = v.RPC_VALIDATOR_FIELDS.CommissionRate
-	retval.ExchangeRatesSize = v.RPC_VALIDATOR_FIELDS.ExchangeRatesSize
-	retval.ExchangeRates = v.RPC_VALIDATOR_FIELDS.ExchangeRates
-	retval.Description = v.RPC_VALIDATOR_FIELDS.Description
-	retval.GasPrice = v.RPC_VALIDATOR_FIELDS.GasPrice
-	retval.ImageUrl = v.RPC_VALIDATOR_FIELDS.ImageUrl
-	retval.Name = v.RPC_VALIDATOR_FIELDS.Name
-	retval.Credentials = v.RPC_VALIDATOR_FIELDS.Credentials
-	retval.NextEpochCommissionRate = v.RPC_VALIDATOR_FIELDS.NextEpochCommissionRate
-	retval.NextEpochGasPrice = v.RPC_VALIDATOR_FIELDS.NextEpochGasPrice
-	retval.NextEpochCredentials = v.RPC_VALIDATOR_FIELDS.NextEpochCredentials
-	retval.NextEpochStake = v.RPC_VALIDATOR_FIELDS.NextEpochStake
-	retval.OperationCap = v.RPC_VALIDATOR_FIELDS.OperationCap
-	retval.PendingPoolTokenWithdraw = v.RPC_VALIDATOR_FIELDS.PendingPoolTokenWithdraw
-	retval.PendingStake = v.RPC_VALIDATOR_FIELDS.PendingStake
-	retval.PendingTotalIotaWithdraw = v.RPC_VALIDATOR_FIELDS.PendingTotalIotaWithdraw
-	retval.PoolTokenBalance = v.RPC_VALIDATOR_FIELDS.PoolTokenBalance
-	retval.ProjectUrl = v.RPC_VALIDATOR_FIELDS.ProjectUrl
-	retval.RewardsPool = v.RPC_VALIDATOR_FIELDS.RewardsPool
-	retval.StakingPool = v.RPC_VALIDATOR_FIELDS.StakingPool
-	retval.StakingPoolActivationEpoch = v.RPC_VALIDATOR_FIELDS.StakingPoolActivationEpoch
-	retval.StakingPoolIotaBalance = v.RPC_VALIDATOR_FIELDS.StakingPoolIotaBalance
-	retval.Address = v.RPC_VALIDATOR_FIELDS.Address
-	retval.VotingPower = v.RPC_VALIDATOR_FIELDS.VotingPower
-	return &retval, nil
 }
 
 // GetLatestIotaSystemStateEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
@@ -3275,550 +2129,120 @@ type GetLatestIotaSystemStateResponse struct {
 // GetEpoch returns GetLatestIotaSystemStateResponse.Epoch, and is useful for accessing the field via an interface.
 func (v *GetLatestIotaSystemStateResponse) GetEpoch() GetLatestIotaSystemStateEpoch { return v.Epoch }
 
-// GetMoveFunctionArgTypesObject includes the requested fields of the GraphQL type Object.
+// GetObjectDynamicFieldsObject includes the requested fields of the GraphQL type Object.
 // The GraphQL type's documentation follows.
 //
 // An object in IOTA is a package (set of Move bytecode modules) or object
 // (typed data structure with fields) with additional metadata detailing its
 // id, version, transaction digest, owner field indicating how this object can
 // be accessed.
-type GetMoveFunctionArgTypesObject struct {
-	// Attempts to convert the object into a MovePackage
-	AsMovePackage GetMoveFunctionArgTypesObjectAsMovePackage `json:"asMovePackage"`
+type GetObjectDynamicFieldsObject struct {
+	// The dynamic fields and dynamic object fields on an object.
+	//
+	// Dynamic fields on wrapped objects can be accessed by using the same API
+	// under the Owner type.
+	DynamicFields GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnection `json:"dynamicFields"`
 }
 
-// GetAsMovePackage returns GetMoveFunctionArgTypesObject.AsMovePackage, and is useful for accessing the field via an interface.
-func (v *GetMoveFunctionArgTypesObject) GetAsMovePackage() GetMoveFunctionArgTypesObjectAsMovePackage {
-	return v.AsMovePackage
+// GetDynamicFields returns GetObjectDynamicFieldsObject.DynamicFields, and is useful for accessing the field via an interface.
+func (v *GetObjectDynamicFieldsObject) GetDynamicFields() GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnection {
+	return v.DynamicFields
 }
 
-// GetMoveFunctionArgTypesObjectAsMovePackage includes the requested fields of the GraphQL type MovePackage.
-// The GraphQL type's documentation follows.
-//
-// A MovePackage is a kind of Move object that represents code that has been
-// published on chain. It exposes information about its modules, type
-// definitions, functions, and dependencies.
-type GetMoveFunctionArgTypesObjectAsMovePackage struct {
-	// A representation of the module called `name` in this package, including
-	// the structs and functions it defines.
-	Module GetMoveFunctionArgTypesObjectAsMovePackageModuleMoveModule `json:"module"`
-}
-
-// GetModule returns GetMoveFunctionArgTypesObjectAsMovePackage.Module, and is useful for accessing the field via an interface.
-func (v *GetMoveFunctionArgTypesObjectAsMovePackage) GetModule() GetMoveFunctionArgTypesObjectAsMovePackageModuleMoveModule {
-	return v.Module
-}
-
-// GetMoveFunctionArgTypesObjectAsMovePackageModuleMoveModule includes the requested fields of the GraphQL type MoveModule.
-// The GraphQL type's documentation follows.
-//
-// Represents a module in Move, a library that defines struct types
-// and functions that operate on these types.
-type GetMoveFunctionArgTypesObjectAsMovePackageModuleMoveModule struct {
-	// Format version of this module's bytecode.
-	FileFormatVersion int `json:"fileFormatVersion"`
-	// Look-up the signature of a function defined in this module, by its name.
-	Function GetMoveFunctionArgTypesObjectAsMovePackageModuleMoveModuleFunctionMoveFunction `json:"function"`
-}
-
-// GetFileFormatVersion returns GetMoveFunctionArgTypesObjectAsMovePackageModuleMoveModule.FileFormatVersion, and is useful for accessing the field via an interface.
-func (v *GetMoveFunctionArgTypesObjectAsMovePackageModuleMoveModule) GetFileFormatVersion() int {
-	return v.FileFormatVersion
-}
-
-// GetFunction returns GetMoveFunctionArgTypesObjectAsMovePackageModuleMoveModule.Function, and is useful for accessing the field via an interface.
-func (v *GetMoveFunctionArgTypesObjectAsMovePackageModuleMoveModule) GetFunction() GetMoveFunctionArgTypesObjectAsMovePackageModuleMoveModuleFunctionMoveFunction {
-	return v.Function
-}
-
-// GetMoveFunctionArgTypesObjectAsMovePackageModuleMoveModuleFunctionMoveFunction includes the requested fields of the GraphQL type MoveFunction.
-// The GraphQL type's documentation follows.
-//
-// Signature of a function, defined in a Move module.
-type GetMoveFunctionArgTypesObjectAsMovePackageModuleMoveModuleFunctionMoveFunction struct {
-	// The function's parameter types.  These types can reference type
-	// parameters introduce by this function (see `typeParameters`).
-	Parameters []GetMoveFunctionArgTypesObjectAsMovePackageModuleMoveModuleFunctionMoveFunctionParametersOpenMoveType `json:"parameters"`
-}
-
-// GetParameters returns GetMoveFunctionArgTypesObjectAsMovePackageModuleMoveModuleFunctionMoveFunction.Parameters, and is useful for accessing the field via an interface.
-func (v *GetMoveFunctionArgTypesObjectAsMovePackageModuleMoveModuleFunctionMoveFunction) GetParameters() []GetMoveFunctionArgTypesObjectAsMovePackageModuleMoveModuleFunctionMoveFunctionParametersOpenMoveType {
-	return v.Parameters
-}
-
-// GetMoveFunctionArgTypesObjectAsMovePackageModuleMoveModuleFunctionMoveFunctionParametersOpenMoveType includes the requested fields of the GraphQL type OpenMoveType.
-// The GraphQL type's documentation follows.
-//
-// Represents types that could contain references or free type parameters.
-// Such types can appear as function parameters, in fields of structs, or as
-// actual type parameter.
-type GetMoveFunctionArgTypesObjectAsMovePackageModuleMoveModuleFunctionMoveFunctionParametersOpenMoveType struct {
-	// Structured representation of the type signature.
-	Signature json.RawMessage `json:"signature"`
-}
-
-// GetSignature returns GetMoveFunctionArgTypesObjectAsMovePackageModuleMoveModuleFunctionMoveFunctionParametersOpenMoveType.Signature, and is useful for accessing the field via an interface.
-func (v *GetMoveFunctionArgTypesObjectAsMovePackageModuleMoveModuleFunctionMoveFunctionParametersOpenMoveType) GetSignature() json.RawMessage {
-	return v.Signature
-}
-
-// GetMoveFunctionArgTypesResponse is returned by GetMoveFunctionArgTypes on success.
-type GetMoveFunctionArgTypesResponse struct {
-	// The object corresponding to the given address at the (optionally) given
-	// version. When no version is given, the latest version is returned.
-	Object GetMoveFunctionArgTypesObject `json:"object"`
-}
-
-// GetObject returns GetMoveFunctionArgTypesResponse.Object, and is useful for accessing the field via an interface.
-func (v *GetMoveFunctionArgTypesResponse) GetObject() GetMoveFunctionArgTypesObject { return v.Object }
-
-// GetNormalizedMoveFunctionObject includes the requested fields of the GraphQL type Object.
-// The GraphQL type's documentation follows.
-//
-// An object in IOTA is a package (set of Move bytecode modules) or object
-// (typed data structure with fields) with additional metadata detailing its
-// id, version, transaction digest, owner field indicating how this object can
-// be accessed.
-type GetNormalizedMoveFunctionObject struct {
-	Address iotago.Address `json:"address"`
-	// Attempts to convert the object into a MovePackage
-	AsMovePackage GetNormalizedMoveFunctionObjectAsMovePackage `json:"asMovePackage"`
-}
-
-// GetAddress returns GetNormalizedMoveFunctionObject.Address, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveFunctionObject) GetAddress() iotago.Address { return v.Address }
-
-// GetAsMovePackage returns GetNormalizedMoveFunctionObject.AsMovePackage, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveFunctionObject) GetAsMovePackage() GetNormalizedMoveFunctionObjectAsMovePackage {
-	return v.AsMovePackage
-}
-
-// GetNormalizedMoveFunctionObjectAsMovePackage includes the requested fields of the GraphQL type MovePackage.
-// The GraphQL type's documentation follows.
-//
-// A MovePackage is a kind of Move object that represents code that has been
-// published on chain. It exposes information about its modules, type
-// definitions, functions, and dependencies.
-type GetNormalizedMoveFunctionObjectAsMovePackage struct {
-	// A representation of the module called `name` in this package, including
-	// the structs and functions it defines.
-	Module GetNormalizedMoveFunctionObjectAsMovePackageModuleMoveModule `json:"module"`
-}
-
-// GetModule returns GetNormalizedMoveFunctionObjectAsMovePackage.Module, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveFunctionObjectAsMovePackage) GetModule() GetNormalizedMoveFunctionObjectAsMovePackageModuleMoveModule {
-	return v.Module
-}
-
-// GetNormalizedMoveFunctionObjectAsMovePackageModuleMoveModule includes the requested fields of the GraphQL type MoveModule.
-// The GraphQL type's documentation follows.
-//
-// Represents a module in Move, a library that defines struct types
-// and functions that operate on these types.
-type GetNormalizedMoveFunctionObjectAsMovePackageModuleMoveModule struct {
-	// Format version of this module's bytecode.
-	FileFormatVersion int `json:"fileFormatVersion"`
-	// Look-up the signature of a function defined in this module, by its name.
-	Function GetNormalizedMoveFunctionObjectAsMovePackageModuleMoveModuleFunctionMoveFunction `json:"function"`
-}
-
-// GetFileFormatVersion returns GetNormalizedMoveFunctionObjectAsMovePackageModuleMoveModule.FileFormatVersion, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveFunctionObjectAsMovePackageModuleMoveModule) GetFileFormatVersion() int {
-	return v.FileFormatVersion
-}
-
-// GetFunction returns GetNormalizedMoveFunctionObjectAsMovePackageModuleMoveModule.Function, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveFunctionObjectAsMovePackageModuleMoveModule) GetFunction() GetNormalizedMoveFunctionObjectAsMovePackageModuleMoveModuleFunctionMoveFunction {
-	return v.Function
-}
-
-// GetNormalizedMoveFunctionObjectAsMovePackageModuleMoveModuleFunctionMoveFunction includes the requested fields of the GraphQL type MoveFunction.
-// The GraphQL type's documentation follows.
-//
-// Signature of a function, defined in a Move module.
-type GetNormalizedMoveFunctionObjectAsMovePackageModuleMoveModuleFunctionMoveFunction struct {
-	RPC_MOVE_FUNCTION_FIELDS `json:"-"`
-}
-
-// GetName returns GetNormalizedMoveFunctionObjectAsMovePackageModuleMoveModuleFunctionMoveFunction.Name, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveFunctionObjectAsMovePackageModuleMoveModuleFunctionMoveFunction) GetName() string {
-	return v.RPC_MOVE_FUNCTION_FIELDS.Name
-}
-
-// GetVisibility returns GetNormalizedMoveFunctionObjectAsMovePackageModuleMoveModuleFunctionMoveFunction.Visibility, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveFunctionObjectAsMovePackageModuleMoveModuleFunctionMoveFunction) GetVisibility() MoveVisibility {
-	return v.RPC_MOVE_FUNCTION_FIELDS.Visibility
-}
-
-// GetIsEntry returns GetNormalizedMoveFunctionObjectAsMovePackageModuleMoveModuleFunctionMoveFunction.IsEntry, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveFunctionObjectAsMovePackageModuleMoveModuleFunctionMoveFunction) GetIsEntry() bool {
-	return v.RPC_MOVE_FUNCTION_FIELDS.IsEntry
-}
-
-// GetParameters returns GetNormalizedMoveFunctionObjectAsMovePackageModuleMoveModuleFunctionMoveFunction.Parameters, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveFunctionObjectAsMovePackageModuleMoveModuleFunctionMoveFunction) GetParameters() []RPC_MOVE_FUNCTION_FIELDSParametersOpenMoveType {
-	return v.RPC_MOVE_FUNCTION_FIELDS.Parameters
-}
-
-// GetTypeParameters returns GetNormalizedMoveFunctionObjectAsMovePackageModuleMoveModuleFunctionMoveFunction.TypeParameters, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveFunctionObjectAsMovePackageModuleMoveModuleFunctionMoveFunction) GetTypeParameters() []RPC_MOVE_FUNCTION_FIELDSTypeParametersMoveFunctionTypeParameter {
-	return v.RPC_MOVE_FUNCTION_FIELDS.TypeParameters
-}
-
-// GetReturn returns GetNormalizedMoveFunctionObjectAsMovePackageModuleMoveModuleFunctionMoveFunction.Return, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveFunctionObjectAsMovePackageModuleMoveModuleFunctionMoveFunction) GetReturn() []RPC_MOVE_FUNCTION_FIELDSReturnOpenMoveType {
-	return v.RPC_MOVE_FUNCTION_FIELDS.Return
-}
-
-func (v *GetNormalizedMoveFunctionObjectAsMovePackageModuleMoveModuleFunctionMoveFunction) UnmarshalJSON(b []byte) error {
-
-	if string(b) == "null" {
-		return nil
-	}
-
-	var firstPass struct {
-		*GetNormalizedMoveFunctionObjectAsMovePackageModuleMoveModuleFunctionMoveFunction
-		graphql.NoUnmarshalJSON
-	}
-	firstPass.GetNormalizedMoveFunctionObjectAsMovePackageModuleMoveModuleFunctionMoveFunction = v
-
-	err := json.Unmarshal(b, &firstPass)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(
-		b, &v.RPC_MOVE_FUNCTION_FIELDS)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-type __premarshalGetNormalizedMoveFunctionObjectAsMovePackageModuleMoveModuleFunctionMoveFunction struct {
-	Name string `json:"name"`
-
-	Visibility MoveVisibility `json:"visibility"`
-
-	IsEntry bool `json:"isEntry"`
-
-	Parameters []RPC_MOVE_FUNCTION_FIELDSParametersOpenMoveType `json:"parameters"`
-
-	TypeParameters []RPC_MOVE_FUNCTION_FIELDSTypeParametersMoveFunctionTypeParameter `json:"typeParameters"`
-
-	Return []RPC_MOVE_FUNCTION_FIELDSReturnOpenMoveType `json:"return"`
-}
-
-func (v *GetNormalizedMoveFunctionObjectAsMovePackageModuleMoveModuleFunctionMoveFunction) MarshalJSON() ([]byte, error) {
-	premarshaled, err := v.__premarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(premarshaled)
-}
-
-func (v *GetNormalizedMoveFunctionObjectAsMovePackageModuleMoveModuleFunctionMoveFunction) __premarshalJSON() (*__premarshalGetNormalizedMoveFunctionObjectAsMovePackageModuleMoveModuleFunctionMoveFunction, error) {
-	var retval __premarshalGetNormalizedMoveFunctionObjectAsMovePackageModuleMoveModuleFunctionMoveFunction
-
-	retval.Name = v.RPC_MOVE_FUNCTION_FIELDS.Name
-	retval.Visibility = v.RPC_MOVE_FUNCTION_FIELDS.Visibility
-	retval.IsEntry = v.RPC_MOVE_FUNCTION_FIELDS.IsEntry
-	retval.Parameters = v.RPC_MOVE_FUNCTION_FIELDS.Parameters
-	retval.TypeParameters = v.RPC_MOVE_FUNCTION_FIELDS.TypeParameters
-	retval.Return = v.RPC_MOVE_FUNCTION_FIELDS.Return
-	return &retval, nil
-}
-
-// GetNormalizedMoveFunctionResponse is returned by GetNormalizedMoveFunction on success.
-type GetNormalizedMoveFunctionResponse struct {
-	// The object corresponding to the given address at the (optionally) given
-	// version. When no version is given, the latest version is returned.
-	Object GetNormalizedMoveFunctionObject `json:"object"`
-}
-
-// GetObject returns GetNormalizedMoveFunctionResponse.Object, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveFunctionResponse) GetObject() GetNormalizedMoveFunctionObject {
-	return v.Object
-}
-
-// GetNormalizedMoveModuleObject includes the requested fields of the GraphQL type Object.
-// The GraphQL type's documentation follows.
-//
-// An object in IOTA is a package (set of Move bytecode modules) or object
-// (typed data structure with fields) with additional metadata detailing its
-// id, version, transaction digest, owner field indicating how this object can
-// be accessed.
-type GetNormalizedMoveModuleObject struct {
-	// Attempts to convert the object into a MovePackage
-	AsMovePackage GetNormalizedMoveModuleObjectAsMovePackage `json:"asMovePackage"`
-}
-
-// GetAsMovePackage returns GetNormalizedMoveModuleObject.AsMovePackage, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveModuleObject) GetAsMovePackage() GetNormalizedMoveModuleObjectAsMovePackage {
-	return v.AsMovePackage
-}
-
-// GetNormalizedMoveModuleObjectAsMovePackage includes the requested fields of the GraphQL type MovePackage.
-// The GraphQL type's documentation follows.
-//
-// A MovePackage is a kind of Move object that represents code that has been
-// published on chain. It exposes information about its modules, type
-// definitions, functions, and dependencies.
-type GetNormalizedMoveModuleObjectAsMovePackage struct {
-	// A representation of the module called `name` in this package, including
-	// the structs and functions it defines.
-	Module GetNormalizedMoveModuleObjectAsMovePackageModuleMoveModule `json:"module"`
-}
-
-// GetModule returns GetNormalizedMoveModuleObjectAsMovePackage.Module, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveModuleObjectAsMovePackage) GetModule() GetNormalizedMoveModuleObjectAsMovePackageModuleMoveModule {
-	return v.Module
-}
-
-// GetNormalizedMoveModuleObjectAsMovePackageModuleMoveModule includes the requested fields of the GraphQL type MoveModule.
-// The GraphQL type's documentation follows.
-//
-// Represents a module in Move, a library that defines struct types
-// and functions that operate on these types.
-type GetNormalizedMoveModuleObjectAsMovePackageModuleMoveModule struct {
-	RPC_MOVE_MODULE_FIELDS `json:"-"`
-}
-
-// GetName returns GetNormalizedMoveModuleObjectAsMovePackageModuleMoveModule.Name, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveModuleObjectAsMovePackageModuleMoveModule) GetName() string {
-	return v.RPC_MOVE_MODULE_FIELDS.Name
-}
-
-// GetFriends returns GetNormalizedMoveModuleObjectAsMovePackageModuleMoveModule.Friends, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveModuleObjectAsMovePackageModuleMoveModule) GetFriends() RPC_MOVE_MODULE_FIELDSFriendsMoveModuleConnection {
-	return v.RPC_MOVE_MODULE_FIELDS.Friends
-}
-
-// GetStructs returns GetNormalizedMoveModuleObjectAsMovePackageModuleMoveModule.Structs, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveModuleObjectAsMovePackageModuleMoveModule) GetStructs() RPC_MOVE_MODULE_FIELDSStructsMoveStructConnection {
-	return v.RPC_MOVE_MODULE_FIELDS.Structs
-}
-
-// GetEnums returns GetNormalizedMoveModuleObjectAsMovePackageModuleMoveModule.Enums, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveModuleObjectAsMovePackageModuleMoveModule) GetEnums() RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnection {
-	return v.RPC_MOVE_MODULE_FIELDS.Enums
-}
-
-// GetFileFormatVersion returns GetNormalizedMoveModuleObjectAsMovePackageModuleMoveModule.FileFormatVersion, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveModuleObjectAsMovePackageModuleMoveModule) GetFileFormatVersion() int {
-	return v.RPC_MOVE_MODULE_FIELDS.FileFormatVersion
-}
-
-// GetFunctions returns GetNormalizedMoveModuleObjectAsMovePackageModuleMoveModule.Functions, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveModuleObjectAsMovePackageModuleMoveModule) GetFunctions() RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnection {
-	return v.RPC_MOVE_MODULE_FIELDS.Functions
-}
-
-func (v *GetNormalizedMoveModuleObjectAsMovePackageModuleMoveModule) UnmarshalJSON(b []byte) error {
-
-	if string(b) == "null" {
-		return nil
-	}
-
-	var firstPass struct {
-		*GetNormalizedMoveModuleObjectAsMovePackageModuleMoveModule
-		graphql.NoUnmarshalJSON
-	}
-	firstPass.GetNormalizedMoveModuleObjectAsMovePackageModuleMoveModule = v
-
-	err := json.Unmarshal(b, &firstPass)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(
-		b, &v.RPC_MOVE_MODULE_FIELDS)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-type __premarshalGetNormalizedMoveModuleObjectAsMovePackageModuleMoveModule struct {
-	Name string `json:"name"`
-
-	Friends RPC_MOVE_MODULE_FIELDSFriendsMoveModuleConnection `json:"friends"`
-
-	Structs RPC_MOVE_MODULE_FIELDSStructsMoveStructConnection `json:"structs"`
-
-	Enums RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnection `json:"enums"`
-
-	FileFormatVersion int `json:"fileFormatVersion"`
-
-	Functions RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnection `json:"functions"`
-}
-
-func (v *GetNormalizedMoveModuleObjectAsMovePackageModuleMoveModule) MarshalJSON() ([]byte, error) {
-	premarshaled, err := v.__premarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(premarshaled)
-}
-
-func (v *GetNormalizedMoveModuleObjectAsMovePackageModuleMoveModule) __premarshalJSON() (*__premarshalGetNormalizedMoveModuleObjectAsMovePackageModuleMoveModule, error) {
-	var retval __premarshalGetNormalizedMoveModuleObjectAsMovePackageModuleMoveModule
-
-	retval.Name = v.RPC_MOVE_MODULE_FIELDS.Name
-	retval.Friends = v.RPC_MOVE_MODULE_FIELDS.Friends
-	retval.Structs = v.RPC_MOVE_MODULE_FIELDS.Structs
-	retval.Enums = v.RPC_MOVE_MODULE_FIELDS.Enums
-	retval.FileFormatVersion = v.RPC_MOVE_MODULE_FIELDS.FileFormatVersion
-	retval.Functions = v.RPC_MOVE_MODULE_FIELDS.Functions
-	return &retval, nil
-}
-
-// GetNormalizedMoveModuleResponse is returned by GetNormalizedMoveModule on success.
-type GetNormalizedMoveModuleResponse struct {
-	// The object corresponding to the given address at the (optionally) given
-	// version. When no version is given, the latest version is returned.
-	Object GetNormalizedMoveModuleObject `json:"object"`
-}
-
-// GetObject returns GetNormalizedMoveModuleResponse.Object, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveModuleResponse) GetObject() GetNormalizedMoveModuleObject { return v.Object }
-
-// GetNormalizedMoveModulesByPackageObject includes the requested fields of the GraphQL type Object.
-// The GraphQL type's documentation follows.
-//
-// An object in IOTA is a package (set of Move bytecode modules) or object
-// (typed data structure with fields) with additional metadata detailing its
-// id, version, transaction digest, owner field indicating how this object can
-// be accessed.
-type GetNormalizedMoveModulesByPackageObject struct {
-	// Attempts to convert the object into a MovePackage
-	AsMovePackage GetNormalizedMoveModulesByPackageObjectAsMovePackage `json:"asMovePackage"`
-}
-
-// GetAsMovePackage returns GetNormalizedMoveModulesByPackageObject.AsMovePackage, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveModulesByPackageObject) GetAsMovePackage() GetNormalizedMoveModulesByPackageObjectAsMovePackage {
-	return v.AsMovePackage
-}
-
-// GetNormalizedMoveModulesByPackageObjectAsMovePackage includes the requested fields of the GraphQL type MovePackage.
-// The GraphQL type's documentation follows.
-//
-// A MovePackage is a kind of Move object that represents code that has been
-// published on chain. It exposes information about its modules, type
-// definitions, functions, and dependencies.
-type GetNormalizedMoveModulesByPackageObjectAsMovePackage struct {
-	Address iotago.Address `json:"address"`
-	// Paginate through the MoveModules defined in this package.
-	Modules GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnection `json:"modules"`
-}
-
-// GetAddress returns GetNormalizedMoveModulesByPackageObjectAsMovePackage.Address, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveModulesByPackageObjectAsMovePackage) GetAddress() iotago.Address {
-	return v.Address
-}
-
-// GetModules returns GetNormalizedMoveModulesByPackageObjectAsMovePackage.Modules, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveModulesByPackageObjectAsMovePackage) GetModules() GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnection {
-	return v.Modules
-}
-
-// GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnection includes the requested fields of the GraphQL type MoveModuleConnection.
-type GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnection struct {
+// GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnection includes the requested fields of the GraphQL type DynamicFieldConnection.
+type GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnection struct {
 	// Information to aid in pagination.
-	PageInfo GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnectionPageInfo `json:"pageInfo"`
+	PageInfo GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionPageInfo `json:"pageInfo"`
 	// A list of nodes.
-	Nodes []GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule `json:"nodes"`
+	Nodes []GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicField `json:"nodes"`
 }
 
-// GetPageInfo returns GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnection.PageInfo, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnection) GetPageInfo() GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnectionPageInfo {
+// GetPageInfo returns GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnection.PageInfo, and is useful for accessing the field via an interface.
+func (v *GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnection) GetPageInfo() GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionPageInfo {
 	return v.PageInfo
 }
 
-// GetNodes returns GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnection) GetNodes() []GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule {
+// GetNodes returns GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnection.Nodes, and is useful for accessing the field via an interface.
+func (v *GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnection) GetNodes() []GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicField {
 	return v.Nodes
 }
 
-// GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule includes the requested fields of the GraphQL type MoveModule.
+// GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicField includes the requested fields of the GraphQL type DynamicField.
 // The GraphQL type's documentation follows.
 //
-// Represents a module in Move, a library that defines struct types
-// and functions that operate on these types.
-type GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule struct {
-	RPC_MOVE_MODULE_FIELDS `json:"-"`
+// Dynamic fields are heterogeneous fields that can be added or removed at
+// runtime, and can have arbitrary user-assigned names. There are two sub-types
+// of dynamic fields:
+//
+// 1) Dynamic Fields can store any value that has the `store` ability, however
+// an object stored in this kind of field will be considered wrapped and
+// will not be accessible directly via its ID by external tools (explorers,
+// wallets, etc) accessing storage.
+// 2) Dynamic Object Fields values must be IOTA objects (have the `key` and
+// `store` abilities, and id: UID as the first field), but will still be
+// directly accessible off-chain via their object ID after being attached.
+type GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicField struct {
+	// The string type, data, and serialized value of the DynamicField's 'name'
+	// field. This field is used to uniquely identify a child of the parent
+	// object.
+	Name GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldNameMoveValue `json:"name"`
+	// The returned dynamic field is an object if its return type is
+	// `MoveObject`, in which case it is also accessible off-chain via its
+	// address. Its contents will be from the latest version that is at
+	// most equal to its parent object's version.
+	Value GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValue `json:"-"`
 }
 
-// GetName returns GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule.Name, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule) GetName() string {
-	return v.RPC_MOVE_MODULE_FIELDS.Name
+// GetName returns GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicField.Name, and is useful for accessing the field via an interface.
+func (v *GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicField) GetName() GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldNameMoveValue {
+	return v.Name
 }
 
-// GetFriends returns GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule.Friends, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule) GetFriends() RPC_MOVE_MODULE_FIELDSFriendsMoveModuleConnection {
-	return v.RPC_MOVE_MODULE_FIELDS.Friends
+// GetValue returns GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicField.Value, and is useful for accessing the field via an interface.
+func (v *GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicField) GetValue() GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValue {
+	return v.Value
 }
 
-// GetStructs returns GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule.Structs, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule) GetStructs() RPC_MOVE_MODULE_FIELDSStructsMoveStructConnection {
-	return v.RPC_MOVE_MODULE_FIELDS.Structs
-}
-
-// GetEnums returns GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule.Enums, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule) GetEnums() RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnection {
-	return v.RPC_MOVE_MODULE_FIELDS.Enums
-}
-
-// GetFileFormatVersion returns GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule.FileFormatVersion, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule) GetFileFormatVersion() int {
-	return v.RPC_MOVE_MODULE_FIELDS.FileFormatVersion
-}
-
-// GetFunctions returns GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule.Functions, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule) GetFunctions() RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnection {
-	return v.RPC_MOVE_MODULE_FIELDS.Functions
-}
-
-func (v *GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule) UnmarshalJSON(b []byte) error {
+func (v *GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicField) UnmarshalJSON(b []byte) error {
 
 	if string(b) == "null" {
 		return nil
 	}
 
 	var firstPass struct {
-		*GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule
+		*GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicField
+		Value json.RawMessage `json:"value"`
 		graphql.NoUnmarshalJSON
 	}
-	firstPass.GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule = v
+	firstPass.GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicField = v
 
 	err := json.Unmarshal(b, &firstPass)
 	if err != nil {
 		return err
 	}
 
-	err = json.Unmarshal(
-		b, &v.RPC_MOVE_MODULE_FIELDS)
-	if err != nil {
-		return err
+	{
+		dst := &v.Value
+		src := firstPass.Value
+		if len(src) != 0 && string(src) != "null" {
+			err = __unmarshalGetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValue(
+				src, dst)
+			if err != nil {
+				return fmt.Errorf(
+					"unable to unmarshal GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicField.Value: %w", err)
+			}
+		}
 	}
 	return nil
 }
 
-type __premarshalGetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule struct {
-	Name string `json:"name"`
+type __premarshalGetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicField struct {
+	Name GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldNameMoveValue `json:"name"`
 
-	Friends RPC_MOVE_MODULE_FIELDSFriendsMoveModuleConnection `json:"friends"`
-
-	Structs RPC_MOVE_MODULE_FIELDSStructsMoveStructConnection `json:"structs"`
-
-	Enums RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnection `json:"enums"`
-
-	FileFormatVersion int `json:"fileFormatVersion"`
-
-	Functions RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnection `json:"functions"`
+	Value json.RawMessage `json:"value"`
 }
 
-func (v *GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule) MarshalJSON() ([]byte, error) {
+func (v *GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicField) MarshalJSON() ([]byte, error) {
 	premarshaled, err := v.__premarshalJSON()
 	if err != nil {
 		return nil, err
@@ -3826,201 +2250,325 @@ func (v *GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleCo
 	return json.Marshal(premarshaled)
 }
 
-func (v *GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule) __premarshalJSON() (*__premarshalGetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule, error) {
-	var retval __premarshalGetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule
+func (v *GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicField) __premarshalJSON() (*__premarshalGetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicField, error) {
+	var retval __premarshalGetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicField
 
-	retval.Name = v.RPC_MOVE_MODULE_FIELDS.Name
-	retval.Friends = v.RPC_MOVE_MODULE_FIELDS.Friends
-	retval.Structs = v.RPC_MOVE_MODULE_FIELDS.Structs
-	retval.Enums = v.RPC_MOVE_MODULE_FIELDS.Enums
-	retval.FileFormatVersion = v.RPC_MOVE_MODULE_FIELDS.FileFormatVersion
-	retval.Functions = v.RPC_MOVE_MODULE_FIELDS.Functions
+	retval.Name = v.Name
+	{
+
+		dst := &retval.Value
+		src := v.Value
+		var err error
+		*dst, err = __marshalGetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValue(
+			&src)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"unable to marshal GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicField.Value: %w", err)
+		}
+	}
 	return &retval, nil
 }
 
-// GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
+// GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldNameMoveValue includes the requested fields of the GraphQL type MoveValue.
+type GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldNameMoveValue struct {
+	// The BCS representation of this value, Base64 encoded.
+	Bcs iotago.Base64Data `json:"bcs"`
+	// Representation of a Move value in JSON, where:
+	//
+	// - Addresses, IDs, and UIDs are represented in canonical form, as JSON
+	// strings.
+	// - Bools are represented by JSON boolean literals.
+	// - u8, u16, and u32 are represented as JSON numbers.
+	// - u64, u128, and u256 are represented as JSON strings.
+	// - Vectors are represented by JSON arrays.
+	// - Structs are represented by JSON objects.
+	// - Empty optional values are represented by `null`.
+	//
+	// This form is offered as a less verbose convenience in cases where the
+	// layout of the type is known by the client.
+	Json json.RawMessage `json:"json"`
+	// The value's Move type.
+	Type GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldNameMoveValueTypeMoveType `json:"type"`
+}
+
+// GetBcs returns GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldNameMoveValue.Bcs, and is useful for accessing the field via an interface.
+func (v *GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldNameMoveValue) GetBcs() iotago.Base64Data {
+	return v.Bcs
+}
+
+// GetJson returns GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldNameMoveValue.Json, and is useful for accessing the field via an interface.
+func (v *GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldNameMoveValue) GetJson() json.RawMessage {
+	return v.Json
+}
+
+// GetType returns GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldNameMoveValue.Type, and is useful for accessing the field via an interface.
+func (v *GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldNameMoveValue) GetType() GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldNameMoveValueTypeMoveType {
+	return v.Type
+}
+
+// GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldNameMoveValueTypeMoveType includes the requested fields of the GraphQL type MoveType.
+// The GraphQL type's documentation follows.
+//
+// Represents concrete types (no type parameters, no references).
+type GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldNameMoveValueTypeMoveType struct {
+	// Structured representation of the "shape" of values that match this type.
+	// May return MoveTypeLayout::InvalidType for malformed types.
+	Layout json.RawMessage `json:"layout"`
+	// Flat representation of the type signature, as a displayable string.
+	Repr string `json:"repr"`
+}
+
+// GetLayout returns GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldNameMoveValueTypeMoveType.Layout, and is useful for accessing the field via an interface.
+func (v *GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldNameMoveValueTypeMoveType) GetLayout() json.RawMessage {
+	return v.Layout
+}
+
+// GetRepr returns GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldNameMoveValueTypeMoveType.Repr, and is useful for accessing the field via an interface.
+func (v *GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldNameMoveValueTypeMoveType) GetRepr() string {
+	return v.Repr
+}
+
+// GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValue includes the requested fields of the GraphQL interface DynamicFieldValue.
+//
+// GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValue is implemented by the following types:
+// GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObject
+// GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveValue
+type GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValue interface {
+	implementsGraphQLInterfaceGetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValue()
+	// GetTypename returns the receiver's concrete GraphQL type-name (see interface doc for possible values).
+	GetTypename() string
+}
+
+func (v *GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObject) implementsGraphQLInterfaceGetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValue() {
+}
+func (v *GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveValue) implementsGraphQLInterfaceGetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValue() {
+}
+
+func __unmarshalGetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValue(b []byte, v *GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValue) error {
+	if string(b) == "null" {
+		return nil
+	}
+
+	var tn struct {
+		TypeName string `json:"__typename"`
+	}
+	err := json.Unmarshal(b, &tn)
+	if err != nil {
+		return err
+	}
+
+	switch tn.TypeName {
+	case "MoveObject":
+		*v = new(GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObject)
+		return json.Unmarshal(b, *v)
+	case "MoveValue":
+		*v = new(GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveValue)
+		return json.Unmarshal(b, *v)
+	case "":
+		return fmt.Errorf(
+			"response was missing DynamicFieldValue.__typename")
+	default:
+		return fmt.Errorf(
+			`unexpected concrete type for GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValue: "%v"`, tn.TypeName)
+	}
+}
+
+func __marshalGetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValue(v *GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValue) ([]byte, error) {
+
+	var typename string
+	switch v := (*v).(type) {
+	case *GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObject:
+		typename = "MoveObject"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObject
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveValue:
+		typename = "MoveValue"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveValue
+		}{typename, v}
+		return json.Marshal(result)
+	case nil:
+		return []byte("null"), nil
+	default:
+		return nil, fmt.Errorf(
+			`unexpected concrete type for GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValue: "%T"`, v)
+	}
+}
+
+// GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObject includes the requested fields of the GraphQL type MoveObject.
+// The GraphQL type's documentation follows.
+//
+// The representation of an object as a Move Object, which exposes additional
+// information (content, module that governs it, version, is transferable,
+// etc.) about this object.
+type GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObject struct {
+	Typename string `json:"__typename"`
+	// Displays the contents of the Move object in a JSON string and through
+	// GraphQL types. Also provides the flat representation of the type
+	// signature, and the BCS of the corresponding data.
+	Contents GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObjectContentsMoveValue `json:"contents"`
+	Address  iotago.Address                                                                                                   `json:"address"`
+	// 32-byte hash that identifies the object's contents, encoded as a Base58
+	// string.
+	Digest  string `json:"digest"`
+	Version uint64 `json:"version"`
+}
+
+// GetTypename returns GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObject.Typename, and is useful for accessing the field via an interface.
+func (v *GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObject) GetTypename() string {
+	return v.Typename
+}
+
+// GetContents returns GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObject.Contents, and is useful for accessing the field via an interface.
+func (v *GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObject) GetContents() GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObjectContentsMoveValue {
+	return v.Contents
+}
+
+// GetAddress returns GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObject.Address, and is useful for accessing the field via an interface.
+func (v *GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObject) GetAddress() iotago.Address {
+	return v.Address
+}
+
+// GetDigest returns GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObject.Digest, and is useful for accessing the field via an interface.
+func (v *GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObject) GetDigest() string {
+	return v.Digest
+}
+
+// GetVersion returns GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObject.Version, and is useful for accessing the field via an interface.
+func (v *GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObject) GetVersion() uint64 {
+	return v.Version
+}
+
+// GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObjectContentsMoveValue includes the requested fields of the GraphQL type MoveValue.
+type GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObjectContentsMoveValue struct {
+	// The value's Move type.
+	Type GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObjectContentsMoveValueTypeMoveType `json:"type"`
+	// Representation of a Move value in JSON, where:
+	//
+	// - Addresses, IDs, and UIDs are represented in canonical form, as JSON
+	// strings.
+	// - Bools are represented by JSON boolean literals.
+	// - u8, u16, and u32 are represented as JSON numbers.
+	// - u64, u128, and u256 are represented as JSON strings.
+	// - Vectors are represented by JSON arrays.
+	// - Structs are represented by JSON objects.
+	// - Empty optional values are represented by `null`.
+	//
+	// This form is offered as a less verbose convenience in cases where the
+	// layout of the type is known by the client.
+	Json json.RawMessage `json:"json"`
+}
+
+// GetType returns GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObjectContentsMoveValue.Type, and is useful for accessing the field via an interface.
+func (v *GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObjectContentsMoveValue) GetType() GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObjectContentsMoveValueTypeMoveType {
+	return v.Type
+}
+
+// GetJson returns GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObjectContentsMoveValue.Json, and is useful for accessing the field via an interface.
+func (v *GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObjectContentsMoveValue) GetJson() json.RawMessage {
+	return v.Json
+}
+
+// GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObjectContentsMoveValueTypeMoveType includes the requested fields of the GraphQL type MoveType.
+// The GraphQL type's documentation follows.
+//
+// Represents concrete types (no type parameters, no references).
+type GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObjectContentsMoveValueTypeMoveType struct {
+	// Flat representation of the type signature, as a displayable string.
+	Repr string `json:"repr"`
+}
+
+// GetRepr returns GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObjectContentsMoveValueTypeMoveType.Repr, and is useful for accessing the field via an interface.
+func (v *GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObjectContentsMoveValueTypeMoveType) GetRepr() string {
+	return v.Repr
+}
+
+// GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveValue includes the requested fields of the GraphQL type MoveValue.
+type GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveValue struct {
+	Typename string `json:"__typename"`
+	// Representation of a Move value in JSON, where:
+	//
+	// - Addresses, IDs, and UIDs are represented in canonical form, as JSON
+	// strings.
+	// - Bools are represented by JSON boolean literals.
+	// - u8, u16, and u32 are represented as JSON numbers.
+	// - u64, u128, and u256 are represented as JSON strings.
+	// - Vectors are represented by JSON arrays.
+	// - Structs are represented by JSON objects.
+	// - Empty optional values are represented by `null`.
+	//
+	// This form is offered as a less verbose convenience in cases where the
+	// layout of the type is known by the client.
+	Json json.RawMessage `json:"json"`
+	// The value's Move type.
+	Type GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveValueTypeMoveType `json:"type"`
+}
+
+// GetTypename returns GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveValue.Typename, and is useful for accessing the field via an interface.
+func (v *GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveValue) GetTypename() string {
+	return v.Typename
+}
+
+// GetJson returns GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveValue.Json, and is useful for accessing the field via an interface.
+func (v *GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveValue) GetJson() json.RawMessage {
+	return v.Json
+}
+
+// GetType returns GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveValue.Type, and is useful for accessing the field via an interface.
+func (v *GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveValue) GetType() GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveValueTypeMoveType {
+	return v.Type
+}
+
+// GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveValueTypeMoveType includes the requested fields of the GraphQL type MoveType.
+// The GraphQL type's documentation follows.
+//
+// Represents concrete types (no type parameters, no references).
+type GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveValueTypeMoveType struct {
+	// Flat representation of the type signature, as a displayable string.
+	Repr string `json:"repr"`
+}
+
+// GetRepr returns GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveValueTypeMoveType.Repr, and is useful for accessing the field via an interface.
+func (v *GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveValueTypeMoveType) GetRepr() string {
+	return v.Repr
+}
+
+// GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
 // The GraphQL type's documentation follows.
 //
 // Information about pagination in a connection
-type GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnectionPageInfo struct {
+type GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionPageInfo struct {
 	// When paginating forwards, are there more items?
 	HasNextPage bool `json:"hasNextPage"`
 	// When paginating forwards, the cursor to continue.
 	EndCursor string `json:"endCursor"`
 }
 
-// GetHasNextPage returns GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnectionPageInfo) GetHasNextPage() bool {
+// GetHasNextPage returns GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
+func (v *GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionPageInfo) GetHasNextPage() bool {
 	return v.HasNextPage
 }
 
-// GetEndCursor returns GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveModulesByPackageObjectAsMovePackageModulesMoveModuleConnectionPageInfo) GetEndCursor() string {
+// GetEndCursor returns GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
+func (v *GetObjectDynamicFieldsObjectDynamicFieldsDynamicFieldConnectionPageInfo) GetEndCursor() string {
 	return v.EndCursor
 }
 
-// GetNormalizedMoveModulesByPackageResponse is returned by GetNormalizedMoveModulesByPackage on success.
-type GetNormalizedMoveModulesByPackageResponse struct {
+// GetObjectDynamicFieldsResponse is returned by GetObjectDynamicFields on success.
+type GetObjectDynamicFieldsResponse struct {
 	// The object corresponding to the given address at the (optionally) given
 	// version. When no version is given, the latest version is returned.
-	Object GetNormalizedMoveModulesByPackageObject `json:"object"`
+	Object GetObjectDynamicFieldsObject `json:"object"`
 }
 
-// GetObject returns GetNormalizedMoveModulesByPackageResponse.Object, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveModulesByPackageResponse) GetObject() GetNormalizedMoveModulesByPackageObject {
-	return v.Object
-}
-
-// GetNormalizedMoveStructObject includes the requested fields of the GraphQL type Object.
-// The GraphQL type's documentation follows.
-//
-// An object in IOTA is a package (set of Move bytecode modules) or object
-// (typed data structure with fields) with additional metadata detailing its
-// id, version, transaction digest, owner field indicating how this object can
-// be accessed.
-type GetNormalizedMoveStructObject struct {
-	// Attempts to convert the object into a MovePackage
-	AsMovePackage GetNormalizedMoveStructObjectAsMovePackage `json:"asMovePackage"`
-}
-
-// GetAsMovePackage returns GetNormalizedMoveStructObject.AsMovePackage, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveStructObject) GetAsMovePackage() GetNormalizedMoveStructObjectAsMovePackage {
-	return v.AsMovePackage
-}
-
-// GetNormalizedMoveStructObjectAsMovePackage includes the requested fields of the GraphQL type MovePackage.
-// The GraphQL type's documentation follows.
-//
-// A MovePackage is a kind of Move object that represents code that has been
-// published on chain. It exposes information about its modules, type
-// definitions, functions, and dependencies.
-type GetNormalizedMoveStructObjectAsMovePackage struct {
-	Address iotago.Address `json:"address"`
-	// A representation of the module called `name` in this package, including
-	// the structs and functions it defines.
-	Module GetNormalizedMoveStructObjectAsMovePackageModuleMoveModule `json:"module"`
-}
-
-// GetAddress returns GetNormalizedMoveStructObjectAsMovePackage.Address, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveStructObjectAsMovePackage) GetAddress() iotago.Address { return v.Address }
-
-// GetModule returns GetNormalizedMoveStructObjectAsMovePackage.Module, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveStructObjectAsMovePackage) GetModule() GetNormalizedMoveStructObjectAsMovePackageModuleMoveModule {
-	return v.Module
-}
-
-// GetNormalizedMoveStructObjectAsMovePackageModuleMoveModule includes the requested fields of the GraphQL type MoveModule.
-// The GraphQL type's documentation follows.
-//
-// Represents a module in Move, a library that defines struct types
-// and functions that operate on these types.
-type GetNormalizedMoveStructObjectAsMovePackageModuleMoveModule struct {
-	// Format version of this module's bytecode.
-	FileFormatVersion int `json:"fileFormatVersion"`
-	// Look-up the definition of a struct defined in this module, by its name.
-	Struct GetNormalizedMoveStructObjectAsMovePackageModuleMoveModuleStructMoveStruct `json:"struct"`
-}
-
-// GetFileFormatVersion returns GetNormalizedMoveStructObjectAsMovePackageModuleMoveModule.FileFormatVersion, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveStructObjectAsMovePackageModuleMoveModule) GetFileFormatVersion() int {
-	return v.FileFormatVersion
-}
-
-// GetStruct returns GetNormalizedMoveStructObjectAsMovePackageModuleMoveModule.Struct, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveStructObjectAsMovePackageModuleMoveModule) GetStruct() GetNormalizedMoveStructObjectAsMovePackageModuleMoveModuleStructMoveStruct {
-	return v.Struct
-}
-
-// GetNormalizedMoveStructObjectAsMovePackageModuleMoveModuleStructMoveStruct includes the requested fields of the GraphQL type MoveStruct.
-// The GraphQL type's documentation follows.
-//
-// Description of a struct type, defined in a Move module.
-type GetNormalizedMoveStructObjectAsMovePackageModuleMoveModuleStructMoveStruct struct {
-	RPC_MOVE_STRUCT_FIELDS `json:"-"`
-}
-
-// GetName returns GetNormalizedMoveStructObjectAsMovePackageModuleMoveModuleStructMoveStruct.Name, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveStructObjectAsMovePackageModuleMoveModuleStructMoveStruct) GetName() string {
-	return v.RPC_MOVE_STRUCT_FIELDS.Name
-}
-
-// GetAbilities returns GetNormalizedMoveStructObjectAsMovePackageModuleMoveModuleStructMoveStruct.Abilities, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveStructObjectAsMovePackageModuleMoveModuleStructMoveStruct) GetAbilities() []MoveAbility {
-	return v.RPC_MOVE_STRUCT_FIELDS.Abilities
-}
-
-// GetFields returns GetNormalizedMoveStructObjectAsMovePackageModuleMoveModuleStructMoveStruct.Fields, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveStructObjectAsMovePackageModuleMoveModuleStructMoveStruct) GetFields() []RPC_MOVE_STRUCT_FIELDSFieldsMoveField {
-	return v.RPC_MOVE_STRUCT_FIELDS.Fields
-}
-
-// GetTypeParameters returns GetNormalizedMoveStructObjectAsMovePackageModuleMoveModuleStructMoveStruct.TypeParameters, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveStructObjectAsMovePackageModuleMoveModuleStructMoveStruct) GetTypeParameters() []RPC_MOVE_STRUCT_FIELDSTypeParametersMoveStructTypeParameter {
-	return v.RPC_MOVE_STRUCT_FIELDS.TypeParameters
-}
-
-func (v *GetNormalizedMoveStructObjectAsMovePackageModuleMoveModuleStructMoveStruct) UnmarshalJSON(b []byte) error {
-
-	if string(b) == "null" {
-		return nil
-	}
-
-	var firstPass struct {
-		*GetNormalizedMoveStructObjectAsMovePackageModuleMoveModuleStructMoveStruct
-		graphql.NoUnmarshalJSON
-	}
-	firstPass.GetNormalizedMoveStructObjectAsMovePackageModuleMoveModuleStructMoveStruct = v
-
-	err := json.Unmarshal(b, &firstPass)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(
-		b, &v.RPC_MOVE_STRUCT_FIELDS)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-type __premarshalGetNormalizedMoveStructObjectAsMovePackageModuleMoveModuleStructMoveStruct struct {
-	Name string `json:"name"`
-
-	Abilities []MoveAbility `json:"abilities"`
-
-	Fields []RPC_MOVE_STRUCT_FIELDSFieldsMoveField `json:"fields"`
-
-	TypeParameters []RPC_MOVE_STRUCT_FIELDSTypeParametersMoveStructTypeParameter `json:"typeParameters"`
-}
-
-func (v *GetNormalizedMoveStructObjectAsMovePackageModuleMoveModuleStructMoveStruct) MarshalJSON() ([]byte, error) {
-	premarshaled, err := v.__premarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(premarshaled)
-}
-
-func (v *GetNormalizedMoveStructObjectAsMovePackageModuleMoveModuleStructMoveStruct) __premarshalJSON() (*__premarshalGetNormalizedMoveStructObjectAsMovePackageModuleMoveModuleStructMoveStruct, error) {
-	var retval __premarshalGetNormalizedMoveStructObjectAsMovePackageModuleMoveModuleStructMoveStruct
-
-	retval.Name = v.RPC_MOVE_STRUCT_FIELDS.Name
-	retval.Abilities = v.RPC_MOVE_STRUCT_FIELDS.Abilities
-	retval.Fields = v.RPC_MOVE_STRUCT_FIELDS.Fields
-	retval.TypeParameters = v.RPC_MOVE_STRUCT_FIELDS.TypeParameters
-	return &retval, nil
-}
-
-// GetNormalizedMoveStructResponse is returned by GetNormalizedMoveStruct on success.
-type GetNormalizedMoveStructResponse struct {
-	// The object corresponding to the given address at the (optionally) given
-	// version. When no version is given, the latest version is returned.
-	Object GetNormalizedMoveStructObject `json:"object"`
-}
-
-// GetObject returns GetNormalizedMoveStructResponse.Object, and is useful for accessing the field via an interface.
-func (v *GetNormalizedMoveStructResponse) GetObject() GetNormalizedMoveStructObject { return v.Object }
+// GetObject returns GetObjectDynamicFieldsResponse.Object, and is useful for accessing the field via an interface.
+func (v *GetObjectDynamicFieldsResponse) GetObject() GetObjectDynamicFieldsObject { return v.Object }
 
 // GetObjectObject includes the requested fields of the GraphQL type Object.
 // The GraphQL type's documentation follows.
@@ -4381,94 +2929,6 @@ type GetOwnedObjectsResponse struct {
 
 // GetAddress returns GetOwnedObjectsResponse.Address, and is useful for accessing the field via an interface.
 func (v *GetOwnedObjectsResponse) GetAddress() GetOwnedObjectsAddress { return v.Address }
-
-// GetProtocolConfigProtocolConfigProtocolConfigs includes the requested fields of the GraphQL type ProtocolConfigs.
-// The GraphQL type's documentation follows.
-//
-// Constants that control how the chain operates.
-//
-// These can only change during protocol upgrades which happen on epoch
-// boundaries.
-type GetProtocolConfigProtocolConfigProtocolConfigs struct {
-	// The protocol is not required to change on every epoch boundary, so the
-	// protocol version tracks which change to the protocol these configs
-	// are from.
-	ProtocolVersion uint64 `json:"protocolVersion"`
-	// List all available configurations and their values.  These
-	// configurations can take any value (but they will all be represented
-	// in string form), and do not include feature flags.
-	Configs []GetProtocolConfigProtocolConfigProtocolConfigsConfigsProtocolConfigAttr `json:"configs"`
-	// List all available feature flags and their values.  Feature flags are a
-	// form of boolean configuration that are usually used to gate features
-	// while they are in development.  Once a flag has been enabled, it is
-	// rare for it to be disabled.
-	FeatureFlags []GetProtocolConfigProtocolConfigProtocolConfigsFeatureFlagsProtocolConfigFeatureFlag `json:"featureFlags"`
-}
-
-// GetProtocolVersion returns GetProtocolConfigProtocolConfigProtocolConfigs.ProtocolVersion, and is useful for accessing the field via an interface.
-func (v *GetProtocolConfigProtocolConfigProtocolConfigs) GetProtocolVersion() uint64 {
-	return v.ProtocolVersion
-}
-
-// GetConfigs returns GetProtocolConfigProtocolConfigProtocolConfigs.Configs, and is useful for accessing the field via an interface.
-func (v *GetProtocolConfigProtocolConfigProtocolConfigs) GetConfigs() []GetProtocolConfigProtocolConfigProtocolConfigsConfigsProtocolConfigAttr {
-	return v.Configs
-}
-
-// GetFeatureFlags returns GetProtocolConfigProtocolConfigProtocolConfigs.FeatureFlags, and is useful for accessing the field via an interface.
-func (v *GetProtocolConfigProtocolConfigProtocolConfigs) GetFeatureFlags() []GetProtocolConfigProtocolConfigProtocolConfigsFeatureFlagsProtocolConfigFeatureFlag {
-	return v.FeatureFlags
-}
-
-// GetProtocolConfigProtocolConfigProtocolConfigsConfigsProtocolConfigAttr includes the requested fields of the GraphQL type ProtocolConfigAttr.
-// The GraphQL type's documentation follows.
-//
-// A single protocol configuration value.
-type GetProtocolConfigProtocolConfigProtocolConfigsConfigsProtocolConfigAttr struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
-}
-
-// GetKey returns GetProtocolConfigProtocolConfigProtocolConfigsConfigsProtocolConfigAttr.Key, and is useful for accessing the field via an interface.
-func (v *GetProtocolConfigProtocolConfigProtocolConfigsConfigsProtocolConfigAttr) GetKey() string {
-	return v.Key
-}
-
-// GetValue returns GetProtocolConfigProtocolConfigProtocolConfigsConfigsProtocolConfigAttr.Value, and is useful for accessing the field via an interface.
-func (v *GetProtocolConfigProtocolConfigProtocolConfigsConfigsProtocolConfigAttr) GetValue() string {
-	return v.Value
-}
-
-// GetProtocolConfigProtocolConfigProtocolConfigsFeatureFlagsProtocolConfigFeatureFlag includes the requested fields of the GraphQL type ProtocolConfigFeatureFlag.
-// The GraphQL type's documentation follows.
-//
-// Whether or not a single feature is enabled in the protocol config.
-type GetProtocolConfigProtocolConfigProtocolConfigsFeatureFlagsProtocolConfigFeatureFlag struct {
-	Key   string `json:"key"`
-	Value bool   `json:"value"`
-}
-
-// GetKey returns GetProtocolConfigProtocolConfigProtocolConfigsFeatureFlagsProtocolConfigFeatureFlag.Key, and is useful for accessing the field via an interface.
-func (v *GetProtocolConfigProtocolConfigProtocolConfigsFeatureFlagsProtocolConfigFeatureFlag) GetKey() string {
-	return v.Key
-}
-
-// GetValue returns GetProtocolConfigProtocolConfigProtocolConfigsFeatureFlagsProtocolConfigFeatureFlag.Value, and is useful for accessing the field via an interface.
-func (v *GetProtocolConfigProtocolConfigProtocolConfigsFeatureFlagsProtocolConfigFeatureFlag) GetValue() bool {
-	return v.Value
-}
-
-// GetProtocolConfigResponse is returned by GetProtocolConfig on success.
-type GetProtocolConfigResponse struct {
-	// Fetch the protocol config by protocol version (defaults to the latest
-	// protocol version known to the GraphQL service).
-	ProtocolConfig GetProtocolConfigProtocolConfigProtocolConfigs `json:"protocolConfig"`
-}
-
-// GetProtocolConfig returns GetProtocolConfigResponse.ProtocolConfig, and is useful for accessing the field via an interface.
-func (v *GetProtocolConfigResponse) GetProtocolConfig() GetProtocolConfigProtocolConfigProtocolConfigs {
-	return v.ProtocolConfig
-}
 
 // GetReferenceGasPriceEpoch includes the requested fields of the GraphQL type Epoch.
 // The GraphQL type's documentation follows.
@@ -4851,60 +3311,6 @@ type GetStakesResponse struct {
 // GetAddress returns GetStakesResponse.Address, and is useful for accessing the field via an interface.
 func (v *GetStakesResponse) GetAddress() GetStakesAddress { return v.Address }
 
-// GetTotalSupplyCoinMetadata includes the requested fields of the GraphQL type CoinMetadata.
-// The GraphQL type's documentation follows.
-//
-// The metadata for a coin type.
-type GetTotalSupplyCoinMetadata struct {
-	// The overall quantity of tokens that will be issued.
-	Supply iotajsonrpc.BigInt `json:"supply"`
-	// The number of decimal places used to represent the token.
-	Decimals int `json:"decimals"`
-}
-
-// GetSupply returns GetTotalSupplyCoinMetadata.Supply, and is useful for accessing the field via an interface.
-func (v *GetTotalSupplyCoinMetadata) GetSupply() iotajsonrpc.BigInt { return v.Supply }
-
-// GetDecimals returns GetTotalSupplyCoinMetadata.Decimals, and is useful for accessing the field via an interface.
-func (v *GetTotalSupplyCoinMetadata) GetDecimals() int { return v.Decimals }
-
-// GetTotalSupplyResponse is returned by GetTotalSupply on success.
-type GetTotalSupplyResponse struct {
-	// The coin metadata associated with the given coin type.
-	CoinMetadata GetTotalSupplyCoinMetadata `json:"coinMetadata"`
-}
-
-// GetCoinMetadata returns GetTotalSupplyResponse.CoinMetadata, and is useful for accessing the field via an interface.
-func (v *GetTotalSupplyResponse) GetCoinMetadata() GetTotalSupplyCoinMetadata { return v.CoinMetadata }
-
-// GetTotalTransactionBlocksCheckpoint includes the requested fields of the GraphQL type Checkpoint.
-// The GraphQL type's documentation follows.
-//
-// Checkpoints contain finalized transactions and are used for node
-// synchronization and global transaction ordering.
-type GetTotalTransactionBlocksCheckpoint struct {
-	// The total number of transaction blocks in the network by the end of this
-	// checkpoint.
-	NetworkTotalTransactions uint64 `json:"networkTotalTransactions"`
-}
-
-// GetNetworkTotalTransactions returns GetTotalTransactionBlocksCheckpoint.NetworkTotalTransactions, and is useful for accessing the field via an interface.
-func (v *GetTotalTransactionBlocksCheckpoint) GetNetworkTotalTransactions() uint64 {
-	return v.NetworkTotalTransactions
-}
-
-// GetTotalTransactionBlocksResponse is returned by GetTotalTransactionBlocks on success.
-type GetTotalTransactionBlocksResponse struct {
-	// Fetch checkpoint information by sequence number or digest (defaults to
-	// the latest available checkpoint).
-	Checkpoint GetTotalTransactionBlocksCheckpoint `json:"checkpoint"`
-}
-
-// GetCheckpoint returns GetTotalTransactionBlocksResponse.Checkpoint, and is useful for accessing the field via an interface.
-func (v *GetTotalTransactionBlocksResponse) GetCheckpoint() GetTotalTransactionBlocksCheckpoint {
-	return v.Checkpoint
-}
-
 // GetTransactionBlockResponse is returned by GetTransactionBlock on success.
 type GetTransactionBlockResponse struct {
 	// Fetch a transaction block by its transaction digest.
@@ -4926,9 +3332,9 @@ func (v *GetTransactionBlockTransactionBlock) GetDigest() string {
 	return v.RPC_TRANSACTION_FIELDS.Digest
 }
 
-// GetRawTransaction returns GetTransactionBlockTransactionBlock.RawTransaction, and is useful for accessing the field via an interface.
-func (v *GetTransactionBlockTransactionBlock) GetRawTransaction() iotago.Base64Data {
-	return v.RPC_TRANSACTION_FIELDS.RawTransaction
+// GetBcs returns GetTransactionBlockTransactionBlock.Bcs, and is useful for accessing the field via an interface.
+func (v *GetTransactionBlockTransactionBlock) GetBcs() iotago.Base64Data {
+	return v.RPC_TRANSACTION_FIELDS.Bcs
 }
 
 // GetSender returns GetTransactionBlockTransactionBlock.Sender, and is useful for accessing the field via an interface.
@@ -4974,7 +3380,7 @@ func (v *GetTransactionBlockTransactionBlock) UnmarshalJSON(b []byte) error {
 type __premarshalGetTransactionBlockTransactionBlock struct {
 	Digest string `json:"digest"`
 
-	RawTransaction iotago.Base64Data `json:"rawTransaction"`
+	Bcs iotago.Base64Data `json:"bcs"`
 
 	Sender RPC_TRANSACTION_FIELDSSenderAddress `json:"sender"`
 
@@ -4995,202 +3401,11 @@ func (v *GetTransactionBlockTransactionBlock) __premarshalJSON() (*__premarshalG
 	var retval __premarshalGetTransactionBlockTransactionBlock
 
 	retval.Digest = v.RPC_TRANSACTION_FIELDS.Digest
-	retval.RawTransaction = v.RPC_TRANSACTION_FIELDS.RawTransaction
+	retval.Bcs = v.RPC_TRANSACTION_FIELDS.Bcs
 	retval.Sender = v.RPC_TRANSACTION_FIELDS.Sender
 	retval.Signatures = v.RPC_TRANSACTION_FIELDS.Signatures
 	retval.Effects = v.RPC_TRANSACTION_FIELDS.Effects
 	return &retval, nil
-}
-
-// GetTypeLayoutResponse is returned by GetTypeLayout on success.
-type GetTypeLayoutResponse struct {
-	// Fetch a structured representation of a concrete type, including its
-	// layout information. Fails if the type is malformed.
-	Type GetTypeLayoutTypeMoveType `json:"type"`
-}
-
-// GetType returns GetTypeLayoutResponse.Type, and is useful for accessing the field via an interface.
-func (v *GetTypeLayoutResponse) GetType() GetTypeLayoutTypeMoveType { return v.Type }
-
-// GetTypeLayoutTypeMoveType includes the requested fields of the GraphQL type MoveType.
-// The GraphQL type's documentation follows.
-//
-// Represents concrete types (no type parameters, no references).
-type GetTypeLayoutTypeMoveType struct {
-	// Structured representation of the "shape" of values that match this type.
-	// May return MoveTypeLayout::InvalidType for malformed types.
-	Layout json.RawMessage `json:"layout"`
-}
-
-// GetLayout returns GetTypeLayoutTypeMoveType.Layout, and is useful for accessing the field via an interface.
-func (v *GetTypeLayoutTypeMoveType) GetLayout() json.RawMessage { return v.Layout }
-
-// GetValidatorsApyEpoch includes the requested fields of the GraphQL type Epoch.
-// The GraphQL type's documentation follows.
-//
-// Operation of the IOTA network is temporally partitioned into non-overlapping
-// epochs, and the network aims to keep epochs roughly the same duration as
-// each other. During a particular epoch the following data is fixed:
-//
-// - the protocol version
-// - the reference gas price
-// - the set of participating validators
-type GetValidatorsApyEpoch struct {
-	// The epoch's id as a sequence number that starts at 0 and is incremented
-	// by one at every epoch change.
-	EpochId uint64 `json:"epochId"`
-	// Validator related properties, including the active validators.
-	//
-	// For epochs other than the current the data provided refer to the start
-	// of the epoch.
-	ValidatorSet GetValidatorsApyEpochValidatorSet `json:"validatorSet"`
-}
-
-// GetEpochId returns GetValidatorsApyEpoch.EpochId, and is useful for accessing the field via an interface.
-func (v *GetValidatorsApyEpoch) GetEpochId() uint64 { return v.EpochId }
-
-// GetValidatorSet returns GetValidatorsApyEpoch.ValidatorSet, and is useful for accessing the field via an interface.
-func (v *GetValidatorsApyEpoch) GetValidatorSet() GetValidatorsApyEpochValidatorSet {
-	return v.ValidatorSet
-}
-
-// GetValidatorsApyEpochValidatorSet includes the requested fields of the GraphQL type ValidatorSet.
-// The GraphQL type's documentation follows.
-//
-// Representation of `0x3::validator_set::ValidatorSet`.
-type GetValidatorsApyEpochValidatorSet struct {
-	// The current set of active validators.
-	ActiveValidators GetValidatorsApyEpochValidatorSetActiveValidatorsValidatorConnection `json:"activeValidators"`
-}
-
-// GetActiveValidators returns GetValidatorsApyEpochValidatorSet.ActiveValidators, and is useful for accessing the field via an interface.
-func (v *GetValidatorsApyEpochValidatorSet) GetActiveValidators() GetValidatorsApyEpochValidatorSetActiveValidatorsValidatorConnection {
-	return v.ActiveValidators
-}
-
-// GetValidatorsApyEpochValidatorSetActiveValidatorsValidatorConnection includes the requested fields of the GraphQL type ValidatorConnection.
-type GetValidatorsApyEpochValidatorSetActiveValidatorsValidatorConnection struct {
-	// Information to aid in pagination.
-	PageInfo GetValidatorsApyEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo `json:"pageInfo"`
-	// A list of nodes.
-	Nodes []GetValidatorsApyEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator `json:"nodes"`
-}
-
-// GetPageInfo returns GetValidatorsApyEpochValidatorSetActiveValidatorsValidatorConnection.PageInfo, and is useful for accessing the field via an interface.
-func (v *GetValidatorsApyEpochValidatorSetActiveValidatorsValidatorConnection) GetPageInfo() GetValidatorsApyEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo {
-	return v.PageInfo
-}
-
-// GetNodes returns GetValidatorsApyEpochValidatorSetActiveValidatorsValidatorConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *GetValidatorsApyEpochValidatorSetActiveValidatorsValidatorConnection) GetNodes() []GetValidatorsApyEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator {
-	return v.Nodes
-}
-
-// GetValidatorsApyEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator includes the requested fields of the GraphQL type Validator.
-type GetValidatorsApyEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator struct {
-	// The validator's address.
-	Address GetValidatorsApyEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidatorAddress `json:"address"`
-	// The APY of this validator in basis points. To get the APY in
-	// percentage, divide by 100.
-	Apy int `json:"apy"`
-}
-
-// GetAddress returns GetValidatorsApyEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.Address, and is useful for accessing the field via an interface.
-func (v *GetValidatorsApyEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetAddress() GetValidatorsApyEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidatorAddress {
-	return v.Address
-}
-
-// GetApy returns GetValidatorsApyEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.Apy, and is useful for accessing the field via an interface.
-func (v *GetValidatorsApyEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetApy() int {
-	return v.Apy
-}
-
-// GetValidatorsApyEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidatorAddress includes the requested fields of the GraphQL type Address.
-// The GraphQL type's documentation follows.
-//
-// The 32-byte address that is an account address (corresponding to a public
-// key).
-type GetValidatorsApyEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidatorAddress struct {
-	Address iotago.Address `json:"address"`
-}
-
-// GetAddress returns GetValidatorsApyEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidatorAddress.Address, and is useful for accessing the field via an interface.
-func (v *GetValidatorsApyEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidatorAddress) GetAddress() iotago.Address {
-	return v.Address
-}
-
-// GetValidatorsApyEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
-// The GraphQL type's documentation follows.
-//
-// Information about pagination in a connection
-type GetValidatorsApyEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo struct {
-	// When paginating forwards, are there more items?
-	HasNextPage bool `json:"hasNextPage"`
-	// When paginating forwards, the cursor to continue.
-	EndCursor string `json:"endCursor"`
-}
-
-// GetHasNextPage returns GetValidatorsApyEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
-func (v *GetValidatorsApyEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo) GetHasNextPage() bool {
-	return v.HasNextPage
-}
-
-// GetEndCursor returns GetValidatorsApyEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
-func (v *GetValidatorsApyEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo) GetEndCursor() string {
-	return v.EndCursor
-}
-
-// GetValidatorsApyResponse is returned by GetValidatorsApy on success.
-type GetValidatorsApyResponse struct {
-	// Fetch epoch information by ID (defaults to the latest epoch).
-	Epoch GetValidatorsApyEpoch `json:"epoch"`
-}
-
-// GetEpoch returns GetValidatorsApyResponse.Epoch, and is useful for accessing the field via an interface.
-func (v *GetValidatorsApyResponse) GetEpoch() GetValidatorsApyEpoch { return v.Epoch }
-
-// Abilities are keywords in IOTA Move that define how types behave at the
-// compiler level.
-type MoveAbility string
-
-const (
-	// Enables values to be copied.
-	MoveAbilityCopy MoveAbility = "COPY"
-	// Enables values to be popped/dropped.
-	MoveAbilityDrop MoveAbility = "DROP"
-	// Enables values to be held directly in global storage.
-	MoveAbilityKey MoveAbility = "KEY"
-	// Enables values to be held inside a struct in global storage.
-	MoveAbilityStore MoveAbility = "STORE"
-)
-
-var AllMoveAbility = []MoveAbility{
-	MoveAbilityCopy,
-	MoveAbilityDrop,
-	MoveAbilityKey,
-	MoveAbilityStore,
-}
-
-// The visibility modifier describes which modules can access this module
-// member. By default, a module member can be called only within the same
-// module.
-type MoveVisibility string
-
-const (
-	// A public member can be accessed by any module.
-	MoveVisibilityPublic MoveVisibility = "PUBLIC"
-	// A private member can be accessed in the module it is defined in.
-	MoveVisibilityPrivate MoveVisibility = "PRIVATE"
-	// A friend member can be accessed in the module it is defined in and any
-	// other module in its package that is explicitly specified in its
-	// friend list.
-	MoveVisibilityFriend MoveVisibility = "FRIEND"
-)
-
-var AllMoveVisibility = []MoveVisibility{
-	MoveVisibilityPublic,
-	MoveVisibilityPrivate,
-	MoveVisibilityFriend,
 }
 
 // MultiGetObjectsObjectsObjectConnection includes the requested fields of the GraphQL type ObjectConnection.
@@ -5445,9 +3660,9 @@ func (v *MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionNod
 	return v.RPC_TRANSACTION_FIELDS.Digest
 }
 
-// GetRawTransaction returns MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock.RawTransaction, and is useful for accessing the field via an interface.
-func (v *MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock) GetRawTransaction() iotago.Base64Data {
-	return v.RPC_TRANSACTION_FIELDS.RawTransaction
+// GetBcs returns MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock.Bcs, and is useful for accessing the field via an interface.
+func (v *MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock) GetBcs() iotago.Base64Data {
+	return v.RPC_TRANSACTION_FIELDS.Bcs
 }
 
 // GetSender returns MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock.Sender, and is useful for accessing the field via an interface.
@@ -5493,7 +3708,7 @@ func (v *MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionNod
 type __premarshalMultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock struct {
 	Digest string `json:"digest"`
 
-	RawTransaction iotago.Base64Data `json:"rawTransaction"`
+	Bcs iotago.Base64Data `json:"bcs"`
 
 	Sender RPC_TRANSACTION_FIELDSSenderAddress `json:"sender"`
 
@@ -5514,7 +3729,7 @@ func (v *MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionNod
 	var retval __premarshalMultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock
 
 	retval.Digest = v.RPC_TRANSACTION_FIELDS.Digest
-	retval.RawTransaction = v.RPC_TRANSACTION_FIELDS.RawTransaction
+	retval.Bcs = v.RPC_TRANSACTION_FIELDS.Bcs
 	retval.Sender = v.RPC_TRANSACTION_FIELDS.Sender
 	retval.Signatures = v.RPC_TRANSACTION_FIELDS.Signatures
 	retval.Effects = v.RPC_TRANSACTION_FIELDS.Effects
@@ -5564,11 +3779,8 @@ func (v *MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionPag
 // - AND, whose ID is in `objectIds` OR whose ID and version is in
 // `objectKeys`.
 type ObjectFilter struct {
-	// This field is used to specify the type of objects that should be
-	// included in the query results.
-	//
-	// Objects can be filtered by their type's package, package::module, or
-	// their fully qualified type name.
+	// Filter objects by their type's `package`, `package::module`, or their
+	// fully qualified type name.
 	//
 	// Generic types can be queried by either the generic type name, e.g.
 	// `0x2::coin::Coin`, or by the full type name, such as
@@ -6159,971 +4371,6 @@ func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesOb
 	return v.EndCursor
 }
 
-// PaginateCheckpointTransactionBlocksCheckpoint includes the requested fields of the GraphQL type Checkpoint.
-// The GraphQL type's documentation follows.
-//
-// Checkpoints contain finalized transactions and are used for node
-// synchronization and global transaction ordering.
-type PaginateCheckpointTransactionBlocksCheckpoint struct {
-	// Transactions in this checkpoint.
-	//
-	// `scanLimit` restricts the number of candidate transactions scanned when
-	// gathering a page of results. It is required for queries that apply
-	// more than two complex filters (on function, kind, sender, recipient,
-	// input object, changed object, or ids), and can be at most
-	// `serviceConfig.maxScanLimit`.
-	//
-	// When the scan limit is reached the page will be returned even if it has
-	// fewer than `first` results when paginating forward (`last` when
-	// paginating backwards). If there are more transactions to scan,
-	// `pageInfo.hasNextPage` (or `pageInfo.hasPreviousPage`) will be set to
-	// `true`, and `PageInfo.endCursor` (or `PageInfo.startCursor`) will be set
-	// to the last transaction that was scanned as opposed to the last (or
-	// first) transaction in the page.
-	//
-	// Requesting the next (or previous) page after this cursor will resume the
-	// search, scanning the next `scanLimit` many transactions in the
-	// direction of pagination, and so on until all transactions in the
-	// scanning range have been visited.
-	//
-	// By default, the scanning range consists of all transactions in this
-	// checkpoint.
-	TransactionBlocks PaginateCheckpointTransactionBlocksCheckpointTransactionBlocksTransactionBlockConnection `json:"transactionBlocks"`
-}
-
-// GetTransactionBlocks returns PaginateCheckpointTransactionBlocksCheckpoint.TransactionBlocks, and is useful for accessing the field via an interface.
-func (v *PaginateCheckpointTransactionBlocksCheckpoint) GetTransactionBlocks() PaginateCheckpointTransactionBlocksCheckpointTransactionBlocksTransactionBlockConnection {
-	return v.TransactionBlocks
-}
-
-// PaginateCheckpointTransactionBlocksCheckpointTransactionBlocksTransactionBlockConnection includes the requested fields of the GraphQL type TransactionBlockConnection.
-type PaginateCheckpointTransactionBlocksCheckpointTransactionBlocksTransactionBlockConnection struct {
-	// Information to aid in pagination.
-	PageInfo PaginateCheckpointTransactionBlocksCheckpointTransactionBlocksTransactionBlockConnectionPageInfo `json:"pageInfo"`
-	// A list of nodes.
-	Nodes []PaginateCheckpointTransactionBlocksCheckpointTransactionBlocksTransactionBlockConnectionNodesTransactionBlock `json:"nodes"`
-}
-
-// GetPageInfo returns PaginateCheckpointTransactionBlocksCheckpointTransactionBlocksTransactionBlockConnection.PageInfo, and is useful for accessing the field via an interface.
-func (v *PaginateCheckpointTransactionBlocksCheckpointTransactionBlocksTransactionBlockConnection) GetPageInfo() PaginateCheckpointTransactionBlocksCheckpointTransactionBlocksTransactionBlockConnectionPageInfo {
-	return v.PageInfo
-}
-
-// GetNodes returns PaginateCheckpointTransactionBlocksCheckpointTransactionBlocksTransactionBlockConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *PaginateCheckpointTransactionBlocksCheckpointTransactionBlocksTransactionBlockConnection) GetNodes() []PaginateCheckpointTransactionBlocksCheckpointTransactionBlocksTransactionBlockConnectionNodesTransactionBlock {
-	return v.Nodes
-}
-
-// PaginateCheckpointTransactionBlocksCheckpointTransactionBlocksTransactionBlockConnectionNodesTransactionBlock includes the requested fields of the GraphQL type TransactionBlock.
-type PaginateCheckpointTransactionBlocksCheckpointTransactionBlocksTransactionBlockConnectionNodesTransactionBlock struct {
-	// A 32-byte hash that uniquely identifies the transaction block contents,
-	// encoded in Base58. This serves as a unique id for the block on
-	// chain.
-	Digest string `json:"digest"`
-}
-
-// GetDigest returns PaginateCheckpointTransactionBlocksCheckpointTransactionBlocksTransactionBlockConnectionNodesTransactionBlock.Digest, and is useful for accessing the field via an interface.
-func (v *PaginateCheckpointTransactionBlocksCheckpointTransactionBlocksTransactionBlockConnectionNodesTransactionBlock) GetDigest() string {
-	return v.Digest
-}
-
-// PaginateCheckpointTransactionBlocksCheckpointTransactionBlocksTransactionBlockConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
-// The GraphQL type's documentation follows.
-//
-// Information about pagination in a connection
-type PaginateCheckpointTransactionBlocksCheckpointTransactionBlocksTransactionBlockConnectionPageInfo struct {
-	// When paginating forwards, are there more items?
-	HasNextPage bool `json:"hasNextPage"`
-	// When paginating forwards, the cursor to continue.
-	EndCursor string `json:"endCursor"`
-}
-
-// GetHasNextPage returns PaginateCheckpointTransactionBlocksCheckpointTransactionBlocksTransactionBlockConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
-func (v *PaginateCheckpointTransactionBlocksCheckpointTransactionBlocksTransactionBlockConnectionPageInfo) GetHasNextPage() bool {
-	return v.HasNextPage
-}
-
-// GetEndCursor returns PaginateCheckpointTransactionBlocksCheckpointTransactionBlocksTransactionBlockConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
-func (v *PaginateCheckpointTransactionBlocksCheckpointTransactionBlocksTransactionBlockConnectionPageInfo) GetEndCursor() string {
-	return v.EndCursor
-}
-
-// PaginateCheckpointTransactionBlocksResponse is returned by PaginateCheckpointTransactionBlocks on success.
-type PaginateCheckpointTransactionBlocksResponse struct {
-	// Fetch checkpoint information by sequence number or digest (defaults to
-	// the latest available checkpoint).
-	Checkpoint PaginateCheckpointTransactionBlocksCheckpoint `json:"checkpoint"`
-}
-
-// GetCheckpoint returns PaginateCheckpointTransactionBlocksResponse.Checkpoint, and is useful for accessing the field via an interface.
-func (v *PaginateCheckpointTransactionBlocksResponse) GetCheckpoint() PaginateCheckpointTransactionBlocksCheckpoint {
-	return v.Checkpoint
-}
-
-// PaginateEpochValidatorsEpoch includes the requested fields of the GraphQL type Epoch.
-// The GraphQL type's documentation follows.
-//
-// Operation of the IOTA network is temporally partitioned into non-overlapping
-// epochs, and the network aims to keep epochs roughly the same duration as
-// each other. During a particular epoch the following data is fixed:
-//
-// - the protocol version
-// - the reference gas price
-// - the set of participating validators
-type PaginateEpochValidatorsEpoch struct {
-	// Validator related properties, including the active validators.
-	//
-	// For epochs other than the current the data provided refer to the start
-	// of the epoch.
-	ValidatorSet PaginateEpochValidatorsEpochValidatorSet `json:"validatorSet"`
-}
-
-// GetValidatorSet returns PaginateEpochValidatorsEpoch.ValidatorSet, and is useful for accessing the field via an interface.
-func (v *PaginateEpochValidatorsEpoch) GetValidatorSet() PaginateEpochValidatorsEpochValidatorSet {
-	return v.ValidatorSet
-}
-
-// PaginateEpochValidatorsEpochValidatorSet includes the requested fields of the GraphQL type ValidatorSet.
-// The GraphQL type's documentation follows.
-//
-// Representation of `0x3::validator_set::ValidatorSet`.
-type PaginateEpochValidatorsEpochValidatorSet struct {
-	// The current set of active validators.
-	ActiveValidators PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnection `json:"activeValidators"`
-}
-
-// GetActiveValidators returns PaginateEpochValidatorsEpochValidatorSet.ActiveValidators, and is useful for accessing the field via an interface.
-func (v *PaginateEpochValidatorsEpochValidatorSet) GetActiveValidators() PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnection {
-	return v.ActiveValidators
-}
-
-// PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnection includes the requested fields of the GraphQL type ValidatorConnection.
-type PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnection struct {
-	// Information to aid in pagination.
-	PageInfo PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo `json:"pageInfo"`
-	// A list of nodes.
-	Nodes []PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator `json:"nodes"`
-}
-
-// GetPageInfo returns PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnection.PageInfo, and is useful for accessing the field via an interface.
-func (v *PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnection) GetPageInfo() PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo {
-	return v.PageInfo
-}
-
-// GetNodes returns PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnection) GetNodes() []PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator {
-	return v.Nodes
-}
-
-// PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator includes the requested fields of the GraphQL type Validator.
-type PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator struct {
-	RPC_VALIDATOR_FIELDS `json:"-"`
-}
-
-// GetAtRisk returns PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.AtRisk, and is useful for accessing the field via an interface.
-func (v *PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetAtRisk() uint64 {
-	return v.RPC_VALIDATOR_FIELDS.AtRisk
-}
-
-// GetCommissionRate returns PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.CommissionRate, and is useful for accessing the field via an interface.
-func (v *PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetCommissionRate() int {
-	return v.RPC_VALIDATOR_FIELDS.CommissionRate
-}
-
-// GetExchangeRatesSize returns PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.ExchangeRatesSize, and is useful for accessing the field via an interface.
-func (v *PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetExchangeRatesSize() uint64 {
-	return v.RPC_VALIDATOR_FIELDS.ExchangeRatesSize
-}
-
-// GetExchangeRates returns PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.ExchangeRates, and is useful for accessing the field via an interface.
-func (v *PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetExchangeRates() RPC_VALIDATOR_FIELDSExchangeRatesMoveObject {
-	return v.RPC_VALIDATOR_FIELDS.ExchangeRates
-}
-
-// GetDescription returns PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.Description, and is useful for accessing the field via an interface.
-func (v *PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetDescription() string {
-	return v.RPC_VALIDATOR_FIELDS.Description
-}
-
-// GetGasPrice returns PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.GasPrice, and is useful for accessing the field via an interface.
-func (v *PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetGasPrice() iotajsonrpc.BigInt {
-	return v.RPC_VALIDATOR_FIELDS.GasPrice
-}
-
-// GetImageUrl returns PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.ImageUrl, and is useful for accessing the field via an interface.
-func (v *PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetImageUrl() string {
-	return v.RPC_VALIDATOR_FIELDS.ImageUrl
-}
-
-// GetName returns PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.Name, and is useful for accessing the field via an interface.
-func (v *PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetName() string {
-	return v.RPC_VALIDATOR_FIELDS.Name
-}
-
-// GetCredentials returns PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.Credentials, and is useful for accessing the field via an interface.
-func (v *PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetCredentials() RPC_VALIDATOR_FIELDSCredentialsValidatorCredentials {
-	return v.RPC_VALIDATOR_FIELDS.Credentials
-}
-
-// GetNextEpochCommissionRate returns PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.NextEpochCommissionRate, and is useful for accessing the field via an interface.
-func (v *PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetNextEpochCommissionRate() int {
-	return v.RPC_VALIDATOR_FIELDS.NextEpochCommissionRate
-}
-
-// GetNextEpochGasPrice returns PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.NextEpochGasPrice, and is useful for accessing the field via an interface.
-func (v *PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetNextEpochGasPrice() iotajsonrpc.BigInt {
-	return v.RPC_VALIDATOR_FIELDS.NextEpochGasPrice
-}
-
-// GetNextEpochCredentials returns PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.NextEpochCredentials, and is useful for accessing the field via an interface.
-func (v *PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetNextEpochCredentials() RPC_VALIDATOR_FIELDSNextEpochCredentialsValidatorCredentials {
-	return v.RPC_VALIDATOR_FIELDS.NextEpochCredentials
-}
-
-// GetNextEpochStake returns PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.NextEpochStake, and is useful for accessing the field via an interface.
-func (v *PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetNextEpochStake() iotajsonrpc.BigInt {
-	return v.RPC_VALIDATOR_FIELDS.NextEpochStake
-}
-
-// GetOperationCap returns PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.OperationCap, and is useful for accessing the field via an interface.
-func (v *PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetOperationCap() RPC_VALIDATOR_FIELDSOperationCapMoveObject {
-	return v.RPC_VALIDATOR_FIELDS.OperationCap
-}
-
-// GetPendingPoolTokenWithdraw returns PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.PendingPoolTokenWithdraw, and is useful for accessing the field via an interface.
-func (v *PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetPendingPoolTokenWithdraw() iotajsonrpc.BigInt {
-	return v.RPC_VALIDATOR_FIELDS.PendingPoolTokenWithdraw
-}
-
-// GetPendingStake returns PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.PendingStake, and is useful for accessing the field via an interface.
-func (v *PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetPendingStake() iotajsonrpc.BigInt {
-	return v.RPC_VALIDATOR_FIELDS.PendingStake
-}
-
-// GetPendingTotalIotaWithdraw returns PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.PendingTotalIotaWithdraw, and is useful for accessing the field via an interface.
-func (v *PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetPendingTotalIotaWithdraw() iotajsonrpc.BigInt {
-	return v.RPC_VALIDATOR_FIELDS.PendingTotalIotaWithdraw
-}
-
-// GetPoolTokenBalance returns PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.PoolTokenBalance, and is useful for accessing the field via an interface.
-func (v *PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetPoolTokenBalance() iotajsonrpc.BigInt {
-	return v.RPC_VALIDATOR_FIELDS.PoolTokenBalance
-}
-
-// GetProjectUrl returns PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.ProjectUrl, and is useful for accessing the field via an interface.
-func (v *PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetProjectUrl() string {
-	return v.RPC_VALIDATOR_FIELDS.ProjectUrl
-}
-
-// GetRewardsPool returns PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.RewardsPool, and is useful for accessing the field via an interface.
-func (v *PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetRewardsPool() iotajsonrpc.BigInt {
-	return v.RPC_VALIDATOR_FIELDS.RewardsPool
-}
-
-// GetStakingPool returns PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.StakingPool, and is useful for accessing the field via an interface.
-func (v *PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetStakingPool() RPC_VALIDATOR_FIELDSStakingPoolMoveObject {
-	return v.RPC_VALIDATOR_FIELDS.StakingPool
-}
-
-// GetStakingPoolActivationEpoch returns PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.StakingPoolActivationEpoch, and is useful for accessing the field via an interface.
-func (v *PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetStakingPoolActivationEpoch() uint64 {
-	return v.RPC_VALIDATOR_FIELDS.StakingPoolActivationEpoch
-}
-
-// GetStakingPoolIotaBalance returns PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.StakingPoolIotaBalance, and is useful for accessing the field via an interface.
-func (v *PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetStakingPoolIotaBalance() iotajsonrpc.BigInt {
-	return v.RPC_VALIDATOR_FIELDS.StakingPoolIotaBalance
-}
-
-// GetAddress returns PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.Address, and is useful for accessing the field via an interface.
-func (v *PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetAddress() RPC_VALIDATOR_FIELDSAddress {
-	return v.RPC_VALIDATOR_FIELDS.Address
-}
-
-// GetVotingPower returns PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.VotingPower, and is useful for accessing the field via an interface.
-func (v *PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetVotingPower() int {
-	return v.RPC_VALIDATOR_FIELDS.VotingPower
-}
-
-func (v *PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) UnmarshalJSON(b []byte) error {
-
-	if string(b) == "null" {
-		return nil
-	}
-
-	var firstPass struct {
-		*PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator
-		graphql.NoUnmarshalJSON
-	}
-	firstPass.PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator = v
-
-	err := json.Unmarshal(b, &firstPass)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(
-		b, &v.RPC_VALIDATOR_FIELDS)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-type __premarshalPaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator struct {
-	AtRisk uint64 `json:"atRisk"`
-
-	CommissionRate int `json:"commissionRate"`
-
-	ExchangeRatesSize uint64 `json:"exchangeRatesSize"`
-
-	ExchangeRates RPC_VALIDATOR_FIELDSExchangeRatesMoveObject `json:"exchangeRates"`
-
-	Description string `json:"description"`
-
-	GasPrice iotajsonrpc.BigInt `json:"gasPrice"`
-
-	ImageUrl string `json:"imageUrl"`
-
-	Name string `json:"name"`
-
-	Credentials RPC_VALIDATOR_FIELDSCredentialsValidatorCredentials `json:"credentials"`
-
-	NextEpochCommissionRate int `json:"nextEpochCommissionRate"`
-
-	NextEpochGasPrice iotajsonrpc.BigInt `json:"nextEpochGasPrice"`
-
-	NextEpochCredentials RPC_VALIDATOR_FIELDSNextEpochCredentialsValidatorCredentials `json:"nextEpochCredentials"`
-
-	NextEpochStake iotajsonrpc.BigInt `json:"nextEpochStake"`
-
-	OperationCap RPC_VALIDATOR_FIELDSOperationCapMoveObject `json:"operationCap"`
-
-	PendingPoolTokenWithdraw iotajsonrpc.BigInt `json:"pendingPoolTokenWithdraw"`
-
-	PendingStake iotajsonrpc.BigInt `json:"pendingStake"`
-
-	PendingTotalIotaWithdraw iotajsonrpc.BigInt `json:"pendingTotalIotaWithdraw"`
-
-	PoolTokenBalance iotajsonrpc.BigInt `json:"poolTokenBalance"`
-
-	ProjectUrl string `json:"projectUrl"`
-
-	RewardsPool iotajsonrpc.BigInt `json:"rewardsPool"`
-
-	StakingPool RPC_VALIDATOR_FIELDSStakingPoolMoveObject `json:"stakingPool"`
-
-	StakingPoolActivationEpoch uint64 `json:"stakingPoolActivationEpoch"`
-
-	StakingPoolIotaBalance iotajsonrpc.BigInt `json:"stakingPoolIotaBalance"`
-
-	Address RPC_VALIDATOR_FIELDSAddress `json:"address"`
-
-	VotingPower int `json:"votingPower"`
-}
-
-func (v *PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) MarshalJSON() ([]byte, error) {
-	premarshaled, err := v.__premarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(premarshaled)
-}
-
-func (v *PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) __premarshalJSON() (*__premarshalPaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator, error) {
-	var retval __premarshalPaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator
-
-	retval.AtRisk = v.RPC_VALIDATOR_FIELDS.AtRisk
-	retval.CommissionRate = v.RPC_VALIDATOR_FIELDS.CommissionRate
-	retval.ExchangeRatesSize = v.RPC_VALIDATOR_FIELDS.ExchangeRatesSize
-	retval.ExchangeRates = v.RPC_VALIDATOR_FIELDS.ExchangeRates
-	retval.Description = v.RPC_VALIDATOR_FIELDS.Description
-	retval.GasPrice = v.RPC_VALIDATOR_FIELDS.GasPrice
-	retval.ImageUrl = v.RPC_VALIDATOR_FIELDS.ImageUrl
-	retval.Name = v.RPC_VALIDATOR_FIELDS.Name
-	retval.Credentials = v.RPC_VALIDATOR_FIELDS.Credentials
-	retval.NextEpochCommissionRate = v.RPC_VALIDATOR_FIELDS.NextEpochCommissionRate
-	retval.NextEpochGasPrice = v.RPC_VALIDATOR_FIELDS.NextEpochGasPrice
-	retval.NextEpochCredentials = v.RPC_VALIDATOR_FIELDS.NextEpochCredentials
-	retval.NextEpochStake = v.RPC_VALIDATOR_FIELDS.NextEpochStake
-	retval.OperationCap = v.RPC_VALIDATOR_FIELDS.OperationCap
-	retval.PendingPoolTokenWithdraw = v.RPC_VALIDATOR_FIELDS.PendingPoolTokenWithdraw
-	retval.PendingStake = v.RPC_VALIDATOR_FIELDS.PendingStake
-	retval.PendingTotalIotaWithdraw = v.RPC_VALIDATOR_FIELDS.PendingTotalIotaWithdraw
-	retval.PoolTokenBalance = v.RPC_VALIDATOR_FIELDS.PoolTokenBalance
-	retval.ProjectUrl = v.RPC_VALIDATOR_FIELDS.ProjectUrl
-	retval.RewardsPool = v.RPC_VALIDATOR_FIELDS.RewardsPool
-	retval.StakingPool = v.RPC_VALIDATOR_FIELDS.StakingPool
-	retval.StakingPoolActivationEpoch = v.RPC_VALIDATOR_FIELDS.StakingPoolActivationEpoch
-	retval.StakingPoolIotaBalance = v.RPC_VALIDATOR_FIELDS.StakingPoolIotaBalance
-	retval.Address = v.RPC_VALIDATOR_FIELDS.Address
-	retval.VotingPower = v.RPC_VALIDATOR_FIELDS.VotingPower
-	return &retval, nil
-}
-
-// PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
-// The GraphQL type's documentation follows.
-//
-// Information about pagination in a connection
-type PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo struct {
-	// When paginating forwards, are there more items?
-	HasNextPage bool `json:"hasNextPage"`
-	// When paginating forwards, the cursor to continue.
-	EndCursor string `json:"endCursor"`
-}
-
-// GetHasNextPage returns PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
-func (v *PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo) GetHasNextPage() bool {
-	return v.HasNextPage
-}
-
-// GetEndCursor returns PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
-func (v *PaginateEpochValidatorsEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo) GetEndCursor() string {
-	return v.EndCursor
-}
-
-// PaginateEpochValidatorsResponse is returned by PaginateEpochValidators on success.
-type PaginateEpochValidatorsResponse struct {
-	// Fetch epoch information by ID (defaults to the latest epoch).
-	Epoch PaginateEpochValidatorsEpoch `json:"epoch"`
-}
-
-// GetEpoch returns PaginateEpochValidatorsResponse.Epoch, and is useful for accessing the field via an interface.
-func (v *PaginateEpochValidatorsResponse) GetEpoch() PaginateEpochValidatorsEpoch { return v.Epoch }
-
-// PaginateMoveModuleListsObject includes the requested fields of the GraphQL type Object.
-// The GraphQL type's documentation follows.
-//
-// An object in IOTA is a package (set of Move bytecode modules) or object
-// (typed data structure with fields) with additional metadata detailing its
-// id, version, transaction digest, owner field indicating how this object can
-// be accessed.
-type PaginateMoveModuleListsObject struct {
-	// Attempts to convert the object into a MovePackage
-	AsMovePackage PaginateMoveModuleListsObjectAsMovePackage `json:"asMovePackage"`
-}
-
-// GetAsMovePackage returns PaginateMoveModuleListsObject.AsMovePackage, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObject) GetAsMovePackage() PaginateMoveModuleListsObjectAsMovePackage {
-	return v.AsMovePackage
-}
-
-// PaginateMoveModuleListsObjectAsMovePackage includes the requested fields of the GraphQL type MovePackage.
-// The GraphQL type's documentation follows.
-//
-// A MovePackage is a kind of Move object that represents code that has been
-// published on chain. It exposes information about its modules, type
-// definitions, functions, and dependencies.
-type PaginateMoveModuleListsObjectAsMovePackage struct {
-	// A representation of the module called `name` in this package, including
-	// the structs and functions it defines.
-	Module PaginateMoveModuleListsObjectAsMovePackageModuleMoveModule `json:"module"`
-}
-
-// GetModule returns PaginateMoveModuleListsObjectAsMovePackage.Module, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackage) GetModule() PaginateMoveModuleListsObjectAsMovePackageModuleMoveModule {
-	return v.Module
-}
-
-// PaginateMoveModuleListsObjectAsMovePackageModuleMoveModule includes the requested fields of the GraphQL type MoveModule.
-// The GraphQL type's documentation follows.
-//
-// Represents a module in Move, a library that defines struct types
-// and functions that operate on these types.
-type PaginateMoveModuleListsObjectAsMovePackageModuleMoveModule struct {
-	// Modules that this module considers friends (these modules can access
-	// `public(friend)` functions from this module).
-	Friends PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFriendsMoveModuleConnection `json:"friends"`
-	// Iterate through the structs defined in this module.
-	Structs PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleStructsMoveStructConnection `json:"structs"`
-	// Iterate through the enums defined in this module.
-	Enums PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleEnumsMoveEnumConnection `json:"enums"`
-	// Iterate through the signatures of functions defined in this module.
-	Functions PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnection `json:"functions"`
-}
-
-// GetFriends returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModule.Friends, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModule) GetFriends() PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFriendsMoveModuleConnection {
-	return v.Friends
-}
-
-// GetStructs returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModule.Structs, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModule) GetStructs() PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleStructsMoveStructConnection {
-	return v.Structs
-}
-
-// GetEnums returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModule.Enums, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModule) GetEnums() PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleEnumsMoveEnumConnection {
-	return v.Enums
-}
-
-// GetFunctions returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModule.Functions, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModule) GetFunctions() PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnection {
-	return v.Functions
-}
-
-// PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleEnumsMoveEnumConnection includes the requested fields of the GraphQL type MoveEnumConnection.
-type PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleEnumsMoveEnumConnection struct {
-	// Information to aid in pagination.
-	PageInfo PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleEnumsMoveEnumConnectionPageInfo `json:"pageInfo"`
-	// A list of nodes.
-	Nodes []PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleEnumsMoveEnumConnectionNodesMoveEnum `json:"nodes"`
-}
-
-// GetPageInfo returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleEnumsMoveEnumConnection.PageInfo, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleEnumsMoveEnumConnection) GetPageInfo() PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleEnumsMoveEnumConnectionPageInfo {
-	return v.PageInfo
-}
-
-// GetNodes returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleEnumsMoveEnumConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleEnumsMoveEnumConnection) GetNodes() []PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleEnumsMoveEnumConnectionNodesMoveEnum {
-	return v.Nodes
-}
-
-// PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleEnumsMoveEnumConnectionNodesMoveEnum includes the requested fields of the GraphQL type MoveEnum.
-// The GraphQL type's documentation follows.
-//
-// Description of an enum type, defined in a Move module.
-type PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleEnumsMoveEnumConnectionNodesMoveEnum struct {
-	RPC_MOVE_ENUM_FIELDS `json:"-"`
-}
-
-// GetName returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleEnumsMoveEnumConnectionNodesMoveEnum.Name, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleEnumsMoveEnumConnectionNodesMoveEnum) GetName() string {
-	return v.RPC_MOVE_ENUM_FIELDS.Name
-}
-
-// GetAbilities returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleEnumsMoveEnumConnectionNodesMoveEnum.Abilities, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleEnumsMoveEnumConnectionNodesMoveEnum) GetAbilities() []MoveAbility {
-	return v.RPC_MOVE_ENUM_FIELDS.Abilities
-}
-
-// GetTypeParameters returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleEnumsMoveEnumConnectionNodesMoveEnum.TypeParameters, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleEnumsMoveEnumConnectionNodesMoveEnum) GetTypeParameters() []RPC_MOVE_ENUM_FIELDSTypeParametersMoveStructTypeParameter {
-	return v.RPC_MOVE_ENUM_FIELDS.TypeParameters
-}
-
-// GetVariants returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleEnumsMoveEnumConnectionNodesMoveEnum.Variants, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleEnumsMoveEnumConnectionNodesMoveEnum) GetVariants() []RPC_MOVE_ENUM_FIELDSVariantsMoveEnumVariant {
-	return v.RPC_MOVE_ENUM_FIELDS.Variants
-}
-
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleEnumsMoveEnumConnectionNodesMoveEnum) UnmarshalJSON(b []byte) error {
-
-	if string(b) == "null" {
-		return nil
-	}
-
-	var firstPass struct {
-		*PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleEnumsMoveEnumConnectionNodesMoveEnum
-		graphql.NoUnmarshalJSON
-	}
-	firstPass.PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleEnumsMoveEnumConnectionNodesMoveEnum = v
-
-	err := json.Unmarshal(b, &firstPass)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(
-		b, &v.RPC_MOVE_ENUM_FIELDS)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-type __premarshalPaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleEnumsMoveEnumConnectionNodesMoveEnum struct {
-	Name string `json:"name"`
-
-	Abilities []MoveAbility `json:"abilities"`
-
-	TypeParameters []RPC_MOVE_ENUM_FIELDSTypeParametersMoveStructTypeParameter `json:"typeParameters"`
-
-	Variants []RPC_MOVE_ENUM_FIELDSVariantsMoveEnumVariant `json:"variants"`
-}
-
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleEnumsMoveEnumConnectionNodesMoveEnum) MarshalJSON() ([]byte, error) {
-	premarshaled, err := v.__premarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(premarshaled)
-}
-
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleEnumsMoveEnumConnectionNodesMoveEnum) __premarshalJSON() (*__premarshalPaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleEnumsMoveEnumConnectionNodesMoveEnum, error) {
-	var retval __premarshalPaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleEnumsMoveEnumConnectionNodesMoveEnum
-
-	retval.Name = v.RPC_MOVE_ENUM_FIELDS.Name
-	retval.Abilities = v.RPC_MOVE_ENUM_FIELDS.Abilities
-	retval.TypeParameters = v.RPC_MOVE_ENUM_FIELDS.TypeParameters
-	retval.Variants = v.RPC_MOVE_ENUM_FIELDS.Variants
-	return &retval, nil
-}
-
-// PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleEnumsMoveEnumConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
-// The GraphQL type's documentation follows.
-//
-// Information about pagination in a connection
-type PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleEnumsMoveEnumConnectionPageInfo struct {
-	// When paginating forwards, are there more items?
-	HasNextPage bool `json:"hasNextPage"`
-	// When paginating forwards, the cursor to continue.
-	EndCursor string `json:"endCursor"`
-}
-
-// GetHasNextPage returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleEnumsMoveEnumConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleEnumsMoveEnumConnectionPageInfo) GetHasNextPage() bool {
-	return v.HasNextPage
-}
-
-// GetEndCursor returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleEnumsMoveEnumConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleEnumsMoveEnumConnectionPageInfo) GetEndCursor() string {
-	return v.EndCursor
-}
-
-// PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFriendsMoveModuleConnection includes the requested fields of the GraphQL type MoveModuleConnection.
-type PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFriendsMoveModuleConnection struct {
-	// Information to aid in pagination.
-	PageInfo PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFriendsMoveModuleConnectionPageInfo `json:"pageInfo"`
-	// A list of nodes.
-	Nodes []PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFriendsMoveModuleConnectionNodesMoveModule `json:"nodes"`
-}
-
-// GetPageInfo returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFriendsMoveModuleConnection.PageInfo, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFriendsMoveModuleConnection) GetPageInfo() PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFriendsMoveModuleConnectionPageInfo {
-	return v.PageInfo
-}
-
-// GetNodes returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFriendsMoveModuleConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFriendsMoveModuleConnection) GetNodes() []PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFriendsMoveModuleConnectionNodesMoveModule {
-	return v.Nodes
-}
-
-// PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFriendsMoveModuleConnectionNodesMoveModule includes the requested fields of the GraphQL type MoveModule.
-// The GraphQL type's documentation follows.
-//
-// Represents a module in Move, a library that defines struct types
-// and functions that operate on these types.
-type PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFriendsMoveModuleConnectionNodesMoveModule struct {
-	// The module's (unqualified) name.
-	Name string `json:"name"`
-	// The package that this Move module was defined in
-	Package PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFriendsMoveModuleConnectionNodesMoveModulePackageMovePackage `json:"package"`
-}
-
-// GetName returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFriendsMoveModuleConnectionNodesMoveModule.Name, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFriendsMoveModuleConnectionNodesMoveModule) GetName() string {
-	return v.Name
-}
-
-// GetPackage returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFriendsMoveModuleConnectionNodesMoveModule.Package, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFriendsMoveModuleConnectionNodesMoveModule) GetPackage() PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFriendsMoveModuleConnectionNodesMoveModulePackageMovePackage {
-	return v.Package
-}
-
-// PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFriendsMoveModuleConnectionNodesMoveModulePackageMovePackage includes the requested fields of the GraphQL type MovePackage.
-// The GraphQL type's documentation follows.
-//
-// A MovePackage is a kind of Move object that represents code that has been
-// published on chain. It exposes information about its modules, type
-// definitions, functions, and dependencies.
-type PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFriendsMoveModuleConnectionNodesMoveModulePackageMovePackage struct {
-	Address iotago.Address `json:"address"`
-}
-
-// GetAddress returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFriendsMoveModuleConnectionNodesMoveModulePackageMovePackage.Address, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFriendsMoveModuleConnectionNodesMoveModulePackageMovePackage) GetAddress() iotago.Address {
-	return v.Address
-}
-
-// PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFriendsMoveModuleConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
-// The GraphQL type's documentation follows.
-//
-// Information about pagination in a connection
-type PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFriendsMoveModuleConnectionPageInfo struct {
-	// When paginating forwards, are there more items?
-	HasNextPage bool `json:"hasNextPage"`
-	// When paginating forwards, the cursor to continue.
-	EndCursor string `json:"endCursor"`
-}
-
-// GetHasNextPage returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFriendsMoveModuleConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFriendsMoveModuleConnectionPageInfo) GetHasNextPage() bool {
-	return v.HasNextPage
-}
-
-// GetEndCursor returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFriendsMoveModuleConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFriendsMoveModuleConnectionPageInfo) GetEndCursor() string {
-	return v.EndCursor
-}
-
-// PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnection includes the requested fields of the GraphQL type MoveFunctionConnection.
-type PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnection struct {
-	// Information to aid in pagination.
-	PageInfo PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnectionPageInfo `json:"pageInfo"`
-	// A list of nodes.
-	Nodes []PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnectionNodesMoveFunction `json:"nodes"`
-}
-
-// GetPageInfo returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnection.PageInfo, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnection) GetPageInfo() PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnectionPageInfo {
-	return v.PageInfo
-}
-
-// GetNodes returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnection) GetNodes() []PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnectionNodesMoveFunction {
-	return v.Nodes
-}
-
-// PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnectionNodesMoveFunction includes the requested fields of the GraphQL type MoveFunction.
-// The GraphQL type's documentation follows.
-//
-// Signature of a function, defined in a Move module.
-type PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnectionNodesMoveFunction struct {
-	RPC_MOVE_FUNCTION_FIELDS `json:"-"`
-}
-
-// GetName returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnectionNodesMoveFunction.Name, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnectionNodesMoveFunction) GetName() string {
-	return v.RPC_MOVE_FUNCTION_FIELDS.Name
-}
-
-// GetVisibility returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnectionNodesMoveFunction.Visibility, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnectionNodesMoveFunction) GetVisibility() MoveVisibility {
-	return v.RPC_MOVE_FUNCTION_FIELDS.Visibility
-}
-
-// GetIsEntry returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnectionNodesMoveFunction.IsEntry, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnectionNodesMoveFunction) GetIsEntry() bool {
-	return v.RPC_MOVE_FUNCTION_FIELDS.IsEntry
-}
-
-// GetParameters returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnectionNodesMoveFunction.Parameters, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnectionNodesMoveFunction) GetParameters() []RPC_MOVE_FUNCTION_FIELDSParametersOpenMoveType {
-	return v.RPC_MOVE_FUNCTION_FIELDS.Parameters
-}
-
-// GetTypeParameters returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnectionNodesMoveFunction.TypeParameters, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnectionNodesMoveFunction) GetTypeParameters() []RPC_MOVE_FUNCTION_FIELDSTypeParametersMoveFunctionTypeParameter {
-	return v.RPC_MOVE_FUNCTION_FIELDS.TypeParameters
-}
-
-// GetReturn returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnectionNodesMoveFunction.Return, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnectionNodesMoveFunction) GetReturn() []RPC_MOVE_FUNCTION_FIELDSReturnOpenMoveType {
-	return v.RPC_MOVE_FUNCTION_FIELDS.Return
-}
-
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnectionNodesMoveFunction) UnmarshalJSON(b []byte) error {
-
-	if string(b) == "null" {
-		return nil
-	}
-
-	var firstPass struct {
-		*PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnectionNodesMoveFunction
-		graphql.NoUnmarshalJSON
-	}
-	firstPass.PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnectionNodesMoveFunction = v
-
-	err := json.Unmarshal(b, &firstPass)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(
-		b, &v.RPC_MOVE_FUNCTION_FIELDS)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-type __premarshalPaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnectionNodesMoveFunction struct {
-	Name string `json:"name"`
-
-	Visibility MoveVisibility `json:"visibility"`
-
-	IsEntry bool `json:"isEntry"`
-
-	Parameters []RPC_MOVE_FUNCTION_FIELDSParametersOpenMoveType `json:"parameters"`
-
-	TypeParameters []RPC_MOVE_FUNCTION_FIELDSTypeParametersMoveFunctionTypeParameter `json:"typeParameters"`
-
-	Return []RPC_MOVE_FUNCTION_FIELDSReturnOpenMoveType `json:"return"`
-}
-
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnectionNodesMoveFunction) MarshalJSON() ([]byte, error) {
-	premarshaled, err := v.__premarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(premarshaled)
-}
-
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnectionNodesMoveFunction) __premarshalJSON() (*__premarshalPaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnectionNodesMoveFunction, error) {
-	var retval __premarshalPaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnectionNodesMoveFunction
-
-	retval.Name = v.RPC_MOVE_FUNCTION_FIELDS.Name
-	retval.Visibility = v.RPC_MOVE_FUNCTION_FIELDS.Visibility
-	retval.IsEntry = v.RPC_MOVE_FUNCTION_FIELDS.IsEntry
-	retval.Parameters = v.RPC_MOVE_FUNCTION_FIELDS.Parameters
-	retval.TypeParameters = v.RPC_MOVE_FUNCTION_FIELDS.TypeParameters
-	retval.Return = v.RPC_MOVE_FUNCTION_FIELDS.Return
-	return &retval, nil
-}
-
-// PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
-// The GraphQL type's documentation follows.
-//
-// Information about pagination in a connection
-type PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnectionPageInfo struct {
-	// When paginating forwards, are there more items?
-	HasNextPage bool `json:"hasNextPage"`
-	// When paginating forwards, the cursor to continue.
-	EndCursor string `json:"endCursor"`
-}
-
-// GetHasNextPage returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnectionPageInfo) GetHasNextPage() bool {
-	return v.HasNextPage
-}
-
-// GetEndCursor returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleFunctionsMoveFunctionConnectionPageInfo) GetEndCursor() string {
-	return v.EndCursor
-}
-
-// PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleStructsMoveStructConnection includes the requested fields of the GraphQL type MoveStructConnection.
-type PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleStructsMoveStructConnection struct {
-	// Information to aid in pagination.
-	PageInfo PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleStructsMoveStructConnectionPageInfo `json:"pageInfo"`
-	// A list of nodes.
-	Nodes []PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleStructsMoveStructConnectionNodesMoveStruct `json:"nodes"`
-}
-
-// GetPageInfo returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleStructsMoveStructConnection.PageInfo, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleStructsMoveStructConnection) GetPageInfo() PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleStructsMoveStructConnectionPageInfo {
-	return v.PageInfo
-}
-
-// GetNodes returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleStructsMoveStructConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleStructsMoveStructConnection) GetNodes() []PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleStructsMoveStructConnectionNodesMoveStruct {
-	return v.Nodes
-}
-
-// PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleStructsMoveStructConnectionNodesMoveStruct includes the requested fields of the GraphQL type MoveStruct.
-// The GraphQL type's documentation follows.
-//
-// Description of a struct type, defined in a Move module.
-type PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleStructsMoveStructConnectionNodesMoveStruct struct {
-	RPC_MOVE_STRUCT_FIELDS `json:"-"`
-}
-
-// GetName returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleStructsMoveStructConnectionNodesMoveStruct.Name, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleStructsMoveStructConnectionNodesMoveStruct) GetName() string {
-	return v.RPC_MOVE_STRUCT_FIELDS.Name
-}
-
-// GetAbilities returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleStructsMoveStructConnectionNodesMoveStruct.Abilities, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleStructsMoveStructConnectionNodesMoveStruct) GetAbilities() []MoveAbility {
-	return v.RPC_MOVE_STRUCT_FIELDS.Abilities
-}
-
-// GetFields returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleStructsMoveStructConnectionNodesMoveStruct.Fields, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleStructsMoveStructConnectionNodesMoveStruct) GetFields() []RPC_MOVE_STRUCT_FIELDSFieldsMoveField {
-	return v.RPC_MOVE_STRUCT_FIELDS.Fields
-}
-
-// GetTypeParameters returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleStructsMoveStructConnectionNodesMoveStruct.TypeParameters, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleStructsMoveStructConnectionNodesMoveStruct) GetTypeParameters() []RPC_MOVE_STRUCT_FIELDSTypeParametersMoveStructTypeParameter {
-	return v.RPC_MOVE_STRUCT_FIELDS.TypeParameters
-}
-
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleStructsMoveStructConnectionNodesMoveStruct) UnmarshalJSON(b []byte) error {
-
-	if string(b) == "null" {
-		return nil
-	}
-
-	var firstPass struct {
-		*PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleStructsMoveStructConnectionNodesMoveStruct
-		graphql.NoUnmarshalJSON
-	}
-	firstPass.PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleStructsMoveStructConnectionNodesMoveStruct = v
-
-	err := json.Unmarshal(b, &firstPass)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(
-		b, &v.RPC_MOVE_STRUCT_FIELDS)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-type __premarshalPaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleStructsMoveStructConnectionNodesMoveStruct struct {
-	Name string `json:"name"`
-
-	Abilities []MoveAbility `json:"abilities"`
-
-	Fields []RPC_MOVE_STRUCT_FIELDSFieldsMoveField `json:"fields"`
-
-	TypeParameters []RPC_MOVE_STRUCT_FIELDSTypeParametersMoveStructTypeParameter `json:"typeParameters"`
-}
-
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleStructsMoveStructConnectionNodesMoveStruct) MarshalJSON() ([]byte, error) {
-	premarshaled, err := v.__premarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(premarshaled)
-}
-
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleStructsMoveStructConnectionNodesMoveStruct) __premarshalJSON() (*__premarshalPaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleStructsMoveStructConnectionNodesMoveStruct, error) {
-	var retval __premarshalPaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleStructsMoveStructConnectionNodesMoveStruct
-
-	retval.Name = v.RPC_MOVE_STRUCT_FIELDS.Name
-	retval.Abilities = v.RPC_MOVE_STRUCT_FIELDS.Abilities
-	retval.Fields = v.RPC_MOVE_STRUCT_FIELDS.Fields
-	retval.TypeParameters = v.RPC_MOVE_STRUCT_FIELDS.TypeParameters
-	return &retval, nil
-}
-
-// PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleStructsMoveStructConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
-// The GraphQL type's documentation follows.
-//
-// Information about pagination in a connection
-type PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleStructsMoveStructConnectionPageInfo struct {
-	// When paginating forwards, are there more items?
-	HasNextPage bool `json:"hasNextPage"`
-	// When paginating forwards, the cursor to continue.
-	EndCursor string `json:"endCursor"`
-}
-
-// GetHasNextPage returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleStructsMoveStructConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleStructsMoveStructConnectionPageInfo) GetHasNextPage() bool {
-	return v.HasNextPage
-}
-
-// GetEndCursor returns PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleStructsMoveStructConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsObjectAsMovePackageModuleMoveModuleStructsMoveStructConnectionPageInfo) GetEndCursor() string {
-	return v.EndCursor
-}
-
-// PaginateMoveModuleListsResponse is returned by PaginateMoveModuleLists on success.
-type PaginateMoveModuleListsResponse struct {
-	// The object corresponding to the given address at the (optionally) given
-	// version. When no version is given, the latest version is returned.
-	Object PaginateMoveModuleListsObject `json:"object"`
-}
-
-// GetObject returns PaginateMoveModuleListsResponse.Object, and is useful for accessing the field via an interface.
-func (v *PaginateMoveModuleListsResponse) GetObject() PaginateMoveModuleListsObject { return v.Object }
-
 // PaginateTransactionBlockListsResponse is returned by PaginateTransactionBlockLists on success.
 type PaginateTransactionBlockListsResponse struct {
 	// Fetch a transaction block by its transaction digest.
@@ -7389,9 +4636,9 @@ func (v *QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesT
 	return v.RPC_TRANSACTION_FIELDS.Digest
 }
 
-// GetRawTransaction returns QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock.RawTransaction, and is useful for accessing the field via an interface.
-func (v *QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock) GetRawTransaction() iotago.Base64Data {
-	return v.RPC_TRANSACTION_FIELDS.RawTransaction
+// GetBcs returns QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock.Bcs, and is useful for accessing the field via an interface.
+func (v *QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock) GetBcs() iotago.Base64Data {
+	return v.RPC_TRANSACTION_FIELDS.Bcs
 }
 
 // GetSender returns QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock.Sender, and is useful for accessing the field via an interface.
@@ -7437,7 +4684,7 @@ func (v *QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesT
 type __premarshalQueryTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock struct {
 	Digest string `json:"digest"`
 
-	RawTransaction iotago.Base64Data `json:"rawTransaction"`
+	Bcs iotago.Base64Data `json:"bcs"`
 
 	Sender RPC_TRANSACTION_FIELDSSenderAddress `json:"sender"`
 
@@ -7458,7 +4705,7 @@ func (v *QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesT
 	var retval __premarshalQueryTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock
 
 	retval.Digest = v.RPC_TRANSACTION_FIELDS.Digest
-	retval.RawTransaction = v.RPC_TRANSACTION_FIELDS.RawTransaction
+	retval.Bcs = v.RPC_TRANSACTION_FIELDS.Bcs
 	retval.Sender = v.RPC_TRANSACTION_FIELDS.Sender
 	retval.Signatures = v.RPC_TRANSACTION_FIELDS.Signatures
 	retval.Effects = v.RPC_TRANSACTION_FIELDS.Effects
@@ -7497,978 +4744,6 @@ func (v *QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionPageIn
 
 // GetEndCursor returns QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
 func (v *QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionPageInfo) GetEndCursor() string {
-	return v.EndCursor
-}
-
-// RPC_CREDENTIAL_FIELDS includes the GraphQL fields of ValidatorCredentials requested by the fragment RPC_CREDENTIAL_FIELDS.
-// The GraphQL type's documentation follows.
-//
-// The credentials related fields associated with a validator.
-type RPC_CREDENTIAL_FIELDS struct {
-	NetAddress        string            `json:"netAddress"`
-	NetworkPubKey     iotago.Base64Data `json:"networkPubKey"`
-	P2PAddress        string            `json:"p2PAddress"`
-	PrimaryAddress    string            `json:"primaryAddress"`
-	ProofOfPossession iotago.Base64Data `json:"proofOfPossession"`
-	ProtocolPubKey    iotago.Base64Data `json:"protocolPubKey"`
-}
-
-// GetNetAddress returns RPC_CREDENTIAL_FIELDS.NetAddress, and is useful for accessing the field via an interface.
-func (v *RPC_CREDENTIAL_FIELDS) GetNetAddress() string { return v.NetAddress }
-
-// GetNetworkPubKey returns RPC_CREDENTIAL_FIELDS.NetworkPubKey, and is useful for accessing the field via an interface.
-func (v *RPC_CREDENTIAL_FIELDS) GetNetworkPubKey() iotago.Base64Data { return v.NetworkPubKey }
-
-// GetP2PAddress returns RPC_CREDENTIAL_FIELDS.P2PAddress, and is useful for accessing the field via an interface.
-func (v *RPC_CREDENTIAL_FIELDS) GetP2PAddress() string { return v.P2PAddress }
-
-// GetPrimaryAddress returns RPC_CREDENTIAL_FIELDS.PrimaryAddress, and is useful for accessing the field via an interface.
-func (v *RPC_CREDENTIAL_FIELDS) GetPrimaryAddress() string { return v.PrimaryAddress }
-
-// GetProofOfPossession returns RPC_CREDENTIAL_FIELDS.ProofOfPossession, and is useful for accessing the field via an interface.
-func (v *RPC_CREDENTIAL_FIELDS) GetProofOfPossession() iotago.Base64Data { return v.ProofOfPossession }
-
-// GetProtocolPubKey returns RPC_CREDENTIAL_FIELDS.ProtocolPubKey, and is useful for accessing the field via an interface.
-func (v *RPC_CREDENTIAL_FIELDS) GetProtocolPubKey() iotago.Base64Data { return v.ProtocolPubKey }
-
-// RPC_Checkpoint_Fields includes the GraphQL fields of Checkpoint requested by the fragment RPC_Checkpoint_Fields.
-// The GraphQL type's documentation follows.
-//
-// Checkpoints contain finalized transactions and are used for node
-// synchronization and global transaction ordering.
-type RPC_Checkpoint_Fields struct {
-	// A 32-byte hash that uniquely identifies the checkpoint contents, encoded
-	// in Base58. This hash can be used to verify checkpoint contents by
-	// checking signatures against the committee, Hashing contents to match
-	// digest, and checking that the previous checkpoint digest matches.
-	Digest string `json:"digest"`
-	// The epoch this checkpoint is part of.
-	Epoch RPC_Checkpoint_FieldsEpoch `json:"epoch"`
-	// The computation cost, storage cost, storage rebate, and non-refundable
-	// storage fee accumulated during this epoch, up to and including this
-	// checkpoint. These values increase monotonically across checkpoints
-	// in the same epoch, and reset on epoch boundaries.
-	RollingGasSummary RPC_Checkpoint_FieldsRollingGasSummaryGasCostSummary `json:"rollingGasSummary"`
-	// The total number of transaction blocks in the network by the end of this
-	// checkpoint.
-	NetworkTotalTransactions uint64 `json:"networkTotalTransactions"`
-	// The digest of the checkpoint at the previous sequence number.
-	PreviousCheckpointDigest string `json:"previousCheckpointDigest"`
-	// This checkpoint's position in the total order of finalized checkpoints,
-	// agreed upon by consensus.
-	SequenceNumber uint64 `json:"sequenceNumber"`
-	// The timestamp at which the checkpoint is agreed to have happened
-	// according to consensus. Transactions that access time in this
-	// checkpoint will observe this timestamp.
-	Timestamp time.Time `json:"timestamp"`
-	// This is an aggregation of signatures from a quorum of validators for the
-	// checkpoint proposal.
-	ValidatorSignatures iotago.Base64Data `json:"validatorSignatures"`
-	// Transactions in this checkpoint.
-	//
-	// `scanLimit` restricts the number of candidate transactions scanned when
-	// gathering a page of results. It is required for queries that apply
-	// more than two complex filters (on function, kind, sender, recipient,
-	// input object, changed object, or ids), and can be at most
-	// `serviceConfig.maxScanLimit`.
-	//
-	// When the scan limit is reached the page will be returned even if it has
-	// fewer than `first` results when paginating forward (`last` when
-	// paginating backwards). If there are more transactions to scan,
-	// `pageInfo.hasNextPage` (or `pageInfo.hasPreviousPage`) will be set to
-	// `true`, and `PageInfo.endCursor` (or `PageInfo.startCursor`) will be set
-	// to the last transaction that was scanned as opposed to the last (or
-	// first) transaction in the page.
-	//
-	// Requesting the next (or previous) page after this cursor will resume the
-	// search, scanning the next `scanLimit` many transactions in the
-	// direction of pagination, and so on until all transactions in the
-	// scanning range have been visited.
-	//
-	// By default, the scanning range consists of all transactions in this
-	// checkpoint.
-	TransactionBlocks RPC_Checkpoint_FieldsTransactionBlocksTransactionBlockConnection `json:"transactionBlocks"`
-	// Transactions in this checkpoint.
-	//
-	// `scanLimit` restricts the number of candidate transactions scanned when
-	// gathering a page of results. It is required for queries that apply
-	// more than two complex filters (on function, kind, sender, recipient,
-	// input object, changed object, or ids), and can be at most
-	// `serviceConfig.maxScanLimit`.
-	//
-	// When the scan limit is reached the page will be returned even if it has
-	// fewer than `first` results when paginating forward (`last` when
-	// paginating backwards). If there are more transactions to scan,
-	// `pageInfo.hasNextPage` (or `pageInfo.hasPreviousPage`) will be set to
-	// `true`, and `PageInfo.endCursor` (or `PageInfo.startCursor`) will be set
-	// to the last transaction that was scanned as opposed to the last (or
-	// first) transaction in the page.
-	//
-	// Requesting the next (or previous) page after this cursor will resume the
-	// search, scanning the next `scanLimit` many transactions in the
-	// direction of pagination, and so on until all transactions in the
-	// scanning range have been visited.
-	//
-	// By default, the scanning range consists of all transactions in this
-	// checkpoint.
-	EndOfEpoch RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnection `json:"endOfEpoch"`
-}
-
-// GetDigest returns RPC_Checkpoint_Fields.Digest, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_Fields) GetDigest() string { return v.Digest }
-
-// GetEpoch returns RPC_Checkpoint_Fields.Epoch, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_Fields) GetEpoch() RPC_Checkpoint_FieldsEpoch { return v.Epoch }
-
-// GetRollingGasSummary returns RPC_Checkpoint_Fields.RollingGasSummary, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_Fields) GetRollingGasSummary() RPC_Checkpoint_FieldsRollingGasSummaryGasCostSummary {
-	return v.RollingGasSummary
-}
-
-// GetNetworkTotalTransactions returns RPC_Checkpoint_Fields.NetworkTotalTransactions, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_Fields) GetNetworkTotalTransactions() uint64 {
-	return v.NetworkTotalTransactions
-}
-
-// GetPreviousCheckpointDigest returns RPC_Checkpoint_Fields.PreviousCheckpointDigest, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_Fields) GetPreviousCheckpointDigest() string {
-	return v.PreviousCheckpointDigest
-}
-
-// GetSequenceNumber returns RPC_Checkpoint_Fields.SequenceNumber, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_Fields) GetSequenceNumber() uint64 { return v.SequenceNumber }
-
-// GetTimestamp returns RPC_Checkpoint_Fields.Timestamp, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_Fields) GetTimestamp() time.Time { return v.Timestamp }
-
-// GetValidatorSignatures returns RPC_Checkpoint_Fields.ValidatorSignatures, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_Fields) GetValidatorSignatures() iotago.Base64Data {
-	return v.ValidatorSignatures
-}
-
-// GetTransactionBlocks returns RPC_Checkpoint_Fields.TransactionBlocks, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_Fields) GetTransactionBlocks() RPC_Checkpoint_FieldsTransactionBlocksTransactionBlockConnection {
-	return v.TransactionBlocks
-}
-
-// GetEndOfEpoch returns RPC_Checkpoint_Fields.EndOfEpoch, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_Fields) GetEndOfEpoch() RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnection {
-	return v.EndOfEpoch
-}
-
-// RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnection includes the requested fields of the GraphQL type TransactionBlockConnection.
-type RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnection struct {
-	// A list of nodes.
-	Nodes []RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlock `json:"nodes"`
-}
-
-// GetNodes returns RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnection) GetNodes() []RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlock {
-	return v.Nodes
-}
-
-// RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlock includes the requested fields of the GraphQL type TransactionBlock.
-type RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlock struct {
-	// The type of this transaction as well as the commands and/or parameters
-	// comprising the transaction of this kind.
-	Kind RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKind `json:"-"`
-}
-
-// GetKind returns RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlock.Kind, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlock) GetKind() RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKind {
-	return v.Kind
-}
-
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlock) UnmarshalJSON(b []byte) error {
-
-	if string(b) == "null" {
-		return nil
-	}
-
-	var firstPass struct {
-		*RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlock
-		Kind json.RawMessage `json:"kind"`
-		graphql.NoUnmarshalJSON
-	}
-	firstPass.RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlock = v
-
-	err := json.Unmarshal(b, &firstPass)
-	if err != nil {
-		return err
-	}
-
-	{
-		dst := &v.Kind
-		src := firstPass.Kind
-		if len(src) != 0 && string(src) != "null" {
-			err = __unmarshalRPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKind(
-				src, dst)
-			if err != nil {
-				return fmt.Errorf(
-					"unable to unmarshal RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlock.Kind: %w", err)
-			}
-		}
-	}
-	return nil
-}
-
-type __premarshalRPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlock struct {
-	Kind json.RawMessage `json:"kind"`
-}
-
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlock) MarshalJSON() ([]byte, error) {
-	premarshaled, err := v.__premarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(premarshaled)
-}
-
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlock) __premarshalJSON() (*__premarshalRPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlock, error) {
-	var retval __premarshalRPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlock
-
-	{
-
-		dst := &retval.Kind
-		src := v.Kind
-		var err error
-		*dst, err = __marshalRPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKind(
-			&src)
-		if err != nil {
-			return nil, fmt.Errorf(
-				"unable to marshal RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlock.Kind: %w", err)
-		}
-	}
-	return &retval, nil
-}
-
-// RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKind includes the requested fields of the GraphQL interface TransactionBlockKind.
-//
-// RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKind is implemented by the following types:
-// RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindAuthenticatorStateUpdateTransaction
-// RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindConsensusCommitPrologueTransaction
-// RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransaction
-// RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindGenesisTransaction
-// RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindProgrammableTransactionBlock
-// RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindRandomnessStateUpdateTransaction
-// The GraphQL type's documentation follows.
-//
-// The kind of transaction block, either a programmable transaction or a system
-// transaction.
-type RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKind interface {
-	implementsGraphQLInterfaceRPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKind()
-	// GetTypename returns the receiver's concrete GraphQL type-name (see interface doc for possible values).
-	GetTypename() string
-}
-
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindAuthenticatorStateUpdateTransaction) implementsGraphQLInterfaceRPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKind() {
-}
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindConsensusCommitPrologueTransaction) implementsGraphQLInterfaceRPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKind() {
-}
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransaction) implementsGraphQLInterfaceRPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKind() {
-}
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindGenesisTransaction) implementsGraphQLInterfaceRPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKind() {
-}
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindProgrammableTransactionBlock) implementsGraphQLInterfaceRPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKind() {
-}
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindRandomnessStateUpdateTransaction) implementsGraphQLInterfaceRPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKind() {
-}
-
-func __unmarshalRPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKind(b []byte, v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKind) error {
-	if string(b) == "null" {
-		return nil
-	}
-
-	var tn struct {
-		TypeName string `json:"__typename"`
-	}
-	err := json.Unmarshal(b, &tn)
-	if err != nil {
-		return err
-	}
-
-	switch tn.TypeName {
-	case "AuthenticatorStateUpdateTransaction":
-		*v = new(RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindAuthenticatorStateUpdateTransaction)
-		return json.Unmarshal(b, *v)
-	case "ConsensusCommitPrologueTransaction":
-		*v = new(RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindConsensusCommitPrologueTransaction)
-		return json.Unmarshal(b, *v)
-	case "EndOfEpochTransaction":
-		*v = new(RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransaction)
-		return json.Unmarshal(b, *v)
-	case "GenesisTransaction":
-		*v = new(RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindGenesisTransaction)
-		return json.Unmarshal(b, *v)
-	case "ProgrammableTransactionBlock":
-		*v = new(RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindProgrammableTransactionBlock)
-		return json.Unmarshal(b, *v)
-	case "RandomnessStateUpdateTransaction":
-		*v = new(RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindRandomnessStateUpdateTransaction)
-		return json.Unmarshal(b, *v)
-	case "":
-		return fmt.Errorf(
-			"response was missing TransactionBlockKind.__typename")
-	default:
-		return fmt.Errorf(
-			`unexpected concrete type for RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKind: "%v"`, tn.TypeName)
-	}
-}
-
-func __marshalRPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKind(v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKind) ([]byte, error) {
-
-	var typename string
-	switch v := (*v).(type) {
-	case *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindAuthenticatorStateUpdateTransaction:
-		typename = "AuthenticatorStateUpdateTransaction"
-
-		result := struct {
-			TypeName string `json:"__typename"`
-			*RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindAuthenticatorStateUpdateTransaction
-		}{typename, v}
-		return json.Marshal(result)
-	case *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindConsensusCommitPrologueTransaction:
-		typename = "ConsensusCommitPrologueTransaction"
-
-		result := struct {
-			TypeName string `json:"__typename"`
-			*RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindConsensusCommitPrologueTransaction
-		}{typename, v}
-		return json.Marshal(result)
-	case *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransaction:
-		typename = "EndOfEpochTransaction"
-
-		result := struct {
-			TypeName string `json:"__typename"`
-			*RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransaction
-		}{typename, v}
-		return json.Marshal(result)
-	case *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindGenesisTransaction:
-		typename = "GenesisTransaction"
-
-		result := struct {
-			TypeName string `json:"__typename"`
-			*RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindGenesisTransaction
-		}{typename, v}
-		return json.Marshal(result)
-	case *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindProgrammableTransactionBlock:
-		typename = "ProgrammableTransactionBlock"
-
-		result := struct {
-			TypeName string `json:"__typename"`
-			*RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindProgrammableTransactionBlock
-		}{typename, v}
-		return json.Marshal(result)
-	case *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindRandomnessStateUpdateTransaction:
-		typename = "RandomnessStateUpdateTransaction"
-
-		result := struct {
-			TypeName string `json:"__typename"`
-			*RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindRandomnessStateUpdateTransaction
-		}{typename, v}
-		return json.Marshal(result)
-	case nil:
-		return []byte("null"), nil
-	default:
-		return nil, fmt.Errorf(
-			`unexpected concrete type for RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKind: "%T"`, v)
-	}
-}
-
-// RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindAuthenticatorStateUpdateTransaction includes the requested fields of the GraphQL type AuthenticatorStateUpdateTransaction.
-// The GraphQL type's documentation follows.
-//
-// System transaction for updating the on-chain state used by zkLogin.
-type RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindAuthenticatorStateUpdateTransaction struct {
-	Typename string `json:"__typename"`
-}
-
-// GetTypename returns RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindAuthenticatorStateUpdateTransaction.Typename, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindAuthenticatorStateUpdateTransaction) GetTypename() string {
-	return v.Typename
-}
-
-// RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindConsensusCommitPrologueTransaction includes the requested fields of the GraphQL type ConsensusCommitPrologueTransaction.
-// The GraphQL type's documentation follows.
-//
-// System transaction that runs at the beginning of a checkpoint, and is
-// responsible for setting the current value of the clock, based on the
-// timestamp from consensus.
-type RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindConsensusCommitPrologueTransaction struct {
-	Typename string `json:"__typename"`
-}
-
-// GetTypename returns RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindConsensusCommitPrologueTransaction.Typename, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindConsensusCommitPrologueTransaction) GetTypename() string {
-	return v.Typename
-}
-
-// RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransaction includes the requested fields of the GraphQL type EndOfEpochTransaction.
-// The GraphQL type's documentation follows.
-//
-// System transaction that supersedes `ChangeEpochTransaction` as the new way
-// to run transactions at the end of an epoch. Behaves similarly to
-// `ChangeEpochTransaction` but can accommodate other optional transactions to
-// run at the end of the epoch.
-type RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransaction struct {
-	Typename string `json:"__typename"`
-	// The list of system transactions that are allowed to run at the end of
-	// the epoch.
-	Transactions RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnection `json:"transactions"`
-}
-
-// GetTypename returns RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransaction.Typename, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransaction) GetTypename() string {
-	return v.Typename
-}
-
-// GetTransactions returns RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransaction.Transactions, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransaction) GetTransactions() RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnection {
-	return v.Transactions
-}
-
-// RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnection includes the requested fields of the GraphQL type EndOfEpochTransactionKindConnection.
-type RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnection struct {
-	// A list of nodes.
-	Nodes []RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesEndOfEpochTransactionKind `json:"-"`
-}
-
-// GetNodes returns RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnection) GetNodes() []RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesEndOfEpochTransactionKind {
-	return v.Nodes
-}
-
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnection) UnmarshalJSON(b []byte) error {
-
-	if string(b) == "null" {
-		return nil
-	}
-
-	var firstPass struct {
-		*RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnection
-		Nodes []json.RawMessage `json:"nodes"`
-		graphql.NoUnmarshalJSON
-	}
-	firstPass.RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnection = v
-
-	err := json.Unmarshal(b, &firstPass)
-	if err != nil {
-		return err
-	}
-
-	{
-		dst := &v.Nodes
-		src := firstPass.Nodes
-		*dst = make(
-			[]RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesEndOfEpochTransactionKind,
-			len(src))
-		for i, src := range src {
-			dst := &(*dst)[i]
-			if len(src) != 0 && string(src) != "null" {
-				err = __unmarshalRPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesEndOfEpochTransactionKind(
-					src, dst)
-				if err != nil {
-					return fmt.Errorf(
-						"unable to unmarshal RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnection.Nodes: %w", err)
-				}
-			}
-		}
-	}
-	return nil
-}
-
-type __premarshalRPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnection struct {
-	Nodes []json.RawMessage `json:"nodes"`
-}
-
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnection) MarshalJSON() ([]byte, error) {
-	premarshaled, err := v.__premarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(premarshaled)
-}
-
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnection) __premarshalJSON() (*__premarshalRPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnection, error) {
-	var retval __premarshalRPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnection
-
-	{
-
-		dst := &retval.Nodes
-		src := v.Nodes
-		*dst = make(
-			[]json.RawMessage,
-			len(src))
-		for i, src := range src {
-			dst := &(*dst)[i]
-			var err error
-			*dst, err = __marshalRPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesEndOfEpochTransactionKind(
-				&src)
-			if err != nil {
-				return nil, fmt.Errorf(
-					"unable to marshal RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnection.Nodes: %w", err)
-			}
-		}
-	}
-	return &retval, nil
-}
-
-// RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesAuthenticatorStateCreateTransaction includes the requested fields of the GraphQL type AuthenticatorStateCreateTransaction.
-// The GraphQL type's documentation follows.
-//
-// System transaction for creating the on-chain state used by zkLogin.
-type RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesAuthenticatorStateCreateTransaction struct {
-	Typename string `json:"__typename"`
-}
-
-// GetTypename returns RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesAuthenticatorStateCreateTransaction.Typename, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesAuthenticatorStateCreateTransaction) GetTypename() string {
-	return v.Typename
-}
-
-// RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesAuthenticatorStateExpireTransaction includes the requested fields of the GraphQL type AuthenticatorStateExpireTransaction.
-type RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesAuthenticatorStateExpireTransaction struct {
-	Typename string `json:"__typename"`
-}
-
-// GetTypename returns RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesAuthenticatorStateExpireTransaction.Typename, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesAuthenticatorStateExpireTransaction) GetTypename() string {
-	return v.Typename
-}
-
-// RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransaction includes the requested fields of the GraphQL type ChangeEpochTransaction.
-// The GraphQL type's documentation follows.
-//
-// A system transaction that updates epoch information on-chain (increments the
-// current epoch). Executed by the system once per epoch, without using gas.
-// Epoch change transactions cannot be submitted by users, because validators
-// will refuse to sign them.
-type RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransaction struct {
-	Typename string `json:"__typename"`
-	// The next (to become) epoch.
-	Epoch RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpoch `json:"epoch"`
-}
-
-// GetTypename returns RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransaction.Typename, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransaction) GetTypename() string {
-	return v.Typename
-}
-
-// GetEpoch returns RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransaction.Epoch, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransaction) GetEpoch() RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpoch {
-	return v.Epoch
-}
-
-// RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpoch includes the requested fields of the GraphQL type Epoch.
-// The GraphQL type's documentation follows.
-//
-// Operation of the IOTA network is temporally partitioned into non-overlapping
-// epochs, and the network aims to keep epochs roughly the same duration as
-// each other. During a particular epoch the following data is fixed:
-//
-// - the protocol version
-// - the reference gas price
-// - the set of participating validators
-type RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpoch struct {
-	// Validator related properties, including the active validators.
-	//
-	// For epochs other than the current the data provided refer to the start
-	// of the epoch.
-	ValidatorSet RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochValidatorSet `json:"validatorSet"`
-	// The epoch's corresponding protocol configuration, including the feature
-	// flags and the configuration options.
-	ProtocolConfigs RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochProtocolConfigs `json:"protocolConfigs"`
-	// The epoch's id as a sequence number that starts at 0 and is incremented
-	// by one at every epoch change.
-	EpochId uint64 `json:"epochId"`
-}
-
-// GetValidatorSet returns RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpoch.ValidatorSet, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpoch) GetValidatorSet() RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochValidatorSet {
-	return v.ValidatorSet
-}
-
-// GetProtocolConfigs returns RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpoch.ProtocolConfigs, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpoch) GetProtocolConfigs() RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochProtocolConfigs {
-	return v.ProtocolConfigs
-}
-
-// GetEpochId returns RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpoch.EpochId, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpoch) GetEpochId() uint64 {
-	return v.EpochId
-}
-
-// RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochProtocolConfigs includes the requested fields of the GraphQL type ProtocolConfigs.
-// The GraphQL type's documentation follows.
-//
-// Constants that control how the chain operates.
-//
-// These can only change during protocol upgrades which happen on epoch
-// boundaries.
-type RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochProtocolConfigs struct {
-	// The protocol is not required to change on every epoch boundary, so the
-	// protocol version tracks which change to the protocol these configs
-	// are from.
-	ProtocolVersion uint64 `json:"protocolVersion"`
-}
-
-// GetProtocolVersion returns RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochProtocolConfigs.ProtocolVersion, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochProtocolConfigs) GetProtocolVersion() uint64 {
-	return v.ProtocolVersion
-}
-
-// RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochValidatorSet includes the requested fields of the GraphQL type ValidatorSet.
-// The GraphQL type's documentation follows.
-//
-// Representation of `0x3::validator_set::ValidatorSet`.
-type RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochValidatorSet struct {
-	// The current set of active validators.
-	ActiveValidators RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochValidatorSetActiveValidatorsValidatorConnection `json:"activeValidators"`
-}
-
-// GetActiveValidators returns RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochValidatorSet.ActiveValidators, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochValidatorSet) GetActiveValidators() RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochValidatorSetActiveValidatorsValidatorConnection {
-	return v.ActiveValidators
-}
-
-// RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochValidatorSetActiveValidatorsValidatorConnection includes the requested fields of the GraphQL type ValidatorConnection.
-type RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochValidatorSetActiveValidatorsValidatorConnection struct {
-	// Information to aid in pagination.
-	PageInfo RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo `json:"pageInfo"`
-	// A list of nodes.
-	Nodes []RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator `json:"nodes"`
-}
-
-// GetPageInfo returns RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochValidatorSetActiveValidatorsValidatorConnection.PageInfo, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochValidatorSetActiveValidatorsValidatorConnection) GetPageInfo() RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo {
-	return v.PageInfo
-}
-
-// GetNodes returns RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochValidatorSetActiveValidatorsValidatorConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochValidatorSetActiveValidatorsValidatorConnection) GetNodes() []RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator {
-	return v.Nodes
-}
-
-// RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator includes the requested fields of the GraphQL type Validator.
-type RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator struct {
-	// Validator's set of credentials such as public keys, network addresses
-	// and others.
-	Credentials RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidatorCredentials `json:"credentials"`
-	// The voting power of this validator in basis points (e.g., 100 = 1%
-	// voting power).
-	VotingPower int `json:"votingPower"`
-}
-
-// GetCredentials returns RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.Credentials, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetCredentials() RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidatorCredentials {
-	return v.Credentials
-}
-
-// GetVotingPower returns RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator.VotingPower, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidator) GetVotingPower() int {
-	return v.VotingPower
-}
-
-// RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidatorCredentials includes the requested fields of the GraphQL type ValidatorCredentials.
-// The GraphQL type's documentation follows.
-//
-// The credentials related fields associated with a validator.
-type RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidatorCredentials struct {
-	ProtocolPubKey iotago.Base64Data `json:"protocolPubKey"`
-}
-
-// GetProtocolPubKey returns RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidatorCredentials.ProtocolPubKey, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochValidatorSetActiveValidatorsValidatorConnectionNodesValidatorCredentials) GetProtocolPubKey() iotago.Base64Data {
-	return v.ProtocolPubKey
-}
-
-// RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
-// The GraphQL type's documentation follows.
-//
-// Information about pagination in a connection
-type RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo struct {
-	// When paginating forwards, are there more items?
-	HasNextPage bool `json:"hasNextPage"`
-	// When paginating forwards, the cursor to continue.
-	EndCursor string `json:"endCursor"`
-}
-
-// GetHasNextPage returns RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo) GetHasNextPage() bool {
-	return v.HasNextPage
-}
-
-// GetEndCursor returns RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionEpochValidatorSetActiveValidatorsValidatorConnectionPageInfo) GetEndCursor() string {
-	return v.EndCursor
-}
-
-// RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionV2 includes the requested fields of the GraphQL type ChangeEpochTransactionV2.
-// The GraphQL type's documentation follows.
-//
-// A system transaction that updates epoch information on-chain (increments the
-// current epoch). Executed by the system once per epoch, without using gas.
-// Epoch change transactions cannot be submitted by users, because validators
-// will refuse to sign them.
-type RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionV2 struct {
-	Typename string `json:"__typename"`
-}
-
-// GetTypename returns RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionV2.Typename, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionV2) GetTypename() string {
-	return v.Typename
-}
-
-// RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesEndOfEpochTransactionKind includes the requested fields of the GraphQL interface EndOfEpochTransactionKind.
-//
-// RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesEndOfEpochTransactionKind is implemented by the following types:
-// RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesAuthenticatorStateCreateTransaction
-// RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesAuthenticatorStateExpireTransaction
-// RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransaction
-// RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionV2
-type RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesEndOfEpochTransactionKind interface {
-	implementsGraphQLInterfaceRPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesEndOfEpochTransactionKind()
-	// GetTypename returns the receiver's concrete GraphQL type-name (see interface doc for possible values).
-	GetTypename() string
-}
-
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesAuthenticatorStateCreateTransaction) implementsGraphQLInterfaceRPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesEndOfEpochTransactionKind() {
-}
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesAuthenticatorStateExpireTransaction) implementsGraphQLInterfaceRPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesEndOfEpochTransactionKind() {
-}
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransaction) implementsGraphQLInterfaceRPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesEndOfEpochTransactionKind() {
-}
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionV2) implementsGraphQLInterfaceRPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesEndOfEpochTransactionKind() {
-}
-
-func __unmarshalRPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesEndOfEpochTransactionKind(b []byte, v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesEndOfEpochTransactionKind) error {
-	if string(b) == "null" {
-		return nil
-	}
-
-	var tn struct {
-		TypeName string `json:"__typename"`
-	}
-	err := json.Unmarshal(b, &tn)
-	if err != nil {
-		return err
-	}
-
-	switch tn.TypeName {
-	case "AuthenticatorStateCreateTransaction":
-		*v = new(RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesAuthenticatorStateCreateTransaction)
-		return json.Unmarshal(b, *v)
-	case "AuthenticatorStateExpireTransaction":
-		*v = new(RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesAuthenticatorStateExpireTransaction)
-		return json.Unmarshal(b, *v)
-	case "ChangeEpochTransaction":
-		*v = new(RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransaction)
-		return json.Unmarshal(b, *v)
-	case "ChangeEpochTransactionV2":
-		*v = new(RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionV2)
-		return json.Unmarshal(b, *v)
-	case "":
-		return fmt.Errorf(
-			"response was missing EndOfEpochTransactionKind.__typename")
-	default:
-		return fmt.Errorf(
-			`unexpected concrete type for RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesEndOfEpochTransactionKind: "%v"`, tn.TypeName)
-	}
-}
-
-func __marshalRPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesEndOfEpochTransactionKind(v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesEndOfEpochTransactionKind) ([]byte, error) {
-
-	var typename string
-	switch v := (*v).(type) {
-	case *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesAuthenticatorStateCreateTransaction:
-		typename = "AuthenticatorStateCreateTransaction"
-
-		result := struct {
-			TypeName string `json:"__typename"`
-			*RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesAuthenticatorStateCreateTransaction
-		}{typename, v}
-		return json.Marshal(result)
-	case *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesAuthenticatorStateExpireTransaction:
-		typename = "AuthenticatorStateExpireTransaction"
-
-		result := struct {
-			TypeName string `json:"__typename"`
-			*RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesAuthenticatorStateExpireTransaction
-		}{typename, v}
-		return json.Marshal(result)
-	case *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransaction:
-		typename = "ChangeEpochTransaction"
-
-		result := struct {
-			TypeName string `json:"__typename"`
-			*RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransaction
-		}{typename, v}
-		return json.Marshal(result)
-	case *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionV2:
-		typename = "ChangeEpochTransactionV2"
-
-		result := struct {
-			TypeName string `json:"__typename"`
-			*RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesChangeEpochTransactionV2
-		}{typename, v}
-		return json.Marshal(result)
-	case nil:
-		return []byte("null"), nil
-	default:
-		return nil, fmt.Errorf(
-			`unexpected concrete type for RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindEndOfEpochTransactionTransactionsEndOfEpochTransactionKindConnectionNodesEndOfEpochTransactionKind: "%T"`, v)
-	}
-}
-
-// RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindGenesisTransaction includes the requested fields of the GraphQL type GenesisTransaction.
-// The GraphQL type's documentation follows.
-//
-// System transaction that initializes the network and writes the initial set
-// of objects on-chain.
-type RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindGenesisTransaction struct {
-	Typename string `json:"__typename"`
-}
-
-// GetTypename returns RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindGenesisTransaction.Typename, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindGenesisTransaction) GetTypename() string {
-	return v.Typename
-}
-
-// RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindProgrammableTransactionBlock includes the requested fields of the GraphQL type ProgrammableTransactionBlock.
-// The GraphQL type's documentation follows.
-//
-// A user transaction that allows the interleaving of native commands (like
-// transfer, split coins, merge coins, etc) and move calls, executed
-// atomically.
-type RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindProgrammableTransactionBlock struct {
-	Typename string `json:"__typename"`
-}
-
-// GetTypename returns RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindProgrammableTransactionBlock.Typename, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindProgrammableTransactionBlock) GetTypename() string {
-	return v.Typename
-}
-
-// RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindRandomnessStateUpdateTransaction includes the requested fields of the GraphQL type RandomnessStateUpdateTransaction.
-// The GraphQL type's documentation follows.
-//
-// System transaction to update the source of on-chain randomness.
-type RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindRandomnessStateUpdateTransaction struct {
-	Typename string `json:"__typename"`
-}
-
-// GetTypename returns RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindRandomnessStateUpdateTransaction.Typename, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsEndOfEpochTransactionBlockConnectionNodesTransactionBlockKindRandomnessStateUpdateTransaction) GetTypename() string {
-	return v.Typename
-}
-
-// RPC_Checkpoint_FieldsEpoch includes the requested fields of the GraphQL type Epoch.
-// The GraphQL type's documentation follows.
-//
-// Operation of the IOTA network is temporally partitioned into non-overlapping
-// epochs, and the network aims to keep epochs roughly the same duration as
-// each other. During a particular epoch the following data is fixed:
-//
-// - the protocol version
-// - the reference gas price
-// - the set of participating validators
-type RPC_Checkpoint_FieldsEpoch struct {
-	// The epoch's id as a sequence number that starts at 0 and is incremented
-	// by one at every epoch change.
-	EpochId uint64 `json:"epochId"`
-}
-
-// GetEpochId returns RPC_Checkpoint_FieldsEpoch.EpochId, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsEpoch) GetEpochId() uint64 { return v.EpochId }
-
-// RPC_Checkpoint_FieldsRollingGasSummaryGasCostSummary includes the requested fields of the GraphQL type GasCostSummary.
-// The GraphQL type's documentation follows.
-//
-// Breakdown of gas costs in effects.
-type RPC_Checkpoint_FieldsRollingGasSummaryGasCostSummary struct {
-	// Gas paid for executing this transaction (in NANOS).
-	ComputationCost iotajsonrpc.BigInt `json:"computationCost"`
-	// Gas paid for the data stored on-chain by this transaction (in NANOS).
-	StorageCost iotajsonrpc.BigInt `json:"storageCost"`
-	// Part of storage cost that can be reclaimed by cleaning up data created
-	// by this transaction (when objects are deleted or an object is
-	// modified, which is treated as a deletion followed by a creation) (in
-	// NANOS).
-	StorageRebate iotajsonrpc.BigInt `json:"storageRebate"`
-	// Part of storage cost that is not reclaimed when data created by this
-	// transaction is cleaned up (in NANOS).
-	NonRefundableStorageFee iotajsonrpc.BigInt `json:"nonRefundableStorageFee"`
-}
-
-// GetComputationCost returns RPC_Checkpoint_FieldsRollingGasSummaryGasCostSummary.ComputationCost, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsRollingGasSummaryGasCostSummary) GetComputationCost() iotajsonrpc.BigInt {
-	return v.ComputationCost
-}
-
-// GetStorageCost returns RPC_Checkpoint_FieldsRollingGasSummaryGasCostSummary.StorageCost, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsRollingGasSummaryGasCostSummary) GetStorageCost() iotajsonrpc.BigInt {
-	return v.StorageCost
-}
-
-// GetStorageRebate returns RPC_Checkpoint_FieldsRollingGasSummaryGasCostSummary.StorageRebate, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsRollingGasSummaryGasCostSummary) GetStorageRebate() iotajsonrpc.BigInt {
-	return v.StorageRebate
-}
-
-// GetNonRefundableStorageFee returns RPC_Checkpoint_FieldsRollingGasSummaryGasCostSummary.NonRefundableStorageFee, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsRollingGasSummaryGasCostSummary) GetNonRefundableStorageFee() iotajsonrpc.BigInt {
-	return v.NonRefundableStorageFee
-}
-
-// RPC_Checkpoint_FieldsTransactionBlocksTransactionBlockConnection includes the requested fields of the GraphQL type TransactionBlockConnection.
-type RPC_Checkpoint_FieldsTransactionBlocksTransactionBlockConnection struct {
-	// Information to aid in pagination.
-	PageInfo RPC_Checkpoint_FieldsTransactionBlocksTransactionBlockConnectionPageInfo `json:"pageInfo"`
-	// A list of nodes.
-	Nodes []RPC_Checkpoint_FieldsTransactionBlocksTransactionBlockConnectionNodesTransactionBlock `json:"nodes"`
-}
-
-// GetPageInfo returns RPC_Checkpoint_FieldsTransactionBlocksTransactionBlockConnection.PageInfo, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsTransactionBlocksTransactionBlockConnection) GetPageInfo() RPC_Checkpoint_FieldsTransactionBlocksTransactionBlockConnectionPageInfo {
-	return v.PageInfo
-}
-
-// GetNodes returns RPC_Checkpoint_FieldsTransactionBlocksTransactionBlockConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsTransactionBlocksTransactionBlockConnection) GetNodes() []RPC_Checkpoint_FieldsTransactionBlocksTransactionBlockConnectionNodesTransactionBlock {
-	return v.Nodes
-}
-
-// RPC_Checkpoint_FieldsTransactionBlocksTransactionBlockConnectionNodesTransactionBlock includes the requested fields of the GraphQL type TransactionBlock.
-type RPC_Checkpoint_FieldsTransactionBlocksTransactionBlockConnectionNodesTransactionBlock struct {
-	// A 32-byte hash that uniquely identifies the transaction block contents,
-	// encoded in Base58. This serves as a unique id for the block on
-	// chain.
-	Digest string `json:"digest"`
-}
-
-// GetDigest returns RPC_Checkpoint_FieldsTransactionBlocksTransactionBlockConnectionNodesTransactionBlock.Digest, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsTransactionBlocksTransactionBlockConnectionNodesTransactionBlock) GetDigest() string {
-	return v.Digest
-}
-
-// RPC_Checkpoint_FieldsTransactionBlocksTransactionBlockConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
-// The GraphQL type's documentation follows.
-//
-// Information about pagination in a connection
-type RPC_Checkpoint_FieldsTransactionBlocksTransactionBlockConnectionPageInfo struct {
-	// When paginating forwards, are there more items?
-	HasNextPage bool `json:"hasNextPage"`
-	// When paginating forwards, the cursor to continue.
-	EndCursor string `json:"endCursor"`
-}
-
-// GetHasNextPage returns RPC_Checkpoint_FieldsTransactionBlocksTransactionBlockConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsTransactionBlocksTransactionBlockConnectionPageInfo) GetHasNextPage() bool {
-	return v.HasNextPage
-}
-
-// GetEndCursor returns RPC_Checkpoint_FieldsTransactionBlocksTransactionBlockConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
-func (v *RPC_Checkpoint_FieldsTransactionBlocksTransactionBlockConnectionPageInfo) GetEndCursor() string {
 	return v.EndCursor
 }
 
@@ -8559,703 +4834,6 @@ type RPC_EVENTS_FIELDSSendingModuleMoveModulePackageMovePackage struct {
 // GetAddress returns RPC_EVENTS_FIELDSSendingModuleMoveModulePackageMovePackage.Address, and is useful for accessing the field via an interface.
 func (v *RPC_EVENTS_FIELDSSendingModuleMoveModulePackageMovePackage) GetAddress() iotago.Address {
 	return v.Address
-}
-
-// RPC_MOVE_ENUM_FIELDS includes the GraphQL fields of MoveEnum requested by the fragment RPC_MOVE_ENUM_FIELDS.
-// The GraphQL type's documentation follows.
-//
-// Description of an enum type, defined in a Move module.
-type RPC_MOVE_ENUM_FIELDS struct {
-	// The enum's (unqualified) type name.
-	Name string `json:"name"`
-	// The enum's abilities.
-	Abilities []MoveAbility `json:"abilities"`
-	// Constraints on the enum's formal type parameters.  Move bytecode does
-	// not name type parameters, so when they are referenced (e.g. in field
-	// types) they are identified by their index in this list.
-	TypeParameters []RPC_MOVE_ENUM_FIELDSTypeParametersMoveStructTypeParameter `json:"typeParameters"`
-	// The names and types of the enum's fields.  Field types reference type
-	// parameters, by their index in the defining enum's `typeParameters`
-	// list.
-	Variants []RPC_MOVE_ENUM_FIELDSVariantsMoveEnumVariant `json:"variants"`
-}
-
-// GetName returns RPC_MOVE_ENUM_FIELDS.Name, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_ENUM_FIELDS) GetName() string { return v.Name }
-
-// GetAbilities returns RPC_MOVE_ENUM_FIELDS.Abilities, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_ENUM_FIELDS) GetAbilities() []MoveAbility { return v.Abilities }
-
-// GetTypeParameters returns RPC_MOVE_ENUM_FIELDS.TypeParameters, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_ENUM_FIELDS) GetTypeParameters() []RPC_MOVE_ENUM_FIELDSTypeParametersMoveStructTypeParameter {
-	return v.TypeParameters
-}
-
-// GetVariants returns RPC_MOVE_ENUM_FIELDS.Variants, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_ENUM_FIELDS) GetVariants() []RPC_MOVE_ENUM_FIELDSVariantsMoveEnumVariant {
-	return v.Variants
-}
-
-// RPC_MOVE_ENUM_FIELDSTypeParametersMoveStructTypeParameter includes the requested fields of the GraphQL type MoveStructTypeParameter.
-type RPC_MOVE_ENUM_FIELDSTypeParametersMoveStructTypeParameter struct {
-	IsPhantom   bool          `json:"isPhantom"`
-	Constraints []MoveAbility `json:"constraints"`
-}
-
-// GetIsPhantom returns RPC_MOVE_ENUM_FIELDSTypeParametersMoveStructTypeParameter.IsPhantom, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_ENUM_FIELDSTypeParametersMoveStructTypeParameter) GetIsPhantom() bool {
-	return v.IsPhantom
-}
-
-// GetConstraints returns RPC_MOVE_ENUM_FIELDSTypeParametersMoveStructTypeParameter.Constraints, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_ENUM_FIELDSTypeParametersMoveStructTypeParameter) GetConstraints() []MoveAbility {
-	return v.Constraints
-}
-
-// RPC_MOVE_ENUM_FIELDSVariantsMoveEnumVariant includes the requested fields of the GraphQL type MoveEnumVariant.
-type RPC_MOVE_ENUM_FIELDSVariantsMoveEnumVariant struct {
-	// The name of the variant
-	Name string `json:"name"`
-	// The names and types of the variant's fields.  Field types reference type
-	// parameters, by their index in the defining enum's `typeParameters`
-	// list.
-	Fields []RPC_MOVE_ENUM_FIELDSVariantsMoveEnumVariantFieldsMoveField `json:"fields"`
-}
-
-// GetName returns RPC_MOVE_ENUM_FIELDSVariantsMoveEnumVariant.Name, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_ENUM_FIELDSVariantsMoveEnumVariant) GetName() string { return v.Name }
-
-// GetFields returns RPC_MOVE_ENUM_FIELDSVariantsMoveEnumVariant.Fields, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_ENUM_FIELDSVariantsMoveEnumVariant) GetFields() []RPC_MOVE_ENUM_FIELDSVariantsMoveEnumVariantFieldsMoveField {
-	return v.Fields
-}
-
-// RPC_MOVE_ENUM_FIELDSVariantsMoveEnumVariantFieldsMoveField includes the requested fields of the GraphQL type MoveField.
-// The GraphQL type's documentation follows.
-//
-// Information for a particular field on a Move struct.
-type RPC_MOVE_ENUM_FIELDSVariantsMoveEnumVariantFieldsMoveField struct {
-	Name string                                                                     `json:"name"`
-	Type RPC_MOVE_ENUM_FIELDSVariantsMoveEnumVariantFieldsMoveFieldTypeOpenMoveType `json:"type"`
-}
-
-// GetName returns RPC_MOVE_ENUM_FIELDSVariantsMoveEnumVariantFieldsMoveField.Name, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_ENUM_FIELDSVariantsMoveEnumVariantFieldsMoveField) GetName() string { return v.Name }
-
-// GetType returns RPC_MOVE_ENUM_FIELDSVariantsMoveEnumVariantFieldsMoveField.Type, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_ENUM_FIELDSVariantsMoveEnumVariantFieldsMoveField) GetType() RPC_MOVE_ENUM_FIELDSVariantsMoveEnumVariantFieldsMoveFieldTypeOpenMoveType {
-	return v.Type
-}
-
-// RPC_MOVE_ENUM_FIELDSVariantsMoveEnumVariantFieldsMoveFieldTypeOpenMoveType includes the requested fields of the GraphQL type OpenMoveType.
-// The GraphQL type's documentation follows.
-//
-// Represents types that could contain references or free type parameters.
-// Such types can appear as function parameters, in fields of structs, or as
-// actual type parameter.
-type RPC_MOVE_ENUM_FIELDSVariantsMoveEnumVariantFieldsMoveFieldTypeOpenMoveType struct {
-	// Structured representation of the type signature.
-	Signature json.RawMessage `json:"signature"`
-}
-
-// GetSignature returns RPC_MOVE_ENUM_FIELDSVariantsMoveEnumVariantFieldsMoveFieldTypeOpenMoveType.Signature, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_ENUM_FIELDSVariantsMoveEnumVariantFieldsMoveFieldTypeOpenMoveType) GetSignature() json.RawMessage {
-	return v.Signature
-}
-
-// RPC_MOVE_FUNCTION_FIELDS includes the GraphQL fields of MoveFunction requested by the fragment RPC_MOVE_FUNCTION_FIELDS.
-// The GraphQL type's documentation follows.
-//
-// Signature of a function, defined in a Move module.
-type RPC_MOVE_FUNCTION_FIELDS struct {
-	// The function's (unqualified) name.
-	Name string `json:"name"`
-	// The function's visibility: `public`, `public(friend)`, or `private`.
-	Visibility MoveVisibility `json:"visibility"`
-	// Whether the function has the `entry` modifier or not.
-	IsEntry bool `json:"isEntry"`
-	// The function's parameter types.  These types can reference type
-	// parameters introduce by this function (see `typeParameters`).
-	Parameters []RPC_MOVE_FUNCTION_FIELDSParametersOpenMoveType `json:"parameters"`
-	// Constraints on the function's formal type parameters.  Move bytecode
-	// does not name type parameters, so when they are referenced (e.g. in
-	// parameter and return types) they are identified by their index in
-	// this list.
-	TypeParameters []RPC_MOVE_FUNCTION_FIELDSTypeParametersMoveFunctionTypeParameter `json:"typeParameters"`
-	// The function's return types.  There can be multiple because functions in
-	// Move can return multiple values.  These types can reference type
-	// parameters introduced by this function (see `typeParameters`).
-	Return []RPC_MOVE_FUNCTION_FIELDSReturnOpenMoveType `json:"return"`
-}
-
-// GetName returns RPC_MOVE_FUNCTION_FIELDS.Name, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_FUNCTION_FIELDS) GetName() string { return v.Name }
-
-// GetVisibility returns RPC_MOVE_FUNCTION_FIELDS.Visibility, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_FUNCTION_FIELDS) GetVisibility() MoveVisibility { return v.Visibility }
-
-// GetIsEntry returns RPC_MOVE_FUNCTION_FIELDS.IsEntry, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_FUNCTION_FIELDS) GetIsEntry() bool { return v.IsEntry }
-
-// GetParameters returns RPC_MOVE_FUNCTION_FIELDS.Parameters, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_FUNCTION_FIELDS) GetParameters() []RPC_MOVE_FUNCTION_FIELDSParametersOpenMoveType {
-	return v.Parameters
-}
-
-// GetTypeParameters returns RPC_MOVE_FUNCTION_FIELDS.TypeParameters, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_FUNCTION_FIELDS) GetTypeParameters() []RPC_MOVE_FUNCTION_FIELDSTypeParametersMoveFunctionTypeParameter {
-	return v.TypeParameters
-}
-
-// GetReturn returns RPC_MOVE_FUNCTION_FIELDS.Return, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_FUNCTION_FIELDS) GetReturn() []RPC_MOVE_FUNCTION_FIELDSReturnOpenMoveType {
-	return v.Return
-}
-
-// RPC_MOVE_FUNCTION_FIELDSParametersOpenMoveType includes the requested fields of the GraphQL type OpenMoveType.
-// The GraphQL type's documentation follows.
-//
-// Represents types that could contain references or free type parameters.
-// Such types can appear as function parameters, in fields of structs, or as
-// actual type parameter.
-type RPC_MOVE_FUNCTION_FIELDSParametersOpenMoveType struct {
-	// Structured representation of the type signature.
-	Signature json.RawMessage `json:"signature"`
-}
-
-// GetSignature returns RPC_MOVE_FUNCTION_FIELDSParametersOpenMoveType.Signature, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_FUNCTION_FIELDSParametersOpenMoveType) GetSignature() json.RawMessage {
-	return v.Signature
-}
-
-// RPC_MOVE_FUNCTION_FIELDSReturnOpenMoveType includes the requested fields of the GraphQL type OpenMoveType.
-// The GraphQL type's documentation follows.
-//
-// Represents types that could contain references or free type parameters.
-// Such types can appear as function parameters, in fields of structs, or as
-// actual type parameter.
-type RPC_MOVE_FUNCTION_FIELDSReturnOpenMoveType struct {
-	// Flat representation of the type signature, as a displayable string.
-	Repr string `json:"repr"`
-	// Structured representation of the type signature.
-	Signature json.RawMessage `json:"signature"`
-}
-
-// GetRepr returns RPC_MOVE_FUNCTION_FIELDSReturnOpenMoveType.Repr, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_FUNCTION_FIELDSReturnOpenMoveType) GetRepr() string { return v.Repr }
-
-// GetSignature returns RPC_MOVE_FUNCTION_FIELDSReturnOpenMoveType.Signature, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_FUNCTION_FIELDSReturnOpenMoveType) GetSignature() json.RawMessage {
-	return v.Signature
-}
-
-// RPC_MOVE_FUNCTION_FIELDSTypeParametersMoveFunctionTypeParameter includes the requested fields of the GraphQL type MoveFunctionTypeParameter.
-type RPC_MOVE_FUNCTION_FIELDSTypeParametersMoveFunctionTypeParameter struct {
-	Constraints []MoveAbility `json:"constraints"`
-}
-
-// GetConstraints returns RPC_MOVE_FUNCTION_FIELDSTypeParametersMoveFunctionTypeParameter.Constraints, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_FUNCTION_FIELDSTypeParametersMoveFunctionTypeParameter) GetConstraints() []MoveAbility {
-	return v.Constraints
-}
-
-// RPC_MOVE_MODULE_FIELDS includes the GraphQL fields of MoveModule requested by the fragment RPC_MOVE_MODULE_FIELDS.
-// The GraphQL type's documentation follows.
-//
-// Represents a module in Move, a library that defines struct types
-// and functions that operate on these types.
-type RPC_MOVE_MODULE_FIELDS struct {
-	// The module's (unqualified) name.
-	Name string `json:"name"`
-	// Modules that this module considers friends (these modules can access
-	// `public(friend)` functions from this module).
-	Friends RPC_MOVE_MODULE_FIELDSFriendsMoveModuleConnection `json:"friends"`
-	// Iterate through the structs defined in this module.
-	Structs RPC_MOVE_MODULE_FIELDSStructsMoveStructConnection `json:"structs"`
-	// Iterate through the enums defined in this module.
-	Enums RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnection `json:"enums"`
-	// Format version of this module's bytecode.
-	FileFormatVersion int `json:"fileFormatVersion"`
-	// Iterate through the signatures of functions defined in this module.
-	Functions RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnection `json:"functions"`
-}
-
-// GetName returns RPC_MOVE_MODULE_FIELDS.Name, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDS) GetName() string { return v.Name }
-
-// GetFriends returns RPC_MOVE_MODULE_FIELDS.Friends, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDS) GetFriends() RPC_MOVE_MODULE_FIELDSFriendsMoveModuleConnection {
-	return v.Friends
-}
-
-// GetStructs returns RPC_MOVE_MODULE_FIELDS.Structs, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDS) GetStructs() RPC_MOVE_MODULE_FIELDSStructsMoveStructConnection {
-	return v.Structs
-}
-
-// GetEnums returns RPC_MOVE_MODULE_FIELDS.Enums, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDS) GetEnums() RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnection {
-	return v.Enums
-}
-
-// GetFileFormatVersion returns RPC_MOVE_MODULE_FIELDS.FileFormatVersion, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDS) GetFileFormatVersion() int { return v.FileFormatVersion }
-
-// GetFunctions returns RPC_MOVE_MODULE_FIELDS.Functions, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDS) GetFunctions() RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnection {
-	return v.Functions
-}
-
-// RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnection includes the requested fields of the GraphQL type MoveEnumConnection.
-type RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnection struct {
-	// Information to aid in pagination.
-	PageInfo RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnectionPageInfo `json:"pageInfo"`
-	// A list of nodes.
-	Nodes []RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnectionNodesMoveEnum `json:"nodes"`
-}
-
-// GetPageInfo returns RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnection.PageInfo, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnection) GetPageInfo() RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnectionPageInfo {
-	return v.PageInfo
-}
-
-// GetNodes returns RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnection) GetNodes() []RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnectionNodesMoveEnum {
-	return v.Nodes
-}
-
-// RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnectionNodesMoveEnum includes the requested fields of the GraphQL type MoveEnum.
-// The GraphQL type's documentation follows.
-//
-// Description of an enum type, defined in a Move module.
-type RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnectionNodesMoveEnum struct {
-	RPC_MOVE_ENUM_FIELDS `json:"-"`
-}
-
-// GetName returns RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnectionNodesMoveEnum.Name, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnectionNodesMoveEnum) GetName() string {
-	return v.RPC_MOVE_ENUM_FIELDS.Name
-}
-
-// GetAbilities returns RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnectionNodesMoveEnum.Abilities, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnectionNodesMoveEnum) GetAbilities() []MoveAbility {
-	return v.RPC_MOVE_ENUM_FIELDS.Abilities
-}
-
-// GetTypeParameters returns RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnectionNodesMoveEnum.TypeParameters, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnectionNodesMoveEnum) GetTypeParameters() []RPC_MOVE_ENUM_FIELDSTypeParametersMoveStructTypeParameter {
-	return v.RPC_MOVE_ENUM_FIELDS.TypeParameters
-}
-
-// GetVariants returns RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnectionNodesMoveEnum.Variants, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnectionNodesMoveEnum) GetVariants() []RPC_MOVE_ENUM_FIELDSVariantsMoveEnumVariant {
-	return v.RPC_MOVE_ENUM_FIELDS.Variants
-}
-
-func (v *RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnectionNodesMoveEnum) UnmarshalJSON(b []byte) error {
-
-	if string(b) == "null" {
-		return nil
-	}
-
-	var firstPass struct {
-		*RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnectionNodesMoveEnum
-		graphql.NoUnmarshalJSON
-	}
-	firstPass.RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnectionNodesMoveEnum = v
-
-	err := json.Unmarshal(b, &firstPass)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(
-		b, &v.RPC_MOVE_ENUM_FIELDS)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-type __premarshalRPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnectionNodesMoveEnum struct {
-	Name string `json:"name"`
-
-	Abilities []MoveAbility `json:"abilities"`
-
-	TypeParameters []RPC_MOVE_ENUM_FIELDSTypeParametersMoveStructTypeParameter `json:"typeParameters"`
-
-	Variants []RPC_MOVE_ENUM_FIELDSVariantsMoveEnumVariant `json:"variants"`
-}
-
-func (v *RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnectionNodesMoveEnum) MarshalJSON() ([]byte, error) {
-	premarshaled, err := v.__premarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(premarshaled)
-}
-
-func (v *RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnectionNodesMoveEnum) __premarshalJSON() (*__premarshalRPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnectionNodesMoveEnum, error) {
-	var retval __premarshalRPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnectionNodesMoveEnum
-
-	retval.Name = v.RPC_MOVE_ENUM_FIELDS.Name
-	retval.Abilities = v.RPC_MOVE_ENUM_FIELDS.Abilities
-	retval.TypeParameters = v.RPC_MOVE_ENUM_FIELDS.TypeParameters
-	retval.Variants = v.RPC_MOVE_ENUM_FIELDS.Variants
-	return &retval, nil
-}
-
-// RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
-// The GraphQL type's documentation follows.
-//
-// Information about pagination in a connection
-type RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnectionPageInfo struct {
-	// When paginating forwards, are there more items?
-	HasNextPage bool `json:"hasNextPage"`
-	// When paginating forwards, the cursor to continue.
-	EndCursor string `json:"endCursor"`
-}
-
-// GetHasNextPage returns RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnectionPageInfo) GetHasNextPage() bool {
-	return v.HasNextPage
-}
-
-// GetEndCursor returns RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDSEnumsMoveEnumConnectionPageInfo) GetEndCursor() string {
-	return v.EndCursor
-}
-
-// RPC_MOVE_MODULE_FIELDSFriendsMoveModuleConnection includes the requested fields of the GraphQL type MoveModuleConnection.
-type RPC_MOVE_MODULE_FIELDSFriendsMoveModuleConnection struct {
-	// Information to aid in pagination.
-	PageInfo RPC_MOVE_MODULE_FIELDSFriendsMoveModuleConnectionPageInfo `json:"pageInfo"`
-	// A list of nodes.
-	Nodes []RPC_MOVE_MODULE_FIELDSFriendsMoveModuleConnectionNodesMoveModule `json:"nodes"`
-}
-
-// GetPageInfo returns RPC_MOVE_MODULE_FIELDSFriendsMoveModuleConnection.PageInfo, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDSFriendsMoveModuleConnection) GetPageInfo() RPC_MOVE_MODULE_FIELDSFriendsMoveModuleConnectionPageInfo {
-	return v.PageInfo
-}
-
-// GetNodes returns RPC_MOVE_MODULE_FIELDSFriendsMoveModuleConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDSFriendsMoveModuleConnection) GetNodes() []RPC_MOVE_MODULE_FIELDSFriendsMoveModuleConnectionNodesMoveModule {
-	return v.Nodes
-}
-
-// RPC_MOVE_MODULE_FIELDSFriendsMoveModuleConnectionNodesMoveModule includes the requested fields of the GraphQL type MoveModule.
-// The GraphQL type's documentation follows.
-//
-// Represents a module in Move, a library that defines struct types
-// and functions that operate on these types.
-type RPC_MOVE_MODULE_FIELDSFriendsMoveModuleConnectionNodesMoveModule struct {
-	// The module's (unqualified) name.
-	Name string `json:"name"`
-	// The package that this Move module was defined in
-	Package RPC_MOVE_MODULE_FIELDSFriendsMoveModuleConnectionNodesMoveModulePackageMovePackage `json:"package"`
-}
-
-// GetName returns RPC_MOVE_MODULE_FIELDSFriendsMoveModuleConnectionNodesMoveModule.Name, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDSFriendsMoveModuleConnectionNodesMoveModule) GetName() string {
-	return v.Name
-}
-
-// GetPackage returns RPC_MOVE_MODULE_FIELDSFriendsMoveModuleConnectionNodesMoveModule.Package, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDSFriendsMoveModuleConnectionNodesMoveModule) GetPackage() RPC_MOVE_MODULE_FIELDSFriendsMoveModuleConnectionNodesMoveModulePackageMovePackage {
-	return v.Package
-}
-
-// RPC_MOVE_MODULE_FIELDSFriendsMoveModuleConnectionNodesMoveModulePackageMovePackage includes the requested fields of the GraphQL type MovePackage.
-// The GraphQL type's documentation follows.
-//
-// A MovePackage is a kind of Move object that represents code that has been
-// published on chain. It exposes information about its modules, type
-// definitions, functions, and dependencies.
-type RPC_MOVE_MODULE_FIELDSFriendsMoveModuleConnectionNodesMoveModulePackageMovePackage struct {
-	Address iotago.Address `json:"address"`
-}
-
-// GetAddress returns RPC_MOVE_MODULE_FIELDSFriendsMoveModuleConnectionNodesMoveModulePackageMovePackage.Address, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDSFriendsMoveModuleConnectionNodesMoveModulePackageMovePackage) GetAddress() iotago.Address {
-	return v.Address
-}
-
-// RPC_MOVE_MODULE_FIELDSFriendsMoveModuleConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
-// The GraphQL type's documentation follows.
-//
-// Information about pagination in a connection
-type RPC_MOVE_MODULE_FIELDSFriendsMoveModuleConnectionPageInfo struct {
-	// When paginating forwards, are there more items?
-	HasNextPage bool `json:"hasNextPage"`
-	// When paginating forwards, the cursor to continue.
-	EndCursor string `json:"endCursor"`
-}
-
-// GetHasNextPage returns RPC_MOVE_MODULE_FIELDSFriendsMoveModuleConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDSFriendsMoveModuleConnectionPageInfo) GetHasNextPage() bool {
-	return v.HasNextPage
-}
-
-// GetEndCursor returns RPC_MOVE_MODULE_FIELDSFriendsMoveModuleConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDSFriendsMoveModuleConnectionPageInfo) GetEndCursor() string {
-	return v.EndCursor
-}
-
-// RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnection includes the requested fields of the GraphQL type MoveFunctionConnection.
-type RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnection struct {
-	// Information to aid in pagination.
-	PageInfo RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnectionPageInfo `json:"pageInfo"`
-	// A list of nodes.
-	Nodes []RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnectionNodesMoveFunction `json:"nodes"`
-}
-
-// GetPageInfo returns RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnection.PageInfo, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnection) GetPageInfo() RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnectionPageInfo {
-	return v.PageInfo
-}
-
-// GetNodes returns RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnection) GetNodes() []RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnectionNodesMoveFunction {
-	return v.Nodes
-}
-
-// RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnectionNodesMoveFunction includes the requested fields of the GraphQL type MoveFunction.
-// The GraphQL type's documentation follows.
-//
-// Signature of a function, defined in a Move module.
-type RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnectionNodesMoveFunction struct {
-	RPC_MOVE_FUNCTION_FIELDS `json:"-"`
-}
-
-// GetName returns RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnectionNodesMoveFunction.Name, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnectionNodesMoveFunction) GetName() string {
-	return v.RPC_MOVE_FUNCTION_FIELDS.Name
-}
-
-// GetVisibility returns RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnectionNodesMoveFunction.Visibility, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnectionNodesMoveFunction) GetVisibility() MoveVisibility {
-	return v.RPC_MOVE_FUNCTION_FIELDS.Visibility
-}
-
-// GetIsEntry returns RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnectionNodesMoveFunction.IsEntry, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnectionNodesMoveFunction) GetIsEntry() bool {
-	return v.RPC_MOVE_FUNCTION_FIELDS.IsEntry
-}
-
-// GetParameters returns RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnectionNodesMoveFunction.Parameters, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnectionNodesMoveFunction) GetParameters() []RPC_MOVE_FUNCTION_FIELDSParametersOpenMoveType {
-	return v.RPC_MOVE_FUNCTION_FIELDS.Parameters
-}
-
-// GetTypeParameters returns RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnectionNodesMoveFunction.TypeParameters, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnectionNodesMoveFunction) GetTypeParameters() []RPC_MOVE_FUNCTION_FIELDSTypeParametersMoveFunctionTypeParameter {
-	return v.RPC_MOVE_FUNCTION_FIELDS.TypeParameters
-}
-
-// GetReturn returns RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnectionNodesMoveFunction.Return, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnectionNodesMoveFunction) GetReturn() []RPC_MOVE_FUNCTION_FIELDSReturnOpenMoveType {
-	return v.RPC_MOVE_FUNCTION_FIELDS.Return
-}
-
-func (v *RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnectionNodesMoveFunction) UnmarshalJSON(b []byte) error {
-
-	if string(b) == "null" {
-		return nil
-	}
-
-	var firstPass struct {
-		*RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnectionNodesMoveFunction
-		graphql.NoUnmarshalJSON
-	}
-	firstPass.RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnectionNodesMoveFunction = v
-
-	err := json.Unmarshal(b, &firstPass)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(
-		b, &v.RPC_MOVE_FUNCTION_FIELDS)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-type __premarshalRPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnectionNodesMoveFunction struct {
-	Name string `json:"name"`
-
-	Visibility MoveVisibility `json:"visibility"`
-
-	IsEntry bool `json:"isEntry"`
-
-	Parameters []RPC_MOVE_FUNCTION_FIELDSParametersOpenMoveType `json:"parameters"`
-
-	TypeParameters []RPC_MOVE_FUNCTION_FIELDSTypeParametersMoveFunctionTypeParameter `json:"typeParameters"`
-
-	Return []RPC_MOVE_FUNCTION_FIELDSReturnOpenMoveType `json:"return"`
-}
-
-func (v *RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnectionNodesMoveFunction) MarshalJSON() ([]byte, error) {
-	premarshaled, err := v.__premarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(premarshaled)
-}
-
-func (v *RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnectionNodesMoveFunction) __premarshalJSON() (*__premarshalRPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnectionNodesMoveFunction, error) {
-	var retval __premarshalRPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnectionNodesMoveFunction
-
-	retval.Name = v.RPC_MOVE_FUNCTION_FIELDS.Name
-	retval.Visibility = v.RPC_MOVE_FUNCTION_FIELDS.Visibility
-	retval.IsEntry = v.RPC_MOVE_FUNCTION_FIELDS.IsEntry
-	retval.Parameters = v.RPC_MOVE_FUNCTION_FIELDS.Parameters
-	retval.TypeParameters = v.RPC_MOVE_FUNCTION_FIELDS.TypeParameters
-	retval.Return = v.RPC_MOVE_FUNCTION_FIELDS.Return
-	return &retval, nil
-}
-
-// RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
-// The GraphQL type's documentation follows.
-//
-// Information about pagination in a connection
-type RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnectionPageInfo struct {
-	// When paginating forwards, are there more items?
-	HasNextPage bool `json:"hasNextPage"`
-	// When paginating forwards, the cursor to continue.
-	EndCursor string `json:"endCursor"`
-}
-
-// GetHasNextPage returns RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnectionPageInfo) GetHasNextPage() bool {
-	return v.HasNextPage
-}
-
-// GetEndCursor returns RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDSFunctionsMoveFunctionConnectionPageInfo) GetEndCursor() string {
-	return v.EndCursor
-}
-
-// RPC_MOVE_MODULE_FIELDSStructsMoveStructConnection includes the requested fields of the GraphQL type MoveStructConnection.
-type RPC_MOVE_MODULE_FIELDSStructsMoveStructConnection struct {
-	// Information to aid in pagination.
-	PageInfo RPC_MOVE_MODULE_FIELDSStructsMoveStructConnectionPageInfo `json:"pageInfo"`
-	// A list of nodes.
-	Nodes []RPC_MOVE_MODULE_FIELDSStructsMoveStructConnectionNodesMoveStruct `json:"nodes"`
-}
-
-// GetPageInfo returns RPC_MOVE_MODULE_FIELDSStructsMoveStructConnection.PageInfo, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDSStructsMoveStructConnection) GetPageInfo() RPC_MOVE_MODULE_FIELDSStructsMoveStructConnectionPageInfo {
-	return v.PageInfo
-}
-
-// GetNodes returns RPC_MOVE_MODULE_FIELDSStructsMoveStructConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDSStructsMoveStructConnection) GetNodes() []RPC_MOVE_MODULE_FIELDSStructsMoveStructConnectionNodesMoveStruct {
-	return v.Nodes
-}
-
-// RPC_MOVE_MODULE_FIELDSStructsMoveStructConnectionNodesMoveStruct includes the requested fields of the GraphQL type MoveStruct.
-// The GraphQL type's documentation follows.
-//
-// Description of a struct type, defined in a Move module.
-type RPC_MOVE_MODULE_FIELDSStructsMoveStructConnectionNodesMoveStruct struct {
-	RPC_MOVE_STRUCT_FIELDS `json:"-"`
-}
-
-// GetName returns RPC_MOVE_MODULE_FIELDSStructsMoveStructConnectionNodesMoveStruct.Name, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDSStructsMoveStructConnectionNodesMoveStruct) GetName() string {
-	return v.RPC_MOVE_STRUCT_FIELDS.Name
-}
-
-// GetAbilities returns RPC_MOVE_MODULE_FIELDSStructsMoveStructConnectionNodesMoveStruct.Abilities, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDSStructsMoveStructConnectionNodesMoveStruct) GetAbilities() []MoveAbility {
-	return v.RPC_MOVE_STRUCT_FIELDS.Abilities
-}
-
-// GetFields returns RPC_MOVE_MODULE_FIELDSStructsMoveStructConnectionNodesMoveStruct.Fields, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDSStructsMoveStructConnectionNodesMoveStruct) GetFields() []RPC_MOVE_STRUCT_FIELDSFieldsMoveField {
-	return v.RPC_MOVE_STRUCT_FIELDS.Fields
-}
-
-// GetTypeParameters returns RPC_MOVE_MODULE_FIELDSStructsMoveStructConnectionNodesMoveStruct.TypeParameters, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDSStructsMoveStructConnectionNodesMoveStruct) GetTypeParameters() []RPC_MOVE_STRUCT_FIELDSTypeParametersMoveStructTypeParameter {
-	return v.RPC_MOVE_STRUCT_FIELDS.TypeParameters
-}
-
-func (v *RPC_MOVE_MODULE_FIELDSStructsMoveStructConnectionNodesMoveStruct) UnmarshalJSON(b []byte) error {
-
-	if string(b) == "null" {
-		return nil
-	}
-
-	var firstPass struct {
-		*RPC_MOVE_MODULE_FIELDSStructsMoveStructConnectionNodesMoveStruct
-		graphql.NoUnmarshalJSON
-	}
-	firstPass.RPC_MOVE_MODULE_FIELDSStructsMoveStructConnectionNodesMoveStruct = v
-
-	err := json.Unmarshal(b, &firstPass)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(
-		b, &v.RPC_MOVE_STRUCT_FIELDS)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-type __premarshalRPC_MOVE_MODULE_FIELDSStructsMoveStructConnectionNodesMoveStruct struct {
-	Name string `json:"name"`
-
-	Abilities []MoveAbility `json:"abilities"`
-
-	Fields []RPC_MOVE_STRUCT_FIELDSFieldsMoveField `json:"fields"`
-
-	TypeParameters []RPC_MOVE_STRUCT_FIELDSTypeParametersMoveStructTypeParameter `json:"typeParameters"`
-}
-
-func (v *RPC_MOVE_MODULE_FIELDSStructsMoveStructConnectionNodesMoveStruct) MarshalJSON() ([]byte, error) {
-	premarshaled, err := v.__premarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(premarshaled)
-}
-
-func (v *RPC_MOVE_MODULE_FIELDSStructsMoveStructConnectionNodesMoveStruct) __premarshalJSON() (*__premarshalRPC_MOVE_MODULE_FIELDSStructsMoveStructConnectionNodesMoveStruct, error) {
-	var retval __premarshalRPC_MOVE_MODULE_FIELDSStructsMoveStructConnectionNodesMoveStruct
-
-	retval.Name = v.RPC_MOVE_STRUCT_FIELDS.Name
-	retval.Abilities = v.RPC_MOVE_STRUCT_FIELDS.Abilities
-	retval.Fields = v.RPC_MOVE_STRUCT_FIELDS.Fields
-	retval.TypeParameters = v.RPC_MOVE_STRUCT_FIELDS.TypeParameters
-	return &retval, nil
-}
-
-// RPC_MOVE_MODULE_FIELDSStructsMoveStructConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
-// The GraphQL type's documentation follows.
-//
-// Information about pagination in a connection
-type RPC_MOVE_MODULE_FIELDSStructsMoveStructConnectionPageInfo struct {
-	// When paginating forwards, are there more items?
-	HasNextPage bool `json:"hasNextPage"`
-	// When paginating forwards, the cursor to continue.
-	EndCursor string `json:"endCursor"`
-}
-
-// GetHasNextPage returns RPC_MOVE_MODULE_FIELDSStructsMoveStructConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDSStructsMoveStructConnectionPageInfo) GetHasNextPage() bool {
-	return v.HasNextPage
-}
-
-// GetEndCursor returns RPC_MOVE_MODULE_FIELDSStructsMoveStructConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_MODULE_FIELDSStructsMoveStructConnectionPageInfo) GetEndCursor() string {
-	return v.EndCursor
 }
 
 // RPC_MOVE_OBJECT_FIELDS includes the GraphQL fields of MoveObject requested by the fragment RPC_MOVE_OBJECT_FIELDS.
@@ -9940,88 +5518,6 @@ type RPC_MOVE_OBJECT_FIELDSPreviousTransactionBlock struct {
 
 // GetDigest returns RPC_MOVE_OBJECT_FIELDSPreviousTransactionBlock.Digest, and is useful for accessing the field via an interface.
 func (v *RPC_MOVE_OBJECT_FIELDSPreviousTransactionBlock) GetDigest() string { return v.Digest }
-
-// RPC_MOVE_STRUCT_FIELDS includes the GraphQL fields of MoveStruct requested by the fragment RPC_MOVE_STRUCT_FIELDS.
-// The GraphQL type's documentation follows.
-//
-// Description of a struct type, defined in a Move module.
-type RPC_MOVE_STRUCT_FIELDS struct {
-	// The struct's (unqualified) type name.
-	Name string `json:"name"`
-	// Abilities this struct has.
-	Abilities []MoveAbility `json:"abilities"`
-	// The names and types of the struct's fields.  Field types reference type
-	// parameters, by their index in the defining struct's `typeParameters`
-	// list.
-	Fields []RPC_MOVE_STRUCT_FIELDSFieldsMoveField `json:"fields"`
-	// Constraints on the struct's formal type parameters.  Move bytecode does
-	// not name type parameters, so when they are referenced (e.g. in field
-	// types) they are identified by their index in this list.
-	TypeParameters []RPC_MOVE_STRUCT_FIELDSTypeParametersMoveStructTypeParameter `json:"typeParameters"`
-}
-
-// GetName returns RPC_MOVE_STRUCT_FIELDS.Name, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_STRUCT_FIELDS) GetName() string { return v.Name }
-
-// GetAbilities returns RPC_MOVE_STRUCT_FIELDS.Abilities, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_STRUCT_FIELDS) GetAbilities() []MoveAbility { return v.Abilities }
-
-// GetFields returns RPC_MOVE_STRUCT_FIELDS.Fields, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_STRUCT_FIELDS) GetFields() []RPC_MOVE_STRUCT_FIELDSFieldsMoveField { return v.Fields }
-
-// GetTypeParameters returns RPC_MOVE_STRUCT_FIELDS.TypeParameters, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_STRUCT_FIELDS) GetTypeParameters() []RPC_MOVE_STRUCT_FIELDSTypeParametersMoveStructTypeParameter {
-	return v.TypeParameters
-}
-
-// RPC_MOVE_STRUCT_FIELDSFieldsMoveField includes the requested fields of the GraphQL type MoveField.
-// The GraphQL type's documentation follows.
-//
-// Information for a particular field on a Move struct.
-type RPC_MOVE_STRUCT_FIELDSFieldsMoveField struct {
-	Name string                                                `json:"name"`
-	Type RPC_MOVE_STRUCT_FIELDSFieldsMoveFieldTypeOpenMoveType `json:"type"`
-}
-
-// GetName returns RPC_MOVE_STRUCT_FIELDSFieldsMoveField.Name, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_STRUCT_FIELDSFieldsMoveField) GetName() string { return v.Name }
-
-// GetType returns RPC_MOVE_STRUCT_FIELDSFieldsMoveField.Type, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_STRUCT_FIELDSFieldsMoveField) GetType() RPC_MOVE_STRUCT_FIELDSFieldsMoveFieldTypeOpenMoveType {
-	return v.Type
-}
-
-// RPC_MOVE_STRUCT_FIELDSFieldsMoveFieldTypeOpenMoveType includes the requested fields of the GraphQL type OpenMoveType.
-// The GraphQL type's documentation follows.
-//
-// Represents types that could contain references or free type parameters.
-// Such types can appear as function parameters, in fields of structs, or as
-// actual type parameter.
-type RPC_MOVE_STRUCT_FIELDSFieldsMoveFieldTypeOpenMoveType struct {
-	// Structured representation of the type signature.
-	Signature json.RawMessage `json:"signature"`
-}
-
-// GetSignature returns RPC_MOVE_STRUCT_FIELDSFieldsMoveFieldTypeOpenMoveType.Signature, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_STRUCT_FIELDSFieldsMoveFieldTypeOpenMoveType) GetSignature() json.RawMessage {
-	return v.Signature
-}
-
-// RPC_MOVE_STRUCT_FIELDSTypeParametersMoveStructTypeParameter includes the requested fields of the GraphQL type MoveStructTypeParameter.
-type RPC_MOVE_STRUCT_FIELDSTypeParametersMoveStructTypeParameter struct {
-	IsPhantom   bool          `json:"isPhantom"`
-	Constraints []MoveAbility `json:"constraints"`
-}
-
-// GetIsPhantom returns RPC_MOVE_STRUCT_FIELDSTypeParametersMoveStructTypeParameter.IsPhantom, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_STRUCT_FIELDSTypeParametersMoveStructTypeParameter) GetIsPhantom() bool {
-	return v.IsPhantom
-}
-
-// GetConstraints returns RPC_MOVE_STRUCT_FIELDSTypeParametersMoveStructTypeParameter.Constraints, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_STRUCT_FIELDSTypeParametersMoveStructTypeParameter) GetConstraints() []MoveAbility {
-	return v.Constraints
-}
 
 // RPC_OBJECT_FIELDS includes the GraphQL fields of Object requested by the fragment RPC_OBJECT_FIELDS.
 // The GraphQL type's documentation follows.
@@ -11104,7 +6600,7 @@ type RPC_TRANSACTION_FIELDS struct {
 	Digest string `json:"digest"`
 	// Serialized form of this transaction's `SenderSignedData`, BCS serialized
 	// and Base64 encoded.
-	RawTransaction iotago.Base64Data `json:"rawTransaction"`
+	Bcs iotago.Base64Data `json:"bcs"`
 	// The address corresponding to the public key that signed this
 	// transaction. System transactions do not have senders.
 	Sender RPC_TRANSACTION_FIELDSSenderAddress `json:"sender"`
@@ -11119,8 +6615,8 @@ type RPC_TRANSACTION_FIELDS struct {
 // GetDigest returns RPC_TRANSACTION_FIELDS.Digest, and is useful for accessing the field via an interface.
 func (v *RPC_TRANSACTION_FIELDS) GetDigest() string { return v.Digest }
 
-// GetRawTransaction returns RPC_TRANSACTION_FIELDS.RawTransaction, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDS) GetRawTransaction() iotago.Base64Data { return v.RawTransaction }
+// GetBcs returns RPC_TRANSACTION_FIELDS.Bcs, and is useful for accessing the field via an interface.
+func (v *RPC_TRANSACTION_FIELDS) GetBcs() iotago.Base64Data { return v.Bcs }
 
 // GetSender returns RPC_TRANSACTION_FIELDS.Sender, and is useful for accessing the field via an interface.
 func (v *RPC_TRANSACTION_FIELDS) GetSender() RPC_TRANSACTION_FIELDSSenderAddress { return v.Sender }
@@ -11706,546 +7202,6 @@ type RPC_TRANSACTION_FIELDSSenderAddress struct {
 // GetAddress returns RPC_TRANSACTION_FIELDSSenderAddress.Address, and is useful for accessing the field via an interface.
 func (v *RPC_TRANSACTION_FIELDSSenderAddress) GetAddress() iotago.Address { return v.Address }
 
-// RPC_VALIDATOR_FIELDS includes the GraphQL fields of Validator requested by the fragment RPC_VALIDATOR_FIELDS.
-type RPC_VALIDATOR_FIELDS struct {
-	// The number of epochs for which this validator has been below the
-	// low stake threshold.
-	AtRisk uint64 `json:"atRisk"`
-	// The fee charged by the validator for staking services.
-	CommissionRate int `json:"commissionRate"`
-	// Number of exchange rates in the table.
-	ExchangeRatesSize uint64 `json:"exchangeRatesSize"`
-	// The validator's current exchange object. The exchange rate is used to
-	// determine the amount of IOTA tokens that each past IOTA staker can
-	// withdraw in the future.
-	ExchangeRates RPC_VALIDATOR_FIELDSExchangeRatesMoveObject `json:"exchangeRates"`
-	// Validator's description.
-	Description string `json:"description"`
-	// The reference gas price for this epoch.
-	GasPrice iotajsonrpc.BigInt `json:"gasPrice"`
-	// Validator's url containing their custom image.
-	ImageUrl string `json:"imageUrl"`
-	// Validator's name.
-	Name string `json:"name"`
-	// Validator's set of credentials such as public keys, network addresses
-	// and others.
-	Credentials RPC_VALIDATOR_FIELDSCredentialsValidatorCredentials `json:"credentials"`
-	// The proposed next epoch fee for the validator's staking services.
-	NextEpochCommissionRate int `json:"nextEpochCommissionRate"`
-	// The validator's gas price quote for the next epoch.
-	NextEpochGasPrice iotajsonrpc.BigInt `json:"nextEpochGasPrice"`
-	// Validator's set of credentials for the next epoch.
-	NextEpochCredentials RPC_VALIDATOR_FIELDSNextEpochCredentialsValidatorCredentials `json:"nextEpochCredentials"`
-	// The total number of IOTA tokens in this pool plus
-	// the pending stake amount for this epoch.
-	NextEpochStake iotajsonrpc.BigInt `json:"nextEpochStake"`
-	// The validator's current valid `Cap` object. Validators can delegate
-	// the operation ability to another address. The address holding this `Cap`
-	// object can then update the reference gas price and tallying rule on
-	// behalf of the validator.
-	OperationCap RPC_VALIDATOR_FIELDSOperationCapMoveObject `json:"operationCap"`
-	// Pending pool token withdrawn during the current epoch, emptied at epoch
-	// boundaries. Zero for past epochs.
-	PendingPoolTokenWithdraw iotajsonrpc.BigInt `json:"pendingPoolTokenWithdraw"`
-	// Pending stake amount for the current epoch, emptied at epoch boundaries.
-	// Zero for past epochs.
-	PendingStake iotajsonrpc.BigInt `json:"pendingStake"`
-	// Pending stake withdrawn during the current epoch, emptied at epoch
-	// boundaries. Zero for past epochs.
-	PendingTotalIotaWithdraw iotajsonrpc.BigInt `json:"pendingTotalIotaWithdraw"`
-	// Total number of pool tokens issued by the pool.
-	PoolTokenBalance iotajsonrpc.BigInt `json:"poolTokenBalance"`
-	// Validator's homepage URL.
-	ProjectUrl string `json:"projectUrl"`
-	// The epoch stake rewards will be added here at the end of each epoch.
-	RewardsPool iotajsonrpc.BigInt `json:"rewardsPool"`
-	// The validator's current staking pool object, used to track the amount of
-	// stake and to compound staking rewards.
-	StakingPool RPC_VALIDATOR_FIELDSStakingPoolMoveObject `json:"stakingPool"`
-	// The epoch at which this pool became active.
-	StakingPoolActivationEpoch uint64 `json:"stakingPoolActivationEpoch"`
-	// The total number of IOTA tokens in this pool.
-	StakingPoolIotaBalance iotajsonrpc.BigInt `json:"stakingPoolIotaBalance"`
-	// The validator's address.
-	Address RPC_VALIDATOR_FIELDSAddress `json:"address"`
-	// The voting power of this validator in basis points (e.g., 100 = 1%
-	// voting power).
-	VotingPower int `json:"votingPower"`
-}
-
-// GetAtRisk returns RPC_VALIDATOR_FIELDS.AtRisk, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDS) GetAtRisk() uint64 { return v.AtRisk }
-
-// GetCommissionRate returns RPC_VALIDATOR_FIELDS.CommissionRate, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDS) GetCommissionRate() int { return v.CommissionRate }
-
-// GetExchangeRatesSize returns RPC_VALIDATOR_FIELDS.ExchangeRatesSize, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDS) GetExchangeRatesSize() uint64 { return v.ExchangeRatesSize }
-
-// GetExchangeRates returns RPC_VALIDATOR_FIELDS.ExchangeRates, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDS) GetExchangeRates() RPC_VALIDATOR_FIELDSExchangeRatesMoveObject {
-	return v.ExchangeRates
-}
-
-// GetDescription returns RPC_VALIDATOR_FIELDS.Description, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDS) GetDescription() string { return v.Description }
-
-// GetGasPrice returns RPC_VALIDATOR_FIELDS.GasPrice, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDS) GetGasPrice() iotajsonrpc.BigInt { return v.GasPrice }
-
-// GetImageUrl returns RPC_VALIDATOR_FIELDS.ImageUrl, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDS) GetImageUrl() string { return v.ImageUrl }
-
-// GetName returns RPC_VALIDATOR_FIELDS.Name, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDS) GetName() string { return v.Name }
-
-// GetCredentials returns RPC_VALIDATOR_FIELDS.Credentials, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDS) GetCredentials() RPC_VALIDATOR_FIELDSCredentialsValidatorCredentials {
-	return v.Credentials
-}
-
-// GetNextEpochCommissionRate returns RPC_VALIDATOR_FIELDS.NextEpochCommissionRate, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDS) GetNextEpochCommissionRate() int { return v.NextEpochCommissionRate }
-
-// GetNextEpochGasPrice returns RPC_VALIDATOR_FIELDS.NextEpochGasPrice, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDS) GetNextEpochGasPrice() iotajsonrpc.BigInt { return v.NextEpochGasPrice }
-
-// GetNextEpochCredentials returns RPC_VALIDATOR_FIELDS.NextEpochCredentials, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDS) GetNextEpochCredentials() RPC_VALIDATOR_FIELDSNextEpochCredentialsValidatorCredentials {
-	return v.NextEpochCredentials
-}
-
-// GetNextEpochStake returns RPC_VALIDATOR_FIELDS.NextEpochStake, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDS) GetNextEpochStake() iotajsonrpc.BigInt { return v.NextEpochStake }
-
-// GetOperationCap returns RPC_VALIDATOR_FIELDS.OperationCap, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDS) GetOperationCap() RPC_VALIDATOR_FIELDSOperationCapMoveObject {
-	return v.OperationCap
-}
-
-// GetPendingPoolTokenWithdraw returns RPC_VALIDATOR_FIELDS.PendingPoolTokenWithdraw, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDS) GetPendingPoolTokenWithdraw() iotajsonrpc.BigInt {
-	return v.PendingPoolTokenWithdraw
-}
-
-// GetPendingStake returns RPC_VALIDATOR_FIELDS.PendingStake, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDS) GetPendingStake() iotajsonrpc.BigInt { return v.PendingStake }
-
-// GetPendingTotalIotaWithdraw returns RPC_VALIDATOR_FIELDS.PendingTotalIotaWithdraw, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDS) GetPendingTotalIotaWithdraw() iotajsonrpc.BigInt {
-	return v.PendingTotalIotaWithdraw
-}
-
-// GetPoolTokenBalance returns RPC_VALIDATOR_FIELDS.PoolTokenBalance, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDS) GetPoolTokenBalance() iotajsonrpc.BigInt { return v.PoolTokenBalance }
-
-// GetProjectUrl returns RPC_VALIDATOR_FIELDS.ProjectUrl, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDS) GetProjectUrl() string { return v.ProjectUrl }
-
-// GetRewardsPool returns RPC_VALIDATOR_FIELDS.RewardsPool, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDS) GetRewardsPool() iotajsonrpc.BigInt { return v.RewardsPool }
-
-// GetStakingPool returns RPC_VALIDATOR_FIELDS.StakingPool, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDS) GetStakingPool() RPC_VALIDATOR_FIELDSStakingPoolMoveObject {
-	return v.StakingPool
-}
-
-// GetStakingPoolActivationEpoch returns RPC_VALIDATOR_FIELDS.StakingPoolActivationEpoch, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDS) GetStakingPoolActivationEpoch() uint64 {
-	return v.StakingPoolActivationEpoch
-}
-
-// GetStakingPoolIotaBalance returns RPC_VALIDATOR_FIELDS.StakingPoolIotaBalance, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDS) GetStakingPoolIotaBalance() iotajsonrpc.BigInt {
-	return v.StakingPoolIotaBalance
-}
-
-// GetAddress returns RPC_VALIDATOR_FIELDS.Address, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDS) GetAddress() RPC_VALIDATOR_FIELDSAddress { return v.Address }
-
-// GetVotingPower returns RPC_VALIDATOR_FIELDS.VotingPower, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDS) GetVotingPower() int { return v.VotingPower }
-
-// RPC_VALIDATOR_FIELDSAddress includes the requested fields of the GraphQL type Address.
-// The GraphQL type's documentation follows.
-//
-// The 32-byte address that is an account address (corresponding to a public
-// key).
-type RPC_VALIDATOR_FIELDSAddress struct {
-	Address iotago.Address `json:"address"`
-}
-
-// GetAddress returns RPC_VALIDATOR_FIELDSAddress.Address, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDSAddress) GetAddress() iotago.Address { return v.Address }
-
-// RPC_VALIDATOR_FIELDSCredentialsValidatorCredentials includes the requested fields of the GraphQL type ValidatorCredentials.
-// The GraphQL type's documentation follows.
-//
-// The credentials related fields associated with a validator.
-type RPC_VALIDATOR_FIELDSCredentialsValidatorCredentials struct {
-	RPC_CREDENTIAL_FIELDS `json:"-"`
-}
-
-// GetNetAddress returns RPC_VALIDATOR_FIELDSCredentialsValidatorCredentials.NetAddress, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDSCredentialsValidatorCredentials) GetNetAddress() string {
-	return v.RPC_CREDENTIAL_FIELDS.NetAddress
-}
-
-// GetNetworkPubKey returns RPC_VALIDATOR_FIELDSCredentialsValidatorCredentials.NetworkPubKey, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDSCredentialsValidatorCredentials) GetNetworkPubKey() iotago.Base64Data {
-	return v.RPC_CREDENTIAL_FIELDS.NetworkPubKey
-}
-
-// GetP2PAddress returns RPC_VALIDATOR_FIELDSCredentialsValidatorCredentials.P2PAddress, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDSCredentialsValidatorCredentials) GetP2PAddress() string {
-	return v.RPC_CREDENTIAL_FIELDS.P2PAddress
-}
-
-// GetPrimaryAddress returns RPC_VALIDATOR_FIELDSCredentialsValidatorCredentials.PrimaryAddress, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDSCredentialsValidatorCredentials) GetPrimaryAddress() string {
-	return v.RPC_CREDENTIAL_FIELDS.PrimaryAddress
-}
-
-// GetProofOfPossession returns RPC_VALIDATOR_FIELDSCredentialsValidatorCredentials.ProofOfPossession, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDSCredentialsValidatorCredentials) GetProofOfPossession() iotago.Base64Data {
-	return v.RPC_CREDENTIAL_FIELDS.ProofOfPossession
-}
-
-// GetProtocolPubKey returns RPC_VALIDATOR_FIELDSCredentialsValidatorCredentials.ProtocolPubKey, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDSCredentialsValidatorCredentials) GetProtocolPubKey() iotago.Base64Data {
-	return v.RPC_CREDENTIAL_FIELDS.ProtocolPubKey
-}
-
-func (v *RPC_VALIDATOR_FIELDSCredentialsValidatorCredentials) UnmarshalJSON(b []byte) error {
-
-	if string(b) == "null" {
-		return nil
-	}
-
-	var firstPass struct {
-		*RPC_VALIDATOR_FIELDSCredentialsValidatorCredentials
-		graphql.NoUnmarshalJSON
-	}
-	firstPass.RPC_VALIDATOR_FIELDSCredentialsValidatorCredentials = v
-
-	err := json.Unmarshal(b, &firstPass)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(
-		b, &v.RPC_CREDENTIAL_FIELDS)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-type __premarshalRPC_VALIDATOR_FIELDSCredentialsValidatorCredentials struct {
-	NetAddress string `json:"netAddress"`
-
-	NetworkPubKey iotago.Base64Data `json:"networkPubKey"`
-
-	P2PAddress string `json:"p2PAddress"`
-
-	PrimaryAddress string `json:"primaryAddress"`
-
-	ProofOfPossession iotago.Base64Data `json:"proofOfPossession"`
-
-	ProtocolPubKey iotago.Base64Data `json:"protocolPubKey"`
-}
-
-func (v *RPC_VALIDATOR_FIELDSCredentialsValidatorCredentials) MarshalJSON() ([]byte, error) {
-	premarshaled, err := v.__premarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(premarshaled)
-}
-
-func (v *RPC_VALIDATOR_FIELDSCredentialsValidatorCredentials) __premarshalJSON() (*__premarshalRPC_VALIDATOR_FIELDSCredentialsValidatorCredentials, error) {
-	var retval __premarshalRPC_VALIDATOR_FIELDSCredentialsValidatorCredentials
-
-	retval.NetAddress = v.RPC_CREDENTIAL_FIELDS.NetAddress
-	retval.NetworkPubKey = v.RPC_CREDENTIAL_FIELDS.NetworkPubKey
-	retval.P2PAddress = v.RPC_CREDENTIAL_FIELDS.P2PAddress
-	retval.PrimaryAddress = v.RPC_CREDENTIAL_FIELDS.PrimaryAddress
-	retval.ProofOfPossession = v.RPC_CREDENTIAL_FIELDS.ProofOfPossession
-	retval.ProtocolPubKey = v.RPC_CREDENTIAL_FIELDS.ProtocolPubKey
-	return &retval, nil
-}
-
-// RPC_VALIDATOR_FIELDSExchangeRatesMoveObject includes the requested fields of the GraphQL type MoveObject.
-// The GraphQL type's documentation follows.
-//
-// The representation of an object as a Move Object, which exposes additional
-// information (content, module that governs it, version, is transferable,
-// etc.) about this object.
-type RPC_VALIDATOR_FIELDSExchangeRatesMoveObject struct {
-	// Displays the contents of the Move object in a JSON string and through
-	// GraphQL types. Also provides the flat representation of the type
-	// signature, and the BCS of the corresponding data.
-	Contents RPC_VALIDATOR_FIELDSExchangeRatesMoveObjectContentsMoveValue `json:"contents"`
-	Address  iotago.Address                                               `json:"address"`
-}
-
-// GetContents returns RPC_VALIDATOR_FIELDSExchangeRatesMoveObject.Contents, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDSExchangeRatesMoveObject) GetContents() RPC_VALIDATOR_FIELDSExchangeRatesMoveObjectContentsMoveValue {
-	return v.Contents
-}
-
-// GetAddress returns RPC_VALIDATOR_FIELDSExchangeRatesMoveObject.Address, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDSExchangeRatesMoveObject) GetAddress() iotago.Address { return v.Address }
-
-// RPC_VALIDATOR_FIELDSExchangeRatesMoveObjectContentsMoveValue includes the requested fields of the GraphQL type MoveValue.
-type RPC_VALIDATOR_FIELDSExchangeRatesMoveObjectContentsMoveValue struct {
-	// Representation of a Move value in JSON, where:
-	//
-	// - Addresses, IDs, and UIDs are represented in canonical form, as JSON
-	// strings.
-	// - Bools are represented by JSON boolean literals.
-	// - u8, u16, and u32 are represented as JSON numbers.
-	// - u64, u128, and u256 are represented as JSON strings.
-	// - Vectors are represented by JSON arrays.
-	// - Structs are represented by JSON objects.
-	// - Empty optional values are represented by `null`.
-	//
-	// This form is offered as a less verbose convenience in cases where the
-	// layout of the type is known by the client.
-	Json json.RawMessage `json:"json"`
-}
-
-// GetJson returns RPC_VALIDATOR_FIELDSExchangeRatesMoveObjectContentsMoveValue.Json, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDSExchangeRatesMoveObjectContentsMoveValue) GetJson() json.RawMessage {
-	return v.Json
-}
-
-// RPC_VALIDATOR_FIELDSNextEpochCredentialsValidatorCredentials includes the requested fields of the GraphQL type ValidatorCredentials.
-// The GraphQL type's documentation follows.
-//
-// The credentials related fields associated with a validator.
-type RPC_VALIDATOR_FIELDSNextEpochCredentialsValidatorCredentials struct {
-	RPC_CREDENTIAL_FIELDS `json:"-"`
-}
-
-// GetNetAddress returns RPC_VALIDATOR_FIELDSNextEpochCredentialsValidatorCredentials.NetAddress, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDSNextEpochCredentialsValidatorCredentials) GetNetAddress() string {
-	return v.RPC_CREDENTIAL_FIELDS.NetAddress
-}
-
-// GetNetworkPubKey returns RPC_VALIDATOR_FIELDSNextEpochCredentialsValidatorCredentials.NetworkPubKey, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDSNextEpochCredentialsValidatorCredentials) GetNetworkPubKey() iotago.Base64Data {
-	return v.RPC_CREDENTIAL_FIELDS.NetworkPubKey
-}
-
-// GetP2PAddress returns RPC_VALIDATOR_FIELDSNextEpochCredentialsValidatorCredentials.P2PAddress, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDSNextEpochCredentialsValidatorCredentials) GetP2PAddress() string {
-	return v.RPC_CREDENTIAL_FIELDS.P2PAddress
-}
-
-// GetPrimaryAddress returns RPC_VALIDATOR_FIELDSNextEpochCredentialsValidatorCredentials.PrimaryAddress, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDSNextEpochCredentialsValidatorCredentials) GetPrimaryAddress() string {
-	return v.RPC_CREDENTIAL_FIELDS.PrimaryAddress
-}
-
-// GetProofOfPossession returns RPC_VALIDATOR_FIELDSNextEpochCredentialsValidatorCredentials.ProofOfPossession, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDSNextEpochCredentialsValidatorCredentials) GetProofOfPossession() iotago.Base64Data {
-	return v.RPC_CREDENTIAL_FIELDS.ProofOfPossession
-}
-
-// GetProtocolPubKey returns RPC_VALIDATOR_FIELDSNextEpochCredentialsValidatorCredentials.ProtocolPubKey, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDSNextEpochCredentialsValidatorCredentials) GetProtocolPubKey() iotago.Base64Data {
-	return v.RPC_CREDENTIAL_FIELDS.ProtocolPubKey
-}
-
-func (v *RPC_VALIDATOR_FIELDSNextEpochCredentialsValidatorCredentials) UnmarshalJSON(b []byte) error {
-
-	if string(b) == "null" {
-		return nil
-	}
-
-	var firstPass struct {
-		*RPC_VALIDATOR_FIELDSNextEpochCredentialsValidatorCredentials
-		graphql.NoUnmarshalJSON
-	}
-	firstPass.RPC_VALIDATOR_FIELDSNextEpochCredentialsValidatorCredentials = v
-
-	err := json.Unmarshal(b, &firstPass)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(
-		b, &v.RPC_CREDENTIAL_FIELDS)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-type __premarshalRPC_VALIDATOR_FIELDSNextEpochCredentialsValidatorCredentials struct {
-	NetAddress string `json:"netAddress"`
-
-	NetworkPubKey iotago.Base64Data `json:"networkPubKey"`
-
-	P2PAddress string `json:"p2PAddress"`
-
-	PrimaryAddress string `json:"primaryAddress"`
-
-	ProofOfPossession iotago.Base64Data `json:"proofOfPossession"`
-
-	ProtocolPubKey iotago.Base64Data `json:"protocolPubKey"`
-}
-
-func (v *RPC_VALIDATOR_FIELDSNextEpochCredentialsValidatorCredentials) MarshalJSON() ([]byte, error) {
-	premarshaled, err := v.__premarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(premarshaled)
-}
-
-func (v *RPC_VALIDATOR_FIELDSNextEpochCredentialsValidatorCredentials) __premarshalJSON() (*__premarshalRPC_VALIDATOR_FIELDSNextEpochCredentialsValidatorCredentials, error) {
-	var retval __premarshalRPC_VALIDATOR_FIELDSNextEpochCredentialsValidatorCredentials
-
-	retval.NetAddress = v.RPC_CREDENTIAL_FIELDS.NetAddress
-	retval.NetworkPubKey = v.RPC_CREDENTIAL_FIELDS.NetworkPubKey
-	retval.P2PAddress = v.RPC_CREDENTIAL_FIELDS.P2PAddress
-	retval.PrimaryAddress = v.RPC_CREDENTIAL_FIELDS.PrimaryAddress
-	retval.ProofOfPossession = v.RPC_CREDENTIAL_FIELDS.ProofOfPossession
-	retval.ProtocolPubKey = v.RPC_CREDENTIAL_FIELDS.ProtocolPubKey
-	return &retval, nil
-}
-
-// RPC_VALIDATOR_FIELDSOperationCapMoveObject includes the requested fields of the GraphQL type MoveObject.
-// The GraphQL type's documentation follows.
-//
-// The representation of an object as a Move Object, which exposes additional
-// information (content, module that governs it, version, is transferable,
-// etc.) about this object.
-type RPC_VALIDATOR_FIELDSOperationCapMoveObject struct {
-	Address iotago.Address `json:"address"`
-}
-
-// GetAddress returns RPC_VALIDATOR_FIELDSOperationCapMoveObject.Address, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDSOperationCapMoveObject) GetAddress() iotago.Address { return v.Address }
-
-// RPC_VALIDATOR_FIELDSStakingPoolMoveObject includes the requested fields of the GraphQL type MoveObject.
-// The GraphQL type's documentation follows.
-//
-// The representation of an object as a Move Object, which exposes additional
-// information (content, module that governs it, version, is transferable,
-// etc.) about this object.
-type RPC_VALIDATOR_FIELDSStakingPoolMoveObject struct {
-	Address iotago.Address `json:"address"`
-}
-
-// GetAddress returns RPC_VALIDATOR_FIELDSStakingPoolMoveObject.Address, and is useful for accessing the field via an interface.
-func (v *RPC_VALIDATOR_FIELDSStakingPoolMoveObject) GetAddress() iotago.Address { return v.Address }
-
-// ResolveNameServiceAddressResolveIotaNamesAddress includes the requested fields of the GraphQL type Address.
-// The GraphQL type's documentation follows.
-//
-// The 32-byte address that is an account address (corresponding to a public
-// key).
-type ResolveNameServiceAddressResolveIotaNamesAddress struct {
-	Address iotago.Address `json:"address"`
-}
-
-// GetAddress returns ResolveNameServiceAddressResolveIotaNamesAddress.Address, and is useful for accessing the field via an interface.
-func (v *ResolveNameServiceAddressResolveIotaNamesAddress) GetAddress() iotago.Address {
-	return v.Address
-}
-
-// ResolveNameServiceAddressResponse is returned by ResolveNameServiceAddress on success.
-type ResolveNameServiceAddressResponse struct {
-	// Resolves an IOTA-Names `name` to an address, if it has been
-	// bound.
-	ResolveIotaNamesAddress ResolveNameServiceAddressResolveIotaNamesAddress `json:"resolveIotaNamesAddress"`
-}
-
-// GetResolveIotaNamesAddress returns ResolveNameServiceAddressResponse.ResolveIotaNamesAddress, and is useful for accessing the field via an interface.
-func (v *ResolveNameServiceAddressResponse) GetResolveIotaNamesAddress() ResolveNameServiceAddressResolveIotaNamesAddress {
-	return v.ResolveIotaNamesAddress
-}
-
-// ResolveNameServiceNamesAddress includes the requested fields of the GraphQL type Address.
-// The GraphQL type's documentation follows.
-//
-// The 32-byte address that is an account address (corresponding to a public
-// key).
-type ResolveNameServiceNamesAddress struct {
-	// The NameRegistration NFTs owned by this address. These grant the
-	// owner the capability to manage the associated name.
-	IotaNamesRegistrations ResolveNameServiceNamesAddressIotaNamesRegistrationsNameRegistrationConnection `json:"iotaNamesRegistrations"`
-}
-
-// GetIotaNamesRegistrations returns ResolveNameServiceNamesAddress.IotaNamesRegistrations, and is useful for accessing the field via an interface.
-func (v *ResolveNameServiceNamesAddress) GetIotaNamesRegistrations() ResolveNameServiceNamesAddressIotaNamesRegistrationsNameRegistrationConnection {
-	return v.IotaNamesRegistrations
-}
-
-// ResolveNameServiceNamesAddressIotaNamesRegistrationsNameRegistrationConnection includes the requested fields of the GraphQL type NameRegistrationConnection.
-type ResolveNameServiceNamesAddressIotaNamesRegistrationsNameRegistrationConnection struct {
-	// Information to aid in pagination.
-	PageInfo ResolveNameServiceNamesAddressIotaNamesRegistrationsNameRegistrationConnectionPageInfo `json:"pageInfo"`
-	// A list of nodes.
-	Nodes []ResolveNameServiceNamesAddressIotaNamesRegistrationsNameRegistrationConnectionNodesNameRegistration `json:"nodes"`
-}
-
-// GetPageInfo returns ResolveNameServiceNamesAddressIotaNamesRegistrationsNameRegistrationConnection.PageInfo, and is useful for accessing the field via an interface.
-func (v *ResolveNameServiceNamesAddressIotaNamesRegistrationsNameRegistrationConnection) GetPageInfo() ResolveNameServiceNamesAddressIotaNamesRegistrationsNameRegistrationConnectionPageInfo {
-	return v.PageInfo
-}
-
-// GetNodes returns ResolveNameServiceNamesAddressIotaNamesRegistrationsNameRegistrationConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *ResolveNameServiceNamesAddressIotaNamesRegistrationsNameRegistrationConnection) GetNodes() []ResolveNameServiceNamesAddressIotaNamesRegistrationsNameRegistrationConnectionNodesNameRegistration {
-	return v.Nodes
-}
-
-// ResolveNameServiceNamesAddressIotaNamesRegistrationsNameRegistrationConnectionNodesNameRegistration includes the requested fields of the GraphQL type NameRegistration.
-type ResolveNameServiceNamesAddressIotaNamesRegistrationsNameRegistrationConnectionNodesNameRegistration struct {
-	// Name of the NameRegistration object
-	Name string `json:"name"`
-}
-
-// GetName returns ResolveNameServiceNamesAddressIotaNamesRegistrationsNameRegistrationConnectionNodesNameRegistration.Name, and is useful for accessing the field via an interface.
-func (v *ResolveNameServiceNamesAddressIotaNamesRegistrationsNameRegistrationConnectionNodesNameRegistration) GetName() string {
-	return v.Name
-}
-
-// ResolveNameServiceNamesAddressIotaNamesRegistrationsNameRegistrationConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
-// The GraphQL type's documentation follows.
-//
-// Information about pagination in a connection
-type ResolveNameServiceNamesAddressIotaNamesRegistrationsNameRegistrationConnectionPageInfo struct {
-	// When paginating forwards, are there more items?
-	HasNextPage bool `json:"hasNextPage"`
-	// When paginating forwards, the cursor to continue.
-	EndCursor string `json:"endCursor"`
-}
-
-// GetHasNextPage returns ResolveNameServiceNamesAddressIotaNamesRegistrationsNameRegistrationConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
-func (v *ResolveNameServiceNamesAddressIotaNamesRegistrationsNameRegistrationConnectionPageInfo) GetHasNextPage() bool {
-	return v.HasNextPage
-}
-
-// GetEndCursor returns ResolveNameServiceNamesAddressIotaNamesRegistrationsNameRegistrationConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
-func (v *ResolveNameServiceNamesAddressIotaNamesRegistrationsNameRegistrationConnectionPageInfo) GetEndCursor() string {
-	return v.EndCursor
-}
-
-// ResolveNameServiceNamesResponse is returned by ResolveNameServiceNames on success.
-type ResolveNameServiceNamesResponse struct {
-	// Look-up an Account by its IotaAddress.
-	Address ResolveNameServiceNamesAddress `json:"address"`
-}
-
-// GetAddress returns ResolveNameServiceNamesResponse.Address, and is useful for accessing the field via an interface.
-func (v *ResolveNameServiceNamesResponse) GetAddress() ResolveNameServiceNamesAddress {
-	return v.Address
-}
-
 // The stake's possible status: active, pending, or unstaked.
 type StakeStatus string
 
@@ -12265,20 +7221,34 @@ var AllStakeStatus = []StakeStatus{
 	StakeStatusUnstaked,
 }
 
+// Represents optional available filters for transaction blocks.
 type TransactionBlockFilter struct {
+	// Filter transactions by move function called.
+	//
+	// Calls can be filtered by the `package`, `package::module`, or the
+	// `package::module::name` of their function.
 	Function string `json:"function"`
 	// An input filter selecting for either system or programmable
 	// transactions.
-	Kind                   TransactionBlockKindInput `json:"kind"`
-	AfterCheckpoint        uint64                    `json:"afterCheckpoint"`
-	AtCheckpoint           uint64                    `json:"atCheckpoint"`
-	BeforeCheckpoint       uint64                    `json:"beforeCheckpoint"`
-	SignAddress            iotago.Address            `json:"signAddress"`
-	RecvAddress            iotago.Address            `json:"recvAddress"`
-	InputObject            iotago.Address            `json:"inputObject"`
-	ChangedObject          iotago.Address            `json:"changedObject"`
-	WrappedOrDeletedObject iotago.Address            `json:"wrappedOrDeletedObject"`
-	TransactionIds         []string                  `json:"transactionIds"`
+	Kind TransactionBlockKindInput `json:"kind"`
+	// Limit to transactions that occurred strictly after the given checkpoint.
+	AfterCheckpoint uint64 `json:"afterCheckpoint"`
+	// Limit to transactions in the given checkpoint.
+	AtCheckpoint uint64 `json:"atCheckpoint"`
+	// Limit to transaction that occurred strictly before the given checkpoint.
+	BeforeCheckpoint uint64 `json:"beforeCheckpoint"`
+	// Limit to transactions that were signed by the given address.
+	SignAddress iotago.Address `json:"signAddress"`
+	// Limit to transactions that sent an object to the given address.
+	RecvAddress iotago.Address `json:"recvAddress"`
+	// Limit to transactions that accepted the given object as an input.
+	InputObject iotago.Address `json:"inputObject"`
+	// Limit to transactions that output a version of this object.
+	ChangedObject iotago.Address `json:"changedObject"`
+	// Limit to transactions that wrapped or deleted the given object.
+	WrappedOrDeletedObject iotago.Address `json:"wrappedOrDeletedObject"`
+	// Select transactions by their digest.
+	TransactionIds []string `json:"transactionIds"`
 }
 
 // GetFunction returns TransactionBlockFilter.Function, and is useful for accessing the field via an interface.
@@ -12708,34 +7678,6 @@ func (v *__GetBalanceInput) GetOwner() iotago.Address { return v.Owner }
 // GetFetchCoinType returns __GetBalanceInput.FetchCoinType, and is useful for accessing the field via an interface.
 func (v *__GetBalanceInput) GetFetchCoinType() *string { return v.FetchCoinType }
 
-// __GetCheckpointInput is used internally by genqlient
-type __GetCheckpointInput struct {
-	Id *CheckpointId `json:"id"`
-}
-
-// GetId returns __GetCheckpointInput.Id, and is useful for accessing the field via an interface.
-func (v *__GetCheckpointInput) GetId() *CheckpointId { return v.Id }
-
-// __GetCheckpointsInput is used internally by genqlient
-type __GetCheckpointsInput struct {
-	First  *int    `json:"first"`
-	Before *string `json:"before"`
-	Last   *int    `json:"last"`
-	After  *string `json:"after"`
-}
-
-// GetFirst returns __GetCheckpointsInput.First, and is useful for accessing the field via an interface.
-func (v *__GetCheckpointsInput) GetFirst() *int { return v.First }
-
-// GetBefore returns __GetCheckpointsInput.Before, and is useful for accessing the field via an interface.
-func (v *__GetCheckpointsInput) GetBefore() *string { return v.Before }
-
-// GetLast returns __GetCheckpointsInput.Last, and is useful for accessing the field via an interface.
-func (v *__GetCheckpointsInput) GetLast() *int { return v.Last }
-
-// GetAfter returns __GetCheckpointsInput.After, and is useful for accessing the field via an interface.
-func (v *__GetCheckpointsInput) GetAfter() *string { return v.After }
-
 // __GetCoinMetadataInput is used internally by genqlient
 type __GetCoinMetadataInput struct {
 	CoinType string `json:"coinType"`
@@ -12764,18 +7706,6 @@ func (v *__GetCoinsInput) GetCursor() *string { return v.Cursor }
 // GetFetchCoinType returns __GetCoinsInput.FetchCoinType, and is useful for accessing the field via an interface.
 func (v *__GetCoinsInput) GetFetchCoinType() *string { return v.FetchCoinType }
 
-// __GetCommitteeInfoInput is used internally by genqlient
-type __GetCommitteeInfoInput struct {
-	EpochId *uint64 `json:"epochId"`
-	After   *string `json:"after"`
-}
-
-// GetEpochId returns __GetCommitteeInfoInput.EpochId, and is useful for accessing the field via an interface.
-func (v *__GetCommitteeInfoInput) GetEpochId() *uint64 { return v.EpochId }
-
-// GetAfter returns __GetCommitteeInfoInput.After, and is useful for accessing the field via an interface.
-func (v *__GetCommitteeInfoInput) GetAfter() *string { return v.After }
-
 // __GetDynamicFieldsInput is used internally by genqlient
 type __GetDynamicFieldsInput struct {
 	ParentId iotago.Address `json:"parentId"`
@@ -12792,77 +7722,21 @@ func (v *__GetDynamicFieldsInput) GetFirst() *int { return v.First }
 // GetCursor returns __GetDynamicFieldsInput.Cursor, and is useful for accessing the field via an interface.
 func (v *__GetDynamicFieldsInput) GetCursor() *string { return v.Cursor }
 
-// __GetMoveFunctionArgTypesInput is used internally by genqlient
-type __GetMoveFunctionArgTypesInput struct {
-	PackageId iotago.Address `json:"packageId"`
-	Module    string         `json:"module"`
-	Function  string         `json:"function"`
+// __GetObjectDynamicFieldsInput is used internally by genqlient
+type __GetObjectDynamicFieldsInput struct {
+	ObjectId iotago.Address `json:"objectId"`
+	First    *int           `json:"first"`
+	Cursor   *string        `json:"cursor"`
 }
 
-// GetPackageId returns __GetMoveFunctionArgTypesInput.PackageId, and is useful for accessing the field via an interface.
-func (v *__GetMoveFunctionArgTypesInput) GetPackageId() iotago.Address { return v.PackageId }
+// GetObjectId returns __GetObjectDynamicFieldsInput.ObjectId, and is useful for accessing the field via an interface.
+func (v *__GetObjectDynamicFieldsInput) GetObjectId() iotago.Address { return v.ObjectId }
 
-// GetModule returns __GetMoveFunctionArgTypesInput.Module, and is useful for accessing the field via an interface.
-func (v *__GetMoveFunctionArgTypesInput) GetModule() string { return v.Module }
+// GetFirst returns __GetObjectDynamicFieldsInput.First, and is useful for accessing the field via an interface.
+func (v *__GetObjectDynamicFieldsInput) GetFirst() *int { return v.First }
 
-// GetFunction returns __GetMoveFunctionArgTypesInput.Function, and is useful for accessing the field via an interface.
-func (v *__GetMoveFunctionArgTypesInput) GetFunction() string { return v.Function }
-
-// __GetNormalizedMoveFunctionInput is used internally by genqlient
-type __GetNormalizedMoveFunctionInput struct {
-	PackageId iotago.Address `json:"packageId"`
-	Module    string         `json:"module"`
-	Function  string         `json:"function"`
-}
-
-// GetPackageId returns __GetNormalizedMoveFunctionInput.PackageId, and is useful for accessing the field via an interface.
-func (v *__GetNormalizedMoveFunctionInput) GetPackageId() iotago.Address { return v.PackageId }
-
-// GetModule returns __GetNormalizedMoveFunctionInput.Module, and is useful for accessing the field via an interface.
-func (v *__GetNormalizedMoveFunctionInput) GetModule() string { return v.Module }
-
-// GetFunction returns __GetNormalizedMoveFunctionInput.Function, and is useful for accessing the field via an interface.
-func (v *__GetNormalizedMoveFunctionInput) GetFunction() string { return v.Function }
-
-// __GetNormalizedMoveModuleInput is used internally by genqlient
-type __GetNormalizedMoveModuleInput struct {
-	PackageId iotago.Address `json:"packageId"`
-	Module    string         `json:"module"`
-}
-
-// GetPackageId returns __GetNormalizedMoveModuleInput.PackageId, and is useful for accessing the field via an interface.
-func (v *__GetNormalizedMoveModuleInput) GetPackageId() iotago.Address { return v.PackageId }
-
-// GetModule returns __GetNormalizedMoveModuleInput.Module, and is useful for accessing the field via an interface.
-func (v *__GetNormalizedMoveModuleInput) GetModule() string { return v.Module }
-
-// __GetNormalizedMoveModulesByPackageInput is used internally by genqlient
-type __GetNormalizedMoveModulesByPackageInput struct {
-	PackageId iotago.Address `json:"packageId"`
-	Cursor    *string        `json:"cursor"`
-}
-
-// GetPackageId returns __GetNormalizedMoveModulesByPackageInput.PackageId, and is useful for accessing the field via an interface.
-func (v *__GetNormalizedMoveModulesByPackageInput) GetPackageId() iotago.Address { return v.PackageId }
-
-// GetCursor returns __GetNormalizedMoveModulesByPackageInput.Cursor, and is useful for accessing the field via an interface.
-func (v *__GetNormalizedMoveModulesByPackageInput) GetCursor() *string { return v.Cursor }
-
-// __GetNormalizedMoveStructInput is used internally by genqlient
-type __GetNormalizedMoveStructInput struct {
-	PackageId  iotago.Address `json:"packageId"`
-	Module     string         `json:"module"`
-	MoveStruct string         `json:"moveStruct"`
-}
-
-// GetPackageId returns __GetNormalizedMoveStructInput.PackageId, and is useful for accessing the field via an interface.
-func (v *__GetNormalizedMoveStructInput) GetPackageId() iotago.Address { return v.PackageId }
-
-// GetModule returns __GetNormalizedMoveStructInput.Module, and is useful for accessing the field via an interface.
-func (v *__GetNormalizedMoveStructInput) GetModule() string { return v.Module }
-
-// GetMoveStruct returns __GetNormalizedMoveStructInput.MoveStruct, and is useful for accessing the field via an interface.
-func (v *__GetNormalizedMoveStructInput) GetMoveStruct() string { return v.MoveStruct }
+// GetCursor returns __GetObjectDynamicFieldsInput.Cursor, and is useful for accessing the field via an interface.
+func (v *__GetObjectDynamicFieldsInput) GetCursor() *string { return v.Cursor }
 
 // __GetObjectInput is used internally by genqlient
 type __GetObjectInput struct {
@@ -12948,14 +7822,6 @@ func (v *__GetOwnedObjectsInput) GetShowStorageRebate() *bool { return v.ShowSto
 // GetFilter returns __GetOwnedObjectsInput.Filter, and is useful for accessing the field via an interface.
 func (v *__GetOwnedObjectsInput) GetFilter() *ObjectFilter { return v.Filter }
 
-// __GetProtocolConfigInput is used internally by genqlient
-type __GetProtocolConfigInput struct {
-	ProtocolVersion *uint64 `json:"protocolVersion"`
-}
-
-// GetProtocolVersion returns __GetProtocolConfigInput.ProtocolVersion, and is useful for accessing the field via an interface.
-func (v *__GetProtocolConfigInput) GetProtocolVersion() *uint64 { return v.ProtocolVersion }
-
 // __GetStakesByIdsInput is used internally by genqlient
 type __GetStakesByIdsInput struct {
 	Ids    []iotago.Address `json:"ids"`
@@ -12987,14 +7853,6 @@ func (v *__GetStakesInput) GetLimit() *int { return v.Limit }
 
 // GetCursor returns __GetStakesInput.Cursor, and is useful for accessing the field via an interface.
 func (v *__GetStakesInput) GetCursor() *string { return v.Cursor }
-
-// __GetTotalSupplyInput is used internally by genqlient
-type __GetTotalSupplyInput struct {
-	CoinType string `json:"coinType"`
-}
-
-// GetCoinType returns __GetTotalSupplyInput.CoinType, and is useful for accessing the field via an interface.
-func (v *__GetTotalSupplyInput) GetCoinType() string { return v.CoinType }
 
 // __GetTransactionBlockInput is used internally by genqlient
 type __GetTransactionBlockInput struct {
@@ -13031,14 +7889,6 @@ func (v *__GetTransactionBlockInput) GetShowObjectChanges() *bool { return v.Sho
 
 // GetShowRawInput returns __GetTransactionBlockInput.ShowRawInput, and is useful for accessing the field via an interface.
 func (v *__GetTransactionBlockInput) GetShowRawInput() *bool { return v.ShowRawInput }
-
-// __GetTypeLayoutInput is used internally by genqlient
-type __GetTypeLayoutInput struct {
-	TargetType string `json:"targetType"`
-}
-
-// GetTargetType returns __GetTypeLayoutInput.TargetType, and is useful for accessing the field via an interface.
-func (v *__GetTypeLayoutInput) GetTargetType() string { return v.TargetType }
 
 // __MultiGetObjectsInput is used internally by genqlient
 type __MultiGetObjectsInput struct {
@@ -13127,74 +7977,6 @@ func (v *__MultiGetTransactionBlocksInput) GetShowObjectChanges() *bool { return
 
 // GetShowRawInput returns __MultiGetTransactionBlocksInput.ShowRawInput, and is useful for accessing the field via an interface.
 func (v *__MultiGetTransactionBlocksInput) GetShowRawInput() *bool { return v.ShowRawInput }
-
-// __PaginateCheckpointTransactionBlocksInput is used internally by genqlient
-type __PaginateCheckpointTransactionBlocksInput struct {
-	Id    *CheckpointId `json:"id"`
-	After *string       `json:"after"`
-}
-
-// GetId returns __PaginateCheckpointTransactionBlocksInput.Id, and is useful for accessing the field via an interface.
-func (v *__PaginateCheckpointTransactionBlocksInput) GetId() *CheckpointId { return v.Id }
-
-// GetAfter returns __PaginateCheckpointTransactionBlocksInput.After, and is useful for accessing the field via an interface.
-func (v *__PaginateCheckpointTransactionBlocksInput) GetAfter() *string { return v.After }
-
-// __PaginateEpochValidatorsInput is used internally by genqlient
-type __PaginateEpochValidatorsInput struct {
-	Id    uint64  `json:"id"`
-	After *string `json:"after"`
-}
-
-// GetId returns __PaginateEpochValidatorsInput.Id, and is useful for accessing the field via an interface.
-func (v *__PaginateEpochValidatorsInput) GetId() uint64 { return v.Id }
-
-// GetAfter returns __PaginateEpochValidatorsInput.After, and is useful for accessing the field via an interface.
-func (v *__PaginateEpochValidatorsInput) GetAfter() *string { return v.After }
-
-// __PaginateMoveModuleListsInput is used internally by genqlient
-type __PaginateMoveModuleListsInput struct {
-	PackageId        iotago.Address `json:"packageId"`
-	Module           string         `json:"module"`
-	HasMoreFriends   bool           `json:"hasMoreFriends"`
-	HasMoreStructs   bool           `json:"hasMoreStructs"`
-	HasMoreFunctions bool           `json:"hasMoreFunctions"`
-	HasMoreEnums     bool           `json:"hasMoreEnums"`
-	AfterFriends     *string        `json:"afterFriends"`
-	AfterStructs     *string        `json:"afterStructs"`
-	AfterFunctions   *string        `json:"afterFunctions"`
-	AfterEnums       *string        `json:"afterEnums"`
-}
-
-// GetPackageId returns __PaginateMoveModuleListsInput.PackageId, and is useful for accessing the field via an interface.
-func (v *__PaginateMoveModuleListsInput) GetPackageId() iotago.Address { return v.PackageId }
-
-// GetModule returns __PaginateMoveModuleListsInput.Module, and is useful for accessing the field via an interface.
-func (v *__PaginateMoveModuleListsInput) GetModule() string { return v.Module }
-
-// GetHasMoreFriends returns __PaginateMoveModuleListsInput.HasMoreFriends, and is useful for accessing the field via an interface.
-func (v *__PaginateMoveModuleListsInput) GetHasMoreFriends() bool { return v.HasMoreFriends }
-
-// GetHasMoreStructs returns __PaginateMoveModuleListsInput.HasMoreStructs, and is useful for accessing the field via an interface.
-func (v *__PaginateMoveModuleListsInput) GetHasMoreStructs() bool { return v.HasMoreStructs }
-
-// GetHasMoreFunctions returns __PaginateMoveModuleListsInput.HasMoreFunctions, and is useful for accessing the field via an interface.
-func (v *__PaginateMoveModuleListsInput) GetHasMoreFunctions() bool { return v.HasMoreFunctions }
-
-// GetHasMoreEnums returns __PaginateMoveModuleListsInput.HasMoreEnums, and is useful for accessing the field via an interface.
-func (v *__PaginateMoveModuleListsInput) GetHasMoreEnums() bool { return v.HasMoreEnums }
-
-// GetAfterFriends returns __PaginateMoveModuleListsInput.AfterFriends, and is useful for accessing the field via an interface.
-func (v *__PaginateMoveModuleListsInput) GetAfterFriends() *string { return v.AfterFriends }
-
-// GetAfterStructs returns __PaginateMoveModuleListsInput.AfterStructs, and is useful for accessing the field via an interface.
-func (v *__PaginateMoveModuleListsInput) GetAfterStructs() *string { return v.AfterStructs }
-
-// GetAfterFunctions returns __PaginateMoveModuleListsInput.AfterFunctions, and is useful for accessing the field via an interface.
-func (v *__PaginateMoveModuleListsInput) GetAfterFunctions() *string { return v.AfterFunctions }
-
-// GetAfterEnums returns __PaginateMoveModuleListsInput.AfterEnums, and is useful for accessing the field via an interface.
-func (v *__PaginateMoveModuleListsInput) GetAfterEnums() *string { return v.AfterEnums }
 
 // __PaginateTransactionBlockListsInput is used internally by genqlient
 type __PaginateTransactionBlockListsInput struct {
@@ -13312,30 +8094,6 @@ func (v *__QueryTransactionBlocksInput) GetShowRawInput() *bool { return v.ShowR
 // GetFilter returns __QueryTransactionBlocksInput.Filter, and is useful for accessing the field via an interface.
 func (v *__QueryTransactionBlocksInput) GetFilter() *TransactionBlockFilter { return v.Filter }
 
-// __ResolveNameServiceAddressInput is used internally by genqlient
-type __ResolveNameServiceAddressInput struct {
-	Name *string `json:"name"`
-}
-
-// GetName returns __ResolveNameServiceAddressInput.Name, and is useful for accessing the field via an interface.
-func (v *__ResolveNameServiceAddressInput) GetName() *string { return v.Name }
-
-// __ResolveNameServiceNamesInput is used internally by genqlient
-type __ResolveNameServiceNamesInput struct {
-	Address iotago.Address `json:"address"`
-	Limit   *int           `json:"limit"`
-	Cursor  *string        `json:"cursor"`
-}
-
-// GetAddress returns __ResolveNameServiceNamesInput.Address, and is useful for accessing the field via an interface.
-func (v *__ResolveNameServiceNamesInput) GetAddress() iotago.Address { return v.Address }
-
-// GetLimit returns __ResolveNameServiceNamesInput.Limit, and is useful for accessing the field via an interface.
-func (v *__ResolveNameServiceNamesInput) GetLimit() *int { return v.Limit }
-
-// GetCursor returns __ResolveNameServiceNamesInput.Cursor, and is useful for accessing the field via an interface.
-func (v *__ResolveNameServiceNamesInput) GetCursor() *string { return v.Cursor }
-
 // __TryGetPastObjectInput is used internally by genqlient
 type __TryGetPastObjectInput struct {
 	Id                      iotago.Address `json:"id"`
@@ -13414,8 +8172,8 @@ query DevInspectTransactionBlock ($txBytes: String!, $txMeta: TransactionMetadat
 }
 fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 	digest
-	rawTransaction: bcs @include(if: $showInput)
-	rawTransaction: bcs @include(if: $showRawInput)
+	bcs @include(if: $showInput)
+	bcs @include(if: $showRawInput)
 	sender {
 		address
 	}
@@ -13437,7 +8195,7 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 			sequenceNumber
 		}
 		timestamp
-		balanceChanges(first: 50) @include(if: $showBalanceChanges) {
+		balanceChanges @include(if: $showBalanceChanges) {
 			pageInfo {
 				hasNextPage
 				endCursor
@@ -13562,8 +8320,8 @@ query DryRunTransactionBlock ($txBytes: String!, $showBalanceChanges: Boolean = 
 }
 fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 	digest
-	rawTransaction: bcs @include(if: $showInput)
-	rawTransaction: bcs @include(if: $showRawInput)
+	bcs @include(if: $showInput)
+	bcs @include(if: $showRawInput)
 	sender {
 		address
 	}
@@ -13585,7 +8343,7 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 			sequenceNumber
 		}
 		timestamp
-		balanceChanges(first: 50) @include(if: $showBalanceChanges) {
+		balanceChanges @include(if: $showBalanceChanges) {
 			pageInfo {
 				hasNextPage
 				endCursor
@@ -13710,8 +8468,8 @@ mutation ExecuteTransactionBlock ($txBytes: String!, $signatures: [String!]!, $s
 }
 fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 	digest
-	rawTransaction: bcs @include(if: $showInput)
-	rawTransaction: bcs @include(if: $showRawInput)
+	bcs @include(if: $showInput)
+	bcs @include(if: $showRawInput)
 	sender {
 		address
 	}
@@ -13733,7 +8491,7 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 			sequenceNumber
 		}
 		timestamp
-		balanceChanges(first: 50) @include(if: $showBalanceChanges) {
+		balanceChanges @include(if: $showBalanceChanges) {
 			pageInfo {
 				hasNextPage
 				endCursor
@@ -13996,240 +8754,6 @@ func GetBalance(
 	return data_, err_
 }
 
-// The query executed by GetChainIdentifier.
-const GetChainIdentifier_Operation = `
-query GetChainIdentifier {
-	chainIdentifier
-}
-`
-
-func GetChainIdentifier(
-	ctx_ context.Context,
-	client_ graphql.Client,
-) (data_ *GetChainIdentifierResponse, err_ error) {
-	req_ := &graphql.Request{
-		OpName: "GetChainIdentifier",
-		Query:  GetChainIdentifier_Operation,
-	}
-
-	data_ = &GetChainIdentifierResponse{}
-	resp_ := &graphql.Response{Data: data_}
-
-	err_ = client_.MakeRequest(
-		ctx_,
-		req_,
-		resp_,
-	)
-
-	return data_, err_
-}
-
-// The query executed by GetCheckpoint.
-const GetCheckpoint_Operation = `
-query GetCheckpoint ($id: CheckpointId) {
-	checkpoint(id: $id) {
-		... RPC_Checkpoint_Fields
-	}
-}
-fragment RPC_Checkpoint_Fields on Checkpoint {
-	digest
-	epoch {
-		epochId
-	}
-	rollingGasSummary {
-		computationCost
-		storageCost
-		storageRebate
-		nonRefundableStorageFee
-	}
-	networkTotalTransactions
-	previousCheckpointDigest
-	sequenceNumber
-	timestamp
-	validatorSignatures
-	transactionBlocks {
-		pageInfo {
-			hasNextPage
-			endCursor
-		}
-		nodes {
-			digest
-		}
-	}
-	endOfEpoch: transactionBlocks(last: 1, filter: {kind:SYSTEM_TX}) {
-		nodes {
-			kind {
-				__typename
-				... on EndOfEpochTransaction {
-					transactions(last: 1) {
-						nodes {
-							__typename
-							... on ChangeEpochTransaction {
-								epoch {
-									validatorSet {
-										activeValidators {
-											pageInfo {
-												hasNextPage
-												endCursor
-											}
-											nodes {
-												credentials {
-													protocolPubKey
-												}
-												votingPower
-											}
-										}
-									}
-									protocolConfigs {
-										protocolVersion
-									}
-									epochId
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-}
-`
-
-func GetCheckpoint(
-	ctx_ context.Context,
-	client_ graphql.Client,
-	id *CheckpointId,
-) (data_ *GetCheckpointResponse, err_ error) {
-	req_ := &graphql.Request{
-		OpName: "GetCheckpoint",
-		Query:  GetCheckpoint_Operation,
-		Variables: &__GetCheckpointInput{
-			Id: id,
-		},
-	}
-
-	data_ = &GetCheckpointResponse{}
-	resp_ := &graphql.Response{Data: data_}
-
-	err_ = client_.MakeRequest(
-		ctx_,
-		req_,
-		resp_,
-	)
-
-	return data_, err_
-}
-
-// The query executed by GetCheckpoints.
-const GetCheckpoints_Operation = `
-query GetCheckpoints ($first: Int, $before: String, $last: Int, $after: String) {
-	checkpoints(first: $first, after: $after, last: $last, before: $before) {
-		pageInfo {
-			startCursor
-			endCursor
-			hasNextPage
-			hasPreviousPage
-		}
-		nodes {
-			... RPC_Checkpoint_Fields
-		}
-	}
-}
-fragment RPC_Checkpoint_Fields on Checkpoint {
-	digest
-	epoch {
-		epochId
-	}
-	rollingGasSummary {
-		computationCost
-		storageCost
-		storageRebate
-		nonRefundableStorageFee
-	}
-	networkTotalTransactions
-	previousCheckpointDigest
-	sequenceNumber
-	timestamp
-	validatorSignatures
-	transactionBlocks {
-		pageInfo {
-			hasNextPage
-			endCursor
-		}
-		nodes {
-			digest
-		}
-	}
-	endOfEpoch: transactionBlocks(last: 1, filter: {kind:SYSTEM_TX}) {
-		nodes {
-			kind {
-				__typename
-				... on EndOfEpochTransaction {
-					transactions(last: 1) {
-						nodes {
-							__typename
-							... on ChangeEpochTransaction {
-								epoch {
-									validatorSet {
-										activeValidators {
-											pageInfo {
-												hasNextPage
-												endCursor
-											}
-											nodes {
-												credentials {
-													protocolPubKey
-												}
-												votingPower
-											}
-										}
-									}
-									protocolConfigs {
-										protocolVersion
-									}
-									epochId
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-}
-`
-
-func GetCheckpoints(
-	ctx_ context.Context,
-	client_ graphql.Client,
-	first *int,
-	before *string,
-	last *int,
-	after *string,
-) (data_ *GetCheckpointsResponse, err_ error) {
-	req_ := &graphql.Request{
-		OpName: "GetCheckpoints",
-		Query:  GetCheckpoints_Operation,
-		Variables: &__GetCheckpointsInput{
-			First:  first,
-			Before: before,
-			Last:   last,
-			After:  after,
-		},
-	}
-
-	data_ = &GetCheckpointsResponse{}
-	resp_ := &graphql.Response{Data: data_}
-
-	err_ = client_.MakeRequest(
-		ctx_,
-		req_,
-		resp_,
-	)
-
-	return data_, err_
-}
-
 // The query executed by GetCoinMetadata.
 const GetCoinMetadata_Operation = `
 query GetCoinMetadata ($coinType: String!) {
@@ -14329,157 +8853,6 @@ func GetCoins(
 	return data_, err_
 }
 
-// The query executed by GetCommitteeInfo.
-const GetCommitteeInfo_Operation = `
-query GetCommitteeInfo ($epochId: UInt53, $after: String) {
-	epoch(id: $epochId) {
-		epochId
-		validatorSet {
-			activeValidators(after: $after) {
-				pageInfo {
-					hasNextPage
-					endCursor
-				}
-				nodes {
-					credentials {
-						protocolPubKey
-					}
-					votingPower
-				}
-			}
-		}
-	}
-}
-`
-
-func GetCommitteeInfo(
-	ctx_ context.Context,
-	client_ graphql.Client,
-	epochId *uint64,
-	after *string,
-) (data_ *GetCommitteeInfoResponse, err_ error) {
-	req_ := &graphql.Request{
-		OpName: "GetCommitteeInfo",
-		Query:  GetCommitteeInfo_Operation,
-		Variables: &__GetCommitteeInfoInput{
-			EpochId: epochId,
-			After:   after,
-		},
-	}
-
-	data_ = &GetCommitteeInfoResponse{}
-	resp_ := &graphql.Response{Data: data_}
-
-	err_ = client_.MakeRequest(
-		ctx_,
-		req_,
-		resp_,
-	)
-
-	return data_, err_
-}
-
-// The query executed by GetCurrentEpoch.
-const GetCurrentEpoch_Operation = `
-query GetCurrentEpoch {
-	epoch {
-		epochId
-		validatorSet {
-			activeValidators {
-				pageInfo {
-					hasNextPage
-					endCursor
-				}
-				nodes {
-					... RPC_VALIDATOR_FIELDS
-				}
-			}
-		}
-		totalTransactions
-		firstCheckpoint: checkpoints(first: 1) {
-			nodes {
-				sequenceNumber
-			}
-		}
-		startTimestamp
-		endTimestamp
-		referenceGasPrice
-	}
-}
-fragment RPC_VALIDATOR_FIELDS on Validator {
-	atRisk
-	commissionRate
-	exchangeRatesSize
-	exchangeRates {
-		contents {
-			json
-		}
-		address
-	}
-	description
-	gasPrice
-	imageUrl
-	name
-	credentials {
-		... RPC_CREDENTIAL_FIELDS
-	}
-	nextEpochCommissionRate
-	nextEpochGasPrice
-	nextEpochCredentials {
-		... RPC_CREDENTIAL_FIELDS
-	}
-	nextEpochStake
-	nextEpochCommissionRate
-	operationCap {
-		address
-	}
-	pendingPoolTokenWithdraw
-	pendingStake
-	pendingTotalIotaWithdraw
-	poolTokenBalance
-	projectUrl
-	rewardsPool
-	stakingPool {
-		address
-	}
-	stakingPoolActivationEpoch
-	stakingPoolIotaBalance
-	address {
-		address
-	}
-	votingPower
-}
-fragment RPC_CREDENTIAL_FIELDS on ValidatorCredentials {
-	netAddress
-	networkPubKey
-	p2PAddress
-	primaryAddress
-	proofOfPossession
-	protocolPubKey
-}
-`
-
-func GetCurrentEpoch(
-	ctx_ context.Context,
-	client_ graphql.Client,
-) (data_ *GetCurrentEpochResponse, err_ error) {
-	req_ := &graphql.Request{
-		OpName: "GetCurrentEpoch",
-		Query:  GetCurrentEpoch_Operation,
-	}
-
-	data_ = &GetCurrentEpochResponse{}
-	resp_ := &graphql.Response{Data: data_}
-
-	err_ = client_.MakeRequest(
-		ctx_,
-		req_,
-		resp_,
-	)
-
-	return data_, err_
-}
-
 // The query executed by GetDynamicFields.
 const GetDynamicFields_Operation = `
 query GetDynamicFields ($parentId: IotaAddress!, $first: Int, $cursor: String) {
@@ -14553,36 +8926,6 @@ func GetDynamicFields(
 	return data_, err_
 }
 
-// The query executed by GetLatestCheckpointSequenceNumber.
-const GetLatestCheckpointSequenceNumber_Operation = `
-query GetLatestCheckpointSequenceNumber {
-	checkpoint {
-		sequenceNumber
-	}
-}
-`
-
-func GetLatestCheckpointSequenceNumber(
-	ctx_ context.Context,
-	client_ graphql.Client,
-) (data_ *GetLatestCheckpointSequenceNumberResponse, err_ error) {
-	req_ := &graphql.Request{
-		OpName: "GetLatestCheckpointSequenceNumber",
-		Query:  GetLatestCheckpointSequenceNumber_Operation,
-	}
-
-	data_ = &GetLatestCheckpointSequenceNumberResponse{}
-	resp_ := &graphql.Response{Data: data_}
-
-	err_ = client_.MakeRequest(
-		ctx_,
-		req_,
-		resp_,
-	)
-
-	return data_, err_
-}
-
 // The query executed by GetLatestIotaSystemState.
 const GetLatestIotaSystemState_Operation = `
 query GetLatestIotaSystemState {
@@ -14623,9 +8966,6 @@ query GetLatestIotaSystemState {
 					hasNextPage
 					endCursor
 				}
-				nodes {
-					... RPC_VALIDATOR_FIELDS
-				}
 			}
 			inactivePoolsSize
 			pendingActiveValidatorsSize
@@ -14640,57 +8980,6 @@ query GetLatestIotaSystemState {
 		}
 	}
 }
-fragment RPC_VALIDATOR_FIELDS on Validator {
-	atRisk
-	commissionRate
-	exchangeRatesSize
-	exchangeRates {
-		contents {
-			json
-		}
-		address
-	}
-	description
-	gasPrice
-	imageUrl
-	name
-	credentials {
-		... RPC_CREDENTIAL_FIELDS
-	}
-	nextEpochCommissionRate
-	nextEpochGasPrice
-	nextEpochCredentials {
-		... RPC_CREDENTIAL_FIELDS
-	}
-	nextEpochStake
-	nextEpochCommissionRate
-	operationCap {
-		address
-	}
-	pendingPoolTokenWithdraw
-	pendingStake
-	pendingTotalIotaWithdraw
-	poolTokenBalance
-	projectUrl
-	rewardsPool
-	stakingPool {
-		address
-	}
-	stakingPoolActivationEpoch
-	stakingPoolIotaBalance
-	address {
-		address
-	}
-	votingPower
-}
-fragment RPC_CREDENTIAL_FIELDS on ValidatorCredentials {
-	netAddress
-	networkPubKey
-	p2PAddress
-	primaryAddress
-	proofOfPossession
-	protocolPubKey
-}
 `
 
 func GetLatestIotaSystemState(
@@ -14703,439 +8992,6 @@ func GetLatestIotaSystemState(
 	}
 
 	data_ = &GetLatestIotaSystemStateResponse{}
-	resp_ := &graphql.Response{Data: data_}
-
-	err_ = client_.MakeRequest(
-		ctx_,
-		req_,
-		resp_,
-	)
-
-	return data_, err_
-}
-
-// The query executed by GetMoveFunctionArgTypes.
-const GetMoveFunctionArgTypes_Operation = `
-query GetMoveFunctionArgTypes ($packageId: IotaAddress!, $module: String!, $function: String!) {
-	object(address: $packageId) {
-		asMovePackage {
-			module(name: $module) {
-				fileFormatVersion
-				function(name: $function) {
-					parameters {
-						signature
-					}
-				}
-			}
-		}
-	}
-}
-`
-
-func GetMoveFunctionArgTypes(
-	ctx_ context.Context,
-	client_ graphql.Client,
-	packageId iotago.Address,
-	module string,
-	function string,
-) (data_ *GetMoveFunctionArgTypesResponse, err_ error) {
-	req_ := &graphql.Request{
-		OpName: "GetMoveFunctionArgTypes",
-		Query:  GetMoveFunctionArgTypes_Operation,
-		Variables: &__GetMoveFunctionArgTypesInput{
-			PackageId: packageId,
-			Module:    module,
-			Function:  function,
-		},
-	}
-
-	data_ = &GetMoveFunctionArgTypesResponse{}
-	resp_ := &graphql.Response{Data: data_}
-
-	err_ = client_.MakeRequest(
-		ctx_,
-		req_,
-		resp_,
-	)
-
-	return data_, err_
-}
-
-// The query executed by GetNormalizedMoveFunction.
-const GetNormalizedMoveFunction_Operation = `
-query GetNormalizedMoveFunction ($packageId: IotaAddress!, $module: String!, $function: String!) {
-	object(address: $packageId) {
-		address
-		asMovePackage {
-			module(name: $module) {
-				fileFormatVersion
-				function(name: $function) {
-					... RPC_MOVE_FUNCTION_FIELDS
-				}
-			}
-		}
-	}
-}
-fragment RPC_MOVE_FUNCTION_FIELDS on MoveFunction {
-	name
-	visibility
-	isEntry
-	parameters {
-		signature
-	}
-	typeParameters {
-		constraints
-	}
-	return {
-		repr
-		signature
-	}
-}
-`
-
-func GetNormalizedMoveFunction(
-	ctx_ context.Context,
-	client_ graphql.Client,
-	packageId iotago.Address,
-	module string,
-	function string,
-) (data_ *GetNormalizedMoveFunctionResponse, err_ error) {
-	req_ := &graphql.Request{
-		OpName: "GetNormalizedMoveFunction",
-		Query:  GetNormalizedMoveFunction_Operation,
-		Variables: &__GetNormalizedMoveFunctionInput{
-			PackageId: packageId,
-			Module:    module,
-			Function:  function,
-		},
-	}
-
-	data_ = &GetNormalizedMoveFunctionResponse{}
-	resp_ := &graphql.Response{Data: data_}
-
-	err_ = client_.MakeRequest(
-		ctx_,
-		req_,
-		resp_,
-	)
-
-	return data_, err_
-}
-
-// The query executed by GetNormalizedMoveModule.
-const GetNormalizedMoveModule_Operation = `
-query GetNormalizedMoveModule ($packageId: IotaAddress!, $module: String!) {
-	object(address: $packageId) {
-		asMovePackage {
-			module(name: $module) {
-				... RPC_MOVE_MODULE_FIELDS
-			}
-		}
-	}
-}
-fragment RPC_MOVE_MODULE_FIELDS on MoveModule {
-	name
-	friends {
-		pageInfo {
-			hasNextPage
-			endCursor
-		}
-		nodes {
-			name
-			package {
-				address
-			}
-		}
-	}
-	structs {
-		pageInfo {
-			hasNextPage
-			endCursor
-		}
-		nodes {
-			... RPC_MOVE_STRUCT_FIELDS
-		}
-	}
-	enums {
-		pageInfo {
-			hasNextPage
-			endCursor
-		}
-		nodes {
-			... RPC_MOVE_ENUM_FIELDS
-		}
-	}
-	fileFormatVersion
-	functions {
-		pageInfo {
-			hasNextPage
-			endCursor
-		}
-		nodes {
-			... RPC_MOVE_FUNCTION_FIELDS
-		}
-	}
-}
-fragment RPC_MOVE_STRUCT_FIELDS on MoveStruct {
-	name
-	abilities
-	fields {
-		name
-		type {
-			signature
-		}
-	}
-	typeParameters {
-		isPhantom
-		constraints
-	}
-}
-fragment RPC_MOVE_ENUM_FIELDS on MoveEnum {
-	name
-	abilities
-	typeParameters {
-		isPhantom
-		constraints
-	}
-	variants {
-		name
-		fields {
-			name
-			type {
-				signature
-			}
-		}
-	}
-}
-fragment RPC_MOVE_FUNCTION_FIELDS on MoveFunction {
-	name
-	visibility
-	isEntry
-	parameters {
-		signature
-	}
-	typeParameters {
-		constraints
-	}
-	return {
-		repr
-		signature
-	}
-}
-`
-
-func GetNormalizedMoveModule(
-	ctx_ context.Context,
-	client_ graphql.Client,
-	packageId iotago.Address,
-	module string,
-) (data_ *GetNormalizedMoveModuleResponse, err_ error) {
-	req_ := &graphql.Request{
-		OpName: "GetNormalizedMoveModule",
-		Query:  GetNormalizedMoveModule_Operation,
-		Variables: &__GetNormalizedMoveModuleInput{
-			PackageId: packageId,
-			Module:    module,
-		},
-	}
-
-	data_ = &GetNormalizedMoveModuleResponse{}
-	resp_ := &graphql.Response{Data: data_}
-
-	err_ = client_.MakeRequest(
-		ctx_,
-		req_,
-		resp_,
-	)
-
-	return data_, err_
-}
-
-// The query executed by GetNormalizedMoveModulesByPackage.
-const GetNormalizedMoveModulesByPackage_Operation = `
-query GetNormalizedMoveModulesByPackage ($packageId: IotaAddress!, $cursor: String) {
-	object(address: $packageId) {
-		asMovePackage {
-			address
-			modules(after: $cursor) {
-				pageInfo {
-					hasNextPage
-					endCursor
-				}
-				nodes {
-					... RPC_MOVE_MODULE_FIELDS
-				}
-			}
-		}
-	}
-}
-fragment RPC_MOVE_MODULE_FIELDS on MoveModule {
-	name
-	friends {
-		pageInfo {
-			hasNextPage
-			endCursor
-		}
-		nodes {
-			name
-			package {
-				address
-			}
-		}
-	}
-	structs {
-		pageInfo {
-			hasNextPage
-			endCursor
-		}
-		nodes {
-			... RPC_MOVE_STRUCT_FIELDS
-		}
-	}
-	enums {
-		pageInfo {
-			hasNextPage
-			endCursor
-		}
-		nodes {
-			... RPC_MOVE_ENUM_FIELDS
-		}
-	}
-	fileFormatVersion
-	functions {
-		pageInfo {
-			hasNextPage
-			endCursor
-		}
-		nodes {
-			... RPC_MOVE_FUNCTION_FIELDS
-		}
-	}
-}
-fragment RPC_MOVE_STRUCT_FIELDS on MoveStruct {
-	name
-	abilities
-	fields {
-		name
-		type {
-			signature
-		}
-	}
-	typeParameters {
-		isPhantom
-		constraints
-	}
-}
-fragment RPC_MOVE_ENUM_FIELDS on MoveEnum {
-	name
-	abilities
-	typeParameters {
-		isPhantom
-		constraints
-	}
-	variants {
-		name
-		fields {
-			name
-			type {
-				signature
-			}
-		}
-	}
-}
-fragment RPC_MOVE_FUNCTION_FIELDS on MoveFunction {
-	name
-	visibility
-	isEntry
-	parameters {
-		signature
-	}
-	typeParameters {
-		constraints
-	}
-	return {
-		repr
-		signature
-	}
-}
-`
-
-func GetNormalizedMoveModulesByPackage(
-	ctx_ context.Context,
-	client_ graphql.Client,
-	packageId iotago.Address,
-	cursor *string,
-) (data_ *GetNormalizedMoveModulesByPackageResponse, err_ error) {
-	req_ := &graphql.Request{
-		OpName: "GetNormalizedMoveModulesByPackage",
-		Query:  GetNormalizedMoveModulesByPackage_Operation,
-		Variables: &__GetNormalizedMoveModulesByPackageInput{
-			PackageId: packageId,
-			Cursor:    cursor,
-		},
-	}
-
-	data_ = &GetNormalizedMoveModulesByPackageResponse{}
-	resp_ := &graphql.Response{Data: data_}
-
-	err_ = client_.MakeRequest(
-		ctx_,
-		req_,
-		resp_,
-	)
-
-	return data_, err_
-}
-
-// The query executed by GetNormalizedMoveStruct.
-const GetNormalizedMoveStruct_Operation = `
-query GetNormalizedMoveStruct ($packageId: IotaAddress!, $module: String!, $moveStruct: String!) {
-	object(address: $packageId) {
-		asMovePackage {
-			address
-			module(name: $module) {
-				fileFormatVersion
-				struct(name: $moveStruct) {
-					... RPC_MOVE_STRUCT_FIELDS
-				}
-			}
-		}
-	}
-}
-fragment RPC_MOVE_STRUCT_FIELDS on MoveStruct {
-	name
-	abilities
-	fields {
-		name
-		type {
-			signature
-		}
-	}
-	typeParameters {
-		isPhantom
-		constraints
-	}
-}
-`
-
-func GetNormalizedMoveStruct(
-	ctx_ context.Context,
-	client_ graphql.Client,
-	packageId iotago.Address,
-	module string,
-	moveStruct string,
-) (data_ *GetNormalizedMoveStructResponse, err_ error) {
-	req_ := &graphql.Request{
-		OpName: "GetNormalizedMoveStruct",
-		Query:  GetNormalizedMoveStruct_Operation,
-		Variables: &__GetNormalizedMoveStructInput{
-			PackageId:  packageId,
-			Module:     module,
-			MoveStruct: moveStruct,
-		},
-	}
-
-	data_ = &GetNormalizedMoveStructResponse{}
 	resp_ := &graphql.Response{Data: data_}
 
 	err_ = client_.MakeRequest(
@@ -15260,6 +9116,79 @@ func GetObject(
 	return data_, err_
 }
 
+// The query executed by GetObjectDynamicFields.
+const GetObjectDynamicFields_Operation = `
+query GetObjectDynamicFields ($objectId: IotaAddress!, $first: Int, $cursor: String) {
+	object(address: $objectId) {
+		dynamicFields(first: $first, after: $cursor) {
+			pageInfo {
+				hasNextPage
+				endCursor
+			}
+			nodes {
+				name {
+					bcs
+					json
+					type {
+						layout
+						repr
+					}
+				}
+				value {
+					__typename
+					... on MoveValue {
+						json
+						type {
+							repr
+						}
+					}
+					... on MoveObject {
+						contents {
+							type {
+								repr
+							}
+							json
+						}
+						address
+						digest
+						version
+					}
+				}
+			}
+		}
+	}
+}
+`
+
+func GetObjectDynamicFields(
+	ctx_ context.Context,
+	client_ graphql.Client,
+	objectId iotago.Address,
+	first *int,
+	cursor *string,
+) (data_ *GetObjectDynamicFieldsResponse, err_ error) {
+	req_ := &graphql.Request{
+		OpName: "GetObjectDynamicFields",
+		Query:  GetObjectDynamicFields_Operation,
+		Variables: &__GetObjectDynamicFieldsInput{
+			ObjectId: objectId,
+			First:    first,
+			Cursor:   cursor,
+		},
+	}
+
+	data_ = &GetObjectDynamicFieldsResponse{}
+	resp_ := &graphql.Response{Data: data_}
+
+	err_ = client_.MakeRequest(
+		ctx_,
+		req_,
+		resp_,
+	)
+
+	return data_, err_
+}
+
 // The query executed by GetOwnedObjects.
 const GetOwnedObjects_Operation = `
 query GetOwnedObjects ($owner: IotaAddress!, $limit: Int, $cursor: String, $showBcs: Boolean = false, $showContent: Boolean = false, $showDisplay: Boolean = false, $showType: Boolean = false, $showOwner: Boolean = false, $showPreviousTransaction: Boolean = false, $showStorageRebate: Boolean = false, $filter: ObjectFilter) {
@@ -15370,48 +9299,6 @@ func GetOwnedObjects(
 	}
 
 	data_ = &GetOwnedObjectsResponse{}
-	resp_ := &graphql.Response{Data: data_}
-
-	err_ = client_.MakeRequest(
-		ctx_,
-		req_,
-		resp_,
-	)
-
-	return data_, err_
-}
-
-// The query executed by GetProtocolConfig.
-const GetProtocolConfig_Operation = `
-query GetProtocolConfig ($protocolVersion: UInt53) {
-	protocolConfig(protocolVersion: $protocolVersion) {
-		protocolVersion
-		configs {
-			key
-			value
-		}
-		featureFlags {
-			key
-			value
-		}
-	}
-}
-`
-
-func GetProtocolConfig(
-	ctx_ context.Context,
-	client_ graphql.Client,
-	protocolVersion *uint64,
-) (data_ *GetProtocolConfigResponse, err_ error) {
-	req_ := &graphql.Request{
-		OpName: "GetProtocolConfig",
-		Query:  GetProtocolConfig_Operation,
-		Variables: &__GetProtocolConfigInput{
-			ProtocolVersion: protocolVersion,
-		},
-	}
-
-	data_ = &GetProtocolConfigResponse{}
 	resp_ := &graphql.Response{Data: data_}
 
 	err_ = client_.MakeRequest(
@@ -15579,71 +9466,6 @@ func GetStakesByIds(
 	return data_, err_
 }
 
-// The query executed by GetTotalSupply.
-const GetTotalSupply_Operation = `
-query GetTotalSupply ($coinType: String!) {
-	coinMetadata(coinType: $coinType) {
-		supply
-		decimals
-	}
-}
-`
-
-func GetTotalSupply(
-	ctx_ context.Context,
-	client_ graphql.Client,
-	coinType string,
-) (data_ *GetTotalSupplyResponse, err_ error) {
-	req_ := &graphql.Request{
-		OpName: "GetTotalSupply",
-		Query:  GetTotalSupply_Operation,
-		Variables: &__GetTotalSupplyInput{
-			CoinType: coinType,
-		},
-	}
-
-	data_ = &GetTotalSupplyResponse{}
-	resp_ := &graphql.Response{Data: data_}
-
-	err_ = client_.MakeRequest(
-		ctx_,
-		req_,
-		resp_,
-	)
-
-	return data_, err_
-}
-
-// The query executed by GetTotalTransactionBlocks.
-const GetTotalTransactionBlocks_Operation = `
-query GetTotalTransactionBlocks {
-	checkpoint {
-		networkTotalTransactions
-	}
-}
-`
-
-func GetTotalTransactionBlocks(
-	ctx_ context.Context,
-	client_ graphql.Client,
-) (data_ *GetTotalTransactionBlocksResponse, err_ error) {
-	req_ := &graphql.Request{
-		OpName: "GetTotalTransactionBlocks",
-		Query:  GetTotalTransactionBlocks_Operation,
-	}
-
-	data_ = &GetTotalTransactionBlocksResponse{}
-	resp_ := &graphql.Response{Data: data_}
-
-	err_ = client_.MakeRequest(
-		ctx_,
-		req_,
-		resp_,
-	)
-
-	return data_, err_
-}
-
 // The query executed by GetTransactionBlock.
 const GetTransactionBlock_Operation = `
 query GetTransactionBlock ($digest: String!, $showBalanceChanges: Boolean = false, $showEffects: Boolean = false, $showRawEffects: Boolean = false, $showEvents: Boolean = false, $showInput: Boolean = false, $showObjectChanges: Boolean = false, $showRawInput: Boolean = false) {
@@ -15653,8 +9475,8 @@ query GetTransactionBlock ($digest: String!, $showBalanceChanges: Boolean = fals
 }
 fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 	digest
-	rawTransaction: bcs @include(if: $showInput)
-	rawTransaction: bcs @include(if: $showRawInput)
+	bcs @include(if: $showInput)
+	bcs @include(if: $showRawInput)
 	sender {
 		address
 	}
@@ -15676,7 +9498,7 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 			sequenceNumber
 		}
 		timestamp
-		balanceChanges(first: 50) @include(if: $showBalanceChanges) {
+		balanceChanges @include(if: $showBalanceChanges) {
 			pageInfo {
 				hasNextPage
 				endCursor
@@ -15776,84 +9598,6 @@ func GetTransactionBlock(
 	}
 
 	data_ = &GetTransactionBlockResponse{}
-	resp_ := &graphql.Response{Data: data_}
-
-	err_ = client_.MakeRequest(
-		ctx_,
-		req_,
-		resp_,
-	)
-
-	return data_, err_
-}
-
-// The query executed by GetTypeLayout.
-const GetTypeLayout_Operation = `
-query GetTypeLayout ($targetType: String!) {
-	type(type: $targetType) {
-		layout
-	}
-}
-`
-
-func GetTypeLayout(
-	ctx_ context.Context,
-	client_ graphql.Client,
-	targetType string,
-) (data_ *GetTypeLayoutResponse, err_ error) {
-	req_ := &graphql.Request{
-		OpName: "GetTypeLayout",
-		Query:  GetTypeLayout_Operation,
-		Variables: &__GetTypeLayoutInput{
-			TargetType: targetType,
-		},
-	}
-
-	data_ = &GetTypeLayoutResponse{}
-	resp_ := &graphql.Response{Data: data_}
-
-	err_ = client_.MakeRequest(
-		ctx_,
-		req_,
-		resp_,
-	)
-
-	return data_, err_
-}
-
-// The query executed by GetValidatorsApy.
-const GetValidatorsApy_Operation = `
-query GetValidatorsApy {
-	epoch {
-		epochId
-		validatorSet {
-			activeValidators {
-				pageInfo {
-					hasNextPage
-					endCursor
-				}
-				nodes {
-					address {
-						address
-					}
-					apy
-				}
-			}
-		}
-	}
-}
-`
-
-func GetValidatorsApy(
-	ctx_ context.Context,
-	client_ graphql.Client,
-) (data_ *GetValidatorsApyResponse, err_ error) {
-	req_ := &graphql.Request{
-		OpName: "GetValidatorsApy",
-		Query:  GetValidatorsApy_Operation,
-	}
-
-	data_ = &GetValidatorsApyResponse{}
 	resp_ := &graphql.Response{Data: data_}
 
 	err_ = client_.MakeRequest(
@@ -16005,8 +9749,8 @@ query MultiGetTransactionBlocks ($digests: [String!]!, $limit: Int, $cursor: Str
 }
 fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 	digest
-	rawTransaction: bcs @include(if: $showInput)
-	rawTransaction: bcs @include(if: $showRawInput)
+	bcs @include(if: $showInput)
+	bcs @include(if: $showRawInput)
 	sender {
 		address
 	}
@@ -16028,7 +9772,7 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 			sequenceNumber
 		}
 		timestamp
-		balanceChanges(first: 50) @include(if: $showBalanceChanges) {
+		balanceChanges @include(if: $showBalanceChanges) {
 			pageInfo {
 				hasNextPage
 				endCursor
@@ -16132,287 +9876,6 @@ func MultiGetTransactionBlocks(
 	}
 
 	data_ = &MultiGetTransactionBlocksResponse{}
-	resp_ := &graphql.Response{Data: data_}
-
-	err_ = client_.MakeRequest(
-		ctx_,
-		req_,
-		resp_,
-	)
-
-	return data_, err_
-}
-
-// The query executed by PaginateCheckpointTransactionBlocks.
-const PaginateCheckpointTransactionBlocks_Operation = `
-query PaginateCheckpointTransactionBlocks ($id: CheckpointId, $after: String) {
-	checkpoint(id: $id) {
-		transactionBlocks(after: $after) {
-			pageInfo {
-				hasNextPage
-				endCursor
-			}
-			nodes {
-				digest
-			}
-		}
-	}
-}
-`
-
-func PaginateCheckpointTransactionBlocks(
-	ctx_ context.Context,
-	client_ graphql.Client,
-	id *CheckpointId,
-	after *string,
-) (data_ *PaginateCheckpointTransactionBlocksResponse, err_ error) {
-	req_ := &graphql.Request{
-		OpName: "PaginateCheckpointTransactionBlocks",
-		Query:  PaginateCheckpointTransactionBlocks_Operation,
-		Variables: &__PaginateCheckpointTransactionBlocksInput{
-			Id:    id,
-			After: after,
-		},
-	}
-
-	data_ = &PaginateCheckpointTransactionBlocksResponse{}
-	resp_ := &graphql.Response{Data: data_}
-
-	err_ = client_.MakeRequest(
-		ctx_,
-		req_,
-		resp_,
-	)
-
-	return data_, err_
-}
-
-// The query executed by PaginateEpochValidators.
-const PaginateEpochValidators_Operation = `
-query PaginateEpochValidators ($id: UInt53!, $after: String) {
-	epoch(id: $id) {
-		validatorSet {
-			activeValidators(after: $after) {
-				pageInfo {
-					hasNextPage
-					endCursor
-				}
-				nodes {
-					... RPC_VALIDATOR_FIELDS
-				}
-			}
-		}
-	}
-}
-fragment RPC_VALIDATOR_FIELDS on Validator {
-	atRisk
-	commissionRate
-	exchangeRatesSize
-	exchangeRates {
-		contents {
-			json
-		}
-		address
-	}
-	description
-	gasPrice
-	imageUrl
-	name
-	credentials {
-		... RPC_CREDENTIAL_FIELDS
-	}
-	nextEpochCommissionRate
-	nextEpochGasPrice
-	nextEpochCredentials {
-		... RPC_CREDENTIAL_FIELDS
-	}
-	nextEpochStake
-	nextEpochCommissionRate
-	operationCap {
-		address
-	}
-	pendingPoolTokenWithdraw
-	pendingStake
-	pendingTotalIotaWithdraw
-	poolTokenBalance
-	projectUrl
-	rewardsPool
-	stakingPool {
-		address
-	}
-	stakingPoolActivationEpoch
-	stakingPoolIotaBalance
-	address {
-		address
-	}
-	votingPower
-}
-fragment RPC_CREDENTIAL_FIELDS on ValidatorCredentials {
-	netAddress
-	networkPubKey
-	p2PAddress
-	primaryAddress
-	proofOfPossession
-	protocolPubKey
-}
-`
-
-func PaginateEpochValidators(
-	ctx_ context.Context,
-	client_ graphql.Client,
-	id uint64,
-	after *string,
-) (data_ *PaginateEpochValidatorsResponse, err_ error) {
-	req_ := &graphql.Request{
-		OpName: "PaginateEpochValidators",
-		Query:  PaginateEpochValidators_Operation,
-		Variables: &__PaginateEpochValidatorsInput{
-			Id:    id,
-			After: after,
-		},
-	}
-
-	data_ = &PaginateEpochValidatorsResponse{}
-	resp_ := &graphql.Response{Data: data_}
-
-	err_ = client_.MakeRequest(
-		ctx_,
-		req_,
-		resp_,
-	)
-
-	return data_, err_
-}
-
-// The query executed by PaginateMoveModuleLists.
-const PaginateMoveModuleLists_Operation = `
-query PaginateMoveModuleLists ($packageId: IotaAddress!, $module: String!, $hasMoreFriends: Boolean!, $hasMoreStructs: Boolean!, $hasMoreFunctions: Boolean!, $hasMoreEnums: Boolean!, $afterFriends: String, $afterStructs: String, $afterFunctions: String, $afterEnums: String) {
-	object(address: $packageId) {
-		asMovePackage {
-			module(name: $module) {
-				friends(after: $afterFriends) @include(if: $hasMoreFriends) {
-					pageInfo {
-						hasNextPage
-						endCursor
-					}
-					nodes {
-						name
-						package {
-							address
-						}
-					}
-				}
-				structs(after: $afterStructs) @include(if: $hasMoreStructs) {
-					pageInfo {
-						hasNextPage
-						endCursor
-					}
-					nodes {
-						... RPC_MOVE_STRUCT_FIELDS
-					}
-				}
-				enums(after: $afterEnums) @include(if: $hasMoreEnums) {
-					pageInfo {
-						hasNextPage
-						endCursor
-					}
-					nodes {
-						... RPC_MOVE_ENUM_FIELDS
-					}
-				}
-				functions(after: $afterFunctions) @include(if: $hasMoreFunctions) {
-					pageInfo {
-						hasNextPage
-						endCursor
-					}
-					nodes {
-						... RPC_MOVE_FUNCTION_FIELDS
-					}
-				}
-			}
-		}
-	}
-}
-fragment RPC_MOVE_STRUCT_FIELDS on MoveStruct {
-	name
-	abilities
-	fields {
-		name
-		type {
-			signature
-		}
-	}
-	typeParameters {
-		isPhantom
-		constraints
-	}
-}
-fragment RPC_MOVE_ENUM_FIELDS on MoveEnum {
-	name
-	abilities
-	typeParameters {
-		isPhantom
-		constraints
-	}
-	variants {
-		name
-		fields {
-			name
-			type {
-				signature
-			}
-		}
-	}
-}
-fragment RPC_MOVE_FUNCTION_FIELDS on MoveFunction {
-	name
-	visibility
-	isEntry
-	parameters {
-		signature
-	}
-	typeParameters {
-		constraints
-	}
-	return {
-		repr
-		signature
-	}
-}
-`
-
-func PaginateMoveModuleLists(
-	ctx_ context.Context,
-	client_ graphql.Client,
-	packageId iotago.Address,
-	module string,
-	hasMoreFriends bool,
-	hasMoreStructs bool,
-	hasMoreFunctions bool,
-	hasMoreEnums bool,
-	afterFriends *string,
-	afterStructs *string,
-	afterFunctions *string,
-	afterEnums *string,
-) (data_ *PaginateMoveModuleListsResponse, err_ error) {
-	req_ := &graphql.Request{
-		OpName: "PaginateMoveModuleLists",
-		Query:  PaginateMoveModuleLists_Operation,
-		Variables: &__PaginateMoveModuleListsInput{
-			PackageId:        packageId,
-			Module:           module,
-			HasMoreFriends:   hasMoreFriends,
-			HasMoreStructs:   hasMoreStructs,
-			HasMoreFunctions: hasMoreFunctions,
-			HasMoreEnums:     hasMoreEnums,
-			AfterFriends:     afterFriends,
-			AfterStructs:     afterStructs,
-			AfterFunctions:   afterFunctions,
-			AfterEnums:       afterEnums,
-		},
-	}
-
-	data_ = &PaginateMoveModuleListsResponse{}
 	resp_ := &graphql.Response{Data: data_}
 
 	err_ = client_.MakeRequest(
@@ -16631,8 +10094,8 @@ query QueryTransactionBlocks ($first: Int, $last: Int, $before: String, $after: 
 }
 fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 	digest
-	rawTransaction: bcs @include(if: $showInput)
-	rawTransaction: bcs @include(if: $showRawInput)
+	bcs @include(if: $showInput)
+	bcs @include(if: $showRawInput)
 	sender {
 		address
 	}
@@ -16654,7 +10117,7 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 			sequenceNumber
 		}
 		timestamp
-		balanceChanges(first: 50) @include(if: $showBalanceChanges) {
+		balanceChanges @include(if: $showBalanceChanges) {
 			pageInfo {
 				hasNextPage
 				endCursor
@@ -16762,86 +10225,6 @@ func QueryTransactionBlocks(
 	}
 
 	data_ = &QueryTransactionBlocksResponse{}
-	resp_ := &graphql.Response{Data: data_}
-
-	err_ = client_.MakeRequest(
-		ctx_,
-		req_,
-		resp_,
-	)
-
-	return data_, err_
-}
-
-// The query executed by ResolveNameServiceAddress.
-const ResolveNameServiceAddress_Operation = `
-query ResolveNameServiceAddress ($name: String!) {
-	resolveIotaNamesAddress(name: $name) {
-		address
-	}
-}
-`
-
-func ResolveNameServiceAddress(
-	ctx_ context.Context,
-	client_ graphql.Client,
-	name *string,
-) (data_ *ResolveNameServiceAddressResponse, err_ error) {
-	req_ := &graphql.Request{
-		OpName: "ResolveNameServiceAddress",
-		Query:  ResolveNameServiceAddress_Operation,
-		Variables: &__ResolveNameServiceAddressInput{
-			Name: name,
-		},
-	}
-
-	data_ = &ResolveNameServiceAddressResponse{}
-	resp_ := &graphql.Response{Data: data_}
-
-	err_ = client_.MakeRequest(
-		ctx_,
-		req_,
-		resp_,
-	)
-
-	return data_, err_
-}
-
-// The query executed by ResolveNameServiceNames.
-const ResolveNameServiceNames_Operation = `
-query ResolveNameServiceNames ($address: IotaAddress!, $limit: Int, $cursor: String) {
-	address(address: $address) {
-		iotaNamesRegistrations(first: $limit, after: $cursor) {
-			pageInfo {
-				hasNextPage
-				endCursor
-			}
-			nodes {
-				name
-			}
-		}
-	}
-}
-`
-
-func ResolveNameServiceNames(
-	ctx_ context.Context,
-	client_ graphql.Client,
-	address iotago.Address,
-	limit *int,
-	cursor *string,
-) (data_ *ResolveNameServiceNamesResponse, err_ error) {
-	req_ := &graphql.Request{
-		OpName: "ResolveNameServiceNames",
-		Query:  ResolveNameServiceNames_Operation,
-		Variables: &__ResolveNameServiceNamesInput{
-			Address: address,
-			Limit:   limit,
-			Cursor:  cursor,
-		},
-	}
-
-	data_ = &ResolveNameServiceNamesResponse{}
 	resp_ := &graphql.Response{Data: data_}
 
 	err_ = client_.MakeRequest(

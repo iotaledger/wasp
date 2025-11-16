@@ -18,7 +18,7 @@ func (c *Client) GetAllBalances(ctx context.Context, owner *iotago.Address) ([]*
 type GetAllCoinsRequest struct {
 	Owner  *iotago.Address
 	Cursor *iotago.ObjectID // optional
-	Limit  uint             // optional
+	Limit  int              // optional
 }
 
 // start with the first object when cursor is nil
@@ -51,7 +51,7 @@ type GetCoinsRequest struct {
 	Owner    *iotago.Address
 	CoinType *string // optional
 	Cursor   *string // optional
-	Limit    uint    // optional
+	Limit    int     // optional
 }
 
 // GetCoins to use default iotago coin(0x2::iota::IOTA) when coinType is nil

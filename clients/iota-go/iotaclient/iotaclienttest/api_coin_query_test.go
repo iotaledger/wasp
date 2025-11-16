@@ -33,7 +33,7 @@ func TestGetAllCoins(t *testing.T) {
 		ctx     context.Context
 		address *iotago.Address
 		cursor  *iotago.ObjectID
-		limit   uint
+		limit   int
 	}
 
 	tests := []struct {

@@ -81,7 +81,7 @@ func TestGetOwnedObjects(t *testing.T) {
 					ShowContent: true,
 				},
 			}
-			limit := uint(10)
+			limit := int(10)
 			objs, err := client.GetOwnedObjects(
 				context.Background(), iotaclient.GetOwnedObjectsRequest{
 					Address: signer.Address(),
@@ -106,7 +106,7 @@ func TestGetOwnedObjects(t *testing.T) {
 					ShowContent: true,
 				},
 			}
-			limit := uint(9)
+			limit := int(9)
 			objs, err := client.GetOwnedObjects(
 				context.Background(), iotaclient.GetOwnedObjectsRequest{
 					Address: signer.Address(),
@@ -148,12 +148,12 @@ func TestGetOwnedObjects(t *testing.T) {
 
 func TestQueryTransactionBlocks(t *testing.T) {
 	api := l1starter.Instance().L1Client()
-	limit := uint(10)
+	limit := int(10)
 	type args struct {
 		ctx             context.Context
 		query           *iotajsonrpc.IotaTransactionBlockResponseQuery
 		cursor          *iotago.TransactionDigest
-		limit           *uint
+		limit           *int
 		descendingOrder bool
 	}
 	tests := []struct {

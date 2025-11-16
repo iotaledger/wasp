@@ -56,7 +56,7 @@ type L1Client interface {
 	) (*iotajsonrpc.DevInspectResults, error)
 	DryRunTransaction(
 		ctx context.Context,
-		txDataBytes iotago.Base64Data,
+		req iotaclient.DryRunTransactionRequest,
 	) (*iotajsonrpc.DryRunTransactionBlockResponse, error)
 	ExecuteTransactionBlock(
 		ctx context.Context,

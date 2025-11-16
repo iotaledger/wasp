@@ -5,7 +5,6 @@ operations:
 generated: ./generated.go
 package: iotagraphql
 
-# FIXME we need to go through the following bindings and make sure they are the best ones for the types
 bindings:
   IotaAddress:
     type: github.com/iotaledger/wasp/v2/clients/iota-go/iotago.Address

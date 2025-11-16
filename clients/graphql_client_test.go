@@ -45,7 +45,7 @@ query GetAllBalances($owner: SuiAddress!, $limit: Int, $cursor: String) {
 		}
 	}
 }`
-		b, err := client.Query(q, map[string]interface{}{
+		b, err := client.Query(context.Background(), q, map[string]interface{}{
 			"owner": "0xe25afa59deccfec819aaa67bf14f049982d2a1ca87c49c8614da5ea2dc438f72",
 		})
 		require.NoError(t, err)

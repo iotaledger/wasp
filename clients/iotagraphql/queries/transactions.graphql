@@ -178,8 +178,8 @@ fragment PAGINATE_TRANSACTION_LISTS on TransactionBlock {
 
 fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 	digest
-	rawTransaction: bcs @include(if: $showInput)
-	rawTransaction: bcs @include(if: $showRawInput)
+	bcs @include(if: $showInput)
+	bcs @include(if: $showRawInput)
 	sender {
 		address
 	}
