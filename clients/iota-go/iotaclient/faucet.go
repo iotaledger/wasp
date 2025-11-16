@@ -34,7 +34,11 @@ func RequestFundsFromFaucet(ctx context.Context, address *iotago.Address, faucet
 		return err
 	}
 	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusCreated && res.StatusCode != http.StatusAccepted {
-		return fmt.Errorf("post %v response code: %v", faucetUrl, res.Status)
+		body, err := io.ReadAll(res.Body)
+		if err != nil {
+			fmt.Printf("post %v response code: %v, error reading body: %v", faucetUrl, res.Status, err)
+		}
+		return fmt.Errorf("post %v response code: %v, body: %s", faucetUrl, res.Status, string(body))
 	}
 	defer res.Body.Close()
 

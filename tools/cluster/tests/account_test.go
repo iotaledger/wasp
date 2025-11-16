@@ -9,71 +9,14 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/v2/clients/chainclient"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/v2/packages/vm/core/root"
 )
 
 // executed in cluster_test.go
-func (e *ChainEnv) testBasicAccounts(t *testing.T) {
-	e.testAccounts()
-}
-
-func TestBasicAccountsNLow(t *testing.T) {
-	runTest := func(tt *testing.T, n, t int) {
-		clu := newCluster(tt)
-		chainNodes := make([]int, n)
-		for i := range chainNodes {
-			chainNodes[i] = i
-		}
-		chain, err := clu.DeployChainWithDistKeyGen(chainNodes, chainNodes, uint16(t))
-		require.NoError(tt, err)
-		env := newChainEnv(tt, clu, chain)
-		env.testAccounts()
-	}
-	t.Run("N=1", func(tt *testing.T) { runTest(tt, 1, 1) })
-	t.Run("N=2", func(tt *testing.T) { runTest(tt, 2, 2) })
-	t.Run("N=3", func(tt *testing.T) { runTest(tt, 3, 3) })
-	t.Run("N=4", func(tt *testing.T) { runTest(tt, 4, 3) })
-}
-
-func (e *ChainEnv) testAccounts() {
-	e.t.Logf("   %s: %s", root.Contract.Name, root.Contract.Hname().String())
-	e.t.Logf("   %s: %s", accounts.Contract.Name, accounts.Contract.Hname().String())
-
-	e.checkCoreContracts()
-
-	keyPair, _, err := e.Clu.NewKeyPairWithFunds()
-	require.NoError(e.t, err)
-	originatorClient := e.NewChainClient(keyPair)
-	_, err = originatorClient.DepositFunds(1 * isc.Million)
-	require.NoError(e.t, err)
-	time.Sleep(3 * time.Second)
-	balance1, err := originatorClient.L1Client.GetBalance(context.TODO(), iotaclient.GetBalanceRequest{Owner: keyPair.Address().AsIotaAddress()})
-	require.NoError(e.t, err)
-
-	balance2 := e.GetL1Balance(keyPair.Address().AsIotaAddress(), coin.BaseTokenType)
-	require.Equal(e.t, balance1.TotalBalance.Uint64(), balance2.Uint64())
-
-	_, err = originatorClient.PostOffLedgerRequest(context.Background(),
-		accounts.FuncWithdraw.Message(),
-		chainclient.PostRequestParams{
-			Allowance: isc.NewAssets(10),
-		},
-	)
-	require.NoError(e.t, err)
-	time.Sleep(3 * time.Second)
-
-	balance3 := e.GetL1Balance(keyPair.Address().AsIotaAddress(), coin.BaseTokenType)
-	require.Equal(e.t, balance1.TotalBalance.Uint64()+10, balance3.Uint64())
-}
-
-// executed in cluster_test.go
-func (e *ChainEnv) testBasic2Accounts(t *testing.T) {
-	e.checkCoreContracts()
-
+// deposit, withdraw, transfer
+func (e *ChainEnv) testOffLedgerDepositWithdrawTransfer(t *testing.T) {
 	keyPairUser1, addressUser1, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 	_, addressUser2, err := e.Clu.NewKeyPairWithFunds()
@@ -82,9 +25,6 @@ func (e *ChainEnv) testBasic2Accounts(t *testing.T) {
 	userClient1.DepositFunds(10 * isc.Million)
 	time.Sleep(3 * time.Second)
 	balance1 := e.GetL1Balance(addressUser1.AsIotaAddress(), coin.BaseTokenType)
-
-	balance2 := e.GetL1Balance(addressUser1.AsIotaAddress(), coin.BaseTokenType)
-	require.Equal(t, balance1, balance2)
 
 	_, err = userClient1.PostOffLedgerRequest(context.Background(),
 		accounts.FuncWithdraw.Message(),

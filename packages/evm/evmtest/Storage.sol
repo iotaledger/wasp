@@ -17,6 +17,11 @@ contract Storage {
         emit Stored(_n);
     }
 
+    function increment() public {
+        n += 1;
+        emit Stored(n);
+    }
+
     function retrieve() public view returns (uint32) {
         return n;
     }
