@@ -44,7 +44,7 @@ func (c *Client) GetAssetsBagWithBalances(
 				return nil, fmt.Errorf("failed to call GetObject for Balance: %w", err)
 			}
 
-			if resGetObject.Data.Content == nil || resGetObject.Data.Content.Data.MoveObject == nil {
+			if resGetObject.Data == nil || resGetObject.Data.Content == nil || resGetObject.Data.Content.Data.MoveObject == nil {
 				return nil, fmt.Errorf("content data of AssetBag nil! (%s)", assetsBagID)
 			}
 			var coinBalance struct {

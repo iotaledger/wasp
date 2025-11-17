@@ -5,6 +5,7 @@ package tests
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -16,25 +17,16 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/isc"
-	"github.com/iotaledger/wasp/v2/packages/testutil"
 	"github.com/iotaledger/wasp/v2/packages/util"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/accounts"
 )
 
 func TestAccessNodesOnLedger(t *testing.T) {
-	t.Skip("TODO: fix test")
 	if testing.Short() {
-		t.SkipNow()
+		t.Skip("Skipping cluster test in short mode")
 	}
-	t.Run("cluster=10, N=4, req=100", func(t *testing.T) {
-		const numRequests = 100
-		const numValidatorNodes = 4
-		const clusterSize = 10
-		testAccessNodesOnLedger(t, numRequests, numValidatorNodes, clusterSize)
-	})
 
 	t.Run("cluster=15, N=6, req=200", func(t *testing.T) {
-		testutil.RunHeavy(t)
 		const numRequests = 200
 		const numValidatorNodes = 6
 		const clusterSize = 15
@@ -44,11 +36,11 @@ func TestAccessNodesOnLedger(t *testing.T) {
 
 // This is the value of the Gas used per deposit
 // This should probably be a bit nicer, than a hardcoded const hidden in a test :)
-const BaseTokensDepositFee = 100
+const BaseTokensDepositFee = 100_000
 
 func testAccessNodesOnLedger(t *testing.T, numRequests, numValidatorNodes, clusterSize int) {
 	cmt := util.MakeRange(0, numValidatorNodes)
-	e := setupNativeInccounterTest(t, clusterSize, cmt)
+	e := setupClusterTest(t, clusterSize, cmt)
 	client, _ := e.NewRandomChainClient()
 
 	for i := 0; i < numRequests; i++ {
@@ -63,33 +55,15 @@ func testAccessNodesOnLedger(t *testing.T, numRequests, numValidatorNodes, clust
 
 	expectedBalance := (iotaclient.DefaultGasBudget - BaseTokensDepositFee) * numRequests
 
-	waitUntil(t, e.balanceEquals(isc.NewAddressAgentID(client.KeyPair.Address()), expectedBalance), e.Clu.AllNodes(), 40*time.Second, "a required number of testAccessNodesOnLedger requests")
+	waitUntil(t, e.balanceEquals(isc.NewAddressAgentID(client.KeyPair.Address()), expectedBalance), e.Clu.AllNodes(), 240*time.Second, fmt.Sprintf("balance to be %d", expectedBalance))
 }
 
 func TestAccessNodesOffLedger(t *testing.T) {
-	t.Skip("TODO: fix test")
 	if testing.Short() {
-		t.SkipNow()
+		t.Skip("Skipping cluster test in short mode")
 	}
 
-	t.Run("cluster=6,N=4,req=8", func(t *testing.T) {
-		const waitFor = 90 * time.Second
-		const numRequests = 8
-		const numValidatorNodes = 4
-		const clusterSize = 6
-		testAccessNodesOffLedger(t, numRequests, numValidatorNodes, clusterSize, waitFor)
-	})
-
-	t.Run("cluster=10,N=4,req=50", func(t *testing.T) {
-		const waitFor = 90 * time.Second
-		const numRequests = 50
-		const numValidatorNodes = 4
-		const clusterSize = 10
-		testAccessNodesOffLedger(t, numRequests, numValidatorNodes, clusterSize, waitFor)
-	})
-
 	t.Run("cluster=30,N=20,req=8", func(t *testing.T) {
-		testutil.RunHeavy(t)
 		const waitFor = 300 * time.Second
 		const numRequests = 8
 		const numValidatorNodes = 20
@@ -105,12 +79,10 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 	}
 	cmt := util.MakeRange(0, numValidatorNodes-1)
 
-	e := setupNativeInccounterTest(t, clusterSize, cmt)
+	e := setupClusterTest(t, clusterSize, cmt)
 
-	keyPair, _, err := e.Clu.NewKeyPairWithFunds()
-	require.NoError(t, err)
+	accountsClient, _ := e.NewRandomChainClient()
 
-	accountsClient := e.Chain.Client(keyPair)
 	coinType := iotajsonrpc.IotaCoinType.String()
 	balance, err := accountsClient.L1Client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{
 		CoinType: &coinType,

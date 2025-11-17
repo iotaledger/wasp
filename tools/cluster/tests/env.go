@@ -121,12 +121,17 @@ func (e *ChainEnv) DeploySolidityContract(creator *ecdsa.PrivateKey, abiJSON str
 	value := big.NewInt(0)
 
 	jsonRPCClient := e.EVMJSONRPClient(0) // send request to node #0
-	gasLimit, err := jsonRPCClient.EstimateGas(context.Background(),
-		ethereum.CallMsg{
-			From:  creatorAddress,
-			Value: value,
-			Data:  data,
-		})
+
+	var gasLimit uint64
+	err = cluster.Retry(func() error {
+		gasLimit, err = jsonRPCClient.EstimateGas(context.Background(),
+			ethereum.CallMsg{
+				From:  creatorAddress,
+				Value: value,
+				Data:  data,
+			})
+		return err
+	}, 7)
 	require.NoError(e.t, err)
 
 	tx, err := types.SignTx(

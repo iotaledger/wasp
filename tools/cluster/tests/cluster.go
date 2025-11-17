@@ -44,10 +44,6 @@ func parseConfig() l1starter.L1EndpointConfig {
 // It is a private function because cluster tests cannot be run in parallel,
 // so all cluster tests MUST be in this same package.
 func newCluster(t *testing.T, opt ...waspClusterOpts) *cluster.Cluster {
-	if testing.Short() {
-		t.Skip("Skipping cluster test in short mode")
-	}
-
 	dirname := "wasp-cluster"
 	var modifyNodesConfig cluster.ModifyNodesConfigFn
 

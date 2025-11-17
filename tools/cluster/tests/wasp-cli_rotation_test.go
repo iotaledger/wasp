@@ -17,6 +17,9 @@ import (
 )
 
 func TestWaspCLIExternalRotationGovAccessNodes(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping cluster tests in short mode")
+	}
 	t.Skip("TODO: fix or remove test")
 	addAccessNode := func(w *WaspCLITest, pubKey string) {
 		out := w.MustRun("chain", "gov-change-access-nodes", "accept", pubKey, "--node=0")
@@ -27,6 +30,9 @@ func TestWaspCLIExternalRotationGovAccessNodes(t *testing.T) {
 }
 
 func TestWaspCLIExternalRotationPermissionlessAccessNodes(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping cluster tests in short mode")
+	}
 	t.Skip("TODO: fix or remove test")
 
 	addAccessNode := func(w *WaspCLITest, pubKey string) {
