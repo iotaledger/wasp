@@ -20,6 +20,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/config"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/format"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/util"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/waspcmd"
@@ -50,20 +51,25 @@ func initBalanceCmd() *cobra.Command {
 				return err
 			}
 
-			header := []string{"token", "amount"}
-			rows := make([][]string, len(balance.Coins)+1)
-
-			rows[0] = []string{"base", balance.BaseTokens}
-			for k, v := range balance.Coins {
+			coins := make([]format.ChainBalanceCoin, 0, len(balance.Coins)+1)
+			coins = append(coins, format.ChainBalanceCoin{
+				Token:  "base",
+				Amount: balance.BaseTokens,
+			})
+			for _, v := range balance.Coins {
 				if lo.Must(coin.IsBaseToken(v.CoinType)) {
 					continue
 				}
-
-				rows[k+1] = []string{v.CoinType, v.Balance}
+				coins = append(coins, format.ChainBalanceCoin{
+					Token:  v.CoinType,
+					Amount: v.Balance,
+				})
 			}
 
-			log.PrintTable(header, rows)
-			return nil
+			output := format.ChainBalanceOutput{
+				Coins: coins,
+			}
+			return format.FormatSuccess("chain_balance", output.ToMap())
 		},
 	}
 
@@ -226,7 +232,11 @@ func initDepositCmd() *cobra.Command {
 			}
 
 			if printReceipt {
-				log.Printf("L1 Gas Fee: %d\n", res.Effects.Data.GasFee())
+				if err := format.FormatSuccess("l1_gas_fee", map[string]interface{}{
+					"amount": res.Effects.Data.GasFee(),
+				}); err != nil {
+					return err
+				}
 				ref, err := res.GetCreatedObjectByName("request", "Request")
 				if err != nil {
 					return err

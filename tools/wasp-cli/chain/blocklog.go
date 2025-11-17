@@ -105,7 +105,7 @@ func logRequestsInBlock(ctx context.Context, client *apiclient.APIClient, index 
 
 	for i, receipt := range receipts {
 		r := receipt
-		util.LogReceipt(r, i)
+		util.LogReceipt(r, i) //nolint:contextcheck
 	}
 	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"math/big"
@@ -23,6 +24,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/v2/packages/vm/gas"
 	"github.com/iotaledger/wasp/v2/tools/cluster"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/format"
 )
 
 func TestWaspAuth(t *testing.T) {
@@ -137,10 +139,10 @@ func TestZeroGasFee(t *testing.T) {
 	t.Run("deposit directly to EVM", func(t *testing.T) {
 		alternativeAddress := getAddressFromJSON(w.MustRun("wallet", "address", "--address-index=1", "--json"))
 		w.MustRun("wallet", "send-funds", alternativeAddress, "base|1000000")
-		outs := w.MustRun("wallet", "balance", "--address-index=1")
+		w.MustRun("wallet", "balance", "--address-index=1")
 		_, eth := newEthereumAccount()
 		w.MustRun("chain", "deposit", eth.String(), "base|1000000", "--node=0")
-		outs = w.MustRun("chain", "balance", eth.String(), "--node=0")
+		outs = w.MustRun("chain", "balance", eth.String(), "--node=0", "--json")
 		checkL2Balance(t, outs, 1000000)
 	})
 }
@@ -199,13 +201,27 @@ func checkL1BalanceJSON(t *testing.T, out []string, expected int) {
 
 func checkL2Balance(t *testing.T, out []string, expected int) {
 	t.Helper()
-	r := regexp.MustCompile(`.*(?i:base)\s*(?i:tokens)?:*\s*(\d+).*`).FindStringSubmatch(strings.Join(out, ""))
-	if r == nil {
-		panic("couldn't check balance")
+
+	rawOutput := strings.Join(out, "\n")
+
+	var balanceOutput format.ChainBalanceOutput
+	err := json.Unmarshal([]byte(rawOutput), &balanceOutput)
+	require.NoError(t, err, "Expected valid JSON output, got: %v", rawOutput)
+
+	// Find the base token in the coins array
+	var baseAmount int64
+	found := false
+	for _, coin := range balanceOutput.Coins {
+		if coin.Token == "base" {
+			baseAmount, err = strconv.ParseInt(coin.Amount, 10, 64)
+			require.NoError(t, err)
+			found = true
+			break
+		}
 	}
-	amount, err := strconv.Atoi(r[1])
-	require.NoError(t, err)
-	require.EqualValues(t, expected, amount)
+
+	require.True(t, found, "base token not found in balance output")
+	require.EqualValues(t, expected, baseAmount, "Expected base token balance to be %d, got %d", expected, baseAmount)
 }
 
 // getAddressFromJSON extracts the address from JSON output
@@ -283,25 +299,25 @@ func TestWaspCLIDeposit(t *testing.T) {
 	t.Run("deposit directly to EVM", func(t *testing.T) {
 		_, eth := newEthereumAccount()
 		w.MustRun("chain", "deposit", "base|1000000", "--node=0")
-		outs := w.MustRun("chain", "deposit", eth.String(), "base|10000", "--node=0", "--print-receipt")
-		outs = w.MustRun("chain", "balance", eth.String(), "--node=0")
+		w.MustRun("chain", "deposit", eth.String(), "base|10000", "--node=0", "--print-receipt")
+		outs = w.MustRun("chain", "balance", eth.String(), "--node=0", "--json")
 		checkL2Balance(t, outs, 10000)
 	})
 
 	t.Run("deposit to own account, then to EVM", func(t *testing.T) {
 		const depositAmount = int64(1_000_000)
 		w.MustRun("wallet", "request-funds", "--address-index=2")
-		outs = w.MustRun("chain", "deposit", "base|1000000", "--address-index=2", "--node=0", "--print-receipt")
+		outs = w.MustRun("chain", "deposit", "base|1000000", "--address-index=2", "--node=0", "--print-receipt", "--json")
 		l2GasFee := getL2GasFee(t, outs)
-		outs = w.MustRun("chain", "balance", "--address-index=2", "--node=0")
+		outs = w.MustRun("chain", "balance", "--address-index=2", "--node=0", "--json")
 		checkL2Balance(t, outs, int(depositAmount-l2GasFee))
-		outs := w.MustRun("wallet", "balance", "--address-index=2", "--json")
+		w.MustRun("wallet", "balance", "--address-index=2", "--json")
 		_, eth := newEthereumAccount()
-		outs = w.MustRun("chain", "deposit", eth.String(), "base|1000000", "--address-index=2", "--node=0", "--print-receipt")
+		outs = w.MustRun("chain", "deposit", eth.String(), "base|1000000", "--address-index=2", "--node=0", "--print-receipt", "--json")
 		l2GasFee = getL2GasFee(t, outs)
-		outs = w.MustRun("chain", "balance", eth.String(), "--node=0")
+		outs = w.MustRun("chain", "balance", eth.String(), "--node=0", "--json")
 		checkL2Balance(t, outs, 1000000) // receiver gets full amount
-		outs = w.MustRun("chain", "balance", "--address-index=2", "--node=0")
+		outs = w.MustRun("chain", "balance", "--address-index=2", "--node=0", "--json")
 		expectedL2Balance := int(depositAmount - l2GasFee - int64(minFee))
 		checkL2Balance(t, outs, expectedL2Balance)
 	})
@@ -383,18 +399,28 @@ func TestWaspCLIDeposit(t *testing.T) {
 }
 
 func getL2GasFee(t *testing.T, outs []string) int64 {
-	var err error
-	var l2GasFee int64
-	re := regexp.MustCompile(`Gas fee charged:\s*(\d+)`)
+	t.Helper()
 
-	for _, line := range outs {
-		matches := re.FindStringSubmatch(line)
-		if len(matches) > 1 {
-			l2GasFee, err = strconv.ParseInt(matches[1], 10, 64)
-			require.NoError(t, err)
+	rawOutput := strings.Join(outs, "\n")
+	decoder := json.NewDecoder(strings.NewReader(rawOutput))
+
+	for {
+		var receipt format.ChainReceiptOutput
+		if err := decoder.Decode(&receipt); err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			require.FailNowf(t, "failed to decode CLI output", "error: %v\noutput:\n%s", err, rawOutput)
 		}
+		if receipt.Type != "chain_receipt" {
+			continue
+		}
+		l2GasFee, err := strconv.ParseInt(receipt.GasFeeCharged, 10, 64)
+		require.NoError(t, err)
+		return l2GasFee
 	}
-	return l2GasFee
+
+	panic("gas fee not found")
 }
 
 func findRequestIDInOutput(out []string) string {
