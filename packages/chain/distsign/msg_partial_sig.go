@@ -4,6 +4,7 @@
 package distsign
 
 import (
+	"bytes"
 	"fmt"
 
 	"fortio.org/safecast"
@@ -11,43 +12,45 @@ import (
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/sign/dss"
 	"go.dedis.ch/kyber/v3/suites"
-
-	bcs "github.com/iotaledger/bcs-go"
 )
 
-type MsgPartialSig struct {
-	suite      suites.Suite // Transient, for un-marshaling only.
-	partialSig *dss.PartialSig
-}
-
-func (m *MsgPartialSig) MarshalBCS(e *bcs.Encoder) error {
-	val, err := safecast.Convert[uint16](m.partialSig.Partial.I)
+func NewMsgPartialSig(suite suites.Suite, partialSig *dss.PartialSig) (*MsgPartialSig, error) {
+	partialI, err := safecast.Convert[uint16](partialSig.Partial.I) // TODO: Resolve it from the context, instead of marshaling.
 	if err != nil {
-		return err
-	}
-	e.WriteUint16(val) // TODO: Resolve it from the context, instead of marshaling.
-
-	if _, err := m.partialSig.Partial.V.MarshalTo(e); err != nil {
-		return fmt.Errorf("marshaling PartialSig.Partial.V: %w", err)
+		return nil, err
 	}
 
-	e.Encode(m.partialSig.SessionID)
-	e.Encode(m.partialSig.Signature)
+	var partialV bytes.Buffer
+	if _, err := partialSig.Partial.V.MarshalTo(&partialV); err != nil {
+		return nil, fmt.Errorf("marshaling PartialSig.Partial.V: %w", err)
+	}
 
-	return nil
+	return &MsgPartialSig{
+		PartialI:  partialI,
+		PartialV:  partialV.Bytes(),
+		SessionID: partialSig.SessionID,
+		Signature: partialSig.Signature,
+	}, nil
 }
 
-func (m *MsgPartialSig) UnmarshalBCS(d *bcs.Decoder) error {
-	m.partialSig = &dss.PartialSig{Partial: &share.PriShare{}}
-	m.partialSig.Partial.I = int(d.ReadUint16())
+type MsgPartialSig struct {
+	PartialI  uint16
+	PartialV  []byte
+	SessionID []byte
+	Signature []byte
+}
 
-	m.partialSig.Partial.V = m.suite.Scalar()
-	if _, err := m.partialSig.Partial.V.UnmarshalFrom(d); err != nil {
-		return fmt.Errorf("unmarshaling PartialSig.Partial.V: %w", err)
+func (m *MsgPartialSig) PartialSig(suite suites.Suite) (*dss.PartialSig, error) {
+	partialSig := &dss.PartialSig{Partial: &share.PriShare{}}
+	partialSig.Partial.I = int(m.PartialI)
+
+	partialSig.Partial.V = suite.Scalar()
+	if _, err := partialSig.Partial.V.UnmarshalFrom(bytes.NewReader(m.PartialV)); err != nil {
+		return nil, fmt.Errorf("unmarshaling PartialSig.Partial.V: %w", err)
 	}
 
-	m.partialSig.SessionID = bcs.Decode[[]byte](d)
-	m.partialSig.Signature = bcs.Decode[[]byte](d)
+	partialSig.SessionID = m.SessionID
+	partialSig.Signature = m.Signature
 
-	return nil
+	return partialSig, nil
 }

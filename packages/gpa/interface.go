@@ -263,6 +263,9 @@ func UnmarshalPayloadNEW(data []byte, mapper PayloadAllocatorNEW) (any, error) {
 		return msg, err
 	}
 
+	// TODO: Remove before merge
+	panic(fmt.Sprintf("XXX unexpected message type %v", msgType))
+
 	return nil, fmt.Errorf("unexpected message type %d", msgType)
 }
 

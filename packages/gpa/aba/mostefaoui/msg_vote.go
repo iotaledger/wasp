@@ -37,7 +37,7 @@ type MsgVote struct {
 
 func multicastMsgVote(recipients []gpa.NodeID, round int, voteType msgVoteType, value bool) []gpa.PayloadOut {
 	return lo.Map(recipients, func(recipient gpa.NodeID, _ int) gpa.PayloadOut {
-		return gpa.NewPayloadOut(recipient, &MsgVote{
+		return gpa.NewPayloadOut(recipient, MsgVote{
 			round:    round,
 			voteType: voteType,
 			value:    value,

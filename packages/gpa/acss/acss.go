@@ -225,7 +225,7 @@ func (a *ACSS) handleInput(secretToShare kyber.Scalar) []gpa.PayloadOut {
 	}
 
 	// > RBC(C||E)
-	rbcCEPayloadBytes := bcs.MustMarshal(&MsgRBCCEPayload{suite: a.suite, data: data})
+	rbcCEPayloadBytes := bcs.MustMarshal(&MsgRBCCEPayload{data: data})
 	msgs := a.rbc.Input(rbcCEPayloadBytes)
 	return slices.Concat(msgs, a.tryHandleRBCTermination(false))
 }
@@ -243,11 +243,11 @@ func (a *ACSS) HandleRBCMessage(m gpa.PayloadIn[rbc.MsgBracha]) []gpa.PayloadOut
 func (a *ACSS) tryHandleRBCTermination(wasOut bool) []gpa.PayloadOut {
 	if out := a.rbc.Output(); !wasOut && out != nil {
 		// Send the result for self as a message (maybe the code will look nicer this way).
-		outParsed, err := bcs.UnmarshalInto(out.([]byte), &MsgRBCCEPayload{suite: a.suite})
+		outParsed, err := bcs.UnmarshalInto(out.([]byte), &MsgRBCCEPayload{})
 		if err != nil {
-			outParsed = &MsgRBCCEPayload{err: err}
+			outParsed = &MsgRBCCEPayload{}
 		}
-		return a.handleRBCOutput(outParsed)
+		return a.handleRBCOutput(outParsed, err)
 	}
 	return nil
 }
@@ -259,15 +259,15 @@ func (a *ACSS) tryHandleRBCTermination(wasOut bool) []gpa.PayloadOut {
 // >   send <IMPLICATE, i, skᵢ> to all parties
 // > else:
 // >   send <OK>
-func (a *ACSS) handleRBCOutput(rbcOutput *MsgRBCCEPayload) []gpa.PayloadOut {
+func (a *ACSS) handleRBCOutput(rbcOutput *MsgRBCCEPayload, err error) []gpa.PayloadOut {
 	if a.outS != nil || a.rbcOut != nil {
 		// Take the first RBC output only.
 		return nil
 	}
 	//
 	// Store the broadcast result and process pending IMPLICATE/RECOVER messages, if any.
-	if rbcOutput.err != nil {
-		return a.broadcastImplicate(rbcOutput.err)
+	if err != nil {
+		return a.broadcastImplicate(err)
 	}
 	deal, err := crypto.DealUnmarshalBinary(a.suite, a.n, rbcOutput.data)
 	if err != nil {

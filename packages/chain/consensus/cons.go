@@ -30,6 +30,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
+	"github.com/iotaledger/wasp/v2/packages/gpa/aba/mostefaoui"
 	"github.com/iotaledger/wasp/v2/packages/gpa/acs"
 	"github.com/iotaledger/wasp/v2/packages/gpa/acss"
 	"github.com/iotaledger/wasp/v2/packages/gpa/cc/blssig"
@@ -269,6 +270,12 @@ func (c *Consensus) Message(msg gpa.PayloadIn[any]) []gpa.PayloadOut {
 	case gpa.PayloadWithIndex[bracha.MsgBracha]:
 		msgs := c.acs.HandleRBCMsgBracha(msgT.Index, gpa.NewPayloadIn(msg.Sender, msgT.Payload))
 		return slices.Concat(msgs, c.subACS.ACSOutputReceived(c.acs.Output()))
+	case gpa.PayloadWithIndex[mostefaoui.MsgDone]:
+		msgs := c.acs.HandleABAMsgDone(msgT.Index, gpa.NewPayloadIn(msg.Sender, msgT.Payload))
+		return slices.Concat(msgs, c.subACS.ACSOutputReceived(c.acs.Output()))
+	case gpa.PayloadWithIndex[mostefaoui.MsgVote]:
+		msgs := c.acs.HandleABAMsgVote(msgT.Index, gpa.NewPayloadIn(msg.Sender, msgT.Payload))
+		return slices.Concat(msgs, c.subACS.ACSOutputReceived(c.acs.Output()))
 	case gpa.PayloadWithIndex[acss.MsgVote]:
 		msgs := c.distributedSignature.HandlegACSSMsgVote(msgT.Index, gpa.NewPayloadIn(msg.Sender, msgT.Payload))
 		return slices.Concat(msgs, c.subDistributedSignature.DistributedSignatureReady(c.distributedSignature.Output()))
@@ -278,8 +285,10 @@ func (c *Consensus) Message(msg gpa.PayloadIn[any]) []gpa.PayloadOut {
 	case gpa.PayloadWithIndex[distsign.MsgPartialSig]:
 		msgs := c.distributedSignature.HandleMsgPartialSig(gpa.NewPayloadIn(msg.Sender, msgT.Payload))
 		return slices.Concat(msgs, c.subDistributedSignature.DistributedSignatureReady(c.distributedSignature.Output()))
+	case gpa.PayloadWithIndex[blssig.MsgSigShare]:
+		return c.acs.HandleCCMsgSigShare(msgT.Index, gpa.NewPayloadIn(msg.Sender, msgT.Payload))
 	}
-	panic(fmt.Errorf("unexpected message: %v", msg))
+	panic(fmt.Errorf("unexpected message payload: %#v", msg.Payload))
 }
 
 func (c *Consensus) Output() gpa.Output {
@@ -503,7 +512,7 @@ func (c *Consensus) uponRNDInputsReady(dataToSign []byte) []gpa.PayloadOut {
 		panic(fmt.Errorf("cannot sign share for randomness: %w", err))
 	}
 	return lo.Map(c.nodeIDs, func(nid gpa.NodeID, _ int) gpa.PayloadOut {
-		return newMsgBLSPartialSig(c.blsSuite, nid, sigShare)
+		return newMsgBLSPartialSig(nid, sigShare)
 	})
 }
 

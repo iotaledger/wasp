@@ -36,6 +36,7 @@ import (
 
 	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/gpa/aba/mostefaoui"
+	"github.com/iotaledger/wasp/v2/packages/gpa/cc/blssig"
 	"github.com/iotaledger/wasp/v2/packages/gpa/cc/semi"
 	"github.com/iotaledger/wasp/v2/packages/gpa/rbc/bracha"
 )
@@ -132,7 +133,7 @@ func (a *ACS) Input(input gpa.Input) []gpa.PayloadOut {
 	}
 	a.rbcInput = true
 	rbcInst := a.rbcInsts[a.me]
-	subMsgs := rbcInst.Input(input)
+	subMsgs := gpa.AddIndex(a.nodeIdx[a.me], rbcInst.Input(input))
 	return slices.Concat(
 		subMsgs,
 		a.tryHandleRBCOutput(a.me, rbcInst),
@@ -147,7 +148,7 @@ func (a *ACS) HandleRBCMsgBracha(index int, msg gpa.PayloadIn[bracha.MsgBracha])
 	}
 	subMsgs := rbcInst.HandleMsgBracha(msg)
 	return slices.Concat(
-		subMsgs,
+		gpa.AddIndex(index, subMsgs),
 		a.tryHandleRBCOutput(a.nodeIDs[index], rbcInst),
 	)
 }
@@ -160,7 +161,7 @@ func (a *ACS) HandleABAMsgVote(index int, msg gpa.PayloadIn[mostefaoui.MsgVote])
 	}
 	subMsgs := abaInst.HandleMsgVote(msg)
 	return slices.Concat(
-		subMsgs,
+		gpa.AddIndex(index, subMsgs),
 		a.tryHandleABAOutput(a.nodeIDs[index], abaInst),
 	)
 }
@@ -172,6 +173,19 @@ func (a *ACS) HandleABAMsgDone(index int, msg gpa.PayloadIn[mostefaoui.MsgDone])
 		return nil
 	}
 	subMsgs := abaInst.HandleMsgDone(msg)
+	return slices.Concat(
+		gpa.AddIndex(index, subMsgs),
+		a.tryHandleABAOutput(a.nodeIDs[index], abaInst),
+	)
+}
+
+func (a *ACS) HandleCCMsgSigShare(index int, msg gpa.PayloadIn[blssig.MsgSigShare]) []gpa.PayloadOut {
+	abaInst, err := a.getABAInst(index)
+	if err != nil {
+		a.log.LogWarnf("cannot select subsystem: %v", err)
+		return nil
+	}
+	subMsgs := abaInst.HandleCCMsg(index, msg)
 	return slices.Concat(
 		subMsgs,
 		a.tryHandleABAOutput(a.nodeIDs[index], abaInst),
@@ -198,7 +212,7 @@ func (a *ACS) tryHandleRBCOutput(nodeID gpa.NodeID, rbcInst *bracha.RBC) []gpa.P
 	sub := a.abaInsts[nodeID]
 	subMsgs := sub.Input(true)
 	return slices.Concat(
-		subMsgs,
+		gpa.AddIndex(a.nodeIdx[nodeID], subMsgs),
 		a.tryHandleABAOutput(nodeID, sub),
 	)
 }
@@ -243,7 +257,7 @@ func (a *ACS) tryHandleABAOutput(nodeID gpa.NodeID, abaInst *mostefaoui.ABA) []g
 			subMsgs := sub.Input(false)
 			msgs = slices.Concat(
 				msgs,
-				subMsgs,
+				gpa.AddIndex(a.nodeIdx[nid], subMsgs),
 				a.tryHandleABAOutput(nid, sub),
 			)
 		}

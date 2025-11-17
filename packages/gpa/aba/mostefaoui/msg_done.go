@@ -17,7 +17,7 @@ func multicastMsgDone(recipients []gpa.NodeID, me gpa.NodeID, round int) []gpa.P
 	var msgs []gpa.PayloadOut
 	for _, recipient := range recipients {
 		if recipient != me {
-			msgs = append(msgs, gpa.NewPayloadOut(recipient, &MsgDone{
+			msgs = append(msgs, gpa.NewPayloadOut(recipient, MsgDone{
 				round: round,
 			}))
 		}

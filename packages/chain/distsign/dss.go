@@ -176,10 +176,14 @@ func (d *DistributedSignature) tryHandleDistributedKeyGenerationOutput() []gpa.P
 			if d.nodeIDs[i] == d.me {
 				continue
 			}
-			msgs = append(msgs, gpa.NewPayloadOut(d.nodeIDs[i], &MsgPartialSig{
-				suite:      d.suite,
-				partialSig: partialSig,
-			}))
+
+			msg, err := NewMsgPartialSig(d.suite, partialSig)
+			if err != nil {
+				d.log.LogErrorf("cannot create MsgPartialSig: %v", err)
+				continue
+			}
+
+			msgs = append(msgs, gpa.NewPayloadOut(d.nodeIDs[i], msg))
 		}
 		//
 		// Maybe we have everything for the signature already?
@@ -200,19 +204,25 @@ func (d *DistributedSignature) HandleMsgPartialSig(msg gpa.PayloadIn[MsgPartialS
 		// Signature already aggregated, ignore the remaining shares.
 		return nil
 	}
+
+	partialSig, err := msg.Payload.PartialSig(d.suite)
+	if err != nil {
+		d.log.LogErrorf("Failed to extract partial signature from the message: %v", err)
+		return nil
+	}
+
 	if d.distributedSignatureSigner == nil {
 		if d.distSignPartialSigBuffer.Has(msg.Sender) {
 			d.log.LogWarn("duplicate partial signature from %v", msg.Sender)
 			return nil
 		}
 
-		d.distSignPartialSigBuffer.Set(msg.Sender, msg.Payload.partialSig)
+		d.distSignPartialSigBuffer.Set(msg.Sender, partialSig)
 		return nil
 	}
 	//
 	// Then process the one received with the current message.
-	err := d.distributedSignatureSigner.ProcessPartialSig(msg.Payload.partialSig)
-	if err != nil {
+	if err := d.distributedSignatureSigner.ProcessPartialSig(partialSig); err != nil {
 		d.log.LogWarnf("Failed to process a partial signature: %v", err)
 		return nil
 	}
