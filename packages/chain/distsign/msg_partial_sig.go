@@ -14,18 +14,18 @@ import (
 	"go.dedis.ch/kyber/v3/suites"
 )
 
-func NewMsgPartialSig(suite suites.Suite, partialSig *dss.PartialSig) (*MsgPartialSig, error) {
+func NewMsgPartialSig(partialSig *dss.PartialSig) (MsgPartialSig, error) {
 	partialI, err := safecast.Convert[uint16](partialSig.Partial.I) // TODO: Resolve it from the context, instead of marshaling.
 	if err != nil {
-		return nil, err
+		return MsgPartialSig{}, err
 	}
 
 	var partialV bytes.Buffer
 	if _, err := partialSig.Partial.V.MarshalTo(&partialV); err != nil {
-		return nil, fmt.Errorf("marshaling PartialSig.Partial.V: %w", err)
+		return MsgPartialSig{}, fmt.Errorf("marshaling PartialSig.Partial.V: %w", err)
 	}
 
-	return &MsgPartialSig{
+	return MsgPartialSig{
 		PartialI:  partialI,
 		PartialV:  partialV.Bytes(),
 		SessionID: partialSig.SessionID,

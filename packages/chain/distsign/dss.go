@@ -36,6 +36,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/gpa/acss"
 	"github.com/iotaledger/wasp/v2/packages/gpa/asyncdistkeygen/nonce"
+	rbc "github.com/iotaledger/wasp/v2/packages/gpa/rbc/bracha"
 	"github.com/iotaledger/wasp/v2/packages/tcrypto"
 )
 
@@ -110,13 +111,18 @@ func (d *DistributedSignature) Input(input gpa.Input) []gpa.PayloadOut {
 	panic(fmt.Errorf("unexpected input: %T: %+v", input, input))
 }
 
-func (d *DistributedSignature) HandlegACSSMsgVote(acssIndex int, msg gpa.PayloadIn[acss.MsgVote]) []gpa.PayloadOut {
-	outMsgs := d.distributedKeyGen.HandlegACSSMsgVote(acssIndex, msg)
+func (d *DistributedSignature) HandleACSSMsgBracha(acssIndex int, m gpa.PayloadIn[rbc.MsgBracha]) []gpa.PayloadOut {
+	outMsgs := d.distributedKeyGen.HandleACSSMsgBracha(acssIndex, m)
 	return slices.Concat(outMsgs, d.tryHandleDistributedKeyGenerationOutput())
 }
 
-func (d *DistributedSignature) HandlegACSSMsgImplicateRecover(acssIndex int, msg gpa.PayloadIn[acss.MsgImplicateRecover]) []gpa.PayloadOut {
-	outMsgs := d.distributedKeyGen.HandlegACSSMsgImplicateRecover(acssIndex, msg)
+func (d *DistributedSignature) HandleACSSMsgVote(acssIndex int, msg gpa.PayloadIn[acss.MsgVote]) []gpa.PayloadOut {
+	outMsgs := d.distributedKeyGen.HandleACSSMsgVote(acssIndex, msg)
+	return slices.Concat(outMsgs, d.tryHandleDistributedKeyGenerationOutput())
+}
+
+func (d *DistributedSignature) HandleACSSMsgImplicateRecover(acssIndex int, msg gpa.PayloadIn[acss.MsgImplicateRecover]) []gpa.PayloadOut {
+	outMsgs := d.distributedKeyGen.HandleACSSMsgImplicateRecover(acssIndex, msg)
 	return slices.Concat(outMsgs, d.tryHandleDistributedKeyGenerationOutput())
 }
 
@@ -177,7 +183,7 @@ func (d *DistributedSignature) tryHandleDistributedKeyGenerationOutput() []gpa.P
 				continue
 			}
 
-			msg, err := NewMsgPartialSig(d.suite, partialSig)
+			msg, err := NewMsgPartialSig(partialSig)
 			if err != nil {
 				d.log.LogErrorf("cannot create MsgPartialSig: %v", err)
 				continue

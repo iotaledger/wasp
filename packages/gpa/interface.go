@@ -175,6 +175,28 @@ func AddIndex(index int, msgs []PayloadOut) []PayloadOut {
 	return ret
 }
 
+// TODO: Refactor or remove this before merge
+type SubsystemPayload[Payload any] struct {
+	SubsystemID string
+	Index       int
+	Payload     Payload
+}
+
+func AddSubsystemID(subsystemID string, index int, msgs []PayloadOut) []PayloadOut {
+	ret := make([]PayloadOut, len(msgs))
+	for i, msg := range msgs {
+		ret[i] = PayloadOut{
+			Recipient: msg.Recipient,
+			Payload: SubsystemPayload[any]{
+				SubsystemID: subsystemID,
+				Index:       index,
+				Payload:     msg.Payload,
+			},
+		}
+	}
+	return ret
+}
+
 type (
 	Input  any
 	Output any

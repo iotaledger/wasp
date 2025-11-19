@@ -234,7 +234,7 @@ func (a *ACSS) handleInput(secretToShare kyber.Scalar) []gpa.PayloadOut {
 //
 // > // party i (including the dealer)
 // > RBC(C||E)
-func (a *ACSS) HandleRBCMessage(m gpa.PayloadIn[rbc.MsgBracha]) []gpa.PayloadOut {
+func (a *ACSS) HandleRBCMsgBracha(m gpa.PayloadIn[rbc.MsgBracha]) []gpa.PayloadOut {
 	wasOut := a.rbc.Output() != nil // To send the msgRBCCEOutput message once (for perf reasons).
 	msgs := a.rbc.HandleMsgBracha(m)
 	return slices.Concat(msgs, a.tryHandleRBCTermination(wasOut))

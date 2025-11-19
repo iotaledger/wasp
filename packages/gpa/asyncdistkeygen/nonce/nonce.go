@@ -45,6 +45,7 @@ import (
 
 	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/gpa/acss"
+	rbc "github.com/iotaledger/wasp/v2/packages/gpa/rbc/bracha"
 )
 
 type Output struct {
@@ -121,7 +122,7 @@ func (n *NonceDistributedKeyGeneration) Input(input gpa.Input) []gpa.PayloadOut 
 	switch input := input.(type) {
 	case *inputStart:
 		secret := n.suite.Scalar().Pick(n.suite.RandomStream())
-		msgs := gpa.AddIndex(n.myIdx, n.acss[n.myIdx].Input(secret))
+		msgs := gpa.AddSubsystemID("acss", n.myIdx, n.acss[n.myIdx].Input(secret))
 		return slices.Concat(msgs, n.tryHandleACSSTermination(n.myIdx))
 	case *inputAgreementResult:
 		return n.handleAgreementResult(input)
@@ -158,18 +159,26 @@ func (n *NonceDistributedKeyGeneration) StatusString() string {
 	return fmt.Sprintf("{ADKG:Nonce, acss: %s}", acssStats)
 }
 
-func (n *NonceDistributedKeyGeneration) HandlegACSSMsgVote(acssIndex int, msg gpa.PayloadIn[acss.MsgVote]) []gpa.PayloadOut {
-	outMsgs := n.acss[acssIndex].HandleMsgVote(msg)
+func (n *NonceDistributedKeyGeneration) HandleACSSMsgBracha(acssIndex int, m gpa.PayloadIn[rbc.MsgBracha]) []gpa.PayloadOut {
+	outMsgs := n.acss[acssIndex].HandleRBCMsgBracha(m)
 	return slices.Concat(
-		gpa.AddIndex(acssIndex, outMsgs),
+		gpa.AddSubsystemID("acss", acssIndex, outMsgs),
 		n.tryHandleACSSTermination(acssIndex),
 	)
 }
 
-func (n *NonceDistributedKeyGeneration) HandlegACSSMsgImplicateRecover(acssIndex int, msg gpa.PayloadIn[acss.MsgImplicateRecover]) []gpa.PayloadOut {
+func (n *NonceDistributedKeyGeneration) HandleACSSMsgVote(acssIndex int, msg gpa.PayloadIn[acss.MsgVote]) []gpa.PayloadOut {
+	outMsgs := n.acss[acssIndex].HandleMsgVote(msg)
+	return slices.Concat(
+		gpa.AddSubsystemID("acss", acssIndex, outMsgs),
+		n.tryHandleACSSTermination(acssIndex),
+	)
+}
+
+func (n *NonceDistributedKeyGeneration) HandleACSSMsgImplicateRecover(acssIndex int, msg gpa.PayloadIn[acss.MsgImplicateRecover]) []gpa.PayloadOut {
 	outMsgs := n.acss[acssIndex].HandleImplicateRecoverReceived(msg)
 	return slices.Concat(
-		gpa.AddIndex(acssIndex, outMsgs),
+		gpa.AddSubsystemID("acss", acssIndex, outMsgs),
 		n.tryHandleACSSTermination(acssIndex),
 	)
 }

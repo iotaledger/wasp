@@ -16,9 +16,10 @@ import (
 
 const (
 	msgTypeBLSShare gpa.MessageType = iota
-	msgTypeRBCBracha
+	msgTypeACSBracha
 	msgTypeABAMsgDone
 	msgTypeABAMsgVote
+	msgTypeACSSBracha
 	msgTypeACSSVote
 	msgTypeACSSImplicateRecover
 	msgTypeDSSPartialSig
@@ -32,19 +33,32 @@ func (c *Consensus) MarshalPayload(payload any) ([]byte, error) {
 	case gpa.PayloadWithIndex[any]:
 		switch p.Payload.(type) {
 		case bracha.MsgBracha:
-			return gpa.MarshalPayloadNEW(msgTypeRBCBracha, p)
+			return gpa.MarshalPayloadNEW(msgTypeACSBracha, p)
 		case mostefaoui.MsgDone:
 			return gpa.MarshalPayloadNEW(msgTypeABAMsgDone, p)
 		case mostefaoui.MsgVote:
 			return gpa.MarshalPayloadNEW(msgTypeABAMsgVote, p)
+		case blssig.MsgSigShare:
+			return gpa.MarshalPayloadNEW(msgTypeBLSSigShare, p)
+		default:
+			panic(fmt.Errorf("unexpected payload type: %T", p.Payload))
+		}
+	case distsign.MsgPartialSig:
+		return gpa.MarshalPayloadNEW(msgTypeDSSPartialSig, p)
+	// TODO: Organize this consisntently before merge
+	case gpa.SubsystemPayload[any]:
+		switch p.Payload.(type) {
+		case bracha.MsgBracha:
+			switch p.SubsystemID {
+			case "acss":
+				return gpa.MarshalPayloadNEW(msgTypeACSSBracha, p)
+			default:
+				panic(fmt.Errorf("unexpected subsystem ID: %s", p.SubsystemID))
+			}
 		case acss.MsgVote:
 			return gpa.MarshalPayloadNEW(msgTypeACSSVote, p)
 		case acss.MsgImplicateRecover:
 			return gpa.MarshalPayloadNEW(msgTypeACSSImplicateRecover, p)
-		case distsign.MsgPartialSig:
-			return gpa.MarshalPayloadNEW(msgTypeDSSPartialSig, p)
-		case blssig.MsgSigShare:
-			return gpa.MarshalPayloadNEW(msgTypeBLSSigShare, p)
 		default:
 			panic(fmt.Errorf("unexpected payload type: %T", p.Payload))
 		}
@@ -56,12 +70,13 @@ func (c *Consensus) MarshalPayload(payload any) ([]byte, error) {
 func (c *Consensus) UnmarshalPayload(data []byte) (any, error) {
 	return gpa.UnmarshalPayloadNEW(data, gpa.PayloadAllocatorNEW{
 		msgTypeBLSShare:             func() any { return msgBLSPartialSig{} },
-		msgTypeRBCBracha:            func() any { return gpa.PayloadWithIndex[bracha.MsgBracha]{} },
+		msgTypeACSBracha:            func() any { return gpa.PayloadWithIndex[bracha.MsgBracha]{} },
 		msgTypeABAMsgDone:           func() any { return gpa.PayloadWithIndex[mostefaoui.MsgDone]{} },
 		msgTypeABAMsgVote:           func() any { return gpa.PayloadWithIndex[mostefaoui.MsgVote]{} },
-		msgTypeACSSVote:             func() any { return gpa.PayloadWithIndex[acss.MsgVote]{} },
-		msgTypeACSSImplicateRecover: func() any { return gpa.PayloadWithIndex[acss.MsgImplicateRecover]{} },
-		msgTypeDSSPartialSig:        func() any { return gpa.PayloadWithIndex[distsign.MsgPartialSig]{} },
+		msgTypeACSSBracha:           func() any { return gpa.SubsystemPayload[bracha.MsgBracha]{} },
+		msgTypeACSSVote:             func() any { return gpa.SubsystemPayload[acss.MsgVote]{} },
+		msgTypeACSSImplicateRecover: func() any { return gpa.SubsystemPayload[acss.MsgImplicateRecover]{} },
+		msgTypeDSSPartialSig:        func() any { return distsign.MsgPartialSig{} },
 		msgTypeBLSSigShare:          func() any { return gpa.PayloadWithIndex[blssig.MsgSigShare]{} },
 	})
 }

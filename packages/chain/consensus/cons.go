@@ -276,17 +276,38 @@ func (c *Consensus) Message(msg gpa.PayloadIn[any]) []gpa.PayloadOut {
 	case gpa.PayloadWithIndex[mostefaoui.MsgVote]:
 		msgs := c.acs.HandleABAMsgVote(msgT.Index, gpa.NewPayloadIn(msg.Sender, msgT.Payload))
 		return slices.Concat(msgs, c.subACS.ACSOutputReceived(c.acs.Output()))
-	case gpa.PayloadWithIndex[acss.MsgVote]:
-		msgs := c.distributedSignature.HandlegACSSMsgVote(msgT.Index, gpa.NewPayloadIn(msg.Sender, msgT.Payload))
-		return slices.Concat(msgs, c.subDistributedSignature.DistributedSignatureReady(c.distributedSignature.Output()))
-	case gpa.PayloadWithIndex[acss.MsgImplicateRecover]:
-		msgs := c.distributedSignature.HandlegACSSMsgImplicateRecover(msgT.Index, gpa.NewPayloadIn(msg.Sender, msgT.Payload))
-		return slices.Concat(msgs, c.subDistributedSignature.DistributedSignatureReady(c.distributedSignature.Output()))
-	case gpa.PayloadWithIndex[distsign.MsgPartialSig]:
-		msgs := c.distributedSignature.HandleMsgPartialSig(gpa.NewPayloadIn(msg.Sender, msgT.Payload))
-		return slices.Concat(msgs, c.subDistributedSignature.DistributedSignatureReady(c.distributedSignature.Output()))
 	case gpa.PayloadWithIndex[blssig.MsgSigShare]:
 		return c.acs.HandleCCMsgSigShare(msgT.Index, gpa.NewPayloadIn(msg.Sender, msgT.Payload))
+	case gpa.SubsystemPayload[bracha.MsgBracha]:
+		switch msgT.SubsystemID {
+		case "acss":
+			msgs := c.distributedSignature.HandleACSSMsgBracha(msgT.Index, gpa.NewPayloadIn(msg.Sender, msgT.Payload))
+			return slices.Concat(msgs, c.subDistributedSignature.DistributedSignatureReady(c.distributedSignature.Output()))
+		default:
+			//c.log.LogWarnf("cannot select subsystem: unexpected subsystem ID: %s", msgT.SubsystemID)
+			panic(fmt.Errorf("unexpected subsystem ID: %s", msgT.SubsystemID))
+		}
+	case gpa.SubsystemPayload[acss.MsgVote]:
+		switch msgT.SubsystemID {
+		case "acss":
+			msgs := c.distributedSignature.HandleACSSMsgVote(msgT.Index, gpa.NewPayloadIn(msg.Sender, msgT.Payload))
+			return slices.Concat(msgs, c.subDistributedSignature.DistributedSignatureReady(c.distributedSignature.Output()))
+		default:
+			//c.log.LogWarnf("cannot select subsystem: unexpected subsystem ID: %s", msgT.SubsystemID)
+			panic(fmt.Errorf("unexpected subsystem ID: %s", msgT.SubsystemID))
+		}
+	case gpa.SubsystemPayload[acss.MsgImplicateRecover]:
+		switch msgT.SubsystemID {
+		case "acss":
+			msgs := c.distributedSignature.HandleACSSMsgImplicateRecover(msgT.Index, gpa.NewPayloadIn(msg.Sender, msgT.Payload))
+			return slices.Concat(msgs, c.subDistributedSignature.DistributedSignatureReady(c.distributedSignature.Output()))
+		default:
+			//c.log.LogWarnf("cannot select subsystem: unexpected subsystem ID: %s", msgT.SubsystemID)
+			panic(fmt.Errorf("unexpected subsystem ID: %s", msgT.SubsystemID))
+		}
+	case distsign.MsgPartialSig:
+		msgs := c.distributedSignature.HandleMsgPartialSig(gpa.NewPayloadIn(msg.Sender, msgT))
+		return slices.Concat(msgs, c.subDistributedSignature.DistributedSignatureReady(c.distributedSignature.Output()))
 	}
 	panic(fmt.Errorf("unexpected message payload: %#v", msg.Payload))
 }
