@@ -36,7 +36,7 @@ type ackHandlerNew struct {
 	recvAcksIn   *shrinkingmap.ShrinkingMap[NodeID, map[int]*int]
 }
 
-type AckHandlerNew interface {
+type AckHandlerNEW interface {
 	GPAnew
 	DismissPeer(peerID NodeID) // To avoid resending messages to dead peers.
 	MakeTickInput(time.Time) Input
@@ -44,9 +44,9 @@ type AckHandlerNew interface {
 	NestedCall(c func(GPAnew) []PayloadOut) []PayloadOut
 }
 
-var _ AckHandlerNew = &ackHandlerNew{}
+var _ AckHandlerNEW = &ackHandlerNew{}
 
-func NewAckHandlerNew(me NodeID, nested GPAnew, resendPeriod time.Duration) AckHandlerNew {
+func NewAckHandlerNEW(me NodeID, nested GPAnew, resendPeriod time.Duration) AckHandlerNEW {
 	return &ackHandlerNew{
 		me:           me,
 		nested:       nested,

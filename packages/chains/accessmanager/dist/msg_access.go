@@ -16,22 +16,16 @@ type msgAccess struct {
 	serverForChains []isc.ChainID `bcs:"export,len_bytes=2"`
 }
 
-var _ gpa.MessagePayload = new(msgAccess)
-
 func newMsgAccess(
 	recipient gpa.NodeID,
 	senderLClock, receiverLClock int,
 	accessForChains []isc.ChainID,
 	serverForChains []isc.ChainID,
-) gpa.MessageOut {
-	return gpa.NewMessageOut(recipient, &msgAccess{
+) gpa.PayloadOut {
+	return gpa.NewPayloadOut(recipient, msgAccess{
 		senderLClock:    senderLClock,
 		receiverLClock:  receiverLClock,
 		accessForChains: accessForChains,
 		serverForChains: serverForChains,
 	})
-}
-
-func (msg *msgAccess) MsgType() gpa.MessageType {
-	return msgTypeAccess
 }

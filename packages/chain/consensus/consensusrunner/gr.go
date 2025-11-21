@@ -113,7 +113,7 @@ type input struct {
 
 type ConsensusRunner struct {
 	me                          gpa.NodeID
-	consInst                    gpa.AckHandlerNew
+	consInst                    gpa.AckHandlerNEW
 	inputCh                     chan *input
 	inputReceived               *atomic.Bool
 	inputRotateToCh             chan *iotago.Address
@@ -220,7 +220,7 @@ func New(
 		validatorAgentID,
 		log,
 	).AsGPA()
-	runner.consInst = gpa.NewAckHandlerNew(me, consInstRaw, redeliveryPeriod)
+	runner.consInst = gpa.NewAckHandlerNEW(me, consInstRaw, redeliveryPeriod)
 
 	unhook := net.Attach(&netPeeringID, peering.ReceiverChainCons, func(recv *peering.PeerMessageIn) {
 		if recv.MsgType != msgTypeCons {

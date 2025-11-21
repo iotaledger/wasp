@@ -24,15 +24,11 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/util"
 )
 
-type AccessMgr interface {
-	AsGPA() gpa.GPA
-}
-
 type Output interface {
 	ChainServerNodes(chainID isc.ChainID) []*cryptolib.PublicKey
 }
 
-type accessMgrDist struct {
+type AccessMgrDist struct {
 	nodes            *shrinkingmap.ShrinkingMap[gpa.NodeID, *accessMgrNode]   // State for each peer.
 	chains           *shrinkingmap.ShrinkingMap[isc.ChainID, *accessMgrChain] // State for each chain.
 	pubKeyToNodeID   func(*cryptolib.PublicKey) gpa.NodeID                    // Convert PubKeys to NodeIDs.
@@ -41,15 +37,15 @@ type accessMgrDist struct {
 	log              log.Logger
 }
 
-var _ gpa.GPA = &accessMgrDist{}
+var _ gpa.GPAnew = &AccessMgrDist{}
 
 func NewAccessMgr(
 	pubKeyToNodeID func(*cryptolib.PublicKey) gpa.NodeID,
 	serversUpdatedCB func(chainID isc.ChainID, servers []*cryptolib.PublicKey),
 	dismissPeerCB func(*cryptolib.PublicKey),
 	log log.Logger,
-) AccessMgr {
-	return &accessMgrDist{
+) *AccessMgrDist {
+	return &AccessMgrDist{
 		nodes:            shrinkingmap.New[gpa.NodeID, *accessMgrNode](),
 		chains:           shrinkingmap.New[isc.ChainID, *accessMgrChain](),
 		pubKeyToNodeID:   pubKeyToNodeID,
@@ -60,12 +56,12 @@ func NewAccessMgr(
 }
 
 // Implements the AccessMgr interface.
-func (amd *accessMgrDist) AsGPA() gpa.GPA {
+func (amd *AccessMgrDist) AsGPA() gpa.GPAnew {
 	return amd
 }
 
 // Implements the Output interface.
-func (amd *accessMgrDist) ChainServerNodes(chainID isc.ChainID) []*cryptolib.PublicKey {
+func (amd *AccessMgrDist) ChainServerNodes(chainID isc.ChainID) []*cryptolib.PublicKey {
 	if chain, exists := amd.chains.Get(chainID); exists {
 		return chain.server.Values()
 	}
@@ -73,7 +69,7 @@ func (amd *accessMgrDist) ChainServerNodes(chainID isc.ChainID) []*cryptolib.Pub
 }
 
 // Implements the gpa.GPA interface.
-func (amd *accessMgrDist) Input(input gpa.Input) []gpa.MessageOut {
+func (amd *AccessMgrDist) Input(input gpa.Input) []gpa.PayloadOut {
 	switch input := input.(type) {
 	case *inputChainDisabled:
 		return amd.handleInputChainDisabled(input)
@@ -86,32 +82,32 @@ func (amd *accessMgrDist) Input(input gpa.Input) []gpa.MessageOut {
 }
 
 // Implements the gpa.GPA interface.
-func (amd *accessMgrDist) Message(msg gpa.MessageIn) []gpa.MessageOut {
-	if _, ok := msg.Payload.(*msgAccess); ok {
-		return amd.handleMsgAccess(gpa.AsTypedMessageIn[*msgAccess](msg))
+func (amd *AccessMgrDist) Message(msg gpa.PayloadIn[any]) []gpa.PayloadOut {
+	if p, ok := msg.Payload.(msgAccess); ok {
+		return amd.handleMsgAccess(gpa.NewPayloadIn(msg.Sender, p))
 	}
-	panic(fmt.Errorf("unexpected message %T: %+v", msg, msg))
+	panic(fmt.Errorf("unexpected message payload %T: %+v", msg.Payload, msg.Payload))
 }
 
 // Implements the gpa.GPA interface.
-func (amd *accessMgrDist) Output() gpa.Output {
+func (amd *AccessMgrDist) Output() gpa.Output {
 	return amd
 }
 
 // Implements the gpa.GPA interface.
-func (amd *accessMgrDist) StatusString() string {
+func (amd *AccessMgrDist) StatusString() string {
 	return fmt.Sprintf("{accessMgr, |nodes|=%v, |chains|=%v}", amd.nodes.Size(), amd.chains.Size())
 }
 
 // > Notify all the trusted access nodes, that we will not serve the requests anymore.
-func (amd *accessMgrDist) handleInputChainDisabled(input *inputChainDisabled) []gpa.MessageOut {
+func (amd *AccessMgrDist) handleInputChainDisabled(input *inputChainDisabled) []gpa.PayloadOut {
 	chain, exists := amd.chains.Get(input.chainID)
 	if !exists {
 		return nil // Already disabled.
 	}
 	chain.Disabled()
 	amd.chains.Delete(input.chainID)
-	var msgs []gpa.MessageOut
+	var msgs []gpa.PayloadOut
 	amd.nodes.ForEach(func(_ gpa.NodeID, node *accessMgrNode) bool {
 		msgs = slices.Concat(msgs, node.SetChainAccess(input.chainID, false))
 		return true
@@ -123,7 +119,7 @@ func (amd *accessMgrDist) handleInputChainDisabled(input *inputChainDisabled) []
 //
 // > Send disabled for nodes not in the access list anymore.
 // > Send enabled for new access nodes.
-func (amd *accessMgrDist) handleInputAccessNodes(input *inputAccessNodes) []gpa.MessageOut {
+func (amd *AccessMgrDist) handleInputAccessNodes(input *inputAccessNodes) []gpa.PayloadOut {
 	//
 	// Update the info from the chain perspective.
 	chain, exists := amd.chains.Get(input.chainID)
@@ -141,7 +137,7 @@ func (amd *accessMgrDist) handleInputAccessNodes(input *inputAccessNodes) []gpa.
 	chain.AccessGrantedFor(input.accessNodes)
 	//
 	// Update the info for each node.
-	var msgs []gpa.MessageOut
+	var msgs []gpa.PayloadOut
 	amd.nodes.ForEach(func(nodeID gpa.NodeID, node *accessMgrNode) bool {
 		msgs = slices.Concat(msgs, node.SetChainAccess(input.chainID, chain.IsAccessGrantedFor(nodeID)))
 		return true
@@ -149,8 +145,8 @@ func (amd *accessMgrDist) handleInputAccessNodes(input *inputAccessNodes) []gpa.
 	return msgs
 }
 
-func (amd *accessMgrDist) handleInputTrustedNodes(input *inputTrustedNodes) []gpa.MessageOut {
-	var msgs []gpa.MessageOut
+func (amd *AccessMgrDist) handleInputTrustedNodes(input *inputTrustedNodes) []gpa.PayloadOut {
+	var msgs []gpa.PayloadOut
 	//
 	// Setup new nodes.
 	trustedIndex := map[gpa.NodeID]bool{}
@@ -189,7 +185,7 @@ func (amd *accessMgrDist) handleInputTrustedNodes(input *inputTrustedNodes) []gp
 	return msgs
 }
 
-func (amd *accessMgrDist) handleMsgAccess(msg gpa.TypedMessageIn[*msgAccess]) []gpa.MessageOut {
+func (amd *AccessMgrDist) handleMsgAccess(msg gpa.PayloadIn[msgAccess]) []gpa.PayloadOut {
 	node, exists := amd.nodes.Get(msg.Sender)
 	if !exists {
 		return nil
@@ -292,7 +288,7 @@ func newAccessMgrNode(
 	nodeID gpa.NodeID,
 	pubKey *cryptolib.PublicKey,
 	accessFor *chainSet,
-) (*accessMgrNode, []gpa.MessageOut) {
+) (*accessMgrNode, []gpa.PayloadOut) {
 	amn := &accessMgrNode{
 		nodeID:    nodeID,
 		pubKey:    pubKey,
@@ -301,42 +297,42 @@ func newAccessMgrNode(
 		accessFor: accessFor,
 		serverFor: newChainSet(),
 	}
-	msgs := []gpa.MessageOut{
+	msgs := []gpa.PayloadOut{
 		newMsgAccess(amn.nodeID, amn.ourLC, amn.peerLC, amn.accessFor.AsSlice(), amn.serverFor.AsSlice()),
 	}
 	return amn, msgs
 }
 
-func (amn *accessMgrNode) SetChainAccess(chainID isc.ChainID, access bool) []gpa.MessageOut {
+func (amn *accessMgrNode) SetChainAccess(chainID isc.ChainID, access bool) []gpa.PayloadOut {
 	if access {
 		return amn.grantAccess(chainID)
 	}
 	return amn.revokeAccess(chainID)
 }
 
-func (amn *accessMgrNode) grantAccess(chainID isc.ChainID) []gpa.MessageOut {
+func (amn *accessMgrNode) grantAccess(chainID isc.ChainID) []gpa.PayloadOut {
 	if amn.accessFor.Has(chainID) {
 		return nil
 	}
 	amn.accessFor.Add(chainID)
 	amn.ourLC++
-	return []gpa.MessageOut{
+	return []gpa.PayloadOut{
 		newMsgAccess(amn.nodeID, amn.ourLC, amn.peerLC, amn.accessFor.AsSlice(), amn.serverFor.AsSlice()),
 	}
 }
 
-func (amn *accessMgrNode) revokeAccess(chainID isc.ChainID) []gpa.MessageOut {
+func (amn *accessMgrNode) revokeAccess(chainID isc.ChainID) []gpa.PayloadOut {
 	if !amn.accessFor.Has(chainID) {
 		return nil
 	}
 	amn.accessFor.Delete(chainID)
 	amn.ourLC++
-	return []gpa.MessageOut{
+	return []gpa.PayloadOut{
 		newMsgAccess(amn.nodeID, amn.ourLC, amn.peerLC, amn.accessFor.AsSlice(), amn.serverFor.AsSlice()),
 	}
 }
 
-func (amn *accessMgrNode) handleMsgAccess(msg gpa.TypedMessageIn[*msgAccess]) []gpa.MessageOut {
+func (amn *accessMgrNode) handleMsgAccess(msg gpa.PayloadIn[msgAccess]) []gpa.PayloadOut {
 	// This has to be checked before updating the state.
 	// > IF /\ m.access = serverForChains(n, m.src)    \* Peer's info hasn't changed, so we don't need to ack it.
 	// >    /\ m.server = H(accessForChains(n, m.src)) \* Our info echoed, so that was an ack.
@@ -368,7 +364,7 @@ func (amn *accessMgrNode) handleMsgAccess(msg gpa.TypedMessageIn[*msgAccess]) []
 	//
 	// Send message back, if needed.
 	if !sendDone {
-		return []gpa.MessageOut{
+		return []gpa.PayloadOut{
 			newMsgAccess(msg.Sender, amn.ourLC, amn.peerLC, amn.accessFor.AsSlice(), amn.serverFor.AsSlice()),
 		}
 	}
