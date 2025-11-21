@@ -133,11 +133,11 @@ func New(
 		log.LogDebugf("VarConsInsts: Output received, %v", out)
 		cl.output = out
 	}, log.NewChildLogger("VCI"))
-	cl.varLogIndex = NewVarLogIndex(nodeIDs, n, f, prevLI, func(li LogIndex) OutMessages {
+	cl.varLogIndex = NewVarLogIndex(nodeIDs, n, f, prevLI, func(li LogIndex) []gpa.PayloadOut {
 		log.LogDebugf("VarLogIndex: Output received, %v", li)
 		return cl.varConsInsts.LatestSeenLI(li, cl.varLogIndex.ConsensusStarted)
 	}, cclMetrics, log.NewChildLogger("VLI"))
-	cl.varLocalView = NewVarLocalView(pipeliningLimit, func(ao *isc.StateAnchor) OutMessages {
+	cl.varLocalView = NewVarLocalView(pipeliningLimit, func(ao *isc.StateAnchor) []gpa.PayloadOut {
 		log.LogDebugf("VarLocalView: Output received, %v", ao)
 		return cl.varConsInsts.LatestL1Anchor(ao, cl.varLogIndex.ConsensusStarted)
 	}, log.NewChildLogger("VLV"))
@@ -145,7 +145,7 @@ func New(
 }
 
 // Input implements the gpa.GPA interface.
-func (cl *CommitteeLog) Input(input gpa.Input) OutMessages {
+func (cl *CommitteeLog) Input(input gpa.Input) []gpa.PayloadOut {
 	switch input.(type) {
 	case *inputCanPropose:
 		break // Don't log, its periodic.
@@ -173,41 +173,40 @@ func (cl *CommitteeLog) Input(input gpa.Input) OutMessages {
 }
 
 // The latest anchor object's version confirmed at the L1.
-func (cl *CommitteeLog) handleInputAnchorConfirmed(input *InputAnchorConfirmed) OutMessages {
+func (cl *CommitteeLog) handleInputAnchorConfirmed(input *InputAnchorConfirmed) []gpa.PayloadOut {
 	cl.suspended = false
 	return cl.varLocalView.AnchorConfirmed(input.anchor)
 }
 
 // Consensus completed with a decision to SKIP/⊥.
-func (cl *CommitteeLog) handleInputConsensusOutputSkip(input *inputConsensusOutputSkip) OutMessages {
+func (cl *CommitteeLog) handleInputConsensusOutputSkip(input *inputConsensusOutputSkip) []gpa.PayloadOut {
 	return cl.varConsInsts.ConsOutputSkip(input.logIndex, cl.varLogIndex.ConsensusStarted)
 }
 
 // Consensus has decided, produced a TX and it is now confirmed by L1.
-func (cl *CommitteeLog) handleInputConsensusOutputConfirmed(input *InputConsensusOutputConfirmed) OutMessages {
+func (cl *CommitteeLog) handleInputConsensusOutputConfirmed(input *InputConsensusOutputConfirmed) []gpa.PayloadOut {
 	return cl.varConsInsts.ConsOutputDone(input.logIndex, input.nextAnchor, cl.varLogIndex.ConsensusStarted)
 }
 
 // Consensus has decided, produced a TX but it was rejected by L1.
-func (cl *CommitteeLog) handleInputConsensusOutputRejected(input *inputConsensusOutputRejected) OutMessages {
+func (cl *CommitteeLog) handleInputConsensusOutputRejected(input *inputConsensusOutputRejected) []gpa.PayloadOut {
 	return cl.varConsInsts.ConsOutputSkip(input.logIndex, cl.varLogIndex.ConsensusStarted) // This will cause proposal of our latest L1 Anchor.
 }
 
 // Consensus tries to decide for too long. Maybe quorum assumption has been violated.
-func (cl *CommitteeLog) handleInputConsensusTimeout(input *inputConsensusTimeout) OutMessages {
+func (cl *CommitteeLog) handleInputConsensusTimeout(input *inputConsensusTimeout) []gpa.PayloadOut {
 	return cl.varConsInsts.ConsOutputTimeout(input.logIndex, cl.varLogIndex.ConsensusStarted)
 }
 
-func (cl *CommitteeLog) handleInputCanPropose() OutMessages {
-	msgs := NoMessages()
-	msgs.AddAll(cl.varConsInsts.Tick(cl.varLogIndex.ConsensusStarted))
+func (cl *CommitteeLog) handleInputCanPropose() []gpa.PayloadOut {
+	msgs := cl.varConsInsts.Tick(cl.varLogIndex.ConsensusStarted)
 
 	if cl.first && cl.output != nil && len(cl.output) > 0 {
 		// This is a workaround for sending initial NextLI messages on boot.
 		cl.first = false
 		for li := range cl.output {
 			cl.log.LogDebugf("Sending initial NextLI messages for LI=%v", li)
-			msgs.AddAll(cl.varLogIndex.ConsensusStarted(li))
+			msgs = append(msgs, cl.varLogIndex.ConsensusStarted(li)...)
 		}
 		return msgs
 	}
@@ -220,7 +219,7 @@ func (cl *CommitteeLog) handleInputSuspend() {
 
 // > ON Reception of ⟨NextLI, •⟩ message:
 // >   ...
-func (cl *CommitteeLog) HandleMsgNextLogIndex(msg gpa.PayloadIn[MsgNextLogIndex]) OutMessages {
+func (cl *CommitteeLog) HandleMsgNextLogIndex(msg gpa.PayloadIn[MsgNextLogIndex]) []gpa.PayloadOut {
 	return cl.varLogIndex.MsgNextLogIndexReceived(msg)
 }
 

@@ -30,7 +30,7 @@ func (c *Consensus) MarshalPayload(payload any) ([]byte, error) {
 	switch p := payload.(type) {
 	case msgBLSPartialSig:
 		return gpa.MarshalPayloadNEW(msgTypeBLSShare, p)
-	case gpa.PayloadWithIndex[any]:
+	case gpa.PayloadWithKey[int, any]:
 		switch p.Payload.(type) {
 		case bracha.MsgBracha:
 			return gpa.MarshalPayloadNEW(msgTypeACSBracha, p)
@@ -46,7 +46,7 @@ func (c *Consensus) MarshalPayload(payload any) ([]byte, error) {
 	case distsign.MsgPartialSig:
 		return gpa.MarshalPayloadNEW(msgTypeDSSPartialSig, p)
 	// TODO: Organize this consisntently before merge
-	case gpa.SubsystemPayload[any]:
+	case gpa.SubsystemPayload[int, any]:
 		switch p.Payload.(type) {
 		case bracha.MsgBracha:
 			switch p.SubsystemID {
@@ -70,13 +70,13 @@ func (c *Consensus) MarshalPayload(payload any) ([]byte, error) {
 func (c *Consensus) UnmarshalPayload(data []byte) (any, error) {
 	return gpa.UnmarshalPayloadNEW(data, gpa.PayloadAllocatorNEW{
 		msgTypeBLSShare:             func() any { return msgBLSPartialSig{} },
-		msgTypeACSBracha:            func() any { return gpa.PayloadWithIndex[bracha.MsgBracha]{} },
-		msgTypeABAMsgDone:           func() any { return gpa.PayloadWithIndex[mostefaoui.MsgDone]{} },
-		msgTypeABAMsgVote:           func() any { return gpa.PayloadWithIndex[mostefaoui.MsgVote]{} },
-		msgTypeACSSBracha:           func() any { return gpa.SubsystemPayload[bracha.MsgBracha]{} },
-		msgTypeACSSVote:             func() any { return gpa.SubsystemPayload[acss.MsgVote]{} },
-		msgTypeACSSImplicateRecover: func() any { return gpa.SubsystemPayload[acss.MsgImplicateRecover]{} },
+		msgTypeACSBracha:            func() any { return gpa.PayloadWithKey[int, bracha.MsgBracha]{} },
+		msgTypeABAMsgDone:           func() any { return gpa.PayloadWithKey[int, mostefaoui.MsgDone]{} },
+		msgTypeABAMsgVote:           func() any { return gpa.PayloadWithKey[int, mostefaoui.MsgVote]{} },
+		msgTypeACSSBracha:           func() any { return gpa.SubsystemPayload[int, bracha.MsgBracha]{} },
+		msgTypeACSSVote:             func() any { return gpa.SubsystemPayload[int, acss.MsgVote]{} },
+		msgTypeACSSImplicateRecover: func() any { return gpa.SubsystemPayload[int, acss.MsgImplicateRecover]{} },
 		msgTypeDSSPartialSig:        func() any { return distsign.MsgPartialSig{} },
-		msgTypeBLSSigShare:          func() any { return gpa.PayloadWithIndex[blssig.MsgSigShare]{} },
+		msgTypeBLSSigShare:          func() any { return gpa.PayloadWithKey[int, blssig.MsgSigShare]{} },
 	})
 }

@@ -11,21 +11,21 @@ import (
 
 func TestMsgBlockProducedSerialization(t *testing.T) {
 	randomSignedTransaction := iotasignertest.RandomSignedTransaction()
-	msg := &msgBlockProduced{
+	msg := msgBlockProduced{
 		&randomSignedTransaction,
 		statetest.RandomBlock(),
 	}
 
-	bcs.TestCodec(t, msg, &msgBlockProduced{
+	bcs.TestCodec(t, msg, msgBlockProduced{
 		block: state.NewBlock(),
 	})
 
-	msg = &msgBlockProduced{
+	msg = msgBlockProduced{
 		&iotasignertest.TestSignedTransaction,
 		statetest.TestBlock(),
 	}
 
-	bcs.TestCodecAndHash(t, msg, "6b906810f98b", &msgBlockProduced{
+	bcs.TestCodecAndHash(t, msg, "6b906810f98b", msgBlockProduced{
 		block: state.NewBlock(),
 	})
 }

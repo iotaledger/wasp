@@ -156,18 +156,18 @@ func NewPayloadOut(recipient NodeID, payload any) PayloadOut {
 
 type PayloadOut = TypedPayloadOut[any]
 
-type PayloadWithIndex[Payload any] struct {
-	Index   int
+type PayloadWithKey[Key, Payload any] struct {
+	Key     Key
 	Payload Payload
 }
 
-func AddIndex(index int, msgs []PayloadOut) []PayloadOut {
+func AddKey[Key any](key Key, msgs []PayloadOut) []PayloadOut {
 	ret := make([]PayloadOut, len(msgs))
 	for i, msg := range msgs {
 		ret[i] = PayloadOut{
 			Recipient: msg.Recipient,
-			Payload: PayloadWithIndex[any]{
-				Index:   index,
+			Payload: PayloadWithKey[Key, any]{
+				Key:     key,
 				Payload: msg.Payload,
 			},
 		}
@@ -176,20 +176,20 @@ func AddIndex(index int, msgs []PayloadOut) []PayloadOut {
 }
 
 // TODO: Refactor or remove this before merge
-type SubsystemPayload[Payload any] struct {
+type SubsystemPayload[Key, Payload any] struct {
 	SubsystemID string
-	Index       int
+	Key         Key
 	Payload     Payload
 }
 
-func AddSubsystemID(subsystemID string, index int, msgs []PayloadOut) []PayloadOut {
+func AddSubsystemID[Key any](subsystemID string, key Key, msgs []PayloadOut) []PayloadOut {
 	ret := make([]PayloadOut, len(msgs))
 	for i, msg := range msgs {
 		ret[i] = PayloadOut{
 			Recipient: msg.Recipient,
-			Payload: SubsystemPayload[any]{
+			Payload: SubsystemPayload[Key, any]{
 				SubsystemID: subsystemID,
-				Index:       index,
+				Key:         key,
 				Payload:     msg.Payload,
 			},
 		}

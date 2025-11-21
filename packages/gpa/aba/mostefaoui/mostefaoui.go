@@ -249,7 +249,7 @@ func (a *ABA) HandleCCMsg(index int, msgT gpa.PayloadIn[blssig.MsgSigShare]) []g
 	}
 
 	subMsgs := cc.HandleMsgSigShare(msgT)
-	msgs := gpa.AddIndex(index, subMsgs)
+	msgs := gpa.AddKey(index, subMsgs)
 	if index == a.round && !a.uponDecisionInputs.haveCC() {
 		ccOut := cc.Output()
 		if ccOut != nil {

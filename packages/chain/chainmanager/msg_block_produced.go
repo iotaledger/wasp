@@ -17,17 +17,11 @@ type msgBlockProduced struct {
 	block state.Block                   `bcs:"export"`
 }
 
-var _ gpa.MessagePayload = new(msgBlockProduced)
-
-func NewMsgBlockProduced(recipient gpa.NodeID, tx *iotasigner.SignedTransaction, block state.Block) gpa.MessageOut {
-	return gpa.NewMessageOut(recipient, &msgBlockProduced{
+func NewMsgBlockProduced(recipient gpa.NodeID, tx *iotasigner.SignedTransaction, block state.Block) gpa.PayloadOut {
+	return gpa.NewPayloadOut(recipient, msgBlockProduced{
 		tx:    tx,
 		block: block,
 	})
-}
-
-func (msg *msgBlockProduced) MsgType() gpa.MessageType {
-	return msgTypeBlockProduced
 }
 
 func (msg *msgBlockProduced) String() string {
