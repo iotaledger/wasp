@@ -29,7 +29,7 @@ type blockInfo struct {
 	blockIndex uint32
 }
 
-type stateManagerGPA struct {
+type StateManager struct {
 	log                      log.Logger
 	chainID                  isc.ChainID
 	blockCache               gpautils.BlockCache
@@ -48,7 +48,7 @@ type stateManagerGPA struct {
 	metrics                  *metrics.ChainStateManagerMetrics
 }
 
-var _ gpa.GPA = &stateManagerGPA{}
+var _ gpa.GPA = &StateManager{}
 
 func New(
 	chainID isc.ChainID,
@@ -59,14 +59,14 @@ func New(
 	metrics *metrics.ChainStateManagerMetrics,
 	log log.Logger,
 	parameters StateManagerParameters,
-) (gpa.GPA, error) {
+) (*StateManager, error) {
 	var err error
 	smLog := log.NewChildLogger("GPA")
 	blockCache, err := gpautils.NewBlockCache(parameters.TimeProvider, parameters.BlockCacheMaxSize, wal, metrics, smLog)
 	if err != nil {
 		return nil, fmt.Errorf("error creating block cache: %v", err)
 	}
-	result := &stateManagerGPA{
+	result := &StateManager{
 		log:                      smLog,
 		chainID:                  chainID,
 		blockCache:               blockCache,
@@ -92,7 +92,7 @@ func New(
 // Implementation for gpa.GPA interface
 // -------------------------------------
 
-func (smT *stateManagerGPA) Input(input gpa.Input) []gpa.MessageOut {
+func (smT *StateManager) Input(input gpa.Input) []gpa.MessageOut {
 	switch inputCasted := input.(type) {
 	case *inputs.ConsensusStateProposal: // From consensus
 		return smT.handleConsensusStateProposal(inputCasted)
@@ -112,7 +112,7 @@ func (smT *stateManagerGPA) Input(input gpa.Input) []gpa.MessageOut {
 	}
 }
 
-func (smT *stateManagerGPA) Message(msg gpa.MessageIn) []gpa.MessageOut {
+func (smT *StateManager) Message(msg gpa.MessageIn[any]) []gpa.MessageOut {
 	switch msgCasted := msg.Payload.(type) {
 	case *messages.GetBlockMessage:
 		return smT.handlePeerGetBlock(msg.Sender, msgCasted.GetL1Commitment())
@@ -124,11 +124,11 @@ func (smT *stateManagerGPA) Message(msg gpa.MessageIn) []gpa.MessageOut {
 	}
 }
 
-func (smT *stateManagerGPA) Output() gpa.Output {
+func (smT *StateManager) Output() gpa.Output {
 	return smT.output
 }
 
-func (smT *stateManagerGPA) StatusString() string {
+func (smT *StateManager) StatusString() string {
 	return fmt.Sprintf(
 		"State manager is waiting for %v blocks from other nodes; "+
 			"%v blocks are obtained and waiting to be committed; "+
@@ -144,11 +144,21 @@ func (smT *stateManagerGPA) StatusString() string {
 		util.TimeOrNever(smT.lastCleanBlockCacheTime), smT.parameters.BlockCacheBlockCleaningPeriod,
 	)
 }
+func (smT *StateManager) MarshalPayload(payload any) ([]byte, error) {
+	switch p := payload.(type) {
+	case messages.BlockMessage:
+		return gpa.MarshalPayload(messages.MsgTypeBlockMessage, p)
+	case *messages.GetBlockMessage:
+		return gpa.MarshalPayload(messages.MsgTypeGetBlockMessage, p)
+	default:
+		panic(fmt.Sprintf("state manager gpa: unknown payload type %T", payload))
+	}
+}
 
-func (smT *stateManagerGPA) UnmarshalPayload(data []byte) (gpa.MessagePayload, error) {
+func (smT *StateManager) UnmarshalPayload(data []byte) (any, error) {
 	return gpa.UnmarshalPayload(data, gpa.PayloadAllocator{
-		messages.MsgTypeBlockMessage:    func() gpa.MessagePayload { return messages.NewEmptyBlockMessage() },
-		messages.MsgTypeGetBlockMessage: func() gpa.MessagePayload { return messages.NewEmptyGetBlockMessage() },
+		messages.MsgTypeBlockMessage:    func() any { return messages.BlockMessage{} },
+		messages.MsgTypeGetBlockMessage: func() any { return messages.GetBlockMessage{} },
 	})
 }
 
@@ -156,7 +166,7 @@ func (smT *stateManagerGPA) UnmarshalPayload(data []byte) (gpa.MessagePayload, e
 // Internal functions
 // -------------------------------------
 
-func (smT *stateManagerGPA) handlePeerGetBlock(from gpa.NodeID, commitment *state.L1Commitment) []gpa.MessageOut {
+func (smT *StateManager) handlePeerGetBlock(from gpa.NodeID, commitment *state.L1Commitment) []gpa.MessageOut {
 	// TODO: [KP] Only accept queries from access nodes.
 	fromLog := from.ShortString()
 	smT.log.LogDebugf("Message GetBlock %s received from peer %s", commitment, fromLog)
@@ -169,7 +179,7 @@ func (smT *stateManagerGPA) handlePeerGetBlock(from gpa.NodeID, commitment *stat
 	return []gpa.MessageOut{gpa.NewMessageOut(from, messages.NewBlockMessage(block))}
 }
 
-func (smT *stateManagerGPA) handlePeerBlock(from gpa.NodeID, block state.Block) []gpa.MessageOut {
+func (smT *StateManager) handlePeerBlock(from gpa.NodeID, block state.Block) []gpa.MessageOut {
 	blockIndex := block.StateIndex()
 	blockCommitment := block.L1Commitment()
 	fromLog := from.ShortString()
@@ -185,7 +195,7 @@ func (smT *stateManagerGPA) handlePeerBlock(from gpa.NodeID, block state.Block) 
 	return messages
 }
 
-func (smT *stateManagerGPA) handleConsensusStateProposal(csp *inputs.ConsensusStateProposal) []gpa.MessageOut {
+func (smT *StateManager) handleConsensusStateProposal(csp *inputs.ConsensusStateProposal) []gpa.MessageOut {
 	start := time.Now()
 	smT.log.LogDebugf("Input consensus state proposal index %v %s received...", csp.GetStateIndex(), csp.GetL1Commitment())
 	callback := newBlockRequestCallback(
@@ -203,7 +213,7 @@ func (smT *stateManagerGPA) handleConsensusStateProposal(csp *inputs.ConsensusSt
 	return messages
 }
 
-func (smT *stateManagerGPA) handleConsensusDecidedState(cds *inputs.ConsensusDecidedState) []gpa.MessageOut {
+func (smT *StateManager) handleConsensusDecidedState(cds *inputs.ConsensusDecidedState) []gpa.MessageOut {
 	start := time.Now()
 	smT.log.LogDebugf("Input consensus decided state index %v %s received...", cds.GetStateIndex(), cds.GetL1Commitment())
 	callback := newBlockRequestCallback(
@@ -227,7 +237,7 @@ func (smT *stateManagerGPA) handleConsensusDecidedState(cds *inputs.ConsensusDec
 	return messages
 }
 
-func (smT *stateManagerGPA) handleConsensusBlockProduced(input *inputs.ConsensusBlockProduced) []gpa.MessageOut {
+func (smT *StateManager) handleConsensusBlockProduced(input *inputs.ConsensusBlockProduced) []gpa.MessageOut {
 	start := time.Now()
 	stateIndex := input.GetStateDraft().BlockIndex() - 1 // NOTE: as this state draft is complete, the returned index is the one of the next state (which will be obtained, once this state draft is committed); to get the index of the base state, we need to subtract one
 	commitment := input.GetStateDraft().BaseL1Commitment()
@@ -252,7 +262,7 @@ func (smT *stateManagerGPA) handleConsensusBlockProduced(input *inputs.Consensus
 	return result // No messages to send
 }
 
-func (smT *stateManagerGPA) handleChainFetchStateDiff(input *inputs.ChainFetchStateDiff) []gpa.MessageOut {
+func (smT *StateManager) handleChainFetchStateDiff(input *inputs.ChainFetchStateDiff) []gpa.MessageOut {
 	start := time.Now()
 	smT.log.LogDebugf("Input mempool state request for state index %v %s is received compared to state index %v %s...",
 		input.GetNewStateIndex(), input.GetNewL1Commitment(), input.GetOldStateIndex(), input.GetOldL1Commitment())
@@ -285,7 +295,7 @@ func (smT *stateManagerGPA) handleChainFetchStateDiff(input *inputs.ChainFetchSt
 	return result
 }
 
-func (smT *stateManagerGPA) handleChainFetchStateDiffRespond(input *inputs.ChainFetchStateDiff, start time.Time) { //nolint:funlen
+func (smT *StateManager) handleChainFetchStateDiffRespond(input *inputs.ChainFetchStateDiff, start time.Time) { //nolint:funlen
 	makeCallbackFun := func(part string) blockRequestCallback {
 		return newBlockRequestCallback(
 			func() bool { return input.IsValid() },
@@ -376,7 +386,7 @@ func (smT *stateManagerGPA) handleChainFetchStateDiffRespond(input *inputs.Chain
 	smT.metrics.ChainFetchStateDiffHandled(time.Since(start))
 }
 
-func (smT *stateManagerGPA) handleStateManagerBlocksToCommit(commitments []*state.L1Commitment) []gpa.MessageOut {
+func (smT *StateManager) handleStateManagerBlocksToCommit(commitments []*state.L1Commitment) []gpa.MessageOut {
 	start := time.Now()
 	smT.log.LogDebugf("Input state manager blocks to commit %s is received", commitments)
 	var result []gpa.MessageOut
@@ -394,7 +404,7 @@ func (smT *stateManagerGPA) handleStateManagerBlocksToCommit(commitments []*stat
 	return result
 }
 
-func (smT *stateManagerGPA) getBlock(commitment *state.L1Commitment) state.Block {
+func (smT *StateManager) getBlock(commitment *state.L1Commitment) state.Block {
 	block := smT.blockCache.GetBlock(commitment)
 	if block != nil {
 		return block
@@ -425,7 +435,7 @@ func (smT *stateManagerGPA) getBlock(commitment *state.L1Commitment) state.Block
 	return block
 }
 
-func (smT *stateManagerGPA) traceBlockChainWithCallback(index uint32, lastCommitment *state.L1Commitment, callback blockRequestCallback) []gpa.MessageOut {
+func (smT *StateManager) traceBlockChainWithCallback(index uint32, lastCommitment *state.L1Commitment, callback blockRequestCallback) []gpa.MessageOut {
 	if smT.store.HasTrieRoot(lastCommitment.TrieRoot()) {
 		smT.log.LogDebugf("Tracing block index %v %s chain: the block is already in the store, calling back", index, lastCommitment)
 		callback.requestCompleted()
@@ -450,7 +460,7 @@ func (smT *stateManagerGPA) traceBlockChainWithCallback(index uint32, lastCommit
 // formulated as "give me blocks from some commitment till some index". If the
 // requested node has the required block committed into the store, it certainly
 // has all the blocks before it.
-func (smT *stateManagerGPA) traceBlockChain(initFetcher blockFetcher) []gpa.MessageOut {
+func (smT *StateManager) traceBlockChain(initFetcher blockFetcher) []gpa.MessageOut {
 	var fetcher blockFetcher
 	var previousCommitment *state.L1Commitment
 	for fetcher = initFetcher; !smT.store.HasTrieRoot(fetcher.getCommitment().TrieRoot()); fetcher = newBlockFetcherWithRelatedFetcher(previousCommitment, fetcher) {
@@ -503,7 +513,7 @@ func (smT *stateManagerGPA) traceBlockChain(initFetcher blockFetcher) []gpa.Mess
 	return result
 }
 
-func (smT *stateManagerGPA) markFetched(fetcher blockFetcher, doCommit bool) []gpa.MessageOut {
+func (smT *StateManager) markFetched(fetcher blockFetcher, doCommit bool) []gpa.MessageOut {
 	if doCommit {
 		commitment := fetcher.getCommitment()
 		block := smT.blockCache.GetBlock(commitment)
@@ -549,14 +559,14 @@ func (smT *stateManagerGPA) markFetched(fetcher blockFetcher, doCommit bool) []g
 }
 
 // Make `numberOfNodesToRequestBlockFromConst` messages to random peers
-func (smT *stateManagerGPA) makeGetBlockRequestMessages(commitment *state.L1Commitment) []gpa.MessageOut {
+func (smT *StateManager) makeGetBlockRequestMessages(commitment *state.L1Commitment) []gpa.MessageOut {
 	nodeIDs := smT.nodeRandomiser.GetRandomOtherNodeIDs(smT.parameters.StateManagerGetBlockNodeCount)
 	return lo.Map(nodeIDs, func(nodeID gpa.NodeID, _ int) gpa.MessageOut {
 		return gpa.NewMessageOut(nodeID, messages.NewGetBlockMessage(commitment))
 	})
 }
 
-func (smT *stateManagerGPA) handleStateManagerTimerTick(now time.Time) []gpa.MessageOut {
+func (smT *StateManager) handleStateManagerTimerTick(now time.Time) []gpa.MessageOut {
 	start := time.Now()
 	var result []gpa.MessageOut
 	nextStatusLogTime := smT.lastStatusLogTime.Add(smT.parameters.StateManagerStatusLogPeriod)
@@ -595,11 +605,11 @@ func (smT *stateManagerGPA) handleStateManagerTimerTick(now time.Time) []gpa.Mes
 	return result
 }
 
-func (smT *stateManagerGPA) getWaitingCallbacksCount() int {
+func (smT *StateManager) getWaitingCallbacksCount() int {
 	return smT.blocksToFetch.getCallbacksCount() + smT.blocksFetched.getCallbacksCount()
 }
 
-func (smT *stateManagerGPA) commitStateDraft(stateDraft state.StateDraft) state.Block {
+func (smT *StateManager) commitStateDraft(stateDraft state.StateDraft) state.Block {
 	block, _, _ := lo.Must3(smT.store.Commit(stateDraft))
 	stateIndex := block.StateIndex()
 	smT.metrics.BlockIndexCommitted(stateIndex)
@@ -610,11 +620,11 @@ func (smT *stateManagerGPA) commitStateDraft(stateDraft state.StateDraft) state.
 	return block
 }
 
-func (smT *stateManagerGPA) pruningNeeded() bool {
+func (smT *StateManager) pruningNeeded() bool {
 	return smT.parameters.PruningMinStatesToKeep > 0
 }
 
-func (smT *stateManagerGPA) pruneStore(commitment *state.L1Commitment, stateIndex uint32) {
+func (smT *StateManager) pruneStore(commitment *state.L1Commitment, stateIndex uint32) {
 	if commitment == nil {
 		return // Nothing to prune
 	}
@@ -671,7 +681,7 @@ func (smT *stateManagerGPA) pruneStore(commitment *state.L1Commitment, stateInde
 // place to merge it with already known chain. After the merge it checks if the
 // end of the merged chain is still what it should be.
 // This function is extensively tested in `state_manager_gpa_cob_test.go` file.
-func (smT *stateManagerGPA) updateChainOfBlocks(commitment *state.L1Commitment, stateIndex uint32) { //nolint:gocyclo
+func (smT *StateManager) updateChainOfBlocks(commitment *state.L1Commitment, stateIndex uint32) { //nolint:gocyclo
 	GetPreviousBlockInfoFun := func(bi *blockInfo) (*blockInfo, error) {
 		block, err := smT.store.BlockByTrieRoot(bi.trieRoot)
 		if err != nil {

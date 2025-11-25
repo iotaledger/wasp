@@ -13,15 +13,9 @@ type msgShareRequest struct {
 	request isc.Request `bcs:"export"`
 }
 
-var _ gpa.MessagePayload = new(msgShareRequest)
-
 func newMsgShareRequest(request isc.Request, ttl byte, recipient gpa.NodeID) gpa.MessageOut {
-	return gpa.NewMessageOut(recipient, &msgShareRequest{
+	return gpa.NewMessageOut(recipient, msgShareRequest{
 		request: request,
 		ttl:     ttl,
 	})
-}
-
-func (msg *msgShareRequest) MsgType() gpa.MessageType {
-	return msgTypeShareRequest
 }

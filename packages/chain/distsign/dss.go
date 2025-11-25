@@ -99,7 +99,7 @@ func New(
 }
 
 // Input handles the input to the protocol.
-func (d *DistributedSignature) Input(input gpa.Input) []gpa.PayloadOut {
+func (d *DistributedSignature) Input(input gpa.Input) []gpa.MessageOut {
 	d.log.LogDebugf("Input %+v", input)
 	switch input := input.(type) {
 	case *inputStart:
@@ -111,17 +111,17 @@ func (d *DistributedSignature) Input(input gpa.Input) []gpa.PayloadOut {
 	panic(fmt.Errorf("unexpected input: %T: %+v", input, input))
 }
 
-func (d *DistributedSignature) HandleACSSMsgBracha(acssIndex int, m gpa.PayloadIn[rbc.MsgBracha]) []gpa.PayloadOut {
+func (d *DistributedSignature) HandleACSSMsgBracha(acssIndex int, m gpa.MessageIn[rbc.MsgBracha]) []gpa.MessageOut {
 	outMsgs := d.distributedKeyGen.HandleACSSMsgBracha(acssIndex, m)
 	return slices.Concat(outMsgs, d.tryHandleDistributedKeyGenerationOutput())
 }
 
-func (d *DistributedSignature) HandleACSSMsgVote(acssIndex int, msg gpa.PayloadIn[acss.MsgVote]) []gpa.PayloadOut {
+func (d *DistributedSignature) HandleACSSMsgVote(acssIndex int, msg gpa.MessageIn[acss.MsgVote]) []gpa.MessageOut {
 	outMsgs := d.distributedKeyGen.HandleACSSMsgVote(acssIndex, msg)
 	return slices.Concat(outMsgs, d.tryHandleDistributedKeyGenerationOutput())
 }
 
-func (d *DistributedSignature) HandleACSSMsgImplicateRecover(acssIndex int, msg gpa.PayloadIn[acss.MsgImplicateRecover]) []gpa.PayloadOut {
+func (d *DistributedSignature) HandleACSSMsgImplicateRecover(acssIndex int, msg gpa.MessageIn[acss.MsgImplicateRecover]) []gpa.MessageOut {
 	outMsgs := d.distributedKeyGen.HandleACSSMsgImplicateRecover(acssIndex, msg)
 	return slices.Concat(outMsgs, d.tryHandleDistributedKeyGenerationOutput())
 }
@@ -137,12 +137,12 @@ func (d *DistributedSignature) Output() gpa.Output {
 	}
 }
 
-func (d *DistributedSignature) tryHandleDistributedKeyGenerationOutput() []gpa.PayloadOut {
+func (d *DistributedSignature) tryHandleDistributedKeyGenerationOutput() []gpa.MessageOut {
 	distKeyGenOut := d.distributedKeyGen.Output()
 	if d.distKeyGenOutIndexes == nil && distKeyGenOut != nil && distKeyGenOut.(*nonce.Output).Indexes != nil {
 		d.distKeyGenOutIndexes = distKeyGenOut.(*nonce.Output).Indexes
 	}
-	var msgs []gpa.PayloadOut
+	var msgs []gpa.MessageOut
 	if d.distKeyGenOutNonce == nil && distKeyGenOut != nil && distKeyGenOut.(*nonce.Output).PriShare != nil {
 		d.distKeyGenOutNonce = tcrypto.NewDistKeyShare(
 			distKeyGenOut.(*nonce.Output).PriShare,
@@ -189,7 +189,7 @@ func (d *DistributedSignature) tryHandleDistributedKeyGenerationOutput() []gpa.P
 				continue
 			}
 
-			msgs = append(msgs, gpa.NewPayloadOut(d.nodeIDs[i], msg))
+			msgs = append(msgs, gpa.NewMessageOut(d.nodeIDs[i], msg))
 		}
 		//
 		// Maybe we have everything for the signature already?
@@ -205,7 +205,7 @@ func (d *DistributedSignature) tryHandleDistributedKeyGenerationOutput() []gpa.P
 	return msgs
 }
 
-func (d *DistributedSignature) HandleMsgPartialSig(msg gpa.PayloadIn[MsgPartialSig]) []gpa.PayloadOut {
+func (d *DistributedSignature) HandleMsgPartialSig(msg gpa.MessageIn[MsgPartialSig]) []gpa.MessageOut {
 	if d.signature != nil {
 		// Signature already aggregated, ignore the remaining shares.
 		return nil
@@ -245,7 +245,7 @@ func (d *DistributedSignature) HandleMsgPartialSig(msg gpa.PayloadIn[MsgPartialS
 	return nil
 }
 
-func (d *DistributedSignature) handleDecided(input *inputDecided) []gpa.PayloadOut {
+func (d *DistributedSignature) handleDecided(input *inputDecided) []gpa.MessageOut {
 	if d.distKeyGenDecidedIndexProposals != nil {
 		d.log.LogWarn("Duplicate will be dropped: DecidedIndexes=%+v", input.decidedIndexProposals)
 		return nil

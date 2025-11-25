@@ -19,13 +19,13 @@ func TestBlockMessageSerialization(t *testing.T) {
 }
 
 func TestSerializationBlockMessage(t *testing.T) {
-	msg := &BlockMessage{
+	msg := BlockMessage{
 		statetest.RandomBlock(),
 	}
 
 	bcs.TestCodec(t, msg)
 
-	bcs.TestCodecAndHash(t, &BlockMessage{
+	bcs.TestCodecAndHash(t, BlockMessage{
 		statetest.TestBlock(),
 	}, "453dabc9e5e2")
 }

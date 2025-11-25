@@ -21,13 +21,13 @@ func TestMsgMissingRequestSerialization(t *testing.T) {
 	gasBudget := gas.LimitsDefault.MaxGasPerRequest
 	req := isc.NewOffLedgerRequest(isctest.RandomChainID(), isc.NewMessage(contract, entryPoint, nil), 0, gasBudget).Sign(senderKP)
 
-	msg := &msgMissingRequest{
+	msg := msgMissingRequest{
 		isc.RequestRefFromRequest(req),
 	}
 
 	bcs.TestCodec(t, msg)
 
-	msg = &msgMissingRequest{
+	msg = msgMissingRequest{
 		isc.RequestRefFromRequest(
 			isc.NewOffLedgerRequest(
 				isctest.TestChainID,

@@ -11,8 +11,8 @@ type msgBLSPartialSig struct {
 	partialSig []byte `bcs:"export"`
 }
 
-func newMsgBLSPartialSig(recipient gpa.NodeID, partialSig []byte) gpa.PayloadOut {
-	return gpa.NewPayloadOut(recipient, msgBLSPartialSig{
+func newMsgBLSPartialSig(recipient gpa.NodeID, partialSig []byte) gpa.MessageOut {
+	return gpa.NewMessageOut(recipient, msgBLSPartialSig{
 		partialSig: partialSig,
 	})
 }

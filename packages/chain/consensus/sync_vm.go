@@ -33,7 +33,7 @@ func NewSyncVM(
 	return &SyncVM{c: c}
 }
 
-func (sub *SyncVM) DecidedBatchProposalsReceived(aggregatedProposals *batchproposal.AggregatedBatchProposals) []gpa.PayloadOut {
+func (sub *SyncVM) DecidedBatchProposalsReceived(aggregatedProposals *batchproposal.AggregatedBatchProposals) []gpa.MessageOut {
 	if sub.aggregatedProposals != nil || aggregatedProposals == nil {
 		return nil
 	}
@@ -44,7 +44,7 @@ func (sub *SyncVM) DecidedBatchProposalsReceived(aggregatedProposals *batchpropo
 	)
 }
 
-func (sub *SyncVM) DecidedStateReceived(chainState state.State) []gpa.PayloadOut {
+func (sub *SyncVM) DecidedStateReceived(chainState state.State) []gpa.MessageOut {
 	if sub.chainState != nil {
 		return nil
 	}
@@ -52,7 +52,7 @@ func (sub *SyncVM) DecidedStateReceived(chainState state.State) []gpa.PayloadOut
 	return sub.tryCompleteInputs()
 }
 
-func (sub *SyncVM) RandomnessReceived(randomness hashing.HashValue) []gpa.PayloadOut {
+func (sub *SyncVM) RandomnessReceived(randomness hashing.HashValue) []gpa.MessageOut {
 	if sub.randomness != nil {
 		return nil
 	}
@@ -60,7 +60,7 @@ func (sub *SyncVM) RandomnessReceived(randomness hashing.HashValue) []gpa.Payloa
 	return sub.tryCompleteInputs()
 }
 
-func (sub *SyncVM) RequestsReceived(requests []isc.Request) []gpa.PayloadOut {
+func (sub *SyncVM) RequestsReceived(requests []isc.Request) []gpa.MessageOut {
 	if sub.requests != nil || requests == nil {
 		return nil
 	}
@@ -68,7 +68,7 @@ func (sub *SyncVM) RequestsReceived(requests []isc.Request) []gpa.PayloadOut {
 	return sub.tryCompleteInputs()
 }
 
-func (sub *SyncVM) tryCompleteInputs() []gpa.PayloadOut {
+func (sub *SyncVM) tryCompleteInputs() []gpa.MessageOut {
 	if sub.inputsReady || sub.aggregatedProposals == nil || sub.chainState == nil || sub.randomness == nil || sub.requests == nil {
 		return nil
 	}
@@ -76,7 +76,7 @@ func (sub *SyncVM) tryCompleteInputs() []gpa.PayloadOut {
 	return sub.c.uponVMInputsReceived(sub.aggregatedProposals, sub.randomness, sub.requests)
 }
 
-func (sub *SyncVM) tryCompleteOutputs() []gpa.PayloadOut {
+func (sub *SyncVM) tryCompleteOutputs() []gpa.MessageOut {
 	if sub.vmResult == nil || sub.aggregatedProposals == nil {
 		return nil
 	}
@@ -87,7 +87,7 @@ func (sub *SyncVM) tryCompleteOutputs() []gpa.PayloadOut {
 	return sub.c.uponVMOutputReceived(sub.vmResult, sub.aggregatedProposals)
 }
 
-func (sub *SyncVM) VMResultReceived(vmResult *vm.VMTaskResult) []gpa.PayloadOut {
+func (sub *SyncVM) VMResultReceived(vmResult *vm.VMTaskResult) []gpa.MessageOut {
 	if sub.vmResult != nil || vmResult == nil {
 		return nil
 	}

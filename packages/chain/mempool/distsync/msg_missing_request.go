@@ -12,14 +12,8 @@ type msgMissingRequest struct {
 	requestRef *isc.RequestRef `bcs:"export"`
 }
 
-var _ gpa.MessagePayload = new(msgMissingRequest)
-
 func newMsgMissingRequest(requestRef *isc.RequestRef, recipient gpa.NodeID) gpa.MessageOut {
-	return gpa.NewMessageOut(recipient, &msgMissingRequest{
+	return gpa.NewMessageOut(recipient, msgMissingRequest{
 		requestRef: requestRef,
 	})
-}
-
-func (msg *msgMissingRequest) MsgType() gpa.MessageType {
-	return msgTypeMissingRequest
 }

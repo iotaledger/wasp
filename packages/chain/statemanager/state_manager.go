@@ -81,7 +81,7 @@ func (r *reqPreliminaryBlock) Respond(err error) {
 type stateManager struct {
 	log                  log.Logger
 	chainID              isc.ChainID
-	stateManagerGPA      gpa.GPA
+	stateManagerGPA      *smgpa.StateManager
 	nodeRandomiser       utils.NodeRandomiser
 	nodeIDToPubKey       map[gpa.NodeID]*cryptolib.PublicKey
 	inputPipe            pipe.Pipe[gpa.Input]
@@ -387,7 +387,7 @@ func (smT *stateManager) handleTimerTick(now time.Time) {
 
 func (smT *stateManager) sendMessages(outMsgs []gpa.MessageOut) {
 	for _, msg := range outMsgs {
-		msgBytes := lo.Must(gpa.MarshalPayload(msg.Payload))
+		msgBytes := lo.Must(smT.stateManagerGPA.MarshalPayload(msg.Payload))
 		pm := peering.NewPeerMessageData(smT.netPeeringID, peering.ReceiverStateManager, constMsgTypeStm, msgBytes)
 		recipientPubKey, ok := smT.nodeIDToPubKey[msg.Recipient]
 		if !ok {

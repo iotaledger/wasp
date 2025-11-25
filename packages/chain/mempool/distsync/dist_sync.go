@@ -34,7 +34,7 @@ const (
 //   - If response not received, ask random subsets of server nodes.
 //
 // TODO: For the future releases: Implement proper dissemination algorithm.
-type distSyncImpl struct {
+type DistSync struct {
 	me                gpa.NodeID
 	serverNodes       []gpa.NodeID // Should be used to push and query for requests.
 	accessNodes       []gpa.NodeID // Maybe is not needed? Lets keep it until the redesign.
@@ -49,7 +49,7 @@ type distSyncImpl struct {
 	log               log.Logger
 }
 
-var _ gpa.GPA = &distSyncImpl{}
+var _ gpa.GPA = &DistSync{}
 
 type distSyncReqNeeded struct {
 	reqRef  *isc.RequestRef
@@ -63,8 +63,8 @@ func New(
 	maxMsgsPerTick int,
 	missingReqsMetric func(count int),
 	log log.Logger,
-) gpa.GPA {
-	return &distSyncImpl{
+) *DistSync {
+	return &DistSync{
 		me:                me,
 		serverNodes:       []gpa.NodeID{},
 		accessNodes:       []gpa.NodeID{},
@@ -80,7 +80,7 @@ func New(
 	}
 }
 
-func (dsi *distSyncImpl) Input(input gpa.Input) []gpa.MessageOut {
+func (dsi *DistSync) Input(input gpa.Input) []gpa.MessageOut {
 	dsi.log.LogDebugf("Input %T: %+v", input, input)
 	switch input := input.(type) {
 	case *inputServerNodes:
@@ -97,7 +97,7 @@ func (dsi *distSyncImpl) Input(input gpa.Input) []gpa.MessageOut {
 	panic(fmt.Errorf("unexpected input type %T: %+v", input, input))
 }
 
-func (dsi *distSyncImpl) Message(msg gpa.MessageIn) []gpa.MessageOut {
+func (dsi *DistSync) Message(msg gpa.MessageIn[any]) []gpa.MessageOut {
 	switch msg.Payload.(type) {
 	case *msgMissingRequest:
 		return dsi.handleMsgMissingRequest(gpa.AsTypedMessageIn[*msgMissingRequest](msg))
@@ -108,15 +108,15 @@ func (dsi *distSyncImpl) Message(msg gpa.MessageIn) []gpa.MessageOut {
 	return nil
 }
 
-func (dsi *distSyncImpl) Output() gpa.Output {
+func (dsi *DistSync) Output() gpa.Output {
 	return nil // Output is provided via callbacks.
 }
 
-func (dsi *distSyncImpl) StatusString() string {
+func (dsi *DistSync) StatusString() string {
 	return fmt.Sprintf("{MP, neededReqs=%v, nodeCountToShare=%v}", dsi.needed.Size(), dsi.nodeCountToShare)
 }
 
-func (dsi *distSyncImpl) handleInputServerNodes(input *inputServerNodes) []gpa.MessageOut {
+func (dsi *DistSync) handleInputServerNodes(input *inputServerNodes) []gpa.MessageOut {
 	dsi.log.LogDebugf("handleInputServerNodes: %v", input)
 	dsi.handleCommitteeNodes(input.committeeNodes)
 	dsi.serverNodes = input.serverNodes
@@ -128,7 +128,7 @@ func (dsi *distSyncImpl) handleInputServerNodes(input *inputServerNodes) []gpa.M
 	return dsi.handleInputTimeTick() // Re-send requests if node set has changed.
 }
 
-func (dsi *distSyncImpl) handleInputAccessNodes(input *inputAccessNodes) []gpa.MessageOut {
+func (dsi *DistSync) handleInputAccessNodes(input *inputAccessNodes) []gpa.MessageOut {
 	dsi.log.LogDebugf("handleInputAccessNodes: %v", input)
 	dsi.handleCommitteeNodes(input.committeeNodes)
 	dsi.accessNodes = input.accessNodes
@@ -140,7 +140,7 @@ func (dsi *distSyncImpl) handleInputAccessNodes(input *inputAccessNodes) []gpa.M
 	return dsi.handleInputTimeTick() // Re-send requests if node set has changed.
 }
 
-func (dsi *distSyncImpl) handleCommitteeNodes(committeeNodes []gpa.NodeID) {
+func (dsi *DistSync) handleCommitteeNodes(committeeNodes []gpa.NodeID) {
 	dsi.committeeNodes = committeeNodes
 	dsi.nodeCountToShare = (len(dsi.committeeNodes)-1)/3 + 1 // F+1
 	if dsi.nodeCountToShare < 2 {
@@ -153,7 +153,7 @@ func (dsi *distSyncImpl) handleCommitteeNodes(committeeNodes []gpa.NodeID) {
 
 // In the current algorithm, for sharing a message:
 //   - Just send a message to all the committee nodes (or server nodes, if committee is not known).
-func (dsi *distSyncImpl) handleInputPublishRequest(input *inputPublishRequest) []gpa.MessageOut {
+func (dsi *DistSync) handleInputPublishRequest(input *inputPublishRequest) []gpa.MessageOut {
 	msgs := dsi.propagateRequest(input.request)
 	//
 	// Delete the it from the "needed" list, if any.
@@ -165,7 +165,7 @@ func (dsi *distSyncImpl) handleInputPublishRequest(input *inputPublishRequest) [
 	return msgs
 }
 
-func (dsi *distSyncImpl) propagateRequest(request isc.Request) []gpa.MessageOut {
+func (dsi *DistSync) propagateRequest(request isc.Request) []gpa.MessageOut {
 	var publishToNodes []gpa.NodeID
 	if len(dsi.committeeNodes) > 0 {
 		publishToNodes = dsi.committeeNodes
@@ -184,7 +184,7 @@ func (dsi *distSyncImpl) propagateRequest(request isc.Request) []gpa.MessageOut 
 // For querying a message:
 //   - First ask all the committee for the message.
 //   - ...
-func (dsi *distSyncImpl) handleInputRequestNeeded(input *inputRequestNeeded) []gpa.MessageOut {
+func (dsi *DistSync) handleInputRequestNeeded(input *inputRequestNeeded) []gpa.MessageOut {
 	reqRefKey := input.requestRef.AsKey()
 	reqNeeded, have := dsi.needed.Get(reqRefKey)
 	if have {
@@ -211,7 +211,7 @@ func (dsi *distSyncImpl) handleInputRequestNeeded(input *inputRequestNeeded) []g
 // For querying a message:
 //   - ...
 //   - If response not received, ask random subsets of server nodes.
-func (dsi *distSyncImpl) handleInputTimeTick() []gpa.MessageOut {
+func (dsi *DistSync) handleInputTimeTick() []gpa.MessageOut {
 	if dsi.needed.Size() == 0 {
 		return nil
 	}
@@ -239,7 +239,7 @@ func (dsi *distSyncImpl) handleInputTimeTick() []gpa.MessageOut {
 	return msgs
 }
 
-func (dsi *distSyncImpl) handleMsgMissingRequest(msg gpa.TypedMessageIn[*msgMissingRequest]) []gpa.MessageOut {
+func (dsi *DistSync) handleMsgMissingRequest(msg gpa.MessageIn[*msgMissingRequest]) []gpa.MessageOut {
 	req := dsi.requestNeededCB(msg.Payload.requestRef)
 	if req != nil {
 		return []gpa.MessageOut{newMsgShareRequest(req, 0, msg.Sender)}
@@ -247,7 +247,7 @@ func (dsi *distSyncImpl) handleMsgMissingRequest(msg gpa.TypedMessageIn[*msgMiss
 	return nil
 }
 
-func (dsi *distSyncImpl) handleMsgShareRequest(msg gpa.TypedMessageIn[*msgShareRequest]) []gpa.MessageOut {
+func (dsi *DistSync) handleMsgShareRequest(msg gpa.MessageIn[*msgShareRequest]) []gpa.MessageOut {
 	var msgs []gpa.MessageOut
 	reqRefKey := isc.RequestRefFromRequest(msg.Payload.request).AsKey()
 	added := dsi.requestReceivedCB(msg.Payload.request)

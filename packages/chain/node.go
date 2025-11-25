@@ -141,7 +141,7 @@ type chainNodeImpl struct {
 	me                  gpa.NodeID
 	nodeIdentity        *cryptolib.KeyPair
 	chainID             isc.ChainID
-	chainMgr            gpa.AckHandlerNEW
+	chainMgr            gpa.AckHandler
 	chainStore          indexedstore.IndexedStore
 	nodeConn            NodeConnection
 	tangleTime          time.Time
@@ -667,7 +667,7 @@ func (cni *chainNodeImpl) handleNetMessage(recv *peering.PeerMessageIn) {
 		cni.log.LogWarnf("cannot parse message: %v", err)
 		return
 	}
-	cni.sendMessages(cni.chainMgr.Message(gpa.NewPayloadIn(cni.pubKeyAsNodeID(recv.SenderPubKey), msg)))
+	cni.sendMessages(cni.chainMgr.Message(gpa.NewMessageIn(cni.pubKeyAsNodeID(recv.SenderPubKey), msg)))
 }
 
 func (cni *chainNodeImpl) handleNeedConsensus(ctx context.Context, upd *chainmanager.NeedConsensusMap) {
@@ -834,7 +834,7 @@ func (cni *chainNodeImpl) cleanupPublishingTXes(neededPostTXes *shrinkingmap.Shr
 	})
 }
 
-func (cni *chainNodeImpl) sendMessages(outMsgs []gpa.PayloadOut) {
+func (cni *chainNodeImpl) sendMessages(outMsgs []gpa.MessageOut) {
 	for _, msg := range outMsgs {
 		recipientPubKey, ok := cni.netPeerPubs[msg.Recipient]
 		if !ok {
@@ -1252,7 +1252,7 @@ func initializeOperationalChain(
 	mempool := createMempool(ctx, chainID, nodeIdentity, net, cni, chainMetrics,
 		mempoolSettings, mempoolBroadcastInterval, nodeConn)
 
-	cni.chainMgr = gpa.NewAckHandlerNEW(cni.me, chainMgr.AsGPA(), RedeliveryPeriod)
+	cni.chainMgr = gpa.NewAckHandler(cni.me, chainMgr.AsGPA(), RedeliveryPeriod)
 	cni.stateMgr = stateMgr
 	cni.mempool = mempool
 

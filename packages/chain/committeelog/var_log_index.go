@@ -19,7 +19,7 @@ type VarLogIndex struct {
 	agreedLI  LogIndex                        // LI for which we have N-F proposals (when reached, consensus starts, the LI is persisted).
 	lastMsgs  map[gpa.NodeID]*MsgNextLogIndex // Latest messages we have sent to other peers.
 	qcStarted *QuorumCounter
-	outputCB  func(li LogIndex) []gpa.PayloadOut
+	outputCB  func(li LogIndex) []gpa.MessageOut
 	metrics   *metrics.ChainCommitteeLogMetrics
 	log       log.Logger
 }
@@ -29,7 +29,7 @@ func NewVarLogIndex(
 	n int,
 	f int,
 	persistedLI LogIndex,
-	outputCB func(li LogIndex) []gpa.PayloadOut,
+	outputCB func(li LogIndex) []gpa.MessageOut,
 	metrics *metrics.ChainCommitteeLogMetrics,
 	log log.Logger,
 ) *VarLogIndex {
@@ -55,15 +55,15 @@ func (vli *VarLogIndex) StatusString() string {
 	)
 }
 
-func (vli *VarLogIndex) ConsensusStarted(consensusLI LogIndex) []gpa.PayloadOut {
+func (vli *VarLogIndex) ConsensusStarted(consensusLI LogIndex) []gpa.MessageOut {
 	vli.log.LogDebugf("ConsensusStarted: consensusLI=%v", consensusLI)
-	var msgs []gpa.PayloadOut
+	var msgs []gpa.MessageOut
 	msgs = append(msgs, vli.qcStarted.MaybeSendVote(consensusLI)...)
 	msgs = append(msgs, vli.tryOutputOnStarted()...)
 	return msgs
 }
 
-func (vli *VarLogIndex) MsgNextLogIndexReceived(msg gpa.PayloadIn[MsgNextLogIndex]) []gpa.PayloadOut {
+func (vli *VarLogIndex) MsgNextLogIndexReceived(msg gpa.MessageIn[MsgNextLogIndex]) []gpa.MessageOut {
 	vli.log.LogDebugf("MsgNextLogIndexReceived, %v", msg)
 	sender := msg.Sender
 	if !vli.knownNodeID(sender) {
@@ -80,18 +80,18 @@ func (vli *VarLogIndex) MsgNextLogIndexReceived(msg gpa.PayloadIn[MsgNextLogInde
 	}
 }
 
-func (vli *VarLogIndex) msgNextLogIndexOnStarted(msg gpa.PayloadIn[MsgNextLogIndex]) []gpa.PayloadOut {
+func (vli *VarLogIndex) msgNextLogIndexOnStarted(msg gpa.MessageIn[MsgNextLogIndex]) []gpa.MessageOut {
 	vli.qcStarted.VoteReceived(msg)
 	return vli.tryOutputOnStarted()
 }
 
-func (vli *VarLogIndex) tryOutputOnStarted() []gpa.PayloadOut {
+func (vli *VarLogIndex) tryOutputOnStarted() []gpa.MessageOut {
 	ali := vli.qcStarted.EnoughVotes(vli.f + 1)
 	return vli.tryOutput(ali, MsgNextLogIndexCauseStarted)
 }
 
 // That's output for the consensus. We will start consensus instances with strictly increasing LIs with non-nil Anchors.
-func (vli *VarLogIndex) tryOutput(li LogIndex, cause MsgNextLogIndexCause) []gpa.PayloadOut {
+func (vli *VarLogIndex) tryOutput(li LogIndex, cause MsgNextLogIndexCause) []gpa.MessageOut {
 	if li <= vli.agreedLI || li < vli.minLI {
 		return nil
 	}

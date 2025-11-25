@@ -21,8 +21,8 @@ func newMsgAccess(
 	senderLClock, receiverLClock int,
 	accessForChains []isc.ChainID,
 	serverForChains []isc.ChainID,
-) gpa.PayloadOut {
-	return gpa.NewPayloadOut(recipient, msgAccess{
+) gpa.MessageOut {
+	return gpa.NewMessageOut(recipient, msgAccess{
 		senderLClock:    senderLClock,
 		receiverLClock:  receiverLClock,
 		accessForChains: accessForChains,

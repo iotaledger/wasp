@@ -133,11 +133,11 @@ func New(
 		log.LogDebugf("VarConsInsts: Output received, %v", out)
 		cl.output = out
 	}, log.NewChildLogger("VCI"))
-	cl.varLogIndex = NewVarLogIndex(nodeIDs, n, f, prevLI, func(li LogIndex) []gpa.PayloadOut {
+	cl.varLogIndex = NewVarLogIndex(nodeIDs, n, f, prevLI, func(li LogIndex) []gpa.MessageOut {
 		log.LogDebugf("VarLogIndex: Output received, %v", li)
 		return cl.varConsInsts.LatestSeenLI(li, cl.varLogIndex.ConsensusStarted)
 	}, cclMetrics, log.NewChildLogger("VLI"))
-	cl.varLocalView = NewVarLocalView(pipeliningLimit, func(ao *isc.StateAnchor) []gpa.PayloadOut {
+	cl.varLocalView = NewVarLocalView(pipeliningLimit, func(ao *isc.StateAnchor) []gpa.MessageOut {
 		log.LogDebugf("VarLocalView: Output received, %v", ao)
 		return cl.varConsInsts.LatestL1Anchor(ao, cl.varLogIndex.ConsensusStarted)
 	}, log.NewChildLogger("VLV"))
@@ -145,7 +145,7 @@ func New(
 }
 
 // Input implements the gpa.GPA interface.
-func (cl *CommitteeLog) Input(input gpa.Input) []gpa.PayloadOut {
+func (cl *CommitteeLog) Input(input gpa.Input) []gpa.MessageOut {
 	switch input.(type) {
 	case *inputCanPropose:
 		break // Don't log, its periodic.
@@ -173,32 +173,32 @@ func (cl *CommitteeLog) Input(input gpa.Input) []gpa.PayloadOut {
 }
 
 // The latest anchor object's version confirmed at the L1.
-func (cl *CommitteeLog) handleInputAnchorConfirmed(input *InputAnchorConfirmed) []gpa.PayloadOut {
+func (cl *CommitteeLog) handleInputAnchorConfirmed(input *InputAnchorConfirmed) []gpa.MessageOut {
 	cl.suspended = false
 	return cl.varLocalView.AnchorConfirmed(input.anchor)
 }
 
 // Consensus completed with a decision to SKIP/⊥.
-func (cl *CommitteeLog) handleInputConsensusOutputSkip(input *inputConsensusOutputSkip) []gpa.PayloadOut {
+func (cl *CommitteeLog) handleInputConsensusOutputSkip(input *inputConsensusOutputSkip) []gpa.MessageOut {
 	return cl.varConsInsts.ConsOutputSkip(input.logIndex, cl.varLogIndex.ConsensusStarted)
 }
 
 // Consensus has decided, produced a TX and it is now confirmed by L1.
-func (cl *CommitteeLog) handleInputConsensusOutputConfirmed(input *InputConsensusOutputConfirmed) []gpa.PayloadOut {
+func (cl *CommitteeLog) handleInputConsensusOutputConfirmed(input *InputConsensusOutputConfirmed) []gpa.MessageOut {
 	return cl.varConsInsts.ConsOutputDone(input.logIndex, input.nextAnchor, cl.varLogIndex.ConsensusStarted)
 }
 
 // Consensus has decided, produced a TX but it was rejected by L1.
-func (cl *CommitteeLog) handleInputConsensusOutputRejected(input *inputConsensusOutputRejected) []gpa.PayloadOut {
+func (cl *CommitteeLog) handleInputConsensusOutputRejected(input *inputConsensusOutputRejected) []gpa.MessageOut {
 	return cl.varConsInsts.ConsOutputSkip(input.logIndex, cl.varLogIndex.ConsensusStarted) // This will cause proposal of our latest L1 Anchor.
 }
 
 // Consensus tries to decide for too long. Maybe quorum assumption has been violated.
-func (cl *CommitteeLog) handleInputConsensusTimeout(input *inputConsensusTimeout) []gpa.PayloadOut {
+func (cl *CommitteeLog) handleInputConsensusTimeout(input *inputConsensusTimeout) []gpa.MessageOut {
 	return cl.varConsInsts.ConsOutputTimeout(input.logIndex, cl.varLogIndex.ConsensusStarted)
 }
 
-func (cl *CommitteeLog) handleInputCanPropose() []gpa.PayloadOut {
+func (cl *CommitteeLog) handleInputCanPropose() []gpa.MessageOut {
 	msgs := cl.varConsInsts.Tick(cl.varLogIndex.ConsensusStarted)
 
 	if cl.first && cl.output != nil && len(cl.output) > 0 {
@@ -219,7 +219,7 @@ func (cl *CommitteeLog) handleInputSuspend() {
 
 // > ON Reception of ⟨NextLI, •⟩ message:
 // >   ...
-func (cl *CommitteeLog) HandleMsgNextLogIndex(msg gpa.PayloadIn[MsgNextLogIndex]) []gpa.PayloadOut {
+func (cl *CommitteeLog) HandleMsgNextLogIndex(msg gpa.MessageIn[MsgNextLogIndex]) []gpa.MessageOut {
 	return cl.varLogIndex.MsgNextLogIndexReceived(msg)
 }
 

@@ -137,7 +137,7 @@ type mempoolImpl struct {
 	tangleTime                     time.Time
 	onLedgerPool                   RequestPool[isc.OnLedgerRequest] // TODO limit this pool
 	offLedgerPool                  *OffLedgerPool                   // TODO maybe use `RequestPool` too?
-	distSync                       gpa.GPA
+	distSync                       *distsync.DistSync
 	chainHeadAnchor                *isc.StateAnchor
 	chainHeadState                 state.State
 	serverNodesUpdatedPipe         pipe.Pipe[*reqServerNodesUpdated]
@@ -973,7 +973,7 @@ func (mpi *mempoolImpl) sendMessages(outMsgs []gpa.MessageOut) {
 		return
 	}
 	for _, msg := range outMsgs {
-		msgBytes := lo.Must(gpa.MarshalPayload(msg.Payload))
+		msgBytes := lo.Must(mpi.distSync.MarshalPayload(msg.Payload))
 		pm := peering.NewPeerMessageData(mpi.netPeeringID, peering.ReceiverMempool, msgTypeMempool, msgBytes)
 		mpi.net.SendMsgByPubKey(mpi.netPeerPubs[msg.Recipient], pm)
 	}

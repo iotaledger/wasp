@@ -9,9 +9,3 @@ const msgTypeTest MessageType = 0xff
 type TestMessage struct {
 	ID int
 }
-
-var _ MessagePayload = new(TestMessage)
-
-func (msg *TestMessage) MsgType() MessageType {
-	return msgTypeTest
-}

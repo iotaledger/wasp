@@ -34,7 +34,7 @@ func (tr *testRound) Input(input Input) []MessageOut {
 	return msgs
 }
 
-func (tr *testRound) Message(msg MessageIn) []MessageOut {
+func (tr *testRound) Message(msg MessageIn[any]) []MessageOut {
 	from := msg.Sender
 	if tr.received[from] {
 		panic(errors.New("duplicate message"))
@@ -55,16 +55,19 @@ func (tr *testRound) StatusString() string {
 	return fmt.Sprintf("{testRound, received=%v}", tr.received)
 }
 
-func (tr *testRound) UnmarshalPayload(data []byte) (MessagePayload, error) {
+func (tr *testRound) MarshalPayload(payload any) ([]byte, error) {
+	switch p := payload.(type) {
+	case *testRoundMsg:
+		return MarshalPayload(msgTypeTestRound, p)
+	default:
+		panic(fmt.Errorf("testRound: unknown payload type %T", payload))
+	}
+}
+
+func (tr *testRound) UnmarshalPayload(data []byte) (any, error) {
 	return UnmarshalPayload(data, PayloadAllocator{
-		msgTypeTestRound: func() MessagePayload { return &testRoundMsg{} },
+		msgTypeTestRound: func() any { return &testRoundMsg{} },
 	})
 }
 
 type testRoundMsg struct{}
-
-var _ MessagePayload = new(testRoundMsg)
-
-func (msg *testRoundMsg) MsgType() MessageType {
-	return msgTypeTestRound
-}

@@ -19,7 +19,7 @@ func (s *silentNode) Input(input Input) []MessageOut {
 	return nil
 }
 
-func (s *silentNode) Message(msg MessageIn) []MessageOut {
+func (s *silentNode) Message(msg MessageIn[any]) []MessageOut {
 	return nil
 }
 
@@ -31,6 +31,10 @@ func (s *silentNode) StatusString() string {
 	return "{silentNode}"
 }
 
-func (s *silentNode) UnmarshalPayload(data []byte) (MessagePayload, error) {
+func (s *silentNode) MarshalPayload(payload any) ([]byte, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (s *silentNode) UnmarshalPayload(data []byte) (any, error) {
 	return nil, errors.New("not implemented")
 }

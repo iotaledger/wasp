@@ -21,7 +21,7 @@ import (
 )
 
 type AccessMgr struct {
-	dist                    gpa.AckHandlerNEW
+	dist                    gpa.AckHandler
 	dismissPeerBuf          []*cryptolib.PublicKey
 	reqTrustedNodesPipe     pipe.Pipe[*reqTrustedNodes]
 	reqChainAccessNodesPipe pipe.Pipe[*reqChainAccessNodes]
@@ -77,7 +77,7 @@ func New(
 		log:                     log,
 	}
 	me := ami.pubKeyAsNodeID(nodeIdentity.GetPublicKey())
-	ami.dist = gpa.NewAckHandlerNEW(me, gpa.NewOwnHandlerNEW(
+	ami.dist = gpa.NewAckHandler(me, gpa.NewOwnHandlerNEW(
 		me,
 		dist.NewAccessMgr(ami.pubKeyAsNodeID, serversUpdatedCB, ami.dismissPeerCB, log).AsGPA(),
 	), resendPeriod)
@@ -198,11 +198,11 @@ func (ami *AccessMgr) handleNetMessage(recv *peering.PeerMessageIn) {
 		return
 	}
 	// Output is handled via callbacks in this case.
-	outMsgs := ami.dist.Message(gpa.NewPayloadIn(ami.pubKeyAsNodeID(recv.SenderPubKey), msg))
+	outMsgs := ami.dist.Message(gpa.NewMessageIn(ami.pubKeyAsNodeID(recv.SenderPubKey), msg))
 	ami.sendMessages(outMsgs)
 }
 
-func (ami *AccessMgr) sendMessages(outMsgs []gpa.PayloadOut) {
+func (ami *AccessMgr) sendMessages(outMsgs []gpa.MessageOut) {
 	if len(ami.dismissPeerBuf) != 0 {
 		for _, dismissPeerPub := range ami.dismissPeerBuf {
 			ami.dist.DismissPeer(ami.pubKeyAsNodeID(dismissPeerPub))

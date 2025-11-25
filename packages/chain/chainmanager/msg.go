@@ -21,19 +21,19 @@ func (cmi *ChainMgr) MarshalPayload(payload any) ([]byte, error) {
 	case gpa.PayloadWithKey[cryptolib.Address, any]:
 		switch p.Payload.(type) {
 		case committeelog.MsgNextLogIndex:
-			return gpa.MarshalPayloadNEW(msgTypeMsgNextLogIndex, p)
+			return gpa.MarshalPayload(msgTypeMsgNextLogIndex, p)
 		default:
 			panic(fmt.Errorf("chainMgr: unexpected payload type: %T", p.Payload))
 		}
 	case msgBlockProduced:
-		return gpa.MarshalPayloadNEW(msgTypeBlockProduced, p)
+		return gpa.MarshalPayload(msgTypeBlockProduced, p)
 	default:
 		panic(fmt.Errorf("chainMgr: unknown payload type %T", payload))
 	}
 }
 
 func (cmi *ChainMgr) UnmarshalPayload(data []byte) (any, error) {
-	return gpa.UnmarshalPayloadNEW(data, gpa.PayloadAllocatorNEW{
+	return gpa.UnmarshalPayload(data, gpa.PayloadAllocator{
 		msgTypeMsgNextLogIndex: func() any { return gpa.PayloadWithKey[cryptolib.Address, committeelog.MsgNextLogIndex]{} },
 		msgTypeBlockProduced:   func() any { return msgBlockProduced{} },
 	})

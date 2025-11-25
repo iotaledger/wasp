@@ -99,7 +99,7 @@ func New(peers []gpa.NodeID, f int, me, broadcaster gpa.NodeID, maxMsgSize int, 
 //	01: // only broadcaster node
 //	02: input 𝑀
 //	03: send ⟨PROPOSE, 𝑀⟩ to all
-func (r *RBC) Input(input gpa.Input) []gpa.PayloadOut {
+func (r *RBC) Input(input gpa.Input) []gpa.MessageOut {
 	if r.broadcaster != r.me {
 		panic(errors.New("only broadcaster is allowed to take an input"))
 	}
@@ -113,7 +113,7 @@ func (r *RBC) Input(input gpa.Input) []gpa.PayloadOut {
 }
 
 // Implements the GPA interface.
-func (r *RBC) HandleMsgBracha(msg gpa.PayloadIn[MsgBracha]) []gpa.PayloadOut {
+func (r *RBC) HandleMsgBracha(msg gpa.MessageIn[MsgBracha]) []gpa.MessageOut {
 	if !r.checkMsgRecv(msg) {
 		return nil
 	}
@@ -135,7 +135,7 @@ func (r *RBC) HandleMsgBracha(msg gpa.PayloadIn[MsgBracha]) []gpa.PayloadOut {
 //	06: upon receiving ⟨PROPOSE, 𝑀⟩ from the broadcaster do
 //	07:     if 𝑃(𝑀) then
 //	08:         send ⟨ECHO, 𝑀⟩ to all
-func (r *RBC) handlePropose(msg gpa.PayloadIn[MsgBracha]) []gpa.PayloadOut {
+func (r *RBC) handlePropose(msg gpa.MessageIn[MsgBracha]) []gpa.MessageOut {
 	if msg.Sender != r.broadcaster {
 		// PROPOSE messages can only be sent by the broadcaster process.
 		// Ignore all the rest.
@@ -153,7 +153,7 @@ func (r *RBC) handlePropose(msg gpa.PayloadIn[MsgBracha]) []gpa.PayloadOut {
 //
 //	09: upon receiving 2𝑡 + 1 ⟨ECHO, 𝑀⟩ messages and not having sent a READY message do
 //	10:     send ⟨READY, 𝑀⟩ to all
-func (r *RBC) handleEcho(msg gpa.PayloadIn[MsgBracha]) []gpa.PayloadOut {
+func (r *RBC) handleEcho(msg gpa.MessageIn[MsgBracha]) []gpa.MessageOut {
 	//
 	// Mark the message as received.
 	h := r.valueHash(msg)
@@ -174,7 +174,7 @@ func (r *RBC) handleEcho(msg gpa.PayloadIn[MsgBracha]) []gpa.PayloadOut {
 //	12:     send ⟨READY, 𝑀⟩ to all
 //	13: upon receiving 2𝑡 + 1 ⟨READY, 𝑀⟩ messages do
 //	14:     output 𝑀
-func (r *RBC) handleReady(msg gpa.PayloadIn[MsgBracha]) []gpa.PayloadOut {
+func (r *RBC) handleReady(msg gpa.MessageIn[MsgBracha]) []gpa.MessageOut {
 	//
 	// Mark the message as received.
 	h := r.valueHash(msg)
@@ -194,7 +194,7 @@ func (r *RBC) handleReady(msg gpa.PayloadIn[MsgBracha]) []gpa.PayloadOut {
 	return nil
 }
 
-func (r *RBC) checkMsgRecv(msg gpa.PayloadIn[MsgBracha]) bool {
+func (r *RBC) checkMsgRecv(msg gpa.MessageIn[MsgBracha]) bool {
 	if msg.Payload.value == nil || len(msg.Payload.value) > r.maxMsgSize {
 		return false // Value not set, or is to big.
 	}
@@ -208,21 +208,21 @@ func (r *RBC) checkMsgRecv(msg gpa.PayloadIn[MsgBracha]) bool {
 	return false // Unknown peer has sent it.
 }
 
-func (r *RBC) markEchoRecv(h hashing.HashValue, msg gpa.PayloadIn[MsgBracha]) {
+func (r *RBC) markEchoRecv(h hashing.HashValue, msg gpa.MessageIn[MsgBracha]) {
 	if _, ok := r.echoRecv[h]; !ok {
 		r.echoRecv[h] = map[gpa.NodeID]bool{}
 	}
 	r.echoRecv[h][msg.Sender] = true
 }
 
-func (r *RBC) markReadyRecv(h hashing.HashValue, msg gpa.PayloadIn[MsgBracha]) {
+func (r *RBC) markReadyRecv(h hashing.HashValue, msg gpa.MessageIn[MsgBracha]) {
 	if _, ok := r.readyRecv[h]; !ok {
 		r.readyRecv[h] = map[gpa.NodeID]bool{}
 	}
 	r.readyRecv[h][msg.Sender] = true
 }
 
-func (r *RBC) maybeSendReady(v []byte) []gpa.PayloadOut {
+func (r *RBC) maybeSendReady(v []byte) []gpa.MessageOut {
 	if r.readySent {
 		return nil
 	}
@@ -231,16 +231,16 @@ func (r *RBC) maybeSendReady(v []byte) []gpa.PayloadOut {
 	return msgs
 }
 
-func (r *RBC) sendToAll(brachaType msgBrachaType, value []byte) []gpa.PayloadOut {
-	return lo.Map(r.peers, func(peer gpa.NodeID, _ int) gpa.PayloadOut {
-		return gpa.NewPayloadOut(peer, MsgBracha{
+func (r *RBC) sendToAll(brachaType msgBrachaType, value []byte) []gpa.MessageOut {
+	return lo.Map(r.peers, func(peer gpa.NodeID, _ int) gpa.MessageOut {
+		return gpa.NewMessageOut(peer, MsgBracha{
 			brachaType: brachaType,
 			value:      value,
 		})
 	})
 }
 
-func (r *RBC) valueHash(msg gpa.PayloadIn[MsgBracha]) hashing.HashValue {
+func (r *RBC) valueHash(msg gpa.MessageIn[MsgBracha]) hashing.HashValue {
 	return hashing.HashData(msg.Payload.value)
 }
 

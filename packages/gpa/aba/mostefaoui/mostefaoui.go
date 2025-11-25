@@ -106,7 +106,7 @@ type ABA struct {
 	ccInsts            []*semi.CCSemi               // Common coin instances for all the rounds.
 	ccCreateFun        func(round int) *semi.CCSemi // Function to create CC instances.
 	output             *Output                      // The current output of the algorithm.
-	postponedMsgs      []gpa.PayloadIn[MsgVote]     // Buffer for future round messages.
+	postponedMsgs      []gpa.MessageIn[MsgVote]     // Buffer for future round messages.
 	log                log.Logger                   // A logger.
 }
 
@@ -127,7 +127,7 @@ func New(nodeIDs []gpa.NodeID, me gpa.NodeID, f int, ccCreateFun func(round int)
 		ccInsts:       []*semi.CCSemi{},
 		ccCreateFun:   ccCreateFun,
 		output:        nil,
-		postponedMsgs: []gpa.PayloadIn[MsgVote]{},
+		postponedMsgs: []gpa.MessageIn[MsgVote]{},
 		log:           log,
 	}
 	a.varBinVals = newBinVals(nodeIDs, f, a.uponBinValuesUpdated)
@@ -161,7 +161,7 @@ func (a *ABA) ccInst(round int) *semi.CCSemi {
 //
 // > • upon receiving input b_input, set est_0 := b_input and proceed as
 // >   follows in consecutive epochs, with increasing labels r:
-func (a *ABA) Input(input gpa.Input) []gpa.PayloadOut {
+func (a *ABA) Input(input gpa.Input) []gpa.MessageOut {
 	if a.round != -1 {
 		panic(fmt.Errorf("duplicate input to BBA: %v", input))
 	}
@@ -175,7 +175,7 @@ func (a *ABA) Input(input gpa.Input) []gpa.PayloadOut {
 //
 // >     – multicast BVAL_r(est_r)
 // >     – bin_values_r := {}
-func (a *ABA) startRound(round int, est bool) []gpa.PayloadOut {
+func (a *ABA) startRound(round int, est bool) []gpa.MessageOut {
 	if a.output != nil && a.output.Terminated {
 		// Don't start the next round if the algorithm is already terminated.
 		return nil
@@ -204,7 +204,7 @@ func (a *ABA) startRound(round int, est bool) []gpa.PayloadOut {
 	// Resend postponed messages, if any.
 	if len(a.postponedMsgs) > 0 {
 		oldPostponedMsgs := a.postponedMsgs
-		a.postponedMsgs = []gpa.PayloadIn[MsgVote]{}
+		a.postponedMsgs = []gpa.MessageIn[MsgVote]{}
 		for _, m := range oldPostponedMsgs {
 			msgs = slices.Concat(msgs, a.HandleMsgVote(m))
 		}
@@ -212,7 +212,7 @@ func (a *ABA) startRound(round int, est bool) []gpa.PayloadOut {
 	return msgs
 }
 
-func (a *ABA) HandleMsgVote(msgT gpa.PayloadIn[MsgVote]) []gpa.PayloadOut {
+func (a *ABA) HandleMsgVote(msgT gpa.MessageIn[MsgVote]) []gpa.MessageOut {
 	if _, ok := a.nodeIdx[msgT.Sender]; !ok {
 		a.log.LogWarnf("unknown sender: %+v", msgT)
 		return nil // Unknown sender.
@@ -234,14 +234,14 @@ func (a *ABA) HandleMsgVote(msgT gpa.PayloadIn[MsgVote]) []gpa.PayloadOut {
 	return nil
 }
 
-func (a *ABA) HandleMsgDone(msgT gpa.PayloadIn[MsgDone]) []gpa.PayloadOut {
+func (a *ABA) HandleMsgDone(msgT gpa.MessageIn[MsgDone]) []gpa.MessageOut {
 	if _, ok := a.nodeIdx[msgT.Sender]; !ok {
 		return nil // Unknown sender.
 	}
 	return a.varDone.msgDoneReceived(msgT)
 }
 
-func (a *ABA) HandleCCMsg(index int, msgT gpa.PayloadIn[blssig.MsgSigShare]) []gpa.PayloadOut {
+func (a *ABA) HandleCCMsg(index int, msgT gpa.MessageIn[blssig.MsgSigShare]) []gpa.MessageOut {
 	cc, err := a.selectCC(index)
 	if err != nil {
 		a.log.LogWarnf("cannot select subsystem: %v", err)
@@ -267,7 +267,7 @@ func (a *ABA) HandleCCMsg(index int, msgT gpa.PayloadIn[blssig.MsgSigShare]) []g
 // >           bin_values_r may continue to change as BVAL_r messages
 // >           are received, thus this condition may be triggered upon
 // >           arrival of either an AUX_r or a BVAL_r message)
-func (a *ABA) uponBinValuesUpdated(binValues []bool) []gpa.PayloadOut {
+func (a *ABA) uponBinValuesUpdated(binValues []bool) []gpa.MessageOut {
 	return a.varAuxVals.binValuesUpdated(binValues)
 }
 
@@ -277,7 +277,7 @@ func (a *ABA) uponBinValuesUpdated(binValues []bool) []gpa.PayloadOut {
 // >           bin_values_r may continue to change as BVAL_r messages
 // >           are received, thus this condition may be triggered upon
 // >           arrival of either an AUX_r or a BVAL_r message)
-func (a *ABA) uponAuxValsReady(auxVals []bool) []gpa.PayloadOut {
+func (a *ABA) uponAuxValsReady(auxVals []bool) []gpa.MessageOut {
 	return a.uponDecisionInputs.auxValsReady(auxVals)
 }
 
@@ -285,7 +285,7 @@ func (a *ABA) uponAuxValsReady(auxVals []bool) []gpa.PayloadOut {
 // >             · est_r+1 := b
 // >             · if (b = s%2) then output b
 // >         ∗ else est_r+1 := s%2
-func (a *ABA) uponDecisionInputsReceived(cc bool, auxVals []bool) []gpa.PayloadOut {
+func (a *ABA) uponDecisionInputsReceived(cc bool, auxVals []bool) []gpa.MessageOut {
 	if len(auxVals) == 1 {
 		nextEst := auxVals[0]
 		if nextEst == cc {

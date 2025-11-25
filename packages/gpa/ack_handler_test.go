@@ -58,7 +58,7 @@ func TestAckHandlerBatchCodec(t *testing.T) {
 	testMsgs := []ackHandlerBatch{
 		{
 			id: lo.ToPtr(42),
-			msgs: []MessagePayload{
+			msgs: []any{
 				&TestMessage{ID: 50},
 				&TestMessage{ID: 100},
 			},
@@ -67,7 +67,7 @@ func TestAckHandlerBatchCodec(t *testing.T) {
 		},
 		{
 			id:        lo.ToPtr(42),
-			msgs:      []MessagePayload{},
+			msgs:      []any{},
 			acks:      []int{1, 2, 3},
 			nestedGPA: &testGPA{},
 		},
@@ -105,9 +105,9 @@ type testGPA struct {
 
 var _ GPA = &testGPA{}
 
-func (g *testGPA) UnmarshalPayload(data []byte) (MessagePayload, error) {
+func (g *testGPA) UnmarshalPayload(data []byte) (any, error) {
 	return UnmarshalPayload(data, PayloadAllocator{
-		msgTypeTest: func() MessagePayload { return &TestMessage{} },
+		msgTypeTest: func() any { return &TestMessage{} },
 	}, nil)
 }
 

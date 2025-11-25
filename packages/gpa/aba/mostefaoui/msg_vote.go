@@ -35,9 +35,9 @@ type MsgVote struct {
 	value    bool        `bcs:"export"`
 }
 
-func multicastMsgVote(recipients []gpa.NodeID, round int, voteType msgVoteType, value bool) []gpa.PayloadOut {
-	return lo.Map(recipients, func(recipient gpa.NodeID, _ int) gpa.PayloadOut {
-		return gpa.NewPayloadOut(recipient, MsgVote{
+func multicastMsgVote(recipients []gpa.NodeID, round int, voteType msgVoteType, value bool) []gpa.MessageOut {
+	return lo.Map(recipients, func(recipient gpa.NodeID, _ int) gpa.MessageOut {
+		return gpa.NewMessageOut(recipient, MsgVote{
 			round:    round,
 			voteType: voteType,
 			value:    value,

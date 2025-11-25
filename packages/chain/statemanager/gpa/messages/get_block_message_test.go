@@ -20,13 +20,13 @@ func TestMarshalUnmarshalGetBlockMessage(t *testing.T) {
 }
 
 func TestGetBlockMessageSerialization(t *testing.T) {
-	msg := &GetBlockMessage{
+	msg := GetBlockMessage{
 		statetest.NewRandL1Commitment(),
 	}
 
 	bcs.TestCodec(t, msg)
 
-	bcs.TestCodecAndHash(t, &GetBlockMessage{
+	bcs.TestCodecAndHash(t, GetBlockMessage{
 		statetest.TestL1Commitment,
 	}, "30dd892c3980")
 }

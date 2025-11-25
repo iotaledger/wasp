@@ -33,13 +33,13 @@ func (m *WrappedMsg) MsgType() gpa.MessageType {
 }
 
 func TestUnmarshalPayload(t *testing.T) {
-	decodeWrapped := func(b []byte) (gpa.MessagePayload, error) {
+	decodeWrapped := func(b []byte) (any, error) {
 		return bcs.Unmarshal[*WrappedMsg](b)
 	}
 
-	unmarshal := func(data []byte) (gpa.MessagePayload, error) {
+	unmarshal := func(data []byte) (any, error) {
 		return gpa.UnmarshalPayload(data, gpa.PayloadAllocator{
-			TestMsgID1: func() gpa.MessagePayload { return &TestMsg{} },
+			TestMsgID1: func() any { return &TestMsg{} },
 		}, gpa.PayloadFallback{
 			TestMsgWrapped: decodeWrapped,
 		})

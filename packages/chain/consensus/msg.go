@@ -29,36 +29,36 @@ const (
 func (c *Consensus) MarshalPayload(payload any) ([]byte, error) {
 	switch p := payload.(type) {
 	case msgBLSPartialSig:
-		return gpa.MarshalPayloadNEW(msgTypeBLSShare, p)
+		return gpa.MarshalPayload(msgTypeBLSShare, p)
 	case gpa.PayloadWithKey[int, any]:
 		switch p.Payload.(type) {
 		case bracha.MsgBracha:
-			return gpa.MarshalPayloadNEW(msgTypeACSBracha, p)
+			return gpa.MarshalPayload(msgTypeACSBracha, p)
 		case mostefaoui.MsgDone:
-			return gpa.MarshalPayloadNEW(msgTypeABAMsgDone, p)
+			return gpa.MarshalPayload(msgTypeABAMsgDone, p)
 		case mostefaoui.MsgVote:
-			return gpa.MarshalPayloadNEW(msgTypeABAMsgVote, p)
+			return gpa.MarshalPayload(msgTypeABAMsgVote, p)
 		case blssig.MsgSigShare:
-			return gpa.MarshalPayloadNEW(msgTypeBLSSigShare, p)
+			return gpa.MarshalPayload(msgTypeBLSSigShare, p)
 		default:
 			panic(fmt.Errorf("unexpected payload type: %T", p.Payload))
 		}
 	case distsign.MsgPartialSig:
-		return gpa.MarshalPayloadNEW(msgTypeDSSPartialSig, p)
+		return gpa.MarshalPayload(msgTypeDSSPartialSig, p)
 	// TODO: Organize this consisntently before merge
 	case gpa.SubsystemPayload[int, any]:
 		switch p.Payload.(type) {
 		case bracha.MsgBracha:
 			switch p.SubsystemID {
 			case "acss":
-				return gpa.MarshalPayloadNEW(msgTypeACSSBracha, p)
+				return gpa.MarshalPayload(msgTypeACSSBracha, p)
 			default:
 				panic(fmt.Errorf("unexpected subsystem ID: %s", p.SubsystemID))
 			}
 		case acss.MsgVote:
-			return gpa.MarshalPayloadNEW(msgTypeACSSVote, p)
+			return gpa.MarshalPayload(msgTypeACSSVote, p)
 		case acss.MsgImplicateRecover:
-			return gpa.MarshalPayloadNEW(msgTypeACSSImplicateRecover, p)
+			return gpa.MarshalPayload(msgTypeACSSImplicateRecover, p)
 		default:
 			panic(fmt.Errorf("unexpected payload type: %T", p.Payload))
 		}
@@ -68,7 +68,7 @@ func (c *Consensus) MarshalPayload(payload any) ([]byte, error) {
 }
 
 func (c *Consensus) UnmarshalPayload(data []byte) (any, error) {
-	return gpa.UnmarshalPayloadNEW(data, gpa.PayloadAllocatorNEW{
+	return gpa.UnmarshalPayload(data, gpa.PayloadAllocator{
 		msgTypeBLSShare:             func() any { return msgBLSPartialSig{} },
 		msgTypeACSBracha:            func() any { return gpa.PayloadWithKey[int, bracha.MsgBracha]{} },
 		msgTypeABAMsgDone:           func() any { return gpa.PayloadWithKey[int, mostefaoui.MsgDone]{} },

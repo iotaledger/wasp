@@ -30,7 +30,7 @@ type ackHandler struct {
 	nested       GPA
 	resendPeriod time.Duration
 	initialized  *shrinkingmap.ShrinkingMap[NodeID, bool]
-	initPending  *shrinkingmap.ShrinkingMap[NodeID, []MessagePayload]
+	initPending  *shrinkingmap.ShrinkingMap[NodeID, []any]
 	counters     *shrinkingmap.ShrinkingMap[NodeID, int] // For numbering the outgoing messages.
 	sentUnacked  *shrinkingmap.ShrinkingMap[NodeID, *shrinkingmap.ShrinkingMap[int, *ackHandlerBatch]]
 	recvAcksIn   *shrinkingmap.ShrinkingMap[NodeID, map[int]*int]
@@ -40,7 +40,7 @@ type AckHandler interface {
 	GPA
 	DismissPeer(peerID NodeID) // To avoid resending messages to dead peers.
 	MakeTickInput(time.Time) Input
-	NestedMessage(msg MessageIn) []MessageOut
+	NestedMessage(msg MessageIn[any]) []MessageOut
 	NestedCall(c func(GPA) []MessageOut) []MessageOut
 }
 
@@ -52,7 +52,7 @@ func NewAckHandler(me NodeID, nested GPA, resendPeriod time.Duration) AckHandler
 		nested:       nested,
 		resendPeriod: resendPeriod,
 		initialized:  shrinkingmap.New[NodeID, bool](),
-		initPending:  shrinkingmap.New[NodeID, []MessagePayload](),
+		initPending:  shrinkingmap.New[NodeID, []any](),
 		counters:     shrinkingmap.New[NodeID, int](),
 		sentUnacked:  shrinkingmap.New[NodeID, *shrinkingmap.ShrinkingMap[int, *ackHandlerBatch]](),
 		recvAcksIn:   shrinkingmap.New[NodeID, map[int]*int](),
@@ -80,7 +80,7 @@ func (a *ackHandler) Input(input Input) []MessageOut {
 	}
 }
 
-func (a *ackHandler) Message(msg MessageIn) []MessageOut {
+func (a *ackHandler) Message(msg MessageIn[any]) []MessageOut {
 	switch msg.Payload.(type) {
 	case *ackHandlerReset:
 		return a.handleResetMsg(AsTypedMessageIn[*ackHandlerReset](msg))
@@ -91,7 +91,7 @@ func (a *ackHandler) Message(msg MessageIn) []MessageOut {
 	}
 }
 
-func (a *ackHandler) NestedMessage(msg MessageIn) []MessageOut {
+func (a *ackHandler) NestedMessage(msg MessageIn[any]) []MessageOut {
 	return a.makeBatches(a.nested.Message(msg))
 }
 
@@ -107,10 +107,22 @@ func (a *ackHandler) StatusString() string {
 	return fmt.Sprintf("{ACK:%s}", a.nested.StatusString())
 }
 
-func (a *ackHandler) UnmarshalPayload(data []byte) (MessagePayload, error) {
+func (a *ackHandler) MarshalPayload(payload any) ([]byte, error) {
+	switch p := payload.(type) {
+	case *ackHandlerReset:
+		return MarshalPayload(msgTypeAckHandlerReset, p)
+	case *ackHandlerBatch:
+		p.nestedGPAnew = a.nested
+		return MarshalPayload(msgTypeAckHandlerBatch, p)
+	default:
+		return nil, fmt.Errorf("unexpected payload type %T", payload)
+	}
+}
+
+func (a *ackHandler) UnmarshalPayload(data []byte) (any, error) {
 	msg, err := UnmarshalPayload(data, PayloadAllocator{
-		msgTypeAckHandlerReset: func() MessagePayload { return &ackHandlerReset{} },
-		msgTypeAckHandlerBatch: func() MessagePayload { return &ackHandlerBatch{nestedGPA: a.nested} },
+		msgTypeAckHandlerReset: func() any { return &ackHandlerReset{} },
+		msgTypeAckHandlerBatch: func() any { return &ackHandlerBatch{nestedGPAnew: a.nested} },
 	})
 	if err != nil {
 		fmt.Printf("ack, err=%v\n", err) // TODO: Clean this up.
@@ -147,7 +159,7 @@ func (a *ackHandler) handleTickMsg(msg *ackHandlerTick) []MessageOut {
 	return resendMsgs
 }
 
-func (a *ackHandler) handleResetMsg(msg TypedMessageIn[*ackHandlerReset]) []MessageOut {
+func (a *ackHandler) handleResetMsg(msg MessageIn[*ackHandlerReset]) []MessageOut {
 	from := msg.Sender
 	if !msg.Payload.response {
 		maxID := 0
@@ -171,7 +183,7 @@ func (a *ackHandler) handleResetMsg(msg TypedMessageIn[*ackHandlerReset]) []Mess
 	return a.makeBatches(nil)
 }
 
-func (a *ackHandler) handleBatchMsg(msgBatch TypedMessageIn[*ackHandlerBatch]) []MessageOut {
+func (a *ackHandler) handleBatchMsg(msgBatch MessageIn[*ackHandlerBatch]) []MessageOut {
 	//
 	// Process the received acknowledgements.
 	// Drop all the outgoing batches, that are now acknowledged.
@@ -234,14 +246,14 @@ func (a *ackHandler) handleBatchMsg(msgBatch TypedMessageIn[*ackHandlerBatch]) [
 func (a *ackHandler) makeBatches(msgs []MessageOut) []MessageOut {
 	groupedMsgs := lo.MapEntries(
 		lo.GroupBy(msgs, func(msg MessageOut) NodeID { return msg.Recipient }),
-		func(nodeID NodeID, msgsForNode []MessageOut) (NodeID, []MessagePayload) {
-			return nodeID, lo.Map(msgsForNode, func(msg MessageOut, _ int) MessagePayload {
+		func(nodeID NodeID, msgsForNode []MessageOut) (NodeID, []any) {
+			return nodeID, lo.Map(msgsForNode, func(msg MessageOut, _ int) any {
 				return msg.Payload
 			})
 		},
 	)
 
-	a.initPending.ForEach(func(nodeID NodeID, pending []MessagePayload) bool {
+	a.initPending.ForEach(func(nodeID NodeID, pending []any) bool {
 		if gr, ok := groupedMsgs[nodeID]; ok {
 			groupedMsgs[nodeID] = append(gr, pending...)
 		} else {
@@ -254,7 +266,7 @@ func (a *ackHandler) makeBatches(msgs []MessageOut) []MessageOut {
 	var batches []MessageOut
 	for nodeID, batchMsgs := range groupedMsgs {
 		if initialized, exists := a.initialized.Get(nodeID); !exists || !initialized {
-			pending, _ := a.initPending.GetOrCreate(nodeID, func() []MessagePayload { return make([]MessagePayload, 0, 1) })
+			pending, _ := a.initPending.GetOrCreate(nodeID, func() []any { return make([]any, 0, 1) })
 			a.initPending.Set(nodeID, append(pending, batchMsgs...))
 			batches = append(batches, NewMessageOut(nodeID, &ackHandlerReset{
 				response: false,
@@ -296,35 +308,23 @@ func (a *ackHandler) makeBatches(msgs []MessageOut) []MessageOut {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// ackHandlerReset
+// ackHandlerNewReset
 
 type ackHandlerReset struct {
 	response bool `bcs:"export"`
 	latestID int  `bcs:"export"`
 }
 
-var _ MessagePayload = new(ackHandlerReset)
-
-func (msg *ackHandlerReset) MsgType() MessageType {
-	return msgTypeAckHandlerReset
-}
-
 ////////////////////////////////////////////////////////////////////////////////
-// ackHandlerBatch
+// ackHandlerNewBatch
 
 // Message conveying the message batches and acknowledgements.
 type ackHandlerBatch struct {
-	id        *int             // That's ACK only, if nil.
-	msgs      []MessagePayload // Messages in the batch.
-	acks      []int            // Acknowledged batches.
-	sent      *time.Time       // Transient, only used for outgoing messages, not sent to the outside.
-	nestedGPA GPA              // Transient, for un-marshaling only.
-}
-
-var _ MessagePayload = new(ackHandlerBatch)
-
-func (msg *ackHandlerBatch) MsgType() MessageType {
-	return msgTypeAckHandlerBatch
+	id           *int       // That's ACK only, if nil.
+	msgs         []any      // Messages in the batch.
+	acks         []int      // Acknowledged batches.
+	sent         *time.Time // Transient, only used for outgoing messages, not sent to the outside.
+	nestedGPAnew GPA        // Transient, for un-marshaling only.
 }
 
 func (msg *ackHandlerBatch) MarshalBCS(e *bcs.Encoder) error {
@@ -336,7 +336,7 @@ func (msg *ackHandlerBatch) MarshalBCS(e *bcs.Encoder) error {
 	}
 	e.Encode(n)
 	for _, p := range msg.msgs {
-		msgBytes, err := MarshalPayload(p)
+		msgBytes, err := msg.nestedGPAnew.MarshalPayload(p)
 		if err != nil {
 			return fmt.Errorf("marshaling nested payload: %w", err)
 		}
@@ -353,10 +353,10 @@ func (msg *ackHandlerBatch) UnmarshalBCS(d *bcs.Decoder) error {
 
 	var n uint16
 	d.Decode(&n)
-	msg.msgs = make([]MessagePayload, n)
+	msg.msgs = make([]any, n)
 	for i := uint16(0); i < n; i++ {
 		msgBytes := bcs.Decode[[]byte](d)
-		payload, err := msg.nestedGPA.UnmarshalPayload(msgBytes)
+		payload, err := msg.nestedGPAnew.UnmarshalPayload(msgBytes)
 		if err != nil {
 			return fmt.Errorf("msgs[%d]: %w", i, err)
 		}
@@ -369,7 +369,7 @@ func (msg *ackHandlerBatch) UnmarshalBCS(d *bcs.Decoder) error {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// ackHandlerTick
+// ackHandlerNewTick
 
 // Event representing a timer tick.
 type ackHandlerTick struct {

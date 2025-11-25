@@ -32,7 +32,7 @@ func TestVarLogIndexV2Basic(t *testing.T) {
 	require.NotEqual(t, nextLI, vliOut)
 	nextLIMsg := committeelog.NewMsgNextLogIndex(nextLI, committeelog.MsgNextLogIndexCauseStarted, false)
 	for i := 0; i < n-f; i++ {
-		vli.MsgNextLogIndexReceived(gpa.PayloadIn[committeelog.MsgNextLogIndex]{
+		vli.MsgNextLogIndexReceived(gpa.MessageIn[committeelog.MsgNextLogIndex]{
 			Sender:  nodeIDs[i],
 			Payload: *nextLIMsg,
 		})
@@ -59,9 +59,9 @@ func TestVarLogIndexV2Other(t *testing.T) {
 	li18 := committeelog.LogIndex(18)
 	require.Equal(t, committeelog.NilLogIndex(), vliOut)
 
-	msgWithSender := func(sender gpa.NodeID, li committeelog.LogIndex) gpa.PayloadIn[committeelog.MsgNextLogIndex] {
+	msgWithSender := func(sender gpa.NodeID, li committeelog.LogIndex) gpa.MessageIn[committeelog.MsgNextLogIndex] {
 		msg := committeelog.NewMsgNextLogIndex(li, committeelog.MsgNextLogIndexCauseStarted, false)
-		return gpa.PayloadIn[committeelog.MsgNextLogIndex]{
+		return gpa.MessageIn[committeelog.MsgNextLogIndex]{
 			Sender:  sender,
 			Payload: *msg,
 		}

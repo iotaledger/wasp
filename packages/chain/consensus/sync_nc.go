@@ -50,7 +50,7 @@ func (s *SyncNodeconn) String() string {
 	return str
 }
 
-func (s *SyncNodeconn) HaveInputAnchor(anchor *isc.StateAnchor) []gpa.PayloadOut {
+func (s *SyncNodeconn) HaveInputAnchor(anchor *isc.StateAnchor) []gpa.MessageOut {
 	if s.inputAnchorReceived {
 		return nil
 	}
@@ -59,7 +59,7 @@ func (s *SyncNodeconn) HaveInputAnchor(anchor *isc.StateAnchor) []gpa.PayloadOut
 	return s.tryCompleteInputs()
 }
 
-func (s *SyncNodeconn) HaveState() []gpa.PayloadOut {
+func (s *SyncNodeconn) HaveState() []gpa.MessageOut {
 	if s.stateReceived {
 		return nil
 	}
@@ -67,7 +67,7 @@ func (s *SyncNodeconn) HaveState() []gpa.PayloadOut {
 	return s.tryCompleteInputs()
 }
 
-func (s *SyncNodeconn) HaveRequests() []gpa.PayloadOut {
+func (s *SyncNodeconn) HaveRequests() []gpa.MessageOut {
 	if s.requestsReceived {
 		return nil
 	}
@@ -75,7 +75,7 @@ func (s *SyncNodeconn) HaveRequests() []gpa.PayloadOut {
 	return s.tryCompleteInputs()
 }
 
-func (s *SyncNodeconn) tryCompleteInputs() []gpa.PayloadOut {
+func (s *SyncNodeconn) tryCompleteInputs() []gpa.MessageOut {
 	if !s.inputAnchorReceived || !s.stateReceived || !s.requestsReceived || s.inputProcessed {
 		return nil
 	}
@@ -83,7 +83,7 @@ func (s *SyncNodeconn) tryCompleteInputs() []gpa.PayloadOut {
 	return s.c.uponNodeconnInputsReady(s.inputAnchor)
 }
 
-func (s *SyncNodeconn) HaveL1Info(gasCoins []*coin.CoinWithRef, l1params *parameters.L1Params) []gpa.PayloadOut {
+func (s *SyncNodeconn) HaveL1Info(gasCoins []*coin.CoinWithRef, l1params *parameters.L1Params) []gpa.MessageOut {
 	if s.gasCoins == nil && gasCoins != nil {
 		s.gasCoins = gasCoins
 	}
@@ -93,7 +93,7 @@ func (s *SyncNodeconn) HaveL1Info(gasCoins []*coin.CoinWithRef, l1params *parame
 	return s.tryCompleteOutput()
 }
 
-func (s *SyncNodeconn) tryCompleteOutput() []gpa.PayloadOut {
+func (s *SyncNodeconn) tryCompleteOutput() []gpa.MessageOut {
 	if s.outputProcessed || s.gasCoins == nil || s.l1params == nil {
 		return nil
 	}

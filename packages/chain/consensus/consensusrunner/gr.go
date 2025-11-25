@@ -113,7 +113,7 @@ type input struct {
 
 type ConsensusRunner struct {
 	me                          gpa.NodeID
-	consInst                    gpa.AckHandlerNEW
+	consInst                    gpa.AckHandler
 	inputCh                     chan *input
 	inputReceived               *atomic.Bool
 	inputRotateToCh             chan *iotago.Address
@@ -220,7 +220,7 @@ func New(
 		validatorAgentID,
 		log,
 	).AsGPA()
-	runner.consInst = gpa.NewAckHandlerNEW(me, consInstRaw, redeliveryPeriod)
+	runner.consInst = gpa.NewAckHandler(me, consInstRaw, redeliveryPeriod)
 
 	unhook := net.Attach(&netPeeringID, peering.ReceiverChainCons, func(recv *peering.PeerMessageIn) {
 		if recv.MsgType != msgTypeCons {
@@ -403,7 +403,7 @@ func (r *ConsensusRunner) handleNetMessage(recv *peering.PeerMessageIn) {
 		r.log.LogWarnf("cannot parse message: %v", err)
 		return
 	}
-	outMsgs := r.consInst.Message(gpa.NewPayloadIn(gpa.NodeIDFromPublicKey(recv.SenderPubKey), msg))
+	outMsgs := r.consInst.Message(gpa.NewMessageIn(gpa.NodeIDFromPublicKey(recv.SenderPubKey), msg))
 	r.sendMessages(outMsgs)
 	r.tryHandleOutput()
 }
@@ -460,7 +460,7 @@ func (r *ConsensusRunner) provideOutput(output *consensus.Output) {
 	}
 }
 
-func (r *ConsensusRunner) sendMessages(outMsgs []gpa.PayloadOut) {
+func (r *ConsensusRunner) sendMessages(outMsgs []gpa.MessageOut) {
 	if outMsgs == nil {
 		return
 	}

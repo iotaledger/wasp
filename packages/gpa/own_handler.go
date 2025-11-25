@@ -33,7 +33,7 @@ func (o *OwnHandler) Input(input Input) []MessageOut {
 	return o.handleMsgs(msgs)
 }
 
-func (o *OwnHandler) Message(msg MessageIn) []MessageOut {
+func (o *OwnHandler) Message(msg MessageIn[any]) []MessageOut {
 	msgs := o.target.Message(msg)
 	return o.handleMsgs(msgs)
 }
@@ -46,7 +46,11 @@ func (o *OwnHandler) StatusString() string {
 	return fmt.Sprintf("{OWN%s}", o.target.StatusString())
 }
 
-func (o *OwnHandler) UnmarshalPayload(data []byte) (MessagePayload, error) {
+func (o *OwnHandler) MarshalPayload(payload any) ([]byte, error) {
+	return o.target.MarshalPayload(payload)
+}
+
+func (o *OwnHandler) UnmarshalPayload(data []byte) (any, error) {
 	return o.target.UnmarshalPayload(data)
 }
 

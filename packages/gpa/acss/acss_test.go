@@ -133,6 +133,6 @@ func (s *silentNode) StatusString() string {
 	return "{silentNode}"
 }
 
-func (s *silentNode) UnmarshalPayload(data []byte) (gpa.MessagePayload, error) {
+func (s *silentNode) UnmarshalPayload(data []byte) (any, error) {
 	return s.nested.UnmarshalPayload(data)
 }

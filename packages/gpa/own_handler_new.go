@@ -17,25 +17,25 @@ import (
 // as an ordinary message.
 type OwnHandlerNEW struct {
 	me     NodeID
-	target GPAnew
+	target GPA
 }
 
-var _ GPAnew = &OwnHandlerNEW{}
+var _ GPA = &OwnHandlerNEW{}
 
-func NewOwnHandlerNEWWithOutPredicate(me NodeID, target GPAnew) GPAnew {
+func NewOwnHandlerNEWWithOutPredicate(me NodeID, target GPA) GPA {
 	return &OwnHandlerNEW{me: me, target: target}
 }
 
-func NewOwnHandlerNEW(me NodeID, target GPAnew) GPAnew {
+func NewOwnHandlerNEW(me NodeID, target GPA) GPA {
 	return NewOwnHandlerNEWWithOutPredicate(me, target)
 }
 
-func (o *OwnHandlerNEW) Input(input Input) []PayloadOut {
+func (o *OwnHandlerNEW) Input(input Input) []MessageOut {
 	msgs := o.target.Input(input)
 	return o.handleMsgs(msgs)
 }
 
-func (o *OwnHandlerNEW) Message(msg PayloadIn[any]) []PayloadOut {
+func (o *OwnHandlerNEW) Message(msg MessageIn[any]) []MessageOut {
 	msgs := o.target.Message(msg)
 	return o.handleMsgs(msgs)
 }
@@ -56,10 +56,10 @@ func (o *OwnHandlerNEW) UnmarshalPayload(data []byte) (any, error) {
 	return o.target.UnmarshalPayload(data)
 }
 
-func (o *OwnHandlerNEW) handleMsgs(msgs []PayloadOut) []PayloadOut {
-	var outMsgs []PayloadOut
+func (o *OwnHandlerNEW) handleMsgs(msgs []MessageOut) []MessageOut {
+	var outMsgs []MessageOut
 	for len(msgs) > 0 {
-		var msg PayloadOut
+		var msg MessageOut
 		msg, msgs = msgs[0], msgs[1:]
 		if msg.Recipient == o.me {
 			// TODO: Review how can we avoid doing this marshal-unmarshal.
@@ -78,7 +78,7 @@ func (o *OwnHandlerNEW) handleMsgs(msgs []PayloadOut) []PayloadOut {
 				continue
 			}
 
-			msgs = slices.Concat(msgs, o.target.Message(NewPayloadIn(o.me, payload)))
+			msgs = slices.Concat(msgs, o.target.Message(NewMessageIn(o.me, payload)))
 			continue
 		}
 		outMsgs = append(outMsgs, msg)

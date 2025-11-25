@@ -11,15 +11,25 @@ import (
 	"github.com/samber/lo"
 )
 
-type PendingMessage = struct {
-	recipient NodeID
-	msg       MessageIn
+type TestContextFunctors[Obj any, Input any, MsgPayload any] struct {
+	ApplyInput       func(obj Obj, input Input) []TypedMessageOut[MsgPayload]
+	ApplyMessage     func(obj Obj, sender NodeID, msg MsgPayload) []TypedMessageOut[MsgPayload]
+	Output           func(obj Obj) any
+	StatusString     func(obj Obj) string
+	MarshalPayload   func(msg MsgPayload) ([]byte, error)
+	UnmarshalPayload func(obj Obj, data []byte) (MsgPayload, error)
+}
+
+type pendingMessage[MsgPayload any] struct {
+	Recipient NodeID
+	Msg       MessageIn[MsgPayload]
 }
 
 // TestContext imitates a cluster of nodes and the medium performing the message exchange.
 // Inputs are processes in-order for each node individually.
-type TestContext struct {
-	nodes           map[NodeID]GPA                     // Nodes to test.
+type TestContext[Obj any, Input any, MsgPayload any] struct {
+	functors        TestContextFunctors[Obj, Input, MsgPayload]
+	nodes           map[NodeID]Obj                     // Nodes to test.
 	inputs          map[NodeID][]Input                 // Not yet provided inputs.
 	inputCh         <-chan map[NodeID]Input            // A way to provide additional inputs w/o synchronizing other parts.
 	inputProb       float64                            // A probability to process input, instead of a message (if any).
@@ -27,96 +37,97 @@ type TestContext struct {
 	outputHandler   func(nodeID NodeID, output Output) // User can check outputs w/o synchronizing other parts.
 	msgDeliveryProb float64                            // A probability to deliver a message (to not discard/loose it).
 	msgSerialize    bool                               // Use serialization/deserialization when delivering the messages?
-	msgs            []PendingMessage                   // Not yet delivered messages.
+	msgs            []pendingMessage[MsgPayload]       // Not yet delivered messages.
 	msgsSent        int                                // Stats.
 	msgsRecv        int                                // Stats.
 	bytesRecv       int
 }
 
-func NewTestContext(nodes map[NodeID]GPA) *TestContext {
+func NewTestContext[Obj any, Input any, MsgPayload any](nodes map[NodeID]Obj, functors TestContextFunctors[Obj, Input, MsgPayload]) *TestContext[Obj, Input, MsgPayload] {
 	inputs := map[NodeID][]Input{}
 	for n := range nodes {
 		inputs[n] = []Input{}
 	}
-	tc := TestContext{
+	tc := TestContext[Obj, Input, MsgPayload]{
+		functors:        functors,
 		msgSerialize:    true,
 		nodes:           nodes,
 		inputs:          inputs,
 		inputProb:       1.0,
 		inputCount:      0,
 		msgDeliveryProb: 1.0,
-		msgs:            []PendingMessage{},
+		msgs:            []pendingMessage[MsgPayload]{},
 	}
 	return &tc
 }
 
-func (tc *TestContext) WithoutSerialization() *TestContext {
+func (tc *TestContext[Obj, Input, MsgPayload]) WithoutSerialization() *TestContext[Obj, Input, MsgPayload] {
 	tc.msgSerialize = false
 	return tc
 }
 
-func (tc *TestContext) MsgCounts() (int, int) {
+func (tc *TestContext[Obj, Input, MsgPayload]) MsgCounts() (int, int) {
 	return tc.msgsSent, tc.msgsRecv
 }
 
 // AddInputs adds new inputs to the existing set.
 // The inputs will be overridden, if exist for the same nodes.
-func (tc *TestContext) AddInputs(inputs map[NodeID]Input) {
+func (tc *TestContext[Obj, Input, MsgPayload]) AddInputs(inputs map[NodeID]Input) {
 	for nid := range inputs {
 		tc.inputs[nid] = append(tc.inputs[nid], inputs[nid])
 	}
 	tc.inputCount += len(inputs)
 }
 
-func (tc *TestContext) WithInput(nodeID NodeID, input Input) *TestContext {
+func (tc *TestContext[Obj, Input, MsgPayload]) WithInput(nodeID NodeID, input Input) *TestContext[Obj, Input, MsgPayload] {
 	tc.AddInputs(map[NodeID]Input{nodeID: input})
 	return tc
 }
 
-func (tc *TestContext) WithInputs(inputs map[NodeID]Input) *TestContext {
+func (tc *TestContext[Obj, Input, MsgPayload]) WithInputs(inputs map[NodeID]Input) *TestContext[Obj, Input, MsgPayload] {
 	tc.AddInputs(inputs)
 	return tc
 }
 
-func (tc *TestContext) WithInputChannel(inputCh <-chan map[NodeID]Input) *TestContext {
+func (tc *TestContext[Obj, Input, MsgPayload]) WithInputChannel(inputCh <-chan map[NodeID]Input) *TestContext[Obj, Input, MsgPayload] {
 	tc.inputCh = inputCh
 	return tc
 }
 
-func (tc *TestContext) WithInputProbability(inputProb float64) *TestContext {
+func (tc *TestContext[Obj, Input, MsgPayload]) WithInputProbability(inputProb float64) *TestContext[Obj, Input, MsgPayload] {
 	tc.inputProb = inputProb
 	return tc
 }
 
-func (tc *TestContext) WithMessageDeliveryProbability(msgDeliveryProb float64) *TestContext {
+func (tc *TestContext[Obj, Input, MsgPayload]) WithMessageDeliveryProbability(msgDeliveryProb float64) *TestContext[Obj, Input, MsgPayload] {
 	tc.msgDeliveryProb = msgDeliveryProb
 	return tc
 }
 
-func (tc *TestContext) WithMessages(recipient NodeID, msgs []MessageIn) *TestContext {
-	tc.addMessages(lo.Map(msgs, func(m MessageIn, _ int) PendingMessage {
-		return PendingMessage{recipient: recipient, msg: m}
+func (tc *TestContext[Obj, Input, MsgPayload]) WithMessages(recipient NodeID, msgs []MessageIn[MsgPayload]) *TestContext[Obj, Input, MsgPayload] {
+	tc.addMessages(lo.Map(msgs, func(m MessageIn[MsgPayload], _ int) pendingMessage[MsgPayload] {
+		return pendingMessage[MsgPayload]{Recipient: recipient, Msg: m}
 	}))
 	return tc
 }
 
-func (tc *TestContext) addMessages(msgs []PendingMessage) {
+func (tc *TestContext[Obj, Input, MsgPayload]) addMessages(msgs []pendingMessage[MsgPayload]) {
 	tc.msgsSent += len(msgs)
 	tc.msgs = append(tc.msgs, msgs...)
 }
 
-func (tc *TestContext) WithMessage(recipient NodeID, msg MessageIn) *TestContext {
+func (tc *TestContext[Obj, Input, MsgPayload]) WithMessage(recipient NodeID, msg MessageIn[MsgPayload]) *TestContext[Obj, Input, MsgPayload] {
 	tc.msgsSent++
-	tc.msgs = append(tc.msgs, PendingMessage{recipient: recipient, msg: msg})
+	tc.msgs = append(tc.msgs, pendingMessage[MsgPayload]{Recipient: recipient, Msg: msg})
 	return tc
 }
 
-func (tc *TestContext) WithOutputHandler(outputHandler func(nodeID NodeID, output Output)) *TestContext {
+func (tc *TestContext[Obj, Input, MsgPayload]) WithOutputHandler(outputHandler func(nodeID NodeID, output Output)) *TestContext[Obj, Input, MsgPayload] {
 	tc.outputHandler = outputHandler
 	return tc
 }
 
-func (tc *TestContext) RunUntil(predicate func() bool) {
+func (tc *TestContext[Obj, Input, MsgPayload]) RunUntil(predicate func() bool) {
 	loop := make(chan bool, 1)
 	loop <- true
 	keepLooping := func() {
@@ -159,7 +170,7 @@ func (tc *TestContext) RunUntil(predicate func() bool) {
 	}
 }
 
-func (tc *TestContext) tryProcessInput() {
+func (tc *TestContext[Obj, Input, MsgPayload]) tryProcessInput() {
 	if tc.inputCount > 0 && (rand.Float64() <= tc.inputProb || len(tc.msgs) == 0) {
 		rnd := rand.Intn(tc.inputCount)
 		var rndNID NodeID
@@ -177,15 +188,15 @@ func (tc *TestContext) tryProcessInput() {
 		tc.inputCount--
 
 		// fmt.Printf("-> %s :: INPUT %s\n", rndNID.ShortString(), rndInp)
-		msgs := tc.nodes[rndNID].Input(rndInp)
-		tc.addMessages(lo.Map(msgs, func(m MessageOut, _ int) PendingMessage {
-			return PendingMessage{recipient: m.Recipient, msg: NewMessageIn(rndNID, m.Payload)}
+		msgs := tc.functors.ApplyInput(tc.nodes[rndNID], rndInp)
+		tc.addMessages(lo.Map(msgs, func(m TypedMessageOut[MsgPayload], _ int) pendingMessage[MsgPayload] {
+			return pendingMessage[MsgPayload]{Recipient: m.Recipient, Msg: NewMessageIn(rndNID, m.Payload)}
 		}))
 		tc.tryCallOutputHandler(rndNID)
 	}
 }
 
-func (tc *TestContext) tryProcessMessage() {
+func (tc *TestContext[Obj, Input, MsgPayload]) tryProcessMessage() {
 	if len(tc.msgs) == 0 {
 		return
 	}
@@ -202,12 +213,12 @@ func (tc *TestContext) tryProcessMessage() {
 		return
 	}
 
-	nid := pendingMsg.recipient
-	msg := pendingMsg.msg
+	nid := pendingMsg.Recipient
+	msg := pendingMsg.Msg
 	if tc.msgSerialize {
-		msgBytes := lo.Must(MarshalPayload(msg.Payload))
+		msgBytes := lo.Must(tc.functors.MarshalPayload(msg.Payload))
 		tc.bytesRecv += len(msgBytes)
-		m, err := tc.nodes[nid].UnmarshalPayload(msgBytes)
+		m, err := tc.functors.UnmarshalPayload(tc.nodes[nid], msgBytes)
 		if err != nil {
 			// E.g. silent node cannot decode messages.
 			return
@@ -215,29 +226,30 @@ func (tc *TestContext) tryProcessMessage() {
 		msg = NewMessageIn(msg.Sender, m)
 	}
 	// fmt.Printf("%s -> %s :: %s (count: %d / %d bytes)\n", msg.Sender.ShortString(), nid.ShortString(), msg.Payload, tc.msgsRecv, tc.bytesRecv)
-	msgs := tc.nodes[nid].Message(msg)
-	tc.addMessages(lo.Map(msgs, func(m MessageOut, _ int) PendingMessage {
-		return PendingMessage{recipient: m.Recipient, msg: NewMessageIn(nid, m.Payload)}
+	msgs := tc.functors.ApplyMessage(tc.nodes[nid], msg.Sender, msg.Payload)
+	tc.addMessages(lo.Map(msgs, func(m TypedMessageOut[MsgPayload], _ int) pendingMessage[MsgPayload] {
+		return pendingMessage[MsgPayload]{Recipient: m.Recipient, Msg: NewMessageIn(nid, m.Payload)}
 	}))
 	tc.tryCallOutputHandler(nid)
 }
 
-func (tc *TestContext) tryCallOutputHandler(nid NodeID) {
-	out := tc.nodes[nid].Output()
+func (tc *TestContext[Obj, Input, MsgPayload]) tryCallOutputHandler(nid NodeID) {
+	out := tc.functors.Output(tc.nodes[nid])
 	if out != nil && tc.outputHandler != nil {
 		tc.outputHandler(nid, out)
 	}
 }
 
-func (tc *TestContext) RunAll() {
+func (tc *TestContext[Obj, Input, MsgPayload]) RunAll() {
 	tc.RunUntil(tc.OutOfMessagesPredicate())
 }
 
 // NumberOfOutputs returns a number of non-nil outputs.
-func (tc *TestContext) NumberOfOutputs() int {
+func (tc *TestContext[Obj, Input, MsgPayload]) NumberOfOutputs() int {
 	outNum := 0
 	for _, node := range tc.nodes {
-		if node.Output() != nil {
+		output := tc.functors.Output(node)
+		if output != nil {
 			outNum++
 		}
 	}
@@ -245,18 +257,18 @@ func (tc *TestContext) NumberOfOutputs() int {
 }
 
 // NumberOfOutputsPredicate runs until there will be at least outNum of non-nil outputs generated.
-func (tc *TestContext) NumberOfOutputsPredicate(outNum int) func() bool {
+func (tc *TestContext[Obj, Input, MsgPayload]) NumberOfOutputsPredicate(outNum int) func() bool {
 	return func() bool {
 		return tc.NumberOfOutputs() >= outNum
 	}
 }
 
 // OutOfMessagesPredicate runs until all the messages will be processed.
-func (tc *TestContext) OutOfMessagesPredicate() func() bool {
+func (tc *TestContext[Obj, Input, MsgPayload]) OutOfMessagesPredicate() func() bool {
 	return func() bool { return false }
 }
 
-func (tc *TestContext) PrintAllStatusStrings(prefix string, logFunc func(format string, args ...any)) {
+func (tc *TestContext[Obj, Input, MsgPayload]) PrintAllStatusStrings(prefix string, logFunc func(format string, args ...any)) {
 	logFunc("TC[%p] Status, |inputs|=%v, inputsCh=%v, |msgs|=%v", tc, tc.inputCount, tc.inputCh != nil, len(tc.msgs))
 	keys := []NodeID{}
 	for nid := range tc.nodes {
@@ -267,6 +279,17 @@ func (tc *TestContext) PrintAllStatusStrings(prefix string, logFunc func(format 
 		return bytes.Compare(keys[i][:], keys[j][:]) < 0
 	})
 	for _, nidStr := range keys {
-		logFunc("TC[%p] %v [node=%v]: %v", tc, prefix, nidStr, tc.nodes[nidStr].StatusString())
+		logFunc("TC[%p] %v [node=%v]: %v", tc, prefix, nidStr, tc.functors.StatusString(tc.nodes[nidStr]))
 	}
+}
+
+func ToAnyPayloadsOut[Payload any](payloads []TypedMessageOut[Payload]) []TypedMessageOut[any] {
+	res := make([]TypedMessageOut[any], len(payloads))
+	for i, p := range payloads {
+		res[i] = TypedMessageOut[any]{
+			Recipient: p.Recipient,
+			Payload:   p.Payload,
+		}
+	}
+	return res
 }

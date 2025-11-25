@@ -404,13 +404,13 @@ func TestPruningMany(t *testing.T) {
 
 	sm, ok := env.sms[nodeID]
 	require.True(env.t, ok)
-	sm.(*stateManagerGPA).parameters.PruningMinStatesToKeep = 10000
+	sm.(*StateManager).parameters.PruningMinStatesToKeep = 10000
 
 	blocks := env.bf.GetBlocks(blocksToSend+1, 1)
 	env.sendBlocksToNode(nodeID, 0*time.Second, blocks[:blocksToSend]...)
 	require.True(env.t, env.ensureStoreContainsBlocksNoWait(nodeID, blocks[:blocksToSend]))
 
-	sm.(*stateManagerGPA).parameters.PruningMinStatesToKeep = blocksToKeep
+	sm.(*StateManager).parameters.PruningMinStatesToKeep = blocksToKeep
 	env.sendBlocksToNode(nodeID, 0*time.Second, blocks[blocksToSend])
 	lastExistingBlockIndex := blocksToSend - blocksToKeep
 	require.True(env.t, env.ensureStoreContainsBlocksNoWait(nodeID, blocks[lastExistingBlockIndex:]))
@@ -445,13 +445,13 @@ func TestPruningTooMuch(t *testing.T) {
 
 	sm, ok := env.sms[nodeID]
 	require.True(env.t, ok)
-	sm.(*stateManagerGPA).parameters.PruningMinStatesToKeep = 10000
+	sm.(*StateManager).parameters.PruningMinStatesToKeep = 10000
 
 	blocks := env.bf.GetBlocks(blocksToSend, 1)
 	env.sendBlocksToNode(nodeID, 0*time.Second, blocks...)
 	require.True(env.t, env.ensureStoreContainsBlocksNoWait(nodeID, blocks))
 
-	sm.(*stateManagerGPA).parameters.PruningMinStatesToKeep = blocksToKeep
+	sm.(*StateManager).parameters.PruningMinStatesToKeep = blocksToKeep
 	lastExistingBlockIndex := -1 // Origin block is not in blocks array
 	lastExistingBlockIndexExpected := blocksToSend - blocksToKeep - 1
 	for lastExistingBlockIndex < lastExistingBlockIndexExpected {
@@ -548,7 +548,7 @@ func TestBlockCacheCleaningAuto(t *testing.T) {
 	nodeID := nodeIDs[0]
 	blocks := env.bf.GetBlocks(6, 2)
 
-	blockCache := env.sms[nodeID].(*stateManagerGPA).blockCache
+	blockCache := env.sms[nodeID].(*StateManager).blockCache
 	blockCache.AddBlock(blocks[0])
 	blockCache.AddBlock(blocks[1])
 	require.NotNil(env.t, blockCache.GetBlock(blocks[0].L1Commitment()))

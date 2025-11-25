@@ -19,7 +19,7 @@ import (
 func TestMsgShareRequestSerialization(t *testing.T) {
 	{
 		req := isc.NewOffLedgerRequest(isctest.RandomChainID(), isc.NewMessage(3, 14, isc.NewCallArguments([]byte{1, 2, 3})), 1337, 100).Sign(cryptolib.NewKeyPair())
-		msg := &msgShareRequest{
+		msg := msgShareRequest{
 			byte(rand.Intn(math.MaxUint8)),
 			req,
 		}
@@ -28,7 +28,7 @@ func TestMsgShareRequestSerialization(t *testing.T) {
 	}
 	{
 		req := isc.NewOffLedgerRequest(isctest.TestChainID, isc.NewMessage(3, 14, isc.NewCallArguments([]byte{1, 2, 3})), 1337, 100).Sign(cryptolib.TestKeyPair)
-		msg := &msgShareRequest{
+		msg := msgShareRequest{
 			123,
 			req,
 		}
@@ -40,7 +40,7 @@ func TestMsgShareRequestSerialization(t *testing.T) {
 		req, err := isc.OnLedgerFromMoveRequest(isctest.RandomRequestWithRef(), sender)
 		require.NoError(t, err)
 
-		msg := &msgShareRequest{
+		msg := msgShareRequest{
 			byte(rand.Intn(math.MaxUint8)),
 			req,
 		}
@@ -52,7 +52,7 @@ func TestMsgShareRequestSerialization(t *testing.T) {
 		req, err := isc.OnLedgerFromMoveRequest(isctest.TestRequestWithRef, sender)
 		require.NoError(t, err)
 
-		msg := &msgShareRequest{
+		msg := msgShareRequest{
 			123,
 			req,
 		}

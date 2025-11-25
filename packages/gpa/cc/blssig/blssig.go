@@ -68,7 +68,7 @@ func New(
 	return cc
 }
 
-func (cc *CC) Input(input gpa.Input) []gpa.PayloadOut {
+func (cc *CC) Input(input gpa.Input) []gpa.MessageOut {
 	if input != nil {
 		panic(errors.New("input must be nil"))
 	}
@@ -87,10 +87,10 @@ func (cc *CC) Input(input gpa.Input) []gpa.PayloadOut {
 		return nil
 	}
 	cc.tryOutput()
-	var msgs []gpa.PayloadOut
+	var msgs []gpa.MessageOut
 	for _, nodeID := range cc.nodeIDs {
 		if nodeID != cc.me {
-			msgs = append(msgs, gpa.NewPayloadOut(nodeID, MsgSigShare{
+			msgs = append(msgs, gpa.NewMessageOut(nodeID, MsgSigShare{
 				sigShare: sigShare,
 			}))
 		}
@@ -98,7 +98,7 @@ func (cc *CC) Input(input gpa.Input) []gpa.PayloadOut {
 	return msgs
 }
 
-func (cc *CC) HandleMsgSigShare(msg gpa.PayloadIn[MsgSigShare]) []gpa.PayloadOut {
+func (cc *CC) HandleMsgSigShare(msg gpa.MessageIn[MsgSigShare]) []gpa.MessageOut {
 	if cc.output != nil {
 		// Decided, don't need to process messages anymore.
 		return nil

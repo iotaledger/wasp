@@ -54,7 +54,7 @@ func (v *varDone) setDone() {
 	}
 }
 
-func (v *varDone) outputProduced() []gpa.PayloadOut {
+func (v *varDone) outputProduced() []gpa.MessageOut {
 	if firstDoneRound, ok := v.recv[v.me]; ok && firstDoneRound < v.round {
 		// We have decided for the second time. That's enough.
 		v.setDone()
@@ -68,7 +68,7 @@ func (v *varDone) outputProduced() []gpa.PayloadOut {
 	)
 }
 
-func (v *varDone) msgDoneReceived(msg gpa.PayloadIn[MsgDone]) []gpa.PayloadOut {
+func (v *varDone) msgDoneReceived(msg gpa.MessageIn[MsgDone]) []gpa.MessageOut {
 	if _, ok := v.recv[msg.Sender]; ok {
 		return nil // Duplicate
 	}
@@ -83,7 +83,7 @@ func (v *varDone) isDone() bool {
 // If others (more than F) have decided in previous epochs, then we are
 // among the others, who decided in a subsequent round, therefore we don't
 // need to wait for more epochs to close the process.
-func (v *varDone) tryComplete() []gpa.PayloadOut {
+func (v *varDone) tryComplete() []gpa.MessageOut {
 	if v.done || len(v.recv) <= v.f {
 		return nil
 	}

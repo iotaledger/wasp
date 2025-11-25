@@ -24,7 +24,7 @@ func New(index int, target *blssig.CC) *CCSemi {
 	return &CCSemi{index: index, target: target}
 }
 
-func (cc *CCSemi) Input(input gpa.Input) []gpa.PayloadOut {
+func (cc *CCSemi) Input(input gpa.Input) []gpa.MessageOut {
 	if input != nil {
 		panic(errors.New("input must be nil"))
 	}
@@ -44,7 +44,7 @@ func (cc *CCSemi) Input(input gpa.Input) []gpa.PayloadOut {
 	return msgs
 }
 
-func (cc *CCSemi) HandleMsgSigShare(msg gpa.PayloadIn[blssig.MsgSigShare]) []gpa.PayloadOut {
+func (cc *CCSemi) HandleMsgSigShare(msg gpa.MessageIn[blssig.MsgSigShare]) []gpa.MessageOut {
 	if cc.output != nil {
 		return nil
 	}
