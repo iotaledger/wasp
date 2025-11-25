@@ -158,18 +158,13 @@ func (nc *nodeConnection) ConsensusL1InfoProposal(
 			panic(err)
 		}
 
-		nc.LogInfof("XXX stateMetadata %#v", *stateMetadata)
 		gasCoinGetObjectRes, err := nc.httpClient.GetObject(ctx, iotaclient.GetObjectRequest{
 			ObjectID: stateMetadata.GasCoinObjectID,
 			Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
 		})
 		if err != nil {
-			nc.LogInfof("XXX gasCoinGetObjectRes PANIC")
 			panic(err)
 		}
-
-		nc.LogInfof("XXX gasCoinGetObjectRes BEFORE")
-		nc.LogInfof("XXX gasCoinGetObjectRes %#v", *gasCoinGetObjectRes)
 
 		var gasCoin iscmoveclient.MoveCoin
 		err = iotaclient.UnmarshalBCS(gasCoinGetObjectRes.Data.Bcs.Data.MoveObject.BcsBytes, &gasCoin)
