@@ -2,6 +2,7 @@ package util
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
@@ -13,13 +14,25 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/config"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/format"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
 )
 
 func WithOffLedgerRequest(ctx context.Context, client *apiclient.APIClient, f func() (isc.OffLedgerRequest, error)) {
 	req, err := f()
 	log.Check(err)
-	log.Printf("Posted off-ledger request (check result with: %s chain request %s)\n", os.Args[0], req.ID().String())
+	reqID := req.ID().String()
+	waitForCompletion := config.WaitForCompletion != config.DefaultWaitForCompletion
+
+	data := map[string]interface{}{
+		"request_id":          reqID,
+		"wait_for_completion": waitForCompletion,
+		"check_receipt_hint":  fmt.Sprintf("%s chain request %s", os.Args[0], reqID),
+	}
+	if waitForCompletion {
+		data["wait_timeout"] = config.WaitForCompletion
+	}
+	log.Check(format.FormatSuccess("off_ledger_request", data)) //nolint:contextcheck
 	if config.WaitForCompletion != config.DefaultWaitForCompletion {
 		timeout, err := time.ParseDuration(config.WaitForCompletion)
 		log.Check(err)
@@ -32,25 +45,38 @@ func WithOffLedgerRequest(ctx context.Context, client *apiclient.APIClient, f fu
 			Execute()
 
 		log.Check(err)
-		LogReceipt(*receipt)
+		LogReceipt(*receipt) //nolint:contextcheck
 	}
 }
 
 func WithSCTransaction(ctx context.Context, client *apiclient.APIClient, f func() (*iotajsonrpc.IotaTransactionBlockResponse, error), forceWait ...time.Duration) *iotajsonrpc.IotaTransactionBlockResponse {
 	tx, err := f()
 	log.Check(err)
-	log.Printf("Posted on-ledger transaction %s\n", tx.Digest)
-
 	ref, err := tx.GetCreatedObjectByName(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	log.Check(err)
-	log.Printf("Request ID: %s\n", ref.ObjectID.String())
+	reqID := ref.ObjectID.String()
+	waitRequested := len(forceWait) > 0 || config.WaitForCompletion != config.DefaultWaitForCompletion
+	waitDescription := ""
+	if len(forceWait) > 0 {
+		waitDescription = forceWait[0].String()
+	} else if config.WaitForCompletion != config.DefaultWaitForCompletion {
+		waitDescription = config.WaitForCompletion
+	}
+
+	data := map[string]interface{}{
+		"transaction_digest":  tx.Digest,
+		"request_id":          reqID,
+		"wait_for_completion": waitRequested,
+	}
+	if waitDescription != "" {
+		data["wait_timeout"] = waitDescription
+	}
+	log.Check(format.FormatSuccess("on_ledger_transaction", data)) //nolint:contextcheck
 
 	if len(forceWait) > 0 {
-		log.Printf("Waiting for tx requests to be processed...\n")
 		_, err2 := apiextensions.APIWaitUntilAllRequestsProcessed(ctx, client, tx, true, forceWait[0])
 		log.Check(err2)
 	} else if config.WaitForCompletion != config.DefaultWaitForCompletion {
-		log.Printf("Waiting for tx requests to be processed...\n")
 		timeout, err := time.ParseDuration(config.WaitForCompletion)
 		log.Check(err)
 		_, err2 := apiextensions.APIWaitUntilAllRequestsProcessed(ctx, client, tx, true, timeout)

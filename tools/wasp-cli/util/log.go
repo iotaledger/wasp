@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/coreprocessors"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/format"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
 )
 
@@ -51,9 +52,7 @@ func decodeKnownContractCall(req apiclient.RequestJSON) []log.TreeItem {
 			return []log.TreeItem{}
 		}
 
-		return []log.TreeItem{
-			{K: "Param 1", V: arg1.String()},
-		}
+		return []log.TreeItem{{K: "Param 1", V: arg1.String()}}
 	}
 
 	return []log.TreeItem{}
@@ -70,11 +69,6 @@ func LogReceipt(receipt apiclient.ReceiptResponse, index ...int) {
 	args, err := apiextensions.APIResultToCallArgs(req.Params)
 	log.Check(err)
 
-	var argsTree interface{} = "(empty)"
-	if len(args) > 0 {
-		argsTree = args
-	}
-
 	errMsg := "(empty)"
 	if receipt.ErrorMessage != nil {
 		errMsg = *receipt.ErrorMessage
@@ -90,37 +84,33 @@ func LogReceipt(receipt apiclient.ReceiptResponse, index ...int) {
 		funcStr = fmt.Sprintf("%s (%s)", funcStr, funcName)
 	}
 
-	tree := []log.TreeItem{
-		{K: "Kind", V: kind},
-		{K: "Sender", V: req.SenderAccount},
-		{K: "Contract Hname", V: contractStr},
-		{K: "Function Hname", V: funcStr},
-		{K: "Arguments", V: argsTree},
-	}
-
-	tree = append(tree, decodeKnownContractCall(req)...)
-
-	coinsString := ""
-
+	assets := make([]format.ChainReceiptAsset, 0, len(receipt.Request.Assets.Coins))
 	for _, coin := range receipt.Request.Assets.Coins {
-		coinsString += fmt.Sprintf("	%s (%s)\n", coin.CoinType, coin.Balance)
+		assets = append(assets, format.ChainReceiptAsset{
+			CoinType: coin.CoinType,
+			Balance:  coin.Balance,
+		})
 	}
 
-	treeRest := []log.TreeItem{
-		{K: "Error", V: errMsg},
-		{K: "Gas budget", V: receipt.GasBudget},
-		{K: "Gas burned", V: receipt.GasBurned},
-		{K: "Gas fee charged", V: receipt.GasFeeCharged},
-		{K: "Storage deposit charged", V: receipt.StorageDepositCharged},
-		{K: "Assets", V: coinsString},
+	output := format.ChainReceiptOutput{
+		RequestID:          req.RequestId,
+		Kind:               kind,
+		Sender:             req.SenderAccount,
+		ContractHName:      contractStr,
+		FunctionHName:      funcStr,
+		ParamsHex:          req.Params,
+		ArgumentsRaw:       args,
+		DecodedKnownParams: decodeKnownContractCall(req),
+		Error:              errMsg,
+		GasBudget:          receipt.GasBudget,
+		GasBurned:          receipt.GasBurned,
+		GasFeeCharged:      receipt.GasFeeCharged,
+		StorageDeposit:     receipt.StorageDepositCharged,
+		Assets:             assets,
 	}
-
-	tree = append(tree, treeRest...)
-
 	if len(index) > 0 {
-		log.Printf("Request #%d (%s):\n", index[0], req.RequestId)
-	} else {
-		log.Printf("Request %s:\n", req.RequestId)
+		idx := index[0]
+		output.Index = &idx
 	}
-	log.PrintTree(tree, 2, 2)
+	log.Check(format.FormatSuccess("chain_receipt", output.ToMap()))
 }
