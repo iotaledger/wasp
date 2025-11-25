@@ -86,18 +86,7 @@ func testCommitteeLogBasic(t *testing.T, n, f int) {
 		gpaNodes[gpaNodeIDs[i]] = committeeLogInst
 	}
 
-	gpaTC := gpa.NewTestContext(gpaNodes, gpa.TestContextFunctors[committeelog.CommitteeLog]{
-		// ApplyMessage: func(obj *committeelog.CommitteeLog, sender gpa.NodeID, msg gpa.MessageIn[any]) []gpa.MessageOut {
-		// 	switch m := msg.Payload.(type) {
-		// 	case committeelog.MsgNextLogIndex:
-		// 		return obj.HandleMsgNextLogIndex(gpa.NewMessageIn(sender, m))
-		// 	default:
-		// 		panic(fmt.Sprintf("unexpected message type %T", msg))
-		// 	}
-		// },
-		Output:       func(obj *committeelog.CommitteeLog) any { return obj.Output() },
-		StatusString: func(obj *committeelog.CommitteeLog) string { return obj.StatusString() },
-	})
+	gpaTC := gpa.NewTestContext(gpaNodes, gpa.TestContextFunctors[committeelog.CommitteeLog]{})
 	gpaTC.WithoutSerialization()
 
 	//

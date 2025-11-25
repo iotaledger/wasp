@@ -14,15 +14,6 @@ import (
 	"github.com/samber/lo"
 )
 
-type TestContextFunctors[Obj any] struct {
-	ApplyInput       func(obj *Obj, input Input) []MessageOut
-	ApplyMessage     func(obj *Obj, msg MessageIn[any]) []MessageOut
-	Output           func(obj *Obj) any
-	StatusString     func(obj *Obj) string
-	MarshalPayload   func(obj *Obj, msg any) ([]byte, error)
-	UnmarshalPayload func(obj *Obj, data []byte) (any, error)
-}
-
 type pendingMessage struct {
 	Recipient NodeID
 	Msg       MessageIn[any]
@@ -46,25 +37,19 @@ type TestContext[Obj any] struct {
 	bytesRecv       int
 }
 
-func NewTestContext[Obj any](nodes map[NodeID]*Obj, functors TestContextFunctors[Obj]) *TestContext[Obj] {
+func NewTestContext[Obj any](nodes map[NodeID]*Obj, functors ...TestContextFunctors[Obj]) *TestContext[Obj] {
 	inputs := map[NodeID][]Input{}
 	for n := range nodes {
 		inputs[n] = []Input{}
 	}
 
-	if functors.ApplyInput == nil {
-		functors.ApplyInput = func(obj *Obj, input Input) []MessageOut {
-			return FindAndInvokeInputHandler(obj, input)
-		}
+	if len(functors) == 0 {
+		functors = append(functors, TestContextFunctors[Obj]{})
 	}
-	if functors.ApplyMessage == nil {
-		functors.ApplyMessage = func(obj *Obj, msg MessageIn[any]) []MessageOut {
-			return FindAndInvokeMessageHandler(obj, msg)
-		}
-	}
+	setDefaultFunctors(&functors[0])
 
 	tc := TestContext[Obj]{
-		functors:        functors,
+		functors:        functors[0],
 		msgSerialize:    true,
 		nodes:           nodes,
 		inputs:          inputs,
@@ -434,4 +419,58 @@ func isMessageInType(t reflect.Type) (isMessageIn bool, payloadField reflect.Str
 	payloadField = t.Field(payloadFieldIdx)
 
 	return true, payloadField
+}
+
+type TestContextFunctors[Obj any] struct {
+	ApplyInput       func(obj *Obj, input Input) []MessageOut
+	ApplyMessage     func(obj *Obj, msg MessageIn[any]) []MessageOut
+	Output           func(obj *Obj) any
+	StatusString     func(obj *Obj) string
+	MarshalPayload   func(obj *Obj, msg any) ([]byte, error)
+	UnmarshalPayload func(obj *Obj, data []byte) (any, error)
+}
+
+func setDefaultFunctors[Obj any](functors *TestContextFunctors[Obj]) {
+	if functors.ApplyInput == nil {
+		functors.ApplyInput = func(obj *Obj, input Input) []MessageOut {
+			return FindAndInvokeInputHandler(obj, input)
+		}
+	}
+	if functors.ApplyMessage == nil {
+		functors.ApplyMessage = func(obj *Obj, msg MessageIn[any]) []MessageOut {
+			return FindAndInvokeMessageHandler(obj, msg)
+		}
+	}
+	if functors.MarshalPayload == nil {
+		type marshaler interface {
+			MarshalPayload(msg any) ([]byte, error)
+		}
+		functors.MarshalPayload = func(obj *Obj, msg any) ([]byte, error) {
+			return interface{}(obj).(marshaler).MarshalPayload(msg)
+		}
+	}
+	if functors.UnmarshalPayload == nil {
+		type unmarshaler interface {
+			UnmarshalPayload(data []byte) (any, error)
+		}
+		functors.UnmarshalPayload = func(obj *Obj, data []byte) (any, error) {
+			return interface{}(obj).(unmarshaler).UnmarshalPayload(data)
+		}
+	}
+	if functors.Output == nil {
+		functors.Output = func(obj *Obj) any {
+			type outputter interface {
+				Output() Output
+			}
+			return interface{}(obj).(outputter).Output()
+		}
+	}
+	if functors.StatusString == nil {
+		functors.StatusString = func(obj *Obj) string {
+			type statusStringer interface {
+				StatusString() string
+			}
+			return interface{}(obj).(statusStringer).StatusString()
+		}
+	}
 }
