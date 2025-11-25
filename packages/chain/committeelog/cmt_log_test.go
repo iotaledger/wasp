@@ -86,26 +86,15 @@ func testCommitteeLogBasic(t *testing.T, n, f int) {
 		gpaNodes[gpaNodeIDs[i]] = committeeLogInst
 	}
 
-	gpaTC := gpa.NewTestContext(gpaNodes, gpa.TestContextFunctors[*committeelog.CommitteeLog, any, any]{
-		ApplyInput: func(obj *committeelog.CommitteeLog, input any) []gpa.TypedMessageOut[any] {
-			outMsgs := obj.Input(input.(gpa.Input))
-			if outMsgs == nil {
-				return nil
-			}
-			return gpa.ToAnyPayloadsOut(outMsgs.NextLogIndex)
-		},
-		ApplyMessage: func(obj *committeelog.CommitteeLog, sender gpa.NodeID, msg any) []gpa.TypedMessageOut[any] {
-			switch m := msg.(type) {
-			case committeelog.MsgNextLogIndex:
-				outMsgs := obj.HandleMsgNextLogIndex(gpa.NewMessageIn(sender, m))
-				if outMsgs == nil {
-					return nil
-				}
-				return gpa.ToAnyPayloadsOut(outMsgs.NextLogIndex)
-			default:
-				panic(fmt.Sprintf("unexpected message type %T", msg))
-			}
-		},
+	gpaTC := gpa.NewTestContext(gpaNodes, gpa.TestContextFunctors[committeelog.CommitteeLog]{
+		// ApplyMessage: func(obj *committeelog.CommitteeLog, sender gpa.NodeID, msg gpa.MessageIn[any]) []gpa.MessageOut {
+		// 	switch m := msg.Payload.(type) {
+		// 	case committeelog.MsgNextLogIndex:
+		// 		return obj.HandleMsgNextLogIndex(gpa.NewMessageIn(sender, m))
+		// 	default:
+		// 		panic(fmt.Sprintf("unexpected message type %T", msg))
+		// 	}
+		// },
 		Output:       func(obj *committeelog.CommitteeLog) any { return obj.Output() },
 		StatusString: func(obj *committeelog.CommitteeLog) string { return obj.StatusString() },
 	})
@@ -161,16 +150,16 @@ func testCommitteeLogBasic(t *testing.T, n, f int) {
 ////////////////////////////////////////////////////////////////////////////////
 // Helper functions.
 
-func inputAnchorConfirmedNew(gpaNodes map[gpa.NodeID]*committeelog.CommitteeLog, ao *isc.StateAnchor) map[gpa.NodeID]any {
-	inputs := map[gpa.NodeID]any{}
+func inputAnchorConfirmedNew(gpaNodes map[gpa.NodeID]*committeelog.CommitteeLog, ao *isc.StateAnchor) map[gpa.NodeID]gpa.Input {
+	inputs := map[gpa.NodeID]gpa.Input{}
 	for n := range gpaNodes {
 		inputs[n] = committeelog.NewInputAnchorConfirmed(ao)
 	}
 	return inputs
 }
 
-func inputAnchorConfirme(gpaNodes map[gpa.NodeID]gpa.GPA, ao *isc.StateAnchor) map[gpa.NodeID]any {
-	inputs := map[gpa.NodeID]any{}
+func inputAnchorConfirme(gpaNodes map[gpa.NodeID]gpa.GPA, ao *isc.StateAnchor) map[gpa.NodeID]gpa.Input {
+	inputs := map[gpa.NodeID]gpa.Input{}
 	for n := range gpaNodes {
 		inputs[n] = committeelog.NewInputAnchorConfirmed(ao)
 	}
@@ -185,8 +174,8 @@ func inputAnchorConfirmed(gpaNodes map[gpa.NodeID]gpa.GPA, ao *isc.StateAnchor) 
 	return inputs
 }
 
-func inputConsensusOutputNew(consReq map[gpa.NodeID]committeelog.Output, nextAnchor *isc.StateAnchor) map[gpa.NodeID]any {
-	inputs := map[gpa.NodeID]any{}
+func inputConsensusOutputNew(consReq map[gpa.NodeID]committeelog.Output, nextAnchor *isc.StateAnchor) map[gpa.NodeID]gpa.Input {
+	inputs := map[gpa.NodeID]gpa.Input{}
 	for nid, outs := range consReq {
 		maxLI := committeelog.NilLogIndex()
 		for li := range outs {

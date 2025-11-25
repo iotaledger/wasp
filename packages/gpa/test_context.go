@@ -5,31 +5,34 @@ package gpa
 
 import (
 	"bytes"
+	"fmt"
 	"math/rand"
+	"reflect"
 	"sort"
+	"strings"
 
 	"github.com/samber/lo"
 )
 
-type TestContextFunctors[Obj any, Input any, MsgPayload any] struct {
-	ApplyInput       func(obj Obj, input Input) []TypedMessageOut[MsgPayload]
-	ApplyMessage     func(obj Obj, sender NodeID, msg MsgPayload) []TypedMessageOut[MsgPayload]
-	Output           func(obj Obj) any
-	StatusString     func(obj Obj) string
-	MarshalPayload   func(msg MsgPayload) ([]byte, error)
-	UnmarshalPayload func(obj Obj, data []byte) (MsgPayload, error)
+type TestContextFunctors[Obj any] struct {
+	ApplyInput       func(obj *Obj, input Input) []MessageOut
+	ApplyMessage     func(obj *Obj, msg MessageIn[any]) []MessageOut
+	Output           func(obj *Obj) any
+	StatusString     func(obj *Obj) string
+	MarshalPayload   func(obj *Obj, msg any) ([]byte, error)
+	UnmarshalPayload func(obj *Obj, data []byte) (any, error)
 }
 
-type pendingMessage[MsgPayload any] struct {
+type pendingMessage struct {
 	Recipient NodeID
-	Msg       MessageIn[MsgPayload]
+	Msg       MessageIn[any]
 }
 
 // TestContext imitates a cluster of nodes and the medium performing the message exchange.
 // Inputs are processes in-order for each node individually.
-type TestContext[Obj any, Input any, MsgPayload any] struct {
-	functors        TestContextFunctors[Obj, Input, MsgPayload]
-	nodes           map[NodeID]Obj                     // Nodes to test.
+type TestContext[Obj any] struct {
+	functors        TestContextFunctors[Obj]
+	nodes           map[NodeID]*Obj                    // Nodes to test.
 	inputs          map[NodeID][]Input                 // Not yet provided inputs.
 	inputCh         <-chan map[NodeID]Input            // A way to provide additional inputs w/o synchronizing other parts.
 	inputProb       float64                            // A probability to process input, instead of a message (if any).
@@ -37,18 +40,30 @@ type TestContext[Obj any, Input any, MsgPayload any] struct {
 	outputHandler   func(nodeID NodeID, output Output) // User can check outputs w/o synchronizing other parts.
 	msgDeliveryProb float64                            // A probability to deliver a message (to not discard/loose it).
 	msgSerialize    bool                               // Use serialization/deserialization when delivering the messages?
-	msgs            []pendingMessage[MsgPayload]       // Not yet delivered messages.
+	msgs            []pendingMessage                   // Not yet delivered messages.
 	msgsSent        int                                // Stats.
 	msgsRecv        int                                // Stats.
 	bytesRecv       int
 }
 
-func NewTestContext[Obj any, Input any, MsgPayload any](nodes map[NodeID]Obj, functors TestContextFunctors[Obj, Input, MsgPayload]) *TestContext[Obj, Input, MsgPayload] {
+func NewTestContext[Obj any](nodes map[NodeID]*Obj, functors TestContextFunctors[Obj]) *TestContext[Obj] {
 	inputs := map[NodeID][]Input{}
 	for n := range nodes {
 		inputs[n] = []Input{}
 	}
-	tc := TestContext[Obj, Input, MsgPayload]{
+
+	if functors.ApplyInput == nil {
+		functors.ApplyInput = func(obj *Obj, input Input) []MessageOut {
+			return FindAndInvokeInputHandler(obj, input)
+		}
+	}
+	if functors.ApplyMessage == nil {
+		functors.ApplyMessage = func(obj *Obj, msg MessageIn[any]) []MessageOut {
+			return FindAndInvokeMessageHandler(obj, msg)
+		}
+	}
+
+	tc := TestContext[Obj]{
 		functors:        functors,
 		msgSerialize:    true,
 		nodes:           nodes,
@@ -56,78 +71,78 @@ func NewTestContext[Obj any, Input any, MsgPayload any](nodes map[NodeID]Obj, fu
 		inputProb:       1.0,
 		inputCount:      0,
 		msgDeliveryProb: 1.0,
-		msgs:            []pendingMessage[MsgPayload]{},
+		msgs:            []pendingMessage{},
 	}
 	return &tc
 }
 
-func (tc *TestContext[Obj, Input, MsgPayload]) WithoutSerialization() *TestContext[Obj, Input, MsgPayload] {
+func (tc *TestContext[Obj]) WithoutSerialization() *TestContext[Obj] {
 	tc.msgSerialize = false
 	return tc
 }
 
-func (tc *TestContext[Obj, Input, MsgPayload]) MsgCounts() (int, int) {
+func (tc *TestContext[Obj]) MsgCounts() (int, int) {
 	return tc.msgsSent, tc.msgsRecv
 }
 
 // AddInputs adds new inputs to the existing set.
 // The inputs will be overridden, if exist for the same nodes.
-func (tc *TestContext[Obj, Input, MsgPayload]) AddInputs(inputs map[NodeID]Input) {
+func (tc *TestContext[Obj]) AddInputs(inputs map[NodeID]Input) {
 	for nid := range inputs {
 		tc.inputs[nid] = append(tc.inputs[nid], inputs[nid])
 	}
 	tc.inputCount += len(inputs)
 }
 
-func (tc *TestContext[Obj, Input, MsgPayload]) WithInput(nodeID NodeID, input Input) *TestContext[Obj, Input, MsgPayload] {
+func (tc *TestContext[Obj]) WithInput(nodeID NodeID, input Input) *TestContext[Obj] {
 	tc.AddInputs(map[NodeID]Input{nodeID: input})
 	return tc
 }
 
-func (tc *TestContext[Obj, Input, MsgPayload]) WithInputs(inputs map[NodeID]Input) *TestContext[Obj, Input, MsgPayload] {
+func (tc *TestContext[Obj]) WithInputs(inputs map[NodeID]Input) *TestContext[Obj] {
 	tc.AddInputs(inputs)
 	return tc
 }
 
-func (tc *TestContext[Obj, Input, MsgPayload]) WithInputChannel(inputCh <-chan map[NodeID]Input) *TestContext[Obj, Input, MsgPayload] {
+func (tc *TestContext[Obj]) WithInputChannel(inputCh <-chan map[NodeID]Input) *TestContext[Obj] {
 	tc.inputCh = inputCh
 	return tc
 }
 
-func (tc *TestContext[Obj, Input, MsgPayload]) WithInputProbability(inputProb float64) *TestContext[Obj, Input, MsgPayload] {
+func (tc *TestContext[Obj]) WithInputProbability(inputProb float64) *TestContext[Obj] {
 	tc.inputProb = inputProb
 	return tc
 }
 
-func (tc *TestContext[Obj, Input, MsgPayload]) WithMessageDeliveryProbability(msgDeliveryProb float64) *TestContext[Obj, Input, MsgPayload] {
+func (tc *TestContext[Obj]) WithMessageDeliveryProbability(msgDeliveryProb float64) *TestContext[Obj] {
 	tc.msgDeliveryProb = msgDeliveryProb
 	return tc
 }
 
-func (tc *TestContext[Obj, Input, MsgPayload]) WithMessages(recipient NodeID, msgs []MessageIn[MsgPayload]) *TestContext[Obj, Input, MsgPayload] {
-	tc.addMessages(lo.Map(msgs, func(m MessageIn[MsgPayload], _ int) pendingMessage[MsgPayload] {
-		return pendingMessage[MsgPayload]{Recipient: recipient, Msg: m}
+func (tc *TestContext[Obj]) WithMessages(recipient NodeID, msgs []MessageIn[any]) *TestContext[Obj] {
+	tc.addMessages(lo.Map(msgs, func(m MessageIn[any], _ int) pendingMessage {
+		return pendingMessage{Recipient: recipient, Msg: m}
 	}))
 	return tc
 }
 
-func (tc *TestContext[Obj, Input, MsgPayload]) addMessages(msgs []pendingMessage[MsgPayload]) {
+func (tc *TestContext[Obj]) addMessages(msgs []pendingMessage) {
 	tc.msgsSent += len(msgs)
 	tc.msgs = append(tc.msgs, msgs...)
 }
 
-func (tc *TestContext[Obj, Input, MsgPayload]) WithMessage(recipient NodeID, msg MessageIn[MsgPayload]) *TestContext[Obj, Input, MsgPayload] {
+func (tc *TestContext[Obj]) WithMessage(recipient NodeID, msg MessageIn[any]) *TestContext[Obj] {
 	tc.msgsSent++
-	tc.msgs = append(tc.msgs, pendingMessage[MsgPayload]{Recipient: recipient, Msg: msg})
+	tc.msgs = append(tc.msgs, pendingMessage{Recipient: recipient, Msg: msg})
 	return tc
 }
 
-func (tc *TestContext[Obj, Input, MsgPayload]) WithOutputHandler(outputHandler func(nodeID NodeID, output Output)) *TestContext[Obj, Input, MsgPayload] {
+func (tc *TestContext[Obj]) WithOutputHandler(outputHandler func(nodeID NodeID, output Output)) *TestContext[Obj] {
 	tc.outputHandler = outputHandler
 	return tc
 }
 
-func (tc *TestContext[Obj, Input, MsgPayload]) RunUntil(predicate func() bool) {
+func (tc *TestContext[Obj]) RunUntil(predicate func() bool) {
 	loop := make(chan bool, 1)
 	loop <- true
 	keepLooping := func() {
@@ -170,7 +185,7 @@ func (tc *TestContext[Obj, Input, MsgPayload]) RunUntil(predicate func() bool) {
 	}
 }
 
-func (tc *TestContext[Obj, Input, MsgPayload]) tryProcessInput() {
+func (tc *TestContext[Obj]) tryProcessInput() {
 	if tc.inputCount > 0 && (rand.Float64() <= tc.inputProb || len(tc.msgs) == 0) {
 		rnd := rand.Intn(tc.inputCount)
 		var rndNID NodeID
@@ -189,14 +204,14 @@ func (tc *TestContext[Obj, Input, MsgPayload]) tryProcessInput() {
 
 		// fmt.Printf("-> %s :: INPUT %s\n", rndNID.ShortString(), rndInp)
 		msgs := tc.functors.ApplyInput(tc.nodes[rndNID], rndInp)
-		tc.addMessages(lo.Map(msgs, func(m TypedMessageOut[MsgPayload], _ int) pendingMessage[MsgPayload] {
-			return pendingMessage[MsgPayload]{Recipient: m.Recipient, Msg: NewMessageIn(rndNID, m.Payload)}
+		tc.addMessages(lo.Map(msgs, func(m MessageOut, _ int) pendingMessage {
+			return pendingMessage{Recipient: m.Recipient, Msg: NewMessageIn(rndNID, m.Payload)}
 		}))
 		tc.tryCallOutputHandler(rndNID)
 	}
 }
 
-func (tc *TestContext[Obj, Input, MsgPayload]) tryProcessMessage() {
+func (tc *TestContext[Obj]) tryProcessMessage() {
 	if len(tc.msgs) == 0 {
 		return
 	}
@@ -216,7 +231,7 @@ func (tc *TestContext[Obj, Input, MsgPayload]) tryProcessMessage() {
 	nid := pendingMsg.Recipient
 	msg := pendingMsg.Msg
 	if tc.msgSerialize {
-		msgBytes := lo.Must(tc.functors.MarshalPayload(msg.Payload))
+		msgBytes := lo.Must(tc.functors.MarshalPayload(tc.nodes[msg.Sender], msg.Payload))
 		tc.bytesRecv += len(msgBytes)
 		m, err := tc.functors.UnmarshalPayload(tc.nodes[nid], msgBytes)
 		if err != nil {
@@ -226,26 +241,26 @@ func (tc *TestContext[Obj, Input, MsgPayload]) tryProcessMessage() {
 		msg = NewMessageIn(msg.Sender, m)
 	}
 	// fmt.Printf("%s -> %s :: %s (count: %d / %d bytes)\n", msg.Sender.ShortString(), nid.ShortString(), msg.Payload, tc.msgsRecv, tc.bytesRecv)
-	msgs := tc.functors.ApplyMessage(tc.nodes[nid], msg.Sender, msg.Payload)
-	tc.addMessages(lo.Map(msgs, func(m TypedMessageOut[MsgPayload], _ int) pendingMessage[MsgPayload] {
-		return pendingMessage[MsgPayload]{Recipient: m.Recipient, Msg: NewMessageIn(nid, m.Payload)}
+	msgs := tc.functors.ApplyMessage(tc.nodes[nid], msg)
+	tc.addMessages(lo.Map(msgs, func(m TypedMessageOut[any], _ int) pendingMessage {
+		return pendingMessage{Recipient: m.Recipient, Msg: NewMessageIn(nid, m.Payload)}
 	}))
 	tc.tryCallOutputHandler(nid)
 }
 
-func (tc *TestContext[Obj, Input, MsgPayload]) tryCallOutputHandler(nid NodeID) {
+func (tc *TestContext[Obj]) tryCallOutputHandler(nid NodeID) {
 	out := tc.functors.Output(tc.nodes[nid])
 	if out != nil && tc.outputHandler != nil {
 		tc.outputHandler(nid, out)
 	}
 }
 
-func (tc *TestContext[Obj, Input, MsgPayload]) RunAll() {
+func (tc *TestContext[Obj]) RunAll() {
 	tc.RunUntil(tc.OutOfMessagesPredicate())
 }
 
 // NumberOfOutputs returns a number of non-nil outputs.
-func (tc *TestContext[Obj, Input, MsgPayload]) NumberOfOutputs() int {
+func (tc *TestContext[Obj]) NumberOfOutputs() int {
 	outNum := 0
 	for _, node := range tc.nodes {
 		output := tc.functors.Output(node)
@@ -257,18 +272,18 @@ func (tc *TestContext[Obj, Input, MsgPayload]) NumberOfOutputs() int {
 }
 
 // NumberOfOutputsPredicate runs until there will be at least outNum of non-nil outputs generated.
-func (tc *TestContext[Obj, Input, MsgPayload]) NumberOfOutputsPredicate(outNum int) func() bool {
+func (tc *TestContext[Obj]) NumberOfOutputsPredicate(outNum int) func() bool {
 	return func() bool {
 		return tc.NumberOfOutputs() >= outNum
 	}
 }
 
 // OutOfMessagesPredicate runs until all the messages will be processed.
-func (tc *TestContext[Obj, Input, MsgPayload]) OutOfMessagesPredicate() func() bool {
+func (tc *TestContext[Obj]) OutOfMessagesPredicate() func() bool {
 	return func() bool { return false }
 }
 
-func (tc *TestContext[Obj, Input, MsgPayload]) PrintAllStatusStrings(prefix string, logFunc func(format string, args ...any)) {
+func (tc *TestContext[Obj]) PrintAllStatusStrings(prefix string, logFunc func(format string, args ...any)) {
 	logFunc("TC[%p] Status, |inputs|=%v, inputsCh=%v, |msgs|=%v", tc, tc.inputCount, tc.inputCh != nil, len(tc.msgs))
 	keys := []NodeID{}
 	for nid := range tc.nodes {
@@ -283,13 +298,140 @@ func (tc *TestContext[Obj, Input, MsgPayload]) PrintAllStatusStrings(prefix stri
 	}
 }
 
-func ToAnyPayloadsOut[Payload any](payloads []TypedMessageOut[Payload]) []TypedMessageOut[any] {
-	res := make([]TypedMessageOut[any], len(payloads))
+func ToAnyPayloadsOut[Payload any](payloads []TypedMessageOut[Payload]) []MessageOut {
+	res := make([]MessageOut, len(payloads))
 	for i, p := range payloads {
-		res[i] = TypedMessageOut[any]{
+		res[i] = MessageOut{
 			Recipient: p.Recipient,
 			Payload:   p.Payload,
 		}
 	}
 	return res
+}
+
+func FindAndInvokeInputHandler(obj any, input Input) []MessageOut {
+	type genericInputHandler interface {
+		Input(input Input) []MessageOut
+	}
+	if handler, ok := obj.(genericInputHandler); ok {
+		return handler.Input(input)
+	}
+
+	objV := reflect.ValueOf(obj)
+	objT := objV.Type()
+
+	handlerMethodT := reflect.FuncOf([]reflect.Type{objT, reflect.TypeOf(input)}, []reflect.Type{reflect.TypeOf([]MessageOut{})}, false)
+	handlerPtrMethodT := reflect.FuncOf([]reflect.Type{objT, reflect.PtrTo(reflect.TypeOf(input))}, []reflect.Type{reflect.TypeOf([]MessageOut{})}, false)
+
+	for i := 0; i < objT.NumMethod(); i++ {
+		methodT := objT.Method(i)
+		if methodT.Type == handlerMethodT {
+			result := methodT.Func.Call([]reflect.Value{objV, reflect.ValueOf(input)})
+			return result[0].Interface().([]MessageOut)
+		}
+		if methodT.Type == handlerPtrMethodT {
+			// TODO: copy non-addressable value
+			result := methodT.Func.Call([]reflect.Value{objV, reflect.ValueOf(input).Addr()})
+			return result[0].Interface().([]MessageOut)
+		}
+	}
+
+	panic(fmt.Errorf("no input handler found with signature %v or %v", handlerMethodT, handlerPtrMethodT))
+}
+
+func FindAndInvokeMessageHandler(obj any, msg MessageIn[any]) []MessageOut {
+	type genericMessageHandler interface {
+		Message(msg MessageIn[any]) []MessageOut
+	}
+	if handler, ok := obj.(genericMessageHandler); ok {
+		return handler.Message(msg)
+	}
+
+	objV := reflect.ValueOf(obj)
+	objT := objV.Type()
+	msgV := reflect.ValueOf(msg)
+
+	for i := 0; i < objT.NumMethod(); i++ {
+		methodT := objT.Method(i)
+
+		if methodT.Type.NumIn() != 2 || methodT.Type.NumOut() != 1 {
+			continue
+		}
+		if methodT.Type.Out(0) != reflect.TypeOf([]MessageOut{}) {
+			continue
+		}
+		if methodT.Type.In(0) != objT {
+			panic(fmt.Errorf("mismatched receiver type: %v != %v", methodT.Type.In(0), objT))
+		}
+
+		msgArgT := methodT.Type.In(1)
+		isMsgIn, payloadFieldT := isMessageInType(msgArgT)
+		if !isMsgIn {
+			continue
+		}
+
+		// We have a match.
+		convertedMsgV := reflect.New(msgArgT).Elem()
+
+		for i := 0; i < msgArgT.NumField(); i++ {
+			fieldV := msgV.Field(i)
+			destFieldV := convertedMsgV.Field(i)
+
+			if i == payloadFieldT.Index[0] {
+				convertedFieldV := fieldV.Elem().Convert(destFieldV.Type())
+				destFieldV.Set(convertedFieldV)
+			} else {
+				destFieldV.Set(fieldV)
+			}
+		}
+
+		result := methodT.Func.Call([]reflect.Value{objV, convertedMsgV})
+		return result[0].Interface().([]MessageOut)
+	}
+
+	panic(fmt.Errorf("no message handler found for message with payload type %T", msg.Payload))
+}
+
+func isMessageInType(t reflect.Type) (isMessageIn bool, payloadField reflect.StructField) {
+	// There is no good instruments with work with generics in Go reflection.
+	// So we are forced to fallback to name-based heuristics.
+
+	if t.Kind() != reflect.Struct {
+		return false, reflect.StructField{}
+	}
+
+	// We could just hard-code name, but then tests would break after renamings. So we dynamically get current name of type.
+	type privatePayloadType struct{}
+	sampleTypeT := reflect.TypeOf(MessageIn[privatePayloadType]{})
+
+	if t.NumField() != sampleTypeT.NumField() {
+		return false, reflect.StructField{}
+	}
+
+	paramsStart := strings.Index(sampleTypeT.Name(), "[")
+	if paramsStart < 0 {
+		panic("cannot find generic parameters in MessageIn type name")
+	}
+	genericTypeName := sampleTypeT.Name()[:paramsStart]
+
+	if !strings.HasPrefix(t.Name(), genericTypeName+"[") {
+		return false, reflect.StructField{}
+	}
+
+	// We also dynamically find Payload field - also to handle future renamings.
+	payloadFieldIdx := -1
+	for i := 0; i < sampleTypeT.NumField(); i++ {
+		if sampleTypeT.Field(i).Type != reflect.TypeOf(privatePayloadType{}) {
+			continue
+		}
+		payloadFieldIdx = i
+		break
+	}
+	if payloadFieldIdx < 0 {
+		panic("Unable to find Payload field in MessageIn type")
+	}
+
+	payloadField = t.Field(payloadFieldIdx)
+
+	return true, payloadField
 }

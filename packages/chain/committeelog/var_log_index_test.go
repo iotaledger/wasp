@@ -23,7 +23,7 @@ func TestVarLogIndexV2Basic(t *testing.T) {
 	initLI := committeelog.NilLogIndex().Next()
 	//
 	vliOut := committeelog.NilLogIndex()
-	vli := committeelog.NewVarLogIndex(nodeIDs, n, f, initLI, func(li committeelog.LogIndex) committeelog.OutMessages {
+	vli := committeelog.NewVarLogIndex(nodeIDs, n, f, initLI, func(li committeelog.LogIndex) []gpa.MessageOut {
 		vliOut = li
 		return nil
 	}, nil, log)
@@ -50,7 +50,7 @@ func TestVarLogIndexV2Other(t *testing.T) {
 	initLI := committeelog.NilLogIndex().Next()
 	//
 	vliOut := committeelog.NilLogIndex()
-	vli := committeelog.NewVarLogIndex(nodeIDs, n, f, initLI, func(li committeelog.LogIndex) committeelog.OutMessages {
+	vli := committeelog.NewVarLogIndex(nodeIDs, n, f, initLI, func(li committeelog.LogIndex) []gpa.MessageOut {
 		vliOut = li
 		return nil
 	}, nil, log)
