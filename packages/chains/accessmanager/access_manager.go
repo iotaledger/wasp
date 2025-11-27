@@ -77,7 +77,7 @@ func New(
 		log:                     log,
 	}
 	me := ami.pubKeyAsNodeID(nodeIdentity.GetPublicKey())
-	ami.dist = gpa.NewAckHandler(me, gpa.NewOwnHandlerNEW(
+	ami.dist = gpa.NewAckHandler(me, gpa.NewOwnHandler(
 		me,
 		dist.NewAccessMgr(ami.pubKeyAsNodeID, serversUpdatedCB, ami.dismissPeerCB, log).AsGPA(),
 	), resendPeriod)

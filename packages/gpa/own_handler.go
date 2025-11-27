@@ -6,9 +6,11 @@ package gpa
 import (
 	"fmt"
 	"slices"
+
+	"github.com/iotaledger/hive.go/log"
 )
 
-// OwnHandler is a GPA instance handling own messages immediately.
+// OwnHandler is a GPAnew instance handling own messages immediately.
 //
 // The idea is instead of checking if a message for myself in the actual
 // protocols, one just send a message, and this handler passes it back
@@ -60,7 +62,23 @@ func (o *OwnHandler) handleMsgs(msgs []MessageOut) []MessageOut {
 		var msg MessageOut
 		msg, msgs = msgs[0], msgs[1:]
 		if msg.Recipient == o.me {
-			msgs = slices.Concat(msgs, o.target.Message(NewMessageIn(o.me, msg.Payload)))
+			// TODO: Review how can we avoid doing this marshal-unmarshal.
+			// Currently it is needed, because message out payload is of type any,
+			// while message in payload is of some specific type.
+
+			b, err := o.MarshalPayload(msg.Payload)
+			if err != nil {
+				log.NewLogger().LogErrorf("failed to marshal own message payload: %#v: %v", msg.Payload, err)
+				continue
+			}
+
+			payload, err := o.UnmarshalPayload(b)
+			if err != nil {
+				log.NewLogger().LogErrorf("failed to unmarshal own message payload: %v: %v", b, err)
+				continue
+			}
+
+			msgs = slices.Concat(msgs, o.target.Message(NewMessageIn(o.me, payload)))
 			continue
 		}
 		outMsgs = append(outMsgs, msg)

@@ -200,7 +200,7 @@ func New(
 		log:                  log,
 		validatorAgentID:     validatorAgentID,
 	}
-	c.asGPA = gpa.NewOwnHandlerNEW(me, c)
+	c.asGPA = gpa.NewOwnHandler(me, c)
 	c.subMempool = NewSyncMempool(c)
 	c.subStateMgr = NewSyncStateMgr(c)
 	c.subNodeconn = NewSyncNodeconn(c)

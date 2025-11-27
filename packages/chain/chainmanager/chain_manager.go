@@ -262,7 +262,7 @@ func New(
 		log:                        log,
 	}
 	cmi.output = &Output{cmi: cmi}
-	cmi.asGPA = gpa.NewOwnHandlerNEW(me, cmi)
+	cmi.asGPA = gpa.NewOwnHandler(me, cmi)
 	return cmi, nil
 }
 
