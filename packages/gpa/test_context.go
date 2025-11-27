@@ -23,7 +23,7 @@ type pendingMessage struct {
 // Inputs are processes in-order for each node individually.
 type TestContext[Obj any] struct {
 	functors        TestContextFunctors[Obj]
-	nodes           map[NodeID]*Obj                    // Nodes to test.
+	nodes           map[NodeID]Obj                     // Nodes to test.
 	inputs          map[NodeID][]Input                 // Not yet provided inputs.
 	inputCh         <-chan map[NodeID]Input            // A way to provide additional inputs w/o synchronizing other parts.
 	inputProb       float64                            // A probability to process input, instead of a message (if any).
@@ -37,7 +37,7 @@ type TestContext[Obj any] struct {
 	bytesRecv       int
 }
 
-func NewTestContext[Obj any](nodes map[NodeID]*Obj, functors ...TestContextFunctors[Obj]) *TestContext[Obj] {
+func NewTestContext[Obj any](nodes map[NodeID]Obj, functors ...TestContextFunctors[Obj]) *TestContext[Obj] {
 	inputs := map[NodeID][]Input{}
 	for n := range nodes {
 		inputs[n] = []Input{}
@@ -335,6 +335,7 @@ func FindAndInvokeMessageHandler(obj any, msg MessageIn[any]) []MessageOut {
 	objV := reflect.ValueOf(obj)
 	objT := objV.Type()
 	msgV := reflect.ValueOf(msg)
+	payloadT := reflect.TypeOf(msg.Payload)
 
 	for i := 0; i < objT.NumMethod(); i++ {
 		methodT := objT.Method(i)
@@ -351,7 +352,7 @@ func FindAndInvokeMessageHandler(obj any, msg MessageIn[any]) []MessageOut {
 
 		msgArgT := methodT.Type.In(1)
 		isMsgIn, payloadFieldT := isMessageInType(msgArgT)
-		if !isMsgIn {
+		if !isMsgIn || payloadFieldT.Type != payloadT {
 			continue
 		}
 
@@ -374,70 +375,74 @@ func FindAndInvokeMessageHandler(obj any, msg MessageIn[any]) []MessageOut {
 		return result[0].Interface().([]MessageOut)
 	}
 
-	panic(fmt.Errorf("no message handler found for message with payload type %T", msg.Payload))
+	panic(fmt.Errorf("no message handler found for message with payload type %T in object of type %T", msg.Payload, obj))
 }
 
 func isMessageInType(t reflect.Type) (isMessageIn bool, payloadField reflect.StructField) {
 	// There is no good instruments with work with generics in Go reflection.
 	// So we are forced to fallback to name-based heuristics.
-
-	if t.Kind() != reflect.Struct {
-		return false, reflect.StructField{}
-	}
-
 	// We could just hard-code name, but then tests would break after renamings. So we dynamically get current name of type.
 	type privatePayloadType struct{}
 	sampleTypeT := reflect.TypeOf(MessageIn[privatePayloadType]{})
 
-	if t.NumField() != sampleTypeT.NumField() {
-		return false, reflect.StructField{}
-	}
-
-	paramsStart := strings.Index(sampleTypeT.Name(), "[")
-	if paramsStart < 0 {
-		panic("cannot find generic parameters in MessageIn type name")
-	}
-	genericTypeName := sampleTypeT.Name()[:paramsStart]
-
-	if !strings.HasPrefix(t.Name(), genericTypeName+"[") {
+	if !isSameGenericType(t, sampleTypeT) {
 		return false, reflect.StructField{}
 	}
 
 	// We also dynamically find Payload field - also to handle future renamings.
-	payloadFieldIdx := -1
-	for i := 0; i < sampleTypeT.NumField(); i++ {
-		if sampleTypeT.Field(i).Type != reflect.TypeOf(privatePayloadType{}) {
-			continue
+	payloadFieldIndex := getFieldIndexOfType(sampleTypeT, reflect.TypeOf(privatePayloadType{}))
+
+	return true, t.Field(payloadFieldIndex)
+}
+
+func isSameGenericType(t1, t2 reflect.Type) bool {
+	name1 := getGenericTypeName(t1)
+	if name1 == "" {
+		return false // not a generic type
+	}
+	name2 := getGenericTypeName(t2)
+	if name2 == "" {
+		return false // not a generic type
+	}
+	return name1 == name2
+}
+
+func getGenericTypeName(t reflect.Type) string {
+	paramsStart := strings.Index(t.Name(), "[")
+	if paramsStart < 0 {
+		// not a generic type
+		return ""
+	}
+	return t.Name()[:paramsStart]
+}
+
+func getFieldIndexOfType(structType reflect.Type, fieldType reflect.Type) int {
+	for i := 0; i < structType.NumField(); i++ {
+		field := structType.Field(i)
+		if field.Type == fieldType {
+			return i
 		}
-		payloadFieldIdx = i
-		break
 	}
-	if payloadFieldIdx < 0 {
-		panic("Unable to find Payload field in MessageIn type")
-	}
-
-	payloadField = t.Field(payloadFieldIdx)
-
-	return true, payloadField
+	panic(fmt.Errorf("no field of type %v found in struct %v", fieldType, structType))
 }
 
 type TestContextFunctors[Obj any] struct {
-	ApplyInput       func(obj *Obj, input Input) []MessageOut
-	ApplyMessage     func(obj *Obj, msg MessageIn[any]) []MessageOut
-	Output           func(obj *Obj) any
-	StatusString     func(obj *Obj) string
-	MarshalPayload   func(obj *Obj, msg any) ([]byte, error)
-	UnmarshalPayload func(obj *Obj, data []byte) (any, error)
+	ApplyInput       func(obj Obj, input Input) []MessageOut
+	ApplyMessage     func(obj Obj, msg MessageIn[any]) []MessageOut
+	Output           func(obj Obj) any
+	StatusString     func(obj Obj) string
+	MarshalPayload   func(obj Obj, msg any) ([]byte, error)
+	UnmarshalPayload func(obj Obj, data []byte) (any, error)
 }
 
 func setDefaultFunctors[Obj any](functors *TestContextFunctors[Obj]) {
 	if functors.ApplyInput == nil {
-		functors.ApplyInput = func(obj *Obj, input Input) []MessageOut {
+		functors.ApplyInput = func(obj Obj, input Input) []MessageOut {
 			return FindAndInvokeInputHandler(obj, input)
 		}
 	}
 	if functors.ApplyMessage == nil {
-		functors.ApplyMessage = func(obj *Obj, msg MessageIn[any]) []MessageOut {
+		functors.ApplyMessage = func(obj Obj, msg MessageIn[any]) []MessageOut {
 			return FindAndInvokeMessageHandler(obj, msg)
 		}
 	}
@@ -445,7 +450,7 @@ func setDefaultFunctors[Obj any](functors *TestContextFunctors[Obj]) {
 		type marshaler interface {
 			MarshalPayload(msg any) ([]byte, error)
 		}
-		functors.MarshalPayload = func(obj *Obj, msg any) ([]byte, error) {
+		functors.MarshalPayload = func(obj Obj, msg any) ([]byte, error) {
 			return interface{}(obj).(marshaler).MarshalPayload(msg)
 		}
 	}
@@ -453,12 +458,12 @@ func setDefaultFunctors[Obj any](functors *TestContextFunctors[Obj]) {
 		type unmarshaler interface {
 			UnmarshalPayload(data []byte) (any, error)
 		}
-		functors.UnmarshalPayload = func(obj *Obj, data []byte) (any, error) {
+		functors.UnmarshalPayload = func(obj Obj, data []byte) (any, error) {
 			return interface{}(obj).(unmarshaler).UnmarshalPayload(data)
 		}
 	}
 	if functors.Output == nil {
-		functors.Output = func(obj *Obj) any {
+		functors.Output = func(obj Obj) any {
 			type outputter interface {
 				Output() Output
 			}
@@ -466,7 +471,7 @@ func setDefaultFunctors[Obj any](functors *TestContextFunctors[Obj]) {
 		}
 	}
 	if functors.StatusString == nil {
-		functors.StatusString = func(obj *Obj) string {
+		functors.StatusString = func(obj Obj) string {
 			type statusStringer interface {
 				StatusString() string
 			}

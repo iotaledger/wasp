@@ -86,7 +86,7 @@ func testCommitteeLogBasic(t *testing.T, n, f int) {
 		gpaNodes[gpaNodeIDs[i]] = committeeLogInst
 	}
 
-	gpaTC := gpa.NewTestContext(gpaNodes, gpa.TestContextFunctors[committeelog.CommitteeLog]{})
+	gpaTC := gpa.NewTestContext(gpaNodes)
 	gpaTC.WithoutSerialization()
 
 	//
