@@ -590,6 +590,21 @@ func (v *DryRunTransactionBlockResponse) GetDryRunTransactionBlock() DryRunTrans
 	return v.DryRunTransactionBlock
 }
 
+type DynamicFieldName struct {
+	// The string type of the DynamicField's 'name' field.
+	// A string representation of a Move primitive like 'u64', or a struct type
+	// like '0x2::kiosk::Listing'
+	Type string `json:"type"`
+	// The Base64 encoded bcs serialization of the DynamicField's 'name' field.
+	Bcs iotago.Base64Data `json:"bcs"`
+}
+
+// GetType returns DynamicFieldName.Type, and is useful for accessing the field via an interface.
+func (v *DynamicFieldName) GetType() string { return v.Type }
+
+// GetBcs returns DynamicFieldName.Bcs, and is useful for accessing the field via an interface.
+func (v *DynamicFieldName) GetBcs() iotago.Base64Data { return v.Bcs }
+
 // Represents optional available filters for events.
 type EventFilter struct {
 	// Filter down to events from transactions sent by this address.
@@ -660,11 +675,91 @@ func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResult) GetEffec
 type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffects struct {
 	// The transaction that ran to produce these effects.
 	TransactionBlock ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsTransactionBlock `json:"transactionBlock"`
+	// The effect this transaction had on objects on-chain.
+	ObjectChanges ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnection `json:"objectChanges"`
+	// The effect this transaction had on the balances (sum of coin values per
+	// coin type) of addresses and objects.
+	BalanceChanges ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnection `json:"balanceChanges"`
 }
 
 // GetTransactionBlock returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffects.TransactionBlock, and is useful for accessing the field via an interface.
 func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffects) GetTransactionBlock() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsTransactionBlock {
 	return v.TransactionBlock
+}
+
+// GetObjectChanges returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffects.ObjectChanges, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffects) GetObjectChanges() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnection {
+	return v.ObjectChanges
+}
+
+// GetBalanceChanges returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffects.BalanceChanges, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffects) GetBalanceChanges() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnection {
+	return v.BalanceChanges
+}
+
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnection includes the requested fields of the GraphQL type BalanceChangeConnection.
+type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnection struct {
+	// A list of nodes.
+	Nodes []ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange `json:"nodes"`
+}
+
+// GetNodes returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnection.Nodes, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnection) GetNodes() []ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange {
+	return v.Nodes
+}
+
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange includes the requested fields of the GraphQL type BalanceChange.
+// The GraphQL type's documentation follows.
+//
+// Effects to the balance (sum of coin values per coin type) owned by an
+// address or object.
+type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange struct {
+	// The signed balance change.
+	Amount iotajsonrpc.BigInt `json:"amount"`
+}
+
+// GetAmount returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange.Amount, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange) GetAmount() iotajsonrpc.BigInt {
+	return v.Amount
+}
+
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnection includes the requested fields of the GraphQL type ObjectChangeConnection.
+type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnection struct {
+	// A list of nodes.
+	Nodes []ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange `json:"nodes"`
+}
+
+// GetNodes returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnection.Nodes, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnection) GetNodes() []ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange {
+	return v.Nodes
+}
+
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange includes the requested fields of the GraphQL type ObjectChange.
+// The GraphQL type's documentation follows.
+//
+// Effect on an individual Object (keyed by its ID).
+type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange struct {
+	// The address of the object that has changed.
+	Address iotago.Address `json:"address"`
+	// Whether the ID was created in this transaction.
+	IdCreated bool `json:"idCreated"`
+	// Whether the ID was deleted in this transaction.
+	IdDeleted bool `json:"idDeleted"`
+}
+
+// GetAddress returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange.Address, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange) GetAddress() iotago.Address {
+	return v.Address
+}
+
+// GetIdCreated returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange.IdCreated, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange) GetIdCreated() bool {
+	return v.IdCreated
+}
+
+// GetIdDeleted returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange.IdDeleted, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange) GetIdDeleted() bool {
+	return v.IdDeleted
 }
 
 // ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsTransactionBlock includes the requested fields of the GraphQL type TransactionBlock.
@@ -1286,6 +1381,763 @@ type GetCoinsResponse struct {
 // GetAddress returns GetCoinsResponse.Address, and is useful for accessing the field via an interface.
 func (v *GetCoinsResponse) GetAddress() GetCoinsAddress { return v.Address }
 
+// GetDynamicFieldObjectObject includes the requested fields of the GraphQL type Object.
+// The GraphQL type's documentation follows.
+//
+// An object in IOTA is a package (set of Move bytecode modules) or object
+// (typed data structure with fields) with additional metadata detailing its
+// id, version, transaction digest, owner field indicating how this object can
+// be accessed.
+type GetDynamicFieldObjectObject struct {
+	// Access a dynamic object field on an object using its name. Names are
+	// arbitrary Move values whose type have `copy`, `drop`, and `store`,
+	// and are specified using their type, and their BCS contents, Base64
+	// encoded. The value of a dynamic object field can also be accessed
+	// off-chain directly via its address (e.g. using `Query.object`).
+	//
+	// Dynamic fields on wrapped objects can be accessed by using the same API
+	// under the Owner type.
+	DynamicObjectField GetDynamicFieldObjectObjectDynamicObjectFieldDynamicField `json:"dynamicObjectField"`
+}
+
+// GetDynamicObjectField returns GetDynamicFieldObjectObject.DynamicObjectField, and is useful for accessing the field via an interface.
+func (v *GetDynamicFieldObjectObject) GetDynamicObjectField() GetDynamicFieldObjectObjectDynamicObjectFieldDynamicField {
+	return v.DynamicObjectField
+}
+
+// GetDynamicFieldObjectObjectDynamicObjectFieldDynamicField includes the requested fields of the GraphQL type DynamicField.
+// The GraphQL type's documentation follows.
+//
+// Dynamic fields are heterogeneous fields that can be added or removed at
+// runtime, and can have arbitrary user-assigned names. There are two sub-types
+// of dynamic fields:
+//
+// 1) Dynamic Fields can store any value that has the `store` ability, however
+// an object stored in this kind of field will be considered wrapped and
+// will not be accessible directly via its ID by external tools (explorers,
+// wallets, etc) accessing storage.
+// 2) Dynamic Object Fields values must be IOTA objects (have the `key` and
+// `store` abilities, and id: UID as the first field), but will still be
+// directly accessible off-chain via their object ID after being attached.
+type GetDynamicFieldObjectObjectDynamicObjectFieldDynamicField struct {
+	// The string type, data, and serialized value of the DynamicField's 'name'
+	// field. This field is used to uniquely identify a child of the parent
+	// object.
+	Name GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldNameMoveValue `json:"name"`
+	// The returned dynamic field is an object if its return type is
+	// `MoveObject`, in which case it is also accessible off-chain via its
+	// address. Its contents will be from the latest version that is at
+	// most equal to its parent object's version.
+	Value GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValue `json:"-"`
+}
+
+// GetName returns GetDynamicFieldObjectObjectDynamicObjectFieldDynamicField.Name, and is useful for accessing the field via an interface.
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicField) GetName() GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldNameMoveValue {
+	return v.Name
+}
+
+// GetValue returns GetDynamicFieldObjectObjectDynamicObjectFieldDynamicField.Value, and is useful for accessing the field via an interface.
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicField) GetValue() GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValue {
+	return v.Value
+}
+
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicField) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*GetDynamicFieldObjectObjectDynamicObjectFieldDynamicField
+		Value json.RawMessage `json:"value"`
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.GetDynamicFieldObjectObjectDynamicObjectFieldDynamicField = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	{
+		dst := &v.Value
+		src := firstPass.Value
+		if len(src) != 0 && string(src) != "null" {
+			err = __unmarshalGetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValue(
+				src, dst)
+			if err != nil {
+				return fmt.Errorf(
+					"unable to unmarshal GetDynamicFieldObjectObjectDynamicObjectFieldDynamicField.Value: %w", err)
+			}
+		}
+	}
+	return nil
+}
+
+type __premarshalGetDynamicFieldObjectObjectDynamicObjectFieldDynamicField struct {
+	Name GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldNameMoveValue `json:"name"`
+
+	Value json.RawMessage `json:"value"`
+}
+
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicField) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicField) __premarshalJSON() (*__premarshalGetDynamicFieldObjectObjectDynamicObjectFieldDynamicField, error) {
+	var retval __premarshalGetDynamicFieldObjectObjectDynamicObjectFieldDynamicField
+
+	retval.Name = v.Name
+	{
+
+		dst := &retval.Value
+		src := v.Value
+		var err error
+		*dst, err = __marshalGetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValue(
+			&src)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"unable to marshal GetDynamicFieldObjectObjectDynamicObjectFieldDynamicField.Value: %w", err)
+		}
+	}
+	return &retval, nil
+}
+
+// GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldNameMoveValue includes the requested fields of the GraphQL type MoveValue.
+type GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldNameMoveValue struct {
+	// The BCS representation of this value, Base64 encoded.
+	Bcs iotago.Base64Data `json:"bcs"`
+	// Representation of a Move value in JSON, where:
+	//
+	// - Addresses, IDs, and UIDs are represented in canonical form, as JSON
+	// strings.
+	// - Bools are represented by JSON boolean literals.
+	// - u8, u16, and u32 are represented as JSON numbers.
+	// - u64, u128, and u256 are represented as JSON strings.
+	// - Vectors are represented by JSON arrays.
+	// - Structs are represented by JSON objects.
+	// - Empty optional values are represented by `null`.
+	//
+	// This form is offered as a less verbose convenience in cases where the
+	// layout of the type is known by the client.
+	Json json.RawMessage `json:"json"`
+	// The value's Move type.
+	Type GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldNameMoveValueTypeMoveType `json:"type"`
+}
+
+// GetBcs returns GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldNameMoveValue.Bcs, and is useful for accessing the field via an interface.
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldNameMoveValue) GetBcs() iotago.Base64Data {
+	return v.Bcs
+}
+
+// GetJson returns GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldNameMoveValue.Json, and is useful for accessing the field via an interface.
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldNameMoveValue) GetJson() json.RawMessage {
+	return v.Json
+}
+
+// GetType returns GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldNameMoveValue.Type, and is useful for accessing the field via an interface.
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldNameMoveValue) GetType() GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldNameMoveValueTypeMoveType {
+	return v.Type
+}
+
+// GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldNameMoveValueTypeMoveType includes the requested fields of the GraphQL type MoveType.
+// The GraphQL type's documentation follows.
+//
+// Represents concrete types (no type parameters, no references).
+type GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldNameMoveValueTypeMoveType struct {
+	// Structured representation of the "shape" of values that match this type.
+	// May return MoveTypeLayout::InvalidType for malformed types.
+	Layout json.RawMessage `json:"layout"`
+	// Flat representation of the type signature, as a displayable string.
+	Repr string `json:"repr"`
+}
+
+// GetLayout returns GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldNameMoveValueTypeMoveType.Layout, and is useful for accessing the field via an interface.
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldNameMoveValueTypeMoveType) GetLayout() json.RawMessage {
+	return v.Layout
+}
+
+// GetRepr returns GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldNameMoveValueTypeMoveType.Repr, and is useful for accessing the field via an interface.
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldNameMoveValueTypeMoveType) GetRepr() string {
+	return v.Repr
+}
+
+// GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValue includes the requested fields of the GraphQL interface DynamicFieldValue.
+//
+// GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValue is implemented by the following types:
+// GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject
+// GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveValue
+type GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValue interface {
+	implementsGraphQLInterfaceGetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValue()
+	// GetTypename returns the receiver's concrete GraphQL type-name (see interface doc for possible values).
+	GetTypename() string
+}
+
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject) implementsGraphQLInterfaceGetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValue() {
+}
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveValue) implementsGraphQLInterfaceGetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValue() {
+}
+
+func __unmarshalGetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValue(b []byte, v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValue) error {
+	if string(b) == "null" {
+		return nil
+	}
+
+	var tn struct {
+		TypeName string `json:"__typename"`
+	}
+	err := json.Unmarshal(b, &tn)
+	if err != nil {
+		return err
+	}
+
+	switch tn.TypeName {
+	case "MoveObject":
+		*v = new(GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject)
+		return json.Unmarshal(b, *v)
+	case "MoveValue":
+		*v = new(GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveValue)
+		return json.Unmarshal(b, *v)
+	case "":
+		return fmt.Errorf(
+			"response was missing DynamicFieldValue.__typename")
+	default:
+		return fmt.Errorf(
+			`unexpected concrete type for GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValue: "%v"`, tn.TypeName)
+	}
+}
+
+func __marshalGetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValue(v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValue) ([]byte, error) {
+
+	var typename string
+	switch v := (*v).(type) {
+	case *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject:
+		typename = "MoveObject"
+
+		premarshaled, err := v.__premarshalJSON()
+		if err != nil {
+			return nil, err
+		}
+		result := struct {
+			TypeName string `json:"__typename"`
+			*__premarshalGetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject
+		}{typename, premarshaled}
+		return json.Marshal(result)
+	case *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveValue:
+		typename = "MoveValue"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveValue
+		}{typename, v}
+		return json.Marshal(result)
+	case nil:
+		return []byte("null"), nil
+	default:
+		return nil, fmt.Errorf(
+			`unexpected concrete type for GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValue: "%T"`, v)
+	}
+}
+
+// GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject includes the requested fields of the GraphQL type MoveObject.
+// The GraphQL type's documentation follows.
+//
+// The representation of an object as a Move Object, which exposes additional
+// information (content, module that governs it, version, is transferable,
+// etc.) about this object.
+type GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject struct {
+	Typename string `json:"__typename"`
+	// Displays the contents of the Move object in a JSON string and through
+	// GraphQL types. Also provides the flat representation of the type
+	// signature, and the BCS of the corresponding data.
+	Contents GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectContentsMoveValue `json:"contents"`
+	Address  iotago.Address                                                                            `json:"address"`
+	// 32-byte hash that identifies the object's contents, encoded as a Base58
+	// string.
+	Digest  string `json:"digest"`
+	Version uint64 `json:"version"`
+	// The owner type of this object: Immutable, Shared, Parent, Address
+	Owner GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwner `json:"-"`
+	// The transaction block that created this version of the object.
+	PreviousTransactionBlock GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectPreviousTransactionBlock `json:"previousTransactionBlock"`
+	// The amount of IOTA we would rebate if this object gets deleted or
+	// mutated. This number is recalculated based on the present storage
+	// gas price.
+	StorageRebate iotajsonrpc.BigInt `json:"storageRebate"`
+	// The Base64-encoded BCS serialization of the object's content.
+	Bcs iotago.Base64Data `json:"bcs"`
+	// The set of named templates defined on-chain for the type of this object,
+	// to be handled off-chain. The server substitutes data from the object
+	// into these templates to generate a display string per template.
+	Display []GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectDisplayDisplayEntry `json:"display"`
+}
+
+// GetTypename returns GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject.Typename, and is useful for accessing the field via an interface.
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject) GetTypename() string {
+	return v.Typename
+}
+
+// GetContents returns GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject.Contents, and is useful for accessing the field via an interface.
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject) GetContents() GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectContentsMoveValue {
+	return v.Contents
+}
+
+// GetAddress returns GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject.Address, and is useful for accessing the field via an interface.
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject) GetAddress() iotago.Address {
+	return v.Address
+}
+
+// GetDigest returns GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject.Digest, and is useful for accessing the field via an interface.
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject) GetDigest() string {
+	return v.Digest
+}
+
+// GetVersion returns GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject.Version, and is useful for accessing the field via an interface.
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject) GetVersion() uint64 {
+	return v.Version
+}
+
+// GetOwner returns GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject.Owner, and is useful for accessing the field via an interface.
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject) GetOwner() GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwner {
+	return v.Owner
+}
+
+// GetPreviousTransactionBlock returns GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject.PreviousTransactionBlock, and is useful for accessing the field via an interface.
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject) GetPreviousTransactionBlock() GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectPreviousTransactionBlock {
+	return v.PreviousTransactionBlock
+}
+
+// GetStorageRebate returns GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject.StorageRebate, and is useful for accessing the field via an interface.
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject) GetStorageRebate() iotajsonrpc.BigInt {
+	return v.StorageRebate
+}
+
+// GetBcs returns GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject.Bcs, and is useful for accessing the field via an interface.
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject) GetBcs() iotago.Base64Data {
+	return v.Bcs
+}
+
+// GetDisplay returns GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject.Display, and is useful for accessing the field via an interface.
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject) GetDisplay() []GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectDisplayDisplayEntry {
+	return v.Display
+}
+
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject
+		Owner json.RawMessage `json:"owner"`
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	{
+		dst := &v.Owner
+		src := firstPass.Owner
+		if len(src) != 0 && string(src) != "null" {
+			err = __unmarshalGetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwner(
+				src, dst)
+			if err != nil {
+				return fmt.Errorf(
+					"unable to unmarshal GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject.Owner: %w", err)
+			}
+		}
+	}
+	return nil
+}
+
+type __premarshalGetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject struct {
+	Typename string `json:"__typename"`
+
+	Contents GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectContentsMoveValue `json:"contents"`
+
+	Address iotago.Address `json:"address"`
+
+	Digest string `json:"digest"`
+
+	Version uint64 `json:"version"`
+
+	Owner json.RawMessage `json:"owner"`
+
+	PreviousTransactionBlock GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectPreviousTransactionBlock `json:"previousTransactionBlock"`
+
+	StorageRebate iotajsonrpc.BigInt `json:"storageRebate"`
+
+	Bcs iotago.Base64Data `json:"bcs"`
+
+	Display []GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectDisplayDisplayEntry `json:"display"`
+}
+
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject) __premarshalJSON() (*__premarshalGetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject, error) {
+	var retval __premarshalGetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject
+
+	retval.Typename = v.Typename
+	retval.Contents = v.Contents
+	retval.Address = v.Address
+	retval.Digest = v.Digest
+	retval.Version = v.Version
+	{
+
+		dst := &retval.Owner
+		src := v.Owner
+		var err error
+		*dst, err = __marshalGetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwner(
+			&src)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"unable to marshal GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject.Owner: %w", err)
+		}
+	}
+	retval.PreviousTransactionBlock = v.PreviousTransactionBlock
+	retval.StorageRebate = v.StorageRebate
+	retval.Bcs = v.Bcs
+	retval.Display = v.Display
+	return &retval, nil
+}
+
+// GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectContentsMoveValue includes the requested fields of the GraphQL type MoveValue.
+type GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectContentsMoveValue struct {
+	// The value's Move type.
+	Type GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectContentsMoveValueTypeMoveType `json:"type"`
+	// Representation of a Move value in JSON, where:
+	//
+	// - Addresses, IDs, and UIDs are represented in canonical form, as JSON
+	// strings.
+	// - Bools are represented by JSON boolean literals.
+	// - u8, u16, and u32 are represented as JSON numbers.
+	// - u64, u128, and u256 are represented as JSON strings.
+	// - Vectors are represented by JSON arrays.
+	// - Structs are represented by JSON objects.
+	// - Empty optional values are represented by `null`.
+	//
+	// This form is offered as a less verbose convenience in cases where the
+	// layout of the type is known by the client.
+	Json json.RawMessage `json:"json"`
+}
+
+// GetType returns GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectContentsMoveValue.Type, and is useful for accessing the field via an interface.
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectContentsMoveValue) GetType() GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectContentsMoveValueTypeMoveType {
+	return v.Type
+}
+
+// GetJson returns GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectContentsMoveValue.Json, and is useful for accessing the field via an interface.
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectContentsMoveValue) GetJson() json.RawMessage {
+	return v.Json
+}
+
+// GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectContentsMoveValueTypeMoveType includes the requested fields of the GraphQL type MoveType.
+// The GraphQL type's documentation follows.
+//
+// Represents concrete types (no type parameters, no references).
+type GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectContentsMoveValueTypeMoveType struct {
+	// Flat representation of the type signature, as a displayable string.
+	Repr string `json:"repr"`
+}
+
+// GetRepr returns GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectContentsMoveValueTypeMoveType.Repr, and is useful for accessing the field via an interface.
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectContentsMoveValueTypeMoveType) GetRepr() string {
+	return v.Repr
+}
+
+// GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectDisplayDisplayEntry includes the requested fields of the GraphQL type DisplayEntry.
+// The GraphQL type's documentation follows.
+//
+// The set of named templates defined on-chain for the type of this object,
+// to be handled off-chain. The server substitutes data from the object
+// into these templates to generate a display string per template.
+type GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectDisplayDisplayEntry struct {
+	// The identifier for a particular template string of the Display object.
+	Key string `json:"key"`
+	// The template string for the key with placeholder values substituted.
+	Value string `json:"value"`
+	// An error string describing why the template could not be rendered.
+	Error string `json:"error"`
+}
+
+// GetKey returns GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectDisplayDisplayEntry.Key, and is useful for accessing the field via an interface.
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectDisplayDisplayEntry) GetKey() string {
+	return v.Key
+}
+
+// GetValue returns GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectDisplayDisplayEntry.Value, and is useful for accessing the field via an interface.
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectDisplayDisplayEntry) GetValue() string {
+	return v.Value
+}
+
+// GetError returns GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectDisplayDisplayEntry.Error, and is useful for accessing the field via an interface.
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectDisplayDisplayEntry) GetError() string {
+	return v.Error
+}
+
+// GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwner includes the requested fields of the GraphQL interface ObjectOwner.
+//
+// GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwner is implemented by the following types:
+// GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerAddressOwner
+// GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerImmutable
+// GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerParent
+// GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerShared
+// The GraphQL type's documentation follows.
+//
+// The object's owner type: Immutable, Shared, Parent, or Address.
+type GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwner interface {
+	implementsGraphQLInterfaceGetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwner()
+	// GetTypename returns the receiver's concrete GraphQL type-name (see interface doc for possible values).
+	GetTypename() string
+}
+
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerAddressOwner) implementsGraphQLInterfaceGetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwner() {
+}
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerImmutable) implementsGraphQLInterfaceGetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwner() {
+}
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerParent) implementsGraphQLInterfaceGetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwner() {
+}
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerShared) implementsGraphQLInterfaceGetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwner() {
+}
+
+func __unmarshalGetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwner(b []byte, v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwner) error {
+	if string(b) == "null" {
+		return nil
+	}
+
+	var tn struct {
+		TypeName string `json:"__typename"`
+	}
+	err := json.Unmarshal(b, &tn)
+	if err != nil {
+		return err
+	}
+
+	switch tn.TypeName {
+	case "AddressOwner":
+		*v = new(GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerAddressOwner)
+		return json.Unmarshal(b, *v)
+	case "Immutable":
+		*v = new(GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerImmutable)
+		return json.Unmarshal(b, *v)
+	case "Parent":
+		*v = new(GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerParent)
+		return json.Unmarshal(b, *v)
+	case "Shared":
+		*v = new(GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerShared)
+		return json.Unmarshal(b, *v)
+	case "":
+		return fmt.Errorf(
+			"response was missing ObjectOwner.__typename")
+	default:
+		return fmt.Errorf(
+			`unexpected concrete type for GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwner: "%v"`, tn.TypeName)
+	}
+}
+
+func __marshalGetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwner(v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwner) ([]byte, error) {
+
+	var typename string
+	switch v := (*v).(type) {
+	case *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerAddressOwner:
+		typename = "AddressOwner"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerAddressOwner
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerImmutable:
+		typename = "Immutable"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerImmutable
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerParent:
+		typename = "Parent"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerParent
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerShared:
+		typename = "Shared"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerShared
+		}{typename, v}
+		return json.Marshal(result)
+	case nil:
+		return []byte("null"), nil
+	default:
+		return nil, fmt.Errorf(
+			`unexpected concrete type for GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwner: "%T"`, v)
+	}
+}
+
+// GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerAddressOwner includes the requested fields of the GraphQL type AddressOwner.
+// The GraphQL type's documentation follows.
+//
+// An address-owned object is owned by a specific 32-byte address that is
+// either an account address (derived from a particular signature scheme) or
+// an object ID. An address-owned object is accessible only to its owner and no
+// others.
+type GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerAddressOwner struct {
+	Typename string                                                                                         `json:"__typename"`
+	Owner    GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerAddressOwnerOwner `json:"owner"`
+}
+
+// GetTypename returns GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerAddressOwner.Typename, and is useful for accessing the field via an interface.
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerAddressOwner) GetTypename() string {
+	return v.Typename
+}
+
+// GetOwner returns GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerAddressOwner.Owner, and is useful for accessing the field via an interface.
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerAddressOwner) GetOwner() GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerAddressOwnerOwner {
+	return v.Owner
+}
+
+// GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerAddressOwnerOwner includes the requested fields of the GraphQL type Owner.
+// The GraphQL type's documentation follows.
+//
+// An Owner is an entity that can own an object. Each Owner is identified by a
+// IotaAddress which represents either an Address (corresponding to a public
+// key of an account) or an Object, but never both (it is not known up-front
+// whether a given Owner is an Address or an Object).
+type GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerAddressOwnerOwner struct {
+	Address iotago.Address `json:"address"`
+}
+
+// GetAddress returns GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerAddressOwnerOwner.Address, and is useful for accessing the field via an interface.
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerAddressOwnerOwner) GetAddress() iotago.Address {
+	return v.Address
+}
+
+// GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerImmutable includes the requested fields of the GraphQL type Immutable.
+// The GraphQL type's documentation follows.
+//
+// An immutable object is an object that can't be mutated, transferred, or
+// deleted. Immutable objects have no owner, so anyone can use them.
+type GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerImmutable struct {
+	Typename string `json:"__typename"`
+}
+
+// GetTypename returns GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerImmutable.Typename, and is useful for accessing the field via an interface.
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerImmutable) GetTypename() string {
+	return v.Typename
+}
+
+// GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerParent includes the requested fields of the GraphQL type Parent.
+// The GraphQL type's documentation follows.
+//
+// If the object's owner is a Parent, this object is part of a dynamic field
+// (it is the value of the dynamic field, or the intermediate Field object
+// itself). Also note that if the owner is a parent, then it's guaranteed to be
+// an object.
+type GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerParent struct {
+	Typename string                                                                                          `json:"__typename"`
+	Parent   GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerParentParentObject `json:"parent"`
+}
+
+// GetTypename returns GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerParent.Typename, and is useful for accessing the field via an interface.
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerParent) GetTypename() string {
+	return v.Typename
+}
+
+// GetParent returns GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerParent.Parent, and is useful for accessing the field via an interface.
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerParent) GetParent() GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerParentParentObject {
+	return v.Parent
+}
+
+// GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerParentParentObject includes the requested fields of the GraphQL type Object.
+// The GraphQL type's documentation follows.
+//
+// An object in IOTA is a package (set of Move bytecode modules) or object
+// (typed data structure with fields) with additional metadata detailing its
+// id, version, transaction digest, owner field indicating how this object can
+// be accessed.
+type GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerParentParentObject struct {
+	Address iotago.Address `json:"address"`
+}
+
+// GetAddress returns GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerParentParentObject.Address, and is useful for accessing the field via an interface.
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerParentParentObject) GetAddress() iotago.Address {
+	return v.Address
+}
+
+// GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerShared includes the requested fields of the GraphQL type Shared.
+// The GraphQL type's documentation follows.
+//
+// A shared object is an object that is shared using the
+// 0x2::transfer::share_object function. Unlike owned objects, once an object
+// is shared, it stays mutable and is accessible by anyone.
+type GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerShared struct {
+	Typename             string `json:"__typename"`
+	InitialSharedVersion uint64 `json:"initialSharedVersion"`
+}
+
+// GetTypename returns GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerShared.Typename, and is useful for accessing the field via an interface.
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerShared) GetTypename() string {
+	return v.Typename
+}
+
+// GetInitialSharedVersion returns GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerShared.InitialSharedVersion, and is useful for accessing the field via an interface.
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectOwnerShared) GetInitialSharedVersion() uint64 {
+	return v.InitialSharedVersion
+}
+
+// GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectPreviousTransactionBlock includes the requested fields of the GraphQL type TransactionBlock.
+type GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectPreviousTransactionBlock struct {
+	// A 32-byte hash that uniquely identifies the transaction block contents,
+	// encoded in Base58. This serves as a unique id for the block on
+	// chain.
+	Digest string `json:"digest"`
+}
+
+// GetDigest returns GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectPreviousTransactionBlock.Digest, and is useful for accessing the field via an interface.
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectPreviousTransactionBlock) GetDigest() string {
+	return v.Digest
+}
+
+// GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveValue includes the requested fields of the GraphQL type MoveValue.
+type GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveValue struct {
+	Typename string `json:"__typename"`
+}
+
+// GetTypename returns GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveValue.Typename, and is useful for accessing the field via an interface.
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveValue) GetTypename() string {
+	return v.Typename
+}
+
+// GetDynamicFieldObjectResponse is returned by GetDynamicFieldObject on success.
+type GetDynamicFieldObjectResponse struct {
+	// The object corresponding to the given address at the (optionally) given
+	// version. When no version is given, the latest version is returned.
+	Object GetDynamicFieldObjectObject `json:"object"`
+}
+
+// GetObject returns GetDynamicFieldObjectResponse.Object, and is useful for accessing the field via an interface.
+func (v *GetDynamicFieldObjectResponse) GetObject() GetDynamicFieldObjectObject { return v.Object }
+
 // GetDynamicFieldsOwner includes the requested fields of the GraphQL type Owner.
 // The GraphQL type's documentation follows.
 //
@@ -1765,6 +2617,8 @@ type GetLatestIotaSystemStateEpoch struct {
 	// The minimum gas price that a quorum of validators are guaranteed to sign
 	// a transaction for.
 	ReferenceGasPrice iotajsonrpc.BigInt `json:"referenceGasPrice"`
+	// The total IOTA supply.
+	IotaTotalSupply iotajsonrpc.BigInt `json:"iotaTotalSupply"`
 	// Information about whether this epoch was started in safe mode, which
 	// happens if the full epoch change logic fails for some reason.
 	SafeMode GetLatestIotaSystemStateEpochSafeMode `json:"safeMode"`
@@ -1800,6 +2654,11 @@ func (v *GetLatestIotaSystemStateEpoch) GetEndTimestamp() time.Time { return v.E
 // GetReferenceGasPrice returns GetLatestIotaSystemStateEpoch.ReferenceGasPrice, and is useful for accessing the field via an interface.
 func (v *GetLatestIotaSystemStateEpoch) GetReferenceGasPrice() iotajsonrpc.BigInt {
 	return v.ReferenceGasPrice
+}
+
+// GetIotaTotalSupply returns GetLatestIotaSystemStateEpoch.IotaTotalSupply, and is useful for accessing the field via an interface.
+func (v *GetLatestIotaSystemStateEpoch) GetIotaTotalSupply() iotajsonrpc.BigInt {
+	return v.IotaTotalSupply
 }
 
 // GetSafeMode returns GetLatestIotaSystemStateEpoch.SafeMode, and is useful for accessing the field via an interface.
@@ -2929,6 +3788,782 @@ type GetOwnedObjectsResponse struct {
 
 // GetAddress returns GetOwnedObjectsResponse.Address, and is useful for accessing the field via an interface.
 func (v *GetOwnedObjectsResponse) GetAddress() GetOwnedObjectsAddress { return v.Address }
+
+// GetOwnerDynamicFieldObjectOwner includes the requested fields of the GraphQL type Owner.
+// The GraphQL type's documentation follows.
+//
+// An Owner is an entity that can own an object. Each Owner is identified by a
+// IotaAddress which represents either an Address (corresponding to a public
+// key of an account) or an Object, but never both (it is not known up-front
+// whether a given Owner is an Address or an Object).
+type GetOwnerDynamicFieldObjectOwner struct {
+	// Access a dynamic object field on an object using its name. Names are
+	// arbitrary Move values whose type have `copy`, `drop`, and `store`,
+	// and are specified using their type, and their BCS contents, Base64
+	// encoded. The value of a dynamic object field can also be accessed
+	// off-chain directly via its address (e.g. using `Query.object`).
+	//
+	// This field exists as a convenience when accessing a dynamic field on a
+	// wrapped object.
+	DynamicObjectField GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicField `json:"dynamicObjectField"`
+}
+
+// GetDynamicObjectField returns GetOwnerDynamicFieldObjectOwner.DynamicObjectField, and is useful for accessing the field via an interface.
+func (v *GetOwnerDynamicFieldObjectOwner) GetDynamicObjectField() GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicField {
+	return v.DynamicObjectField
+}
+
+// GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicField includes the requested fields of the GraphQL type DynamicField.
+// The GraphQL type's documentation follows.
+//
+// Dynamic fields are heterogeneous fields that can be added or removed at
+// runtime, and can have arbitrary user-assigned names. There are two sub-types
+// of dynamic fields:
+//
+// 1) Dynamic Fields can store any value that has the `store` ability, however
+// an object stored in this kind of field will be considered wrapped and
+// will not be accessible directly via its ID by external tools (explorers,
+// wallets, etc) accessing storage.
+// 2) Dynamic Object Fields values must be IOTA objects (have the `key` and
+// `store` abilities, and id: UID as the first field), but will still be
+// directly accessible off-chain via their object ID after being attached.
+type GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicField struct {
+	// The string type, data, and serialized value of the DynamicField's 'name'
+	// field. This field is used to uniquely identify a child of the parent
+	// object.
+	Name GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldNameMoveValue `json:"name"`
+	// The returned dynamic field is an object if its return type is
+	// `MoveObject`, in which case it is also accessible off-chain via its
+	// address. Its contents will be from the latest version that is at
+	// most equal to its parent object's version.
+	Value GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValue `json:"-"`
+}
+
+// GetName returns GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicField.Name, and is useful for accessing the field via an interface.
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicField) GetName() GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldNameMoveValue {
+	return v.Name
+}
+
+// GetValue returns GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicField.Value, and is useful for accessing the field via an interface.
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicField) GetValue() GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValue {
+	return v.Value
+}
+
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicField) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicField
+		Value json.RawMessage `json:"value"`
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicField = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	{
+		dst := &v.Value
+		src := firstPass.Value
+		if len(src) != 0 && string(src) != "null" {
+			err = __unmarshalGetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValue(
+				src, dst)
+			if err != nil {
+				return fmt.Errorf(
+					"unable to unmarshal GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicField.Value: %w", err)
+			}
+		}
+	}
+	return nil
+}
+
+type __premarshalGetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicField struct {
+	Name GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldNameMoveValue `json:"name"`
+
+	Value json.RawMessage `json:"value"`
+}
+
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicField) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicField) __premarshalJSON() (*__premarshalGetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicField, error) {
+	var retval __premarshalGetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicField
+
+	retval.Name = v.Name
+	{
+
+		dst := &retval.Value
+		src := v.Value
+		var err error
+		*dst, err = __marshalGetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValue(
+			&src)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"unable to marshal GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicField.Value: %w", err)
+		}
+	}
+	return &retval, nil
+}
+
+// GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldNameMoveValue includes the requested fields of the GraphQL type MoveValue.
+type GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldNameMoveValue struct {
+	// The BCS representation of this value, Base64 encoded.
+	Bcs iotago.Base64Data `json:"bcs"`
+	// Representation of a Move value in JSON, where:
+	//
+	// - Addresses, IDs, and UIDs are represented in canonical form, as JSON
+	// strings.
+	// - Bools are represented by JSON boolean literals.
+	// - u8, u16, and u32 are represented as JSON numbers.
+	// - u64, u128, and u256 are represented as JSON strings.
+	// - Vectors are represented by JSON arrays.
+	// - Structs are represented by JSON objects.
+	// - Empty optional values are represented by `null`.
+	//
+	// This form is offered as a less verbose convenience in cases where the
+	// layout of the type is known by the client.
+	Json json.RawMessage `json:"json"`
+	// The value's Move type.
+	Type GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldNameMoveValueTypeMoveType `json:"type"`
+}
+
+// GetBcs returns GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldNameMoveValue.Bcs, and is useful for accessing the field via an interface.
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldNameMoveValue) GetBcs() iotago.Base64Data {
+	return v.Bcs
+}
+
+// GetJson returns GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldNameMoveValue.Json, and is useful for accessing the field via an interface.
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldNameMoveValue) GetJson() json.RawMessage {
+	return v.Json
+}
+
+// GetType returns GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldNameMoveValue.Type, and is useful for accessing the field via an interface.
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldNameMoveValue) GetType() GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldNameMoveValueTypeMoveType {
+	return v.Type
+}
+
+// GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldNameMoveValueTypeMoveType includes the requested fields of the GraphQL type MoveType.
+// The GraphQL type's documentation follows.
+//
+// Represents concrete types (no type parameters, no references).
+type GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldNameMoveValueTypeMoveType struct {
+	// Structured representation of the "shape" of values that match this type.
+	// May return MoveTypeLayout::InvalidType for malformed types.
+	Layout json.RawMessage `json:"layout"`
+	// Flat representation of the type signature, as a displayable string.
+	Repr string `json:"repr"`
+}
+
+// GetLayout returns GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldNameMoveValueTypeMoveType.Layout, and is useful for accessing the field via an interface.
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldNameMoveValueTypeMoveType) GetLayout() json.RawMessage {
+	return v.Layout
+}
+
+// GetRepr returns GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldNameMoveValueTypeMoveType.Repr, and is useful for accessing the field via an interface.
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldNameMoveValueTypeMoveType) GetRepr() string {
+	return v.Repr
+}
+
+// GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValue includes the requested fields of the GraphQL interface DynamicFieldValue.
+//
+// GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValue is implemented by the following types:
+// GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject
+// GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveValue
+type GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValue interface {
+	implementsGraphQLInterfaceGetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValue()
+	// GetTypename returns the receiver's concrete GraphQL type-name (see interface doc for possible values).
+	GetTypename() string
+}
+
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject) implementsGraphQLInterfaceGetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValue() {
+}
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveValue) implementsGraphQLInterfaceGetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValue() {
+}
+
+func __unmarshalGetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValue(b []byte, v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValue) error {
+	if string(b) == "null" {
+		return nil
+	}
+
+	var tn struct {
+		TypeName string `json:"__typename"`
+	}
+	err := json.Unmarshal(b, &tn)
+	if err != nil {
+		return err
+	}
+
+	switch tn.TypeName {
+	case "MoveObject":
+		*v = new(GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject)
+		return json.Unmarshal(b, *v)
+	case "MoveValue":
+		*v = new(GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveValue)
+		return json.Unmarshal(b, *v)
+	case "":
+		return fmt.Errorf(
+			"response was missing DynamicFieldValue.__typename")
+	default:
+		return fmt.Errorf(
+			`unexpected concrete type for GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValue: "%v"`, tn.TypeName)
+	}
+}
+
+func __marshalGetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValue(v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValue) ([]byte, error) {
+
+	var typename string
+	switch v := (*v).(type) {
+	case *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject:
+		typename = "MoveObject"
+
+		premarshaled, err := v.__premarshalJSON()
+		if err != nil {
+			return nil, err
+		}
+		result := struct {
+			TypeName string `json:"__typename"`
+			*__premarshalGetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject
+		}{typename, premarshaled}
+		return json.Marshal(result)
+	case *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveValue:
+		typename = "MoveValue"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveValue
+		}{typename, v}
+		return json.Marshal(result)
+	case nil:
+		return []byte("null"), nil
+	default:
+		return nil, fmt.Errorf(
+			`unexpected concrete type for GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValue: "%T"`, v)
+	}
+}
+
+// GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject includes the requested fields of the GraphQL type MoveObject.
+// The GraphQL type's documentation follows.
+//
+// The representation of an object as a Move Object, which exposes additional
+// information (content, module that governs it, version, is transferable,
+// etc.) about this object.
+type GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject struct {
+	Typename string `json:"__typename"`
+	// Displays the contents of the Move object in a JSON string and through
+	// GraphQL types. Also provides the flat representation of the type
+	// signature, and the BCS of the corresponding data.
+	Contents GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectContentsMoveValue `json:"contents"`
+	Address  iotago.Address                                                                                `json:"address"`
+	// 32-byte hash that identifies the object's contents, encoded as a Base58
+	// string.
+	Digest  string `json:"digest"`
+	Version uint64 `json:"version"`
+	// The owner type of this object: Immutable, Shared, Parent, Address
+	Owner GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwner `json:"-"`
+	// The transaction block that created this version of the object.
+	PreviousTransactionBlock GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectPreviousTransactionBlock `json:"previousTransactionBlock"`
+	// The amount of IOTA we would rebate if this object gets deleted or
+	// mutated. This number is recalculated based on the present storage
+	// gas price.
+	StorageRebate iotajsonrpc.BigInt `json:"storageRebate"`
+	// The Base64-encoded BCS serialization of the object's content.
+	Bcs iotago.Base64Data `json:"bcs"`
+	// The set of named templates defined on-chain for the type of this object,
+	// to be handled off-chain. The server substitutes data from the object
+	// into these templates to generate a display string per template.
+	Display []GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectDisplayDisplayEntry `json:"display"`
+}
+
+// GetTypename returns GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject.Typename, and is useful for accessing the field via an interface.
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject) GetTypename() string {
+	return v.Typename
+}
+
+// GetContents returns GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject.Contents, and is useful for accessing the field via an interface.
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject) GetContents() GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectContentsMoveValue {
+	return v.Contents
+}
+
+// GetAddress returns GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject.Address, and is useful for accessing the field via an interface.
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject) GetAddress() iotago.Address {
+	return v.Address
+}
+
+// GetDigest returns GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject.Digest, and is useful for accessing the field via an interface.
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject) GetDigest() string {
+	return v.Digest
+}
+
+// GetVersion returns GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject.Version, and is useful for accessing the field via an interface.
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject) GetVersion() uint64 {
+	return v.Version
+}
+
+// GetOwner returns GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject.Owner, and is useful for accessing the field via an interface.
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject) GetOwner() GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwner {
+	return v.Owner
+}
+
+// GetPreviousTransactionBlock returns GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject.PreviousTransactionBlock, and is useful for accessing the field via an interface.
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject) GetPreviousTransactionBlock() GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectPreviousTransactionBlock {
+	return v.PreviousTransactionBlock
+}
+
+// GetStorageRebate returns GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject.StorageRebate, and is useful for accessing the field via an interface.
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject) GetStorageRebate() iotajsonrpc.BigInt {
+	return v.StorageRebate
+}
+
+// GetBcs returns GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject.Bcs, and is useful for accessing the field via an interface.
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject) GetBcs() iotago.Base64Data {
+	return v.Bcs
+}
+
+// GetDisplay returns GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject.Display, and is useful for accessing the field via an interface.
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject) GetDisplay() []GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectDisplayDisplayEntry {
+	return v.Display
+}
+
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject
+		Owner json.RawMessage `json:"owner"`
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	{
+		dst := &v.Owner
+		src := firstPass.Owner
+		if len(src) != 0 && string(src) != "null" {
+			err = __unmarshalGetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwner(
+				src, dst)
+			if err != nil {
+				return fmt.Errorf(
+					"unable to unmarshal GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject.Owner: %w", err)
+			}
+		}
+	}
+	return nil
+}
+
+type __premarshalGetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject struct {
+	Typename string `json:"__typename"`
+
+	Contents GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectContentsMoveValue `json:"contents"`
+
+	Address iotago.Address `json:"address"`
+
+	Digest string `json:"digest"`
+
+	Version uint64 `json:"version"`
+
+	Owner json.RawMessage `json:"owner"`
+
+	PreviousTransactionBlock GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectPreviousTransactionBlock `json:"previousTransactionBlock"`
+
+	StorageRebate iotajsonrpc.BigInt `json:"storageRebate"`
+
+	Bcs iotago.Base64Data `json:"bcs"`
+
+	Display []GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectDisplayDisplayEntry `json:"display"`
+}
+
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject) __premarshalJSON() (*__premarshalGetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject, error) {
+	var retval __premarshalGetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject
+
+	retval.Typename = v.Typename
+	retval.Contents = v.Contents
+	retval.Address = v.Address
+	retval.Digest = v.Digest
+	retval.Version = v.Version
+	{
+
+		dst := &retval.Owner
+		src := v.Owner
+		var err error
+		*dst, err = __marshalGetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwner(
+			&src)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"unable to marshal GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject.Owner: %w", err)
+		}
+	}
+	retval.PreviousTransactionBlock = v.PreviousTransactionBlock
+	retval.StorageRebate = v.StorageRebate
+	retval.Bcs = v.Bcs
+	retval.Display = v.Display
+	return &retval, nil
+}
+
+// GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectContentsMoveValue includes the requested fields of the GraphQL type MoveValue.
+type GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectContentsMoveValue struct {
+	// The value's Move type.
+	Type GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectContentsMoveValueTypeMoveType `json:"type"`
+	// Representation of a Move value in JSON, where:
+	//
+	// - Addresses, IDs, and UIDs are represented in canonical form, as JSON
+	// strings.
+	// - Bools are represented by JSON boolean literals.
+	// - u8, u16, and u32 are represented as JSON numbers.
+	// - u64, u128, and u256 are represented as JSON strings.
+	// - Vectors are represented by JSON arrays.
+	// - Structs are represented by JSON objects.
+	// - Empty optional values are represented by `null`.
+	//
+	// This form is offered as a less verbose convenience in cases where the
+	// layout of the type is known by the client.
+	Json json.RawMessage `json:"json"`
+}
+
+// GetType returns GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectContentsMoveValue.Type, and is useful for accessing the field via an interface.
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectContentsMoveValue) GetType() GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectContentsMoveValueTypeMoveType {
+	return v.Type
+}
+
+// GetJson returns GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectContentsMoveValue.Json, and is useful for accessing the field via an interface.
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectContentsMoveValue) GetJson() json.RawMessage {
+	return v.Json
+}
+
+// GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectContentsMoveValueTypeMoveType includes the requested fields of the GraphQL type MoveType.
+// The GraphQL type's documentation follows.
+//
+// Represents concrete types (no type parameters, no references).
+type GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectContentsMoveValueTypeMoveType struct {
+	// Flat representation of the type signature, as a displayable string.
+	Repr string `json:"repr"`
+}
+
+// GetRepr returns GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectContentsMoveValueTypeMoveType.Repr, and is useful for accessing the field via an interface.
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectContentsMoveValueTypeMoveType) GetRepr() string {
+	return v.Repr
+}
+
+// GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectDisplayDisplayEntry includes the requested fields of the GraphQL type DisplayEntry.
+// The GraphQL type's documentation follows.
+//
+// The set of named templates defined on-chain for the type of this object,
+// to be handled off-chain. The server substitutes data from the object
+// into these templates to generate a display string per template.
+type GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectDisplayDisplayEntry struct {
+	// The identifier for a particular template string of the Display object.
+	Key string `json:"key"`
+	// The template string for the key with placeholder values substituted.
+	Value string `json:"value"`
+	// An error string describing why the template could not be rendered.
+	Error string `json:"error"`
+}
+
+// GetKey returns GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectDisplayDisplayEntry.Key, and is useful for accessing the field via an interface.
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectDisplayDisplayEntry) GetKey() string {
+	return v.Key
+}
+
+// GetValue returns GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectDisplayDisplayEntry.Value, and is useful for accessing the field via an interface.
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectDisplayDisplayEntry) GetValue() string {
+	return v.Value
+}
+
+// GetError returns GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectDisplayDisplayEntry.Error, and is useful for accessing the field via an interface.
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectDisplayDisplayEntry) GetError() string {
+	return v.Error
+}
+
+// GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwner includes the requested fields of the GraphQL interface ObjectOwner.
+//
+// GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwner is implemented by the following types:
+// GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerAddressOwner
+// GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerImmutable
+// GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerParent
+// GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerShared
+// The GraphQL type's documentation follows.
+//
+// The object's owner type: Immutable, Shared, Parent, or Address.
+type GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwner interface {
+	implementsGraphQLInterfaceGetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwner()
+	// GetTypename returns the receiver's concrete GraphQL type-name (see interface doc for possible values).
+	GetTypename() string
+}
+
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerAddressOwner) implementsGraphQLInterfaceGetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwner() {
+}
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerImmutable) implementsGraphQLInterfaceGetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwner() {
+}
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerParent) implementsGraphQLInterfaceGetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwner() {
+}
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerShared) implementsGraphQLInterfaceGetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwner() {
+}
+
+func __unmarshalGetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwner(b []byte, v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwner) error {
+	if string(b) == "null" {
+		return nil
+	}
+
+	var tn struct {
+		TypeName string `json:"__typename"`
+	}
+	err := json.Unmarshal(b, &tn)
+	if err != nil {
+		return err
+	}
+
+	switch tn.TypeName {
+	case "AddressOwner":
+		*v = new(GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerAddressOwner)
+		return json.Unmarshal(b, *v)
+	case "Immutable":
+		*v = new(GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerImmutable)
+		return json.Unmarshal(b, *v)
+	case "Parent":
+		*v = new(GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerParent)
+		return json.Unmarshal(b, *v)
+	case "Shared":
+		*v = new(GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerShared)
+		return json.Unmarshal(b, *v)
+	case "":
+		return fmt.Errorf(
+			"response was missing ObjectOwner.__typename")
+	default:
+		return fmt.Errorf(
+			`unexpected concrete type for GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwner: "%v"`, tn.TypeName)
+	}
+}
+
+func __marshalGetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwner(v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwner) ([]byte, error) {
+
+	var typename string
+	switch v := (*v).(type) {
+	case *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerAddressOwner:
+		typename = "AddressOwner"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerAddressOwner
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerImmutable:
+		typename = "Immutable"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerImmutable
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerParent:
+		typename = "Parent"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerParent
+		}{typename, v}
+		return json.Marshal(result)
+	case *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerShared:
+		typename = "Shared"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerShared
+		}{typename, v}
+		return json.Marshal(result)
+	case nil:
+		return []byte("null"), nil
+	default:
+		return nil, fmt.Errorf(
+			`unexpected concrete type for GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwner: "%T"`, v)
+	}
+}
+
+// GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerAddressOwner includes the requested fields of the GraphQL type AddressOwner.
+// The GraphQL type's documentation follows.
+//
+// An address-owned object is owned by a specific 32-byte address that is
+// either an account address (derived from a particular signature scheme) or
+// an object ID. An address-owned object is accessible only to its owner and no
+// others.
+type GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerAddressOwner struct {
+	Typename string                                                                                             `json:"__typename"`
+	Owner    GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerAddressOwnerOwner `json:"owner"`
+}
+
+// GetTypename returns GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerAddressOwner.Typename, and is useful for accessing the field via an interface.
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerAddressOwner) GetTypename() string {
+	return v.Typename
+}
+
+// GetOwner returns GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerAddressOwner.Owner, and is useful for accessing the field via an interface.
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerAddressOwner) GetOwner() GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerAddressOwnerOwner {
+	return v.Owner
+}
+
+// GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerAddressOwnerOwner includes the requested fields of the GraphQL type Owner.
+// The GraphQL type's documentation follows.
+//
+// An Owner is an entity that can own an object. Each Owner is identified by a
+// IotaAddress which represents either an Address (corresponding to a public
+// key of an account) or an Object, but never both (it is not known up-front
+// whether a given Owner is an Address or an Object).
+type GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerAddressOwnerOwner struct {
+	Address iotago.Address `json:"address"`
+}
+
+// GetAddress returns GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerAddressOwnerOwner.Address, and is useful for accessing the field via an interface.
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerAddressOwnerOwner) GetAddress() iotago.Address {
+	return v.Address
+}
+
+// GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerImmutable includes the requested fields of the GraphQL type Immutable.
+// The GraphQL type's documentation follows.
+//
+// An immutable object is an object that can't be mutated, transferred, or
+// deleted. Immutable objects have no owner, so anyone can use them.
+type GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerImmutable struct {
+	Typename string `json:"__typename"`
+}
+
+// GetTypename returns GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerImmutable.Typename, and is useful for accessing the field via an interface.
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerImmutable) GetTypename() string {
+	return v.Typename
+}
+
+// GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerParent includes the requested fields of the GraphQL type Parent.
+// The GraphQL type's documentation follows.
+//
+// If the object's owner is a Parent, this object is part of a dynamic field
+// (it is the value of the dynamic field, or the intermediate Field object
+// itself). Also note that if the owner is a parent, then it's guaranteed to be
+// an object.
+type GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerParent struct {
+	Typename string                                                                                              `json:"__typename"`
+	Parent   GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerParentParentObject `json:"parent"`
+}
+
+// GetTypename returns GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerParent.Typename, and is useful for accessing the field via an interface.
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerParent) GetTypename() string {
+	return v.Typename
+}
+
+// GetParent returns GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerParent.Parent, and is useful for accessing the field via an interface.
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerParent) GetParent() GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerParentParentObject {
+	return v.Parent
+}
+
+// GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerParentParentObject includes the requested fields of the GraphQL type Object.
+// The GraphQL type's documentation follows.
+//
+// An object in IOTA is a package (set of Move bytecode modules) or object
+// (typed data structure with fields) with additional metadata detailing its
+// id, version, transaction digest, owner field indicating how this object can
+// be accessed.
+type GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerParentParentObject struct {
+	Address iotago.Address `json:"address"`
+}
+
+// GetAddress returns GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerParentParentObject.Address, and is useful for accessing the field via an interface.
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerParentParentObject) GetAddress() iotago.Address {
+	return v.Address
+}
+
+// GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerShared includes the requested fields of the GraphQL type Shared.
+// The GraphQL type's documentation follows.
+//
+// A shared object is an object that is shared using the
+// 0x2::transfer::share_object function. Unlike owned objects, once an object
+// is shared, it stays mutable and is accessible by anyone.
+type GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerShared struct {
+	Typename             string `json:"__typename"`
+	InitialSharedVersion uint64 `json:"initialSharedVersion"`
+}
+
+// GetTypename returns GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerShared.Typename, and is useful for accessing the field via an interface.
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerShared) GetTypename() string {
+	return v.Typename
+}
+
+// GetInitialSharedVersion returns GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerShared.InitialSharedVersion, and is useful for accessing the field via an interface.
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectOwnerShared) GetInitialSharedVersion() uint64 {
+	return v.InitialSharedVersion
+}
+
+// GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectPreviousTransactionBlock includes the requested fields of the GraphQL type TransactionBlock.
+type GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectPreviousTransactionBlock struct {
+	// A 32-byte hash that uniquely identifies the transaction block contents,
+	// encoded in Base58. This serves as a unique id for the block on
+	// chain.
+	Digest string `json:"digest"`
+}
+
+// GetDigest returns GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectPreviousTransactionBlock.Digest, and is useful for accessing the field via an interface.
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectPreviousTransactionBlock) GetDigest() string {
+	return v.Digest
+}
+
+// GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveValue includes the requested fields of the GraphQL type MoveValue.
+type GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveValue struct {
+	Typename string `json:"__typename"`
+}
+
+// GetTypename returns GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveValue.Typename, and is useful for accessing the field via an interface.
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveValue) GetTypename() string {
+	return v.Typename
+}
+
+// GetOwnerDynamicFieldObjectResponse is returned by GetOwnerDynamicFieldObject on success.
+type GetOwnerDynamicFieldObjectResponse struct {
+	// Look up an Owner by its IotaAddress.
+	//
+	// `rootVersion` represents the version of the root object in some nested
+	// chain of dynamic fields. It allows consistent historical queries for
+	// the case of wrapped objects, which don't have a version. For
+	// example, if querying the dynamic field of a table wrapped in a parent
+	// object, passing the parent object's version here will ensure we get the
+	// dynamic field's state at the moment that parent's version was
+	// created.
+	//
+	// Also, if this Owner is an object itself, `rootVersion` will be used to
+	// bound its version from above when querying `Owner.asObject`. This
+	// can be used, for example, to get the contents of a dynamic object
+	// field when its parent was at `rootVersion`.
+	//
+	// If `rootVersion` is omitted, dynamic fields will be from a consistent
+	// snapshot of the IOTA state at the latest checkpoint known to the
+	// GraphQL RPC. Similarly, `Owner.asObject` will return the object's
+	// version at the latest checkpoint.
+	Owner GetOwnerDynamicFieldObjectOwner `json:"owner"`
+}
+
+// GetOwner returns GetOwnerDynamicFieldObjectResponse.Owner, and is useful for accessing the field via an interface.
+func (v *GetOwnerDynamicFieldObjectResponse) GetOwner() GetOwnerDynamicFieldObjectOwner {
+	return v.Owner
+}
 
 // GetReferenceGasPriceEpoch includes the requested fields of the GraphQL type Epoch.
 // The GraphQL type's documentation follows.
@@ -4184,6 +5819,9 @@ func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesOb
 // be accessed.
 type PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject struct {
 	Version uint64 `json:"version"`
+	// 32-byte hash that identifies the object's current contents, encoded as a
+	// Base58 string.
+	Digest string `json:"digest"`
 	// Attempts to convert the object into a MoveObject
 	AsMoveObject PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObject `json:"asMoveObject"`
 }
@@ -4191,6 +5829,11 @@ type PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObject
 // GetVersion returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject.Version, and is useful for accessing the field via an interface.
 func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject) GetVersion() uint64 {
 	return v.Version
+}
+
+// GetDigest returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject.Digest, and is useful for accessing the field via an interface.
+func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject) GetDigest() string {
+	return v.Digest
 }
 
 // GetAsMoveObject returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject.AsMoveObject, and is useful for accessing the field via an interface.
@@ -4249,10 +5892,24 @@ func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesOb
 // id, version, transaction digest, owner field indicating how this object can
 // be accessed.
 type PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject struct {
+	Version uint64 `json:"version"`
+	// 32-byte hash that identifies the object's current contents, encoded as a
+	// Base58 string.
+	Digest string `json:"digest"`
 	// Attempts to convert the object into a MoveObject
 	AsMoveObject PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObject `json:"asMoveObject"`
 	// Attempts to convert the object into a MovePackage
 	AsMovePackage PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackage `json:"asMovePackage"`
+}
+
+// GetVersion returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject.Version, and is useful for accessing the field via an interface.
+func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject) GetVersion() uint64 {
+	return v.Version
+}
+
+// GetDigest returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject.Digest, and is useful for accessing the field via an interface.
+func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject) GetDigest() string {
+	return v.Digest
 }
 
 // GetAsMoveObject returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject.AsMoveObject, and is useful for accessing the field via an interface.
@@ -6643,6 +8300,8 @@ type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects struct {
 	// Timestamp corresponding to the checkpoint this transaction was finalized
 	// in.
 	Timestamp time.Time `json:"timestamp"`
+	// Effects to the gas object.
+	GasEffects RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffects `json:"gasEffects"`
 	// The effect this transaction had on the balances (sum of coin values per
 	// coin type) of addresses and objects.
 	BalanceChanges RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnection `json:"balanceChanges"`
@@ -6668,6 +8327,11 @@ func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects) GetCheckpoint() R
 // GetTimestamp returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects.Timestamp, and is useful for accessing the field via an interface.
 func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects) GetTimestamp() time.Time {
 	return v.Timestamp
+}
+
+// GetGasEffects returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects.GasEffects, and is useful for accessing the field via an interface.
+func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects) GetGasEffects() RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffects {
+	return v.GasEffects
 }
 
 // GetBalanceChanges returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects.BalanceChanges, and is useful for accessing the field via an interface.
@@ -6948,6 +8612,66 @@ func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnecti
 	return v.EndCursor
 }
 
+// RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffects includes the requested fields of the GraphQL type GasEffects.
+// The GraphQL type's documentation follows.
+//
+// Effects related to gas (costs incurred and the identity of the smashed gas
+// object returned).
+type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffects struct {
+	GasSummary RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary `json:"gasSummary"`
+}
+
+// GetGasSummary returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffects.GasSummary, and is useful for accessing the field via an interface.
+func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffects) GetGasSummary() RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary {
+	return v.GasSummary
+}
+
+// RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary includes the requested fields of the GraphQL type GasCostSummary.
+// The GraphQL type's documentation follows.
+//
+// Breakdown of gas costs in effects.
+type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary struct {
+	// Gas paid for executing this transaction (in NANOS).
+	ComputationCost iotajsonrpc.BigInt `json:"computationCost"`
+	// Gas burned for executing this transaction (in NANOS).
+	ComputationCostBurned iotajsonrpc.BigInt `json:"computationCostBurned"`
+	// Gas paid for the data stored on-chain by this transaction (in NANOS).
+	StorageCost iotajsonrpc.BigInt `json:"storageCost"`
+	// Part of storage cost that can be reclaimed by cleaning up data created
+	// by this transaction (when objects are deleted or an object is
+	// modified, which is treated as a deletion followed by a creation) (in
+	// NANOS).
+	StorageRebate iotajsonrpc.BigInt `json:"storageRebate"`
+	// Part of storage cost that is not reclaimed when data created by this
+	// transaction is cleaned up (in NANOS).
+	NonRefundableStorageFee iotajsonrpc.BigInt `json:"nonRefundableStorageFee"`
+}
+
+// GetComputationCost returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary.ComputationCost, and is useful for accessing the field via an interface.
+func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary) GetComputationCost() iotajsonrpc.BigInt {
+	return v.ComputationCost
+}
+
+// GetComputationCostBurned returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary.ComputationCostBurned, and is useful for accessing the field via an interface.
+func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary) GetComputationCostBurned() iotajsonrpc.BigInt {
+	return v.ComputationCostBurned
+}
+
+// GetStorageCost returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary.StorageCost, and is useful for accessing the field via an interface.
+func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary) GetStorageCost() iotajsonrpc.BigInt {
+	return v.StorageCost
+}
+
+// GetStorageRebate returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary.StorageRebate, and is useful for accessing the field via an interface.
+func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary) GetStorageRebate() iotajsonrpc.BigInt {
+	return v.StorageRebate
+}
+
+// GetNonRefundableStorageFee returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary.NonRefundableStorageFee, and is useful for accessing the field via an interface.
+func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary) GetNonRefundableStorageFee() iotajsonrpc.BigInt {
+	return v.NonRefundableStorageFee
+}
+
 // RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnection includes the requested fields of the GraphQL type ObjectChangeConnection.
 type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnection struct {
 	// Information to aid in pagination.
@@ -7003,6 +8727,9 @@ func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObject
 // be accessed.
 type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject struct {
 	Version uint64 `json:"version"`
+	// 32-byte hash that identifies the object's current contents, encoded as a
+	// Base58 string.
+	Digest string `json:"digest"`
 	// Attempts to convert the object into a MoveObject
 	AsMoveObject RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObject `json:"asMoveObject"`
 }
@@ -7010,6 +8737,11 @@ type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChan
 // GetVersion returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject.Version, and is useful for accessing the field via an interface.
 func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject) GetVersion() uint64 {
 	return v.Version
+}
+
+// GetDigest returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject.Digest, and is useful for accessing the field via an interface.
+func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject) GetDigest() string {
+	return v.Digest
 }
 
 // GetAsMoveObject returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject.AsMoveObject, and is useful for accessing the field via an interface.
@@ -7068,10 +8800,24 @@ func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObject
 // id, version, transaction digest, owner field indicating how this object can
 // be accessed.
 type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject struct {
+	Version uint64 `json:"version"`
+	// 32-byte hash that identifies the object's current contents, encoded as a
+	// Base58 string.
+	Digest string `json:"digest"`
 	// Attempts to convert the object into a MoveObject
 	AsMoveObject RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObject `json:"asMoveObject"`
 	// Attempts to convert the object into a MovePackage
 	AsMovePackage RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackage `json:"asMovePackage"`
+}
+
+// GetVersion returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject.Version, and is useful for accessing the field via an interface.
+func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject) GetVersion() uint64 {
+	return v.Version
+}
+
+// GetDigest returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject.Digest, and is useful for accessing the field via an interface.
+func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject) GetDigest() string {
+	return v.Digest
 }
 
 // GetAsMoveObject returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject.AsMoveObject, and is useful for accessing the field via an interface.
@@ -7706,6 +9452,36 @@ func (v *__GetCoinsInput) GetCursor() *string { return v.Cursor }
 // GetFetchCoinType returns __GetCoinsInput.FetchCoinType, and is useful for accessing the field via an interface.
 func (v *__GetCoinsInput) GetFetchCoinType() *string { return v.FetchCoinType }
 
+// __GetDynamicFieldObjectInput is used internally by genqlient
+type __GetDynamicFieldObjectInput struct {
+	ParentId                iotago.Address   `json:"parentId"`
+	Name                    DynamicFieldName `json:"name"`
+	ShowBcs                 *bool            `json:"showBcs"`
+	ShowPreviousTransaction *bool            `json:"showPreviousTransaction"`
+	ShowDisplay             *bool            `json:"showDisplay"`
+	ShowStorageRebate       *bool            `json:"showStorageRebate"`
+}
+
+// GetParentId returns __GetDynamicFieldObjectInput.ParentId, and is useful for accessing the field via an interface.
+func (v *__GetDynamicFieldObjectInput) GetParentId() iotago.Address { return v.ParentId }
+
+// GetName returns __GetDynamicFieldObjectInput.Name, and is useful for accessing the field via an interface.
+func (v *__GetDynamicFieldObjectInput) GetName() DynamicFieldName { return v.Name }
+
+// GetShowBcs returns __GetDynamicFieldObjectInput.ShowBcs, and is useful for accessing the field via an interface.
+func (v *__GetDynamicFieldObjectInput) GetShowBcs() *bool { return v.ShowBcs }
+
+// GetShowPreviousTransaction returns __GetDynamicFieldObjectInput.ShowPreviousTransaction, and is useful for accessing the field via an interface.
+func (v *__GetDynamicFieldObjectInput) GetShowPreviousTransaction() *bool {
+	return v.ShowPreviousTransaction
+}
+
+// GetShowDisplay returns __GetDynamicFieldObjectInput.ShowDisplay, and is useful for accessing the field via an interface.
+func (v *__GetDynamicFieldObjectInput) GetShowDisplay() *bool { return v.ShowDisplay }
+
+// GetShowStorageRebate returns __GetDynamicFieldObjectInput.ShowStorageRebate, and is useful for accessing the field via an interface.
+func (v *__GetDynamicFieldObjectInput) GetShowStorageRebate() *bool { return v.ShowStorageRebate }
+
 // __GetDynamicFieldsInput is used internally by genqlient
 type __GetDynamicFieldsInput struct {
 	ParentId iotago.Address `json:"parentId"`
@@ -7821,6 +9597,36 @@ func (v *__GetOwnedObjectsInput) GetShowStorageRebate() *bool { return v.ShowSto
 
 // GetFilter returns __GetOwnedObjectsInput.Filter, and is useful for accessing the field via an interface.
 func (v *__GetOwnedObjectsInput) GetFilter() *ObjectFilter { return v.Filter }
+
+// __GetOwnerDynamicFieldObjectInput is used internally by genqlient
+type __GetOwnerDynamicFieldObjectInput struct {
+	OwnerId                 iotago.Address   `json:"ownerId"`
+	Name                    DynamicFieldName `json:"name"`
+	ShowBcs                 *bool            `json:"showBcs"`
+	ShowPreviousTransaction *bool            `json:"showPreviousTransaction"`
+	ShowDisplay             *bool            `json:"showDisplay"`
+	ShowStorageRebate       *bool            `json:"showStorageRebate"`
+}
+
+// GetOwnerId returns __GetOwnerDynamicFieldObjectInput.OwnerId, and is useful for accessing the field via an interface.
+func (v *__GetOwnerDynamicFieldObjectInput) GetOwnerId() iotago.Address { return v.OwnerId }
+
+// GetName returns __GetOwnerDynamicFieldObjectInput.Name, and is useful for accessing the field via an interface.
+func (v *__GetOwnerDynamicFieldObjectInput) GetName() DynamicFieldName { return v.Name }
+
+// GetShowBcs returns __GetOwnerDynamicFieldObjectInput.ShowBcs, and is useful for accessing the field via an interface.
+func (v *__GetOwnerDynamicFieldObjectInput) GetShowBcs() *bool { return v.ShowBcs }
+
+// GetShowPreviousTransaction returns __GetOwnerDynamicFieldObjectInput.ShowPreviousTransaction, and is useful for accessing the field via an interface.
+func (v *__GetOwnerDynamicFieldObjectInput) GetShowPreviousTransaction() *bool {
+	return v.ShowPreviousTransaction
+}
+
+// GetShowDisplay returns __GetOwnerDynamicFieldObjectInput.ShowDisplay, and is useful for accessing the field via an interface.
+func (v *__GetOwnerDynamicFieldObjectInput) GetShowDisplay() *bool { return v.ShowDisplay }
+
+// GetShowStorageRebate returns __GetOwnerDynamicFieldObjectInput.ShowStorageRebate, and is useful for accessing the field via an interface.
+func (v *__GetOwnerDynamicFieldObjectInput) GetShowStorageRebate() *bool { return v.ShowStorageRebate }
 
 // __GetStakesByIdsInput is used internally by genqlient
 type __GetStakesByIdsInput struct {
@@ -8195,6 +10001,15 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 			sequenceNumber
 		}
 		timestamp
+		gasEffects {
+			gasSummary {
+				computationCost
+				computationCostBurned
+				storageCost
+				storageRebate
+				nonRefundableStorageFee
+			}
+		}
 		balanceChanges @include(if: $showBalanceChanges) {
 			pageInfo {
 				hasNextPage
@@ -8224,6 +10039,7 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 				address
 				inputState {
 					version
+					digest
 					asMoveObject {
 						contents {
 							type {
@@ -8233,6 +10049,8 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 					}
 				}
 				outputState {
+					version
+					digest
 					asMoveObject {
 						contents {
 							type {
@@ -8343,6 +10161,15 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 			sequenceNumber
 		}
 		timestamp
+		gasEffects {
+			gasSummary {
+				computationCost
+				computationCostBurned
+				storageCost
+				storageRebate
+				nonRefundableStorageFee
+			}
+		}
 		balanceChanges @include(if: $showBalanceChanges) {
 			pageInfo {
 				hasNextPage
@@ -8372,6 +10199,7 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 				address
 				inputState {
 					version
+					digest
 					asMoveObject {
 						contents {
 							type {
@@ -8381,6 +10209,8 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 					}
 				}
 				outputState {
+					version
+					digest
 					asMoveObject {
 						contents {
 							type {
@@ -8463,6 +10293,18 @@ mutation ExecuteTransactionBlock ($txBytes: String!, $signatures: [String!]!, $s
 			transactionBlock {
 				... RPC_TRANSACTION_FIELDS
 			}
+			objectChanges {
+				nodes {
+					address
+					idCreated
+					idDeleted
+				}
+			}
+			balanceChanges {
+				nodes {
+					amount
+				}
+			}
 		}
 	}
 }
@@ -8491,6 +10333,15 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 			sequenceNumber
 		}
 		timestamp
+		gasEffects {
+			gasSummary {
+				computationCost
+				computationCostBurned
+				storageCost
+				storageRebate
+				nonRefundableStorageFee
+			}
+		}
 		balanceChanges @include(if: $showBalanceChanges) {
 			pageInfo {
 				hasNextPage
@@ -8520,6 +10371,7 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 				address
 				inputState {
 					version
+					digest
 					asMoveObject {
 						contents {
 							type {
@@ -8529,6 +10381,8 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 					}
 				}
 				outputState {
+					version
+					digest
 					asMoveObject {
 						contents {
 							type {
@@ -8853,6 +10707,102 @@ func GetCoins(
 	return data_, err_
 }
 
+// The query executed by GetDynamicFieldObject.
+const GetDynamicFieldObject_Operation = `
+query GetDynamicFieldObject ($parentId: IotaAddress!, $name: DynamicFieldName!, $showBcs: Boolean!, $showPreviousTransaction: Boolean!, $showDisplay: Boolean!, $showStorageRebate: Boolean!) {
+	object(address: $parentId) {
+		dynamicObjectField(name: $name) {
+			name {
+				bcs
+				json
+				type {
+					layout
+					repr
+				}
+			}
+			value {
+				__typename
+				... on MoveObject {
+					contents {
+						type {
+							repr
+						}
+						json
+					}
+					address
+					digest
+					version
+					owner {
+						__typename
+						... on AddressOwner {
+							owner {
+								address
+							}
+						}
+						... on Shared {
+							initialSharedVersion
+						}
+						... on Parent {
+							parent {
+								address
+							}
+						}
+						... on Immutable {
+							__typename
+						}
+					}
+					previousTransactionBlock @include(if: $showPreviousTransaction) {
+						digest
+					}
+					storageRebate @include(if: $showStorageRebate)
+					bcs @include(if: $showBcs)
+					display @include(if: $showDisplay) {
+						key
+						value
+						error
+					}
+				}
+			}
+		}
+	}
+}
+`
+
+func GetDynamicFieldObject(
+	ctx_ context.Context,
+	client_ graphql.Client,
+	parentId iotago.Address,
+	name DynamicFieldName,
+	showBcs *bool,
+	showPreviousTransaction *bool,
+	showDisplay *bool,
+	showStorageRebate *bool,
+) (data_ *GetDynamicFieldObjectResponse, err_ error) {
+	req_ := &graphql.Request{
+		OpName: "GetDynamicFieldObject",
+		Query:  GetDynamicFieldObject_Operation,
+		Variables: &__GetDynamicFieldObjectInput{
+			ParentId:                parentId,
+			Name:                    name,
+			ShowBcs:                 showBcs,
+			ShowPreviousTransaction: showPreviousTransaction,
+			ShowDisplay:             showDisplay,
+			ShowStorageRebate:       showStorageRebate,
+		},
+	}
+
+	data_ = &GetDynamicFieldObjectResponse{}
+	resp_ := &graphql.Response{Data: data_}
+
+	err_ = client_.MakeRequest(
+		ctx_,
+		req_,
+		resp_,
+	)
+
+	return data_, err_
+}
+
 // The query executed by GetDynamicFields.
 const GetDynamicFields_Operation = `
 query GetDynamicFields ($parentId: IotaAddress!, $first: Int, $cursor: String) {
@@ -8934,6 +10884,7 @@ query GetLatestIotaSystemState {
 		startTimestamp
 		endTimestamp
 		referenceGasPrice
+		iotaTotalSupply
 		safeMode {
 			enabled
 			gasSummary {
@@ -9310,6 +11261,102 @@ func GetOwnedObjects(
 	return data_, err_
 }
 
+// The query executed by GetOwnerDynamicFieldObject.
+const GetOwnerDynamicFieldObject_Operation = `
+query GetOwnerDynamicFieldObject ($ownerId: IotaAddress!, $name: DynamicFieldName!, $showBcs: Boolean!, $showPreviousTransaction: Boolean!, $showDisplay: Boolean!, $showStorageRebate: Boolean!) {
+	owner(address: $ownerId) {
+		dynamicObjectField(name: $name) {
+			name {
+				bcs
+				json
+				type {
+					layout
+					repr
+				}
+			}
+			value {
+				__typename
+				... on MoveObject {
+					contents {
+						type {
+							repr
+						}
+						json
+					}
+					address
+					digest
+					version
+					owner {
+						__typename
+						... on AddressOwner {
+							owner {
+								address
+							}
+						}
+						... on Shared {
+							initialSharedVersion
+						}
+						... on Parent {
+							parent {
+								address
+							}
+						}
+						... on Immutable {
+							__typename
+						}
+					}
+					previousTransactionBlock @include(if: $showPreviousTransaction) {
+						digest
+					}
+					storageRebate @include(if: $showStorageRebate)
+					bcs @include(if: $showBcs)
+					display @include(if: $showDisplay) {
+						key
+						value
+						error
+					}
+				}
+			}
+		}
+	}
+}
+`
+
+func GetOwnerDynamicFieldObject(
+	ctx_ context.Context,
+	client_ graphql.Client,
+	ownerId iotago.Address,
+	name DynamicFieldName,
+	showBcs *bool,
+	showPreviousTransaction *bool,
+	showDisplay *bool,
+	showStorageRebate *bool,
+) (data_ *GetOwnerDynamicFieldObjectResponse, err_ error) {
+	req_ := &graphql.Request{
+		OpName: "GetOwnerDynamicFieldObject",
+		Query:  GetOwnerDynamicFieldObject_Operation,
+		Variables: &__GetOwnerDynamicFieldObjectInput{
+			OwnerId:                 ownerId,
+			Name:                    name,
+			ShowBcs:                 showBcs,
+			ShowPreviousTransaction: showPreviousTransaction,
+			ShowDisplay:             showDisplay,
+			ShowStorageRebate:       showStorageRebate,
+		},
+	}
+
+	data_ = &GetOwnerDynamicFieldObjectResponse{}
+	resp_ := &graphql.Response{Data: data_}
+
+	err_ = client_.MakeRequest(
+		ctx_,
+		req_,
+		resp_,
+	)
+
+	return data_, err_
+}
+
 // The query executed by GetReferenceGasPrice.
 const GetReferenceGasPrice_Operation = `
 query GetReferenceGasPrice {
@@ -9498,6 +11545,15 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 			sequenceNumber
 		}
 		timestamp
+		gasEffects {
+			gasSummary {
+				computationCost
+				computationCostBurned
+				storageCost
+				storageRebate
+				nonRefundableStorageFee
+			}
+		}
 		balanceChanges @include(if: $showBalanceChanges) {
 			pageInfo {
 				hasNextPage
@@ -9527,6 +11583,7 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 				address
 				inputState {
 					version
+					digest
 					asMoveObject {
 						contents {
 							type {
@@ -9536,6 +11593,8 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 					}
 				}
 				outputState {
+					version
+					digest
 					asMoveObject {
 						contents {
 							type {
@@ -9772,6 +11831,15 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 			sequenceNumber
 		}
 		timestamp
+		gasEffects {
+			gasSummary {
+				computationCost
+				computationCostBurned
+				storageCost
+				storageRebate
+				nonRefundableStorageFee
+			}
+		}
 		balanceChanges @include(if: $showBalanceChanges) {
 			pageInfo {
 				hasNextPage
@@ -9801,6 +11869,7 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 				address
 				inputState {
 					version
+					digest
 					asMoveObject {
 						contents {
 							type {
@@ -9810,6 +11879,8 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 					}
 				}
 				outputState {
+					version
+					digest
 					asMoveObject {
 						contents {
 							type {
@@ -9934,6 +12005,7 @@ fragment PAGINATE_TRANSACTION_LISTS on TransactionBlock {
 				address
 				inputState {
 					version
+					digest
 					asMoveObject {
 						contents {
 							type {
@@ -9943,6 +12015,8 @@ fragment PAGINATE_TRANSACTION_LISTS on TransactionBlock {
 					}
 				}
 				outputState {
+					version
+					digest
 					asMoveObject {
 						contents {
 							type {
@@ -10117,6 +12191,15 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 			sequenceNumber
 		}
 		timestamp
+		gasEffects {
+			gasSummary {
+				computationCost
+				computationCostBurned
+				storageCost
+				storageRebate
+				nonRefundableStorageFee
+			}
+		}
 		balanceChanges @include(if: $showBalanceChanges) {
 			pageInfo {
 				hasNextPage
@@ -10146,6 +12229,7 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 				address
 				inputState {
 					version
+					digest
 					asMoveObject {
 						contents {
 							type {
@@ -10155,6 +12239,8 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 					}
 				}
 				outputState {
+					version
+					digest
 					asMoveObject {
 						contents {
 							type {

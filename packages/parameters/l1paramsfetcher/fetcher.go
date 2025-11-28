@@ -1,4 +1,6 @@
-package parameters
+// Package l1paramsfetcher provides functionality to fetch and cache L1 protocol parameters.
+// It automatically refreshes parameters when the current epoch expires.
+package l1paramsfetcher
 
 import (
 	"context"
@@ -7,34 +9,36 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/log"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/client"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/v2/packages/coin"
+	"github.com/iotaledger/wasp/v2/packages/parameters"
 )
 
 // L1ParamsFetcher provides the latest version of L1Params, and
 // automatically refreshes it when the epoch is out of date
 type L1ParamsFetcher interface {
-	GetOrFetchLatest(ctx context.Context) (*L1Params, error)
+	GetOrFetchLatest(ctx context.Context) (*parameters.L1Params, error)
 }
 
 type l1ParamsFetcher struct {
-	client *iotaclient.Client
+	client client.IotaClient
 	log    log.Logger
 	mu     sync.Mutex
-	latest *L1Params
+	latest *parameters.L1Params
 }
 
 // NewL1ParamsFetcher creates a new L1ParamsFetcher
-func NewL1ParamsFetcher(client *iotaclient.Client, log log.Logger) L1ParamsFetcher {
+func NewL1ParamsFetcher(iotaClient client.IotaClient, log log.Logger) L1ParamsFetcher {
 	return &l1ParamsFetcher{
-		client: client,
+		client: iotaClient,
 		log:    log.NewChildLogger("L1ParamsFetcher"),
 	}
 }
 
 // GetOrFetchLatest returns the latest L1Params, or fetches it if necessary
-func (f *l1ParamsFetcher) GetOrFetchLatest(ctx context.Context) (*L1Params, error) {
+func (f *l1ParamsFetcher) GetOrFetchLatest(ctx context.Context) (*parameters.L1Params, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
@@ -62,23 +66,23 @@ func (f *l1ParamsFetcher) shouldFetch() bool {
 }
 
 // FetchLatest fetches the latest L1Params from L1, retrying on failure
-func FetchLatest(ctx context.Context, client *iotaclient.Client) (*L1Params, error) {
+func FetchLatest(ctx context.Context, iotaClient client.IotaClient) (*parameters.L1Params, error) {
 	return iotaclient.Retry(
 		ctx,
-		func() (*L1Params, error) {
-			system, err := client.GetLatestIotaSystemState(ctx)
+		func() (*parameters.L1Params, error) {
+			system, err := iotaClient.GetLatestIotaSystemState(ctx)
 			if err != nil {
 				return nil, fmt.Errorf("can't get latest system state: %w", err)
 			}
-			meta, err := client.GetCoinMetadata(ctx, iotajsonrpc.IotaCoinType.String())
+			meta, err := iotaClient.GetCoinMetadata(ctx, iotajsonrpc.IotaCoinType.String())
 			if err != nil {
 				return nil, fmt.Errorf("can't get coin metadata: %w", err)
 			}
-			if meta.Decimals != BaseTokenDecimals {
+			if meta.Decimals != parameters.BaseTokenDecimals {
 				return nil, fmt.Errorf("unsupported decimals: %d", meta.Decimals)
 			}
-			return &L1Params{
-				Protocol: &Protocol{
+			return &parameters.L1Params{
+				Protocol: &parameters.Protocol{
 					Epoch:                 system.Epoch,
 					ProtocolVersion:       system.ProtocolVersion,
 					SystemStateVersion:    system.SystemStateVersion,
@@ -86,14 +90,14 @@ func FetchLatest(ctx context.Context, client *iotaclient.Client) (*L1Params, err
 					EpochStartTimestampMs: system.EpochStartTimestampMs,
 					EpochDurationMs:       system.EpochDurationMs,
 				},
-				BaseToken: IotaCoinInfoFromL1Metadata(
+				BaseToken: parameters.IotaCoinInfoFromL1Metadata(
 					coin.BaseTokenType,
 					meta,
 					coin.Value(system.IotaTotalSupply.Uint64()),
 				),
 			}, nil
 		},
-		iotaclient.DefaultRetryCondition[*L1Params](),
+		iotaclient.DefaultRetryCondition[*parameters.L1Params](),
 		iotaclient.WaitForEffectsEnabled,
 	)
 }

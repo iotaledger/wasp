@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/v2/clients/iota-go/client"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
@@ -14,7 +15,7 @@ import (
 
 func DeployCoinPackage(
 	t require.TestingT,
-	client *iotaclient.Client,
+	iotaClient client.IotaClient,
 	signer iotasigner.Signer,
 	bytecode move.PackageBytecode,
 ) (
@@ -36,7 +37,7 @@ func DeployCoinPackage(
 	}})
 	pt := ptb.Finish()
 
-	txnResponse, err := client.SignAndExecuteTxWithRetry(
+	txnResponse, err := iotaClient.SignAndExecuteTxWithRetry(
 		context.Background(),
 		signer,
 		pt,
@@ -61,7 +62,7 @@ func DeployCoinPackage(
 
 func MintCoins(
 	t require.TestingT,
-	client *iotaclient.Client,
+	iotaClient client.IotaClient,
 	signer iotasigner.Signer,
 	packageID *iotago.PackageID,
 	moduleName iotago.Identifier,
@@ -69,7 +70,7 @@ func MintCoins(
 	treasuryCapObjectID *iotago.ObjectRef,
 	mintAmount uint64,
 ) *iotago.ObjectRef {
-	txnRes, err := client.MintToken(
+	txnRes, err := iotaClient.MintToken(
 		context.Background(),
 		signer,
 		packageID,

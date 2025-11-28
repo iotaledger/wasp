@@ -58,10 +58,9 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 
 	txnResponse, err := newAssetsBag(client, cryptolibSigner)
 	require.NoError(t, err)
-	sentAssetsBagRef, err := txnResponse.GetCreatedObjectByName(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
-	require.NoError(t, err)
+	time.Sleep(5 * time.Second)
 
-	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: cryptolibSigner.Address().AsIotaAddress()})
+	sentAssetsBagRef, err := txnResponse.GetCreatedObjectByName(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
 	_, err = assetsBagPlaceCoinAmountWithGasCoin(
@@ -72,12 +71,17 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 		10,
 	)
 	require.NoError(t, err)
+	time.Sleep(5 * time.Second)
 
 	sentAssetsBagRef, err = client.UpdateObjectRef(context.Background(), sentAssetsBagRef)
 	require.NoError(t, err)
 
+	// Fetch fresh coin references after assetsBagPlaceCoinAmountWithGasCoin modified the gas coin
+	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: cryptolibSigner.Address().AsIotaAddress()})
+	require.NoError(t, err)
+
 	var createAndSendRequestRes *iotajsonrpc.IotaTransactionBlockResponse
-	client.MustWaitForNextVersionForTesting(context.Background(), 30*time.Second, nil, getCoinsRes.Data[2].Ref(), func() {
+	client.MustWaitForNextVersionForTesting(context.Background(), 30*time.Second, nil, getCoinsRes.Data[1].Ref(), func() {
 		createAndSendRequestRes, err = client.CreateAndSendRequest(
 			context.Background(),
 			&iscmoveclient.CreateAndSendRequestRequest{
@@ -88,7 +92,7 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 				Message:       iscmovetest.RandomMessage(),
 				AllowanceBCS:  nil,
 				GasPayments: []*iotago.ObjectRef{
-					getCoinsRes.Data[2].Ref(),
+					getCoinsRes.Data[1].Ref(),
 				},
 				GasPrice:  iotaclient.DefaultGasPrice,
 				GasBudget: iotaclient.DefaultGasBudget,
@@ -97,13 +101,14 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 
 		require.NoError(t, err)
 	})
+	time.Sleep(5 * time.Second)
 
 	requestRef, err := createAndSendRequestRes.GetCreatedObjectByName(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)
 
 	getCoinsRes, err = client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: chainSigner.Address().AsIotaAddress()})
 	require.NoError(t, err)
-	gasCoin1 := getCoinsRes.Data[2]
+	gasCoin1 := getCoinsRes.Data[1]
 
 	client.MustWaitForNextVersionForTesting(context.Background(), 30*time.Second, nil, requestRef, func() {
 		client.MustWaitForNextVersionForTesting(context.Background(), 30*time.Second, nil, gasCoin1.Ref(), func() {
@@ -125,6 +130,7 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 			require.NoError(t, err)
 		})
 	})
+	time.Sleep(5 * time.Second)
 
 	getObjRes, err := client.GetObject(context.Background(), iotaclient.GetObjectRequest{
 		ObjectID: gasCoin1.CoinObjectID,
@@ -154,7 +160,7 @@ func StartNewChainWithPackageIDAndL1Client(t *testing.T, client *iscmoveclient.C
 	require.NoError(t, err)
 
 	var anchor *iscmove.AnchorWithRef
-	client.MustWaitForNextVersionForTesting(context.Background(), 30*time.Second, nil, selectedChainGasCoin.Ref(), func() {
+	client.MustWaitForNextVersionForTesting(context.Background(), 30*time.Second, nil, gasCoin.Ref(), func() {
 		client.MustWaitForNextVersionForTesting(context.Background(), 30*time.Second, nil, selectedChainGasCoin.Ref(), func() {
 			anchor, err = client.StartNewChain(
 				context.Background(),

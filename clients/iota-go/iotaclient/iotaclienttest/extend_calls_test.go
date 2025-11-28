@@ -22,14 +22,14 @@ func TestMintToken(t *testing.T) {
 
 	tokenPackageID, treasuryCap := DeployCoinPackage(
 		t,
-		client.IotaClient(),
+		client.GetIotaClient(),
 		signer,
 		contracts.Testcoin(),
 	)
 	mintAmount := uint64(1000000)
 	_ = MintCoins(
 		t,
-		client.IotaClient(),
+		client.GetIotaClient(),
 		signer,
 		tokenPackageID,
 		contracts.TestcoinModuleName,

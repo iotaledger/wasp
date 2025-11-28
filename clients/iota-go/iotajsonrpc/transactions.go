@@ -98,6 +98,13 @@ func (t IotaTransactionBlockEffects) Content() string {
 }
 
 func (t IotaTransactionBlockEffects) GasFee() int64 {
+	// Check for nil pointers in GasUsed fields
+	if t.V1 == nil || t.V1.GasUsed.StorageCost == nil ||
+		t.V1.GasUsed.StorageRebate == nil ||
+		t.V1.GasUsed.ComputationCost == nil {
+		return 0
+	}
+
 	return t.V1.GasUsed.StorageCost.Int64() -
 		t.V1.GasUsed.StorageRebate.Int64() +
 		t.V1.GasUsed.ComputationCost.Int64()
