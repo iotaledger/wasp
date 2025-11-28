@@ -6,6 +6,7 @@ package gpa
 import (
 	"bytes"
 	"fmt"
+	"maps"
 	"math/rand"
 	"reflect"
 	"sort"
@@ -38,32 +39,51 @@ type TestContext[Obj any] struct {
 }
 
 func NewTestContext[Obj any](nodes map[NodeID]Obj, functors ...TestContextFunctors[Obj]) *TestContext[Obj] {
-	inputs := map[NodeID][]Input{}
-	for n := range nodes {
-		inputs[n] = []Input{}
-	}
-
 	if len(functors) == 0 {
 		functors = append(functors, TestContextFunctors[Obj]{})
 	}
-	setDefaultFunctors(&functors[0])
 
 	tc := TestContext[Obj]{
-		functors:        functors[0],
 		msgSerialize:    true,
-		nodes:           nodes,
-		inputs:          inputs,
+		inputs:          map[NodeID][]Input{},
 		inputProb:       1.0,
 		inputCount:      0,
 		msgDeliveryProb: 1.0,
 		msgs:            []pendingMessage{},
 	}
+
+	tc.SetNodes(nodes)
+	tc.SetFunctors(tc.functors)
+
 	return &tc
 }
 
 func (tc *TestContext[Obj]) WithoutSerialization() *TestContext[Obj] {
 	tc.msgSerialize = false
 	return tc
+}
+
+func (tc *TestContext[Obj]) Nodes() map[NodeID]Obj {
+	return maps.Clone(tc.nodes)
+}
+
+func (tc *TestContext[Obj]) SetNodes(nodes map[NodeID]Obj) {
+	tc.nodes = nodes
+
+	for n := range nodes {
+		if _, exists := tc.inputs[n]; !exists {
+			tc.inputs[n] = []Input{}
+		}
+	}
+}
+
+func (tc *TestContext[Obj]) Functors() TestContextFunctors[Obj] {
+	return tc.functors
+}
+
+func (tc *TestContext[Obj]) SetFunctors(functors TestContextFunctors[Obj]) {
+	tc.functors = functors
+	setDefaultFunctors(&tc.functors)
 }
 
 func (tc *TestContext[Obj]) MsgCounts() (int, int) {
@@ -188,7 +208,7 @@ func (tc *TestContext[Obj]) tryProcessInput() {
 		tc.inputCount--
 
 		// fmt.Printf("-> %s :: INPUT %s\n", rndNID.ShortString(), rndInp)
-		msgs := tc.functors.ApplyInput(tc.nodes[rndNID], rndInp)
+		msgs := tc.functors.ApplyInput(rndNID, tc.nodes[rndNID], rndInp)
 		tc.addMessages(lo.Map(msgs, func(m MessageOut, _ int) pendingMessage {
 			return pendingMessage{Recipient: m.Recipient, Msg: NewMessageIn(rndNID, m.Payload)}
 		}))
@@ -216,9 +236,9 @@ func (tc *TestContext[Obj]) tryProcessMessage() {
 	nid := pendingMsg.Recipient
 	msg := pendingMsg.Msg
 	if tc.msgSerialize {
-		msgBytes := lo.Must(tc.functors.MarshalPayload(tc.nodes[msg.Sender], msg.Payload))
+		msgBytes := lo.Must(tc.functors.MarshalPayload(msg.Sender, tc.nodes[msg.Sender], msg.Payload))
 		tc.bytesRecv += len(msgBytes)
-		m, err := tc.functors.UnmarshalPayload(tc.nodes[nid], msgBytes)
+		m, err := tc.functors.UnmarshalPayload(nid, tc.nodes[nid], msgBytes)
 		if err != nil {
 			// E.g. silent node cannot decode messages.
 			return
@@ -226,7 +246,7 @@ func (tc *TestContext[Obj]) tryProcessMessage() {
 		msg = NewMessageIn(msg.Sender, m)
 	}
 	// fmt.Printf("%s -> %s :: %s (count: %d / %d bytes)\n", msg.Sender.ShortString(), nid.ShortString(), msg.Payload, tc.msgsRecv, tc.bytesRecv)
-	msgs := tc.functors.ApplyMessage(tc.nodes[nid], msg)
+	msgs := tc.functors.ApplyMessage(nid, tc.nodes[nid], msg)
 	tc.addMessages(lo.Map(msgs, func(m TypedMessageOut[any], _ int) pendingMessage {
 		return pendingMessage{Recipient: m.Recipient, Msg: NewMessageIn(nid, m.Payload)}
 	}))
@@ -234,7 +254,7 @@ func (tc *TestContext[Obj]) tryProcessMessage() {
 }
 
 func (tc *TestContext[Obj]) tryCallOutputHandler(nid NodeID) {
-	out := tc.functors.Output(tc.nodes[nid])
+	out := tc.functors.Output(nid, tc.nodes[nid])
 	if out != nil && tc.outputHandler != nil {
 		tc.outputHandler(nid, out)
 	}
@@ -247,8 +267,8 @@ func (tc *TestContext[Obj]) RunAll() {
 // NumberOfOutputs returns a number of non-nil outputs.
 func (tc *TestContext[Obj]) NumberOfOutputs() int {
 	outNum := 0
-	for _, node := range tc.nodes {
-		output := tc.functors.Output(node)
+	for nid, node := range tc.nodes {
+		output := tc.functors.Output(nid, node)
 		if output != nil {
 			outNum++
 		}
@@ -279,7 +299,7 @@ func (tc *TestContext[Obj]) PrintAllStatusStrings(prefix string, logFunc func(fo
 		return bytes.Compare(keys[i][:], keys[j][:]) < 0
 	})
 	for _, nidStr := range keys {
-		logFunc("TC[%p] %v [node=%v]: %v", tc, prefix, nidStr, tc.functors.StatusString(tc.nodes[nidStr]))
+		logFunc("TC[%p] %v [node=%v]: %v", tc, prefix, nidStr, tc.functors.StatusString(nidStr, tc.nodes[nidStr]))
 	}
 }
 
@@ -520,22 +540,22 @@ func getPayloadWithKeyPayloadFieldIndex(structType reflect.Type) int {
 }
 
 type TestContextFunctors[Obj any] struct {
-	ApplyInput       func(obj Obj, input Input) []MessageOut
-	ApplyMessage     func(obj Obj, msg MessageIn[any]) []MessageOut
-	Output           func(obj Obj) any
-	StatusString     func(obj Obj) string
-	MarshalPayload   func(obj Obj, msg any) ([]byte, error)
-	UnmarshalPayload func(obj Obj, data []byte) (any, error)
+	ApplyInput       func(nodeID NodeID, obj Obj, input Input) []MessageOut
+	ApplyMessage     func(nodeID NodeID, obj Obj, msg MessageIn[any]) []MessageOut
+	Output           func(nodeID NodeID, obj Obj) any
+	StatusString     func(nodeID NodeID, obj Obj) string
+	MarshalPayload   func(nodeID NodeID, obj Obj, msg any) ([]byte, error)
+	UnmarshalPayload func(nodeID NodeID, obj Obj, data []byte) (any, error)
 }
 
 func setDefaultFunctors[Obj any](functors *TestContextFunctors[Obj]) {
 	if functors.ApplyInput == nil {
-		functors.ApplyInput = func(obj Obj, input Input) []MessageOut {
+		functors.ApplyInput = func(nodeID NodeID, obj Obj, input Input) []MessageOut {
 			return FindAndInvokeInputHandler(obj, input)
 		}
 	}
 	if functors.ApplyMessage == nil {
-		functors.ApplyMessage = func(obj Obj, msg MessageIn[any]) []MessageOut {
+		functors.ApplyMessage = func(nodeID NodeID, obj Obj, msg MessageIn[any]) []MessageOut {
 			return FindAndInvokeMessageHandler(obj, msg)
 		}
 	}
@@ -543,7 +563,7 @@ func setDefaultFunctors[Obj any](functors *TestContextFunctors[Obj]) {
 		type marshaler interface {
 			MarshalPayload(msg any) ([]byte, error)
 		}
-		functors.MarshalPayload = func(obj Obj, msg any) ([]byte, error) {
+		functors.MarshalPayload = func(nodeID NodeID, obj Obj, msg any) ([]byte, error) {
 			return interface{}(obj).(marshaler).MarshalPayload(msg)
 		}
 	}
@@ -551,12 +571,12 @@ func setDefaultFunctors[Obj any](functors *TestContextFunctors[Obj]) {
 		type unmarshaler interface {
 			UnmarshalPayload(data []byte) (any, error)
 		}
-		functors.UnmarshalPayload = func(obj Obj, data []byte) (any, error) {
+		functors.UnmarshalPayload = func(nodeID NodeID, obj Obj, data []byte) (any, error) {
 			return interface{}(obj).(unmarshaler).UnmarshalPayload(data)
 		}
 	}
 	if functors.Output == nil {
-		functors.Output = func(obj Obj) any {
+		functors.Output = func(nodeID NodeID, obj Obj) any {
 			type outputter interface {
 				Output() Output
 			}
@@ -564,7 +584,7 @@ func setDefaultFunctors[Obj any](functors *TestContextFunctors[Obj]) {
 		}
 	}
 	if functors.StatusString == nil {
-		functors.StatusString = func(obj Obj) string {
+		functors.StatusString = func(nodeID NodeID, obj Obj) string {
 			type statusStringer interface {
 				StatusString() string
 			}

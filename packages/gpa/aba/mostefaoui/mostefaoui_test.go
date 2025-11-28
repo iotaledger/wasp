@@ -54,10 +54,11 @@ func testBasic(t *testing.T, n, f int, inpType string, silent int) {
 	//
 	// Create the nodes.
 	nodeIDs := gpa.MakeTestNodeIDs(n)
-	nodes := map[gpa.NodeID]gpa.GPA{}
+	nodes := map[gpa.NodeID]*mostefaoui.ABA{}
+	faulty := []gpa.NodeID{}
 	for i, nid := range nodeIDs {
 		if i >= n-silent {
-			nodes[nid] = gpa.MakeTestSilentNode()
+			faulty = append(faulty, nid)
 		} else {
 			nodeLog := log.NewChildLogger(nid.ShortString())
 			ii := i
@@ -68,10 +69,13 @@ func testBasic(t *testing.T, n, f int, inpType string, silent int) {
 				)
 				return semi.New(round, realCC)
 			}
-			nodes[nid] = mostefaoui.New(nodeIDs, nid, f, makeCCInst, nodeLog).AsGPA()
+			nodes[nid] = mostefaoui.New(nodeIDs, nid, f, makeCCInst, nodeLog)
 		}
 	}
+
 	tc := gpa.NewTestContext(nodes)
+	tc.WithoutSerialization()
+	gpa.AddSilentNodes(tc, faulty)
 	//
 	// Choose inputs.
 	inputs := map[gpa.NodeID]gpa.Input{}

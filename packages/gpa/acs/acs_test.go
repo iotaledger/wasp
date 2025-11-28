@@ -45,14 +45,15 @@ func testBasic(t *testing.T, n, f, silent int) {
 	//
 	// Create the nodes.
 	nodeIDs := gpa.MakeTestNodeIDs(n)
-	nodes := map[gpa.NodeID]gpa.GPA{}
+	nodes := map[gpa.NodeID]*acs.ACS{}
+	faulty := []gpa.NodeID{}
 	for i, nid := range nodeIDs {
 		if i >= n-silent {
-			nodes[nid] = gpa.MakeTestSilentNode()
+			faulty = append(faulty, nid)
 		} else {
 			nodeLog := log.NewChildLogger(nid.ShortString())
 			ii := i
-			makeCCInstFun := func(nodeID gpa.NodeID, round int) gpa.GPA {
+			makeCCInstFun := func(nodeID gpa.NodeID, round int) *semi.CCSemi {
 				sid := fmt.Sprintf("%s-%v", nodeID, round)
 				realCC := blssig.New(
 					suite, nodeIDs, commits, priShares[ii], ccThreshold,
@@ -60,10 +61,13 @@ func testBasic(t *testing.T, n, f, silent int) {
 				)
 				return semi.New(round, realCC)
 			}
-			nodes[nid] = acs.New(nodeIDs, nid, f, makeCCInstFun, nodeLog).AsGPA()
+			nodes[nid] = acs.New(nodeIDs, nid, f, makeCCInstFun, nodeLog)
 		}
 	}
 	tc := gpa.NewTestContext(nodes)
+	tc.WithoutSerialization()
+	gpa.AddSilentNodes(tc, faulty)
+
 	//
 	// Choose inputs.
 	inputs := map[gpa.NodeID]gpa.Input{}

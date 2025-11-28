@@ -29,35 +29,40 @@ const (
 )
 
 func (c *Consensus) MarshalPayload(payload any) ([]byte, error) {
-	switch p := payload.(type) {
+	switch payload := payload.(type) {
 	case msgBLSPartialSig:
-		return gpa.MarshalPayload(msgTypeBLSShare, p)
+		return gpa.MarshalPayload(msgTypeBLSShare, payload)
 	case gpa.PayloadWithKey[int, any]:
-		switch p.Payload.(type) {
+		switch payloadWithKey := payload.Payload.(type) {
 		case mostefaoui.MsgDone:
-			return gpa.MarshalPayload(msgTypeABAMsgDone, p)
+			return gpa.MarshalPayload(msgTypeABAMsgDone, payload)
 		case mostefaoui.MsgVote:
-			return gpa.MarshalPayload(msgTypeABAMsgVote, p)
-		case blssig.MsgSigShare:
-			return gpa.MarshalPayload(msgTypeBLSSigShare, p)
-		case bracha.MsgBracha:
-			switch p.SubsystemID {
-			case acs.SubsystemID:
-				return gpa.MarshalPayload(msgTypeACSBracha, p)
-			case nonce.SubsystemID:
-				return gpa.MarshalPayload(msgTypeACSSBracha, p)
+			return gpa.MarshalPayload(msgTypeABAMsgVote, payload)
+		case gpa.PayloadWithKey[int, any]:
+			switch payloadWithKey.Payload.(type) {
+			case blssig.MsgSigShare:
+				return gpa.MarshalPayload(msgTypeBLSSigShare, payload)
 			default:
-				panic(fmt.Errorf("unexpected subsystem ID: %s", p.SubsystemID))
+				panic(fmt.Errorf("unexpected payload type: %T", payloadWithKey.Payload))
+			}
+		case bracha.MsgBracha:
+			switch payload.SubsystemID {
+			case acs.SubsystemID:
+				return gpa.MarshalPayload(msgTypeACSBracha, payload)
+			case nonce.SubsystemID:
+				return gpa.MarshalPayload(msgTypeACSSBracha, payload)
+			default:
+				panic(fmt.Errorf("unexpected subsystem ID: %s", payload.SubsystemID))
 			}
 		case acss.MsgVote:
-			return gpa.MarshalPayload(msgTypeACSSVote, p)
+			return gpa.MarshalPayload(msgTypeACSSVote, payload)
 		case acss.MsgImplicateRecover:
-			return gpa.MarshalPayload(msgTypeACSSImplicateRecover, p)
+			return gpa.MarshalPayload(msgTypeACSSImplicateRecover, payload)
 		default:
-			panic(fmt.Errorf("unexpected payload type: %T", p.Payload))
+			panic(fmt.Errorf("unexpected payload type: %T", payload.Payload))
 		}
 	case distsign.MsgPartialSig:
-		return gpa.MarshalPayload(msgTypeDSSPartialSig, p)
+		return gpa.MarshalPayload(msgTypeDSSPartialSig, payload)
 	// TODO: Organize this consisntently before merge
 	default:
 		panic(fmt.Errorf("unexpected payload type: %T", payload))
@@ -74,6 +79,6 @@ func (c *Consensus) UnmarshalPayload(data []byte) (any, error) {
 		msgTypeACSSVote:             func() any { return gpa.PayloadWithKey[int, acss.MsgVote]{} },
 		msgTypeACSSImplicateRecover: func() any { return gpa.PayloadWithKey[int, acss.MsgImplicateRecover]{} },
 		msgTypeDSSPartialSig:        func() any { return distsign.MsgPartialSig{} },
-		msgTypeBLSSigShare:          func() any { return gpa.PayloadWithKey[int, blssig.MsgSigShare]{} },
+		msgTypeBLSSigShare:          func() any { return gpa.PayloadWithKey[int, gpa.PayloadWithKey[int, blssig.MsgSigShare]]{} },
 	})
 }

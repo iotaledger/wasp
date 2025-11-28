@@ -195,7 +195,10 @@ func (a *ABA) startRound(round int, est bool) []gpa.MessageOut {
 		panic(fmt.Errorf("failed to select CC: %v", err))
 	}
 
-	msgs = slices.Concat(msgs, cc.Input(nil))
+	msgs = slices.Concat(
+		msgs,
+		gpa.AddKey(SubsystemID, round, cc.Input(nil)),
+	)
 
 	if out := cc.Output(); out != nil {
 		msgs = slices.Concat(msgs, a.uponDecisionInputs.ccOutputReceived(*out.(*bool)))
@@ -241,16 +244,16 @@ func (a *ABA) HandleMsgDone(msgT gpa.MessageIn[MsgDone]) []gpa.MessageOut {
 	return a.varDone.msgDoneReceived(msgT)
 }
 
-func (a *ABA) HandleCCMsg(index int, msgT gpa.MessageIn[blssig.MsgSigShare]) []gpa.MessageOut {
-	cc, err := a.selectCC(index)
+func (a *ABA) HandleCCMsg(ccIndex int, msgT gpa.MessageIn[blssig.MsgSigShare]) []gpa.MessageOut {
+	cc, err := a.selectCC(ccIndex)
 	if err != nil {
 		a.log.LogWarnf("cannot select subsystem: %v", err)
 		return nil
 	}
 
 	subMsgs := cc.HandleMsgSigShare(msgT)
-	msgs := gpa.AddKey(SubsystemID, index, subMsgs)
-	if index == a.round && !a.uponDecisionInputs.haveCC() {
+	msgs := gpa.AddKey(SubsystemID, ccIndex, subMsgs)
+	if ccIndex == a.round && !a.uponDecisionInputs.haveCC() {
 		ccOut := cc.Output()
 		if ccOut != nil {
 			msgs = slices.Concat(msgs, a.uponDecisionInputs.ccOutputReceived(*ccOut.(*bool)))

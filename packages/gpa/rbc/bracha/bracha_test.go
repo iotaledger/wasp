@@ -21,11 +21,14 @@ func TestBasic(t *testing.T) {
 		nodeIDs := gpa.MakeTestNodeIDs(n)
 		leader := nodeIDs[rand.Intn(len(nodeIDs))]
 		input := []byte("something important to broadcast")
-		nodes := map[gpa.NodeID]gpa.GPA{}
+		nodes := map[gpa.NodeID]*bracha.RBC{}
 		for _, nid := range nodeIDs {
 			nodes[nid] = bracha.New(nodeIDs, f, nid, leader, math.MaxInt, func(b []byte) bool { return true }, gpa.NewPanicLogger())
 		}
-		gpa.NewTestContext(nodes).WithInputs(map[gpa.NodeID]gpa.Input{leader: gpa.Input(input)}).RunAll()
+		gpa.NewTestContext(nodes).
+			WithoutSerialization().
+			WithInputs(map[gpa.NodeID]gpa.Input{leader: gpa.Input(input)}).
+			RunAll()
 		for _, n := range nodes {
 			o := n.Output()
 			require.NotNil(tt, o)
@@ -51,14 +54,16 @@ func TestWithSilent(t *testing.T) {
 		require.Len(t, fair, n-f)
 		leader := fair[0]
 		input := []byte("something important to broadcast")
-		nodes := map[gpa.NodeID]gpa.GPA{}
+		nodes := map[gpa.NodeID]*bracha.RBC{}
 		for _, nid := range fair {
 			nodes[nid] = bracha.New(nodeIDs, f, nid, leader, math.MaxInt, func(b []byte) bool { return true }, gpa.NewPanicLogger())
 		}
-		for _, nid := range faulty {
-			nodes[nid] = gpa.MakeTestSilentNode()
-		}
-		gpa.NewTestContext(nodes).WithInputs(map[gpa.NodeID]gpa.Input{leader: gpa.Input(input)}).RunAll()
+		tc := gpa.NewTestContext(nodes).
+			WithoutSerialization().
+			WithInputs(map[gpa.NodeID]gpa.Input{leader: gpa.Input(input)})
+		gpa.AddSilentNodes(tc, faulty)
+		tc.RunAll()
+
 		for _, nid := range fair {
 			o := nodes[nid].Output()
 			require.NotNil(tt, o)
@@ -81,13 +86,14 @@ func TestPredicate(t *testing.T) {
 		nodeIDs := gpa.MakeTestNodeIDs(n)
 		leader := nodeIDs[rand.Intn(len(nodeIDs))]
 		input := []byte("something important to broadcast")
-		nodes := map[gpa.NodeID]gpa.GPA{}
+		nodes := map[gpa.NodeID]*bracha.RBC{}
 		for _, nid := range nodeIDs {
 			nodes[nid] = bracha.New(nodeIDs, f, nid, leader, math.MaxInt, pFalse, gpa.NewPanicLogger()) // NOTE: Initially false.
 		}
 		//
 		// No outputs are returned while predicates are false.
 		tc := gpa.NewTestContext(nodes).WithInputs(map[gpa.NodeID]gpa.Input{leader: gpa.Input(input)})
+		tc.WithoutSerialization()
 		tc.RunAll()
 		for nid := range nodes {
 			require.Nil(tt, nodes[nid].Output())

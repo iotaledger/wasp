@@ -178,16 +178,16 @@ func (a *ACS) HandleABAMsgDone(index int, msg gpa.MessageIn[mostefaoui.MsgDone])
 	)
 }
 
-func (a *ACS) HandleCCMsgSigShare(index int, msg gpa.MessageIn[blssig.MsgSigShare]) []gpa.MessageOut {
-	abaInst, err := a.getABAInst(index)
+func (a *ACS) HandleCCMsgSigShare(abaIndex, ccIndex int, msg gpa.MessageIn[blssig.MsgSigShare]) []gpa.MessageOut {
+	abaInst, err := a.getABAInst(abaIndex)
 	if err != nil {
 		a.log.LogWarnf("cannot select subsystem: %v", err)
 		return nil
 	}
-	subMsgs := abaInst.HandleCCMsg(index, msg)
+	subMsgs := abaInst.HandleCCMsg(ccIndex, msg)
 	return slices.Concat(
-		subMsgs,
-		a.tryHandleABAOutput(a.nodeIDs[index], abaInst),
+		gpa.AddKey(SubsystemID, abaIndex, subMsgs),
+		a.tryHandleABAOutput(a.nodeIDs[abaIndex], abaInst),
 	)
 }
 
