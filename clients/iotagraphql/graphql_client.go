@@ -2795,6 +2795,28 @@ func convertGraphQLTransactionBlockToResponse(
 				NonRefundableStorageFee: &nonRefundableStorageFee,
 			}
 		}
+<<<<<<< HEAD
+=======
+	}
+
+	// Populate gas effects from GraphQL if they're missing from BCS
+	if options != nil && options.ShowEffects && result.Effects != nil {
+		effects := &result.Effects.Data
+		if effects.V1 != nil && (effects.V1.GasUsed.ComputationCost == nil || effects.V1.GasUsed.ComputationCost.String() == "0") {
+			gasEffects := tx.Effects.GasEffects
+			gasSummary := gasEffects.GasSummary
+			computationCost := gasSummary.ComputationCost
+			storageCost := gasSummary.StorageCost
+			storageRebate := gasSummary.StorageRebate
+			nonRefundableStorageFee := gasSummary.NonRefundableStorageFee
+			effects.V1.GasUsed = iotajsonrpc.GasCostSummary{
+				ComputationCost:         &computationCost,
+				StorageCost:             &storageCost,
+				StorageRebate:           &storageRebate,
+				NonRefundableStorageFee: &nonRefundableStorageFee,
+			}
+		}
+>>>>>>> d7f8651f4 (refactor: Replace http client to graphql client)
 	}
 
 	if err := applyShowEvents(result, options, tx.Effects.Events.Nodes, digest); err != nil {
@@ -2824,12 +2846,23 @@ func convertGraphQLTransactionBlockToResponse(
 func convertGraphQLEffects(
 	effects *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects,
 ) (*serialization.TagJson[iotajsonrpc.IotaTransactionBlockEffects], error) {
-	var decodedEffects iotajsonrpc.IotaTransactionBlockEffects
-	if err := iotaclient.UnmarshalBCS(effects.Bcs, &decodedEffects); err != nil {
-		// Some nodes may append auxiliary bytes to the BCS payload; try a permissive decode before failing.
-		if _, altErr := bcs.UnmarshalStreamInto(bytes.NewReader(effects.Bcs), &decodedEffects); altErr != nil {
-			return nil, fmt.Errorf("failed to decode BCS effects: %w", err)
+	// The effects.Bcs field should already be base64-decoded by iotago.Base64Data.UnmarshalJSON,
+	// but if it's not (e.g., coming from GraphQL as raw bytes), we need to handle it.
+	// Check if the data looks like base64-encoded (starts with printable ASCII)
+	bcsData := effects.Bcs
+
+	// If the first bytes look like base64 (printable ASCII), decode it
+	if len(bcsData) > 0 && bcsData[0] >= 'A' && bcsData[0] <= 'Z' || bcsData[0] >= 'a' && bcsData[0] <= 'z' || bcsData[0] >= '0' && bcsData[0] <= '9' || bcsData[0] == '+' || bcsData[0] == '/' || bcsData[0] == '=' {
+		// Looks like base64, try to decode it
+		decoded, err := base64.StdEncoding.DecodeString(string(bcsData))
+		if err == nil {
+			bcsData = decoded
 		}
+	}
+
+	var decodedEffects iotajsonrpc.IotaTransactionBlockEffects
+	if err := iotaclient.UnmarshalBCS(bcsData, &decodedEffects); err != nil {
+		return nil, fmt.Errorf("failed to decode BCS effects: %w", err)
 	}
 
 	return &serialization.TagJson[iotajsonrpc.IotaTransactionBlockEffects]{

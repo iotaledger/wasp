@@ -179,7 +179,7 @@ func TestAssetsBagTakeCoinBalanceMergeTo(t *testing.T) {
 		assetsBagMainRef,
 		getCoinsRes.Data[1].Ref(),
 		iotajsonrpc.IotaCoinType,
-		1000,
+		100,
 	)
 	require.NoError(t, err)
 	time.Sleep(1 * time.Second)
