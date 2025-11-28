@@ -36,31 +36,52 @@ func (c *Client) GetAssetsBagWithBalances(
 		}
 
 		if isCoin {
-			resGetObject, err := c.GetObject(ctx, iotaclient.GetObjectRequest{
-				ObjectID: &data.ObjectID,
-				Options:  &iotajsonrpc.IotaObjectDataOptions{ShowContent: true},
-			})
-			if err != nil {
-				return nil, fmt.Errorf("failed to call GetObject for Balance: %w", err)
-			}
-
-			if resGetObject.Data == nil || resGetObject.Data.Content == nil || resGetObject.Data.Content.Data.MoveObject == nil {
-				return nil, fmt.Errorf("content data of AssetBag nil! (%s)", assetsBagID)
-			}
-			var coinBalance struct {
-				ID    *iotajsonrpc.MoveUID
-				Name  *iotago.ResourceType
-				Value *iotajsonrpc.BigInt
-			}
-
-			err = json.Unmarshal(resGetObject.Data.Content.Data.MoveObject.Fields, &coinBalance)
-			if err != nil {
-				return nil, fmt.Errorf("failed to unmarshal fields in Balance: %w", err)
-			}
-
+			// Convert coin type from the dynamic field name
 			cointype, err := iotajsonrpc.CoinTypeFromString("0x" + data.Name.Value.(string))
 			if err != nil {
 				return nil, fmt.Errorf("failed to convert cointype from iotajsonrpc: %w", err)
+			}
+
+			var balanceJSON []byte
+
+			// Check if it's a DynamicObject or DynamicField
+			if data.Type.Data.DynamicObject != nil {
+				// DynamicObject: use GetObject with the ObjectID
+				resGetObject, err2 := c.GetObject(ctx, iotaclient.GetObjectRequest{
+					ObjectID: &data.ObjectID,
+					Options:  &iotajsonrpc.IotaObjectDataOptions{ShowContent: true},
+				})
+				if err2 != nil {
+					return nil, fmt.Errorf("failed to call GetObject for Balance (coin type %s): %w", cointype, err2)
+				}
+
+				if resGetObject.Data == nil || resGetObject.Data.Content == nil || resGetObject.Data.Content.Data.MoveObject == nil {
+					return nil, fmt.Errorf("content data of AssetBag nil! (%s)", assetsBagID)
+				}
+
+				balanceJSON = resGetObject.Data.Content.Data.MoveObject.Fields
+			} else if data.Type.Data.DynamicField != nil {
+				// DynamicField: extract the value directly from the ValueJson field
+				if len(data.ValueJson) == 0 {
+					return nil, fmt.Errorf("ValueJson is empty for wrapped dynamic field (coin type %s)", cointype)
+				}
+				balanceJSON = data.ValueJson
+			} else {
+				return nil, fmt.Errorf("coin dynamic field is neither DynamicObject nor DynamicField: %+v", data)
+			}
+
+			// Check if balance JSON is empty or null
+			if len(balanceJSON) == 0 || string(balanceJSON) == "null" {
+				return nil, fmt.Errorf("balance JSON is empty or null for coin type %s", cointype)
+			}
+
+			var coinBalance struct {
+				Value *iotajsonrpc.BigInt `json:"value"`
+			}
+
+			err = json.Unmarshal(balanceJSON, &coinBalance)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal balance JSON: %w", err)
 			}
 
 			bag.SetCoin(cointype, iotajsonrpc.CoinValue(coinBalance.Value.Uint64()))

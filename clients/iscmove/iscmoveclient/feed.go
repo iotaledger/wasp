@@ -16,7 +16,7 @@ import (
 )
 
 type ChainFeed struct {
-	wsClient      *Client
+	wsClient      *Client // FIXME this should be removed after we migrate to GqraphQL subscriptions
 	httpClient    *Client
 	iscPackageID  iotago.PackageID
 	anchorAddress iotago.ObjectID

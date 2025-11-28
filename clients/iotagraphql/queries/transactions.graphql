@@ -147,6 +147,7 @@ fragment PAGINATE_TRANSACTION_LISTS on TransactionBlock {
 				address
 				inputState {
 					version
+					digest
 					asMoveObject {
 						contents {
 							type {
@@ -156,6 +157,8 @@ fragment PAGINATE_TRANSACTION_LISTS on TransactionBlock {
 					}
 				}
 				outputState {
+					version
+					digest
 					asMoveObject {
 						contents {
 							type {
@@ -203,6 +206,15 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 			sequenceNumber
 		}
 		timestamp
+		gasEffects {
+			gasSummary {
+				computationCost
+				computationCostBurned
+				storageCost
+				storageRebate
+				nonRefundableStorageFee
+			}
+		}
 		balanceChanges @include(if: $showBalanceChanges) {
 			pageInfo {
 				hasNextPage
@@ -233,6 +245,7 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 				address
 				inputState {
 					version
+					digest
 					asMoveObject {
 						contents {
 							type {
@@ -242,6 +255,8 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 					}
 				}
 				outputState {
+					version
+					digest
 					asMoveObject {
 						contents {
 							type {

@@ -32,6 +32,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
 	"github.com/iotaledger/wasp/v2/packages/origin"
 	"github.com/iotaledger/wasp/v2/packages/parameters"
+	"github.com/iotaledger/wasp/v2/packages/parameters/l1paramsfetcher"
 	"github.com/iotaledger/wasp/v2/packages/publisher"
 	"github.com/iotaledger/wasp/v2/packages/state"
 	"github.com/iotaledger/wasp/v2/packages/state/indexedstore"
@@ -67,7 +68,7 @@ type Solo struct {
 	publisher            *publisher.Publisher
 	ctx                  context.Context
 	mockTime             time.Time
-	l1ParamsFetcher      parameters.L1ParamsFetcher
+	l1ParamsFetcher      l1paramsfetcher.L1ParamsFetcher
 
 	l1Config L1Config
 }
@@ -169,7 +170,7 @@ func New(t Context, initOptions ...*InitOptions) *Solo {
 		enableGasBurnLogging: opt.GasBurnLogEnabled,
 		seed:                 cryptolib.NewSeed(),
 		publisher:            publisher.New(opt.Log.NewChildLogger("publisher")),
-		l1ParamsFetcher:      parameters.NewL1ParamsFetcher(l1starter.Instance().L1Client().IotaClient(), opt.Log),
+		l1ParamsFetcher:      l1paramsfetcher.NewL1ParamsFetcher(l1starter.Instance().L1Client().GetIotaClient(), opt.Log),
 		ctx:                  ctx,
 	}
 	_ = ret.publisher.Events.Published.Hook(func(ev *publisher.ISCEvent[any]) {
@@ -305,6 +306,7 @@ func (env *Solo) deployChain(chainAdmin *cryptolib.KeyPair, initCommonAccountBas
 		initCommonAccountBaseTokens,
 		env.L1Params(),
 	)
+	time.Sleep(5 * time.Second) // FIXME tmp for graphql
 
 	var initCoin *iotago.ObjectRef
 
@@ -584,7 +586,7 @@ func (env *Solo) L1Coins(addr *cryptolib.Address, coinType coin.Type) []*iotajso
 	r, err := env.L1Client().GetCoins(env.ctx, iotaclient.GetCoinsRequest{
 		Owner:    addr.AsIotaAddress(),
 		CoinType: &coinTypeStr,
-		Limit:    math.MaxInt,
+		Limit:    50,
 	})
 	require.NoError(env.T, err)
 	return r.Data
@@ -660,7 +662,7 @@ func (env *Solo) L1DeployCoinPackage(keyPair cryptolib.Signer) (
 ) {
 	return iotaclienttest.DeployCoinPackage(
 		env.T,
-		env.L1Client().IotaClient(),
+		env.L1Client().GetIotaClient(),
 		cryptolib.SignerToIotaSigner(keyPair),
 		contracts.Testcoin(),
 	)
@@ -676,7 +678,7 @@ func (env *Solo) L1MintCoin(
 ) (coinRef *iotago.ObjectRef) {
 	return iotaclienttest.MintCoins(
 		env.T,
-		env.L1Client().IotaClient(),
+		env.L1Client().GetIotaClient(),
 		cryptolib.SignerToIotaSigner(keyPair),
 		packageID,
 		moduleName,

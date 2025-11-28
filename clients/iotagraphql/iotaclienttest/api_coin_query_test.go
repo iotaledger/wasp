@@ -8,16 +8,16 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/v2/clients"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 	testcommon "github.com/iotaledger/wasp/v2/clients/iota-go/test_common"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 )
 
 func TestGetAllBalances(t *testing.T) {
-	client := clients.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
+	client := iotagraphql.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
 	owner := iotago.MustAddressFromHex(testcommon.TestAddress)
 
 	balances, err := client.GetAllBalances(context.Background(), owner)
@@ -37,7 +37,7 @@ func TestGetAllBalances(t *testing.T) {
 func TestGetAllCoins(t *testing.T) {
 	owner := iotago.MustAddressFromHex(testcommon.TestAddress)
 	// Use longer timeout for slow network
-	client := clients.NewGraphQLClientWithTimeout(iotaconn.TestnetGraphQLEndpointURL, 90*time.Second)
+	client := iotagraphql.NewGraphQLClientWithTimeout(iotaconn.TestnetGraphQLEndpointURL, 90*time.Second, nil)
 
 	limit := int(3)
 	respWithLimit, err := client.GetAllCoins(context.Background(), iotaclient.GetAllCoinsRequest{
@@ -60,7 +60,7 @@ func TestGetBalance(t *testing.T) {
 	ctx := context.Background()
 	owner := iotago.MustAddressFromHex(testcommon.TestAddress)
 
-	client := clients.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
+	client := iotagraphql.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
 
 	balance, err := client.GetBalance(ctx, iotaclient.GetBalanceRequest{Owner: owner})
 	require.NoError(t, err)
@@ -68,7 +68,7 @@ func TestGetBalance(t *testing.T) {
 }
 
 func TestGetCoinMetadata(t *testing.T) {
-	client := clients.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
+	client := iotagraphql.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
 	metadata, err := client.GetCoinMetadata(context.Background(), iotajsonrpc.IotaCoinType.String())
 	require.NoError(t, err)
 	require.Equal(t, "IOTA", metadata.Name)
@@ -78,7 +78,7 @@ func TestGetCoins(t *testing.T) {
 	ctx := context.Background()
 	owner := iotago.MustAddressFromHex(testcommon.TestAddress)
 
-	client := clients.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
+	client := iotagraphql.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
 
 	fetchCoinType := iotajsonrpc.IotaCoinType.String()
 	limit := int(5)

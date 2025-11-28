@@ -24,6 +24,7 @@ require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	fortio.org/safecast v1.0.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c // indirect
+	github.com/Khan/genqlient v0.8.1 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/VictoriaMetrics/fastcache v1.12.2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -136,6 +137,7 @@ require (
 	github.com/tklauser/go-sysconf v0.3.15 // indirect
 	github.com/tklauser/numcpus v0.10.0 // indirect
 	github.com/tyler-smith/go-bip39 v1.1.0 // indirect
+	github.com/vektah/gqlparser/v2 v2.5.19 // indirect
 	github.com/wlynxg/anet v0.0.5 // indirect
 	github.com/wollac/iota-crypto-demo v0.0.0-20221117162917-b10619eccb98 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect

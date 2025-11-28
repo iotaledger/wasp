@@ -1,4 +1,4 @@
-package clients_test
+package iotagraphql_test
 
 import (
 	"context"
@@ -7,14 +7,14 @@ import (
 	"testing"
 
 	"github.com/Khan/genqlient/graphql"
-	"github.com/iotaledger/wasp/v2/clients"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/stretchr/testify/require"
 )
 
 func TestGraphQL(t *testing.T) {
-	client := clients.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
+	client := iotagraphql.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
 
 	t.Run("Standard API Call", func(t *testing.T) {
 		addr, err := iotago.AddressFromHex("0x7a89979774c55814f41fc1e3354e2ba38d3d62096d469d86b3132e947de1e8da")
