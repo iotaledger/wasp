@@ -436,14 +436,12 @@ func findAndInvokePayloadWithKeyMessageHandler(obj any, msg MessageIn[any]) []Me
 
 		keyArgT := methodT.Type.In(1)
 		if keyArgT != keyV.Type() {
-			fmt.Println("key type mismatch:", methodT.Name, keyArgT, keyV.Type())
 			continue
 		}
 
 		msgArgT := methodT.Type.In(2)
 		isMsgIn, payloadArgT := isMessageInType(msgArgT)
 		if !isMsgIn || payloadArgT.Type != payloadT {
-			fmt.Println("payload type mismatch:", methodT.Name, payloadArgT.Type, payloadT)
 			continue
 		}
 
