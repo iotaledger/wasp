@@ -17,13 +17,11 @@ func TestMsgBLSPartialSigSerialization(t *testing.T) {
 	_, err := rand.Read(b)
 	require.NoError(t, err)
 	msg := &msgBLSPartialSig{
-		nil,
 		b,
 	}
 	bcs.TestCodec(t, msg)
 
 	msg = &msgBLSPartialSig{
-		nil,
 		[]byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
 	}
 	bcs.TestCodecAndHash(t, msg, "9a5a2e001fcf")

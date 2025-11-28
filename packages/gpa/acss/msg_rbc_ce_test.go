@@ -18,17 +18,13 @@ func TestMsgRBCCEPayloadSerialization(t *testing.T) {
 	_, err := rand.Read(b)
 	require.NoError(t, err)
 	msg := &MsgRBCCEPayload{
-		nil,
 		b,
-		nil,
 	}
 
 	bcs.TestCodec(t, msg)
 
 	msg = &MsgRBCCEPayload{
-		nil,
 		testval.TestBytes(10),
-		nil,
 	}
 
 	bcs.TestCodecAndHash(t, msg, "9a5a2e001fcf")

@@ -112,7 +112,7 @@ func (a *ackHandler) MarshalPayload(payload any) ([]byte, error) {
 	case *ackHandlerReset:
 		return MarshalPayload(msgTypeAckHandlerReset, p)
 	case *ackHandlerBatch:
-		p.nestedGPAnew = a.nested
+		p.nestedGPA = a.nested
 		return MarshalPayload(msgTypeAckHandlerBatch, p)
 	default:
 		return nil, fmt.Errorf("unexpected payload type %T", payload)
@@ -122,7 +122,7 @@ func (a *ackHandler) MarshalPayload(payload any) ([]byte, error) {
 func (a *ackHandler) UnmarshalPayload(data []byte) (any, error) {
 	msg, err := UnmarshalPayload(data, PayloadAllocator{
 		msgTypeAckHandlerReset: func() any { return &ackHandlerReset{} },
-		msgTypeAckHandlerBatch: func() any { return &ackHandlerBatch{nestedGPAnew: a.nested} },
+		msgTypeAckHandlerBatch: func() any { return &ackHandlerBatch{nestedGPA: a.nested} },
 	})
 	if err != nil {
 		fmt.Printf("ack, err=%v\n", err) // TODO: Clean this up.
@@ -320,11 +320,11 @@ type ackHandlerReset struct {
 
 // Message conveying the message batches and acknowledgements.
 type ackHandlerBatch struct {
-	id           *int       // That's ACK only, if nil.
-	msgs         []any      // Messages in the batch.
-	acks         []int      // Acknowledged batches.
-	sent         *time.Time // Transient, only used for outgoing messages, not sent to the outside.
-	nestedGPAnew GPA        // Transient, for un-marshaling only.
+	id        *int       // That's ACK only, if nil.
+	msgs      []any      // Messages in the batch.
+	acks      []int      // Acknowledged batches.
+	sent      *time.Time // Transient, only used for outgoing messages, not sent to the outside.
+	nestedGPA GPA        // Transient, for un-marshaling only.
 }
 
 func (msg *ackHandlerBatch) MarshalBCS(e *bcs.Encoder) error {
@@ -336,7 +336,7 @@ func (msg *ackHandlerBatch) MarshalBCS(e *bcs.Encoder) error {
 	}
 	e.Encode(n)
 	for _, p := range msg.msgs {
-		msgBytes, err := msg.nestedGPAnew.MarshalPayload(p)
+		msgBytes, err := msg.nestedGPA.MarshalPayload(p)
 		if err != nil {
 			return fmt.Errorf("marshaling nested payload: %w", err)
 		}
@@ -356,7 +356,7 @@ func (msg *ackHandlerBatch) UnmarshalBCS(d *bcs.Decoder) error {
 	msg.msgs = make([]any, n)
 	for i := uint16(0); i < n; i++ {
 		msgBytes := bcs.Decode[[]byte](d)
-		payload, err := msg.nestedGPAnew.UnmarshalPayload(msgBytes)
+		payload, err := msg.nestedGPA.UnmarshalPayload(msgBytes)
 		if err != nil {
 			return fmt.Errorf("msgs[%d]: %w", i, err)
 		}

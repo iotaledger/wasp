@@ -40,12 +40,12 @@ func TestBasic(t *testing.T) {
 		//
 		// Setup nodes.
 		distributedSignatures := map[gpa.NodeID]*distsign.DistributedSignature{}
-		gpas := map[gpa.NodeID]gpa.GPA{}
 		for _, nid := range nodeIDs {
 			distributedSignatures[nid] = distsign.New(suite, nodeIDs, nodePKs, f, nid, nodeSKs[nid], longTermSecretShares[nid], log)
-			gpas[nid] = distributedSignatures[nid].AsGPA()
 		}
-		tc := gpa.NewTestContext(gpas)
+		tc := gpa.NewTestContext(distributedSignatures)
+		tc.WithoutSerialization()
+
 		//
 		// Run the DKG
 		inputs := make(map[gpa.NodeID]gpa.Input)
@@ -57,8 +57,8 @@ func TestBasic(t *testing.T) {
 		//
 		// Check the INTERMEDIATE result.
 		intermediateOutputs := map[gpa.NodeID]*distsign.Output{}
-		for nid := range gpas {
-			nodeOutput := gpas[nid].Output()
+		for nid := range distributedSignatures {
+			nodeOutput := distributedSignatures[nid].Output()
 			if nodeOutput == nil {
 				continue
 			}
@@ -86,7 +86,7 @@ func TestBasic(t *testing.T) {
 		//
 		// Check the FINAL result.
 		var signature []byte
-		for _, n := range gpas {
+		for _, n := range distributedSignatures {
 			o := n.Output()
 			require.NotNil(tt, o)
 			require.NotNil(tt, o.(*distsign.Output).Signature)

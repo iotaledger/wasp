@@ -108,7 +108,7 @@ var _ GPA = &testGPA{}
 func (g *testGPA) UnmarshalPayload(data []byte) (any, error) {
 	return UnmarshalPayload(data, PayloadAllocator{
 		msgTypeTest: func() any { return &TestMessage{} },
-	}, nil)
+	})
 }
 
 func TestAckHandlerResetCodec(t *testing.T) {

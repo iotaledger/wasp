@@ -29,10 +29,8 @@ func initTestChainOfBlocks(t *testing.T) (
 	bf := utils.NewBlockFactory(t)
 	log := testlogger.NewLogger(t)
 	store := statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-	smGPA, err := New(bf.GetChainID(), 0, nil, nil, store, mockStateManagerMetrics(), log, NewStateManagerParameters())
+	sm, err := New(bf.GetChainID(), 0, nil, nil, store, mockStateManagerMetrics(), log, NewStateManagerParameters())
 	require.NoError(t, err)
-	sm, ok := smGPA.(*StateManager)
-	require.True(t, ok)
 	origin.InitChain(allmigrations.LatestSchemaVersion, store, bf.GetChainInitParameters(), iotago.ObjectID{}, 0, parameterstest.L1Mock)
 	return log, bf, store, sm
 }

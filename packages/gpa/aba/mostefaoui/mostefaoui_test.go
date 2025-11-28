@@ -61,7 +61,7 @@ func testBasic(t *testing.T, n, f int, inpType string, silent int) {
 		} else {
 			nodeLog := log.NewChildLogger(nid.ShortString())
 			ii := i
-			makeCCInst := func(round int) gpa.GPA {
+			makeCCInst := func(round int) *semi.CCSemi {
 				realCC := blssig.New(
 					suite, nodeIDs, commits, priShares[ii], threshold,
 					nodeIDs[ii], []byte{1, 2, 3, byte(round)}, nodeLog,

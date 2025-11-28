@@ -33,15 +33,9 @@ func (m *WrappedMsg) MsgType() gpa.MessageType {
 }
 
 func TestUnmarshalPayload(t *testing.T) {
-	decodeWrapped := func(b []byte) (any, error) {
-		return bcs.Unmarshal[*WrappedMsg](b)
-	}
-
 	unmarshal := func(data []byte) (any, error) {
 		return gpa.UnmarshalPayload(data, gpa.PayloadAllocator{
 			TestMsgID1: func() any { return &TestMsg{} },
-		}, gpa.PayloadFallback{
-			TestMsgWrapped: decodeWrapped,
 		})
 	}
 
@@ -60,10 +54,6 @@ func TestUnmarshalPayload(t *testing.T) {
 	enc.Encode(TestMsgWrapped)
 	enc.Encode(WrappedMsg{C: []bool{true, false}})
 	require.NoError(t, enc.Err())
-
-	msg, err = unmarshal(encBuf.Bytes())
-	require.NoError(t, err)
-	require.Equal(t, &WrappedMsg{C: []bool{true, false}}, msg)
 
 	encBuf.Reset()
 	enc = bcs.NewEncoder(&encBuf)
