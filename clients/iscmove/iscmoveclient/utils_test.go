@@ -28,14 +28,14 @@ func buildDeployMintTestcoin(
 ) {
 	tokenPackageID, treasuryCap := iotaclienttest.DeployCoinPackage(
 		t,
-		client.Client,
+		client,
 		cryptolib.SignerToIotaSigner(signer),
 		contracts.Testcoin(),
 	)
 	mintAmount := uint64(1000000)
 	coinRef := iotaclienttest.MintCoins(
 		t,
-		client.Client,
+		client,
 		cryptolib.SignerToIotaSigner(signer),
 		tokenPackageID,
 		contracts.TestcoinModuleName,

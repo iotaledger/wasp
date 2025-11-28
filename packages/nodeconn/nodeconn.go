@@ -24,6 +24,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/parameters"
+	"github.com/iotaledger/wasp/v2/packages/parameters/l1paramsfetcher"
 	"github.com/iotaledger/wasp/v2/packages/transaction"
 	"github.com/iotaledger/wasp/v2/packages/util"
 )
@@ -55,7 +56,7 @@ type nodeConnection struct {
 	log.Logger
 
 	httpClient          clients.L1Client
-	l1ParamsFetcher     parameters.L1ParamsFetcher
+	l1ParamsFetcher     l1paramsfetcher.L1ParamsFetcher
 	wsURL               string
 	httpURL             string
 	maxNumberOfRequests int
@@ -85,7 +86,7 @@ func New(
 		wsURL:               wsURL,
 		httpURL:             httpURL,
 		httpClient:          httpClient,
-		l1ParamsFetcher:     parameters.NewL1ParamsFetcher(httpClient.IotaClient(), log),
+		l1ParamsFetcher:     l1paramsfetcher.NewL1ParamsFetcher(httpClient.GetIotaClient(), log),
 		maxNumberOfRequests: maxNumberOfRequests,
 		chainsMap: shrinkingmap.New[isc.ChainID, *ncChain](
 			shrinkingmap.WithShrinkingThresholdRatio(chainsCleanupThresholdRatio),
@@ -231,7 +232,7 @@ func (nc *nodeConnection) L1Client() clients.L1Client {
 	return nc.httpClient
 }
 
-func (nc *nodeConnection) L1ParamsFetcher() parameters.L1ParamsFetcher {
+func (nc *nodeConnection) L1ParamsFetcher() l1paramsfetcher.L1ParamsFetcher {
 	return nc.l1ParamsFetcher
 }
 

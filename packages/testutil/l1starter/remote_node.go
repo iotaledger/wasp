@@ -3,6 +3,7 @@ package l1starter
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/iotaledger/wasp/v2/clients"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
@@ -55,6 +56,8 @@ func (r *RemoteIotaNode) Start(ctx context.Context) {
 	if err != nil {
 		panic(fmt.Errorf("faucet request failed: %w for url: %s", err, r.faucetURL))
 	}
+
+	time.Sleep(10 * time.Second) // FIXME tmp for graphql
 
 	r.iscPackageID, err = client.L2().DeployISCContracts(ctx, r.iscPackageOwner)
 	if err != nil {

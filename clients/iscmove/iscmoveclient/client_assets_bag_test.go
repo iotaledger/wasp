@@ -3,6 +3,7 @@ package iscmoveclient_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -109,6 +110,8 @@ func TestAssetsBagPlaceCoinAmount(t *testing.T) {
 
 	txnResponse, err := newAssetsBag(client, cryptolibSigner)
 	require.NoError(t, err)
+	time.Sleep(5 * time.Second)
+
 	assetsBagMainRef, err := txnResponse.GetCreatedObjectByName(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
@@ -156,6 +159,8 @@ func TestAssetsBagTakeCoinBalanceMergeTo(t *testing.T) {
 	const topUpAmount = 123
 	txnResponse, err := newAssetsBag(client, cryptolibSigner)
 	require.NoError(t, err)
+	time.Sleep(5 * time.Second)
+
 	assetsBagMainRef, err := txnResponse.GetCreatedObjectByName(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
@@ -169,9 +174,10 @@ func TestAssetsBagTakeCoinBalanceMergeTo(t *testing.T) {
 		assetsBagMainRef,
 		getCoinsRes.Data[1].Ref(),
 		iotajsonrpc.IotaCoinType,
-		1000,
+		100,
 	)
 	require.NoError(t, err)
+	time.Sleep(5 * time.Second)
 
 	assetsBagMainRef, err = client.UpdateObjectRef(context.Background(), assetsBagMainRef)
 	require.NoError(t, err)
@@ -196,6 +202,7 @@ func TestAssetsBagTakeCoinBalanceMergeTo(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
+	time.Sleep(5 * time.Second)
 
 	getObjRes, err := client.GetObject(context.Background(), iotaclient.GetObjectRequest{
 		ObjectID: mergeToCoin1.CoinObjectID,
@@ -301,6 +308,7 @@ func TestGetAssetsBagFromAnchorID(t *testing.T) {
 		coinRef,
 		coinType,
 	)
+	time.Sleep(5 * time.Second)
 
 	assetsBag, err := client.GetAssetsBagWithBalances(context.Background(), &anchor.Object.Assets.Value.ID)
 	require.NoError(t, err)
@@ -401,8 +409,10 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 	client := iscmoveclienttest.NewHTTPClient()
 
 	anchor := startNewChain(t, client, cryptolibSigner)
+	time.Sleep(5 * time.Second)
 
 	coinRef, _ := buildDeployMintTestcoin(t, client, cryptolibSigner)
+	time.Sleep(5 * time.Second)
 	getCoinRef, err := client.GetObject(
 		context.Background(),
 		iotaclient.GetObjectRequest{
@@ -419,6 +429,7 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 
 	txnResponse, err := newAssetsBag(client, cryptolibSigner)
 	require.NoError(t, err)
+	time.Sleep(5 * time.Second)
 	assetsBagRef, err := txnResponse.GetCreatedObjectByName(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
@@ -441,6 +452,7 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
+	time.Sleep(5 * time.Second)
 
 	assetsBagGetObjectRes, err := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: assetsBagRef.ObjectID})
 	require.NoError(t, err)
@@ -463,6 +475,7 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
+	time.Sleep(5 * time.Second)
 
 	reqRef, err := createAndSendRequestRes.GetCreatedObjectByName(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)

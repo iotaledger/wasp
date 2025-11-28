@@ -61,18 +61,18 @@ func (c *Client) WaitForNextVersionForTesting(ctx context.Context, timeout time.
 				}
 
 				if logger != nil {
-					logger.LogInfof("WaitForNextVersionForTesting: object error: %v, retrying...", newRef.Error)
+					logger.LogInfof("WaitForNextVersionForTesting: object error: %v, retrying...\n", newRef.Error)
 				} else {
-					fmt.Printf("WaitForNextVersionForTesting: object error: %v, retrying...", newRef.Error)
+					fmt.Printf("WaitForNextVersionForTesting: object error: %v, retrying..\n.", newRef.Error)
 				}
 				continue
 			}
 
 			if newRef.Data.Ref().Version > currentRef.Version {
 				if logger != nil {
-					logger.LogInfof("WaitForNextVersionForTesting: Found the updated version of %v, which is: %v", currentRef, newRef.Data.Ref())
+					logger.LogInfof("WaitForNextVersionForTesting: Found the updated version of %v, which is: %v\n", currentRef, newRef.Data.Ref())
 				} else {
-					fmt.Printf("WaitForNextVersionForTesting: Found the updated version of %v, which is: %v", currentRef, newRef.Data.Ref())
+					fmt.Printf("WaitForNextVersionForTesting: Found the updated version of %v, which is: %v\n", currentRef, newRef.Data.Ref())
 				}
 
 				ref := newRef.Data.Ref()

@@ -25,6 +25,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
 	"github.com/iotaledger/wasp/v2/packages/origin"
 	"github.com/iotaledger/wasp/v2/packages/parameters"
+	"github.com/iotaledger/wasp/v2/packages/parameters/l1paramsfetcher"
 	"github.com/iotaledger/wasp/v2/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/v2/packages/state/statetest"
 	"github.com/iotaledger/wasp/v2/packages/transaction"
@@ -158,7 +159,7 @@ func initializeDeploymentWithGasCoin(ctx context.Context, signer wallets.Wallet,
 		return nil, err
 	}
 
-	l1Params, err := parameters.FetchLatest(ctx, l1Client.IotaClient())
+	l1Params, err := l1paramsfetcher.FetchLatest(ctx, l1Client.GetIotaClient())
 	if err != nil {
 		return nil, err
 	}

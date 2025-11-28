@@ -1,0 +1,137 @@
+query GetDynamicFieldObject(
+	$parentId: IotaAddress!,
+	$name: DynamicFieldName!,
+	# @genqlient(pointer: true)
+	$showBcs: Boolean!,
+	# @genqlient(pointer: true)
+	$showPreviousTransaction: Boolean!,
+	# @genqlient(pointer: true)
+	$showDisplay: Boolean!,
+	# @genqlient(pointer: true)
+	$showStorageRebate: Boolean!,
+) {
+	object(address: $parentId) {
+		dynamicObjectField(name: $name) {
+			name {
+				bcs
+				json
+				type {
+					layout
+					repr
+				}
+			}
+			value {
+				__typename
+				... on MoveObject {
+					contents {
+						type {
+							repr
+						}
+						json
+					}
+					address
+					digest
+					version
+					owner {
+						__typename
+						... on AddressOwner {
+							owner {
+								address
+							}
+						}
+						... on Shared {
+							initialSharedVersion
+						}
+						... on Parent {
+							parent {
+								address
+							}
+						}
+						... on Immutable {
+							__typename
+						}
+					}
+					previousTransactionBlock @include(if: $showPreviousTransaction) {
+						digest
+					}
+					storageRebate @include(if: $showStorageRebate)
+					bcs @include(if: $showBcs)
+					display @include(if: $showDisplay) {
+						key
+						value
+						error
+					}
+				}
+			}
+		}
+	}
+}
+
+query GetOwnerDynamicFieldObject(
+	$ownerId: IotaAddress!,
+	$name: DynamicFieldName!,
+	# @genqlient(pointer: true)
+	$showBcs: Boolean!,
+	# @genqlient(pointer: true)
+	$showPreviousTransaction: Boolean!,
+	# @genqlient(pointer: true)
+	$showDisplay: Boolean!,
+	# @genqlient(pointer: true)
+	$showStorageRebate: Boolean!,
+) {
+	owner(address: $ownerId) {
+		dynamicObjectField(name: $name) {
+			name {
+				bcs
+				json
+				type {
+					layout
+					repr
+				}
+			}
+			value {
+				__typename
+				... on MoveObject {
+					contents {
+						type {
+							repr
+						}
+						json
+					}
+					address
+					digest
+					version
+					owner {
+						__typename
+						... on AddressOwner {
+							owner {
+								address
+							}
+						}
+						... on Shared {
+							initialSharedVersion
+						}
+						... on Parent {
+							parent {
+								address
+							}
+						}
+						... on Immutable {
+							__typename
+						}
+					}
+					previousTransactionBlock @include(if: $showPreviousTransaction) {
+						digest
+					}
+					storageRebate @include(if: $showStorageRebate)
+					bcs @include(if: $showBcs)
+					display @include(if: $showDisplay) {
+						key
+						value
+						error
+					}
+				}
+			}
+		}
+	}
+}

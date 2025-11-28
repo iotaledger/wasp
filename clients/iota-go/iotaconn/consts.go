@@ -46,3 +46,25 @@ func FaucetURL(apiURL string) string {
 		panic("unspecified FaucetURL")
 	}
 }
+
+func GraphQLURL(apiURL string) string {
+	switch apiURL {
+	case AlphanetEndpointURL:
+		return AlphanetGraphQLEndpointURL
+	case AlphanetGraphQLEndpointURL:
+		return AlphanetGraphQLEndpointURL
+	case TestnetEndpointURL:
+		return TestnetGraphQLEndpointURL
+	case TestnetGraphQLEndpointURL:
+		return TestnetGraphQLEndpointURL
+	case DevnetEndpointURL:
+		return DevnetGraphQLEndpointURL
+	case DevnetGraphQLEndpointURL:
+		return DevnetGraphQLEndpointURL
+	case LocalnetEndpointURL: // LocalnetEndpointURL == LocalnetGraphQLEndpointURL
+		return LocalnetGraphQLEndpointURL
+	default:
+		// For unknown URLs (like custom test URLs), assume it's already the correct URL
+		return apiURL
+	}
+}

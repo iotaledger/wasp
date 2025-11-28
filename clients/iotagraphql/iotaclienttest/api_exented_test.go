@@ -6,17 +6,17 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/v2/clients"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 	testcommon "github.com/iotaledger/wasp/v2/clients/iota-go/test_common"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 )
 
 func TestGetDynamicFields(t *testing.T) {
 	ctx := context.Background()
-	client := clients.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
+	client := iotagraphql.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
 
 	// Test object that contains dynamic fields on testnet
 	testObjectID := iotago.MustObjectIDFromHex("0xabe5833dcc82909869439112ff1fe5090bcb7cc0f22f6a5bf9241e3a864f7e3c")
@@ -67,7 +67,7 @@ func TestGetDynamicFields(t *testing.T) {
 func TestGetOwnedObjects(t *testing.T) {
 	ctx := context.Background()
 	// Use the dynamically mapped port from the local test instance
-	client := clients.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
+	client := iotagraphql.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
 	owner := iotago.MustAddressFromHex(testcommon.TestAddress)
 
 	t.Run(

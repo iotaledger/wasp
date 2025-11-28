@@ -10,30 +10,37 @@ import (
 	"github.com/samber/lo"
 
 	bcs "github.com/iotaledger/bcs-go"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/client"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/contracts"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/serialization"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 )
 
 // Client provides convenient methods to interact with the `isc` Move contracts.
 type Client struct {
-	*iotaclient.Client
+	client.IotaClient
 	faucetURL string
+	// wsClient is only set for websocket clients, needed for subscription methods
+	wsClient *iotaclient.Client
 }
 
-func NewClient(client *iotaclient.Client, faucetURL string) *Client {
+func NewClient(iotaClient client.IotaClient, faucetURL string) *Client {
 	return &Client{
-		Client:    client,
-		faucetURL: faucetURL,
+		IotaClient: iotaClient,
+		faucetURL:  faucetURL,
 	}
 }
 
 func NewHTTPClient(apiURL, faucetURL string, waitUntilEffectsVisible *iotaclient.WaitParams) *Client {
+	graphqlURL := iotaconn.GraphQLURL(apiURL)
 	return NewClient(
-		iotaclient.NewHTTP(apiURL, waitUntilEffectsVisible),
+		iotagraphql.NewGraphQLClientWithWaitParams(graphqlURL, waitUntilEffectsVisible),
 		faucetURL,
 	)
 }
@@ -48,7 +55,11 @@ func NewWebsocketClient(
 	if err != nil {
 		return nil, err
 	}
-	return NewClient(ws, faucetURL), nil
+	return &Client{
+		IotaClient: ws,
+		faucetURL:  faucetURL,
+		wsClient:   ws,
+	}, nil
 }
 
 func (c *Client) RequestFunds(ctx context.Context, address cryptolib.Address) error {
@@ -178,6 +189,41 @@ func (c *Client) DevInspectPTB(
 		return nil, fmt.Errorf("failed to execute the transaction: %s", txnResponse.Effects.Data.V1.Status.Error)
 	}
 	return txnResponse, nil
+}
+
+// WaitUntilStopped waits until the websocket client is stopped.
+// This method is only available for websocket clients.
+func (c *Client) WaitUntilStopped() {
+	if c.wsClient == nil {
+		panic("WaitUntilStopped is only available for websocket clients")
+	}
+	c.wsClient.WaitUntilStopped()
+}
+
+// SubscribeEvent subscribes to events matching the given filter.
+// This method is only available for websocket clients.
+func (c *Client) SubscribeEvent(
+	ctx context.Context,
+	filter *iotajsonrpc.EventFilter,
+	resultCh chan<- *iotajsonrpc.IotaEvent,
+) error {
+	if c.wsClient == nil {
+		return fmt.Errorf("SubscribeEvent is only available for websocket clients")
+	}
+	return c.wsClient.SubscribeEvent(ctx, filter, resultCh)
+}
+
+// SubscribeTransaction subscribes to transactions matching the given filter.
+// This method is only available for websocket clients.
+func (c *Client) SubscribeTransaction(
+	ctx context.Context,
+	filter *iotajsonrpc.TransactionFilter,
+	resultCh chan<- *serialization.TagJson[iotajsonrpc.IotaTransactionBlockEffects],
+) error {
+	if c.wsClient == nil {
+		return fmt.Errorf("SubscribeTransaction is only available for websocket clients")
+	}
+	return c.wsClient.SubscribeTransaction(ctx, filter, resultCh)
 }
 
 func (c *Client) GetISCPackageIDForAnchor(ctx context.Context, anchor iotago.ObjectID) (iotago.PackageID, error) {

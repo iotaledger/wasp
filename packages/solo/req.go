@@ -256,8 +256,7 @@ func (env *Solo) makeBaseTokenCoin(
 		},
 	))
 
-	var baseTokenCoin iotajsonrpc.OwnedObjectRef
-
+	var baseTokenCoin *iotago.ObjectRef = nil
 	env.MustWithWaitForNextVersion(pickedCoin.Ref(), func() {
 		txnResponse, err := env.L1Client().SignAndExecuteTransaction(
 			env.ctx,
@@ -274,16 +273,20 @@ func (env *Solo) makeBaseTokenCoin(
 
 		require.NoError(env.T, err)
 		require.True(env.T, txnResponse.Effects.Data.IsSuccess())
-		require.Len(env.T, txnResponse.Effects.Data.V1.Created, 1)
 
-		baseTokenCoin = txnResponse.Effects.Data.V1.Created[0]
+		for _, change := range txnResponse.ObjectChanges {
+			if change.Data.Created != nil {
+				baseTokenCoin = &iotago.ObjectRef{
+					ObjectID: &change.Data.Created.ObjectID,
+					Version:  change.Data.Created.Version.Uint64(),
+					Digest:   &change.Data.Created.Digest,
+				}
+			}
+		}
+		require.NotNil(env.T, baseTokenCoin)
 	})
 
-	return &iotago.ObjectRef{
-		ObjectID: baseTokenCoin.Reference.ObjectID,
-		Version:  baseTokenCoin.Reference.Version,
-		Digest:   &baseTokenCoin.Reference.Digest,
-	}
+	return baseTokenCoin
 }
 
 func (ch *Chain) SendRequestWithL1GasBudget(

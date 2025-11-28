@@ -5,9 +5,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/iotaledger/hive.go/log"
+	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
@@ -18,6 +17,12 @@ import (
 
 func NewSignerWithFunds(t *testing.T, seed []byte, index int) cryptolib.Signer {
 	return newSignerWithFunds(t, seed, index, l1starter.Instance().FaucetURL())
+}
+
+func NewSigner(t *testing.T, seed []byte, index int) cryptolib.Signer {
+	seed[0] += byte(index)
+	kp := cryptolib.KeyPairFromSeed(cryptolib.Seed(seed))
+	return kp
 }
 
 func NewRandomSignerWithFunds(t *testing.T, index int) cryptolib.Signer {

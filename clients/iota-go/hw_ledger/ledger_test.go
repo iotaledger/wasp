@@ -65,6 +65,7 @@ func TestDeployChain(t *testing.T) {
 			APIURL:    iotaconn.AlphanetEndpointURL,
 			FaucetURL: iotaconn.AlphanetFaucetURL,
 		},
+		iotaclient.WaitForEffectsEnabled,
 	)
 
 	pubKey, err := dev.GetPublicKey("44'/4218'/123'/0'/0'", false)
