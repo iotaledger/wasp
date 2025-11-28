@@ -332,10 +332,26 @@ func FindAndInvokeMessageHandler(obj any, msg MessageIn[any]) []MessageOut {
 		return handler.Message(msg)
 	}
 
+	// There is no good instruments with work with generics in Go reflection.
+	// So we are forced to fallback to name-based heuristics.
+	// We could just hard-code name, but then tests would break after renamings. So we dynamically get current name of type.
+	//samplePayloadWithKeyType := PayloadWithKey[struct{}, struct{}]{}
+	sampleSubsystemPayload := SubsystemPayload[struct{}, struct{}]{}
+
+	switch {
+	// case isSameGenericType(reflect.TypeOf(msg.Payload), reflect.TypeOf(samplePayloadWithKeyType)):
+	// 	return findAndInvokePayloadWithKeyMessageHandler(obj, msg)
+	case isSameGenericType(reflect.TypeOf(msg.Payload), reflect.TypeOf(sampleSubsystemPayload)):
+		return findAndInvokeSubsystemPayloadMessageHandler(obj, msg)
+	default:
+		return findAndInvokeSimpleMessageHandler(obj, msg)
+	}
+}
+
+func findAndInvokeSimpleMessageHandler(obj any, msg MessageIn[any]) []MessageOut {
 	objV := reflect.ValueOf(obj)
 	objT := objV.Type()
 	msgV := reflect.ValueOf(msg)
-	payloadT := reflect.TypeOf(msg.Payload)
 
 	for i := 0; i < objT.NumMethod(); i++ {
 		methodT := objT.Method(i)
@@ -351,8 +367,8 @@ func FindAndInvokeMessageHandler(obj any, msg MessageIn[any]) []MessageOut {
 		}
 
 		msgArgT := methodT.Type.In(1)
-		isMsgIn, payloadFieldT := isMessageInType(msgArgT)
-		if !isMsgIn || payloadFieldT.Type != payloadT {
+		isMsgIn, payloadArgT := isMessageInType(msgArgT)
+		if !isMsgIn || payloadArgT.Type != reflect.TypeOf(msg.Payload) {
 			continue
 		}
 
@@ -363,7 +379,7 @@ func FindAndInvokeMessageHandler(obj any, msg MessageIn[any]) []MessageOut {
 			fieldV := msgV.Field(i)
 			destFieldV := convertedMsgV.Field(i)
 
-			if i == payloadFieldT.Index[0] {
+			if i == payloadArgT.Index[0] {
 				convertedFieldV := fieldV.Elem().Convert(destFieldV.Type())
 				destFieldV.Set(convertedFieldV)
 			} else {
@@ -372,6 +388,64 @@ func FindAndInvokeMessageHandler(obj any, msg MessageIn[any]) []MessageOut {
 		}
 
 		result := methodT.Func.Call([]reflect.Value{objV, convertedMsgV})
+		return result[0].Interface().([]MessageOut)
+	}
+
+	panic(fmt.Errorf("no message handler found for message with payload type %T in object of type %T", msg.Payload, obj))
+}
+
+func findAndInvokeSubsystemPayloadMessageHandler(obj any, msg MessageIn[any]) []MessageOut {
+	objV := reflect.ValueOf(obj)
+	objT := objV.Type()
+	msgV := reflect.ValueOf(msg)
+	subsystemPayloadV := reflect.ValueOf(msg.Payload)
+	subsystemPayloadT := subsystemPayloadV.Type()
+	keyV := subsystemPayloadV.Field(getSubsystemPayloadKeyFieldIndex(subsystemPayloadT))
+	payloadV := subsystemPayloadV.Field(getSubsystemPayloadPayloadFieldIndex(subsystemPayloadT)).Elem()
+	payloadT := payloadV.Type()
+
+	for i := 0; i < objT.NumMethod(); i++ {
+		methodT := objT.Method(i)
+
+		if methodT.Type.NumIn() != 3 || methodT.Type.NumOut() != 1 {
+			continue
+		}
+		if methodT.Type.Out(0) != reflect.TypeOf([]MessageOut{}) {
+			continue
+		}
+		if methodT.Type.In(0) != objT {
+			panic(fmt.Errorf("mismatched receiver type: %v != %v", methodT.Type.In(0), objT))
+		}
+
+		keyArgT := methodT.Type.In(1)
+		if keyArgT != keyV.Type() {
+			fmt.Println("key type mismatch:", methodT.Name, keyArgT, keyV.Type())
+			continue
+		}
+
+		msgArgT := methodT.Type.In(2)
+		isMsgIn, payloadArgT := isMessageInType(msgArgT)
+		if !isMsgIn || payloadArgT.Type != payloadT {
+			fmt.Println("payload type mismatch:", methodT.Name, payloadArgT.Type, payloadT)
+			continue
+		}
+
+		// We have a match.
+		convertedMsgV := reflect.New(msgArgT).Elem()
+
+		for i := 0; i < msgArgT.NumField(); i++ {
+			fieldV := msgV.Field(i)
+			destFieldV := convertedMsgV.Field(i)
+
+			if i == payloadArgT.Index[0] {
+				convertedFieldV := payloadV.Convert(destFieldV.Type())
+				destFieldV.Set(convertedFieldV)
+			} else {
+				destFieldV.Set(fieldV)
+			}
+		}
+
+		result := methodT.Func.Call([]reflect.Value{objV, keyV, convertedMsgV})
 		return result[0].Interface().([]MessageOut)
 	}
 
@@ -424,6 +498,28 @@ func getFieldIndexOfType(structType reflect.Type, fieldType reflect.Type) int {
 		}
 	}
 	panic(fmt.Errorf("no field of type %v found in struct %v", fieldType, structType))
+}
+
+// func getSubsystemPayloadSubsystemIDFieldIndex(structType reflect.Type) int {
+// 	sampleSubsystemPayload := SubsystemPayload[struct{}, struct{}]{}
+// 	const fieldName = "SubsystemID"
+// 	f, found := reflect.TypeOf(sampleSubsystemPayload).FieldByName(fieldName)
+// 	if !found {
+// 		panic(fmt.Errorf("no %v field found in %T", fieldName, sampleSubsystemPayload))
+// 	}
+// 	return f.Index[0]
+// }
+
+func getSubsystemPayloadKeyFieldIndex(structType reflect.Type) int {
+	type privateKeyType struct{}
+	sampleSubsystemPayload := SubsystemPayload[privateKeyType, struct{}]{}
+	return getFieldIndexOfType(reflect.TypeOf(sampleSubsystemPayload), reflect.TypeOf(privateKeyType{}))
+}
+
+func getSubsystemPayloadPayloadFieldIndex(structType reflect.Type) int {
+	type privatePayloadType struct{}
+	sampleSubsystemPayload := SubsystemPayload[struct{}, privatePayloadType]{}
+	return getFieldIndexOfType(reflect.TypeOf(sampleSubsystemPayload), reflect.TypeOf(privatePayloadType{}))
 }
 
 type TestContextFunctors[Obj any] struct {
