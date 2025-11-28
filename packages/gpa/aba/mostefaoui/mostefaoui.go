@@ -92,7 +92,7 @@ type Output struct {
 
 // ABA is the public API for this protocol.
 const (
-	subsystemCC byte = iota
+	SubsystemID string = "aba"
 )
 
 type ABA struct {
@@ -249,7 +249,7 @@ func (a *ABA) HandleCCMsg(index int, msgT gpa.MessageIn[blssig.MsgSigShare]) []g
 	}
 
 	subMsgs := cc.HandleMsgSigShare(msgT)
-	msgs := gpa.AddKey(index, subMsgs)
+	msgs := gpa.AddKey(SubsystemID, index, subMsgs)
 	if index == a.round && !a.uponDecisionInputs.haveCC() {
 		ccOut := cc.Output()
 		if ccOut != nil {

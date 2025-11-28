@@ -335,14 +335,11 @@ func FindAndInvokeMessageHandler(obj any, msg MessageIn[any]) []MessageOut {
 	// There is no good instruments with work with generics in Go reflection.
 	// So we are forced to fallback to name-based heuristics.
 	// We could just hard-code name, but then tests would break after renamings. So we dynamically get current name of type.
-	//samplePayloadWithKeyType := PayloadWithKey[struct{}, struct{}]{}
-	sampleSubsystemPayload := SubsystemPayload[struct{}, struct{}]{}
+	samplePayloadWithKey := PayloadWithKey[struct{}, struct{}]{}
 
 	switch {
-	// case isSameGenericType(reflect.TypeOf(msg.Payload), reflect.TypeOf(samplePayloadWithKeyType)):
-	// 	return findAndInvokePayloadWithKeyMessageHandler(obj, msg)
-	case isSameGenericType(reflect.TypeOf(msg.Payload), reflect.TypeOf(sampleSubsystemPayload)):
-		return findAndInvokeSubsystemPayloadMessageHandler(obj, msg)
+	case isSameGenericType(reflect.TypeOf(msg.Payload), reflect.TypeOf(samplePayloadWithKey)):
+		return findAndInvokePayloadWithKeyMessageHandler(obj, msg)
 	default:
 		return findAndInvokeSimpleMessageHandler(obj, msg)
 	}
@@ -394,14 +391,14 @@ func findAndInvokeSimpleMessageHandler(obj any, msg MessageIn[any]) []MessageOut
 	panic(fmt.Errorf("no message handler found for message with payload type %T in object of type %T", msg.Payload, obj))
 }
 
-func findAndInvokeSubsystemPayloadMessageHandler(obj any, msg MessageIn[any]) []MessageOut {
+func findAndInvokePayloadWithKeyMessageHandler(obj any, msg MessageIn[any]) []MessageOut {
 	objV := reflect.ValueOf(obj)
 	objT := objV.Type()
 	msgV := reflect.ValueOf(msg)
-	subsystemPayloadV := reflect.ValueOf(msg.Payload)
-	subsystemPayloadT := subsystemPayloadV.Type()
-	keyV := subsystemPayloadV.Field(getSubsystemPayloadKeyFieldIndex(subsystemPayloadT))
-	payloadV := subsystemPayloadV.Field(getSubsystemPayloadPayloadFieldIndex(subsystemPayloadT)).Elem()
+	payloadWithKeyV := reflect.ValueOf(msg.Payload)
+	payloadWithKeyT := payloadWithKeyV.Type()
+	keyV := payloadWithKeyV.Field(getPayloadWithKeyKeyFieldIndex(payloadWithKeyT))
+	payloadV := payloadWithKeyV.Field(getPayloadWithKeyPayloadFieldIndex(payloadWithKeyT)).Elem()
 	payloadT := payloadV.Type()
 
 	for i := 0; i < objT.NumMethod(); i++ {
@@ -500,26 +497,26 @@ func getFieldIndexOfType(structType reflect.Type, fieldType reflect.Type) int {
 	panic(fmt.Errorf("no field of type %v found in struct %v", fieldType, structType))
 }
 
-// func getSubsystemPayloadSubsystemIDFieldIndex(structType reflect.Type) int {
-// 	sampleSubsystemPayload := SubsystemPayload[struct{}, struct{}]{}
+// func getPayloadWithKeySubsystemIDFieldIndex(structType reflect.Type) int {
+// 	samplePayloadWithKey := PayloadWithKey[struct{}, struct{}]{}
 // 	const fieldName = "SubsystemID"
-// 	f, found := reflect.TypeOf(sampleSubsystemPayload).FieldByName(fieldName)
+// 	f, found := reflect.TypeOf(samplePayloadWithKey).FieldByName(fieldName)
 // 	if !found {
-// 		panic(fmt.Errorf("no %v field found in %T", fieldName, sampleSubsystemPayload))
+// 		panic(fmt.Errorf("no %v field found in %T", fieldName, samplePayloadWithKey))
 // 	}
 // 	return f.Index[0]
 // }
 
-func getSubsystemPayloadKeyFieldIndex(structType reflect.Type) int {
+func getPayloadWithKeyKeyFieldIndex(structType reflect.Type) int {
 	type privateKeyType struct{}
-	sampleSubsystemPayload := SubsystemPayload[privateKeyType, struct{}]{}
-	return getFieldIndexOfType(reflect.TypeOf(sampleSubsystemPayload), reflect.TypeOf(privateKeyType{}))
+	samplePayloadWithKey := PayloadWithKey[privateKeyType, struct{}]{}
+	return getFieldIndexOfType(reflect.TypeOf(samplePayloadWithKey), reflect.TypeOf(privateKeyType{}))
 }
 
-func getSubsystemPayloadPayloadFieldIndex(structType reflect.Type) int {
+func getPayloadWithKeyPayloadFieldIndex(structType reflect.Type) int {
 	type privatePayloadType struct{}
-	sampleSubsystemPayload := SubsystemPayload[struct{}, privatePayloadType]{}
-	return getFieldIndexOfType(reflect.TypeOf(sampleSubsystemPayload), reflect.TypeOf(privatePayloadType{}))
+	samplePayloadWithKey := PayloadWithKey[struct{}, privatePayloadType]{}
+	return getFieldIndexOfType(reflect.TypeOf(samplePayloadWithKey), reflect.TypeOf(privatePayloadType{}))
 }
 
 type TestContextFunctors[Obj any] struct {

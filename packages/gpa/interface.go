@@ -80,38 +80,19 @@ type MessageIn[Payload any] struct {
 
 type MessageOut = TypedMessageOut[any]
 
-type PayloadWithKey[Key, Payload any] struct {
-	Key     Key
-	Payload Payload
-}
-
-func AddKey[Key any](key Key, msgs []MessageOut) []MessageOut {
-	ret := make([]MessageOut, len(msgs))
-	for i, msg := range msgs {
-		ret[i] = MessageOut{
-			Recipient: msg.Recipient,
-			Payload: PayloadWithKey[Key, any]{
-				Key:     key,
-				Payload: msg.Payload,
-			},
-		}
-	}
-	return ret
-}
-
 // TODO: Refactor or remove this before merge
-type SubsystemPayload[Key, Payload any] struct {
+type PayloadWithKey[Key, Payload any] struct {
 	SubsystemID string
 	Key         Key
 	Payload     Payload
 }
 
-func AddSubsystemID[Key any](subsystemID string, key Key, msgs []MessageOut) []MessageOut {
+func AddKey[Key any](subsystemID string, key Key, msgs []MessageOut) []MessageOut {
 	ret := make([]MessageOut, len(msgs))
 	for i, msg := range msgs {
 		ret[i] = MessageOut{
 			Recipient: msg.Recipient,
-			Payload: SubsystemPayload[Key, any]{
+			Payload: PayloadWithKey[Key, any]{
 				SubsystemID: subsystemID,
 				Key:         key,
 				Payload:     msg.Payload,

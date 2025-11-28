@@ -98,6 +98,10 @@ import (
 
 var ErrNotInCommittee = errors.New("ErrNotInCommittee")
 
+const (
+	SubsystemID = "chainmgr"
+)
+
 type Output struct {
 	cmi *ChainMgr
 }
@@ -605,7 +609,7 @@ func (cmi *ChainMgr) StatusString() string { // TODO: Call it periodically. Show
 // Helper functions.
 
 func (cmi *ChainMgr) wrapCommitteeLogMsgs(cli *committeeLogInst, outMsgs []gpa.MessageOut) []gpa.MessageOut {
-	return gpa.AddKey(cli.committeeAddr, outMsgs)
+	return gpa.AddKey(SubsystemID, cli.committeeAddr, outMsgs)
 }
 
 func (cmi *ChainMgr) suspendCommittee(committeeAddr *cryptolib.Address) []gpa.MessageOut {

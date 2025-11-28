@@ -72,11 +72,7 @@ type NonceDistributedKeyGeneration struct {
 }
 
 const (
-	msgWrapperACSS byte = iota // subsystem code.
-)
-
-const (
-	msgTypeWrapped gpa.MessageType = iota
+	SubsystemID string = "nonce"
 )
 
 func New(
@@ -122,7 +118,7 @@ func (n *NonceDistributedKeyGeneration) Input(input gpa.Input) []gpa.MessageOut 
 	switch input := input.(type) {
 	case *inputStart:
 		secret := n.suite.Scalar().Pick(n.suite.RandomStream())
-		msgs := gpa.AddSubsystemID("acss", n.myIdx, n.acss[n.myIdx].Input(secret))
+		msgs := gpa.AddKey(SubsystemID, n.myIdx, n.acss[n.myIdx].Input(secret))
 		return slices.Concat(msgs, n.tryHandleACSSTermination(n.myIdx))
 	case *inputAgreementResult:
 		return n.handleAgreementResult(input)
@@ -162,7 +158,7 @@ func (n *NonceDistributedKeyGeneration) StatusString() string {
 func (n *NonceDistributedKeyGeneration) HandleACSSMsgBracha(acssIndex int, m gpa.MessageIn[rbc.MsgBracha]) []gpa.MessageOut {
 	outMsgs := n.acss[acssIndex].HandleRBCMsgBracha(m)
 	return slices.Concat(
-		gpa.AddSubsystemID("acss", acssIndex, outMsgs),
+		gpa.AddKey(SubsystemID, acssIndex, outMsgs),
 		n.tryHandleACSSTermination(acssIndex),
 	)
 }
@@ -170,7 +166,7 @@ func (n *NonceDistributedKeyGeneration) HandleACSSMsgBracha(acssIndex int, m gpa
 func (n *NonceDistributedKeyGeneration) HandleACSSMsgVote(acssIndex int, msg gpa.MessageIn[acss.MsgVote]) []gpa.MessageOut {
 	outMsgs := n.acss[acssIndex].HandleMsgVote(msg)
 	return slices.Concat(
-		gpa.AddSubsystemID("acss", acssIndex, outMsgs),
+		gpa.AddKey(SubsystemID, acssIndex, outMsgs),
 		n.tryHandleACSSTermination(acssIndex),
 	)
 }
@@ -178,7 +174,7 @@ func (n *NonceDistributedKeyGeneration) HandleACSSMsgVote(acssIndex int, msg gpa
 func (n *NonceDistributedKeyGeneration) HandleACSSMsgImplicateRecover(acssIndex int, msg gpa.MessageIn[acss.MsgImplicateRecover]) []gpa.MessageOut {
 	outMsgs := n.acss[acssIndex].HandleImplicateRecoverReceived(msg)
 	return slices.Concat(
-		gpa.AddSubsystemID("acss", acssIndex, outMsgs),
+		gpa.AddKey(SubsystemID, acssIndex, outMsgs),
 		n.tryHandleACSSTermination(acssIndex),
 	)
 }

@@ -47,8 +47,7 @@ type Output struct {
 }
 
 const (
-	subsystemRBC byte = iota
-	subsystemABA
+	SubsystemID string = "acs"
 )
 
 type ACS struct {
@@ -133,7 +132,7 @@ func (a *ACS) Input(input gpa.Input) []gpa.MessageOut {
 	}
 	a.rbcInput = true
 	rbcInst := a.rbcInsts[a.me]
-	subMsgs := gpa.AddKey(a.nodeIdx[a.me], rbcInst.Input(input))
+	subMsgs := gpa.AddKey(SubsystemID, a.nodeIdx[a.me], rbcInst.Input(input))
 	return slices.Concat(
 		subMsgs,
 		a.tryHandleRBCOutput(a.me, rbcInst),
@@ -148,7 +147,7 @@ func (a *ACS) HandleRBCMsgBracha(index int, msg gpa.MessageIn[bracha.MsgBracha])
 	}
 	subMsgs := rbcInst.HandleMsgBracha(msg)
 	return slices.Concat(
-		gpa.AddKey(index, subMsgs),
+		gpa.AddKey(SubsystemID, index, subMsgs),
 		a.tryHandleRBCOutput(a.nodeIDs[index], rbcInst),
 	)
 }
@@ -161,7 +160,7 @@ func (a *ACS) HandleABAMsgVote(index int, msg gpa.MessageIn[mostefaoui.MsgVote])
 	}
 	subMsgs := abaInst.HandleMsgVote(msg)
 	return slices.Concat(
-		gpa.AddKey(index, subMsgs),
+		gpa.AddKey(SubsystemID, index, subMsgs),
 		a.tryHandleABAOutput(a.nodeIDs[index], abaInst),
 	)
 }
@@ -174,7 +173,7 @@ func (a *ACS) HandleABAMsgDone(index int, msg gpa.MessageIn[mostefaoui.MsgDone])
 	}
 	subMsgs := abaInst.HandleMsgDone(msg)
 	return slices.Concat(
-		gpa.AddKey(index, subMsgs),
+		gpa.AddKey(SubsystemID, index, subMsgs),
 		a.tryHandleABAOutput(a.nodeIDs[index], abaInst),
 	)
 }
@@ -212,7 +211,7 @@ func (a *ACS) tryHandleRBCOutput(nodeID gpa.NodeID, rbcInst *bracha.RBC) []gpa.M
 	sub := a.abaInsts[nodeID]
 	subMsgs := sub.Input(true)
 	return slices.Concat(
-		gpa.AddKey(a.nodeIdx[nodeID], subMsgs),
+		gpa.AddKey(SubsystemID, a.nodeIdx[nodeID], subMsgs),
 		a.tryHandleABAOutput(nodeID, sub),
 	)
 }
@@ -257,7 +256,7 @@ func (a *ACS) tryHandleABAOutput(nodeID gpa.NodeID, abaInst *mostefaoui.ABA) []g
 			subMsgs := sub.Input(false)
 			msgs = slices.Concat(
 				msgs,
-				gpa.AddKey(a.nodeIdx[nid], subMsgs),
+				gpa.AddKey(SubsystemID, a.nodeIdx[nid], subMsgs),
 				a.tryHandleABAOutput(nid, sub),
 			)
 		}

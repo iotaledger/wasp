@@ -33,6 +33,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/gpa/aba/mostefaoui"
 	"github.com/iotaledger/wasp/v2/packages/gpa/acs"
 	"github.com/iotaledger/wasp/v2/packages/gpa/acss"
+	"github.com/iotaledger/wasp/v2/packages/gpa/asyncdistkeygen/nonce"
 	"github.com/iotaledger/wasp/v2/packages/gpa/cc/blssig"
 	"github.com/iotaledger/wasp/v2/packages/gpa/cc/semi"
 	"github.com/iotaledger/wasp/v2/packages/gpa/rbc/bracha"
@@ -267,9 +268,6 @@ func (c *Consensus) Message(msg gpa.MessageIn[any]) []gpa.MessageOut {
 	switch msgT := msg.Payload.(type) {
 	case msgBLSPartialSig:
 		return c.subRND.BLSPartialSigReceived(msg.Sender, msgT.partialSig)
-	case gpa.PayloadWithKey[int, bracha.MsgBracha]:
-		msgs := c.acs.HandleRBCMsgBracha(msgT.Key, gpa.NewMessageIn(msg.Sender, msgT.Payload))
-		return slices.Concat(msgs, c.subACS.ACSOutputReceived(c.acs.Output()))
 	case gpa.PayloadWithKey[int, mostefaoui.MsgDone]:
 		msgs := c.acs.HandleABAMsgDone(msgT.Key, gpa.NewMessageIn(msg.Sender, msgT.Payload))
 		return slices.Concat(msgs, c.subACS.ACSOutputReceived(c.acs.Output()))
@@ -278,33 +276,24 @@ func (c *Consensus) Message(msg gpa.MessageIn[any]) []gpa.MessageOut {
 		return slices.Concat(msgs, c.subACS.ACSOutputReceived(c.acs.Output()))
 	case gpa.PayloadWithKey[int, blssig.MsgSigShare]:
 		return c.acs.HandleCCMsgSigShare(msgT.Key, gpa.NewMessageIn(msg.Sender, msgT.Payload))
-	case gpa.SubsystemPayload[int, bracha.MsgBracha]:
+	case gpa.PayloadWithKey[int, bracha.MsgBracha]:
 		switch msgT.SubsystemID {
-		case "acss":
+		case acs.SubsystemID:
+			msgs := c.acs.HandleRBCMsgBracha(msgT.Key, gpa.NewMessageIn(msg.Sender, msgT.Payload))
+			return slices.Concat(msgs, c.subACS.ACSOutputReceived(c.acs.Output()))
+		case nonce.SubsystemID:
 			msgs := c.distributedSignature.HandleACSSMsgBracha(msgT.Key, gpa.NewMessageIn(msg.Sender, msgT.Payload))
 			return slices.Concat(msgs, c.subDistributedSignature.DistributedSignatureReady(c.distributedSignature.Output()))
 		default:
 			//c.log.LogWarnf("cannot select subsystem: unexpected subsystem ID: %s", msgT.SubsystemID)
 			panic(fmt.Errorf("unexpected subsystem ID: %s", msgT.SubsystemID))
 		}
-	case gpa.SubsystemPayload[int, acss.MsgVote]:
-		switch msgT.SubsystemID {
-		case "acss":
-			msgs := c.distributedSignature.HandleACSSMsgVote(msgT.Key, gpa.NewMessageIn(msg.Sender, msgT.Payload))
-			return slices.Concat(msgs, c.subDistributedSignature.DistributedSignatureReady(c.distributedSignature.Output()))
-		default:
-			//c.log.LogWarnf("cannot select subsystem: unexpected subsystem ID: %s", msgT.SubsystemID)
-			panic(fmt.Errorf("unexpected subsystem ID: %s", msgT.SubsystemID))
-		}
-	case gpa.SubsystemPayload[int, acss.MsgImplicateRecover]:
-		switch msgT.SubsystemID {
-		case "acss":
-			msgs := c.distributedSignature.HandleACSSMsgImplicateRecover(msgT.Key, gpa.NewMessageIn(msg.Sender, msgT.Payload))
-			return slices.Concat(msgs, c.subDistributedSignature.DistributedSignatureReady(c.distributedSignature.Output()))
-		default:
-			//c.log.LogWarnf("cannot select subsystem: unexpected subsystem ID: %s", msgT.SubsystemID)
-			panic(fmt.Errorf("unexpected subsystem ID: %s", msgT.SubsystemID))
-		}
+	case gpa.PayloadWithKey[int, acss.MsgVote]:
+		msgs := c.distributedSignature.HandleACSSMsgVote(msgT.Key, gpa.NewMessageIn(msg.Sender, msgT.Payload))
+		return slices.Concat(msgs, c.subDistributedSignature.DistributedSignatureReady(c.distributedSignature.Output()))
+	case gpa.PayloadWithKey[int, acss.MsgImplicateRecover]:
+		msgs := c.distributedSignature.HandleACSSMsgImplicateRecover(msgT.Key, gpa.NewMessageIn(msg.Sender, msgT.Payload))
+		return slices.Concat(msgs, c.subDistributedSignature.DistributedSignatureReady(c.distributedSignature.Output()))
 	case distsign.MsgPartialSig:
 		msgs := c.distributedSignature.HandleMsgPartialSig(gpa.NewMessageIn(msg.Sender, msgT))
 		return slices.Concat(msgs, c.subDistributedSignature.DistributedSignatureReady(c.distributedSignature.Output()))
