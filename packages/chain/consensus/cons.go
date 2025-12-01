@@ -274,11 +274,10 @@ func (c *Consensus) Message(msg gpa.MessageIn[any]) []gpa.MessageOut {
 	case gpa.PayloadWithKey[int, mostefaoui.MsgVote]:
 		msgs := c.acs.HandleABAMsgVote(msgT.Key, gpa.NewMessageIn(msg.Sender, msgT.Payload))
 		return slices.Concat(msgs, c.subACS.ACSOutputReceived(c.acs.Output()))
-	case gpa.PayloadWithKey[int, gpa.PayloadWithKey[int, any]]:
+	case gpa.PayloadWithKey[int, gpa.PayloadWithKey[int, blssig.MsgSigShare]]:
 		abaIndex := msgT.Key
 		ccIndex := msgT.Payload.Key
-		m := msgT.Payload.Payload.(blssig.MsgSigShare)
-		return c.acs.HandleCCMsgSigShare(abaIndex, ccIndex, gpa.NewMessageIn(msg.Sender, m))
+		return c.acs.HandleCCMsgSigShare(abaIndex, ccIndex, gpa.NewMessageIn(msg.Sender, msgT.Payload.Payload))
 	case gpa.PayloadWithKey[int, bracha.MsgBracha]:
 		switch msgT.SubsystemID {
 		case acs.SubsystemID:
