@@ -83,7 +83,7 @@ func Retry(fn func() error, retries int) error {
 	return err
 }
 
-func New(name string, config *ClusterConfig, dataPath string, t *testing.T, log log.Logger, l1PacakgeID *iotago.PackageID) *Cluster {
+func New(name string, config *ClusterConfig, dataPath string, t *testing.T, log log.Logger, l1PackageID *iotago.PackageID) *Cluster {
 	if log == nil {
 		if t == nil {
 			panic("one of t or log must be set")
@@ -94,7 +94,7 @@ func New(name string, config *ClusterConfig, dataPath string, t *testing.T, log 
 
 	config.setValidatorAddressIfNotSet() // privtangle prefix
 	for i := range config.Wasp {
-		config.Wasp[i].PackageID = l1PacakgeID
+		config.Wasp[i].PackageID = l1PackageID
 	}
 	client := config.L1Client()
 	return &Cluster{
