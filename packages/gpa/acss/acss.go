@@ -99,7 +99,6 @@ import (
 
 	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/gpa/acss/crypto"
-	"github.com/iotaledger/wasp/v2/packages/gpa/rbc/bracha"
 	rbc "github.com/iotaledger/wasp/v2/packages/gpa/rbc/bracha"
 )
 
@@ -124,7 +123,7 @@ type ACSS struct {
 	dealCB        func(int, []byte) []byte             // Callback to be called on the encrypted deals (for tests actually).
 	peerPKs       map[gpa.NodeID]kyber.Point           // Peer public keys.
 	peerIdx       []gpa.NodeID                         // Particular order of the nodes (position in the polynomial).
-	rbc           *bracha.RBC                          // RBC to share `C||E`.
+	rbc           *rbc.RBC                             // RBC to share `C||E`.
 	rbcOut        *crypto.Deal                         // Deal broadcasted by the dealer.
 	voteOKRecv    map[gpa.NodeID]bool                  // A set of received OK votes.
 	voteREADYRecv map[gpa.NodeID]bool                  // A set of received READY votes.
@@ -230,7 +229,7 @@ func (a *ACSS) handleInput(secretToShare kyber.Scalar) []gpa.MessageOut {
 	return slices.Concat(msgs, a.tryHandleRBCTermination(false))
 }
 
-// Delegate received messages to the RBC and handle its output.
+// HandleRBCMsgBracha Delegates received messages to the RBC and handle its output.
 //
 // > // party i (including the dealer)
 // > RBC(C||E)
@@ -322,9 +321,10 @@ func (a *ACSS) handleVoteREADY(msg gpa.MessageIn[MsgVote]) []gpa.MessageOut {
 	return slices.Concat(msgs, a.handleImplicateRecoverPending())
 }
 
-// It is possible that we are receiving IMPLICATE/RECOVER messages before our RBC is completed.
-// We store these messages for processing after that, if RBC is not done and process it otherwise.
 func (a *ACSS) HandleImplicateRecoverReceived(msg gpa.MessageIn[MsgImplicateRecover]) []gpa.MessageOut {
+	// It is possible that we are receiving IMPLICATE/RECOVER messages before our RBC is completed.
+	// We store these messages for processing after that, if RBC is not done and process it otherwise.
+
 	if a.rbcOut == nil {
 		a.pendingIRMsgs = append(a.pendingIRMsgs, msg)
 		return nil
@@ -373,17 +373,18 @@ func (a *ACSS) handleImplicateRecoverPending() []gpa.MessageOut {
 	return msgs
 }
 
-// Here the RBC is assumed to be completed already, OUT is set and the private key is checked.
-//
-// > on receiving <IMPLICATE, j, skⱼ>:
-// >   sⱼ := PKI.Dec(eⱼ, skⱼ)
-// >   if decrypt fails or VSS.Verify(C, j, sⱼ) == false:
-// >     if out == true:
-// >       send <RECOVER, i, skᵢ> to all parties
-// >       return
-//
-// NOTE: We assume `if out == true:` stands for a wait for such condition.
 func (a *ACSS) handleImplicate(msg gpa.MessageIn[MsgImplicateRecover]) []gpa.MessageOut {
+	// Here the RBC is assumed to be completed already, OUT is set and the private key is checked.
+	//
+	// > on receiving <IMPLICATE, j, skⱼ>:
+	// >   sⱼ := PKI.Dec(eⱼ, skⱼ)
+	// >   if decrypt fails or VSS.Verify(C, j, sⱼ) == false:
+	// >     if out == true:
+	// >       send <RECOVER, i, skᵢ> to all parties
+	// >       return
+	//
+	// NOTE: We assume `if out == true:` stands for a wait for such condition.
+
 	peerIndex := a.peerIndex(msg.Sender)
 	if peerIndex == -1 {
 		a.log.LogWarnf("implicate received from unknown peer: %v", msg.Sender)
@@ -414,17 +415,18 @@ func (a *ACSS) handleImplicate(msg gpa.MessageIn[MsgImplicateRecover]) []gpa.Mes
 	return a.broadcastRecover()
 }
 
-// Here the RBC is assumed to be completed already and the private key is checked.
-//
-// >     on receiving <RECOVER, j, skⱼ>:
-// >       sⱼ := PKI.Dec(eⱼ, skⱼ)
-// >       if VSS.Verify(C, j, sⱼ): T = T ∪ {sⱼ}
-// >
-// >     wait until len(T) >= f+1:
-// >       sᵢ = SSS.Recover(T, f+1, n)(i)
-// >       out = true
-// >       output sᵢ
 func (a *ACSS) handleRecover(msg gpa.MessageIn[MsgImplicateRecover]) []gpa.MessageOut {
+	// Here the RBC is assumed to be completed already and the private key is checked.
+	//
+	// >     on receiving <RECOVER, j, skⱼ>:
+	// >       sⱼ := PKI.Dec(eⱼ, skⱼ)
+	// >       if VSS.Verify(C, j, sⱼ): T = T ∪ {sⱼ}
+	// >
+	// >     wait until len(T) >= f+1:
+	// >       sᵢ = SSS.Recover(T, f+1, n)(i)
+	// >       out = true
+	// >       output sᵢ
+
 	if a.output {
 		// Ignore the RECOVER messages, if we are done with the output.
 		return nil

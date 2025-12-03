@@ -228,7 +228,7 @@ func (d *DistributedSignature) HandleMsgPartialSig(msg gpa.MessageIn[MsgPartialS
 	}
 	//
 	// Then process the one received with the current message.
-	if err := d.distributedSignatureSigner.ProcessPartialSig(partialSig); err != nil {
+	if err = d.distributedSignatureSigner.ProcessPartialSig(partialSig); err != nil {
 		d.log.LogWarnf("Failed to process a partial signature: %v", err)
 		return nil
 	}

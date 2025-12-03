@@ -40,7 +40,7 @@ type TestContext[Obj any] struct {
 
 func NewTestContext[Obj any](nodes map[NodeID]Obj, functors ...TestContextFunctors[Obj]) *TestContext[Obj] {
 	if len(functors) == 0 {
-		functors = append(functors, TestContextFunctors[Obj]{})
+		functors = []TestContextFunctors[Obj]{{}}
 	}
 
 	tc := TestContext[Obj]{

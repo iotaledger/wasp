@@ -144,6 +144,7 @@ func (smT *StateManager) StatusString() string {
 		util.TimeOrNever(smT.lastCleanBlockCacheTime), smT.parameters.BlockCacheBlockCleaningPeriod,
 	)
 }
+
 func (smT *StateManager) MarshalPayload(payload any) ([]byte, error) {
 	switch p := payload.(type) {
 	case messages.BlockMessage:

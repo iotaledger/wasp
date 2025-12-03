@@ -34,6 +34,7 @@ const (
 //   - If response not received, ask random subsets of server nodes.
 //
 // TODO: For the future releases: Implement proper dissemination algorithm.
+
 type DistSync struct {
 	me                gpa.NodeID
 	serverNodes       []gpa.NodeID // Should be used to push and query for requests.

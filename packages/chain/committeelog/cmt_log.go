@@ -217,6 +217,8 @@ func (cl *CommitteeLog) handleInputSuspend() {
 	cl.suspended = true
 }
 
+// HandleMsgNextLogIndex processes the NextLogIndex message.
+//
 // > ON Reception of ⟨NextLI, •⟩ message:
 // >   ...
 func (cl *CommitteeLog) HandleMsgNextLogIndex(msg gpa.MessageIn[MsgNextLogIndex]) []gpa.MessageOut {

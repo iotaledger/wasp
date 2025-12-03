@@ -287,8 +287,7 @@ func (c *Consensus) Message(msg gpa.MessageIn[any]) []gpa.MessageOut {
 			msgs := c.distributedSignature.HandleACSSMsgBracha(msgT.Key, gpa.NewMessageIn(msg.Sender, msgT.Payload))
 			return slices.Concat(msgs, c.subDistributedSignature.DistributedSignatureReady(c.distributedSignature.Output()))
 		default:
-			//c.log.LogWarnf("cannot select subsystem: unexpected subsystem ID: %s", msgT.SubsystemID)
-			panic(fmt.Errorf("unexpected subsystem ID: %s", msgT.SubsystemID))
+			c.log.LogErrorf("cannot select subsystem: unexpected subsystem ID: %s", msgT.SubsystemID)
 		}
 	case gpa.PayloadWithKey[int, acss.MsgVote]:
 		msgs := c.distributedSignature.HandleACSSMsgVote(msgT.Key, gpa.NewMessageIn(msg.Sender, msgT.Payload))
