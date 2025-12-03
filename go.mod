@@ -12,6 +12,7 @@ replace (
 require (
 	filippo.io/edwards25519 v1.1.0
 	fortio.org/safecast v1.0.0
+	github.com/Khan/genqlient v0.8.1
 	github.com/VictoriaMetrics/fastcache v1.12.2
 	github.com/btcsuite/btcd/btcutil v1.1.6
 	github.com/bygui86/multi-profile/v2 v2.1.0
@@ -66,6 +67,7 @@ require (
 	golang.org/x/crypto v0.40.0
 	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b
 	golang.org/x/net v0.42.0
+	golang.org/x/sync v0.16.0
 	golang.org/x/text v0.27.0
 	golang.org/x/time v0.12.0
 	pgregory.net/rapid v1.2.0
@@ -227,6 +229,7 @@ require (
 	github.com/tklauser/numcpus v0.10.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
+	github.com/vektah/gqlparser/v2 v2.5.19 // indirect
 	github.com/wlynxg/anet v0.0.5 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.dedis.ch/fixbuf v1.0.3 // indirect
@@ -242,7 +245,6 @@ require (
 	go.uber.org/mock v0.5.2 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/mod v0.25.0 // indirect
-	golang.org/x/sync v0.16.0 // indirect
 	golang.org/x/sys v0.34.0 // indirect
 	golang.org/x/tools v0.34.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20241209162323-e6fa225c2576 // indirect

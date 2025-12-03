@@ -573,7 +573,7 @@ func (env *Solo) L1BaseTokenCoins(addr *cryptolib.Address) []*iotajsonrpc.Coin {
 func (env *Solo) L1AllCoins(addr *cryptolib.Address) iotajsonrpc.Coins {
 	r, err := env.L1Client().GetCoins(env.ctx, iotaclient.GetCoinsRequest{
 		Owner: addr.AsIotaAddress(),
-		Limit: math.MaxUint,
+		Limit: math.MaxInt,
 	})
 	require.NoError(env.T, err)
 	return r.Data
@@ -584,7 +584,7 @@ func (env *Solo) L1Coins(addr *cryptolib.Address, coinType coin.Type) []*iotajso
 	r, err := env.L1Client().GetCoins(env.ctx, iotaclient.GetCoinsRequest{
 		Owner:    addr.AsIotaAddress(),
 		CoinType: &coinTypeStr,
-		Limit:    math.MaxUint,
+		Limit:    math.MaxInt,
 	})
 	require.NoError(env.T, err)
 	return r.Data

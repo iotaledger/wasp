@@ -20,7 +20,7 @@ func TestDevInspectTransactionBlock(t *testing.T) {
 	client := l1starter.Instance().L1Client()
 	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 
-	limit := uint(3)
+	limit := int(3)
 	coinPages, err := client.GetCoins(
 		context.Background(), iotaclient.GetCoinsRequest{
 			Owner: sender.Address(),
@@ -77,7 +77,9 @@ func TestDryRunTransaction(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	resp, err := api.DryRunTransaction(context.Background(), tx.TxBytes)
+	resp, err := api.DryRunTransaction(context.Background(), iotaclient.DryRunTransactionRequest{
+		TxDataBytes: tx.TxBytes,
+	})
 	require.NoError(t, err)
 	require.True(t, resp.Effects.Data.IsSuccess())
 	require.Empty(t, resp.Effects.Data.V1.Status.Error)

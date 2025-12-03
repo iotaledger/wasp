@@ -34,7 +34,7 @@ func (c *Client) GetDynamicFieldObject(
 type GetDynamicFieldsRequest struct {
 	ParentObjectID *iotago.ObjectID
 	Cursor         *iotago.ObjectID // optional
-	Limit          *uint            // optional
+	Limit          *int             // optional
 }
 
 func (c *Client) GetDynamicFields(
@@ -55,7 +55,7 @@ type GetOwnedObjectsRequest struct {
 	Cursor *iotago.ObjectID
 	// [optional] Limit is the maximum number of items returned per page, defaults to [QUERY_MAX_RESULT_LIMIT_OBJECTS] if not
 	// provided
-	Limit *uint
+	Limit *int
 }
 
 func (c *Client) GetOwnedObjects(
@@ -78,7 +78,7 @@ func (c *Client) GetOwnedObjects(
 type QueryEventsRequest struct {
 	Query           *iotajsonrpc.EventFilter
 	Cursor          *iotajsonrpc.EventId // optional
-	Limit           *uint                // optional
+	Limit           *int                 // optional
 	DescendingOrder bool                 // optional
 }
 
@@ -93,7 +93,7 @@ func (c *Client) QueryEvents(
 type QueryTransactionBlocksRequest struct {
 	Query           *iotajsonrpc.IotaTransactionBlockResponseQuery
 	Cursor          *iotago.TransactionDigest // optional
-	Limit           *uint                     // optional
+	Limit           *int                      // optional
 	DescendingOrder bool                      // optional
 }
 
@@ -125,7 +125,7 @@ func (c *Client) ResolveNameServiceAddress(ctx context.Context, iotaName string)
 type ResolveNameServiceNamesRequest struct {
 	Owner  *iotago.Address
 	Cursor *iotago.ObjectID // optional
-	Limit  *uint            // optional
+	Limit  *int             // optional
 }
 
 func (c *Client) ResolveNameServiceNames(

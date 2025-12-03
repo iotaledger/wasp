@@ -21,7 +21,7 @@ type ObjectOwner struct {
 func (o ObjectOwner) IsBcsEnum() {}
 
 type Page[T IotaTransactionBlockResponse | IotaEvent | Coin | *Coin | IotaObjectResponse | DynamicFieldInfo | string | *Checkpoint,
-	C iotago.TransactionDigest | EventId | iotago.ObjectID | BigInt] struct {
+	C iotago.TransactionDigest | EventId | iotago.ObjectID | BigInt | string] struct {
 	Data []T `json:"data"`
 	// 'NextCursor' points to the last item in the page.
 	// Reading with next_cursor will start from the next item after next_cursor

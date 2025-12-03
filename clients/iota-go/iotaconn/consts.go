@@ -15,6 +15,11 @@ const (
 	AlphanetFaucetURL = "https://faucet.iota-rebased-alphanet.iota.cafe/gas"
 	TestnetFaucetURL  = "https://faucet.testnet.iota.cafe/gas"
 	DevnetFaucetURL   = "https://faucet.devnet.iota.cafe/gas"
+
+	LocalnetGraphQLEndpointURL = "http://localhost:9000"
+	AlphanetGraphQLEndpointURL = "https://graphql.iota-rebased-alphanet.iota.cafe"
+	TestnetGraphQLEndpointURL  = "https://graphql.testnet.iota.cafe"
+	DevnetGraphQLEndpointURL   = "https://graphql.devnet.iota.cafe"
 )
 
 type Host string

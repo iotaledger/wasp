@@ -1,0 +1,23 @@
+query GetAllBalances(
+	$owner: IotaAddress!,
+	# @genqlient(pointer: true)
+	$limit: Int,
+	# @genqlient(pointer: true)
+	$cursor: String,
+) {
+	address(address: $owner) {
+		balances(first: $limit, after: $cursor) {
+			pageInfo {
+				hasNextPage
+				endCursor
+			}
+			nodes {
+				coinType {
+					repr
+				}
+				coinObjectCount
+				totalBalance
+			}
+		}
+	}
+}

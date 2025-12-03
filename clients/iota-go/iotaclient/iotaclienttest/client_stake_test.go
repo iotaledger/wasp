@@ -47,7 +47,9 @@ func TestRequestAddDelegation(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	simulate, err := client.DryRunTransaction(context.Background(), txBytes)
+	simulate, err := client.DryRunTransaction(context.Background(), iotaclient.DryRunTransactionRequest{
+		TxDataBytes: txBytes,
+	})
 	require.NoError(t, err)
 	require.Equal(t, "", simulate.Effects.Data.V1.Status.Error)
 	require.True(t, simulate.Effects.Data.IsSuccess())
@@ -91,7 +93,9 @@ func TestRequestWithdrawDelegation(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	simulate, err := client.DryRunTransaction(context.Background(), txBytes)
+	simulate, err := client.DryRunTransaction(context.Background(), iotaclient.DryRunTransactionRequest{
+		TxDataBytes: txBytes,
+	})
 	require.NoError(t, err)
 	require.Equal(t, "", simulate.Effects.Data.V1.Status.Error)
 	require.True(t, simulate.Effects.Data.IsSuccess())

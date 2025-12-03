@@ -20,7 +20,7 @@ type Coin struct {
 	PreviousTransaction iotago.TransactionDigest `json:"previousTransaction"`
 }
 
-type CoinPage = Page[*Coin, iotago.ObjectID]
+type CoinPage = Page[*Coin, string]
 
 func (c *Coin) Ref() *iotago.ObjectRef {
 	return &iotago.ObjectRef{
