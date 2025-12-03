@@ -427,11 +427,18 @@ func (cni *chainNodeImpl) run(ctx context.Context, cleanupFunc context.CancelFun
 	redeliveryPeriodTicker := time.NewTicker(RedeliveryPeriod)
 	consensusDelayTicker := time.NewTicker(cni.consensusDelay)
 	timestampTicker := time.NewTicker(100 * time.Millisecond)
+	var jobShutdownCoordinator *shutdown.Coordinator
+	if cni.shutdownCoordinator != nil {
+		jobShutdownCoordinator = cni.shutdownCoordinator.Nested("chainNodeImpl.run")
+	}
+
 	for {
 		if ctx.Err() != nil {
 			if cni.shutdownCoordinator == nil {
 				return
 			}
+			jobShutdownCoordinator.Done()
+
 			// needs to wait for state mgr and consensusInst
 			cni.shutdownCoordinator.WaitNestedWithLogging(1 * time.Second)
 			cni.shutdownCoordinator.Done()
