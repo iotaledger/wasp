@@ -268,8 +268,6 @@ func (e *EVMChain) iscStateFromEVMBlockNumberOrHash(blockNumberOrHash *rpc.Block
 // Returns the anchor corresponding to the given block (i.e. such that
 // anchor.StateIndex == blockNumber; running the VM from this anchor will
 // produce block n+1).
-//
-// [anchor n-1] -> VM -> [state n] -> [anchor n] -> VM -> [state n+1] -> [anchor n+1] ...
 func (e *EVMChain) iscAnchorFromEVMBlockNumberOrHash(blockNumberOrHash *rpc.BlockNumberOrHash) (*isc.StateAnchor, error) {
 	latest, err := e.backend.ISCLatestAnchor()
 	if err != nil {
@@ -278,6 +276,15 @@ func (e *EVMChain) iscAnchorFromEVMBlockNumberOrHash(blockNumberOrHash *rpc.Bloc
 	if blockNumberOrHash == nil {
 		return latest, nil
 	}
+	// fetch the state n+1 and then read block.PreviousAnchor from the blockinfo n in blocklog.
+	//
+	// at state / block / anchor n:
+	// - latest block in blocklog: n
+	//   - block.PreviousAnchor = n-1
+	//
+	// at state / block / anchor n+1:
+	// - latest block in blocklog: n+1
+	//   - block.PreviousAnchor = n
 	var stateIndex uint32
 	if blockNumber, ok := blockNumberOrHash.Number(); ok {
 		bn := parseBlockNumber(blockNumber)
@@ -288,6 +295,9 @@ func (e *EVMChain) iscAnchorFromEVMBlockNumberOrHash(blockNumberOrHash *rpc.Bloc
 	} else {
 		blockHash, _ := blockNumberOrHash.Hash()
 		block := e.BlockByHash(blockHash)
+		if block == nil {
+			return nil, fmt.Errorf("block with hash %s not found", blockHash)
+		}
 		stateIndex = blockNumberToStateIndex(block.Number())
 	}
 	if stateIndex == latest.GetStateIndex() {
@@ -301,7 +311,16 @@ func (e *EVMChain) iscAnchorFromEVMBlockNumberOrHash(blockNumberOrHash *rpc.Bloc
 
 // Returns the anchor, which was used to form state of given index.
 func (e *EVMChain) previousAnchor(stateIndex uint32) (*isc.StateAnchor, error) {
-	state, err := e.backend.ISCLatestState()
+	indexedTrieRoot := e.index.ISCTrieRootByStateIndex(stateIndex)
+	var state state.State
+	var err error
+	if indexedTrieRoot == nil {
+		// this operation is O(N) and might be problematic if spammed; however
+		// the index should be fully populated some time after boot
+		state, err = e.backend.ISCStateByBlockIndex(stateIndex)
+	} else {
+		state, err = e.backend.ISCStateByTrieRoot(*indexedTrieRoot)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("retrieving latest state: %w", err)
 	}

@@ -119,6 +119,12 @@ func (c *Index) IndexBlock(trieRoot trie.Hash) error {
 	return nil
 }
 
+func (c *Index) ISCTrieRootByStateIndex(stateIndex uint32) *trie.Hash {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.blockTrieRootByIndex(stateIndex)
+}
+
 func (c *Index) BlockByNumber(n *big.Int) *types.Block {
 	if n == nil {
 		return nil
