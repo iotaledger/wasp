@@ -1,0 +1,15 @@
+query GetBalance(
+	$owner: IotaAddress!,
+	# @genqlient(pointer: true)
+	$fetchCoinType: String = "0x2::iota::IOTA",
+) {
+	address(address: $owner) {
+		balance(type: $fetchCoinType) {
+			coinType {
+				repr
+			}
+			coinObjectCount
+			totalBalance
+		}
+	}
+}

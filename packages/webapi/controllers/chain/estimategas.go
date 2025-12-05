@@ -62,7 +62,9 @@ func (c *Controller) estimateGasOnLedger(e echo.Context) error {
 	callContext, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	dryRunResponse, err := c.l1Client.DryRunTransaction(callContext, txBytes)
+	dryRunResponse, err := c.l1Client.DryRunTransaction(callContext, iotaclient.DryRunTransactionRequest{
+		TxDataBytes: txBytes,
+	})
 	if err != nil {
 		return apierrors.NewHTTPError(http.StatusBadRequest, "DryRun error", err)
 	}

@@ -12,8 +12,9 @@ import (
 type DevInspectTransactionBlockRequest struct {
 	SenderAddress *iotago.Address
 	TxKindBytes   iotago.Base64Data
-	GasPrice      *iotajsonrpc.BigInt // optional
-	Epoch         *uint64             // optional
+	GasPrice      *iotajsonrpc.BigInt                            // optional
+	Epoch         *uint64                                        // optional
+	Options       *iotajsonrpc.IotaTransactionBlockResponseOptions // optional
 	// additional_args // optional // FIXME
 }
 
@@ -37,12 +38,17 @@ func (c *Client) DevInspectTransactionBlock(
 	)
 }
 
+type DryRunTransactionRequest struct {
+	TxDataBytes iotago.Base64Data
+	Options     *iotajsonrpc.IotaTransactionBlockResponseOptions // optional
+}
+
 func (c *Client) DryRunTransaction(
 	ctx context.Context,
-	txDataBytes iotago.Base64Data,
+	req DryRunTransactionRequest,
 ) (*iotajsonrpc.DryRunTransactionBlockResponse, error) {
 	var resp iotajsonrpc.DryRunTransactionBlockResponse
-	return &resp, c.transport.Call(ctx, &resp, dryRunTransactionBlock, txDataBytes)
+	return &resp, c.transport.Call(ctx, &resp, dryRunTransactionBlock, req.TxDataBytes)
 }
 
 type ExecuteTransactionBlockRequest struct {

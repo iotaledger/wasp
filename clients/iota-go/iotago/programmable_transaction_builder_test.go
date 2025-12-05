@@ -83,7 +83,9 @@ func TestPTBMoveCall(t *testing.T) {
 			)
 			txBytes, err := bcs.Marshal(&txData)
 			require.NoError(t, err)
-			simulate, err := client.DryRunTransaction(context.Background(), txBytes)
+			simulate, err := client.DryRunTransaction(context.Background(), iotaclient.DryRunTransactionRequest{
+			TxDataBytes: txBytes,
+		})
 			require.NoError(t, err)
 
 			require.Empty(t, simulate.Effects.Data.V1.Status.Error)
@@ -264,7 +266,9 @@ func TestPTBPayIota(t *testing.T) {
 	txBytes, err := bcs.Marshal(&tx)
 	require.NoError(t, err)
 
-	simulate, err := client.DryRunTransaction(context.Background(), txBytes)
+	simulate, err := client.DryRunTransaction(context.Background(), iotaclient.DryRunTransactionRequest{
+		TxDataBytes: txBytes,
+	})
 	require.NoError(t, err)
 	require.Empty(t, simulate.Effects.Data.V1.Status.Error)
 	require.True(t, simulate.Effects.Data.IsSuccess())
@@ -339,7 +343,9 @@ func TestPTBPay(t *testing.T) {
 	txBytes, err := bcs.Marshal(&tx)
 	require.NoError(t, err)
 
-	simulate, err := client.DryRunTransaction(context.Background(), txBytes)
+	simulate, err := client.DryRunTransaction(context.Background(), iotaclient.DryRunTransactionRequest{
+		TxDataBytes: txBytes,
+	})
 	require.NoError(t, err)
 	require.Empty(t, simulate.Effects.Data.V1.Status.Error)
 	require.True(t, simulate.Effects.Data.IsSuccess())
