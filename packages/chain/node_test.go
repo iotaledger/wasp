@@ -69,6 +69,10 @@ func TestMain(m *testing.M) {
 func TestNodeBasic(t *testing.T) {
 	t.Parallel()
 
+	if testmisc.RaceDetectionEnabled {
+		t.Skip("Skipping long-running tests under race detection")
+	}
+
 	tests := []tc{
 		{n: 1, f: 0, reliable: true, timeout: 30 * time.Second},  // Low N
 		{n: 2, f: 0, reliable: true, timeout: 40 * time.Second},  // Low N
@@ -77,18 +81,16 @@ func TestNodeBasic(t *testing.T) {
 		{n: 4, f: 1, reliable: true, timeout: 100 * time.Second}, // Minimal robust config.
 	}
 
-	if !testmisc.RaceDetectionEnabled {
-		// Following test cases run infinitely if race detetion enabled. So we run them only if race detection disabled.
-		tests = append(tests, tc{n: 10, f: 3, reliable: true, timeout: 150 * time.Second}) // Typical config.
+	// Following test cases run infinitely if race detetion enabled. So we run them only if race detection disabled.
+	tests = append(tests, tc{n: 10, f: 3, reliable: true, timeout: 150 * time.Second}) // Typical config.
 
-		if !testing.Short() {
-			tests = append(tests,
-				// TODO these "unreliable" tests are crazy, they either succeed in 10~20s or run forever...
-				tc{n: 4, f: 1, reliable: false, timeout: 50 * time.Minute},   // Minimal robust config.
-				tc{n: 10, f: 3, reliable: false, timeout: 150 * time.Minute}, // Typical config.
-				tc{n: 31, f: 10, reliable: true, timeout: 250 * time.Minute}, // Large cluster, reliable - to make test faster.
-			)
-		}
+	if !testing.Short() {
+		tests = append(tests,
+			// TODO these "unreliable" tests are crazy, they either succeed in 10~20s or run forever...
+			tc{n: 4, f: 1, reliable: false, timeout: 50 * time.Minute},   // Minimal robust config.
+			tc{n: 10, f: 3, reliable: false, timeout: 150 * time.Minute}, // Typical config.
+			tc{n: 31, f: 10, reliable: true, timeout: 250 * time.Minute}, // Large cluster, reliable - to make test faster.
+		)
 	}
 
 	for _, tst := range tests {
