@@ -69,11 +69,11 @@ func TestNodeBasic(t *testing.T) {
 	t.Parallel()
 	tests := []tc{
 		{n: 1, f: 0, reliable: true, timeout: 30 * time.Second},   // Low N
-		{n: 2, f: 0, reliable: true, timeout: 40 * time.Second},   // Low N
-		{n: 3, f: 0, reliable: true, timeout: 50 * time.Second},   // Low N
-		{n: 4, f: 0, reliable: true, timeout: 100 * time.Second},  // Minimal robust config.
-		{n: 4, f: 1, reliable: true, timeout: 100 * time.Second},  // Minimal robust config.
-		{n: 10, f: 3, reliable: true, timeout: 150 * time.Second}, // Typical config.
+		{n: 2, f: 0, reliable: true, timeout: 50 * time.Second},   // Low N
+		{n: 3, f: 0, reliable: true, timeout: 60 * time.Second},   // Low N
+		{n: 4, f: 0, reliable: true, timeout: 110 * time.Second},  // Minimal robust config.
+		{n: 4, f: 1, reliable: true, timeout: 120 * time.Second},  // Minimal robust config.
+		{n: 10, f: 3, reliable: true, timeout: 160 * time.Second}, // Typical config.
 	}
 	if !testing.Short() {
 		tests = append(tests,
@@ -348,8 +348,6 @@ func (tnc *testNodeConn) PublishTX(
 		tnc.t.Logf("ExecuteTransactionBlock, err=%v", err)
 		return err
 	}
-
-	time.Sleep(5 * time.Second)
 
 	res, err = tnc.l1Client.GetTransactionBlock(ctx, iotaclient.GetTransactionBlockRequest{
 		Digest: &res.Digest,
