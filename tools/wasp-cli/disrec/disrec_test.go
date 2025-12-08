@@ -140,7 +140,7 @@ func TestCreateTX(t *testing.T) {
 	kp := cryptolib.NewKeyPair()
 	wallet := providers.NewUnsafeInMemoryTestingSeed(kp, 0)
 	require.NoError(t, client.RequestFunds(context.Background(), *kp.Address()))
-	packageID := lo.Must(client.DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(kp)))
+	packageID := lo.Must(client.L2().DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(kp)))
 
 	ptb := iotago.NewProgrammableTransactionBuilder()
 	ptb = iscmoveclient.PTBAssetsBagNewAndTransfer(ptb, packageID, committeeAddress)

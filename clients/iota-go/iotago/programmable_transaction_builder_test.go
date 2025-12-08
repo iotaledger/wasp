@@ -26,14 +26,31 @@ func TestPTBMoveCall(t *testing.T) {
 			client := l1starter.Instance().L1Client()
 			sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 
-			_, packageID, err := client.PublishContract(
+			txnBytes, err := client.Publish(
 				context.Background(),
-				sender,
-				contracts.SDKVerify().Modules,
-				contracts.SDKVerify().Dependencies,
-				iotaclient.DefaultGasBudget,
-				&iotajsonrpc.IotaTransactionBlockResponseOptions{ShowObjectChanges: true, ShowEffects: true},
+				iotaclient.PublishRequest{
+					Sender:          sender.Address(),
+					CompiledModules: contracts.SDKVerify().Modules,
+					Dependencies:    contracts.SDKVerify().Dependencies,
+					GasBudget:       iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget),
+				},
 			)
+			require.NoError(t, err)
+			txnResponse, err := client.SignAndExecuteTransaction(
+				context.Background(),
+				&iotaclient.SignAndExecuteTransactionRequest{
+					TxDataBytes: txnBytes.TxBytes,
+					Signer:      sender,
+					Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+						ShowEffects:       true,
+						ShowObjectChanges: true,
+					},
+				},
+			)
+			require.NoError(t, err)
+			require.True(t, txnResponse.Effects.Data.IsSuccess())
+
+			packageID, err := txnResponse.GetPublishedPackageID()
 			require.NoError(t, err)
 
 			coinPages, err := client.GetCoins(
@@ -84,8 +101,8 @@ func TestPTBMoveCall(t *testing.T) {
 			txBytes, err := bcs.Marshal(&txData)
 			require.NoError(t, err)
 			simulate, err := client.DryRunTransaction(context.Background(), iotaclient.DryRunTransactionRequest{
-			TxDataBytes: txBytes,
-		})
+				TxDataBytes: txBytes,
+			})
 			require.NoError(t, err)
 
 			require.Empty(t, simulate.Effects.Data.V1.Status.Error)

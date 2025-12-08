@@ -159,7 +159,16 @@ func (e *ChainEnv) testEstimateGasOnLedger(t *testing.T) {
 		pt := ptb.Finish()
 
 		// Find proper coin objects to pay for gas
-		coinsForGas, err := e.Clu.L1Client().FindCoinsForGasPayment(context.Background(), sender.Address().AsIotaAddress(), pt, iotaclient.DefaultGasPrice, l1GasBudget)
+		// coinsForGas, err := e.Clu.L1Client().GetCoinObjsForTargetAmount(context.Background(), sender.Address().AsIotaAddress(), pt, iotaclient.DefaultGasPrice, l1GasBudget)
+		coins, err := e.Clu.L1Client().GetCoinObjsForTargetAmount(context.Background(), sender.Address().AsIotaAddress(), iotaclient.DefaultGasPrice, l1GasBudget)
+		require.NoError(t, err)
+		coins, err = iotajsonrpc.PickupCoinsWithFilter(
+			coins,
+			l1GasBudget,
+			func(c *iotajsonrpc.Coin) bool { return !pt.IsInInputObjects(c.CoinObjectID) },
+		)
+		require.NoError(t, err)
+		coinsForGas := coins.CoinRefs()
 		require.NoError(t, err)
 
 		txData := iotago.NewProgrammable(

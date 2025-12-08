@@ -115,7 +115,7 @@ func (in *LocalIotaNode) start(ctx context.Context) {
 	in.waitAllHealthy(ctxTimeout)
 	in.logf("Deploying ISC contracts...")
 
-	packageID, err := in.L1Client().DeployISCContracts(ctxTimeout, ISCPackageOwner)
+	packageID, err := in.L1Client().L2().DeployISCContracts(ctxTimeout, ISCPackageOwner)
 	if err != nil {
 		panic(fmt.Errorf("isc contract deployment failed: %w", err))
 	}

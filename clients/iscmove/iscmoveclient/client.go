@@ -2,15 +2,19 @@ package iscmoveclient
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 
 	"github.com/iotaledger/hive.go/log"
+	"github.com/samber/lo"
 
 	bcs "github.com/iotaledger/bcs-go"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/contracts"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 )
 
@@ -68,18 +72,20 @@ func (c *Client) SignAndExecutePTB(
 	gasBudget uint64,
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
-	var err error
 	if len(gasPayments) == 0 {
-		gasPayments, err = c.FindCoinsForGasPayment(
-			ctx,
-			signer.Address(),
-			pt,
-			gasPrice,
+		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasPrice, gasBudget)
+		if err != nil {
+			return nil, fmt.Errorf("failed to find gas payment: %w", err)
+		}
+		coins, err = iotajsonrpc.PickupCoinsWithFilter(
+			coins,
 			gasBudget,
+			func(c *iotajsonrpc.Coin) bool { return !pt.IsInInputObjects(c.CoinObjectID) },
 		)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to find gas payment: %w", err)
 		}
+		gasPayments = coins.CoinRefs()
 	}
 
 	if os.Getenv("DEBUG") != "" {
@@ -127,18 +133,20 @@ func (c *Client) DevInspectPTB(
 	gasBudget uint64,
 ) (*iotajsonrpc.DevInspectResults, error) {
 	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
-	var err error
 	if len(gasPayments) == 0 {
-		gasPayments, err = c.FindCoinsForGasPayment(
-			ctx,
-			signer.Address(),
-			pt,
-			gasPrice,
+		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasPrice, gasBudget)
+		if err != nil {
+			return nil, fmt.Errorf("failed to find gas payment: %w", err)
+		}
+		coins, err = iotajsonrpc.PickupCoinsWithFilter(
+			coins,
 			gasBudget,
+			func(c *iotajsonrpc.Coin) bool { return !pt.IsInInputObjects(c.CoinObjectID) },
 		)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to find gas payment: %w", err)
 		}
+		gasPayments = coins.CoinRefs()
 	}
 
 	tx := iotago.NewProgrammable(
@@ -170,4 +178,57 @@ func (c *Client) DevInspectPTB(
 		return nil, fmt.Errorf("failed to execute the transaction: %s", txnResponse.Effects.Data.V1.Status.Error)
 	}
 	return txnResponse, nil
+}
+
+func (c *Client) GetISCPackageIDForAnchor(ctx context.Context, anchor iotago.ObjectID) (iotago.PackageID, error) {
+	obj, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: &anchor, Options: &iotajsonrpc.IotaObjectDataOptions{
+		ShowDisplay: true,
+		ShowType:    true,
+	}})
+	if err != nil {
+		return iotago.PackageID{}, fmt.Errorf("retrieving anchor object: %w", err)
+	}
+
+	objectType, err := iotago.ObjectTypeFromString(*obj.Data.Type)
+	if err != nil {
+		return iotago.PackageID{}, fmt.Errorf("parsing anchor object type: %w", err)
+	}
+
+	packageID := objectType.ResourceType().Address
+
+	return *packageID, nil
+}
+
+func (c *Client) DeployISCContracts(ctx context.Context, signer iotasigner.Signer) (iotago.PackageID, error) {
+	iscBytecode := contracts.ISC()
+	txnBytes, err := c.Publish(ctx, iotaclient.PublishRequest{
+		Sender:          signer.Address(),
+		CompiledModules: iscBytecode.Modules,
+		Dependencies:    iscBytecode.Dependencies,
+		GasBudget:       iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget * 10),
+	})
+	if err != nil {
+		return iotago.PackageID{}, err
+	}
+
+	txnResponse, err := c.SignAndExecuteTransaction(
+		ctx,
+		&iotaclient.SignAndExecuteTransactionRequest{
+			TxDataBytes: txnBytes.TxBytes,
+			Signer:      signer,
+			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+				ShowEffects:       true,
+				ShowObjectChanges: true,
+			},
+		},
+	)
+	if err != nil {
+		return iotago.PackageID{}, err
+	}
+
+	if !txnResponse.Effects.Data.IsSuccess() {
+		return iotago.PackageID{}, errors.New("publish ISC contracts failed")
+	}
+	packageID := lo.Must(txnResponse.GetPublishedPackageID())
+	return *packageID, nil
 }
