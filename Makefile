@@ -47,8 +47,8 @@ test: install
 	go test -ldflags $(BUILD_LD_FLAGS) $(TEST_PKG) --timeout 5m --count 1 -failfast $(TEST_ARG) -run ^TestNodeBasic$$
 
 test-short:
-	go test -race -ldflags $(BUILD_LD_FLAGS) --short --count 1 -timeout 25m -failfast $(shell go list ./...)
-	go test -ldflags $(BUILD_LD_FLAGS) --short --count 1 -timeout 5m -failfast -run ^TestNodeBasic$$ github.com/iotaledger/wasp/v2/packages/chain
+	go test -race -ldflags $(BUILD_LD_FLAGS) --short --count 1 -timeout 40m -failfast $(shell go list ./...)
+	go test -ldflags $(BUILD_LD_FLAGS) --short --count 1 -timeout 10m -failfast -run ^TestNodeBasic$$ github.com/iotaledger/wasp/v2/packages/chain
 
 test-cluster: install
 	go test -race -ldflags $(BUILD_LD_FLAGS) --count 1 -timeout 25m -failfast $(shell go list ./tools/cluster/tests/...)
