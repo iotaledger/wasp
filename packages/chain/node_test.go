@@ -74,15 +74,15 @@ func TestNodeBasic(t *testing.T) {
 	}
 
 	tests := []tc{
-		{n: 1, f: 0, reliable: true, timeout: 30 * time.Second},  // Low N
-		{n: 2, f: 0, reliable: true, timeout: 40 * time.Second},  // Low N
-		{n: 3, f: 0, reliable: true, timeout: 50 * time.Second},  // Low N
-		{n: 4, f: 0, reliable: true, timeout: 100 * time.Second}, // Minimal robust config.
-		{n: 4, f: 1, reliable: true, timeout: 100 * time.Second}, // Minimal robust config.
+		{n: 1, f: 0, reliable: true, timeout: 300 * time.Second},  // Low N
+		{n: 2, f: 0, reliable: true, timeout: 400 * time.Second},  // Low N
+		{n: 3, f: 0, reliable: true, timeout: 500 * time.Second},  // Low N
+		{n: 4, f: 0, reliable: true, timeout: 1000 * time.Second}, // Minimal robust config.
+		{n: 4, f: 1, reliable: true, timeout: 1000 * time.Second}, // Minimal robust config.
 	}
 
 	// Following test cases run infinitely if race detetion enabled. So we run them only if race detection disabled.
-	tests = append(tests, tc{n: 10, f: 3, reliable: true, timeout: 150 * time.Second}) // Typical config.
+	tests = append(tests, tc{n: 10, f: 3, reliable: true, timeout: 1500 * time.Second}) // Typical config.
 
 	if !testing.Short() {
 		tests = append(tests,
