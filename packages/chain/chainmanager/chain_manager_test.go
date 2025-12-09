@@ -228,7 +228,7 @@ func newTestChainLedger(t *testing.T, originator cryptolib.Signer) *testchain.Te
 	l1client.RequestFunds(context.Background(), *originator.Address())
 	l1client.RequestFunds(context.Background(), *originator.Address())
 
-	iscPackage, err := l1client.DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(originator))
+	iscPackage, err := l1client.L2().DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(originator))
 	require.NoError(t, err)
 
 	return testchain.NewTestChainLedger(t, originator, &iscPackage, l1client)

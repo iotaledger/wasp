@@ -120,7 +120,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 
 	l1client := l1starter.Instance().L1Client()
 
-	iscPackage, err := l1client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(originator))
+	iscPackage, err := l1client.L2().DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(originator))
 	require.NoError(t, err)
 
 	tcl := testchain.NewTestChainLedger(t, originator, &iscPackage, l1client)

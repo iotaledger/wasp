@@ -57,7 +57,7 @@ func (c *Client) ISCPackageID(ctx context.Context) (*iotago.PackageID, error) {
 		return c.iscPackageID, nil
 	}
 
-	pkgID, err := c.L1Client.GetISCPackageIDForAnchor(ctx, c.ChainID.AsObjectID())
+	pkgID, err := c.L1Client.L2().GetISCPackageIDForAnchor(ctx, c.ChainID.AsObjectID())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ISC package ID for anchor: %w", err)
 	}

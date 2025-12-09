@@ -51,7 +51,7 @@ func newNCChain(
 	wsURL string,
 	httpURL string,
 ) (*ncChain, error) {
-	packageID, err := nodeConn.httpClient.GetISCPackageIDForAnchor(ctx, chainID.AsObjectID())
+	packageID, err := nodeConn.httpClient.L2().GetISCPackageIDForAnchor(ctx, chainID.AsObjectID())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ISC package ID: %w", err)
 	}

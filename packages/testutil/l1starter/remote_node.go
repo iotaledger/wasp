@@ -56,7 +56,7 @@ func (r *RemoteIotaNode) Start(ctx context.Context) {
 		panic(fmt.Errorf("faucet request failed: %w for url: %s", err, r.faucetURL))
 	}
 
-	r.iscPackageID, err = client.DeployISCContracts(ctx, r.iscPackageOwner)
+	r.iscPackageID, err = client.L2().DeployISCContracts(ctx, r.iscPackageOwner)
 	if err != nil {
 		panic(fmt.Errorf("isc contract deployment failed: %w", err))
 	}

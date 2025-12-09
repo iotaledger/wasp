@@ -1136,17 +1136,6 @@ func (c *GraphQLClient) SignAndExecuteTransaction(
 	return resp, err
 }
 
-func (c *GraphQLClient) PublishContract(
-	ctx context.Context,
-	signer iotasigner.Signer,
-	modules []*iotago.Base64Data,
-	dependencies []*iotago.Address,
-	gasBudget uint64,
-	options *iotajsonrpc.IotaTransactionBlockResponseOptions,
-) (*iotajsonrpc.IotaTransactionBlockResponse, *iotago.PackageID, error) {
-	return nil, nil, fmt.Errorf("not implemented: %s", "PublishContract")
-}
-
 func (c *GraphQLClient) UpdateObjectRef(
 	ctx context.Context,
 	ref *iotago.ObjectRef,
@@ -1525,30 +1514,6 @@ func (c *GraphQLClient) IotaClient() *iotaclient.Client {
 
 func (c *GraphQLClient) DeployISCContracts(ctx context.Context, signer iotasigner.Signer) (iotago.PackageID, error) {
 	return iotago.PackageID{}, fmt.Errorf("not implemented: %s", "DeployISCContracts")
-}
-
-func (c *GraphQLClient) GetISCPackageIDForAnchor(ctx context.Context, anchor iotago.ObjectID) (iotago.PackageID, error) {
-	return iotago.PackageID{}, fmt.Errorf("not implemented: %s", "GetISCPackageIDForAnchor")
-}
-
-func (c *GraphQLClient) FindCoinsForGasPayment(
-	ctx context.Context,
-	owner *iotago.Address,
-	pt iotago.ProgrammableTransaction,
-	gasPrice uint64,
-	gasBudget uint64,
-) ([]*iotago.ObjectRef, error) {
-	return nil, fmt.Errorf("not implemented: %s", "FindCoinsForGasPayment")
-}
-
-func (c *GraphQLClient) MergeCoinsAndExecute(
-	ctx context.Context,
-	owner iotasigner.Signer,
-	destinationCoin *iotago.ObjectRef,
-	sourceCoins []*iotago.ObjectRef,
-	gasBudget uint64,
-) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
-	return nil, fmt.Errorf("not implemented: %s", "MergeCoinsAndExecute")
 }
 
 func (c *GraphQLClient) SignAndExecuteTxWithRetry(
