@@ -131,11 +131,6 @@ type Consensus struct {
 	log                     log.Logger
 }
 
-const (
-	subsystemTypeDistributedSignature byte = iota
-	subsystemTypeACS
-)
-
 var _ gpa.GPA = &Consensus{}
 
 func New(

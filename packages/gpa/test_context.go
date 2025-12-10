@@ -53,7 +53,7 @@ func NewTestContext[Obj any](nodes map[NodeID]Obj, functors ...TestContextFuncto
 	}
 
 	tc.SetNodes(nodes)
-	tc.SetFunctors(tc.functors)
+	tc.SetFunctors(functors[0])
 
 	return &tc
 }
@@ -326,7 +326,7 @@ func FindAndInvokeInputHandler(obj any, input Input) []MessageOut {
 	objT := objV.Type()
 
 	handlerMethodT := reflect.FuncOf([]reflect.Type{objT, reflect.TypeOf(input)}, []reflect.Type{reflect.TypeOf([]MessageOut{})}, false)
-	handlerPtrMethodT := reflect.FuncOf([]reflect.Type{objT, reflect.PtrTo(reflect.TypeOf(input))}, []reflect.Type{reflect.TypeOf([]MessageOut{})}, false)
+	handlerPtrMethodT := reflect.FuncOf([]reflect.Type{objT, reflect.PointerTo(reflect.TypeOf(input))}, []reflect.Type{reflect.TypeOf([]MessageOut{})}, false)
 
 	for i := 0; i < objT.NumMethod(); i++ {
 		methodT := objT.Method(i)
@@ -416,9 +416,8 @@ func findAndInvokePayloadWithKeyMessageHandler(obj any, msg MessageIn[any]) []Me
 	objT := objV.Type()
 	msgV := reflect.ValueOf(msg)
 	payloadWithKeyV := reflect.ValueOf(msg.Payload)
-	payloadWithKeyT := payloadWithKeyV.Type()
-	keyV := payloadWithKeyV.Field(getPayloadWithKeyKeyFieldIndex(payloadWithKeyT))
-	payloadV := payloadWithKeyV.Field(getPayloadWithKeyPayloadFieldIndex(payloadWithKeyT)).Elem()
+	keyV := payloadWithKeyV.Field(getPayloadWithKeyKeyFieldIndex())
+	payloadV := payloadWithKeyV.Field(getPayloadWithKeyPayloadFieldIndex()).Elem()
 	payloadT := payloadV.Type()
 
 	for i := 0; i < objT.NumMethod(); i++ {
@@ -525,13 +524,13 @@ func getFieldIndexOfType(structType reflect.Type, fieldType reflect.Type) int {
 // 	return f.Index[0]
 // }
 
-func getPayloadWithKeyKeyFieldIndex(structType reflect.Type) int {
+func getPayloadWithKeyKeyFieldIndex() int {
 	type privateKeyType struct{}
 	samplePayloadWithKey := PayloadWithKey[privateKeyType, struct{}]{}
 	return getFieldIndexOfType(reflect.TypeOf(samplePayloadWithKey), reflect.TypeOf(privateKeyType{}))
 }
 
-func getPayloadWithKeyPayloadFieldIndex(structType reflect.Type) int {
+func getPayloadWithKeyPayloadFieldIndex() int {
 	type privatePayloadType struct{}
 	samplePayloadWithKey := PayloadWithKey[struct{}, privatePayloadType]{}
 	return getFieldIndexOfType(reflect.TypeOf(samplePayloadWithKey), reflect.TypeOf(privatePayloadType{}))

@@ -98,7 +98,7 @@ func testCommitteeLogBasic(t *testing.T, n, f int) {
 	// FIXME is should be anchor state transition, instead of random anchor
 	ao1 := randomAnchorWithID(*aliasRef.ObjectID, committeeAddress, 1)
 	t.Logf("Anchor1=%v", ao1)
-	gpaTC.WithInputs(inputAnchorConfirmedNew(gpaNodes, ao1)).RunAll()
+	gpaTC.WithInputs(inputAnchorConfirmed(gpaNodes, ao1)).RunAll()
 	gpaTC.PrintAllStatusStrings("After Anchor1Recv", t.Logf)
 	cons1 := gpaNodes[gpaNodeIDs[0]].Output().(committeelog.Output)
 	cons1Outs := map[gpa.NodeID]committeelog.Output{}
@@ -114,7 +114,7 @@ func testCommitteeLogBasic(t *testing.T, n, f int) {
 	// FIXME is should be anchor state transition, instead of random anchor
 	ao2 := randomAnchorWithID(*aliasRef.ObjectID, committeeAddress, 2)
 	t.Logf("Anchor2=%v", ao2)
-	gpaTC.WithInputs(inputConsensusOutputNew(cons1Outs, ao2)).RunAll()
+	gpaTC.WithInputs(inputConsensusOutput(cons1Outs, ao2)).RunAll()
 	gpaTC.PrintAllStatusStrings("After gpaMsgsAnchor2Cons", t.Logf)
 	cons2 := gpaNodes[gpaNodeIDs[0]].Output().(committeelog.Output)
 	t.Logf("cons2=%v", cons2)
@@ -128,7 +128,7 @@ func testCommitteeLogBasic(t *testing.T, n, f int) {
 	}
 	//
 	// Anchor Confirmed received (nothing changes, we are ahead of it)
-	gpaTC.WithInputs(inputAnchorConfirmedNew(gpaNodes, ao2)).RunAll()
+	gpaTC.WithInputs(inputAnchorConfirmed(gpaNodes, ao2)).RunAll()
 	gpaTC.PrintAllStatusStrings("After gpaMsgsAnchor2Recv", t.Logf)
 	for _, n := range gpaNodes {
 		require.NotNil(t, n.Output())
@@ -139,41 +139,10 @@ func testCommitteeLogBasic(t *testing.T, n, f int) {
 ////////////////////////////////////////////////////////////////////////////////
 // Helper functions.
 
-func inputAnchorConfirmedNew(gpaNodes map[gpa.NodeID]*committeelog.CommitteeLog, ao *isc.StateAnchor) map[gpa.NodeID]gpa.Input {
+func inputAnchorConfirmed(gpaNodes map[gpa.NodeID]*committeelog.CommitteeLog, ao *isc.StateAnchor) map[gpa.NodeID]gpa.Input {
 	inputs := map[gpa.NodeID]gpa.Input{}
 	for n := range gpaNodes {
 		inputs[n] = committeelog.NewInputAnchorConfirmed(ao)
-	}
-	return inputs
-}
-
-func inputAnchorConfirme(gpaNodes map[gpa.NodeID]gpa.GPA, ao *isc.StateAnchor) map[gpa.NodeID]gpa.Input {
-	inputs := map[gpa.NodeID]gpa.Input{}
-	for n := range gpaNodes {
-		inputs[n] = committeelog.NewInputAnchorConfirmed(ao)
-	}
-	return inputs
-}
-
-func inputAnchorConfirmed(gpaNodes map[gpa.NodeID]gpa.GPA, ao *isc.StateAnchor) map[gpa.NodeID]gpa.Input {
-	inputs := map[gpa.NodeID]gpa.Input{}
-	for n := range gpaNodes {
-		inputs[n] = committeelog.NewInputAnchorConfirmed(ao)
-	}
-	return inputs
-}
-
-func inputConsensusOutputNew(consReq map[gpa.NodeID]committeelog.Output, nextAnchor *isc.StateAnchor) map[gpa.NodeID]gpa.Input {
-	inputs := map[gpa.NodeID]gpa.Input{}
-	for nid, outs := range consReq {
-		maxLI := committeelog.NilLogIndex()
-		for li := range outs {
-			if li <= maxLI {
-				break
-			}
-			maxLI = li
-			inputs[nid] = committeelog.NewInputConsensusOutputConfirmed(nextAnchor, li)
-		}
 	}
 	return inputs
 }
