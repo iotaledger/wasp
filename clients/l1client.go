@@ -2,14 +2,10 @@ package clients
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
-	"github.com/samber/lo"
-
 	"github.com/iotaledger/hive.go/log"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/contracts"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
@@ -56,7 +52,7 @@ type L1Client interface {
 	) (*iotajsonrpc.DevInspectResults, error)
 	DryRunTransaction(
 		ctx context.Context,
-		txDataBytes iotago.Base64Data,
+		req iotaclient.DryRunTransactionRequest,
 	) (*iotajsonrpc.DryRunTransactionBlockResponse, error)
 	ExecuteTransactionBlock(
 		ctx context.Context,
@@ -133,14 +129,6 @@ type L1Client interface {
 		ctx context.Context,
 		req *iotaclient.SignAndExecuteTransactionRequest,
 	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
-	PublishContract(
-		ctx context.Context,
-		signer iotasigner.Signer,
-		modules []*iotago.Base64Data,
-		dependencies []*iotago.Address,
-		gasBudget uint64,
-		options *iotajsonrpc.IotaTransactionBlockResponseOptions,
-	) (*iotajsonrpc.IotaTransactionBlockResponse, *iotago.PackageID, error)
 	UpdateObjectRef(
 		ctx context.Context,
 		ref *iotago.ObjectRef,
@@ -202,22 +190,6 @@ type L1Client interface {
 	Health(ctx context.Context) error
 	L2() L2Client
 	IotaClient() *iotaclient.Client
-	DeployISCContracts(ctx context.Context, signer iotasigner.Signer) (iotago.PackageID, error)
-	GetISCPackageIDForAnchor(ctx context.Context, anchor iotago.ObjectID) (iotago.PackageID, error)
-	FindCoinsForGasPayment(
-		ctx context.Context,
-		owner *iotago.Address,
-		pt iotago.ProgrammableTransaction,
-		gasPrice uint64,
-		gasBudget uint64,
-	) ([]*iotago.ObjectRef, error)
-	MergeCoinsAndExecute(
-		ctx context.Context,
-		owner iotasigner.Signer,
-		destinationCoin *iotago.ObjectRef,
-		sourceCoins []*iotago.ObjectRef,
-		gasBudget uint64,
-	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
 	SignAndExecuteTxWithRetry(
 		ctx context.Context,
 		signer iotasigner.Signer,
@@ -250,59 +222,6 @@ func (c *l1Client) RequestFunds(ctx context.Context, address cryptolib.Address) 
 func (c *l1Client) Health(ctx context.Context) error {
 	_, err := c.GetLatestIotaSystemState(ctx)
 	return err
-}
-
-func (c *l1Client) DeployISCContracts(ctx context.Context, signer iotasigner.Signer) (iotago.PackageID, error) {
-	iscBytecode := contracts.ISC()
-	txnBytes, err := c.Publish(ctx, iotaclient.PublishRequest{
-		Sender:          signer.Address(),
-		CompiledModules: iscBytecode.Modules,
-		Dependencies:    iscBytecode.Dependencies,
-		GasBudget:       iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget * 10),
-	})
-	if err != nil {
-		return iotago.PackageID{}, err
-	}
-
-	txnResponse, err := c.SignAndExecuteTransaction(
-		ctx,
-		&iotaclient.SignAndExecuteTransactionRequest{
-			TxDataBytes: txnBytes.TxBytes,
-			Signer:      signer,
-			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
-				ShowEffects:       true,
-				ShowObjectChanges: true,
-			},
-		},
-	)
-	if err != nil {
-		return iotago.PackageID{}, err
-	}
-
-	if !txnResponse.Effects.Data.IsSuccess() {
-		return iotago.PackageID{}, errors.New("publish ISC contracts failed")
-	}
-	packageID := lo.Must(txnResponse.GetPublishedPackageID())
-	return *packageID, nil
-}
-
-func (c *l1Client) GetISCPackageIDForAnchor(ctx context.Context, anchor iotago.ObjectID) (iotago.PackageID, error) {
-	obj, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: &anchor, Options: &iotajsonrpc.IotaObjectDataOptions{
-		ShowDisplay: true,
-		ShowType:    true,
-	}})
-	if err != nil {
-		return iotago.PackageID{}, fmt.Errorf("retrieving anchor object: %w", err)
-	}
-
-	objectType, err := iotago.ObjectTypeFromString(*obj.Data.Type)
-	if err != nil {
-		return iotago.PackageID{}, fmt.Errorf("parsing anchor object type: %w", err)
-	}
-
-	packageID := objectType.ResourceType().Address
-
-	return *packageID, nil
 }
 
 func (c *l1Client) L2() L2Client {

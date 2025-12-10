@@ -91,17 +91,25 @@ func initSendFundsCmd() *cobra.Command { //nolint:funlen
 
 			pt := ptb.Finish()
 
-			gasPayments, err := client.FindCoinsForGasPayment(context.TODO(), senderAddress.AsIotaAddress(), pt, iotaclient.DefaultGasPrice, iotaclient.DefaultGasBudget)
+			coins, err := client.GetCoinObjsForTargetAmount(context.Background(), senderAddress.AsIotaAddress(), iotaclient.DefaultGasPrice, iotaclient.DefaultGasBudget)
 			if err != nil {
-				return fmt.Errorf("failed to find gas payment: %s", err)
+				return fmt.Errorf("failed to find gas payment: %w", err)
 			}
-			if len(gasPayments) == 0 {
+			coins, err = iotajsonrpc.PickupCoinsWithFilter(
+				coins,
+				iotaclient.DefaultGasBudget,
+				func(c *iotajsonrpc.Coin) bool { return !pt.IsInInputObjects(c.CoinObjectID) },
+			)
+			if err != nil {
+				return fmt.Errorf("failed to find gas payment: %w", err)
+			}
+			if len(coins) == 0 {
 				return fmt.Errorf("no coin found as gas payment")
 			}
 			tx := iotago.NewProgrammable(
 				senderAddress.AsIotaAddress(),
 				pt,
-				gasPayments,
+				coins.CoinRefs(),
 				iotaclient.DefaultGasBudget,
 				iotaclient.DefaultGasPrice,
 			)

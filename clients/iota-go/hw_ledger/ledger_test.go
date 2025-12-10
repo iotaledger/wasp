@@ -74,7 +74,7 @@ func TestDeployChain(t *testing.T) {
 	require.NoError(t, err)
 
 	signer := NewLedgerSigner(dev, "44'/4218'/123'/0'/0'", false)
-	result, err := l1.DeployISCContracts(context.Background(), signer)
+	result, err := l1.L2().DeployISCContracts(context.Background(), signer)
 	require.NoError(t, err)
 
 	fmt.Println(result)

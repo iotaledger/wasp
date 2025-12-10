@@ -198,7 +198,7 @@ type IotaTransactionBlock struct {
 
 type ObjectChange struct {
 	Published *struct {
-		PackageId iotago.ObjectID     `json:"packageId"`
+		PackageID iotago.ObjectID     `json:"packageId"`
 		Version   *BigInt             `json:"version"`
 		Digest    iotago.ObjectDigest `json:"digest"`
 		Nodules   []string            `json:"nodules"`
@@ -298,9 +298,8 @@ type IotaTransactionBlockResponse struct {
 	ConfirmedLocalExecution *bool                                               `json:"confirmedLocalExecution,omitempty"`
 	ObjectChanges           []serialization.TagJson[ObjectChange]               `json:"objectChanges,omitempty"`
 	BalanceChanges          []BalanceChange                                     `json:"balanceChanges,omitempty"`
-	Errors                  []string                                            `json:"errors,omitempty"` // Errors that occurred in fetching/serializing the transaction.
-	// FIXME datatype may be wrong
-	RawEffects []int `json:"rawEffects,omitempty"` // enable by show_raw_effects
+	Errors                  []string                                            `json:"errors,omitempty"`     // Errors that occurred in fetching/serializing the transaction.
+	RawEffects              []byte                                              `json:"rawEffects,omitempty"` // enable by show_raw_effects
 }
 
 // requires to set 'IotaTransactionBlockResponseOptions.ShowObjectChanges' to true
@@ -311,7 +310,7 @@ func (r *IotaTransactionBlockResponse) GetPublishedPackageID() (*iotago.PackageI
 	var packageID iotago.PackageID
 	for _, change := range r.ObjectChanges {
 		if change.Data.Published != nil {
-			packageID = change.Data.Published.PackageId
+			packageID = change.Data.Published.PackageID
 			return &packageID, nil
 		}
 	}

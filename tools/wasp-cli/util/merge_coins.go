@@ -7,9 +7,11 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/bcs-go"
+	"github.com/iotaledger/wasp/v2/clients"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/cliclients"
@@ -46,7 +48,7 @@ func TryMergeAllCoins(ctx context.Context) error {
 		coinsToMerge[i-2] = baseCoins[i].Ref()
 	}
 
-	_, err = client.MergeCoinsAndExecute(ctx, cryptolib.SignerToIotaSigner(w), baseCoins[0].Ref(), coinsToMerge, iotaclient.DefaultGasBudget)
+	_, err = mergeCoinsAndExecute(ctx, client, cryptolib.SignerToIotaSigner(w), baseCoins[0].Ref(), coinsToMerge, iotaclient.DefaultGasBudget)
 	if err != nil {
 		return err
 	}
@@ -119,4 +121,65 @@ func TryManageCoinsAmount(ctx context.Context) {
 		},
 	)
 	log.Check(err)
+}
+
+func mergeCoinsAndExecute(
+	ctx context.Context,
+	client clients.L1Client,
+	owner iotasigner.Signer,
+	destinationCoin *iotago.ObjectRef,
+	sourceCoins []*iotago.ObjectRef,
+	gasBudget uint64,
+) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+	ptb := iotago.NewProgrammableTransactionBuilder()
+	var argCoins []iotago.Argument
+	for _, sourceCoin := range sourceCoins {
+		argCoins = append(argCoins, ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: sourceCoin}))
+	}
+	ptb.Command(
+		iotago.Command{
+			MergeCoins: &iotago.ProgrammableMergeCoins{
+				Destination: ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: destinationCoin}),
+				Sources:     argCoins,
+			},
+		},
+	)
+	pt := ptb.Finish()
+
+	coins, err := client.GetCoinObjsForTargetAmount(ctx, owner.Address(), iotaclient.DefaultGasPrice, gasBudget)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find gas payment: %w", err)
+	}
+	coins, err = iotajsonrpc.PickupCoinsWithFilter(
+		coins,
+		gasBudget,
+		func(c *iotajsonrpc.Coin) bool { return !pt.IsInInputObjects(c.CoinObjectID) },
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find gas payment: %w", err)
+	}
+
+	tx := iotago.NewProgrammable(
+		owner.Address(),
+		pt,
+		coins.CoinRefs(),
+		gasBudget,
+		iotaclient.DefaultGasPrice,
+	)
+	txBytes, err := bcs.Marshal(&tx)
+	if err != nil {
+		return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
+	}
+	txnResponse, err := client.SignAndExecuteTransaction(
+		ctx, &iotaclient.SignAndExecuteTransactionRequest{
+			TxDataBytes: txBytes,
+			Signer:      owner,
+			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("can't execute the transaction: %w", err)
+	}
+
+	return txnResponse, nil
 }

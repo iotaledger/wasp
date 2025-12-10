@@ -174,7 +174,9 @@ func TestPay(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	simulate, err := client.DryRunTransaction(context.Background(), txn.TxBytes)
+	simulate, err := client.DryRunTransaction(context.Background(), iotaclient.DryRunTransactionRequest{
+		TxDataBytes: txn.TxBytes,
+	})
 	require.NoError(t, err)
 	require.Empty(t, simulate.Effects.Data.V1.Status.Error)
 	require.True(t, simulate.Effects.Data.IsSuccess())
@@ -194,7 +196,7 @@ func TestPayAllIota(t *testing.T) {
 	signer := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 	recipient := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL())
 
-	limit := uint(3)
+	limit := int(3)
 	coinPages, err := client.GetCoins(
 		context.Background(), iotaclient.GetCoinsRequest{
 			Owner: signer.Address(),
@@ -218,7 +220,9 @@ func TestPayAllIota(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	simulate, err := client.DryRunTransaction(context.Background(), txn.TxBytes)
+	simulate, err := client.DryRunTransaction(context.Background(), iotaclient.DryRunTransactionRequest{
+		TxDataBytes: txn.TxBytes,
+	})
 	require.NoError(t, err)
 	require.Empty(t, simulate.Effects.Data.V1.Status.Error)
 	require.True(t, simulate.Effects.Data.IsSuccess())
@@ -235,7 +239,7 @@ func TestPayAllIota(t *testing.T) {
 	}
 	// all the input objects are merged into the first input object
 	// except the first input object, all the other input objects are deleted
-	require.Equal(t, limit-1, delObjNum)
+	require.Equal(t, limit-1, int(delObjNum))
 
 	// one output balance and one input balance
 	require.Len(t, simulate.BalanceChanges, 2)
@@ -254,7 +258,7 @@ func TestPayIota(t *testing.T) {
 	recipient1 := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL())
 	recipient2 := iotatest.MakeSignerWithFunds(2, l1starter.Instance().FaucetURL())
 
-	limit := uint(4)
+	limit := int(4)
 	coinPages, err := client.GetCoins(
 		context.Background(), iotaclient.GetCoinsRequest{
 			Owner: signer.Address(),
@@ -285,7 +289,9 @@ func TestPayIota(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	simulate, err := client.DryRunTransaction(context.Background(), txn.TxBytes)
+	simulate, err := client.DryRunTransaction(context.Background(), iotaclient.DryRunTransactionRequest{
+		TxDataBytes: txn.TxBytes,
+	})
 	require.NoError(t, err)
 	require.Empty(t, simulate.Effects.Data.V1.Status.Error)
 	require.True(t, simulate.Effects.Data.IsSuccess())
@@ -309,7 +315,7 @@ func TestPayIota(t *testing.T) {
 
 	// all the input objects are merged into the first input object
 	// except the first input object, all the other input objects are deleted
-	require.Equal(t, limit-1, delObjNum)
+	require.Equal(t, limit-1, int(delObjNum))
 	// 1 for recipient1, and 2 for recipient2
 	require.Equal(t, amountNum, createdObjNum)
 
@@ -361,7 +367,7 @@ func TestSplitCoin(t *testing.T) {
 	client := l1starter.Instance().L1Client()
 	signer := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 
-	limit := uint(4)
+	limit := int(4)
 	coinPages, err := client.GetCoins(
 		context.Background(), iotaclient.GetCoinsRequest{
 			Owner: signer.Address(),
@@ -386,7 +392,9 @@ func TestSplitCoin(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	simulate, err := client.DryRunTransaction(context.Background(), txn.TxBytes)
+	simulate, err := client.DryRunTransaction(context.Background(), iotaclient.DryRunTransactionRequest{
+		TxDataBytes: txn.TxBytes,
+	})
 	require.NoError(t, err)
 	require.Empty(t, simulate.Effects.Data.V1.Status.Error)
 	require.True(t, simulate.Effects.Data.IsSuccess())
@@ -402,7 +410,7 @@ func TestSplitCoinEqual(t *testing.T) {
 	client := l1starter.Instance().L1Client()
 	signer := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 
-	limit := uint(4)
+	limit := int(4)
 	coinPages, err := client.GetCoins(
 		context.Background(), iotaclient.GetCoinsRequest{
 			Owner: signer.Address(),
@@ -424,7 +432,9 @@ func TestSplitCoinEqual(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	simulate, err := client.DryRunTransaction(context.Background(), txn.TxBytes)
+	simulate, err := client.DryRunTransaction(context.Background(), iotaclient.DryRunTransactionRequest{
+		TxDataBytes: txn.TxBytes,
+	})
 	require.NoError(t, err)
 	require.Empty(t, simulate.Effects.Data.V1.Status.Error)
 	require.True(t, simulate.Effects.Data.IsSuccess())
@@ -441,7 +451,7 @@ func TestTransferObject(t *testing.T) {
 	signer := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 	recipient := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL())
 
-	limit := uint(3)
+	limit := int(3)
 	coinPages, err := client.GetCoins(
 		context.Background(), iotaclient.GetCoinsRequest{
 			Owner: signer.Address(),
@@ -462,7 +472,9 @@ func TestTransferObject(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	simulate, err := client.DryRunTransaction(context.Background(), txn.TxBytes)
+	simulate, err := client.DryRunTransaction(context.Background(), iotaclient.DryRunTransactionRequest{
+		TxDataBytes: txn.TxBytes,
+	})
 	require.NoError(t, err)
 	require.Empty(t, simulate.Effects.Data.V1.Status.Error)
 	require.True(t, simulate.Effects.Data.IsSuccess())
@@ -478,7 +490,7 @@ func TestTransferIota(t *testing.T) {
 	signer := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 	recipient := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL())
 
-	limit := uint(3)
+	limit := int(3)
 	coinPages, err := client.GetCoins(
 		context.Background(), iotaclient.GetCoinsRequest{
 			Owner: signer.Address(),
@@ -500,7 +512,9 @@ func TestTransferIota(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	simulate, err := client.DryRunTransaction(context.Background(), txn.TxBytes)
+	simulate, err := client.DryRunTransaction(context.Background(), iotaclient.DryRunTransactionRequest{
+		TxDataBytes: txn.TxBytes,
+	})
 	require.NoError(t, err)
 	require.Empty(t, simulate.Effects.Data.V1.Status.Error)
 	require.True(t, simulate.Effects.Data.IsSuccess())

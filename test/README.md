@@ -102,8 +102,8 @@ wasp-cli chain rundkg --node wasp1 --peers me,wasp2,wasp3,wasp4
 Add l1 section in `~/.wasp-cli/wasp-cli.json`
 ```
   "l1": {
-    "apiaddress": "https://api.iota-rebased-alphanet.iota.cafe",
-    "faucetaddress": "https://faucet.iota-rebased-alphanet.iota.cafe/gas",
+    "apiaddress": "https://api.alphanet.iota.cafe",
+    "faucetaddress": "https://faucet.alphanet.iota.cafe/gas",
   }
 ```
 

@@ -242,11 +242,13 @@ type IotaPastObject struct {
 	// The object exists but not found with this version
 	VersionNotFound *VersionNotFoundData `json:"VersionNotFound,omitempty"`
 	// The asked object version is higher than the latest
-	VersionTooHigh *struct {
-		ObjectID      iotago.ObjectID       `json:"object_id"`
-		AskedVersion  iotago.SequenceNumber `json:"asked_version"`
-		LatestVersion iotago.SequenceNumber `json:"latest_version"`
-	} `json:"VersionTooHigh,omitempty"`
+	VersionTooHigh *VersionTooHigh `json:"VersionTooHigh,omitempty"`
+}
+
+type VersionTooHigh struct {
+	ObjectID      iotago.ObjectID       `json:"object_id"`
+	AskedVersion  iotago.SequenceNumber `json:"asked_version"`
+	LatestVersion iotago.SequenceNumber `json:"latest_version"`
 }
 
 type VersionNotFoundData struct {

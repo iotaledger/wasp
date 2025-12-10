@@ -612,7 +612,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 
 	fmt.Println(objs)
 
-	iscPackage, err := l1client.DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(te.chainOwner))
+	iscPackage, err := l1client.L2().DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(te.chainOwner))
 	require.NoError(t, err)
 
 	te.tcl = testchain.NewTestChainLedger(t, te.chainOwner, &iscPackage, l1client)

@@ -111,45 +111,6 @@ func (c *Client) SignAndExecuteTransaction(
 	return resp, err
 }
 
-func (c *Client) PublishContract(
-	ctx context.Context,
-	signer iotasigner.Signer,
-	modules []*iotago.Base64Data,
-	dependencies []*iotago.Address,
-	gasBudget uint64,
-	options *iotajsonrpc.IotaTransactionBlockResponseOptions,
-) (*iotajsonrpc.IotaTransactionBlockResponse, *iotago.PackageID, error) {
-	txnBytes, err := c.Publish(
-		context.Background(),
-		PublishRequest{
-			Sender:          signer.Address(),
-			CompiledModules: modules,
-			Dependencies:    dependencies,
-			GasBudget:       iotajsonrpc.NewBigInt(gasBudget),
-		},
-	)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to publish move contract: %w", err)
-	}
-	txnResponse, err := c.SignAndExecuteTransaction(
-		ctx,
-		&SignAndExecuteTransactionRequest{
-			TxDataBytes: txnBytes.TxBytes,
-			Signer:      signer,
-			Options:     options,
-		},
-	)
-	if err != nil || !txnResponse.Effects.Data.IsSuccess() {
-		return nil, nil, fmt.Errorf("failed to sign move contract tx: %w", err)
-	}
-
-	packageID, err := txnResponse.GetPublishedPackageID()
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get move contract package ID: %w", err)
-	}
-	return txnResponse, packageID, nil
-}
-
 func (c *Client) UpdateObjectRef(
 	ctx context.Context,
 	ref *iotago.ObjectRef,
@@ -219,10 +180,19 @@ func (c *Client) SignAndExecuteTxWithRetry(
 	var gasPayments []*iotago.ObjectRef
 	for i := 0; i < c.WaitUntilEffectsVisible.Attempts; i++ {
 		if gasCoin == nil {
-			gasPayments, err = c.FindCoinsForGasPayment(ctx, signer.Address(), pt, gasPrice, gasBudget)
+			coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasPrice, gasBudget)
 			if err != nil {
 				return nil, fmt.Errorf("failed to find gas payment: %w", err)
 			}
+			coins, err = iotajsonrpc.PickupCoinsWithFilter(
+				coins,
+				gasBudget,
+				func(c *iotajsonrpc.Coin) bool { return !pt.IsInInputObjects(c.CoinObjectID) },
+			)
+			if err != nil {
+				return nil, fmt.Errorf("failed to find gas payment: %w", err)
+			}
+			gasPayments = coins.CoinRefs()
 		} else {
 			gasCoin, err = c.UpdateObjectRef(ctx, gasCoin)
 			if err != nil {
@@ -256,81 +226,6 @@ func (c *Client) SignAndExecuteTxWithRetry(
 		time.Sleep(c.WaitUntilEffectsVisible.DelayBetweenAttempts)
 	}
 	return nil, fmt.Errorf("can't execute the transaction in time: %w", err)
-}
-
-func (c *Client) FindCoinsForGasPayment(
-	ctx context.Context,
-	owner *iotago.Address,
-	pt iotago.ProgrammableTransaction,
-	gasPrice uint64,
-	gasBudget uint64,
-) ([]*iotago.ObjectRef, error) {
-	coinType := iotajsonrpc.IotaCoinType.String()
-	coinPage, err := c.GetCoins(
-		ctx, GetCoinsRequest{
-			CoinType: &coinType,
-			Owner:    owner,
-		},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch coins for gas payment: %w", err)
-	}
-	gasPayments, err := iotajsonrpc.PickupCoinsWithFilter(
-		coinPage.Data,
-		gasBudget,
-		func(c *iotajsonrpc.Coin) bool { return !pt.IsInInputObjects(c.CoinObjectID) },
-	)
-	return gasPayments.CoinRefs(), err
-}
-
-func (c *Client) MergeCoinsAndExecute(
-	ctx context.Context,
-	owner iotasigner.Signer,
-	destinationCoin *iotago.ObjectRef,
-	sourceCoins []*iotago.ObjectRef,
-	gasBudget uint64,
-) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
-	ptb := iotago.NewProgrammableTransactionBuilder()
-	var argCoins []iotago.Argument
-	for _, sourceCoin := range sourceCoins {
-		argCoins = append(argCoins, ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: sourceCoin}))
-	}
-	ptb.Command(
-		iotago.Command{
-			MergeCoins: &iotago.ProgrammableMergeCoins{
-				Destination: ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: destinationCoin}),
-				Sources:     argCoins,
-			},
-		},
-	)
-	pt := ptb.Finish()
-	gasPayments, err := c.FindCoinsForGasPayment(ctx, owner.Address(), pt, DefaultGasPrice, DefaultGasBudget)
-	if err != nil {
-		return nil, fmt.Errorf("failed to find gas payment: %w", err)
-	}
-	tx := iotago.NewProgrammable(
-		owner.Address(),
-		pt,
-		gasPayments,
-		DefaultGasBudget,
-		DefaultGasPrice,
-	)
-	txBytes, err := bcs.Marshal(&tx)
-	if err != nil {
-		return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
-	}
-	txnResponse, err := c.SignAndExecuteTransaction(
-		ctx, &SignAndExecuteTransactionRequest{
-			TxDataBytes: txBytes,
-			Signer:      owner,
-			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
-		},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("can't execute the transaction: %w", err)
-	}
-
-	return txnResponse, nil
 }
 
 // NOTE: This a copy the query limit from our Rust JSON RPC backend, this needs to be kept in sync!

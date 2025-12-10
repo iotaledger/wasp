@@ -32,7 +32,7 @@ import (
 	As we only need the GasCoin for sending the transaction, the test will make a new one.
 
 	After the transaction has been generated, store the hex string into a file, then you can execute the recovery by:
-	`./wasp-cli disrec sign_post testtx.hex "0x4c7fb31a460907210c3b7cbaa50cf9faa23f60cbfbe5f26efd27809265458894" isc-private/tools/wasp-cli/disrec/test_committee_keys/ 	wss://api.iota-rebased-alphanet.iota.cafe`
+	`./wasp-cli disrec sign_post testtx.hex "0x4c7fb31a460907210c3b7cbaa50cf9faa23f60cbfbe5f26efd27809265458894" isc-private/tools/wasp-cli/disrec/test_committee_keys/ 	wss://api.alphanet.iota.cafe`
 														^ <-- The Committee Address								     ^ <--- The path to the extracted committee keys       		^ <-- The Websocket address to L1.
 */
 
@@ -140,7 +140,7 @@ func TestCreateTX(t *testing.T) {
 	kp := cryptolib.NewKeyPair()
 	wallet := providers.NewUnsafeInMemoryTestingSeed(kp, 0)
 	require.NoError(t, client.RequestFunds(context.Background(), *kp.Address()))
-	packageID := lo.Must(client.DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(kp)))
+	packageID := lo.Must(client.L2().DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(kp)))
 
 	ptb := iotago.NewProgrammableTransactionBuilder()
 	ptb = iscmoveclient.PTBAssetsBagNewAndTransfer(ptb, packageID, committeeAddress)
