@@ -102,10 +102,6 @@ import (
 	rbc "github.com/iotaledger/wasp/v2/packages/gpa/rbc/bracha"
 )
 
-const (
-	subsystemRBC byte = iota
-)
-
 type Output struct {
 	PriShare *share.PriShare // Private share, received by this instance.
 	Commits  []kyber.Point   // Feldman's commitment to the shared polynomial.

@@ -45,10 +45,6 @@ type Output struct {
 	Signature       []byte // Final output.
 }
 
-const (
-	subsystemDistributedKeyGeneration byte = iota
-)
-
 type DistributedSignature struct {
 	suite                           suites.Suite
 	me                              gpa.NodeID
