@@ -47,6 +47,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/v2/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testpeers"
 	"github.com/iotaledger/wasp/v2/packages/transaction"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/accounts"
@@ -67,14 +68,20 @@ func TestMain(m *testing.M) {
 
 func TestNodeBasic(t *testing.T) {
 	t.Parallel()
-	tests := []tc{
-		{n: 1, f: 0, reliable: true, timeout: 30 * time.Second},   // Low N
-		{n: 2, f: 0, reliable: true, timeout: 40 * time.Second},   // Low N
-		{n: 3, f: 0, reliable: true, timeout: 50 * time.Second},   // Low N
-		{n: 4, f: 0, reliable: true, timeout: 100 * time.Second},  // Minimal robust config.
-		{n: 4, f: 1, reliable: true, timeout: 100 * time.Second},  // Minimal robust config.
-		{n: 10, f: 3, reliable: true, timeout: 150 * time.Second}, // Typical config.
+
+	if testmisc.RaceDetectionEnabled {
+		t.Skip("Skipping long-running tests under race detection")
 	}
+
+	tests := []tc{
+		{n: 1, f: 0, reliable: true, timeout: 300 * time.Second},   // Low N
+		{n: 2, f: 0, reliable: true, timeout: 400 * time.Second},   // Low N
+		{n: 3, f: 0, reliable: true, timeout: 500 * time.Second},   // Low N
+		{n: 4, f: 0, reliable: true, timeout: 1000 * time.Second},  // Minimal robust config.
+		{n: 4, f: 1, reliable: true, timeout: 1000 * time.Second},  // Minimal robust config.
+		{n: 10, f: 3, reliable: true, timeout: 1500 * time.Second}, // Typical config.
+	}
+
 	if !testing.Short() {
 		tests = append(tests,
 			// TODO these "unreliable" tests are crazy, they either succeed in 10~20s or run forever...

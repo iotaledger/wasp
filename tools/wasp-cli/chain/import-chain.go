@@ -92,7 +92,7 @@ func runImportChain(dbPath string, node string, peers []string, quorum int, chai
 	} else {
 		log.Printf("Deploying Move contract...\n")
 		l1Client := cliclients.L1Client()
-		*iscPackageID, err = l1Client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(kp))
+		*iscPackageID, err = l1Client.L2().DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(kp))
 		log.Check(err)
 	}
 

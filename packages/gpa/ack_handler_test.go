@@ -4,6 +4,7 @@
 package gpa
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -104,6 +105,15 @@ type testGPA struct {
 }
 
 var _ GPA = &testGPA{}
+
+func (g *testGPA) MarshalPayload(msg any) ([]byte, error) {
+	switch msg.(type) {
+	case *TestMessage:
+		return MarshalPayload(msgTypeTest, msg)
+	default:
+		panic(fmt.Sprintf("testGPA: unknown payload type %T", msg))
+	}
+}
 
 func (g *testGPA) UnmarshalPayload(data []byte) (any, error) {
 	return UnmarshalPayload(data, PayloadAllocator{

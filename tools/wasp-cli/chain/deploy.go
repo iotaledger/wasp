@@ -51,7 +51,7 @@ func initDeployMoveContractCmd() *cobra.Command {
 
 			l1Client := cliclients.L1Client()
 			kp := wallet.Load()
-			packageID, err := l1Client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(kp))
+			packageID, err := l1Client.L2().DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(kp))
 			if err != nil {
 				return err
 			}
@@ -233,7 +233,7 @@ func initDeployCmd() *cobra.Command {
 			} else {
 				log.Printf("Deploying Move contract...\n")
 				l1Client := cliclients.L1Client()
-				*iscPackageID, err = l1Client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(kp))
+				*iscPackageID, err = l1Client.L2().DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(kp))
 				if err != nil {
 					return err
 				}

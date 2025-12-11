@@ -51,7 +51,7 @@ func newNCChain(
 	wsURL string,
 	httpURL string,
 ) (*ncChain, error) {
-	packageID, err := nodeConn.httpClient.GetISCPackageIDForAnchor(ctx, chainID.AsObjectID())
+	packageID, err := nodeConn.httpClient.L2().GetISCPackageIDForAnchor(ctx, chainID.AsObjectID())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ISC package ID: %w", err)
 	}
@@ -101,7 +101,9 @@ func (ncc *ncChain) postTxLoop(ctx context.Context, packageID iotago.PackageID) 
 
 		// Executing the transaction via DryRun before posting to make sure the transaction is valid, as failed transactions cost gas!
 		// Repeatedly failing transactions == sad gas coin
-		dryRes, err := ncc.nodeConn.httpClient.DryRunTransaction(task.ctx, txBytes)
+		dryRes, err := ncc.nodeConn.httpClient.DryRunTransaction(task.ctx, iotaclient.DryRunTransactionRequest{
+			TxDataBytes: txBytes,
+		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to dry-run Anchor transaction: %w", err)
 		}

@@ -55,12 +55,10 @@ func NewAccessMgr(
 	}
 }
 
-// Implements the AccessMgr interface.
 func (amd *AccessMgrDist) AsGPA() gpa.GPA {
 	return amd
 }
 
-// Implements the Output interface.
 func (amd *AccessMgrDist) ChainServerNodes(chainID isc.ChainID) []*cryptolib.PublicKey {
 	if chain, exists := amd.chains.Get(chainID); exists {
 		return chain.server.Values()
@@ -68,7 +66,6 @@ func (amd *AccessMgrDist) ChainServerNodes(chainID isc.ChainID) []*cryptolib.Pub
 	return []*cryptolib.PublicKey{}
 }
 
-// Implements the gpa.GPA interface.
 func (amd *AccessMgrDist) Input(input gpa.Input) []gpa.MessageOut {
 	switch input := input.(type) {
 	case *inputChainDisabled:
@@ -81,7 +78,6 @@ func (amd *AccessMgrDist) Input(input gpa.Input) []gpa.MessageOut {
 	panic(fmt.Errorf("unexpected input %T: %+v", input, input))
 }
 
-// Implements the gpa.GPA interface.
 func (amd *AccessMgrDist) Message(msg gpa.MessageIn[any]) []gpa.MessageOut {
 	if p, ok := msg.Payload.(msgAccess); ok {
 		return amd.handleMsgAccess(gpa.NewMessageIn(msg.Sender, p))
@@ -89,16 +85,16 @@ func (amd *AccessMgrDist) Message(msg gpa.MessageIn[any]) []gpa.MessageOut {
 	panic(fmt.Errorf("unexpected message payload %T: %+v", msg.Payload, msg.Payload))
 }
 
-// Implements the gpa.GPA interface.
 func (amd *AccessMgrDist) Output() gpa.Output {
 	return amd
 }
 
-// Implements the gpa.GPA interface.
 func (amd *AccessMgrDist) StatusString() string {
 	return fmt.Sprintf("{accessMgr, |nodes|=%v, |chains|=%v}", amd.nodes.Size(), amd.chains.Size())
 }
 
+// handleInputChainDisabled processes the chain disable request.
+//
 // > Notify all the trusted access nodes, that we will not serve the requests anymore.
 func (amd *AccessMgrDist) handleInputChainDisabled(input *inputChainDisabled) []gpa.MessageOut {
 	chain, exists := amd.chains.Get(input.chainID)

@@ -10,8 +10,9 @@ const (
 	msgImplicateRecoverKindRECOVER
 )
 
-// The <IMPLICATE, i, skᵢ> and <RECOVER, i, skᵢ> messages.
 type MsgImplicateRecover struct {
+	// The <IMPLICATE, i, skᵢ> and <RECOVER, i, skᵢ> messages.
+
 	kind msgImplicateKind `bcs:"export"`
 	i    int              `bcs:"export,type=u16"`
 	data []byte           `bcs:"export"` // Either implication or the recovered secret.

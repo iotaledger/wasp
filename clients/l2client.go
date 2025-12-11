@@ -7,6 +7,7 @@ import (
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 )
@@ -45,6 +46,8 @@ type L2Client interface {
 		ctx context.Context,
 		coinID *iotago.ObjectID,
 	) (*iscmoveclient.MoveCoin, error)
+	GetISCPackageIDForAnchor(ctx context.Context, anchor iotago.ObjectID) (iotago.PackageID, error)
+	DeployISCContracts(ctx context.Context, signer iotasigner.Signer) (iotago.PackageID, error)
 }
 
 var _ L2Client = &iscmoveclient.Client{}

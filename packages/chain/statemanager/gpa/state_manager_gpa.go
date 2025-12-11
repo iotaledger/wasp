@@ -114,9 +114,9 @@ func (smT *StateManager) Input(input gpa.Input) []gpa.MessageOut {
 
 func (smT *StateManager) Message(msg gpa.MessageIn[any]) []gpa.MessageOut {
 	switch msgCasted := msg.Payload.(type) {
-	case *messages.GetBlockMessage:
+	case messages.GetBlockMessage:
 		return smT.handlePeerGetBlock(msg.Sender, msgCasted.GetL1Commitment())
-	case *messages.BlockMessage:
+	case messages.BlockMessage:
 		return smT.handlePeerBlock(msg.Sender, msgCasted.GetBlock())
 	default:
 		smT.log.LogWarnf("Unknown message received, ignoring it: type=%T, message=%v", msg, msg)
@@ -144,11 +144,12 @@ func (smT *StateManager) StatusString() string {
 		util.TimeOrNever(smT.lastCleanBlockCacheTime), smT.parameters.BlockCacheBlockCleaningPeriod,
 	)
 }
+
 func (smT *StateManager) MarshalPayload(payload any) ([]byte, error) {
 	switch p := payload.(type) {
 	case messages.BlockMessage:
 		return gpa.MarshalPayload(messages.MsgTypeBlockMessage, p)
-	case *messages.GetBlockMessage:
+	case messages.GetBlockMessage:
 		return gpa.MarshalPayload(messages.MsgTypeGetBlockMessage, p)
 	default:
 		panic(fmt.Sprintf("state manager gpa: unknown payload type %T", payload))
