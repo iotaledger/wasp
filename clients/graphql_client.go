@@ -2038,7 +2038,7 @@ func convertTransactionFilterToGraphQL(filter *iotajsonrpc.TransactionFilter) *i
 	return result
 }
 
-// convertQueryTransactionBlockNodeToResponse converts a GraphQL transaction node to JSON-RPC response
+// applyQueryNodeOptions applies query options to the transaction response
 func applyQueryNodeOptions(
 	result *iotajsonrpc.IotaTransactionBlockResponse,
 	node *iotagraphql.QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock,
