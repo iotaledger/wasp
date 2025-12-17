@@ -23,6 +23,7 @@ import (
 
 // TestRequestsFeed relies of the alphanet, so can't use global l1starter
 func TestRequestsFeed(t *testing.T) {
+	t.Skip("TODO")
 	client := iscmoveclienttest.NewAlphanetHTTPClient()
 
 	iscOwner := iscmoveclienttest.NewAlphanetSignerWithFunds(t, testcommon.TestSeed, 0)

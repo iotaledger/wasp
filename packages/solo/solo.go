@@ -306,7 +306,7 @@ func (env *Solo) deployChain(chainAdmin *cryptolib.KeyPair, initCommonAccountBas
 		initCommonAccountBaseTokens,
 		env.L1Params(),
 	)
-	time.Sleep(10 * time.Second) // FIXME tmp for graphql
+	time.Sleep(1 * time.Second) // FIXME tmp for graphql
 
 	var initCoin *iotago.ObjectRef
 

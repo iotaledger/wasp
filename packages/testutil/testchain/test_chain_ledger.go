@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -62,6 +63,7 @@ func (tcl *TestChainLedger) ChainID() isc.ChainID {
 
 func (tcl *TestChainLedger) MakeTxChainOrigin() (*isc.StateAnchor, coin.Value) {
 	coinType := iotajsonrpc.IotaCoinType.String()
+	time.Sleep(1 * time.Second) // FIXME tmp for graphql
 	resGetCoins, err := tcl.l1client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: tcl.chainOwner.Address().AsIotaAddress(), CoinType: &coinType})
 	require.NoError(tcl.t, err)
 	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()

@@ -9,18 +9,16 @@ import (
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotatest"
-	testcommon "github.com/iotaledger/wasp/v2/clients/iota-go/test_common"
-	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
+	"github.com/iotaledger/wasp/v2/packages/testutil/l1starter"
 )
 
 func TestDevInspectTransactionBlock(t *testing.T) {
-	client := iotagraphql.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
-	sender := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL)
+	client := l1starter.Instance().L1Client()
+	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 
 	limit := int(3)
 	coinPages, err := client.GetCoins(
@@ -58,9 +56,9 @@ func TestDevInspectTransactionBlock(t *testing.T) {
 }
 
 func TestDryRunTransaction(t *testing.T) {
-	client := iotagraphql.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
+	client := l1starter.Instance().L1Client()
+	signer := l1starter.ISCPackageOwner.Address()
 
-	signer := iotago.MustAddressFromHex(testcommon.TestAddress)
 	coins, err := client.GetCoins(
 		context.Background(), iotaclient.GetCoinsRequest{
 			Owner: signer,
@@ -90,8 +88,8 @@ func TestDryRunTransaction(t *testing.T) {
 }
 
 func TestExecuteTransactionBlock(t *testing.T) {
-	client := iotagraphql.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
-	signer := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL)
+	client := l1starter.Instance().L1Client()
+	signer := l1starter.ISCPackageOwner
 	coins, err := client.GetCoins(
 		context.Background(), iotaclient.GetCoinsRequest{
 			Owner: signer.Address(),
@@ -125,8 +123,9 @@ func TestExecuteTransactionBlock(t *testing.T) {
 }
 
 func TestSignAndExecuteTransaction(t *testing.T) {
-	client := iotagraphql.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
-	signer := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL)
+	client := l1starter.Instance().L1Client()
+	signer := l1starter.ISCPackageOwner
+
 	coins, err := client.GetCoins(
 		context.Background(), iotaclient.GetCoinsRequest{
 			Owner: signer.Address(),

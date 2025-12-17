@@ -119,6 +119,7 @@ query MultiGetObjects(
 fragment RPC_OBJECT_FIELDS on Object {
 	objectId: address
 	version
+	status
 	asMoveObjectType: asMoveObject @include(if: $showType) {
 		contents {
 			type {
@@ -154,6 +155,7 @@ fragment RPC_OBJECT_FIELDS on Object {
 	storageRebate @include(if: $showStorageRebate)
 	digest
 	version
+	status
 	display @include(if: $showDisplay) {
 		key
 		value
@@ -164,6 +166,7 @@ fragment RPC_OBJECT_FIELDS on Object {
 fragment RPC_MOVE_OBJECT_FIELDS on MoveObject {
 	objectId: address
 	bcs @include(if: $showBcs)
+	status
 	contents_type: contents @include(if: $showType) {
 		type {
 			repr

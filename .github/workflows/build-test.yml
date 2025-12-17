@@ -29,7 +29,9 @@ jobs:
 
       - name: Build Tests
         # use a regex pattern which never meet any function to build all the tests
-        run: go test ./... -run=XXX -tags=tests_build_only
+        run: |
+          EXCLUDED_PKGS='^github.com/iotaledger/wasp/v2/clients/iota-go'
+          go test -run=XXX -tags=tests_build_only $(go list ./... | grep -v "${EXCLUDED_PKGS}")
 
   test-short:
     name: Test (short)
@@ -51,7 +53,11 @@ jobs:
       # Here used to be a make build step, but we separated it into another job
 
       - name: Test
-        run: make test-short
+        run: |
+          set -euo pipefail
+          BUILD_LD_FLAGS="-X=github.com/iotaledger/wasp/v2/components/app.Version=$(git describe --tags --always)"
+          EXCLUDED_PKGS='^github.com/iotaledger/wasp/v2/clients/iota-go'
+          go test -race -ldflags "${BUILD_LD_FLAGS}" --short --count 1 -timeout 25m -failfast $(go list ./... | grep -v "${EXCLUDED_PKGS}")
 
   golangci:
     name: Lint

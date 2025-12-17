@@ -26,7 +26,7 @@ import (
 func TestStartNewChain(t *testing.T) {
 	client := iscmoveclienttest.NewHTTPClient()
 	signer := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
-
+	time.Sleep(1 * time.Second) // FIXME tmp for graphql
 	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: signer.Address().AsIotaAddress()})
 	require.NoError(t, err)
 
@@ -53,12 +53,14 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 	client := iscmoveclienttest.NewHTTPClient()
 	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
 	chainSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 1)
+
+	time.Sleep(1 * time.Second) // FIXME tmp for graphql
 	const topUpAmount = 123
 	anchor := startNewChain(t, client, chainSigner)
 
 	txnResponse, err := newAssetsBag(client, cryptolibSigner)
 	require.NoError(t, err)
-	time.Sleep(5 * time.Second)
+	time.Sleep(1 * time.Second)
 
 	sentAssetsBagRef, err := txnResponse.GetCreatedObjectByName(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
@@ -73,7 +75,7 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 		10,
 	)
 	require.NoError(t, err)
-	time.Sleep(5 * time.Second)
+	time.Sleep(1 * time.Second)
 
 	sentAssetsBagRef, err = client.UpdateObjectRef(context.Background(), sentAssetsBagRef)
 	require.NoError(t, err)
@@ -104,7 +106,7 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 
 		require.NoError(t, err)
 	})
-	time.Sleep(5 * time.Second)
+	time.Sleep(1 * time.Second)
 
 	requestRef, err := createAndSendRequestRes.GetCreatedObjectByName(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)
@@ -134,7 +136,7 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 			require.NoError(t, err)
 		})
 	})
-	time.Sleep(5 * time.Second)
+	time.Sleep(1 * time.Second)
 
 	getObjRes, err := client.GetObject(context.Background(), iotaclient.GetObjectRequest{
 		ObjectID: gasCoin1.CoinObjectID,

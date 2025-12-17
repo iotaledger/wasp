@@ -745,7 +745,7 @@ func (c *GraphQLClient) GetLatestIotaSystemState(ctx context.Context) (*iotajson
 		StakeSubsidyStartEpoch:               iotajsonrpc.NewBigInt(0),
 		MaxValidatorCount:                    iotajsonrpc.NewBigInt(0),
 		MinValidatorJoiningStake:             iotajsonrpc.NewBigInt(0),
-		PendingActiveValidatorsSize:          iotajsonrpc.NewBigInt(uint64(max(0, resp.Epoch.ValidatorSet.PendingActiveValidatorsSize))),
+		PendingActiveValidatorsSize:          iotajsonrpc.NewBigIntInt64(int64(max(0, resp.Epoch.ValidatorSet.PendingActiveValidatorsSize))),
 		ValidatorReportRecords:               [][]interface{}{}, // TODO: extract from response
 	}, nil
 }
@@ -1644,7 +1644,12 @@ func convertGraphQLAllCoin(node *GetAllCoinsAddressCoinsCoinConnectionNodesCoin)
 }
 
 func (c *GraphQLClient) GetTotalSupply(ctx context.Context, coinType string) (*iotajsonrpc.Supply, error) {
-	return nil, fmt.Errorf("GetTotalSupply is not yet implemented for GraphQL client")
+	resp, err := GetLatestIotaSystemState(ctx, c.client)
+	if err != nil {
+		return nil, err
+	}
+
+	return &iotajsonrpc.Supply{Value: resp.Epoch.IotaTotalSupply.Clone()}, err
 }
 
 func (c *GraphQLClient) GetChainIdentifier(ctx context.Context) (string, error) {
@@ -1711,7 +1716,16 @@ func (c *GraphQLClient) GetObject(ctx context.Context, req iotaclient.GetObjectR
 				return notExistsResp, notExistsResp.ResponseError()
 			}
 
-			return convertGraphQLObjectToIotaObjectResponse(&resp.Object, req.Options)
+			graphQLResp, err := convertGraphQLObjectToIotaObjectResponse(&resp.Object, req.Options)
+			if err != nil {
+				return nil, err
+			}
+
+			if respErr := graphQLResp.ResponseError(); respErr != nil {
+				return graphQLResp, respErr
+			}
+
+			return graphQLResp, nil
 		},
 		func(resp *iotajsonrpc.IotaObjectResponse, err error) bool {
 			return resp != nil && resp.Error != nil && resp.Error.Data.NotExists != nil
@@ -2158,6 +2172,10 @@ func convertGraphQLObjectToIotaObjectResponse(
 		return nil, fmt.Errorf("object is nil")
 	}
 
+	if obj.Status == ObjectKindWrappedOrDeleted {
+		return newDeletedIotaObjectResponse(obj.ObjectId, obj.Version, obj.Digest)
+	}
+
 	digest, err := iotago.NewDigest(obj.Digest)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse object digest: %w", err)
@@ -2167,6 +2185,7 @@ func convertGraphQLObjectToIotaObjectResponse(
 		ObjectID: &obj.ObjectId,
 		Version:  iotajsonrpc.NewBigInt(obj.Version),
 		Digest:   digest,
+		Status:   string(obj.Status),
 	}
 
 	if err := applyGraphQLObjectOptions(data, obj, options); err != nil {
@@ -2174,6 +2193,35 @@ func convertGraphQLObjectToIotaObjectResponse(
 	}
 
 	return &iotajsonrpc.IotaObjectResponse{Data: data}, nil
+}
+
+func newDeletedIotaObjectResponse(objectID iotago.Address, version uint64, digestStr string) (*iotajsonrpc.IotaObjectResponse, error) {
+	digest, err := iotago.NewDigest(digestStr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse object digest: %w", err)
+	}
+
+	return &iotajsonrpc.IotaObjectResponse{
+		Data: &iotajsonrpc.IotaObjectData{
+			ObjectID: &objectID,
+			Version:  iotajsonrpc.NewBigInt(version),
+			Digest:   digest,
+			Status:   string(ObjectKindWrappedOrDeleted),
+		},
+		Error: &serialization.TagJson[iotajsonrpc.IotaObjectResponseError]{
+			Data: iotajsonrpc.IotaObjectResponseError{
+				Deleted: &struct {
+					ObjectID iotago.ObjectID       `json:"object_id"`
+					Version  iotago.SequenceNumber `json:"version"`
+					Digest   iotago.ObjectDigest   `json:"digest"`
+				}{
+					ObjectID: objectID,
+					Version:  version,
+					Digest:   *digest,
+				},
+			},
+		},
+	}, nil
 }
 
 func applyRPCObjectFieldsOptions(
@@ -2269,6 +2317,7 @@ func convertRPCObjectFieldsToIotaObjectData(
 		ObjectID: &fields.ObjectId,
 		Version:  iotajsonrpc.NewBigInt(fields.Version),
 		Digest:   digest,
+		Status:   string(fields.Status),
 	}
 
 	if err := applyRPCObjectFieldsOptions(data, fields, options); err != nil {
@@ -3613,6 +3662,10 @@ func convertRPCMoveObjectFieldsToIotaObjectResponse(
 		return nil, fmt.Errorf("fields is nil")
 	}
 
+	if fields.Status == ObjectKindWrappedOrDeleted {
+		return newDeletedIotaObjectResponse(fields.ObjectId, fields.Version, fields.Digest)
+	}
+
 	digest, err := iotago.NewDigest(fields.Digest)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse object digest: %w", err)
@@ -3622,6 +3675,7 @@ func convertRPCMoveObjectFieldsToIotaObjectResponse(
 		ObjectID: &fields.ObjectId,
 		Version:  iotajsonrpc.NewBigInt(fields.Version),
 		Digest:   digest,
+		Status:   string(fields.Status),
 	}
 
 	if err := applyRPCMoveObjectFieldsOptions(data, fields, options); err != nil {

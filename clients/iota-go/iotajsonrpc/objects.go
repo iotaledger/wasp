@@ -91,6 +91,7 @@ type IotaObjectData struct {
 	ObjectID *iotago.ObjectID     `json:"objectId"`
 	Version  *BigInt              `json:"version"`
 	Digest   *iotago.ObjectDigest `json:"digest"`
+	Status   string               `json:"status,omitempty"`
 	/**
 	 * Type of the object, default to be undefined unless IotaObjectDataOptions.showType is set to true
 	 */

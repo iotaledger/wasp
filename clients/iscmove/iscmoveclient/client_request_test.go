@@ -127,9 +127,9 @@ func TestCreateAndSendRequest(t *testing.T) {
 	var testCoinRef []*iotago.ObjectRef
 	for range 25 + 26 {
 		coinRef, _ := buildDeployMintTestcoin(t, client, cryptolibSigner)
-		time.Sleep(3 * time.Second)
+		time.Sleep(1 * time.Second)
 		testCoinRef = append(testCoinRef, coinRef)
-		time.Sleep(3 * time.Second)
+		time.Sleep(1 * time.Second)
 	}
 
 	t.Run("success", func(t *testing.T) {
@@ -325,6 +325,7 @@ func TestGetRequestFromObjectID(t *testing.T) {
 
 	txnResponse, err := newAssetsBag(client, cryptolibSigner)
 	require.NoError(t, err)
+	time.Sleep(1 * time.Second) // FIXME tmp for graphql
 	assetsBagRef, err := txnResponse.GetCreatedObjectByName(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 

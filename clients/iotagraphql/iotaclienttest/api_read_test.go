@@ -15,12 +15,13 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 	testcommon "github.com/iotaledger/wasp/v2/clients/iota-go/test_common"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
+	"github.com/iotaledger/wasp/v2/packages/testutil/l1starter"
 )
 
 func TestGetObject(t *testing.T) {
 	ctx := context.Background()
-	client := iotagraphql.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
-	owner := iotago.MustAddressFromHex(testcommon.TestAddress)
+	client := l1starter.Instance().L1Client()
+	owner := l1starter.ISCPackageOwner.Address()
 
 	limit := int(1)
 	coinsResp, err := client.GetCoins(ctx, iotaclient.GetCoinsRequest{
@@ -44,8 +45,8 @@ func TestGetObject(t *testing.T) {
 
 func TestGetTransactionBlock(t *testing.T) {
 	ctx := context.Background()
-	client := iotagraphql.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
-	owner := iotago.MustAddressFromHex(testcommon.TestAddress)
+	client := l1starter.Instance().L1Client()
+	owner := l1starter.ISCPackageOwner.Address()
 
 	limit := int(1)
 	coinsResp, err := client.GetCoins(ctx, iotaclient.GetCoinsRequest{
@@ -66,7 +67,7 @@ func TestGetTransactionBlock(t *testing.T) {
 
 func TestQueryTransactionBlocks(t *testing.T) {
 	ctx := context.Background()
-	client := iotagraphql.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
+	client := l1starter.Instance().L1Client()
 
 	resp, err := client.QueryTransactionBlocks(ctx, iotaclient.QueryTransactionBlocksRequest{
 		Limit: lo.ToPtr(int(3)),
@@ -78,7 +79,7 @@ func TestQueryTransactionBlocks(t *testing.T) {
 func TestTryGetPastObject(t *testing.T) {
 	t.Skip("May fail")
 	ctx := context.Background()
-	client := iotagraphql.NewGraphQLClientWithTimeout(iotaconn.TestnetGraphQLEndpointURL, 120*time.Second, nil)
+	client := iotagraphql.NewGraphQLClientWithTimeout(iotaconn.LocalnetGraphQLEndpointURL, 120*time.Second, nil)
 	owner := iotago.MustAddressFromHex(testcommon.TestAddress)
 
 	limit := int(1)

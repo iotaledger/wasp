@@ -2,6 +2,7 @@ package iotaclienttest
 
 import (
 	"context"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -84,6 +85,7 @@ func MintCoins(
 	)
 	require.NoError(t, err)
 	require.True(t, txnRes.Effects.Data.IsSuccess())
+	time.Sleep(1 * time.Second)
 
 	coinRef, err := txnRes.GetCreatedObjectByName(moduleName, typeTag)
 	require.NoError(t, err)

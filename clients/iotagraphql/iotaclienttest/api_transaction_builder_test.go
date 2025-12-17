@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -15,7 +16,7 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotatest"
-	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
+	"github.com/iotaledger/wasp/v2/packages/testutil/l1starter"
 )
 
 func TestMergeCoins(t *testing.T) {
@@ -50,7 +51,7 @@ func TestMergeCoins(t *testing.T) {
 
 func TestMoveCall(t *testing.T) {
 	t.Skip("TODO")
-	client := iotagraphql.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
+	client := l1starter.Instance().L1Client()
 	signer := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL)
 
 	sdkVerifyBytecode := contracts.SDKVerify()
@@ -132,7 +133,7 @@ func TestMoveCall(t *testing.T) {
 
 func TestPay(t *testing.T) {
 	t.Skip("FIXME there is only 1 coin object, because there is only 1 coin object returned from faucet")
-	client := iotagraphql.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
+	client := l1starter.Instance().L1Client()
 	signer := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL)
 	recipient := iotatest.MakeSignerWithFunds(1, iotaconn.TestnetFaucetURL)
 
@@ -204,7 +205,7 @@ func TestPay(t *testing.T) {
 
 func TestPayAllIota(t *testing.T) {
 	t.Skip("FIXME there is only 1 coin object, because there is only 1 coin object returned from faucet")
-	client := iotagraphql.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
+	client := l1starter.Instance().L1Client()
 	signer := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL)
 	recipient := iotatest.MakeSignerWithFunds(1, iotaconn.TestnetFaucetURL)
 
@@ -255,7 +256,7 @@ func TestPayAllIota(t *testing.T) {
 
 func TestPayIota(t *testing.T) {
 	t.Skip("TODO")
-	client := iotagraphql.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
+	client := l1starter.Instance().L1Client()
 	signer := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL)
 	recipient1 := iotatest.MakeSignerWithFunds(1, iotaconn.TestnetFaucetURL)
 	recipient2 := iotatest.MakeSignerWithFunds(2, iotaconn.TestnetFaucetURL)
@@ -323,8 +324,10 @@ func TestPayIota(t *testing.T) {
 }
 
 func TestPublish(t *testing.T) {
-	client := iotagraphql.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
-	signer := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL)
+	client := l1starter.Instance().L1Client()
+	// Use the faucet URL from the running node (LoadConfig() leaves it empty when using the local testnode).
+	signer := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
+	time.Sleep(1 * time.Second) // FIXME tmp for graphql
 
 	testcoinBytecode := contracts.Testcoin()
 
@@ -362,7 +365,7 @@ func TestPublish(t *testing.T) {
 
 func TestSplitCoin(t *testing.T) {
 	t.Skip("TODO")
-	client := iotagraphql.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
+	client := l1starter.Instance().L1Client()
 	signer := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL)
 
 	limit := int(4)
@@ -406,7 +409,7 @@ func TestSplitCoin(t *testing.T) {
 
 func TestTransferObject(t *testing.T) {
 	t.Skip("TODO")
-	client := iotagraphql.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
+	client := l1starter.Instance().L1Client()
 	signer := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL)
 	recipient := iotatest.MakeSignerWithFunds(1, iotaconn.TestnetFaucetURL)
 

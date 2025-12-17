@@ -3446,6 +3446,9 @@ func (v *GetObjectObject) GetObjectId() iotago.Address { return v.RPC_OBJECT_FIE
 // GetVersion returns GetObjectObject.Version, and is useful for accessing the field via an interface.
 func (v *GetObjectObject) GetVersion() uint64 { return v.RPC_OBJECT_FIELDS.Version }
 
+// GetStatus returns GetObjectObject.Status, and is useful for accessing the field via an interface.
+func (v *GetObjectObject) GetStatus() ObjectKind { return v.RPC_OBJECT_FIELDS.Status }
+
 // GetAsMoveObjectType returns GetObjectObject.AsMoveObjectType, and is useful for accessing the field via an interface.
 func (v *GetObjectObject) GetAsMoveObjectType() RPC_OBJECT_FIELDSAsMoveObjectTypeMoveObject {
 	return v.RPC_OBJECT_FIELDS.AsMoveObjectType
@@ -3514,6 +3517,8 @@ type __premarshalGetObjectObject struct {
 
 	Version uint64 `json:"version"`
 
+	Status ObjectKind `json:"status"`
+
 	AsMoveObjectType RPC_OBJECT_FIELDSAsMoveObjectTypeMoveObject `json:"asMoveObjectType"`
 
 	AsMoveObjectContent RPC_OBJECT_FIELDSAsMoveObjectContentMoveObject `json:"asMoveObjectContent"`
@@ -3544,6 +3549,7 @@ func (v *GetObjectObject) __premarshalJSON() (*__premarshalGetObjectObject, erro
 
 	retval.ObjectId = v.RPC_OBJECT_FIELDS.ObjectId
 	retval.Version = v.RPC_OBJECT_FIELDS.Version
+	retval.Status = v.RPC_OBJECT_FIELDS.Status
 	retval.AsMoveObjectType = v.RPC_OBJECT_FIELDS.AsMoveObjectType
 	retval.AsMoveObjectContent = v.RPC_OBJECT_FIELDS.AsMoveObjectContent
 	retval.AsMoveObject = v.RPC_OBJECT_FIELDS.AsMoveObject
@@ -3629,6 +3635,11 @@ func (v *GetOwnedObjectsAddressObjectsMoveObjectConnectionNodesMoveObject) GetBc
 	return v.RPC_MOVE_OBJECT_FIELDS.Bcs
 }
 
+// GetStatus returns GetOwnedObjectsAddressObjectsMoveObjectConnectionNodesMoveObject.Status, and is useful for accessing the field via an interface.
+func (v *GetOwnedObjectsAddressObjectsMoveObjectConnectionNodesMoveObject) GetStatus() ObjectKind {
+	return v.RPC_MOVE_OBJECT_FIELDS.Status
+}
+
 // GetContents_type returns GetOwnedObjectsAddressObjectsMoveObjectConnectionNodesMoveObject.Contents_type, and is useful for accessing the field via an interface.
 func (v *GetOwnedObjectsAddressObjectsMoveObjectConnectionNodesMoveObject) GetContents_type() RPC_MOVE_OBJECT_FIELDSContents_typeMoveValue {
 	return v.RPC_MOVE_OBJECT_FIELDS.Contents_type
@@ -3704,6 +3715,8 @@ type __premarshalGetOwnedObjectsAddressObjectsMoveObjectConnectionNodesMoveObjec
 
 	Bcs iotago.Base64Data `json:"bcs"`
 
+	Status ObjectKind `json:"status"`
+
 	Contents_type RPC_MOVE_OBJECT_FIELDSContents_typeMoveValue `json:"contents_type"`
 
 	Contents_content RPC_MOVE_OBJECT_FIELDSContents_contentMoveValue `json:"contents_content"`
@@ -3736,6 +3749,7 @@ func (v *GetOwnedObjectsAddressObjectsMoveObjectConnectionNodesMoveObject) __pre
 
 	retval.ObjectId = v.RPC_MOVE_OBJECT_FIELDS.ObjectId
 	retval.Bcs = v.RPC_MOVE_OBJECT_FIELDS.Bcs
+	retval.Status = v.RPC_MOVE_OBJECT_FIELDS.Status
 	retval.Contents_type = v.RPC_MOVE_OBJECT_FIELDS.Contents_type
 	retval.Contents_content = v.RPC_MOVE_OBJECT_FIELDS.Contents_content
 	retval.Contents = v.RPC_MOVE_OBJECT_FIELDS.Contents
@@ -5082,6 +5096,11 @@ func (v *MultiGetObjectsObjectsObjectConnectionNodesObject) GetVersion() uint64 
 	return v.RPC_OBJECT_FIELDS.Version
 }
 
+// GetStatus returns MultiGetObjectsObjectsObjectConnectionNodesObject.Status, and is useful for accessing the field via an interface.
+func (v *MultiGetObjectsObjectsObjectConnectionNodesObject) GetStatus() ObjectKind {
+	return v.RPC_OBJECT_FIELDS.Status
+}
+
 // GetAsMoveObjectType returns MultiGetObjectsObjectsObjectConnectionNodesObject.AsMoveObjectType, and is useful for accessing the field via an interface.
 func (v *MultiGetObjectsObjectsObjectConnectionNodesObject) GetAsMoveObjectType() RPC_OBJECT_FIELDSAsMoveObjectTypeMoveObject {
 	return v.RPC_OBJECT_FIELDS.AsMoveObjectType
@@ -5152,6 +5171,8 @@ type __premarshalMultiGetObjectsObjectsObjectConnectionNodesObject struct {
 
 	Version uint64 `json:"version"`
 
+	Status ObjectKind `json:"status"`
+
 	AsMoveObjectType RPC_OBJECT_FIELDSAsMoveObjectTypeMoveObject `json:"asMoveObjectType"`
 
 	AsMoveObjectContent RPC_OBJECT_FIELDSAsMoveObjectContentMoveObject `json:"asMoveObjectContent"`
@@ -5182,6 +5203,7 @@ func (v *MultiGetObjectsObjectsObjectConnectionNodesObject) __premarshalJSON() (
 
 	retval.ObjectId = v.RPC_OBJECT_FIELDS.ObjectId
 	retval.Version = v.RPC_OBJECT_FIELDS.Version
+	retval.Status = v.RPC_OBJECT_FIELDS.Status
 	retval.AsMoveObjectType = v.RPC_OBJECT_FIELDS.AsMoveObjectType
 	retval.AsMoveObjectContent = v.RPC_OBJECT_FIELDS.AsMoveObjectContent
 	retval.AsMoveObject = v.RPC_OBJECT_FIELDS.AsMoveObject
@@ -5452,6 +5474,25 @@ func (v *ObjectKey) GetObjectId() iotago.Address { return v.ObjectId }
 
 // GetVersion returns ObjectKey.Version, and is useful for accessing the field via an interface.
 func (v *ObjectKey) GetVersion() uint64 { return v.Version }
+
+type ObjectKind string
+
+const (
+	// The object is loaded from serialized data, such as the contents of a
+	// transaction that hasn't been indexed yet.
+	ObjectKindNotIndexed ObjectKind = "NOT_INDEXED"
+	// The object is fetched from the index.
+	ObjectKindIndexed ObjectKind = "INDEXED"
+	// The object is deleted or wrapped and only partial information can be
+	// loaded from the indexer.
+	ObjectKindWrappedOrDeleted ObjectKind = "WRAPPED_OR_DELETED"
+)
+
+var AllObjectKind = []ObjectKind{
+	ObjectKindNotIndexed,
+	ObjectKindIndexed,
+	ObjectKindWrappedOrDeleted,
+}
 
 type ObjectRef struct {
 	// ID of the object.
@@ -6503,6 +6544,15 @@ type RPC_MOVE_OBJECT_FIELDS struct {
 	ObjectId iotago.Address `json:"objectId"`
 	// The Base64-encoded BCS serialization of the object's content.
 	Bcs iotago.Base64Data `json:"bcs"`
+	// The current status of the object as read from the off-chain store. The
+	// possible states are:
+	// - NOT_INDEXED: The object is loaded from serialized data, such as the
+	// contents of a genesis or system package upgrade transaction.
+	// - INDEXED: The object is retrieved from the off-chain index and
+	// represents the most recent or historical state of the object.
+	// - WRAPPED_OR_DELETED: The object is deleted or wrapped and only partial
+	// information can be loaded.
+	Status ObjectKind `json:"status"`
 	// Displays the contents of the Move object in a JSON string and through
 	// GraphQL types. Also provides the flat representation of the type
 	// signature, and the BCS of the corresponding data.
@@ -6538,6 +6588,9 @@ func (v *RPC_MOVE_OBJECT_FIELDS) GetObjectId() iotago.Address { return v.ObjectI
 
 // GetBcs returns RPC_MOVE_OBJECT_FIELDS.Bcs, and is useful for accessing the field via an interface.
 func (v *RPC_MOVE_OBJECT_FIELDS) GetBcs() iotago.Base64Data { return v.Bcs }
+
+// GetStatus returns RPC_MOVE_OBJECT_FIELDS.Status, and is useful for accessing the field via an interface.
+func (v *RPC_MOVE_OBJECT_FIELDS) GetStatus() ObjectKind { return v.Status }
 
 // GetContents_type returns RPC_MOVE_OBJECT_FIELDS.Contents_type, and is useful for accessing the field via an interface.
 func (v *RPC_MOVE_OBJECT_FIELDS) GetContents_type() RPC_MOVE_OBJECT_FIELDSContents_typeMoveValue {
@@ -6614,6 +6667,8 @@ type __premarshalRPC_MOVE_OBJECT_FIELDS struct {
 
 	Bcs iotago.Base64Data `json:"bcs"`
 
+	Status ObjectKind `json:"status"`
+
 	Contents_type RPC_MOVE_OBJECT_FIELDSContents_typeMoveValue `json:"contents_type"`
 
 	Contents_content RPC_MOVE_OBJECT_FIELDSContents_contentMoveValue `json:"contents_content"`
@@ -6646,6 +6701,7 @@ func (v *RPC_MOVE_OBJECT_FIELDS) __premarshalJSON() (*__premarshalRPC_MOVE_OBJEC
 
 	retval.ObjectId = v.ObjectId
 	retval.Bcs = v.Bcs
+	retval.Status = v.Status
 	retval.Contents_type = v.Contents_type
 	retval.Contents_content = v.Contents_content
 	retval.Contents = v.Contents
@@ -7186,6 +7242,15 @@ func (v *RPC_MOVE_OBJECT_FIELDSPreviousTransactionBlock) GetDigest() string { re
 type RPC_OBJECT_FIELDS struct {
 	ObjectId iotago.Address `json:"objectId"`
 	Version  uint64         `json:"version"`
+	// The current status of the object as read from the off-chain store. The
+	// possible states are:
+	// - NOT_INDEXED: The object is loaded from serialized data, such as the
+	// contents of a genesis or system package upgrade transaction.
+	// - INDEXED: The object is retrieved from the off-chain index and
+	// represents the most recent or historical state of the object.
+	// - WRAPPED_OR_DELETED: The object is deleted or wrapped and only partial
+	// information can be loaded.
+	Status ObjectKind `json:"status"`
 	// Attempts to convert the object into a MoveObject
 	AsMoveObjectType RPC_OBJECT_FIELDSAsMoveObjectTypeMoveObject `json:"asMoveObjectType"`
 	// Attempts to convert the object into a MoveObject
@@ -7215,6 +7280,9 @@ func (v *RPC_OBJECT_FIELDS) GetObjectId() iotago.Address { return v.ObjectId }
 
 // GetVersion returns RPC_OBJECT_FIELDS.Version, and is useful for accessing the field via an interface.
 func (v *RPC_OBJECT_FIELDS) GetVersion() uint64 { return v.Version }
+
+// GetStatus returns RPC_OBJECT_FIELDS.Status, and is useful for accessing the field via an interface.
+func (v *RPC_OBJECT_FIELDS) GetStatus() ObjectKind { return v.Status }
 
 // GetAsMoveObjectType returns RPC_OBJECT_FIELDS.AsMoveObjectType, and is useful for accessing the field via an interface.
 func (v *RPC_OBJECT_FIELDS) GetAsMoveObjectType() RPC_OBJECT_FIELDSAsMoveObjectTypeMoveObject {
@@ -7284,6 +7352,8 @@ type __premarshalRPC_OBJECT_FIELDS struct {
 
 	Version uint64 `json:"version"`
 
+	Status ObjectKind `json:"status"`
+
 	AsMoveObjectType RPC_OBJECT_FIELDSAsMoveObjectTypeMoveObject `json:"asMoveObjectType"`
 
 	AsMoveObjectContent RPC_OBJECT_FIELDSAsMoveObjectContentMoveObject `json:"asMoveObjectContent"`
@@ -7314,6 +7384,7 @@ func (v *RPC_OBJECT_FIELDS) __premarshalJSON() (*__premarshalRPC_OBJECT_FIELDS, 
 
 	retval.ObjectId = v.ObjectId
 	retval.Version = v.Version
+	retval.Status = v.Status
 	retval.AsMoveObjectType = v.AsMoveObjectType
 	retval.AsMoveObjectContent = v.AsMoveObjectContent
 	retval.AsMoveObject = v.AsMoveObject
@@ -9126,6 +9197,9 @@ func (v *TryGetPastObjectObject) GetObjectId() iotago.Address { return v.RPC_OBJ
 // GetVersion returns TryGetPastObjectObject.Version, and is useful for accessing the field via an interface.
 func (v *TryGetPastObjectObject) GetVersion() uint64 { return v.RPC_OBJECT_FIELDS.Version }
 
+// GetStatus returns TryGetPastObjectObject.Status, and is useful for accessing the field via an interface.
+func (v *TryGetPastObjectObject) GetStatus() ObjectKind { return v.RPC_OBJECT_FIELDS.Status }
+
 // GetAsMoveObjectType returns TryGetPastObjectObject.AsMoveObjectType, and is useful for accessing the field via an interface.
 func (v *TryGetPastObjectObject) GetAsMoveObjectType() RPC_OBJECT_FIELDSAsMoveObjectTypeMoveObject {
 	return v.RPC_OBJECT_FIELDS.AsMoveObjectType
@@ -9194,6 +9268,8 @@ type __premarshalTryGetPastObjectObject struct {
 
 	Version uint64 `json:"version"`
 
+	Status ObjectKind `json:"status"`
+
 	AsMoveObjectType RPC_OBJECT_FIELDSAsMoveObjectTypeMoveObject `json:"asMoveObjectType"`
 
 	AsMoveObjectContent RPC_OBJECT_FIELDSAsMoveObjectContentMoveObject `json:"asMoveObjectContent"`
@@ -9224,6 +9300,7 @@ func (v *TryGetPastObjectObject) __premarshalJSON() (*__premarshalTryGetPastObje
 
 	retval.ObjectId = v.RPC_OBJECT_FIELDS.ObjectId
 	retval.Version = v.RPC_OBJECT_FIELDS.Version
+	retval.Status = v.RPC_OBJECT_FIELDS.Status
 	retval.AsMoveObjectType = v.RPC_OBJECT_FIELDS.AsMoveObjectType
 	retval.AsMoveObjectContent = v.RPC_OBJECT_FIELDS.AsMoveObjectContent
 	retval.AsMoveObject = v.RPC_OBJECT_FIELDS.AsMoveObject
@@ -10964,6 +11041,7 @@ query GetObject ($id: IotaAddress!, $showBcs: Boolean = false, $showOwner: Boole
 fragment RPC_OBJECT_FIELDS on Object {
 	objectId: address
 	version
+	status
 	asMoveObjectType: asMoveObject @include(if: $showType) {
 		contents {
 			type {
@@ -10999,6 +11077,7 @@ fragment RPC_OBJECT_FIELDS on Object {
 	storageRebate @include(if: $showStorageRebate)
 	digest
 	version
+	status
 	display @include(if: $showDisplay) {
 		key
 		value
@@ -11158,6 +11237,7 @@ query GetOwnedObjects ($owner: IotaAddress!, $limit: Int, $cursor: String, $show
 fragment RPC_MOVE_OBJECT_FIELDS on MoveObject {
 	objectId: address
 	bcs @include(if: $showBcs)
+	status
 	contents_type: contents @include(if: $showType) {
 		type {
 			repr
@@ -11684,6 +11764,7 @@ query MultiGetObjects ($ids: [IotaAddress!]!, $limit: Int, $cursor: String, $sho
 fragment RPC_OBJECT_FIELDS on Object {
 	objectId: address
 	version
+	status
 	asMoveObjectType: asMoveObject @include(if: $showType) {
 		contents {
 			type {
@@ -11719,6 +11800,7 @@ fragment RPC_OBJECT_FIELDS on Object {
 	storageRebate @include(if: $showStorageRebate)
 	digest
 	version
+	status
 	display @include(if: $showDisplay) {
 		key
 		value
@@ -12336,6 +12418,7 @@ query TryGetPastObject ($id: IotaAddress!, $version: UInt53, $showBcs: Boolean =
 fragment RPC_OBJECT_FIELDS on Object {
 	objectId: address
 	version
+	status
 	asMoveObjectType: asMoveObject @include(if: $showType) {
 		contents {
 			type {
@@ -12371,6 +12454,7 @@ fragment RPC_OBJECT_FIELDS on Object {
 	storageRebate @include(if: $showStorageRebate)
 	digest
 	version
+	status
 	display @include(if: $showDisplay) {
 		key
 		value
