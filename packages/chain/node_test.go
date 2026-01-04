@@ -19,7 +19,7 @@ import (
 	"github.com/iotaledger/wasp/v2/clients"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotatest"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
@@ -335,7 +335,7 @@ func (tnc *testNodeConn) PublishTX(
 	res, err := tnc.l1Client.ExecuteTransactionBlock(ctx, iotaclient.ExecuteTransactionBlockRequest{
 		TxDataBytes: txBytes,
 		Signatures:  tx.Signatures,
-		Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+		Options: &iotagraphql.IotaTransactionBlockResponseOptions{
 			ShowInput:          true,
 			ShowRawInput:       true,
 			ShowEffects:        true,
@@ -344,7 +344,7 @@ func (tnc *testNodeConn) PublishTX(
 			ShowBalanceChanges: true,
 			ShowRawEffects:     true,
 		},
-		RequestType: iotajsonrpc.TxnRequestTypeWaitForLocalExecution,
+		RequestType: iotagraphql.TxnRequestTypeWaitForLocalExecution,
 	})
 	if err != nil {
 		tnc.t.Logf("ExecuteTransactionBlock, err=%v", err)
@@ -356,7 +356,7 @@ func (tnc *testNodeConn) PublishTX(
 	res, err = tnc.l1Client.GetTransactionBlock(ctx, iotaclient.GetTransactionBlockRequest{
 		Digest: &res.Digest,
 
-		Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+		Options: &iotagraphql.IotaTransactionBlockResponseOptions{
 			ShowInput:          true,
 			ShowRawInput:       true,
 			ShowEffects:        true,
@@ -439,7 +439,7 @@ func (tnc *testNodeConn) ConsensusL1InfoProposal(
 
 		gasCoin, err := tnc.l1Client.GetObject(ctx, iotaclient.GetObjectRequest{
 			ObjectID: stateMetadata.GasCoinObjectID,
-			Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
+			Options:  &iotagraphql.IotaObjectDataOptions{ShowBcs: true},
 		})
 		if err != nil {
 			panic(err)

@@ -9,7 +9,7 @@ import (
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/iotatest"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
@@ -100,7 +100,7 @@ func makeOnLedgerRequest(
 					ID:   *requestAssetsBagRef.ObjectID,
 					Size: 1,
 				},
-				Assets: *iscmove.NewAssets(iotajsonrpc.CoinValue(baseTokens)),
+				Assets: *iscmove.NewAssets(iotagraphql.CoinValue(baseTokens)),
 			},
 			Message: iscmove.Message{
 				Contract: uint32(msg.Target.Contract),

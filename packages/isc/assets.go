@@ -13,7 +13,7 @@ import (
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 )
@@ -402,8 +402,8 @@ func (a *Assets) AsISCMove() *iscmove.Assets {
 	for coinType, amount := range a.Coins.Iterate() {
 		if amount > 0 {
 			r.SetCoin(
-				iotajsonrpc.MustCoinTypeFromString(coinType.String()),
-				iotajsonrpc.CoinValue(amount),
+				iotagraphql.MustCoinTypeFromString(coinType.String()),
+				iotagraphql.CoinValue(amount),
 			)
 		}
 	}

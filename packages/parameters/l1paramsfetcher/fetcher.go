@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/client"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/parameters"
 )
@@ -74,7 +74,7 @@ func FetchLatest(ctx context.Context, iotaClient client.IotaClient) (*parameters
 			if err != nil {
 				return nil, fmt.Errorf("can't get latest system state: %w", err)
 			}
-			meta, err := iotaClient.GetCoinMetadata(ctx, iotajsonrpc.IotaCoinType.String())
+			meta, err := iotaClient.GetCoinMetadata(ctx, iotagraphql.IotaCoinType.String())
 			if err != nil {
 				return nil, fmt.Errorf("can't get coin metadata: %w", err)
 			}

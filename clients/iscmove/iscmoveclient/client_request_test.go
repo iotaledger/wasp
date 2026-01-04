@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/wasp/v2/clients"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	testcommon "github.com/iotaledger/wasp/v2/clients/iota-go/test_common"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
@@ -24,7 +24,7 @@ import (
 )
 
 func ensureSingleCoin(t *testing.T, cryptolibSigner cryptolib.Signer, client clients.L1Client) {
-	coinType := iotajsonrpc.IotaCoinType.String()
+	coinType := iotagraphql.IotaCoinType.String()
 	coinObjects, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{
 		CoinType: &coinType,
 		Owner:    cryptolibSigner.Address().AsIotaAddress(),
@@ -68,7 +68,7 @@ func ensureSingleCoin(t *testing.T, cryptolibSigner cryptolib.Signer, client cli
 		&iotaclient.SignAndExecuteTransactionRequest{
 			Signer:      cryptolib.SignerToIotaSigner(cryptolibSigner),
 			TxDataBytes: txnBytes,
-			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+			Options: &iotagraphql.IotaTransactionBlockResponseOptions{
 				ShowEffects:       true,
 				ShowObjectChanges: true,
 			},
@@ -168,7 +168,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 				context.Background(),
 				iotaclient.GetObjectRequest{
 					ObjectID: testCoinRef[i].ObjectID,
-					Options:  &iotajsonrpc.IotaObjectDataOptions{ShowType: true},
+					Options:  &iotagraphql.IotaObjectDataOptions{ShowType: true},
 				},
 			)
 			require.NoError(t, assetErr)
@@ -176,7 +176,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 			coinResource, assetErr := iotago.NewResourceType(*getCoinRef.Data.Type)
 			require.NoError(t, assetErr)
 
-			testCointype, assetErr := iotajsonrpc.CoinTypeFromString(coinResource.SubType1.String())
+			testCointype, assetErr := iotagraphql.CoinTypeFromString(coinResource.SubType1.String())
 			require.NoError(t, assetErr)
 			ref := getCoinRef.Data.Ref()
 			_, assetErr = PTBTestWrapper(
@@ -193,7 +193,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 						l1starter.ISCPackageID(),
 						ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: assetsBagRef}),
 						ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: &ref}),
-						iotajsonrpc.CoinValue(100),
+						iotagraphql.CoinValue(100),
 						testCointype,
 					)
 				},
@@ -234,7 +234,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 				context.Background(),
 				iotaclient.GetObjectRequest{
 					ObjectID: testCoinRef[i+25].ObjectID,
-					Options:  &iotajsonrpc.IotaObjectDataOptions{ShowType: true},
+					Options:  &iotagraphql.IotaObjectDataOptions{ShowType: true},
 				},
 			)
 			require.NoError(t, assetErr)
@@ -242,7 +242,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 			coinResource, assetErr := iotago.NewResourceType(*getCoinRef.Data.Type)
 			require.NoError(t, assetErr)
 
-			testCointype, assetErr := iotajsonrpc.CoinTypeFromString(coinResource.SubType1.String())
+			testCointype, assetErr := iotagraphql.CoinTypeFromString(coinResource.SubType1.String())
 			require.NoError(t, assetErr)
 			ref := getCoinRef.Data.Ref()
 			_, assetErr = PTBTestWrapper(
@@ -259,7 +259,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 						l1starter.ISCPackageID(),
 						ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: assetsBagRef}),
 						ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: &ref}),
-						iotajsonrpc.CoinValue(100),
+						iotagraphql.CoinValue(100),
 						testCointype,
 					)
 				},
@@ -305,8 +305,8 @@ func TestCreateAndSendRequestWithAssets(t *testing.T) {
 			Assets:        iscmove.NewAssets(100),
 			Message:       iscmovetest.RandomMessage(),
 			AllowanceBCS: bcs.MustMarshal(iscmove.NewAssets(0).
-				SetCoin(iotajsonrpc.MustCoinTypeFromString("0x1::iota::IOTA"), 11).
-				SetCoin(iotajsonrpc.MustCoinTypeFromString("0xa::testa::TEST_A"), 12)),
+				SetCoin(iotagraphql.MustCoinTypeFromString("0x1::iota::IOTA"), 11).
+				SetCoin(iotagraphql.MustCoinTypeFromString("0xa::testa::TEST_A"), 12)),
 			GasPrice:  iotaclient.DefaultGasPrice,
 			GasBudget: iotaclient.DefaultGasBudget,
 		},
@@ -330,8 +330,8 @@ func TestGetRequestFromObjectID(t *testing.T) {
 	require.NoError(t, err)
 
 	allowance := iscmove.NewAssets(0).
-		SetCoin(iotajsonrpc.MustCoinTypeFromString("0x1::iota::IOTA"), 21).
-		SetCoin(iotajsonrpc.MustCoinTypeFromString("0xa::testa::TEST_A"), 12)
+		SetCoin(iotagraphql.MustCoinTypeFromString("0x1::iota::IOTA"), 21).
+		SetCoin(iotagraphql.MustCoinTypeFromString("0xa::testa::TEST_A"), 12)
 
 	createAndSendRequestRes, err := client.CreateAndSendRequest(
 		context.Background(),
@@ -356,6 +356,6 @@ func TestGetRequestFromObjectID(t *testing.T) {
 
 	decodedAllowance := bcs.MustUnmarshal[iscmove.Assets](req.Object.AllowanceBCS)
 
-	require.Equal(t, iotajsonrpc.CoinValue(21), decodedAllowance.Coins.Get(iotajsonrpc.MustCoinTypeFromString("0x1::iota::IOTA")))
-	require.Equal(t, iotajsonrpc.CoinValue(12), decodedAllowance.Coins.Get(iotajsonrpc.MustCoinTypeFromString("0xa::testa::TEST_A")))
+	require.Equal(t, iotagraphql.CoinValue(21), decodedAllowance.Coins.Get(iotagraphql.MustCoinTypeFromString("0x1::iota::IOTA")))
+	require.Equal(t, iotagraphql.CoinValue(12), decodedAllowance.Coins.Get(iotagraphql.MustCoinTypeFromString("0xa::testa::TEST_A")))
 }

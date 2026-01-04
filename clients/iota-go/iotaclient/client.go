@@ -1,91 +1,189 @@
 package iotaclient
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
-	"time"
+	"net/http"
 
+	"github.com/iotaledger/hive.go/log"
+
+	api "github.com/iotaledger/wasp/v2/clients/iota-go/client"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/serialization"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 )
 
+const (
+	SingleCoinFundsFromFaucetAmount = uint64(1_000_000_000)
+	FundsFromFaucetAmount           = SingleCoinFundsFromFaucetAmount * 2
+	DefaultGasBudget                = api.DefaultGasBudget
+	DefaultGasPrice                 = api.DefaultGasPrice
+	MinGasBudget                    = api.MinGasBudget
+	MaxGasBudget                    = api.MaxGasBudget
+)
+
+type (
+	IotaClient                        = api.IotaClient
+	RetryCondition[T any]             = api.RetryCondition[T]
+	WaitParams                        = api.WaitParams
+	GetDynamicFieldObjectRequest      = api.GetDynamicFieldObjectRequest
+	GetDynamicFieldsRequest           = api.GetDynamicFieldsRequest
+	GetOwnedObjectsRequest            = api.GetOwnedObjectsRequest
+	QueryEventsRequest                = api.QueryEventsRequest
+	QueryTransactionBlocksRequest     = api.QueryTransactionBlocksRequest
+	ResolveNameServiceNamesRequest    = api.ResolveNameServiceNamesRequest
+	DevInspectTransactionBlockRequest = api.DevInspectTransactionBlockRequest
+	DryRunTransactionRequest          = api.DryRunTransactionRequest
+	ExecuteTransactionBlockRequest    = api.ExecuteTransactionBlockRequest
+	BatchTransactionRequest           = api.BatchTransactionRequest
+	MergeCoinsRequest                 = api.MergeCoinsRequest
+	MoveCallRequest                   = api.MoveCallRequest
+	PayRequest                        = api.PayRequest
+	PayAllIotaRequest                 = api.PayAllIotaRequest
+	PayIotaRequest                    = api.PayIotaRequest
+	PublishRequest                    = api.PublishRequest
+	RequestAddStakeRequest            = api.RequestAddStakeRequest
+	RequestWithdrawStakeRequest       = api.RequestWithdrawStakeRequest
+	SplitCoinRequest                  = api.SplitCoinRequest
+	SplitCoinEqualRequest             = api.SplitCoinEqualRequest
+	TransferObjectRequest             = api.TransferObjectRequest
+	TransferIotaRequest               = api.TransferIotaRequest
+	GetAllCoinsRequest                = api.GetAllCoinsRequest
+	GetBalanceRequest                 = api.GetBalanceRequest
+	GetCoinsRequest                   = api.GetCoinsRequest
+	GetCheckpointsRequest             = api.GetCheckpointsRequest
+	GetObjectRequest                  = api.GetObjectRequest
+	GetTransactionBlockRequest        = api.GetTransactionBlockRequest
+	MultiGetObjectsRequest            = api.MultiGetObjectsRequest
+	MultiGetTransactionBlocksRequest  = api.MultiGetTransactionBlocksRequest
+	TryGetPastObjectRequest           = api.TryGetPastObjectRequest
+	TryMultiGetPastObjectsRequest     = api.TryMultiGetPastObjectsRequest
+	SignAndExecuteTransactionRequest  = api.SignAndExecuteTransactionRequest
+)
+
+var (
+	WaitForEffectsDisabled = api.WaitForEffectsDisabled
+	WaitForEffectsEnabled  = api.WaitForEffectsEnabled
+)
+
+// Client wraps the GraphQL client so callers depending on the legacy iotaclient
+// package path can continue to work with the new GraphQL implementation.
 type Client struct {
-	transport transport
-
-	// If WaitUntilEffectsVisible is set, it takes effect on any sent transaction with WaitForLocalExecution. It is
-	// necessary because if the L1 node is overloaded, it may return an effects cert without actually having ececuted
-	// the tx locally.
-	WaitUntilEffectsVisible *WaitParams
+	*iotagraphql.GraphQLClient
 }
 
-type WaitParams struct {
-	Attempts             int
-	DelayBetweenAttempts time.Duration
+func NewClient(apiURL string, waitUntilEffectsVisible *WaitParams) *Client {
+	graphqlURL := iotaconn.GraphQLURL(apiURL)
+	return &Client{
+		GraphQLClient: iotagraphql.NewGraphQLClientWithWaitParams(graphqlURL, waitUntilEffectsVisible),
+	}
 }
 
-var WaitForEffectsDisabled *WaitParams = nil
-var WaitForEffectsEnabled *WaitParams = &WaitParams{
-	Attempts:             5,
-	DelayBetweenAttempts: 2 * time.Second,
+// NewWebsocket keeps the existing signature but currently returns an HTTP-based GraphQL client.
+func NewWebsocket(ctx context.Context, wsURL string, waitUntilEffectsVisible *WaitParams, log log.Logger) (*Client, error) {
+	_ = ctx
+	_ = log
+	return NewClient(wsURL, waitUntilEffectsVisible), nil
 }
 
-type transport interface {
-	Call(ctx context.Context, v any, method iotaconn.JsonRPCMethod, args ...any) error
-	Subscribe(ctx context.Context, v chan<- []byte, method iotaconn.JsonRPCMethod, args ...any) error
-	WaitUntilStopped()
-}
-
-func (c *Client) WaitUntilStopped() {
-	c.transport.WaitUntilStopped()
-}
-
-type RetryCondition[T any] func(result T, err error) bool
-
-// Retry retries a function until the condition is met or the context is cancelled
 func Retry[T any](
 	ctx context.Context,
 	f func() (T, error),
 	shouldRetry RetryCondition[T],
 	params *WaitParams,
 ) (T, error) {
-	var result T
-	var err error
-
-	// If params is nil, just run once without retrying
-	if params == nil {
-		return f()
-	}
-
-	for i := range params.Attempts {
-		if ctx.Err() != nil {
-			return result, ctx.Err()
-		}
-
-		result, err = f()
-		if !shouldRetry(result, err) {
-			return result, nil
-		}
-		// no need to wait after last attempt
-		if i < params.Attempts-1 {
-			select {
-			case <-ctx.Done():
-				return result, ctx.Err()
-			case <-time.After(params.DelayBetweenAttempts):
-			}
-		}
-	}
-
-	// failed all attempts, but we still might return incomplete result
-	return result, fmt.Errorf("retry failed after %d attempts: %v", params.Attempts, err)
+	return api.Retry(ctx, f, shouldRetry, params)
 }
 
-// RetryOnError retries a function until the error is nil or the context is cancelled
 func RetryOnError[T any](ctx context.Context, f func() (T, error), params *WaitParams) (T, error) {
-	return Retry(ctx, f, DefaultRetryCondition[T](), params)
+	return api.RetryOnError(ctx, f, params)
 }
 
-// DefaultRetryCondition returns a RetryCondition that only retries on error
 func DefaultRetryCondition[T any]() RetryCondition[T] {
-	return func(result T, err error) bool {
-		return err != nil
+	return api.DefaultRetryCondition[T]()
+}
+
+func UnmarshalBCS[Obj any](data []byte, obj *Obj) error {
+	return api.UnmarshalBCS(data, obj)
+}
+
+// RequestFundsFromFaucet requests test funds for the provided address from the faucet endpoint.
+func RequestFundsFromFaucet(ctx context.Context, address *iotago.Address, faucetURL string) error {
+	payload := map[string]any{
+		"FixedAmountRequest": map[string]string{
+			"recipient": address.String(),
+		},
 	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal faucet request: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, faucetURL, bytes.NewReader(body))
+	if err != nil {
+		return fmt.Errorf("failed to create faucet request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("faucet request failed: %w", err)
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusCreated {
+		return fmt.Errorf("faucet returned unexpected status %s", res.Status)
+	}
+
+	var parsed struct {
+		Error any `json:"error"`
+	}
+	if err := json.NewDecoder(res.Body).Decode(&parsed); err != nil {
+		// The response body is informational; don't fail just because decoding failed.
+		return nil
+	}
+
+	switch v := parsed.Error.(type) {
+	case nil:
+		return nil
+	case string:
+		if v == "" {
+			return nil
+		}
+		return fmt.Errorf("faucet error: %s", v)
+	default:
+		return fmt.Errorf("faucet returned an error")
+	}
+}
+
+// WaitUntilStopped is a no-op placeholder to keep websocket-dependent code compiling.
+func (c *Client) WaitUntilStopped() {}
+
+// SubscribeEvent is currently unsupported on the GraphQL client.
+func (c *Client) SubscribeEvent(
+	ctx context.Context,
+	filter *iotajsonrpc.EventFilter,
+	resultCh chan<- *iotajsonrpc.IotaEvent,
+) error {
+	_ = ctx
+	_ = filter
+	_ = resultCh
+	return fmt.Errorf("event subscriptions are not supported by the GraphQL client")
+}
+
+// SubscribeTransaction is currently unsupported on the GraphQL client.
+func (c *Client) SubscribeTransaction(
+	ctx context.Context,
+	filter *iotajsonrpc.TransactionFilter,
+	resultCh chan<- *serialization.TagJson[iotajsonrpc.IotaTransactionBlockEffects],
+) error {
+	_ = ctx
+	_ = filter
+	_ = resultCh
+	return fmt.Errorf("transaction subscriptions are not supported by the GraphQL client")
 }

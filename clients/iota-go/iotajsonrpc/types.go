@@ -1,7 +1,6 @@
 package iotajsonrpc
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"strings"
@@ -113,21 +112,22 @@ func (o ObjectOwner) MarshalJSON() ([]byte, error) {
 }
 
 func (o *ObjectOwner) UnmarshalJSON(data []byte) error {
-	if bytes.HasPrefix(data, []byte("\"")) {
-		stringData := string(data[1 : len(data)-1])
-		o.string = &stringData
-		return nil
-	}
-	if bytes.HasPrefix(data, []byte("{")) {
-		oOI := ObjectOwnerInternal{}
-		err := json.Unmarshal(data, &oOI)
-		if err != nil {
+	// Try to unmarshal as string first (e.g., "Immutable", "Shared")
+	if len(data) > 0 && data[0] == '"' {
+		var s string
+		if err := json.Unmarshal(data, &s); err != nil {
 			return err
 		}
-		o.ObjectOwnerInternal = &oOI
+		o.string = &s
 		return nil
 	}
-	return errors.New("value not json")
+	// Otherwise, unmarshal as object
+	var internal ObjectOwnerInternal
+	if err := json.Unmarshal(data, &internal); err != nil {
+		return err
+	}
+	o.ObjectOwnerInternal = &internal
+	return nil
 }
 
 func IsSameAddressString(addr1, addr2 string) bool {

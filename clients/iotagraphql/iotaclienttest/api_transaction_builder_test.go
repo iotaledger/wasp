@@ -2,8 +2,6 @@ package iotaclienttest
 
 import (
 	"context"
-	"encoding/json"
-	"math/big"
 	"strconv"
 	"testing"
 	"time"
@@ -11,11 +9,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/contracts"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotatest"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/testutil/l1starter"
 )
 
@@ -23,7 +20,7 @@ func TestMergeCoins(t *testing.T) {
 	t.Skip("FIXME create an account has at least two coin objects on chain")
 	// api := l1starter.Instance().L1Client()
 	// signer := testAddress
-	// coins, err := api.GetCoins(context.Background(), iotaclient.GetCoinsRequest{
+	// coins, err := api.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{
 	// 	Owner: signer,
 	// 	Limit: 10,
 	// })
@@ -36,7 +33,7 @@ func TestMergeCoins(t *testing.T) {
 
 	// txn, err := api.MergeCoins(
 	// 	context.Background(),
-	// 	iotaclient.MergeCoinsRequest{
+	// 	iotagraphql.MergeCoinsRequest{
 	// 		Signer:      signer,
 	// 		PrimaryCoin: coin1.CoinObjectID,
 	// 		CoinToMerge: coin2.CoinObjectID,
@@ -51,156 +48,156 @@ func TestMergeCoins(t *testing.T) {
 
 func TestMoveCall(t *testing.T) {
 	t.Skip("TODO")
-	client := l1starter.Instance().L1Client()
-	signer := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL)
+	// client := l1starter.Instance().L1Client()
+	// signer := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL)
 
-	sdkVerifyBytecode := contracts.SDKVerify()
+	// sdkVerifyBytecode := contracts.SDKVerify()
 
-	txnBytes, err := client.Publish(
-		context.Background(),
-		iotaclient.PublishRequest{
-			Sender:          signer.Address(),
-			CompiledModules: sdkVerifyBytecode.Modules,
-			Dependencies:    sdkVerifyBytecode.Dependencies,
-			GasBudget:       iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget),
-		},
-	)
-	require.NoError(t, err)
-	txnResponse, err := client.SignAndExecuteTransaction(
-		context.Background(),
-		&iotaclient.SignAndExecuteTransactionRequest{
-			TxDataBytes: txnBytes.TxBytes,
-			Signer:      signer,
-			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
-				ShowEffects:       true,
-				ShowObjectChanges: true,
-			},
-		},
-	)
-	require.NoError(t, err)
-	require.True(t, txnResponse.Effects.Data.IsSuccess())
+	// txnBytes, err := client.Publish(
+	// 	context.Background(),
+	// 	iotaclient.PublishRequest{
+	// 		Sender:          signer.Address(),
+	// 		CompiledModules: sdkVerifyBytecode.Modules,
+	// 		Dependencies:    sdkVerifyBytecode.Dependencies,
+	// 		GasBudget:       iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget),
+	// 	},
+	// )
+	// require.NoError(t, err)
+	// txnResponse, err := client.SignAndExecuteTransaction(
+	// 	context.Background(),
+	// 	&iotaclient.SignAndExecuteTransactionRequest{
+	// 		TxDataBytes: txnBytes.TxBytes,
+	// 		Signer:      signer,
+	// 		Options: &iotagraphql.IotaTransactionBlockResponseOptions{
+	// 			ShowEffects:       true,
+	// 			ShowObjectChanges: true,
+	// 		},
+	// 	},
+	// )
+	// require.NoError(t, err)
+	// require.True(t, txnResponse.Effects.Data.IsSuccess())
 
-	packageID, err := txnResponse.GetPublishedPackageID()
-	require.NoError(t, err)
+	// packageID, err := txnResponse.GetPublishedPackageID()
+	// require.NoError(t, err)
 
-	// test MoveCall with byte array input
-	input := []string{"haha", "gogo"}
-	txnBytes, err = client.MoveCall(
-		context.Background(),
-		iotaclient.MoveCallRequest{
-			Signer:    signer.Address(),
-			PackageID: packageID,
-			Module:    "sdk_verify",
-			Function:  "read_input_bytes_array",
-			TypeArgs:  []string{},
-			Arguments: []any{input},
-			GasBudget: iotajsonrpc.NewBigInt((iotaclient.DefaultGasBudget)),
-		},
-	)
-	require.NoError(t, err)
-	txnResponse, err = client.SignAndExecuteTransaction(
-		context.Background(),
-		&iotaclient.SignAndExecuteTransactionRequest{
-			TxDataBytes: txnBytes.TxBytes,
-			Signer:      signer,
-			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
-				ShowEffects: true,
-			},
-		},
-	)
-	require.NoError(t, err)
-	require.True(t, txnResponse.Effects.Data.IsSuccess())
+	// // test MoveCall with byte array input
+	// input := []string{"haha", "gogo"}
+	// txnBytes, err = client.MoveCall(
+	// 	context.Background(),
+	// 	iotaclient.MoveCallRequest{
+	// 		Signer:    signer.Address(),
+	// 		PackageID: packageID,
+	// 		Module:    "sdk_verify",
+	// 		Function:  "read_input_bytes_array",
+	// 		TypeArgs:  []string{},
+	// 		Arguments: []any{input},
+	// 		GasBudget: iotajsonrpc.NewBigInt((iotaclient.DefaultGasBudget)),
+	// 	},
+	// )
+	// require.NoError(t, err)
+	// txnResponse, err = client.SignAndExecuteTransaction(
+	// 	context.Background(),
+	// 	&iotaclient.SignAndExecuteTransactionRequest{
+	// 		TxDataBytes: txnBytes.TxBytes,
+	// 		Signer:      signer,
+	// 		Options: &iotagraphql.IotaTransactionBlockResponseOptions{
+	// 			ShowEffects: true,
+	// 		},
+	// 	},
+	// )
+	// require.NoError(t, err)
+	// require.True(t, txnResponse.Effects.Data.IsSuccess())
 
-	queryEventsRes, err := client.QueryEvents(
-		context.Background(),
-		iotaclient.QueryEventsRequest{
-			Query: &iotajsonrpc.EventFilter{Transaction: &txnResponse.Digest},
-		},
-	)
-	require.NoError(t, err)
-	var queryEventsResMap map[string]any
-	err = json.Unmarshal(queryEventsRes.Data[0].ParsedJson, &queryEventsResMap)
-	require.NoError(t, err)
-	b, err := json.Marshal(queryEventsResMap["data"])
-	require.NoError(t, err)
-	var res [][]byte
-	err = json.Unmarshal(b, &res)
-	require.NoError(t, err)
+	// queryEventsRes, err := client.QueryEvents(
+	// 	context.Background(),
+	// 	iotaclient.QueryEventsRequest{
+	// 		Query: &iotajsonrpc.EventFilter{Transaction: &txnResponse.Digest},
+	// 	},
+	// )
+	// require.NoError(t, err)
+	// var queryEventsResMap map[string]any
+	// err = json.Unmarshal(queryEventsRes.Data[0].ParsedJson, &queryEventsResMap)
+	// require.NoError(t, err)
+	// b, err := json.Marshal(queryEventsResMap["data"])
+	// require.NoError(t, err)
+	// var res [][]byte
+	// err = json.Unmarshal(b, &res)
+	// require.NoError(t, err)
 
-	require.Equal(t, []byte("haha"), res[0])
-	require.Equal(t, []byte("gogo"), res[1])
+	// require.Equal(t, []byte("haha"), res[0])
+	// require.Equal(t, []byte("gogo"), res[1])
 }
 
 func TestPay(t *testing.T) {
 	t.Skip("FIXME there is only 1 coin object, because there is only 1 coin object returned from faucet")
-	client := l1starter.Instance().L1Client()
-	signer := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL)
-	recipient := iotatest.MakeSignerWithFunds(1, iotaconn.TestnetFaucetURL)
+	// client := l1starter.Instance().L1Client()
+	// signer := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL)
+	// recipient := iotatest.MakeSignerWithFunds(1, iotaconn.TestnetFaucetURL)
 
-	coins, err := client.GetCoins(
-		context.Background(), iotaclient.GetCoinsRequest{
-			Owner: signer.Address(),
-			Limit: 10,
-		},
-	)
-	require.NoError(t, err)
-	limit := len(coins.Data) - 1 // need reserve a coin for gas
+	// coins, err := client.GetCoins(
+	// 	context.Background(), iotaclient.GetCoinsRequest{
+	// 		Owner: signer.Address(),
+	// 		Limit: 10,
+	// 	},
+	// )
+	// require.NoError(t, err)
+	// limit := len(coins.Data) - 1 // need reserve a coin for gas
 
-	amount := uint64(123)
-	pickedCoins, err := iotajsonrpc.PickupCoins(
-		coins,
-		new(big.Int).SetUint64(amount),
-		iotaclient.DefaultGasBudget,
-		limit,
-		0,
-	)
-	require.NoError(t, err)
+	// amount := uint64(123)
+	// pickedCoins, err := iotajsonrpc.PickupCoins(
+	// 	coins,
+	// 	new(big.Int).SetUint64(amount),
+	// 	iotaclient.DefaultGasBudget,
+	// 	limit,
+	// 	0,
+	// )
+	// require.NoError(t, err)
 
-	// Find a coin for gas that's not in the picked coins
-	var gasCoin *iotago.ObjectID
-	pickedCoinSet := make(map[string]bool)
-	for _, coinID := range pickedCoins.CoinIds() {
-		pickedCoinSet[coinID.String()] = true
-	}
-	for _, coin := range coins.Data {
-		if !pickedCoinSet[coin.CoinObjectID.String()] {
-			gasCoin = coin.CoinObjectID
-			break
-		}
-	}
-	require.NotNil(t, gasCoin, "should have a coin available for gas")
-
-	txn, err := client.Pay(
-		context.Background(),
-		iotaclient.PayRequest{
-			Signer:     signer.Address(),
-			InputCoins: pickedCoins.CoinIds(),
-			Recipients: []*iotago.Address{recipient.Address()},
-			Amount:     []*iotajsonrpc.BigInt{iotajsonrpc.NewBigInt(amount)},
-			Gas:        gasCoin,
-			GasBudget:  iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget),
-		},
-	)
-	require.NoError(t, err)
-
-	simulate, err := client.DryRunTransaction(context.Background(), iotaclient.DryRunTransactionRequest{
-		TxDataBytes: txn.TxBytes,
-	})
-	require.NoError(t, err)
-	require.Empty(t, simulate.Effects.Data.V1.Status.Error)
-	require.True(t, simulate.Effects.Data.IsSuccess())
-
-	// TODO: Enable balance changes validation once GraphQL dry run supports it
-	// require.Len(t, simulate.BalanceChanges, 2)
-	// recipientAmount := strconv.FormatUint(amount, 10)
-	// signerAmount := strconv.FormatUint(totalBal-amount, 10)
-	// for _, balChange := range simulate.BalanceChanges {
-	// 	if balChange.Owner.AddressOwner == recipient.Address() {
-	// 		require.Equal(t, recipientAmount, balChange.Amount)
-	// 	} else if balChange.Owner.AddressOwner == signer.Address() {
-	// 		require.Equal(t, signerAmount, balChange.Amount)
+	// // Find a coin for gas that's not in the picked coins
+	// var gasCoin *iotago.ObjectID
+	// pickedCoinSet := make(map[string]bool)
+	// for _, coinID := range pickedCoins.CoinIds() {
+	// 	pickedCoinSet[coinID.String()] = true
+	// }
+	// for _, coin := range coins.Data {
+	// 	if !pickedCoinSet[coin.CoinObjectID.String()] {
+	// 		gasCoin = coin.CoinObjectID
+	// 		break
 	// 	}
 	// }
+	// require.NotNil(t, gasCoin, "should have a coin available for gas")
+
+	// txn, err := client.Pay(
+	// 	context.Background(),
+	// 	iotaclient.PayRequest{
+	// 		Signer:     signer.Address(),
+	// 		InputCoins: pickedCoins.CoinIds(),
+	// 		Recipients: []*iotago.Address{recipient.Address()},
+	// 		Amount:     []*iotajsonrpc.BigInt{iotajsonrpc.NewBigInt(amount)},
+	// 		Gas:        gasCoin,
+	// 		GasBudget:  iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget),
+	// 	},
+	// )
+	// require.NoError(t, err)
+
+	// simulate, err := client.DryRunTransaction(context.Background(), iotaclient.DryRunTransactionRequest{
+	// 	TxDataBytes: txn.TxBytes,
+	// })
+	// require.NoError(t, err)
+	// require.Empty(t, simulate.Effects.Data.V1.Status.Error)
+	// require.True(t, simulate.Effects.Data.IsSuccess())
+
+	// // TODO: Enable balance changes validation once GraphQL dry run supports it
+	// // require.Len(t, simulate.BalanceChanges, 2)
+	// // recipientAmount := strconv.FormatUint(amount, 10)
+	// // signerAmount := strconv.FormatUint(totalBal-amount, 10)
+	// // for _, balChange := range simulate.BalanceChanges {
+	// // 	if balChange.Owner.AddressOwner == recipient.Address() {
+	// // 		require.Equal(t, recipientAmount, balChange.Amount)
+	// // 	} else if balChange.Owner.AddressOwner == signer.Address() {
+	// // 		require.Equal(t, signerAmount, balChange.Amount)
+	// // 	}
+	// // }
 }
 
 func TestPayAllIota(t *testing.T) {
@@ -211,28 +208,28 @@ func TestPayAllIota(t *testing.T) {
 
 	limit := int(3)
 	coinPages, err := client.GetCoins(
-		context.Background(), iotaclient.GetCoinsRequest{
+		context.Background(), iotagraphql.GetCoinsRequest{
 			Owner: signer.Address(),
 			Limit: limit,
 		},
 	)
 	require.NoError(t, err)
-	coins := iotajsonrpc.Coins(coinPages.Data)
+	coins := iotagraphql.Coins(coinPages.Data)
 	// assume the account holds more than 'limit' amount Iota token objects
 	require.Len(t, coinPages.Data, 3)
 
 	txn, err := client.PayAllIota(
 		context.Background(),
-		iotaclient.PayAllIotaRequest{
+		iotagraphql.PayAllIotaRequest{
 			Signer:     signer.Address(),
 			Recipient:  recipient.Address(),
 			InputCoins: coins.ObjectIDs(),
-			GasBudget:  iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget),
+			GasBudget:  iotagraphql.NewBigInt(iotagraphql.DefaultGasBudget),
 		},
 	)
 	require.NoError(t, err)
 
-	simulate, err := client.DryRunTransaction(context.Background(), iotaclient.DryRunTransactionRequest{
+	simulate, err := client.DryRunTransaction(context.Background(), iotagraphql.DryRunTransactionRequest{
 		TxDataBytes: txn.TxBytes,
 	})
 	require.NoError(t, err)
@@ -263,18 +260,18 @@ func TestPayIota(t *testing.T) {
 
 	limit := int(4)
 	coinPages, err := client.GetCoins(
-		context.Background(), iotaclient.GetCoinsRequest{
+		context.Background(), iotagraphql.GetCoinsRequest{
 			Owner: signer.Address(),
 			Limit: limit,
 		},
 	)
 	require.NoError(t, err)
-	coins := iotajsonrpc.Coins(coinPages.Data)
+	coins := iotagraphql.Coins(coinPages.Data)
 
 	sentAmounts := []uint64{123, 456, 789}
 	txn, err := client.PayIota(
 		context.Background(),
-		iotaclient.PayIotaRequest{
+		iotagraphql.PayIotaRequest{
 			Signer:     signer.Address(),
 			InputCoins: coins.ObjectIDs(),
 			Recipients: []*iotago.Address{
@@ -282,17 +279,17 @@ func TestPayIota(t *testing.T) {
 				recipient2.Address(),
 				recipient2.Address(),
 			},
-			Amount: []*iotajsonrpc.BigInt{
-				iotajsonrpc.NewBigInt(sentAmounts[0]), // to recipient1
-				iotajsonrpc.NewBigInt(sentAmounts[1]), // to recipient2
-				iotajsonrpc.NewBigInt(sentAmounts[2]), // to recipient2
+			Amount: []*iotagraphql.BigInt{
+				iotagraphql.NewBigInt(sentAmounts[0]), // to recipient1
+				iotagraphql.NewBigInt(sentAmounts[1]), // to recipient2
+				iotagraphql.NewBigInt(sentAmounts[2]), // to recipient2
 			},
-			GasBudget: iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget),
+			GasBudget: iotagraphql.NewBigInt(iotagraphql.DefaultGasBudget),
 		},
 	)
 	require.NoError(t, err)
 
-	simulate, err := client.DryRunTransaction(context.Background(), iotaclient.DryRunTransactionRequest{
+	simulate, err := client.DryRunTransaction(context.Background(), iotagraphql.DryRunTransactionRequest{
 		TxDataBytes: txn.TxBytes,
 	})
 	require.NoError(t, err)
@@ -333,21 +330,21 @@ func TestPublish(t *testing.T) {
 
 	txnBytes, err := client.Publish(
 		context.Background(),
-		iotaclient.PublishRequest{
+		iotagraphql.PublishRequest{
 			Sender:          signer.Address(),
 			CompiledModules: testcoinBytecode.Modules,
 			Dependencies:    testcoinBytecode.Dependencies,
-			GasBudget:       iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget * 5),
+			GasBudget:       iotagraphql.NewBigInt(iotagraphql.DefaultGasBudget * 5),
 		},
 	)
 	require.NoError(t, err)
 
 	txnResponse, err := client.SignAndExecuteTransaction(
 		context.Background(),
-		&iotaclient.SignAndExecuteTransactionRequest{
+		&iotagraphql.SignAndExecuteTransactionRequest{
 			TxDataBytes: txnBytes.TxBytes,
 			Signer:      signer,
-			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+			Options: &iotagraphql.IotaTransactionBlockResponseOptions{
 				ShowEffects:       true,
 				ShowObjectChanges: true,
 			},
@@ -370,30 +367,30 @@ func TestSplitCoin(t *testing.T) {
 
 	limit := int(4)
 	coinPages, err := client.GetCoins(
-		context.Background(), iotaclient.GetCoinsRequest{
+		context.Background(), iotagraphql.GetCoinsRequest{
 			Owner: signer.Address(),
 			Limit: limit,
 		},
 	)
 	require.NoError(t, err)
-	coins := iotajsonrpc.Coins(coinPages.Data)
+	coins := iotagraphql.Coins(coinPages.Data)
 
 	txn, err := client.SplitCoin(
 		context.Background(),
-		iotaclient.SplitCoinRequest{
+		iotagraphql.SplitCoinRequest{
 			Signer: signer.Address(),
 			Coin:   coins[1].CoinObjectID,
-			SplitAmounts: []*iotajsonrpc.BigInt{
+			SplitAmounts: []*iotagraphql.BigInt{
 				// assume coins[0] has more than the sum of the following splitAmounts
-				iotajsonrpc.NewBigInt(2222),
-				iotajsonrpc.NewBigInt(1111),
+				iotagraphql.NewBigInt(2222),
+				iotagraphql.NewBigInt(1111),
 			},
-			GasBudget: iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget),
+			GasBudget: iotagraphql.NewBigInt(iotagraphql.DefaultGasBudget),
 		},
 	)
 	require.NoError(t, err)
 
-	simulate, err := client.DryRunTransaction(context.Background(), iotaclient.DryRunTransactionRequest{
+	simulate, err := client.DryRunTransaction(context.Background(), iotagraphql.DryRunTransactionRequest{
 		TxDataBytes: txn.TxBytes,
 	})
 	require.NoError(t, err)
@@ -415,7 +412,7 @@ func TestTransferObject(t *testing.T) {
 
 	limit := int(3)
 	coinPages, err := client.GetCoins(
-		context.Background(), iotaclient.GetCoinsRequest{
+		context.Background(), iotagraphql.GetCoinsRequest{
 			Owner: signer.Address(),
 			Limit: limit,
 		},
@@ -425,16 +422,16 @@ func TestTransferObject(t *testing.T) {
 
 	txn, err := client.TransferObject(
 		context.Background(),
-		iotaclient.TransferObjectRequest{
+		iotagraphql.TransferObjectRequest{
 			Signer:    signer.Address(),
 			Recipient: recipient.Address(),
 			ObjectID:  transferCoin.CoinObjectID,
-			GasBudget: iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget),
+			GasBudget: iotagraphql.NewBigInt(iotagraphql.DefaultGasBudget),
 		},
 	)
 	require.NoError(t, err)
 
-	simulate, err := client.DryRunTransaction(context.Background(), iotaclient.DryRunTransactionRequest{
+	simulate, err := client.DryRunTransaction(context.Background(), iotagraphql.DryRunTransactionRequest{
 		TxDataBytes: txn.TxBytes,
 	})
 	require.NoError(t, err)

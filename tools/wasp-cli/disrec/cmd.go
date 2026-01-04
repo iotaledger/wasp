@@ -17,7 +17,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
@@ -85,7 +85,7 @@ func runSignAndPost(cmd *cobra.Command, args []string) error {
 	res, execErr := httpClient.SignAndExecuteTransaction(ctx, &iotaclient.SignAndExecuteTransactionRequest{
 		TxDataBytes: txBytes,
 		Signer:      cryptolib.SignerToIotaSigner(signer),
-		Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+		Options: &iotagraphql.IotaTransactionBlockResponseOptions{
 			ShowEffects:        true,
 			ShowObjectChanges:  true,
 			ShowBalanceChanges: true,

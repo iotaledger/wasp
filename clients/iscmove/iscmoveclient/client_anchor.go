@@ -6,7 +6,7 @@ import (
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
@@ -108,7 +108,7 @@ type ReceiveRequestsAndTransitionRequest struct {
 func (c *Client) ReceiveRequestsAndTransition(
 	ctx context.Context,
 	req *ReceiveRequestsAndTransitionRequest,
-) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+) (*iotagraphql.IotaTransactionBlockResponse, error) {
 	consumed := make([]ConsumedRequest, 0, len(req.ConsumedRequests))
 	for _, reqRef := range req.ConsumedRequests {
 		reqWithObj, err := c.GetRequestFromObjectID(ctx, reqRef.ObjectID)
@@ -151,7 +151,7 @@ func (c *Client) GetAnchorFromObjectID(
 ) (*iscmove.AnchorWithRef, error) {
 	getObjectResponse, err := c.GetObject(ctx, iotaclient.GetObjectRequest{
 		ObjectID: anchorObjectID,
-		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true},
+		Options:  &iotagraphql.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor content: %w", err)
@@ -174,7 +174,7 @@ func (c *Client) GetPastAnchorFromObjectID(
 	getObjectResponse, err := c.TryGetPastObject(ctx, iotaclient.TryGetPastObjectRequest{
 		ObjectID: anchorObjectID,
 		Version:  version,
-		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true},
+		Options:  &iotagraphql.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor content: %w", err)

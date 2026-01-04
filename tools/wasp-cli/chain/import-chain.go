@@ -11,7 +11,7 @@ import (
 	hivedb "github.com/iotaledger/hive.go/db"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/database"
@@ -137,7 +137,7 @@ func runImportChain(dbPath string, node string, peers []string, quorum int, chai
 		Signer:    kp.Address().AsIotaAddress(),
 		ObjectID:  anchor.ObjectID,
 		Recipient: result.committeeAddress.AsIotaAddress(),
-		GasBudget: iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget),
+		GasBudget: iotagraphql.NewBigInt(iotaclient.DefaultGasBudget),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to construct transfer anchor: %w", err)
@@ -146,7 +146,7 @@ func runImportChain(dbPath string, node string, peers []string, quorum int, chai
 	_, err = cliclients.L1Client().SignAndExecuteTransaction(ctx, &iotaclient.SignAndExecuteTransactionRequest{
 		Signer:      cryptolib.SignerToIotaSigner(kp),
 		TxDataBytes: transferAnchor.TxBytes,
-		Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+		Options: &iotagraphql.IotaTransactionBlockResponseOptions{
 			ShowObjectChanges: true,
 		},
 	})

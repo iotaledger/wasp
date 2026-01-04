@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/apiextensions"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/v2/packages/coin"
@@ -108,7 +108,7 @@ func (c *Client) PostRequest(
 	ctx context.Context,
 	msg isc.Message,
 	param PostRequestParams,
-) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+) (*iotagraphql.IotaTransactionBlockResponse, error) {
 	if param.GasBudget == 0 {
 		return nil, fmt.Errorf("GasBudget is empty")
 	}
@@ -121,9 +121,9 @@ func (c *Client) PostMultipleRequests(
 	msg isc.Message,
 	requestsCount int,
 	params ...PostRequestParams,
-) ([]*iotajsonrpc.IotaTransactionBlockResponse, error) {
+) ([]*iotagraphql.IotaTransactionBlockResponse, error) {
 	var err error
-	txRes := make([]*iotajsonrpc.IotaTransactionBlockResponse, requestsCount)
+	txRes := make([]*iotagraphql.IotaTransactionBlockResponse, requestsCount)
 	for i := range requestsCount {
 		txRes[i], err = c.postSingleRequest(ctx, msg, params[i])
 		if err != nil {
@@ -137,11 +137,11 @@ func (c *Client) postSingleRequest(
 	ctx context.Context,
 	iscmsg isc.Message,
 	params PostRequestParams,
-) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+) (*iotagraphql.IotaTransactionBlockResponse, error) {
 	transferAssets := iscmove.NewAssets(0)
 	if params.Transfer != nil {
 		for coinType, coinbal := range params.Transfer.Coins.Iterate() {
-			transferAssets.SetCoin(iotajsonrpc.MustCoinTypeFromString(coinType.String()), iotajsonrpc.CoinValue(coinbal.Uint64()))
+			transferAssets.SetCoin(iotagraphql.MustCoinTypeFromString(coinType.String()), iotagraphql.CoinValue(coinbal.Uint64()))
 		}
 	}
 	msg := &iscmove.Message{
@@ -233,7 +233,7 @@ func (c *Client) PostOffLedgerRequest(
 	return signed, err
 }
 
-func (c *Client) DepositFunds(n coin.Value) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+func (c *Client) DepositFunds(n coin.Value) (*iotagraphql.IotaTransactionBlockResponse, error) {
 	return c.PostRequest(context.Background(), accounts.FuncDeposit.Message(), PostRequestParams{
 		Transfer:  isc.NewAssets(n),
 		Allowance: isc.NewAssets(n),

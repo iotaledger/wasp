@@ -14,7 +14,7 @@ import (
 
 	"github.com/Khan/genqlient/graphql"
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	api "github.com/iotaledger/wasp/v2/clients/iota-go/client"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/serialization"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
@@ -29,18 +29,18 @@ type GraphQLClient struct {
 	url                     string
 	client                  graphql.Client
 	httpClient              *http.Client
-	WaitUntilEffectsVisible *iotaclient.WaitParams
+	WaitUntilEffectsVisible *api.WaitParams
 }
 
 func NewGraphQLClient(url string) *GraphQLClient {
 	return NewGraphQLClientWithTimeout(url, 30*time.Second, nil)
 }
 
-func NewGraphQLClientWithWaitParams(url string, waitParams *iotaclient.WaitParams) *GraphQLClient {
+func NewGraphQLClientWithWaitParams(url string, waitParams *api.WaitParams) *GraphQLClient {
 	return NewGraphQLClientWithTimeout(url, 30*time.Second, waitParams)
 }
 
-func NewGraphQLClientWithTimeout(url string, timeout time.Duration, waitParams *iotaclient.WaitParams) *GraphQLClient {
+func NewGraphQLClientWithTimeout(url string, timeout time.Duration, waitParams *api.WaitParams) *GraphQLClient {
 	httpClient := &http.Client{
 		Timeout: timeout,
 	}
@@ -306,7 +306,7 @@ func validateRequired(val interface{}, paramName string) error {
 
 func (c *GraphQLClient) GetDynamicFieldObject(
 	ctx context.Context,
-	req iotaclient.GetDynamicFieldObjectRequest,
+	req api.GetDynamicFieldObjectRequest,
 ) (*iotajsonrpc.IotaObjectResponse, error) {
 	if req.ParentObjectID == nil {
 		return nil, fmt.Errorf("parent object ID is required")
@@ -400,7 +400,7 @@ func (c *GraphQLClient) GetDynamicFieldObject(
 
 func (c *GraphQLClient) GetDynamicFields(
 	ctx context.Context,
-	req iotaclient.GetDynamicFieldsRequest,
+	req api.GetDynamicFieldsRequest,
 ) (*iotajsonrpc.DynamicFieldPage, error) {
 	var cursor *string
 	if req.Cursor != nil {
@@ -480,7 +480,7 @@ func convertObjectDynamicFieldsResponse(resp *GetObjectDynamicFieldsResponse) (*
 
 func (c *GraphQLClient) GetOwnedObjects(
 	ctx context.Context,
-	req iotaclient.GetOwnedObjectsRequest,
+	req api.GetOwnedObjectsRequest,
 ) (*iotajsonrpc.ObjectsPage, error) {
 	if err := validateRequired(req.Address, "address"); err != nil {
 		return nil, err
@@ -542,14 +542,14 @@ func (c *GraphQLClient) GetOwnedObjects(
 
 func (c *GraphQLClient) QueryEvents(
 	ctx context.Context,
-	req iotaclient.QueryEventsRequest,
+	req api.QueryEventsRequest,
 ) (*iotajsonrpc.EventPage, error) {
 	return nil, fmt.Errorf("not implemented: %s", "QueryEvents")
 }
 
 func (c *GraphQLClient) QueryTransactionBlocks(
 	ctx context.Context,
-	req iotaclient.QueryTransactionBlocksRequest,
+	req api.QueryTransactionBlocksRequest,
 ) (*iotajsonrpc.TransactionBlocksPage, error) {
 	var first, last *int
 	var after, before *string
@@ -617,18 +617,18 @@ func (c *GraphQLClient) ResolveNameServiceAddress(ctx context.Context, iotaName 
 
 func (c *GraphQLClient) ResolveNameServiceNames(
 	ctx context.Context,
-	req iotaclient.ResolveNameServiceNamesRequest,
+	req api.ResolveNameServiceNamesRequest,
 ) (*iotajsonrpc.IotaNamePage, error) {
 	return nil, fmt.Errorf("not implemented: %s", "ResolveNameServiceNames")
 }
 
 func (c *GraphQLClient) DevInspectTransactionBlock(
 	ctx context.Context,
-	req iotaclient.DevInspectTransactionBlockRequest,
+	req api.DevInspectTransactionBlockRequest,
 ) (*iotajsonrpc.DevInspectResults, error) {
 	txBytes := req.TxKindBytes.String()
 
-	gasPrice := uint64(iotaclient.DefaultGasPrice)
+	gasPrice := uint64(api.DefaultGasPrice)
 	if req.GasPrice != nil {
 		var err error
 		gasPrice, err = bigIntToUint64(req.GasPrice, "gasPrice")
@@ -640,7 +640,7 @@ func (c *GraphQLClient) DevInspectTransactionBlock(
 	txMeta := TransactionMetadata{
 		Sender:     *req.SenderAddress,
 		GasPrice:   gasPrice,
-		GasBudget:  iotaclient.DefaultGasBudget,
+		GasBudget:  api.DefaultGasBudget,
 		GasSponsor: *req.SenderAddress,
 	}
 
@@ -662,7 +662,7 @@ func (c *GraphQLClient) DevInspectTransactionBlock(
 
 func (c *GraphQLClient) DryRunTransaction(
 	ctx context.Context,
-	req iotaclient.DryRunTransactionRequest,
+	req api.DryRunTransactionRequest,
 ) (*iotajsonrpc.DryRunTransactionBlockResponse, error) {
 	txBytes := req.TxDataBytes.String()
 	opts := convertToShowOptions(req.Options)
@@ -689,7 +689,7 @@ func (c *GraphQLClient) DryRunTransaction(
 
 func (c *GraphQLClient) ExecuteTransactionBlock(
 	ctx context.Context,
-	req iotaclient.ExecuteTransactionBlockRequest,
+	req api.ExecuteTransactionBlockRequest,
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	if len(req.Signatures) == 0 {
 		return nil, fmt.Errorf("at least one signature is required")
@@ -714,12 +714,12 @@ func (c *GraphQLClient) ExecuteTransactionBlock(
 	return convertExecuteTransactionBlockResponse(resp, req.Options)
 }
 
-func (c *GraphQLClient) GetCommitteeInfo(
-	ctx context.Context,
-	epoch *iotajsonrpc.BigInt,
-) (*iotajsonrpc.CommitteeInfo, error) {
-	return nil, fmt.Errorf("not implemented: %s", "GetCommitteeInfo")
-}
+// func (c *GraphQLClient) GetCommitteeInfo(
+// 	ctx context.Context,
+// 	epoch *iotajsonrpc.BigInt,
+// ) (*iotajsonrpc.CommitteeInfo, error) {
+// 	return nil, fmt.Errorf("not implemented: %s", "GetCommitteeInfo")
+// }
 
 func (c *GraphQLClient) GetLatestIotaSystemState(ctx context.Context) (*iotajsonrpc.IotaSystemStateSummary, error) {
 	resp, err := GetLatestIotaSystemState(ctx, c.client)
@@ -772,21 +772,21 @@ func (c *GraphQLClient) GetValidatorsApy(ctx context.Context) (*iotajsonrpc.Vali
 
 func (c *GraphQLClient) BatchTransaction(
 	ctx context.Context,
-	req iotaclient.BatchTransactionRequest,
+	req api.BatchTransactionRequest,
 ) (*iotajsonrpc.TransactionBytes, error) {
 	return nil, fmt.Errorf("not implemented: %s", "BatchTransaction")
 }
 
 func (c *GraphQLClient) MergeCoins(
 	ctx context.Context,
-	req iotaclient.MergeCoinsRequest,
+	req api.MergeCoinsRequest,
 ) (*iotajsonrpc.TransactionBytes, error) {
 	return nil, fmt.Errorf("not implemented: %s", "MergeCoins")
 }
 
 func (c *GraphQLClient) MoveCall(
 	ctx context.Context,
-	req iotaclient.MoveCallRequest,
+	req api.MoveCallRequest,
 ) (*iotajsonrpc.TransactionBytes, error) {
 	return nil, fmt.Errorf("not implemented: %s", "MoveCall")
 }
@@ -794,7 +794,7 @@ func (c *GraphQLClient) MoveCall(
 func (c *GraphQLClient) fetchObjectRefs(ctx context.Context, objectIDs []*iotago.ObjectID) ([]*iotago.ObjectRef, error) {
 	refs := make([]*iotago.ObjectRef, 0, len(objectIDs))
 	for _, objID := range objectIDs {
-		objResp, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: objID})
+		objResp, err := c.GetObject(ctx, api.GetObjectRequest{ObjectID: objID})
 		if err != nil {
 			return nil, fmt.Errorf("failed to get object %s: %w", objID.String(), err)
 		}
@@ -823,7 +823,7 @@ func createInputObjectsFromRefs(refs []*iotago.ObjectRef) []iotajsonrpc.InputObj
 
 func (c *GraphQLClient) Pay(
 	ctx context.Context,
-	req iotaclient.PayRequest,
+	req api.PayRequest,
 ) (*iotajsonrpc.TransactionBytes, error) {
 	coinRefs, err := c.fetchObjectRefs(ctx, req.InputCoins)
 	if err != nil {
@@ -845,7 +845,7 @@ func (c *GraphQLClient) Pay(
 	}
 	pt := ptb.Finish()
 
-	gasBudget := uint64(iotaclient.DefaultGasBudget)
+	gasBudget := uint64(api.DefaultGasBudget)
 	if req.GasBudget != nil {
 		gasBudget, err = bigIntToUint64(req.GasBudget, "gasBudget")
 		if err != nil {
@@ -858,7 +858,7 @@ func (c *GraphQLClient) Pay(
 		return nil, fmt.Errorf("gas parameter is required for Pay via GraphQL (input coins cannot be used as gas)")
 	}
 
-	gasObj, err := c.GetObject(ctx, iotaclient.GetObjectRequest{
+	gasObj, err := c.GetObject(ctx, api.GetObjectRequest{
 		ObjectID: req.Gas,
 	})
 	if err != nil {
@@ -879,7 +879,7 @@ func (c *GraphQLClient) Pay(
 		pt,
 		gasPayment,
 		gasBudget,
-		iotaclient.DefaultGasPrice,
+		api.DefaultGasPrice,
 	)
 
 	txBytes, err := bcs.Marshal(&tx)
@@ -896,7 +896,7 @@ func (c *GraphQLClient) Pay(
 
 func (c *GraphQLClient) PayAllIota(
 	ctx context.Context,
-	req iotaclient.PayAllIotaRequest,
+	req api.PayAllIotaRequest,
 ) (*iotajsonrpc.TransactionBytes, error) {
 	ptb := iotago.NewProgrammableTransactionBuilder()
 	if err := ptb.PayAllIota(req.Recipient); err != nil {
@@ -905,7 +905,7 @@ func (c *GraphQLClient) PayAllIota(
 	pt := ptb.Finish()
 
 	var err error
-	gasBudget := uint64(iotaclient.DefaultGasBudget)
+	gasBudget := uint64(api.DefaultGasBudget)
 	if req.GasBudget != nil {
 		gasBudget, err = bigIntToUint64(req.GasBudget, "gasBudget")
 		if err != nil {
@@ -918,7 +918,7 @@ func (c *GraphQLClient) PayAllIota(
 
 	var objResp *iotajsonrpc.IotaObjectResponse
 	for _, coinID := range req.InputCoins {
-		objResp, err = c.GetObject(ctx, iotaclient.GetObjectRequest{
+		objResp, err = c.GetObject(ctx, api.GetObjectRequest{
 			ObjectID: coinID,
 		})
 		if err != nil {
@@ -946,7 +946,7 @@ func (c *GraphQLClient) PayAllIota(
 		pt,
 		gasPayment,
 		gasBudget,
-		iotaclient.DefaultGasPrice,
+		api.DefaultGasPrice,
 	)
 
 	txBytes, err := bcs.Marshal(&tx)
@@ -963,7 +963,7 @@ func (c *GraphQLClient) PayAllIota(
 
 func (c *GraphQLClient) PayIota(
 	ctx context.Context,
-	req iotaclient.PayIotaRequest,
+	req api.PayIotaRequest,
 ) (*iotajsonrpc.TransactionBytes, error) {
 	coinRefs, err := c.fetchObjectRefs(ctx, req.InputCoins)
 	if err != nil {
@@ -988,7 +988,7 @@ func (c *GraphQLClient) PayIota(
 	}
 	pt := ptb.Finish()
 
-	gasBudget := uint64(iotaclient.DefaultGasBudget)
+	gasBudget := uint64(api.DefaultGasBudget)
 	if req.GasBudget != nil {
 		gasBudget, err = bigIntToUint64(req.GasBudget, "gasBudget")
 		if err != nil {
@@ -1002,9 +1002,9 @@ func (c *GraphQLClient) PayIota(
 	tx := iotago.NewProgrammable(
 		req.Signer,
 		pt,
-		gasPayment,
+		coinRefs,
 		gasBudget,
-		iotaclient.DefaultGasPrice,
+		api.DefaultGasPrice,
 	)
 
 	txBytes, err := bcs.Marshal(&tx)
@@ -1014,14 +1014,14 @@ func (c *GraphQLClient) PayIota(
 
 	return &iotajsonrpc.TransactionBytes{
 		TxBytes:      txBytes,
-		Gas:          gasPayment,
+		Gas:          coinRefs,
 		InputObjects: inputObjects,
 	}, nil
 }
 
 func (c *GraphQLClient) Publish(
 	ctx context.Context,
-	req iotaclient.PublishRequest,
+	req api.PublishRequest,
 ) (*iotajsonrpc.TransactionBytes, error) {
 	if req.Sender == nil {
 		return nil, fmt.Errorf("Publish: sender address is required")
@@ -1046,7 +1046,7 @@ func (c *GraphQLClient) Publish(
 	pt := ptb.Finish()
 
 	// Get gas budget
-	gasBudget := uint64(iotaclient.DefaultGasBudget)
+	gasBudget := uint64(api.DefaultGasBudget)
 	if req.GasBudget != nil {
 		var err error
 		gasBudget, err = bigIntToUint64(req.GasBudget, "gasBudget")
@@ -1071,7 +1071,7 @@ func (c *GraphQLClient) Publish(
 		pt,
 		gasPayment,
 		gasBudget,
-		iotaclient.DefaultGasPrice,
+		api.DefaultGasPrice,
 	)
 
 	// Serialize transaction
@@ -1089,21 +1089,21 @@ func (c *GraphQLClient) Publish(
 
 func (c *GraphQLClient) RequestAddStake(
 	ctx context.Context,
-	req iotaclient.RequestAddStakeRequest,
+	req api.RequestAddStakeRequest,
 ) (*iotajsonrpc.TransactionBytes, error) {
 	return nil, fmt.Errorf("not implemented: %s", "RequestAddStake")
 }
 
 func (c *GraphQLClient) RequestWithdrawStake(
 	ctx context.Context,
-	req iotaclient.RequestWithdrawStakeRequest,
+	req api.RequestWithdrawStakeRequest,
 ) (*iotajsonrpc.TransactionBytes, error) {
 	return nil, fmt.Errorf("not implemented: %s", "RequestWithdrawStake")
 }
 
 func (c *GraphQLClient) SplitCoin(
 	ctx context.Context,
-	req iotaclient.SplitCoinRequest,
+	req api.SplitCoinRequest,
 ) (*iotajsonrpc.TransactionBytes, error) {
 	coinRef, err := c.fetchObjectRefs(ctx, []*iotago.ObjectID{req.Coin})
 	if err != nil {
@@ -1125,7 +1125,7 @@ func (c *GraphQLClient) SplitCoin(
 	}
 	pt := ptb.Finish()
 
-	gasBudget := uint64(iotaclient.DefaultGasBudget)
+	gasBudget := uint64(api.DefaultGasBudget)
 	if req.GasBudget != nil {
 		gasBudget, err = bigIntToUint64(req.GasBudget, "gasBudget")
 		if err != nil {
@@ -1149,7 +1149,7 @@ func (c *GraphQLClient) SplitCoin(
 		pt,
 		gasPayment,
 		gasBudget,
-		iotaclient.DefaultGasPrice,
+		api.DefaultGasPrice,
 	)
 
 	txBytes, err := bcs.Marshal(&tx)
@@ -1166,14 +1166,14 @@ func (c *GraphQLClient) SplitCoin(
 
 func (c *GraphQLClient) SplitCoinEqual(
 	ctx context.Context,
-	req iotaclient.SplitCoinEqualRequest,
+	req api.SplitCoinEqualRequest,
 ) (*iotajsonrpc.TransactionBytes, error) {
 	return nil, fmt.Errorf("not implemented: %s", "SplitCoinEqual")
 }
 
 func (c *GraphQLClient) TransferObject(
 	ctx context.Context,
-	req iotaclient.TransferObjectRequest,
+	req api.TransferObjectRequest,
 ) (*iotajsonrpc.TransactionBytes, error) {
 	if req.Signer == nil {
 		return nil, fmt.Errorf("TransferObject: signer address is required")
@@ -1196,7 +1196,7 @@ func (c *GraphQLClient) TransferObject(
 	}
 	pt := ptb.Finish()
 
-	gasBudget := uint64(iotaclient.DefaultGasBudget)
+	gasBudget := uint64(api.DefaultGasBudget)
 	if req.GasBudget != nil {
 		gasBudget, err = bigIntToUint64(req.GasBudget, "gasBudget")
 		if err != nil {
@@ -1220,7 +1220,7 @@ func (c *GraphQLClient) TransferObject(
 		pt,
 		gasPayment,
 		gasBudget,
-		iotaclient.DefaultGasPrice,
+		api.DefaultGasPrice,
 	)
 
 	txBytes, err := bcs.Marshal(&tx)
@@ -1239,7 +1239,7 @@ func (c *GraphQLClient) loadObjectRef(ctx context.Context, objectID *iotago.Obje
 	if objectID == nil {
 		return nil, fmt.Errorf("object ID is nil")
 	}
-	objResp, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: objectID})
+	objResp, err := c.GetObject(ctx, api.GetObjectRequest{ObjectID: objectID})
 	if err != nil {
 		return nil, err
 	}
@@ -1272,7 +1272,7 @@ func (c *GraphQLClient) resolveGasObject(
 	const pageLimit = int(50)
 	var cursor *string
 	for {
-		coins, err := c.GetCoins(ctx, iotaclient.GetCoinsRequest{
+		coins, err := c.GetCoins(ctx, api.GetCoinsRequest{
 			Owner:  signer,
 			Limit:  pageLimit,
 			Cursor: cursor,
@@ -1313,7 +1313,7 @@ func newInputObjectKind(ref *iotago.ObjectRef) iotajsonrpc.InputObjectKind {
 
 func (c *GraphQLClient) TransferIota(
 	ctx context.Context,
-	req iotaclient.TransferIotaRequest,
+	req api.TransferIotaRequest,
 ) (*iotajsonrpc.TransactionBytes, error) {
 	return nil, fmt.Errorf("not implemented: %s", "TransferIota")
 }
@@ -1325,7 +1325,7 @@ func (c *GraphQLClient) GetCoinObjsForTargetAmount(
 	gasAmount uint64,
 ) (iotajsonrpc.Coins, error) {
 	coins, err := c.GetCoins(
-		ctx, iotaclient.GetCoinsRequest{
+		ctx, api.GetCoinsRequest{
 			Owner: address,
 			Limit: 50,
 		},
@@ -1342,7 +1342,7 @@ func (c *GraphQLClient) GetCoinObjsForTargetAmount(
 
 func (c *GraphQLClient) SignAndExecuteTransaction(
 	ctx context.Context,
-	req *iotaclient.SignAndExecuteTransactionRequest,
+	req *api.SignAndExecuteTransactionRequest,
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	signature, err := req.Signer.SignTransactionBlock(req.TxDataBytes, iotasigner.DefaultIntent())
 	if err != nil {
@@ -1350,7 +1350,7 @@ func (c *GraphQLClient) SignAndExecuteTransaction(
 	}
 	resp, err := c.ExecuteTransactionBlock(
 		ctx,
-		iotaclient.ExecuteTransactionBlockRequest{
+		api.ExecuteTransactionBlockRequest{
 			TxDataBytes: req.TxDataBytes,
 			Signatures:  []*iotasigner.Signature{signature},
 			Options:     req.Options,
@@ -1370,7 +1370,7 @@ func (c *GraphQLClient) UpdateObjectRef(
 ) (*iotago.ObjectRef, error) {
 	res, err := c.GetObject(
 		ctx,
-		iotaclient.GetObjectRequest{
+		api.GetObjectRequest{
 			ObjectID: ref.ObjectID,
 		},
 	)
@@ -1412,7 +1412,7 @@ func (c *GraphQLClient) MintToken(
 	)
 	pt := ptb.Finish()
 
-	return c.SignAndExecuteTxWithRetry(ctx, signer, pt, nil, iotaclient.DefaultGasBudget, iotaclient.DefaultGasPrice, options)
+	return c.SignAndExecuteTxWithRetry(ctx, signer, pt, nil, api.DefaultGasBudget, api.DefaultGasPrice, options)
 }
 
 func (c *GraphQLClient) GetIotaCoinsOwnedByAddress(ctx context.Context, address *iotago.Address) (iotajsonrpc.Coins, error) {
@@ -1456,7 +1456,7 @@ func (c *GraphQLClient) GetAllBalances(ctx context.Context, owner *iotago.Addres
 	return balances, nil
 }
 
-func (c *GraphQLClient) GetAllCoins(ctx context.Context, req iotaclient.GetAllCoinsRequest) (*iotajsonrpc.CoinPage, error) {
+func (c *GraphQLClient) GetAllCoins(ctx context.Context, req api.GetAllCoinsRequest) (*iotajsonrpc.CoinPage, error) {
 	if req.Owner == nil {
 		return nil, fmt.Errorf("owner address is required")
 	}
@@ -1498,7 +1498,7 @@ func (c *GraphQLClient) GetAllCoins(ctx context.Context, req iotaclient.GetAllCo
 	}, nil
 }
 
-func (c *GraphQLClient) GetBalance(ctx context.Context, req iotaclient.GetBalanceRequest) (*iotajsonrpc.Balance, error) {
+func (c *GraphQLClient) GetBalance(ctx context.Context, req api.GetBalanceRequest) (*iotajsonrpc.Balance, error) {
 	if req.Owner == nil {
 		return nil, fmt.Errorf("owner address is required")
 	}
@@ -1534,7 +1534,7 @@ func (c *GraphQLClient) GetCoinMetadata(ctx context.Context, coinType string) (*
 	}, nil
 }
 
-func (c *GraphQLClient) GetCoins(ctx context.Context, req iotaclient.GetCoinsRequest) (*iotajsonrpc.CoinPage, error) {
+func (c *GraphQLClient) GetCoins(ctx context.Context, req api.GetCoinsRequest) (*iotajsonrpc.CoinPage, error) {
 	if req.Owner == nil {
 		return nil, fmt.Errorf("owner address is required")
 	}
@@ -1660,7 +1660,7 @@ func (c *GraphQLClient) GetCheckpoint(ctx context.Context, checkpointID *iotajso
 	return nil, fmt.Errorf("not implemented: %s", "GetCheckpoint")
 }
 
-func (c *GraphQLClient) GetCheckpoints(ctx context.Context, req iotaclient.GetCheckpointsRequest) (*iotajsonrpc.CheckpointPage, error) {
+func (c *GraphQLClient) GetCheckpoints(ctx context.Context, req api.GetCheckpointsRequest) (*iotajsonrpc.CheckpointPage, error) {
 	return nil, fmt.Errorf("not implemented: %s", "GetCheckpoints")
 }
 
@@ -1672,7 +1672,7 @@ func (c *GraphQLClient) GetLatestCheckpointSequenceNumber(ctx context.Context) (
 	return "", fmt.Errorf("not implemented: %s", "GetLatestCheckpointSequenceNumber")
 }
 
-func (c *GraphQLClient) GetObject(ctx context.Context, req iotaclient.GetObjectRequest) (*iotajsonrpc.IotaObjectResponse, error) {
+func (c *GraphQLClient) GetObject(ctx context.Context, req api.GetObjectRequest) (*iotajsonrpc.IotaObjectResponse, error) {
 	if req.ObjectID == nil {
 		return nil, fmt.Errorf("object ID is required")
 	}
@@ -1691,7 +1691,7 @@ func (c *GraphQLClient) GetObject(ctx context.Context, req iotaclient.GetObjectR
 		showContent = &trueVal
 	}
 
-	return iotaclient.Retry(
+	return api.Retry(
 		ctx,
 		func() (*iotajsonrpc.IotaObjectResponse, error) {
 			resp, err := GetObject(ctx, c.client, objAddr,
@@ -1745,7 +1745,7 @@ func (c *GraphQLClient) GetTotalTransactionBlocks(ctx context.Context) (string, 
 	return "", fmt.Errorf("not implemented: %s", "GetTotalTransactionBlocks")
 }
 
-func (c *GraphQLClient) GetTransactionBlock(ctx context.Context, req iotaclient.GetTransactionBlockRequest) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+func (c *GraphQLClient) GetTransactionBlock(ctx context.Context, req api.GetTransactionBlockRequest) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	if req.Digest == nil {
 		return nil, fmt.Errorf("transaction digest is required")
 	}
@@ -1761,20 +1761,20 @@ func (c *GraphQLClient) GetTransactionBlock(ctx context.Context, req iotaclient.
 	return convertGraphQLTransactionBlockToResponse(&resp.TransactionBlock, req.Options)
 }
 
-func (c *GraphQLClient) MultiGetObjects(ctx context.Context, req iotaclient.MultiGetObjectsRequest) ([]iotajsonrpc.IotaObjectResponse, error) {
+func (c *GraphQLClient) MultiGetObjects(ctx context.Context, req api.MultiGetObjectsRequest) ([]iotajsonrpc.IotaObjectResponse, error) {
 	return nil, fmt.Errorf("not implemented: %s", "MultiGetObjects")
 }
 
 func (c *GraphQLClient) MultiGetTransactionBlocks(
 	ctx context.Context,
-	req iotaclient.MultiGetTransactionBlocksRequest,
+	req api.MultiGetTransactionBlocksRequest,
 ) ([]*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	return nil, fmt.Errorf("not implemented: %s", "MultiGetTransactionBlocks")
 }
 
 func (c *GraphQLClient) TryGetPastObject(
 	ctx context.Context,
-	req iotaclient.TryGetPastObjectRequest,
+	req api.TryGetPastObjectRequest,
 ) (*iotajsonrpc.IotaPastObjectResponse, error) {
 	if req.ObjectID == nil {
 		return nil, fmt.Errorf("object ID is required")
@@ -1810,7 +1810,7 @@ func (c *GraphQLClient) TryGetPastObject(
 
 func (c *GraphQLClient) TryMultiGetPastObjects(
 	ctx context.Context,
-	req iotaclient.TryMultiGetPastObjectsRequest,
+	req api.TryMultiGetPastObjectsRequest,
 ) ([]*iotajsonrpc.IotaPastObjectResponse, error) {
 	return nil, fmt.Errorf("not implemented: %s", "TryMultiGetPastObjects")
 }
@@ -1823,9 +1823,8 @@ func (c *GraphQLClient) Health(ctx context.Context) error {
 	return fmt.Errorf("not implemented: %s", "Health")
 }
 
-func (c *GraphQLClient) IotaClient() *iotaclient.Client {
-	// Not implemented for GraphQL client
-	return nil
+func (c *GraphQLClient) GetIotaClient() api.IotaClient {
+	return c
 }
 
 func (c *GraphQLClient) DeployISCContracts(ctx context.Context, signer iotasigner.Signer) (iotago.PackageID, error) {
@@ -1841,7 +1840,7 @@ func (c *GraphQLClient) FindCoinsForGasPayment(
 ) ([]*iotago.ObjectRef, error) {
 	coinType := iotajsonrpc.IotaCoinType.String()
 	coinPage, err := c.GetCoins(
-		ctx, iotaclient.GetCoinsRequest{
+		ctx, api.GetCoinsRequest{
 			CoinType: &coinType,
 			Owner:    owner,
 		},
@@ -1907,7 +1906,7 @@ func (c *GraphQLClient) SignAndExecuteTxWithRetry(
 		}
 
 		txnResponse, err = c.SignAndExecuteTransaction(
-			ctx, &iotaclient.SignAndExecuteTransactionRequest{
+			ctx, &api.SignAndExecuteTransactionRequest{
 				TxDataBytes: txnBytes,
 				Signer:      signer,
 				Options:     options,
@@ -2795,28 +2794,6 @@ func convertGraphQLTransactionBlockToResponse(
 				NonRefundableStorageFee: &nonRefundableStorageFee,
 			}
 		}
-<<<<<<< HEAD
-=======
-	}
-
-	// Populate gas effects from GraphQL if they're missing from BCS
-	if options != nil && options.ShowEffects && result.Effects != nil {
-		effects := &result.Effects.Data
-		if effects.V1 != nil && (effects.V1.GasUsed.ComputationCost == nil || effects.V1.GasUsed.ComputationCost.String() == "0") {
-			gasEffects := tx.Effects.GasEffects
-			gasSummary := gasEffects.GasSummary
-			computationCost := gasSummary.ComputationCost
-			storageCost := gasSummary.StorageCost
-			storageRebate := gasSummary.StorageRebate
-			nonRefundableStorageFee := gasSummary.NonRefundableStorageFee
-			effects.V1.GasUsed = iotajsonrpc.GasCostSummary{
-				ComputationCost:         &computationCost,
-				StorageCost:             &storageCost,
-				StorageRebate:           &storageRebate,
-				NonRefundableStorageFee: &nonRefundableStorageFee,
-			}
-		}
->>>>>>> d7f8651f4 (refactor: Replace http client to graphql client)
 	}
 
 	if err := applyShowEvents(result, options, tx.Effects.Events.Nodes, digest); err != nil {
@@ -2861,7 +2838,7 @@ func convertGraphQLEffects(
 	}
 
 	var decodedEffects iotajsonrpc.IotaTransactionBlockEffects
-	if err := iotaclient.UnmarshalBCS(bcsData, &decodedEffects); err != nil {
+	if err := api.UnmarshalBCS(bcsData, &decodedEffects); err != nil {
 		return nil, fmt.Errorf("failed to decode BCS effects: %w", err)
 	}
 
@@ -3418,7 +3395,7 @@ func convertDryRunResults(resp *DryRunTransactionBlockResponse) (*iotajsonrpc.Dr
 	var input serialization.TagJson[iotajsonrpc.IotaTransactionBlockData]
 	if len(dryRunResult.Transaction.Bcs) > 0 {
 		var txData iotajsonrpc.IotaTransactionBlockData
-		if err := iotaclient.UnmarshalBCS(dryRunResult.Transaction.Bcs, &txData); err != nil {
+		if err := api.UnmarshalBCS(dryRunResult.Transaction.Bcs, &txData); err != nil {
 			return nil, fmt.Errorf("failed to decode input transaction: %w", err)
 		}
 		input = serialization.TagJson[iotajsonrpc.IotaTransactionBlockData]{

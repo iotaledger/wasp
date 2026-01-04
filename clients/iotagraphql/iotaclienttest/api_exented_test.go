@@ -8,7 +8,7 @@ import (
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/testutil/l1starter"
 )
 
@@ -19,7 +19,7 @@ func TestGetDynamicFields(t *testing.T) {
 	t.Run("GetObject", func(t *testing.T) {
 		obj, err := client.GetObject(ctx, iotaclient.GetObjectRequest{
 			ObjectID: iotago.MustObjectIDFromHex("0x5"),
-			Options: &iotajsonrpc.IotaObjectDataOptions{
+			Options: &iotagraphql.IotaObjectDataOptions{
 				ShowContent: true,
 				ShowType:    true,
 			},
@@ -69,18 +69,18 @@ func TestGetOwnedObjects(t *testing.T) {
 		"struct tag", func(t *testing.T) {
 			structTag, err := iotago.StructTagFromString("0x2::coin::Coin<0x2::iota::IOTA>")
 			require.NoError(t, err)
-			query := iotajsonrpc.IotaObjectResponseQuery{
-				Filter: &iotajsonrpc.IotaObjectDataFilter{
+			query := iotagraphql.IotaObjectResponseQuery{
+				Filter: &iotagraphql.IotaObjectDataFilter{
 					StructType: structTag,
 				},
-				Options: &iotajsonrpc.IotaObjectDataOptions{
+				Options: &iotagraphql.IotaObjectDataOptions{
 					ShowType:    true,
 					ShowContent: true,
 				},
 			}
 			limit := int(10)
 			objs, err := client.GetOwnedObjects(
-				ctx, iotaclient.GetOwnedObjectsRequest{
+				ctx, iotagraphql.GetOwnedObjectsRequest{
 					Address: owner,
 					Query:   &query,
 					Limit:   &limit,
@@ -94,18 +94,18 @@ func TestGetOwnedObjects(t *testing.T) {
 
 	t.Run(
 		"move module", func(t *testing.T) {
-			query := iotajsonrpc.IotaObjectResponseQuery{
-				Filter: &iotajsonrpc.IotaObjectDataFilter{
+			query := iotagraphql.IotaObjectResponseQuery{
+				Filter: &iotagraphql.IotaObjectDataFilter{
 					AddressOwner: owner,
 				},
-				Options: &iotajsonrpc.IotaObjectDataOptions{
+				Options: &iotagraphql.IotaObjectDataOptions{
 					ShowType:    true,
 					ShowContent: true,
 				},
 			}
 			limit := int(9)
 			objs, err := client.GetOwnedObjects(
-				ctx, iotaclient.GetOwnedObjectsRequest{
+				ctx, iotagraphql.GetOwnedObjectsRequest{
 					Address: owner,
 					Query:   &query,
 					Limit:   &limit,

@@ -1,11 +1,6 @@
 package iotajsonrpc
 
 import (
-	"encoding/json"
-	"fmt"
-	"reflect"
-	"strings"
-
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/serialization"
 )
@@ -39,45 +34,17 @@ type Stake struct {
 	StakeRequestEpoch *BigInt         `json:"stakeRequestEpoch"`
 	StakeActiveEpoch  *BigInt         `json:"stakeActiveEpoch"`
 	Principal         *BigInt         `json:"principal"`
-	StakeStatus       *StakeStatus    `json:"-,flatten"`
+	StakeStatus       *StakeStatus    `json:"status"`
 }
 
 func (s *Stake) IsActive() bool {
 	return s.StakeStatus.Data.Active != nil
 }
 
-type JsonFlatten[T Stake] struct {
-	Data T
-}
-
-func (s *JsonFlatten[T]) UnmarshalJSON(data []byte) error {
-	err := json.Unmarshal(data, &s.Data)
-	if err != nil {
-		return err
-	}
-	rv := reflect.ValueOf(s).Elem().Field(0)
-	for i := 0; i < rv.Type().NumField(); i++ {
-		tag := rv.Type().Field(i).Tag.Get("json")
-		if strings.Contains(tag, "flatten") {
-			if rv.Field(i).Kind() != reflect.Pointer {
-				return fmt.Errorf("field %s not pointer", rv.Field(i).Type().Name())
-			}
-			if rv.Field(i).IsNil() {
-				rv.Field(i).Set(reflect.New(rv.Field(i).Type().Elem()))
-			}
-			err = json.Unmarshal(data, rv.Field(i).Interface())
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
 type DelegatedStake struct {
-	ValidatorAddress iotago.Address       `json:"validatorAddress"`
-	StakingPool      iotago.ObjectID      `json:"stakingPool"`
-	Stakes           []JsonFlatten[Stake] `json:"stakes"`
+	ValidatorAddress iotago.Address `json:"validatorAddress"`
+	StakingPool      iotago.ObjectID `json:"stakingPool"`
+	Stakes           []Stake        `json:"stakes"`
 }
 
 type IotaValidatorSummary struct {

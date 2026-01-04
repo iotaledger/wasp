@@ -12,7 +12,7 @@ import (
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
@@ -62,7 +62,7 @@ func TestDepositFundsToGasCoin(t *testing.T) {
 
 	res, err := client.TransferIota(context.Background(), iotaclient.TransferIotaRequest{
 		Signer:    kp.Address().AsIotaAddress(),
-		GasBudget: iotajsonrpc.NewBigIntInt64(iotaclient.DefaultGasBudget),
+		GasBudget: iotagraphql.NewBigIntInt64(iotaclient.DefaultGasBudget),
 		Recipient: committeeAddress.AsIotaAddress(),
 		ObjectID:  coins.Data[1].CoinObjectID,
 	})
@@ -71,7 +71,7 @@ func TestDepositFundsToGasCoin(t *testing.T) {
 	response, err := client.SignAndExecuteTransaction(context.Background(), &iotaclient.SignAndExecuteTransactionRequest{
 		Signer:      cryptolib.SignerToIotaSigner(wallet),
 		TxDataBytes: res.TxBytes,
-		Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+		Options: &iotagraphql.IotaTransactionBlockResponseOptions{
 			ShowObjectChanges: true,
 			ShowEffects:       true,
 		},
@@ -80,7 +80,7 @@ func TestDepositFundsToGasCoin(t *testing.T) {
 
 	res2, err := client.TransferIota(context.Background(), iotaclient.TransferIotaRequest{
 		Signer:    kp.Address().AsIotaAddress(),
-		GasBudget: iotajsonrpc.NewBigIntInt64(iotaclient.DefaultGasBudget),
+		GasBudget: iotagraphql.NewBigIntInt64(iotaclient.DefaultGasBudget),
 		Recipient: committeeAddress.AsIotaAddress(),
 		ObjectID:  coins.Data[0].CoinObjectID,
 	})
@@ -89,7 +89,7 @@ func TestDepositFundsToGasCoin(t *testing.T) {
 	response2, err := client.SignAndExecuteTransaction(context.Background(), &iotaclient.SignAndExecuteTransactionRequest{
 		Signer:      cryptolib.SignerToIotaSigner(wallet),
 		TxDataBytes: res2.TxBytes,
-		Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+		Options: &iotagraphql.IotaTransactionBlockResponseOptions{
 			ShowObjectChanges: true,
 			ShowEffects:       true,
 		},

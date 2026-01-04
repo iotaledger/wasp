@@ -18,9 +18,9 @@ import (
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/contracts"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient/iotaclienttest"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql/iotaclienttest"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/v2/packages/coin"
@@ -314,16 +314,16 @@ func (env *Solo) deployChain(chainAdmin *cryptolib.KeyPair, initCommonAccountBas
 		initCoin = env.makeBaseTokenCoin(
 			anchorOwner,
 			initCommonAccountBaseTokens,
-			func(c *iotajsonrpc.Coin) bool {
+			func(c *iotagraphql.Coin) bool {
 				return !c.CoinObjectID.Equals(*gasCoinRef.ObjectID)
 			},
 		)
 	}
 
-	gasPayment, err := iotajsonrpc.PickupCoinsWithFilter(
+	gasPayment, err := iotagraphql.PickupCoinsWithFilter(
 		env.L1BaseTokenCoins(anchorOwner.Address()),
 		uint64(iotaclient.DefaultGasBudget),
-		func(c *iotajsonrpc.Coin) bool {
+		func(c *iotagraphql.Coin) bool {
 			return !c.CoinObjectID.Equals(*gasCoinRef.ObjectID) &&
 				(initCoin == nil || !c.CoinObjectID.Equals(*initCoin.ObjectID))
 		},
@@ -459,7 +459,7 @@ func (env *Solo) GetCoin(id *iotago.ObjectID) *coin.CoinWithRef {
 		env.ctx,
 		iotaclient.GetObjectRequest{
 			ObjectID: id,
-			Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
+			Options:  &iotagraphql.IotaObjectDataOptions{ShowBcs: true},
 		},
 	)
 	require.NoError(env.T, err)
@@ -511,7 +511,7 @@ func (ch *Chain) collateBatch(maxRequestsInBlock int) []isc.Request {
 
 // RunRequestBatch runs a batch of requests pending to be processed
 func (ch *Chain) RunRequestBatch(maxRequestsInBlock int) (
-	*iotajsonrpc.IotaTransactionBlockResponse,
+	*iotagraphql.IotaTransactionBlockResponse,
 	[]*vm.RequestResult,
 ) {
 	ch.runVMMutex.Lock()
@@ -568,11 +568,11 @@ func (env *Solo) L1CoinInfo(coinType coin.Type) *parameters.IotaCoinInfo {
 	return parameters.IotaCoinInfoFromL1Metadata(coinType, md, coin.Value(ts.Value.Uint64()))
 }
 
-func (env *Solo) L1BaseTokenCoins(addr *cryptolib.Address) []*iotajsonrpc.Coin {
+func (env *Solo) L1BaseTokenCoins(addr *cryptolib.Address) []*iotagraphql.Coin {
 	return env.L1Coins(addr, coin.BaseTokenType)
 }
 
-func (env *Solo) L1AllCoins(addr *cryptolib.Address) iotajsonrpc.Coins {
+func (env *Solo) L1AllCoins(addr *cryptolib.Address) iotagraphql.Coins {
 	r, err := env.L1Client().GetCoins(env.ctx, iotaclient.GetCoinsRequest{
 		Owner: addr.AsIotaAddress(),
 		Limit: math.MaxInt,
@@ -581,7 +581,7 @@ func (env *Solo) L1AllCoins(addr *cryptolib.Address) iotajsonrpc.Coins {
 	return r.Data
 }
 
-func (env *Solo) L1Coins(addr *cryptolib.Address, coinType coin.Type) []*iotajsonrpc.Coin {
+func (env *Solo) L1Coins(addr *cryptolib.Address, coinType coin.Type) []*iotagraphql.Coin {
 	coinTypeStr := coinType.String()
 	r, err := env.L1Client().GetCoins(env.ctx, iotaclient.GetCoinsRequest{
 		Owner:    addr.AsIotaAddress(),
@@ -621,7 +621,7 @@ func (env *Solo) executePTB(
 	wallet *cryptolib.KeyPair,
 	gasPaymentCoins []*iotago.ObjectRef,
 	gasBudget, gasPrice uint64,
-) *iotajsonrpc.IotaTransactionBlockResponse {
+) *iotagraphql.IotaTransactionBlockResponse {
 	tx := iotago.NewProgrammable(
 		wallet.Address().AsIotaAddress(),
 		ptb,
@@ -638,7 +638,7 @@ func (env *Solo) executePTB(
 		&iotaclient.SignAndExecuteTransactionRequest{
 			TxDataBytes: txnBytes,
 			Signer:      cryptolib.SignerToIotaSigner(wallet),
-			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+			Options: &iotagraphql.IotaTransactionBlockResponseOptions{
 				ShowEffects:        true,
 				ShowObjectChanges:  true,
 				ShowEvents:         true,
@@ -703,7 +703,7 @@ func (env *Solo) L1MintObject(owner *cryptolib.KeyPair) isc.IotaObject {
 
 	o, err := env.ISCMoveClient().GetObject(env.Ctx(), iotaclient.GetObjectRequest{
 		ObjectID: testAnchor.ObjectID,
-		Options: &iotajsonrpc.IotaObjectDataOptions{
+		Options: &iotagraphql.IotaObjectDataOptions{
 			ShowType: true,
 		},
 	})

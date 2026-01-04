@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/apiclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/tools/cluster"
@@ -91,7 +91,7 @@ func TestRotationOverlappingCommitteesWithConcurrentRequests(t *testing.T) {
 
 	object, err := clu.L1Client().GetObject(context.Background(), iotaclient.GetObjectRequest{
 		ObjectID: chainObjId,
-		Options: &iotajsonrpc.IotaObjectDataOptions{
+		Options: &iotagraphql.IotaObjectDataOptions{
 			ShowContent: true,
 		},
 	})

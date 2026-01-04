@@ -3,7 +3,6 @@ package iotajsonrpc
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
@@ -66,36 +65,10 @@ func (t CoinType) MarshalJSON() ([]byte, error) {
 	return json.Marshal(coinType.String())
 }
 
-func (t *CoinType) UnmarshalJSON(data []byte) error {
-	var s string
-	if err := json.Unmarshal(data, &s); err != nil {
-		return err
-	}
-	coinType, err := CoinTypeFromString(s)
-	if err != nil {
-		return err
-	}
-	*t = coinType
-	return nil
-}
-
 type CoinValue uint64
 
 func (t CoinValue) MarshalJSON() ([]byte, error) {
 	return json.Marshal(fmt.Sprintf("%d", t))
-}
-
-func (t *CoinValue) UnmarshalJSON(data []byte) error {
-	var s string
-	if err := json.Unmarshal(data, &s); err != nil {
-		return err
-	}
-	v, err := strconv.ParseUint(s, 10, 64)
-	if err != nil {
-		return err
-	}
-	*t = CoinValue(v)
-	return nil
 }
 
 func (t CoinValue) Uint64() uint64 {

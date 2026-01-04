@@ -6,7 +6,7 @@ import (
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 )
 
 func (c *Client) GetCoin(
@@ -15,7 +15,7 @@ func (c *Client) GetCoin(
 ) (*MoveCoin, error) {
 	getCoinRes, err := c.GetObject(ctx, iotaclient.GetObjectRequest{
 		ObjectID: coinID,
-		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
+		Options:  &iotagraphql.IotaObjectDataOptions{ShowBcs: true},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to call GetObject: %w", err)

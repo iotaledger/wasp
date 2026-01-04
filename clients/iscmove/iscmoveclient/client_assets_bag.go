@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 )
 
@@ -50,7 +51,7 @@ func (c *Client) GetAssetsBagWithBalances(
 				// DynamicObject: use GetObject with the ObjectID
 				resGetObject, err2 := c.GetObject(ctx, iotaclient.GetObjectRequest{
 					ObjectID: &data.ObjectID,
-					Options:  &iotajsonrpc.IotaObjectDataOptions{ShowContent: true},
+					Options:  &iotagraphql.IotaObjectDataOptions{ShowContent: true},
 				})
 				if err2 != nil {
 					return nil, fmt.Errorf("failed to call GetObject for Balance (coin type %s): %w", cointype, err2)
@@ -77,7 +78,7 @@ func (c *Client) GetAssetsBagWithBalances(
 			}
 
 			var coinBalance struct {
-				Value *iotajsonrpc.BigInt `json:"value"`
+				Value *iotagraphql.BigInt `json:"value"`
 			}
 
 			err = json.Unmarshal(balanceJSON, &coinBalance)
@@ -85,7 +86,7 @@ func (c *Client) GetAssetsBagWithBalances(
 				return nil, fmt.Errorf("failed to unmarshal balance JSON: %w", err)
 			}
 
-			bag.SetCoin(cointype, iotajsonrpc.CoinValue(coinBalance.Value.Uint64()))
+			bag.SetCoin(cointype, iotagraphql.CoinValue(coinBalance.Value.Uint64()))
 		} else {
 			// non-coin asset (i.e. an "object", nft, etc)
 			typ, err := iotago.ObjectTypeFromString(data.ObjectType)

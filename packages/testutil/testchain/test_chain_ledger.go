@@ -15,7 +15,7 @@ import (
 	"github.com/iotaledger/wasp/v2/clients"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/v2/packages/coin"
@@ -62,7 +62,7 @@ func (tcl *TestChainLedger) ChainID() isc.ChainID {
 }
 
 func (tcl *TestChainLedger) MakeTxChainOrigin() (*isc.StateAnchor, coin.Value) {
-	coinType := iotajsonrpc.IotaCoinType.String()
+	coinType := iotagraphql.IotaCoinType.String()
 	time.Sleep(1 * time.Second) // FIXME tmp for graphql
 	resGetCoins, err := tcl.l1client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: tcl.chainOwner.Address().AsIotaAddress(), CoinType: &coinType})
 	require.NoError(tcl.t, err)
@@ -177,7 +177,7 @@ func (tcl *TestChainLedger) RunOnChainStateTransition(anchor *isc.StateAnchor, p
 		&iotaclient.SignAndExecuteTransactionRequest{
 			TxDataBytes: txBytes,
 			Signer:      signer,
-			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true},
+			Options:     &iotagraphql.IotaTransactionBlockResponseOptions{ShowEffects: true},
 		},
 	)
 	if err != nil {

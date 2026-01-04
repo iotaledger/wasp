@@ -8,7 +8,7 @@ import (
 	"slices"
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/hashing"
 )
@@ -145,7 +145,7 @@ type Assets struct {
 
 type (
 	CoinBalances struct {
-		items map[iotajsonrpc.CoinType]iotajsonrpc.CoinValue `bcs:"export"`
+		items map[iotagraphql.CoinType]iotagraphql.CoinValue `bcs:"export"`
 	}
 	ObjectCollection struct {
 		items map[iotago.ObjectID]iotago.ObjectType `bcs:"export"`
@@ -159,31 +159,31 @@ func NewEmptyAssets() *Assets {
 	}
 }
 
-func NewAssets(baseTokens iotajsonrpc.CoinValue) *Assets {
+func NewAssets(baseTokens iotagraphql.CoinValue) *Assets {
 	r := NewEmptyAssets()
 	if baseTokens > 0 {
-		r.SetCoin(iotajsonrpc.IotaCoinType, baseTokens)
+		r.SetCoin(iotagraphql.IotaCoinType, baseTokens)
 	}
 	return r
 }
 
 func NewCoinBalances() CoinBalances {
 	return CoinBalances{
-		items: make(map[iotajsonrpc.CoinType]iotajsonrpc.CoinValue),
+		items: make(map[iotagraphql.CoinType]iotagraphql.CoinValue),
 	}
 }
 
-func (c CoinBalances) Set(coinType iotajsonrpc.CoinType, amount iotajsonrpc.CoinValue) {
+func (c CoinBalances) Set(coinType iotagraphql.CoinType, amount iotagraphql.CoinValue) {
 	c.items[coinType] = amount
 }
 
-func (c CoinBalances) Get(coinType iotajsonrpc.CoinType) iotajsonrpc.CoinValue {
+func (c CoinBalances) Get(coinType iotagraphql.CoinType) iotagraphql.CoinValue {
 	return c.items[coinType]
 }
 
 // Iterate returns a deterministic iterator
-func (c CoinBalances) Iterate() iter.Seq2[iotajsonrpc.CoinType, iotajsonrpc.CoinValue] {
-	return func(yield func(iotajsonrpc.CoinType, iotajsonrpc.CoinValue) bool) {
+func (c CoinBalances) Iterate() iter.Seq2[iotagraphql.CoinType, iotagraphql.CoinValue] {
+	return func(yield func(iotagraphql.CoinType, iotagraphql.CoinValue) bool) {
 		for _, k := range slices.Sorted(maps.Keys(c.items)) {
 			if !yield(k, c.items[k]) {
 				return
@@ -226,7 +226,7 @@ func (o ObjectCollection) Iterate() iter.Seq2[iotago.ObjectID, iotago.ObjectType
 
 var ErrCoinNotFound = errors.New("coin not found")
 
-func (a *Assets) FindCoin(coinType iotajsonrpc.CoinType) (iotajsonrpc.CoinValue, error) {
+func (a *Assets) FindCoin(coinType iotagraphql.CoinType) (iotagraphql.CoinValue, error) {
 	for k, coin := range a.Coins.Iterate() {
 		isSame, err := iotago.IsSameResource(k.String(), coinType.String())
 		if err != nil {
@@ -241,7 +241,7 @@ func (a *Assets) FindCoin(coinType iotajsonrpc.CoinType) (iotajsonrpc.CoinValue,
 	return 0, ErrCoinNotFound
 }
 
-func (a *Assets) SetCoin(coinType iotajsonrpc.CoinType, amount iotajsonrpc.CoinValue) *Assets {
+func (a *Assets) SetCoin(coinType iotagraphql.CoinType, amount iotagraphql.CoinValue) *Assets {
 	a.Coins.Set(coinType, amount)
 	return a
 }
@@ -251,8 +251,8 @@ func (a *Assets) AddObject(objectID iotago.ObjectID, t iotago.ObjectType) *Asset
 	return a
 }
 
-func (a *Assets) BaseToken() iotajsonrpc.CoinValue {
-	token, err := a.FindCoin(iotajsonrpc.IotaCoinType)
+func (a *Assets) BaseToken() iotagraphql.CoinValue {
+	token, err := a.FindCoin(iotagraphql.IotaCoinType)
 	if err != nil {
 		if errors.Is(err, ErrCoinNotFound) {
 			return 0

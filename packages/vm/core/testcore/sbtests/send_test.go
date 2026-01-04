@@ -7,7 +7,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
+	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/solo"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/accounts"
@@ -150,7 +151,7 @@ func TestPingBaseTokens1(t *testing.T) {
 	t.Logf("----- BEFORE -----\nUser funds left: %s\nCommon account: %s", userFundsBefore, commonBefore)
 
 	expectedBack := solo.BaseTokensForL2Gas
-	ch.Env.AssertL1BaseTokens(userAddr, iotaclient.FundsFromFaucetAmount)
+	ch.Env.AssertL1BaseTokens(userAddr, coin.Value(iotaclient.FundsFromFaucetAmount))
 
 	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncPingAllowanceBack.Name).
 		AddBaseTokens(expectedBack * 2). // add extra base tokens besides allowance in order to estimate the gas fees
@@ -205,7 +206,7 @@ func TestSendObjectsBack(t *testing.T) {
 
 	objRes, err := ch.Env.L1Client().GetObject(ch.Env.Ctx(), iotaclient.GetObjectRequest{
 		ObjectID: &obj.ID,
-		Options: &iotajsonrpc.IotaObjectDataOptions{
+		Options: &iotagraphql.IotaObjectDataOptions{
 			ShowOwner: true,
 		},
 	})
@@ -233,7 +234,7 @@ func TestNFTOffledgerWithdraw(t *testing.T) {
 
 	objRes, err := ch.Env.L1Client().GetObject(ch.Env.Ctx(), iotaclient.GetObjectRequest{
 		ObjectID: &obj.ID,
-		Options: &iotajsonrpc.IotaObjectDataOptions{
+		Options: &iotagraphql.IotaObjectDataOptions{
 			ShowOwner: true,
 		},
 	})

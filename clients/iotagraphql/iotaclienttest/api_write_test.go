@@ -8,11 +8,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotatest"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/testutil/l1starter"
 )
 
@@ -22,13 +21,13 @@ func TestDevInspectTransactionBlock(t *testing.T) {
 
 	limit := int(3)
 	coinPages, err := client.GetCoins(
-		context.Background(), iotaclient.GetCoinsRequest{
+		context.Background(), iotagraphql.GetCoinsRequest{
 			Owner: sender.Address(),
 			Limit: limit,
 		},
 	)
 	require.NoError(t, err)
-	coins := iotajsonrpc.Coins(coinPages.Data)
+	coins := iotagraphql.Coins(coinPages.Data)
 
 	ptb := iotago.NewProgrammableTransactionBuilder()
 	ptb.PayAllIota(sender.Address())
@@ -37,18 +36,18 @@ func TestDevInspectTransactionBlock(t *testing.T) {
 		sender.Address(),
 		pt,
 		coins.CoinRefs(),
-		iotaclient.DefaultGasBudget,
-		iotaclient.DefaultGasPrice,
+		iotagraphql.DefaultGasBudget,
+		iotagraphql.DefaultGasPrice,
 	)
 	txBytes, err := bcs.Marshal(&tx.V1.Kind)
 	require.NoError(t, err)
 
 	resp, err := client.DevInspectTransactionBlock(
 		context.Background(),
-		iotaclient.DevInspectTransactionBlockRequest{
+		iotagraphql.DevInspectTransactionBlockRequest{
 			SenderAddress: sender.Address(),
 			TxKindBytes:   txBytes,
-			GasPrice:      iotajsonrpc.NewBigInt(iotaclient.DefaultGasPrice),
+			GasPrice:      iotagraphql.NewBigInt(iotagraphql.DefaultGasPrice),
 		},
 	)
 	require.NoError(t, err)
@@ -60,26 +59,26 @@ func TestDryRunTransaction(t *testing.T) {
 	signer := l1starter.ISCPackageOwner.Address()
 
 	coins, err := client.GetCoins(
-		context.Background(), iotaclient.GetCoinsRequest{
+		context.Background(), iotagraphql.GetCoinsRequest{
 			Owner: signer,
 			Limit: 10,
 		},
 	)
 	require.NoError(t, err)
-	pickedCoins, err := iotajsonrpc.PickupCoins(coins, big.NewInt(100), iotaclient.DefaultGasBudget, 0, 0)
+	pickedCoins, err := iotagraphql.PickupCoins(coins, big.NewInt(100), iotagraphql.DefaultGasBudget, 0, 0)
 	require.NoError(t, err)
 	tx, err := client.PayAllIota(
 		context.Background(),
-		iotaclient.PayAllIotaRequest{
+		iotagraphql.PayAllIotaRequest{
 			Signer:     signer,
 			Recipient:  signer,
 			InputCoins: pickedCoins.CoinIds(),
-			GasBudget:  iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget),
+			GasBudget:  iotagraphql.NewBigInt(iotagraphql.DefaultGasBudget),
 		},
 	)
 	require.NoError(t, err)
 
-	resp, err := client.DryRunTransaction(context.Background(), iotaclient.DryRunTransactionRequest{
+	resp, err := client.DryRunTransaction(context.Background(), iotagraphql.DryRunTransactionRequest{
 		TxDataBytes: tx.TxBytes,
 	})
 	require.NoError(t, err)
@@ -91,21 +90,21 @@ func TestExecuteTransactionBlock(t *testing.T) {
 	client := l1starter.Instance().L1Client()
 	signer := l1starter.ISCPackageOwner
 	coins, err := client.GetCoins(
-		context.Background(), iotaclient.GetCoinsRequest{
+		context.Background(), iotagraphql.GetCoinsRequest{
 			Owner: signer.Address(),
 			Limit: 10,
 		},
 	)
 	require.NoError(t, err)
-	pickedCoins, err := iotajsonrpc.PickupCoins(coins, big.NewInt(100), iotaclient.DefaultGasBudget, 0, 0)
+	pickedCoins, err := iotagraphql.PickupCoins(coins, big.NewInt(100), iotagraphql.DefaultGasBudget, 0, 0)
 	require.NoError(t, err)
 	tx, err := client.PayAllIota(
 		context.Background(),
-		iotaclient.PayAllIotaRequest{
+		iotagraphql.PayAllIotaRequest{
 			Signer:     signer.Address(),
 			Recipient:  signer.Address(),
 			InputCoins: pickedCoins.CoinIds(),
-			GasBudget:  iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget),
+			GasBudget:  iotagraphql.NewBigInt(iotagraphql.DefaultGasBudget),
 		},
 	)
 	require.NoError(t, err)
@@ -113,9 +112,12 @@ func TestExecuteTransactionBlock(t *testing.T) {
 	signature, err := signer.SignTransactionBlock(tx.TxBytes, iotasigner.DefaultIntent())
 	require.NoError(t, err)
 
-	resp, err := client.ExecuteTransactionBlock(context.Background(), iotaclient.ExecuteTransactionBlockRequest{
+	resp, err := client.ExecuteTransactionBlock(context.Background(), iotagraphql.ExecuteTransactionBlockRequest{
 		Signatures:  []*iotasigner.Signature{signature},
 		TxDataBytes: tx.TxBytes,
+		Options: &iotagraphql.IotaTransactionBlockResponseOptions{
+			ShowEffects: true,
+		},
 	})
 	require.NoError(t, err)
 	require.True(t, resp.Effects.Data.IsSuccess())
@@ -127,31 +129,31 @@ func TestSignAndExecuteTransaction(t *testing.T) {
 	signer := l1starter.ISCPackageOwner
 
 	coins, err := client.GetCoins(
-		context.Background(), iotaclient.GetCoinsRequest{
+		context.Background(), iotagraphql.GetCoinsRequest{
 			Owner: signer.Address(),
 			Limit: 10,
 		},
 	)
 	require.NoError(t, err)
-	pickedCoins, err := iotajsonrpc.PickupCoins(coins, big.NewInt(100), iotaclient.DefaultGasBudget, 0, 0)
+	pickedCoins, err := iotagraphql.PickupCoins(coins, big.NewInt(100), iotagraphql.DefaultGasBudget, 0, 0)
 	require.NoError(t, err)
 	tx, err := client.PayAllIota(
 		context.Background(),
-		iotaclient.PayAllIotaRequest{
+		iotagraphql.PayAllIotaRequest{
 			Signer:     signer.Address(),
 			Recipient:  signer.Address(),
 			InputCoins: pickedCoins.CoinIds(),
-			GasBudget:  iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget),
+			GasBudget:  iotagraphql.NewBigInt(iotagraphql.DefaultGasBudget),
 		},
 	)
 	require.NoError(t, err)
 
 	// Test SignAndExecuteTransaction with options requesting effects and object changes
 	// This also tests the isResponseComplete logic to ensure proper handling of incomplete responses
-	resp, err := client.SignAndExecuteTransaction(context.Background(), &iotaclient.SignAndExecuteTransactionRequest{
+	resp, err := client.SignAndExecuteTransaction(context.Background(), &iotagraphql.SignAndExecuteTransactionRequest{
 		TxDataBytes: tx.TxBytes,
 		Signer:      signer,
-		Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+		Options: &iotagraphql.IotaTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},

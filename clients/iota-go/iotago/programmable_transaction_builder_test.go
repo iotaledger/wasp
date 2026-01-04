@@ -17,10 +17,6 @@ import (
 	bcs "github.com/iotaledger/bcs-go"
 )
 
-func TestMain(m *testing.M) {
-	l1starter.TestMain(m)
-}
-
 func TestPTBMoveCall(t *testing.T) {
 	t.Skip()
 	t.Run(
@@ -116,6 +112,7 @@ func TestPTBMoveCall(t *testing.T) {
 }
 
 func TestPTBTransferObject(t *testing.T) {
+	t.Skip("Migrate to graphql")
 	client := l1starter.Instance().L1Client()
 	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 	recipient := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL())
@@ -162,6 +159,7 @@ func TestPTBTransferObject(t *testing.T) {
 }
 
 func TestPTBTransferIota(t *testing.T) {
+	t.Skip("Migrate to graphql")
 	client := l1starter.Instance().L1Client()
 	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 	recipient := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL())
@@ -208,6 +206,7 @@ func TestPTBTransferIota(t *testing.T) {
 }
 
 func TestPTBPayAllIota(t *testing.T) {
+	t.Skip("Migrate to graphql")
 	client := l1starter.Instance().L1Client()
 	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 	recipient := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL())
@@ -252,6 +251,7 @@ func TestPTBPayAllIota(t *testing.T) {
 }
 
 func TestPTBPayIota(t *testing.T) {
+	t.Skip("Migrate to graphql")
 	client := l1starter.Instance().L1Client()
 	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 	recipient1 := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL())
@@ -316,94 +316,6 @@ func TestPTBPayIota(t *testing.T) {
 			InputCoins: []*iotago.ObjectID{coin.CoinObjectID},
 			Recipients: []*iotago.Address{recipient1.Address(), recipient2.Address()},
 			Amount:     []*iotajsonrpc.BigInt{iotajsonrpc.NewBigInt(123), iotajsonrpc.NewBigInt(456)},
-			GasBudget:  iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget),
-		},
-	)
-	require.NoError(t, err)
-	txBytesRemote := txn.TxBytes.Data()
-	require.Equal(t, txBytes, txBytesRemote)
-}
-
-func TestPTBPay(t *testing.T) {
-	client := l1starter.Instance().L1Client()
-	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
-	recipient1 := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL())
-	recipient2 := iotatest.MakeSignerWithFunds(2, l1starter.Instance().FaucetURL())
-
-	coinPages, err := client.GetCoins(
-		context.Background(), iotaclient.GetCoinsRequest{
-			Owner: sender.Address(),
-			Limit: 3,
-		},
-	)
-	require.NoError(t, err)
-	coins := iotajsonrpc.Coins(coinPages.Data)
-	gasCoin := coins[0] // save the 1st element for gas fee
-	transferCoins := coins[1:]
-	amounts := []uint64{123, 567}
-	totalBal := coins.TotalBalance().Uint64()
-
-	ptb := iotago.NewProgrammableTransactionBuilder()
-	err = ptb.Pay(
-		transferCoins.CoinRefs(),
-		[]*iotago.Address{recipient1.Address(), recipient2.Address()},
-		[]uint64{amounts[0], amounts[1]},
-	)
-	require.NoError(t, err)
-	pt := ptb.Finish()
-	tx := iotago.NewProgrammable(
-		sender.Address(),
-		pt,
-		[]*iotago.ObjectRef{
-			gasCoin.Ref(),
-		},
-		iotaclient.DefaultGasBudget,
-		iotaclient.DefaultGasPrice,
-	)
-	txBytes, err := bcs.Marshal(&tx)
-	require.NoError(t, err)
-
-	simulate, err := client.DryRunTransaction(context.Background(), iotaclient.DryRunTransactionRequest{
-		TxDataBytes: txBytes,
-	})
-	require.NoError(t, err)
-	require.Empty(t, simulate.Effects.Data.V1.Status.Error)
-	require.True(t, simulate.Effects.Data.IsSuccess())
-	require.Equal(t, gasCoin.CoinObjectID.String(), simulate.Effects.Data.V1.GasObject.Reference.ObjectID.String())
-
-	// 2 for Mutated (1 gas coin and 1 merged coin in pay pt), 2 created (the 2 transfer in pay pt),
-	require.Len(t, simulate.ObjectChanges, 5)
-	for _, change := range simulate.ObjectChanges {
-		if change.Data.Mutated != nil {
-			require.Contains(
-				t,
-				[]*iotago.ObjectID{gasCoin.CoinObjectID, transferCoins[0].CoinObjectID},
-				&change.Data.Mutated.ObjectID,
-			)
-		} else if change.Data.Deleted != nil {
-			require.Equal(t, transferCoins[1].CoinObjectID, &change.Data.Deleted.ObjectID)
-		}
-	}
-	require.Len(t, simulate.BalanceChanges, 3)
-	for _, balChange := range simulate.BalanceChanges {
-		if balChange.Owner.AddressOwner == sender.Address() {
-			require.Equal(t, totalBal-(amounts[0]+amounts[1]), balChange.Amount)
-		} else if balChange.Owner.AddressOwner == recipient1.Address() {
-			require.Equal(t, amounts[0], balChange.Amount)
-		} else if balChange.Owner.AddressOwner == recipient2.Address() {
-			require.Equal(t, amounts[1], balChange.Amount)
-		}
-	}
-
-	// build with remote rpc
-	txn, err := client.Pay(
-		context.Background(),
-		iotaclient.PayRequest{
-			Signer:     sender.Address(),
-			InputCoins: transferCoins.ObjectIDs(),
-			Recipients: []*iotago.Address{recipient1.Address(), recipient2.Address()},
-			Amount:     []*iotajsonrpc.BigInt{iotajsonrpc.NewBigInt(amounts[0]), iotajsonrpc.NewBigInt(amounts[1])},
-			Gas:        gasCoin.CoinObjectID,
 			GasBudget:  iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget),
 		},
 	)

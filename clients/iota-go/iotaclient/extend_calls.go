@@ -36,12 +36,6 @@ func (c *Client) GetCoinObjsForTargetAmount(
 	return pickedCoins.Coins, nil
 }
 
-type SignAndExecuteTransactionRequest struct {
-	TxDataBytes iotago.Base64Data
-	Signer      iotasigner.Signer
-	Options     *iotajsonrpc.IotaTransactionBlockResponseOptions // optional
-}
-
 func isResponseComplete(
 	res *iotajsonrpc.IotaTransactionBlockResponse,
 	options *iotajsonrpc.IotaTransactionBlockResponseOptions,

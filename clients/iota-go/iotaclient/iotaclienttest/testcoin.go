@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/client"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/move"
 )
@@ -45,7 +45,7 @@ func DeployCoinPackage(
 		nil,
 		iotaclient.DefaultGasBudget*2,
 		iotaclient.DefaultGasPrice,
-		&iotajsonrpc.IotaTransactionBlockResponseOptions{
+		&iotagraphql.IotaTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		})
@@ -78,7 +78,7 @@ func MintCoins(
 		moduleName,
 		treasuryCapObjectID,
 		mintAmount,
-		&iotajsonrpc.IotaTransactionBlockResponseOptions{
+		&iotagraphql.IotaTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},

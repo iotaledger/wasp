@@ -11,7 +11,7 @@ import (
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 )
@@ -33,7 +33,7 @@ type CreateAndSendRequestRequest struct {
 func (c *Client) CreateAndSendRequest(
 	ctx context.Context,
 	req *CreateAndSendRequestRequest,
-) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+) (*iotagraphql.IotaTransactionBlockResponse, error) {
 	anchorRes, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: req.AnchorAddress})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor ref: %w", err)
@@ -76,7 +76,7 @@ type CreateAndSendRequestWithAssetsRequest struct {
 	GasBudget        uint64
 }
 
-func (c *Client) selectProperGasCoinAndBalance(ctx context.Context, req *CreateAndSendRequestWithAssetsRequest) ([]*iotajsonrpc.Coin, uint64, error) {
+func (c *Client) selectProperGasCoinAndBalance(ctx context.Context, req *CreateAndSendRequestWithAssetsRequest) ([]*iotagraphql.Coin, uint64, error) {
 	iotaBalance := req.Assets.BaseToken()
 
 	coinOptions, err := c.GetCoinObjsForTargetAmount(ctx, req.Signer.Address().AsIotaAddress(), iotaBalance.Uint64(), iotaclient.DefaultGasBudget)
@@ -96,7 +96,7 @@ func (c *Client) selectProperGasCoinAndBalance(ctx context.Context, req *CreateA
 func (c *Client) CreateAndSendRequestWithAssets(
 	ctx context.Context,
 	req *CreateAndSendRequestWithAssetsRequest,
-) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+) (*iotagraphql.IotaTransactionBlockResponse, error) {
 	anchorRes, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: req.AnchorAddress})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor ref: %w", err)
@@ -107,14 +107,14 @@ func (c *Client) CreateAndSendRequestWithAssets(
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor ref: %w", err)
 	}
-	var placedCoins []lo.Tuple2[*iotajsonrpc.Coin, uint64]
+	var placedCoins []lo.Tuple2[*iotagraphql.Coin, uint64]
 	// assume we can find it in the first page
 	for cointype, bal := range req.Assets.Coins.Iterate() {
-		if lo.Must(iotago.IsSameResource(cointype.String(), iotajsonrpc.IotaCoinType.String())) {
+		if lo.Must(iotago.IsSameResource(cointype.String(), iotagraphql.IotaCoinType.String())) {
 			continue
 		}
 
-		coin, ok := lo.Find(allCoins.Data, func(coin *iotajsonrpc.Coin) bool {
+		coin, ok := lo.Find(allCoins.Data, func(coin *iotagraphql.Coin) bool {
 			if !lo.Must(iotago.IsSameResource(cointype.String(), string(coin.CoinType))) {
 				return false
 			}
@@ -128,7 +128,7 @@ func (c *Client) CreateAndSendRequestWithAssets(
 		if !ok {
 			return nil, fmt.Errorf("cannot find coin for type %s", cointype)
 		}
-		placedCoins = append(placedCoins, lo.Tuple2[*iotajsonrpc.Coin, uint64]{A: coin, B: bal.Uint64()})
+		placedCoins = append(placedCoins, lo.Tuple2[*iotagraphql.Coin, uint64]{A: coin, B: bal.Uint64()})
 	}
 
 	ptb := iotago.NewProgrammableTransactionBuilder()
@@ -147,8 +147,8 @@ func (c *Client) CreateAndSendRequestWithAssets(
 			req.PackageID,
 			argAssetsBag,
 			iotago.GetArgumentGasCoin(),
-			iotajsonrpc.CoinValue(balance),
-			iotajsonrpc.IotaCoinType,
+			iotagraphql.CoinValue(balance),
+			iotagraphql.IotaCoinType,
 		)
 	}
 
@@ -159,7 +159,7 @@ func (c *Client) CreateAndSendRequestWithAssets(
 			req.PackageID,
 			argAssetsBag,
 			ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: tuple.A.Ref()}),
-			iotajsonrpc.CoinValue(tuple.B),
+			iotagraphql.CoinValue(tuple.B),
 			tuple.A.CoinType,
 		)
 	}
@@ -209,7 +209,7 @@ func (c *Client) GetRequestFromObjectID(
 ) (*iscmove.RefWithObject[iscmove.Request], error) {
 	getObjectResponse, err := c.GetObject(ctx, iotaclient.GetObjectRequest{
 		ObjectID: reqID,
-		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true},
+		Options:  &iotagraphql.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get request content: %w", err)
@@ -220,7 +220,7 @@ func (c *Client) GetRequestFromObjectID(
 	return c.parseRequestAndFetchAssetsBag(ctx, getObjectResponse.Data)
 }
 
-func (c *Client) parseRequestAndFetchAssetsBag(ctx context.Context, obj *iotajsonrpc.IotaObjectData) (*iscmove.RefWithObject[iscmove.Request], error) {
+func (c *Client) parseRequestAndFetchAssetsBag(ctx context.Context, obj *iotagraphql.IotaObjectData) (*iscmove.RefWithObject[iscmove.Request], error) {
 	// intermediateMoveRequest is used to decode actual requests coming from move.
 	// The only difference between this and MoveRequest is the AssetsBag
 	// The Balances in AssetsBagWithBalance are unavailable in the bcs encoded Request coming from L1
@@ -265,18 +265,18 @@ func (c *Client) parseRequestAndFetchAssetsBag(ctx context.Context, obj *iotajso
 	}, nil
 }
 
-func (c *Client) pullRequests(ctx context.Context, packageID iotago.Address, anchorAddress *iotago.ObjectID, maxAmountOfRequests int) (map[iotago.ObjectID]*iotajsonrpc.IotaObjectData, error) {
-	pulledRequests := make(map[iotago.ObjectID]*iotajsonrpc.IotaObjectData, maxAmountOfRequests)
+func (c *Client) pullRequests(ctx context.Context, packageID iotago.Address, anchorAddress *iotago.ObjectID, maxAmountOfRequests int) (map[iotago.ObjectID]*iotagraphql.IotaObjectData, error) {
+	pulledRequests := make(map[iotago.ObjectID]*iotagraphql.IotaObjectData, maxAmountOfRequests)
 
-	query := &iotajsonrpc.IotaObjectResponseQuery{
-		Filter: &iotajsonrpc.IotaObjectDataFilter{
+	query := &iotagraphql.IotaObjectResponseQuery{
+		Filter: &iotagraphql.IotaObjectDataFilter{
 			StructType: &iotago.StructTag{
 				Address: &packageID,
 				Module:  iscmove.RequestModuleName,
 				Name:    iscmove.RequestObjectName,
 			},
 		},
-		Options: &iotajsonrpc.IotaObjectDataOptions{
+		Options: &iotagraphql.IotaObjectDataOptions{
 			ShowBcs:   true,
 			ShowOwner: true,
 		},

@@ -81,17 +81,17 @@ func (c *Client) SignAndExecutePTB(
 	gasPayments []*iotago.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
-) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+) (*iotagraphql.IotaTransactionBlockResponse, error) {
 	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
 	if len(gasPayments) == 0 {
 		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasPrice, gasBudget)
 		if err != nil {
 			return nil, fmt.Errorf("failed to find gas payment: %w", err)
 		}
-		coins, err = iotajsonrpc.PickupCoinsWithFilter(
+		coins, err = iotagraphql.PickupCoinsWithFilter(
 			coins,
 			gasBudget,
-			func(c *iotajsonrpc.Coin) bool { return !pt.IsInInputObjects(c.CoinObjectID) },
+			func(c *iotagraphql.Coin) bool { return !pt.IsInInputObjects(c.CoinObjectID) },
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to find gas payment: %w", err)
@@ -119,7 +119,7 @@ func (c *Client) SignAndExecutePTB(
 		&iotaclient.SignAndExecuteTransactionRequest{
 			TxDataBytes: txnBytes,
 			Signer:      signer,
-			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+			Options: &iotagraphql.IotaTransactionBlockResponseOptions{
 				ShowEffects:        true,
 				ShowObjectChanges:  true,
 				ShowBalanceChanges: true,
@@ -142,17 +142,17 @@ func (c *Client) DevInspectPTB(
 	gasPayments []*iotago.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
-) (*iotajsonrpc.DevInspectResults, error) {
+) (*iotagraphql.DevInspectResults, error) {
 	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
 	if len(gasPayments) == 0 {
 		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasPrice, gasBudget)
 		if err != nil {
 			return nil, fmt.Errorf("failed to find gas payment: %w", err)
 		}
-		coins, err = iotajsonrpc.PickupCoinsWithFilter(
+		coins, err = iotagraphql.PickupCoinsWithFilter(
 			coins,
 			gasBudget,
-			func(c *iotajsonrpc.Coin) bool { return !pt.IsInInputObjects(c.CoinObjectID) },
+			func(c *iotagraphql.Coin) bool { return !pt.IsInInputObjects(c.CoinObjectID) },
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to find gas payment: %w", err)
@@ -205,7 +205,7 @@ func (c *Client) WaitUntilStopped() {
 func (c *Client) SubscribeEvent(
 	ctx context.Context,
 	filter *iotajsonrpc.EventFilter,
-	resultCh chan<- *iotajsonrpc.IotaEvent,
+	resultCh chan<- *iotagraphql.IotaEvent,
 ) error {
 	if c.wsClient == nil {
 		return fmt.Errorf("SubscribeEvent is only available for websocket clients")
@@ -217,8 +217,8 @@ func (c *Client) SubscribeEvent(
 // This method is only available for websocket clients.
 func (c *Client) SubscribeTransaction(
 	ctx context.Context,
-	filter *iotajsonrpc.TransactionFilter,
-	resultCh chan<- *serialization.TagJson[iotajsonrpc.IotaTransactionBlockEffects],
+	filter *iotagraphql.TransactionFilter,
+	resultCh chan<- *serialization.TagJson[iotagraphql.IotaTransactionBlockEffects],
 ) error {
 	if c.wsClient == nil {
 		return fmt.Errorf("SubscribeTransaction is only available for websocket clients")
@@ -227,7 +227,7 @@ func (c *Client) SubscribeTransaction(
 }
 
 func (c *Client) GetISCPackageIDForAnchor(ctx context.Context, anchor iotago.ObjectID) (iotago.PackageID, error) {
-	obj, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: &anchor, Options: &iotajsonrpc.IotaObjectDataOptions{
+	obj, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: &anchor, Options: &iotagraphql.IotaObjectDataOptions{
 		ShowDisplay: true,
 		ShowType:    true,
 	}})
@@ -251,7 +251,7 @@ func (c *Client) DeployISCContracts(ctx context.Context, signer iotasigner.Signe
 		Sender:          signer.Address(),
 		CompiledModules: iscBytecode.Modules,
 		Dependencies:    iscBytecode.Dependencies,
-		GasBudget:       iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget * 10),
+		GasBudget:       iotagraphql.NewBigInt(iotaclient.DefaultGasBudget * 10),
 	})
 	if err != nil {
 		return iotago.PackageID{}, err
@@ -262,7 +262,7 @@ func (c *Client) DeployISCContracts(ctx context.Context, signer iotasigner.Signe
 		&iotaclient.SignAndExecuteTransactionRequest{
 			TxDataBytes: txnBytes.TxBytes,
 			Signer:      signer,
-			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+			Options: &iotagraphql.IotaTransactionBlockResponseOptions{
 				ShowEffects:       true,
 				ShowObjectChanges: true,
 			},

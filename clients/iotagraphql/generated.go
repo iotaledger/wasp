@@ -714,13 +714,72 @@ func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTra
 // Effects to the balance (sum of coin values per coin type) owned by an
 // address or object.
 type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange struct {
+	// The address or object whose balance has changed.
+	Owner ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner `json:"owner"`
 	// The signed balance change.
 	Amount iotajsonrpc.BigInt `json:"amount"`
+	// The inner type of the coin whose balance has changed (e.g.
+	// `0x2::iota::IOTA`).
+	CoinType ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeCoinTypeMoveType `json:"coinType"`
+}
+
+// GetOwner returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange.Owner, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange) GetOwner() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner {
+	return v.Owner
 }
 
 // GetAmount returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange.Amount, and is useful for accessing the field via an interface.
 func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange) GetAmount() iotajsonrpc.BigInt {
 	return v.Amount
+}
+
+// GetCoinType returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange.CoinType, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange) GetCoinType() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeCoinTypeMoveType {
+	return v.CoinType
+}
+
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeCoinTypeMoveType includes the requested fields of the GraphQL type MoveType.
+// The GraphQL type's documentation follows.
+//
+// Represents concrete types (no type parameters, no references).
+type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeCoinTypeMoveType struct {
+	// Flat representation of the type signature, as a displayable string.
+	Repr string `json:"repr"`
+}
+
+// GetRepr returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeCoinTypeMoveType.Repr, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeCoinTypeMoveType) GetRepr() string {
+	return v.Repr
+}
+
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner includes the requested fields of the GraphQL type Owner.
+// The GraphQL type's documentation follows.
+//
+// An Owner is an entity that can own an object. Each Owner is identified by a
+// IotaAddress which represents either an Address (corresponding to a public
+// key of an account) or an Object, but never both (it is not known up-front
+// whether a given Owner is an Address or an Object).
+type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner struct {
+	AsAddress ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsAddress `json:"asAddress"`
+}
+
+// GetAsAddress returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner.AsAddress, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner) GetAsAddress() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsAddress {
+	return v.AsAddress
+}
+
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsAddress includes the requested fields of the GraphQL type Address.
+// The GraphQL type's documentation follows.
+//
+// The 32-byte address that is an account address (corresponding to a public
+// key).
+type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsAddress struct {
+	Address iotago.Address `json:"address"`
+}
+
+// GetAddress returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsAddress.Address, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsAddress) GetAddress() iotago.Address {
+	return v.Address
 }
 
 // ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnection includes the requested fields of the GraphQL type ObjectChangeConnection.
@@ -745,6 +804,10 @@ type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransac
 	IdCreated bool `json:"idCreated"`
 	// Whether the ID was deleted in this transaction.
 	IdDeleted bool `json:"idDeleted"`
+	// The contents of the object immediately before the transaction.
+	InputState ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject `json:"inputState"`
+	// The contents of the object immediately after the transaction.
+	OutputState ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject `json:"outputState"`
 }
 
 // GetAddress returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange.Address, and is useful for accessing the field via an interface.
@@ -760,6 +823,630 @@ func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTra
 // GetIdDeleted returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange.IdDeleted, and is useful for accessing the field via an interface.
 func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange) GetIdDeleted() bool {
 	return v.IdDeleted
+}
+
+// GetInputState returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange.InputState, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange) GetInputState() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject {
+	return v.InputState
+}
+
+// GetOutputState returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange.OutputState, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange) GetOutputState() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject {
+	return v.OutputState
+}
+
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject includes the requested fields of the GraphQL type Object.
+// The GraphQL type's documentation follows.
+//
+// An object in IOTA is a package (set of Move bytecode modules) or object
+// (typed data structure with fields) with additional metadata detailing its
+// id, version, transaction digest, owner field indicating how this object can
+// be accessed.
+type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject struct {
+	Version uint64 `json:"version"`
+	// 32-byte hash that identifies the object's current contents, encoded as a
+	// Base58 string.
+	Digest string `json:"digest"`
+	// Attempts to convert the object into a MoveObject
+	AsMoveObject ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObject `json:"asMoveObject"`
+}
+
+// GetVersion returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject.Version, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject) GetVersion() uint64 {
+	return v.Version
+}
+
+// GetDigest returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject.Digest, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject) GetDigest() string {
+	return v.Digest
+}
+
+// GetAsMoveObject returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject.AsMoveObject, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject) GetAsMoveObject() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObject {
+	return v.AsMoveObject
+}
+
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObject includes the requested fields of the GraphQL type MoveObject.
+// The GraphQL type's documentation follows.
+//
+// The representation of an object as a Move Object, which exposes additional
+// information (content, module that governs it, version, is transferable,
+// etc.) about this object.
+type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObject struct {
+	// Displays the contents of the Move object in a JSON string and through
+	// GraphQL types. Also provides the flat representation of the type
+	// signature, and the BCS of the corresponding data.
+	Contents ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValue `json:"contents"`
+}
+
+// GetContents returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObject.Contents, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObject) GetContents() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValue {
+	return v.Contents
+}
+
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValue includes the requested fields of the GraphQL type MoveValue.
+type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValue struct {
+	// The value's Move type.
+	Type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValueTypeMoveType `json:"type"`
+}
+
+// GetType returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValue.Type, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValue) GetType() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValueTypeMoveType {
+	return v.Type
+}
+
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValueTypeMoveType includes the requested fields of the GraphQL type MoveType.
+// The GraphQL type's documentation follows.
+//
+// Represents concrete types (no type parameters, no references).
+type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValueTypeMoveType struct {
+	// Flat representation of the type signature, as a displayable string.
+	Repr string `json:"repr"`
+}
+
+// GetRepr returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValueTypeMoveType.Repr, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValueTypeMoveType) GetRepr() string {
+	return v.Repr
+}
+
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject includes the requested fields of the GraphQL type Object.
+// The GraphQL type's documentation follows.
+//
+// An object in IOTA is a package (set of Move bytecode modules) or object
+// (typed data structure with fields) with additional metadata detailing its
+// id, version, transaction digest, owner field indicating how this object can
+// be accessed.
+type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject struct {
+	Version uint64 `json:"version"`
+	// 32-byte hash that identifies the object's current contents, encoded as a
+	// Base58 string.
+	Digest string `json:"digest"`
+	// The owner type of this object: Immutable, Shared, Parent, Address
+	// Immutable and Shared Objects do not have owners.
+	Owner ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner `json:"-"`
+	// Attempts to convert the object into a MoveObject
+	AsMoveObject ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObject `json:"asMoveObject"`
+}
+
+// GetVersion returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject.Version, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject) GetVersion() uint64 {
+	return v.Version
+}
+
+// GetDigest returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject.Digest, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject) GetDigest() string {
+	return v.Digest
+}
+
+// GetOwner returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject.Owner, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject) GetOwner() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner {
+	return v.Owner
+}
+
+// GetAsMoveObject returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject.AsMoveObject, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject) GetAsMoveObject() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObject {
+	return v.AsMoveObject
+}
+
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject
+		Owner json.RawMessage `json:"owner"`
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	{
+		dst := &v.Owner
+		src := firstPass.Owner
+		if len(src) != 0 && string(src) != "null" {
+			err = __unmarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner(
+				src, dst)
+			if err != nil {
+				return fmt.Errorf(
+					"unable to unmarshal ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject.Owner: %w", err)
+			}
+		}
+	}
+	return nil
+}
+
+type __premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject struct {
+	Version uint64 `json:"version"`
+
+	Digest string `json:"digest"`
+
+	Owner json.RawMessage `json:"owner"`
+
+	AsMoveObject ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObject `json:"asMoveObject"`
+}
+
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject) __premarshalJSON() (*__premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject, error) {
+	var retval __premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject
+
+	retval.Version = v.Version
+	retval.Digest = v.Digest
+	{
+
+		dst := &retval.Owner
+		src := v.Owner
+		var err error
+		*dst, err = __marshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner(
+			&src)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"unable to marshal ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject.Owner: %w", err)
+		}
+	}
+	retval.AsMoveObject = v.AsMoveObject
+	return &retval, nil
+}
+
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObject includes the requested fields of the GraphQL type MoveObject.
+// The GraphQL type's documentation follows.
+//
+// The representation of an object as a Move Object, which exposes additional
+// information (content, module that governs it, version, is transferable,
+// etc.) about this object.
+type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObject struct {
+	// Displays the contents of the Move object in a JSON string and through
+	// GraphQL types. Also provides the flat representation of the type
+	// signature, and the BCS of the corresponding data.
+	Contents ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValue `json:"contents"`
+}
+
+// GetContents returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObject.Contents, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObject) GetContents() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValue {
+	return v.Contents
+}
+
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValue includes the requested fields of the GraphQL type MoveValue.
+type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValue struct {
+	// The value's Move type.
+	Type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValueTypeMoveType `json:"type"`
+}
+
+// GetType returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValue.Type, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValue) GetType() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValueTypeMoveType {
+	return v.Type
+}
+
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValueTypeMoveType includes the requested fields of the GraphQL type MoveType.
+// The GraphQL type's documentation follows.
+//
+// Represents concrete types (no type parameters, no references).
+type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValueTypeMoveType struct {
+	// Flat representation of the type signature, as a displayable string.
+	Repr string `json:"repr"`
+}
+
+// GetRepr returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValueTypeMoveType.Repr, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValueTypeMoveType) GetRepr() string {
+	return v.Repr
+}
+
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner includes the requested fields of the GraphQL interface ObjectOwner.
+//
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner is implemented by the following types:
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared
+// The GraphQL type's documentation follows.
+//
+// The object's owner type: Immutable, Shared, Parent, or Address.
+type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner interface {
+	implementsGraphQLInterfaceExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner()
+	// GetTypename returns the receiver's concrete GraphQL type-name (see interface doc for possible values).
+	GetTypename() string
+	RPC_OBJECT_OWNER_FIELDS
+}
+
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner) implementsGraphQLInterfaceExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner() {
+}
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable) implementsGraphQLInterfaceExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner() {
+}
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent) implementsGraphQLInterfaceExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner() {
+}
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared) implementsGraphQLInterfaceExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner() {
+}
+
+func __unmarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner(b []byte, v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner) error {
+	if string(b) == "null" {
+		return nil
+	}
+
+	var tn struct {
+		TypeName string `json:"__typename"`
+	}
+	err := json.Unmarshal(b, &tn)
+	if err != nil {
+		return err
+	}
+
+	switch tn.TypeName {
+	case "AddressOwner":
+		*v = new(ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner)
+		return json.Unmarshal(b, *v)
+	case "Immutable":
+		*v = new(ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable)
+		return json.Unmarshal(b, *v)
+	case "Parent":
+		*v = new(ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent)
+		return json.Unmarshal(b, *v)
+	case "Shared":
+		*v = new(ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared)
+		return json.Unmarshal(b, *v)
+	case "":
+		return fmt.Errorf(
+			"response was missing ObjectOwner.__typename")
+	default:
+		return fmt.Errorf(
+			`unexpected concrete type for ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner: "%v"`, tn.TypeName)
+	}
+}
+
+func __marshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner(v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner) ([]byte, error) {
+
+	var typename string
+	switch v := (*v).(type) {
+	case *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner:
+		typename = "AddressOwner"
+
+		premarshaled, err := v.__premarshalJSON()
+		if err != nil {
+			return nil, err
+		}
+		result := struct {
+			TypeName string `json:"__typename"`
+			*__premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner
+		}{typename, premarshaled}
+		return json.Marshal(result)
+	case *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable:
+		typename = "Immutable"
+
+		premarshaled, err := v.__premarshalJSON()
+		if err != nil {
+			return nil, err
+		}
+		result := struct {
+			TypeName string `json:"__typename"`
+			*__premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable
+		}{typename, premarshaled}
+		return json.Marshal(result)
+	case *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent:
+		typename = "Parent"
+
+		premarshaled, err := v.__premarshalJSON()
+		if err != nil {
+			return nil, err
+		}
+		result := struct {
+			TypeName string `json:"__typename"`
+			*__premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent
+		}{typename, premarshaled}
+		return json.Marshal(result)
+	case *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared:
+		typename = "Shared"
+
+		premarshaled, err := v.__premarshalJSON()
+		if err != nil {
+			return nil, err
+		}
+		result := struct {
+			TypeName string `json:"__typename"`
+			*__premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared
+		}{typename, premarshaled}
+		return json.Marshal(result)
+	case nil:
+		return []byte("null"), nil
+	default:
+		return nil, fmt.Errorf(
+			`unexpected concrete type for ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner: "%T"`, v)
+	}
+}
+
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner includes the requested fields of the GraphQL type AddressOwner.
+// The GraphQL type's documentation follows.
+//
+// An address-owned object is owned by a specific 32-byte address that is
+// either an account address (derived from a particular signature scheme) or
+// an object ID. An address-owned object is accessible only to its owner and no
+// others.
+type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner struct {
+	Typename                            string `json:"__typename"`
+	RPC_OBJECT_OWNER_FIELDSAddressOwner `json:"-"`
+}
+
+// GetTypename returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner.Typename, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner) GetTypename() string {
+	return v.Typename
+}
+
+// GetOwner returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner.Owner, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner) GetOwner() RPC_OBJECT_OWNER_FIELDSOwner {
+	return v.RPC_OBJECT_OWNER_FIELDSAddressOwner.Owner
+}
+
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(
+		b, &v.RPC_OBJECT_OWNER_FIELDSAddressOwner)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type __premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner struct {
+	Typename string `json:"__typename"`
+
+	Owner RPC_OBJECT_OWNER_FIELDSOwner `json:"owner"`
+}
+
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner) __premarshalJSON() (*__premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner, error) {
+	var retval __premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner
+
+	retval.Typename = v.Typename
+	retval.Owner = v.RPC_OBJECT_OWNER_FIELDSAddressOwner.Owner
+	return &retval, nil
+}
+
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable includes the requested fields of the GraphQL type Immutable.
+// The GraphQL type's documentation follows.
+//
+// An immutable object is an object that can't be mutated, transferred, or
+// deleted. Immutable objects have no owner, so anyone can use them.
+type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable struct {
+	Typename                         string `json:"__typename"`
+	RPC_OBJECT_OWNER_FIELDSImmutable `json:"-"`
+}
+
+// GetTypename returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable.Typename, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable) GetTypename() string {
+	return v.Typename
+}
+
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(
+		b, &v.RPC_OBJECT_OWNER_FIELDSImmutable)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type __premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable struct {
+	Typename string `json:"__typename"`
+}
+
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable) __premarshalJSON() (*__premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable, error) {
+	var retval __premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable
+
+	retval.Typename = v.Typename
+	return &retval, nil
+}
+
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent includes the requested fields of the GraphQL type Parent.
+// The GraphQL type's documentation follows.
+//
+// If the object's owner is a Parent, this object is part of a dynamic field
+// (it is the value of the dynamic field, or the intermediate Field object
+// itself). Also note that if the owner is a parent, then it's guaranteed to be
+// an object.
+type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent struct {
+	Typename                      string `json:"__typename"`
+	RPC_OBJECT_OWNER_FIELDSParent `json:"-"`
+}
+
+// GetTypename returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent.Typename, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent) GetTypename() string {
+	return v.Typename
+}
+
+// GetParent returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent.Parent, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent) GetParent() RPC_OBJECT_OWNER_FIELDSParentObject {
+	return v.RPC_OBJECT_OWNER_FIELDSParent.Parent
+}
+
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(
+		b, &v.RPC_OBJECT_OWNER_FIELDSParent)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type __premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent struct {
+	Typename string `json:"__typename"`
+
+	Parent RPC_OBJECT_OWNER_FIELDSParentObject `json:"parent"`
+}
+
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent) __premarshalJSON() (*__premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent, error) {
+	var retval __premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent
+
+	retval.Typename = v.Typename
+	retval.Parent = v.RPC_OBJECT_OWNER_FIELDSParent.Parent
+	return &retval, nil
+}
+
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared includes the requested fields of the GraphQL type Shared.
+// The GraphQL type's documentation follows.
+//
+// A shared object is an object that is shared using the
+// 0x2::transfer::share_object function. Unlike owned objects, once an object
+// is shared, it stays mutable and is accessible by anyone.
+type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared struct {
+	Typename                      string `json:"__typename"`
+	RPC_OBJECT_OWNER_FIELDSShared `json:"-"`
+}
+
+// GetTypename returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared.Typename, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared) GetTypename() string {
+	return v.Typename
+}
+
+// GetInitialSharedVersion returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared.InitialSharedVersion, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared) GetInitialSharedVersion() uint64 {
+	return v.RPC_OBJECT_OWNER_FIELDSShared.InitialSharedVersion
+}
+
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(
+		b, &v.RPC_OBJECT_OWNER_FIELDSShared)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type __premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared struct {
+	Typename string `json:"__typename"`
+
+	InitialSharedVersion uint64 `json:"initialSharedVersion"`
+}
+
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared) __premarshalJSON() (*__premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared, error) {
+	var retval __premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared
+
+	retval.Typename = v.Typename
+	retval.InitialSharedVersion = v.RPC_OBJECT_OWNER_FIELDSShared.InitialSharedVersion
+	return &retval, nil
 }
 
 // ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsTransactionBlock includes the requested fields of the GraphQL type TransactionBlock.
@@ -10375,11 +11062,45 @@ mutation ExecuteTransactionBlock ($txBytes: String!, $signatures: [String!]!, $s
 					address
 					idCreated
 					idDeleted
+					inputState {
+						version
+						digest
+						asMoveObject {
+							contents {
+								type {
+									repr
+								}
+							}
+						}
+					}
+					outputState {
+						version
+						digest
+						owner {
+							__typename
+							... RPC_OBJECT_OWNER_FIELDS
+						}
+						asMoveObject {
+							contents {
+								type {
+									repr
+								}
+							}
+						}
+					}
 				}
 			}
 			balanceChanges {
 				nodes {
+					owner {
+						asAddress {
+							address
+						}
+					}
 					amount
+					coinType {
+						repr
+					}
 				}
 			}
 		}
@@ -10477,6 +11198,27 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 				}
 			}
 		}
+	}
+}
+fragment RPC_OBJECT_OWNER_FIELDS on ObjectOwner {
+	__typename
+	... on AddressOwner {
+		owner {
+			asObject {
+				address
+			}
+			asAddress {
+				address
+			}
+		}
+	}
+	... on Parent {
+		parent {
+			address
+		}
+	}
+	... on Shared {
+		initialSharedVersion
 	}
 }
 fragment RPC_EVENTS_FIELDS on Event {

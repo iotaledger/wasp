@@ -30,7 +30,7 @@ import (
 func TestInitLoad(t *testing.T) {
 	env := solo.New(t)
 	user, userAddr := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
-	env.AssertL1BaseTokens(userAddr, iotaclient.FundsFromFaucetAmount)
+	env.AssertL1BaseTokens(userAddr, coin.Value(iotaclient.FundsFromFaucetAmount))
 	var originAmount coin.Value = 10 * isc.Million
 	ch, _ := env.NewChainExt(user, originAmount, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 

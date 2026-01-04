@@ -9,7 +9,7 @@ import (
 
 	"github.com/iotaledger/wasp/v2/clients/chainclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/util"
@@ -23,7 +23,7 @@ func (e *ChainEnv) testOnLedgerDeposit(t *testing.T) {
 	userClient := e.Chain.Client(userWallet)
 	balance1 := e.GetL2Balance(isc.NewAddressAgentID(userAddr), coin.BaseTokenType)
 
-	tx := [5]*iotajsonrpc.IotaTransactionBlockResponse{}
+	tx := [5]*iotagraphql.IotaTransactionBlockResponse{}
 	gasFeeChargedSum := coin.Value(0)
 	baseTokesSent := coin.Value(10 + iotaclient.DefaultGasBudget)
 	for i := 0; i < 5; i++ {

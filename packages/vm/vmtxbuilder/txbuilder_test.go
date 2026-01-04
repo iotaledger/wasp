@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/wasp/v2/clients"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	testcommon "github.com/iotaledger/wasp/v2/clients/iota-go/test_common"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
@@ -80,14 +80,14 @@ func TestTxBuilderBasic(t *testing.T) {
 		&iotaclient.SignAndExecuteTransactionRequest{
 			TxDataBytes: txnBytes,
 			Signer:      cryptolib.SignerToIotaSigner(chainSigner),
-			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+			Options:     &iotagraphql.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 		},
 	)
 	require.NoError(t, err)
 	require.True(t, txnResponse.Effects.Data.IsSuccess())
 	time.Sleep(1 * time.Second) // FIXME tmp for graphql
 
-	getObjReq1, _ := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: req1.RequestRef().ObjectID, Options: &iotajsonrpc.IotaObjectDataOptions{ShowContent: true}})
+	getObjReq1, _ := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: req1.RequestRef().ObjectID, Options: &iotagraphql.IotaObjectDataOptions{ShowContent: true}})
 	require.NotNil(t, getObjReq1.Data)
 	require.Equal(t, "WRAPPED_OR_DELETED", getObjReq1.Data.Status)
 	getObjReq2, _ := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: req2.RequestRef().ObjectID})
@@ -150,14 +150,14 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 		&iotaclient.SignAndExecuteTransactionRequest{
 			TxDataBytes: txnBytes1,
 			Signer:      cryptolib.SignerToIotaSigner(chainSigner),
-			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+			Options:     &iotagraphql.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 		},
 	)
 	require.NoError(t, err)
 	require.True(t, txnResponse1.Effects.Data.IsSuccess())
 	time.Sleep(1 * time.Second) // FIXME tmp for graphql
 
-	getObjReq1, _ := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: req1.RequestRef().ObjectID, Options: &iotajsonrpc.IotaObjectDataOptions{ShowContent: true}})
+	getObjReq1, _ := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: req1.RequestRef().ObjectID, Options: &iotagraphql.IotaObjectDataOptions{ShowContent: true}})
 	require.NotNil(t, getObjReq1.Data)
 	require.Equal(t, "WRAPPED_OR_DELETED", getObjReq1.Data.Status)
 
@@ -197,7 +197,7 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 		&iotaclient.SignAndExecuteTransactionRequest{
 			TxDataBytes: txnBytes2,
 			Signer:      cryptolib.SignerToIotaSigner(chainSigner),
-			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+			Options:     &iotagraphql.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 		},
 	)
 	require.NoError(t, err)
@@ -258,7 +258,7 @@ func TestRotateAndBuildTx(t *testing.T) {
 		&iotaclient.SignAndExecuteTransactionRequest{
 			TxDataBytes: txnBytes,
 			Signer:      cryptolib.SignerToIotaSigner(chainSigner),
-			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+			Options:     &iotagraphql.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 		},
 	)
 	require.NoError(t, err)
@@ -266,14 +266,14 @@ func TestRotateAndBuildTx(t *testing.T) {
 	time.Sleep(1 * time.Second)
 	getObjRes, err := client.GetObject(context.Background(), iotaclient.GetObjectRequest{
 		ObjectID: anchor.ObjectID,
-		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowOwner: true},
+		Options:  &iotagraphql.IotaObjectDataOptions{ShowOwner: true},
 	})
 	require.NoError(t, err)
 	require.Equal(t, rotateRecipientSigner.Address().AsIotaAddress(), getObjRes.Data.Owner.AddressOwner)
 
 	gasCoinGetObjRes, err := client.GetObject(context.Background(), iotaclient.GetObjectRequest{
 		ObjectID: selectedGasCoin.ObjectID,
-		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowOwner: true},
+		Options:  &iotagraphql.IotaObjectDataOptions{ShowOwner: true},
 	})
 	require.NoError(t, err)
 	require.Equal(t, rotateRecipientSigner.Address().AsIotaAddress(), gasCoinGetObjRes.Data.Owner.AddressOwner)

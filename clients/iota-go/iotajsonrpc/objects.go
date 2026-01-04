@@ -253,30 +253,8 @@ type VersionTooHigh struct {
 }
 
 type VersionNotFoundData struct {
-	ObjectID       *iotago.ObjectID
-	SequenceNumber iotago.SequenceNumber
-}
-
-func (c *VersionNotFoundData) UnmarshalJSON(data []byte) error {
-	var vals []any
-	err := json.Unmarshal(data, &vals)
-	if err != nil {
-		return fmt.Errorf("failed to parse VersionNotFound content: %w", err)
-	}
-	if len(vals) != 2 {
-		return fmt.Errorf("failed to parse VersionNotFound content: expected 2 elements, got %d", len(vals))
-	}
-	objIDHex, ok := vals[0].(string)
-	if !ok {
-		return fmt.Errorf("failed to parse VersionNotFound content: expected string, got %T", vals[0])
-	}
-	c.ObjectID, err = iotago.ObjectIDFromHex(objIDHex)
-	seq, ok := vals[1].(float64)
-	if !ok {
-		return fmt.Errorf("failed to parse VersionNotFound content: expected number, got %T", vals[1])
-	}
-	c.SequenceNumber = uint64(seq)
-	return nil
+	ObjectID       *iotago.ObjectID      `json:"objectId"`
+	SequenceNumber iotago.SequenceNumber `json:"sequenceNumber"`
 }
 
 func (s IotaPastObject) Tag() string {
