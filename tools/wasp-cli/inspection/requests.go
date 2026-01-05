@@ -27,7 +27,7 @@ func initRequestsCmd() *cobra.Command {
 
 			ctx := context.Background()
 
-			obj, err := cliclients.L1Client().GetObject(ctx, iotaclient.GetObjectRequest{
+			obj, err := cliclients.L1Client().GetObject(ctx, iotagraphql.GetObjectRequest{
 				ObjectID: objectID,
 				Options: &iotagraphql.IotaObjectDataOptions{
 					ShowType: true,

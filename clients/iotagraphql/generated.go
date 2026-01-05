@@ -10,7 +10,6 @@ import (
 
 	"github.com/Khan/genqlient/graphql"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 )
 
 // DevInspectTransactionBlockDryRunTransactionBlockDryRunResult includes the requested fields of the GraphQL type DryRunResult.
@@ -717,7 +716,7 @@ type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransac
 	// The address or object whose balance has changed.
 	Owner ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner `json:"owner"`
 	// The signed balance change.
-	Amount iotajsonrpc.BigInt `json:"amount"`
+	Amount BigInt `json:"amount"`
 	// The inner type of the coin whose balance has changed (e.g.
 	// `0x2::iota::IOTA`).
 	CoinType ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeCoinTypeMoveType `json:"coinType"`
@@ -729,7 +728,7 @@ func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTra
 }
 
 // GetAmount returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange.Amount, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange) GetAmount() iotajsonrpc.BigInt {
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange) GetAmount() BigInt {
 	return v.Amount
 }
 
@@ -1607,7 +1606,7 @@ type GetAllBalancesAddressBalancesBalanceConnectionNodesBalance struct {
 	// How many coins of this type constitute the balance
 	CoinObjectCount uint64 `json:"coinObjectCount"`
 	// Total balance across all coin objects of the coin type
-	TotalBalance iotajsonrpc.BigInt `json:"totalBalance"`
+	TotalBalance BigInt `json:"totalBalance"`
 }
 
 // GetCoinType returns GetAllBalancesAddressBalancesBalanceConnectionNodesBalance.CoinType, and is useful for accessing the field via an interface.
@@ -1621,7 +1620,7 @@ func (v *GetAllBalancesAddressBalancesBalanceConnectionNodesBalance) GetCoinObje
 }
 
 // GetTotalBalance returns GetAllBalancesAddressBalancesBalanceConnectionNodesBalance.TotalBalance, and is useful for accessing the field via an interface.
-func (v *GetAllBalancesAddressBalancesBalanceConnectionNodesBalance) GetTotalBalance() iotajsonrpc.BigInt {
+func (v *GetAllBalancesAddressBalancesBalanceConnectionNodesBalance) GetTotalBalance() BigInt {
 	return v.TotalBalance
 }
 
@@ -1713,7 +1712,7 @@ func (v *GetAllCoinsAddressCoinsCoinConnection) GetNodes() []GetAllCoinsAddressC
 // Some 0x2::coin::Coin Move object.
 type GetAllCoinsAddressCoinsCoinConnectionNodesCoin struct {
 	// Balance of this coin object.
-	CoinBalance iotajsonrpc.BigInt `json:"coinBalance"`
+	CoinBalance BigInt `json:"coinBalance"`
 	// Displays the contents of the Move object in a JSON string and through
 	// GraphQL types. Also provides the flat representation of the type
 	// signature, and the BCS of the corresponding data.
@@ -1728,7 +1727,7 @@ type GetAllCoinsAddressCoinsCoinConnectionNodesCoin struct {
 }
 
 // GetCoinBalance returns GetAllCoinsAddressCoinsCoinConnectionNodesCoin.CoinBalance, and is useful for accessing the field via an interface.
-func (v *GetAllCoinsAddressCoinsCoinConnectionNodesCoin) GetCoinBalance() iotajsonrpc.BigInt {
+func (v *GetAllCoinsAddressCoinsCoinConnectionNodesCoin) GetCoinBalance() BigInt {
 	return v.CoinBalance
 }
 
@@ -1841,7 +1840,7 @@ type GetBalanceAddressBalance struct {
 	// How many coins of this type constitute the balance
 	CoinObjectCount uint64 `json:"coinObjectCount"`
 	// Total balance across all coin objects of the coin type
-	TotalBalance iotajsonrpc.BigInt `json:"totalBalance"`
+	TotalBalance BigInt `json:"totalBalance"`
 }
 
 // GetCoinType returns GetBalanceAddressBalance.CoinType, and is useful for accessing the field via an interface.
@@ -1853,7 +1852,7 @@ func (v *GetBalanceAddressBalance) GetCoinType() GetBalanceAddressBalanceCoinTyp
 func (v *GetBalanceAddressBalance) GetCoinObjectCount() uint64 { return v.CoinObjectCount }
 
 // GetTotalBalance returns GetBalanceAddressBalance.TotalBalance, and is useful for accessing the field via an interface.
-func (v *GetBalanceAddressBalance) GetTotalBalance() iotajsonrpc.BigInt { return v.TotalBalance }
+func (v *GetBalanceAddressBalance) GetTotalBalance() BigInt { return v.TotalBalance }
 
 // GetBalanceAddressBalanceCoinTypeMoveType includes the requested fields of the GraphQL type MoveType.
 // The GraphQL type's documentation follows.
@@ -1966,7 +1965,7 @@ func (v *GetCoinsAddressCoinsCoinConnection) GetNodes() []GetCoinsAddressCoinsCo
 // Some 0x2::coin::Coin Move object.
 type GetCoinsAddressCoinsCoinConnectionNodesCoin struct {
 	// Balance of this coin object.
-	CoinBalance iotajsonrpc.BigInt `json:"coinBalance"`
+	CoinBalance BigInt `json:"coinBalance"`
 	// Displays the contents of the Move object in a JSON string and through
 	// GraphQL types. Also provides the flat representation of the type
 	// signature, and the BCS of the corresponding data.
@@ -1981,9 +1980,7 @@ type GetCoinsAddressCoinsCoinConnectionNodesCoin struct {
 }
 
 // GetCoinBalance returns GetCoinsAddressCoinsCoinConnectionNodesCoin.CoinBalance, and is useful for accessing the field via an interface.
-func (v *GetCoinsAddressCoinsCoinConnectionNodesCoin) GetCoinBalance() iotajsonrpc.BigInt {
-	return v.CoinBalance
-}
+func (v *GetCoinsAddressCoinsCoinConnectionNodesCoin) GetCoinBalance() BigInt { return v.CoinBalance }
 
 // GetContents returns GetCoinsAddressCoinsCoinConnectionNodesCoin.Contents, and is useful for accessing the field via an interface.
 func (v *GetCoinsAddressCoinsCoinConnectionNodesCoin) GetContents() GetCoinsAddressCoinsCoinConnectionNodesCoinContentsMoveValue {
@@ -2354,7 +2351,7 @@ type GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject st
 	// The amount of IOTA we would rebate if this object gets deleted or
 	// mutated. This number is recalculated based on the present storage
 	// gas price.
-	StorageRebate iotajsonrpc.BigInt `json:"storageRebate"`
+	StorageRebate BigInt `json:"storageRebate"`
 	// The Base64-encoded BCS serialization of the object's content.
 	Bcs iotago.Base64Data `json:"bcs"`
 	// The set of named templates defined on-chain for the type of this object,
@@ -2399,7 +2396,7 @@ func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjec
 }
 
 // GetStorageRebate returns GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject.StorageRebate, and is useful for accessing the field via an interface.
-func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject) GetStorageRebate() iotajsonrpc.BigInt {
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject) GetStorageRebate() BigInt {
 	return v.StorageRebate
 }
 
@@ -2461,7 +2458,7 @@ type __premarshalGetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueM
 
 	PreviousTransactionBlock GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectPreviousTransactionBlock `json:"previousTransactionBlock"`
 
-	StorageRebate iotajsonrpc.BigInt `json:"storageRebate"`
+	StorageRebate BigInt `json:"storageRebate"`
 
 	Bcs iotago.Base64Data `json:"bcs"`
 
@@ -3303,9 +3300,9 @@ type GetLatestIotaSystemStateEpoch struct {
 	EndTimestamp time.Time `json:"endTimestamp"`
 	// The minimum gas price that a quorum of validators are guaranteed to sign
 	// a transaction for.
-	ReferenceGasPrice iotajsonrpc.BigInt `json:"referenceGasPrice"`
+	ReferenceGasPrice BigInt `json:"referenceGasPrice"`
 	// The total IOTA supply.
-	IotaTotalSupply iotajsonrpc.BigInt `json:"iotaTotalSupply"`
+	IotaTotalSupply BigInt `json:"iotaTotalSupply"`
 	// Information about whether this epoch was started in safe mode, which
 	// happens if the full epoch change logic fails for some reason.
 	SafeMode GetLatestIotaSystemStateEpochSafeMode `json:"safeMode"`
@@ -3339,14 +3336,10 @@ func (v *GetLatestIotaSystemStateEpoch) GetStartTimestamp() time.Time { return v
 func (v *GetLatestIotaSystemStateEpoch) GetEndTimestamp() time.Time { return v.EndTimestamp }
 
 // GetReferenceGasPrice returns GetLatestIotaSystemStateEpoch.ReferenceGasPrice, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpoch) GetReferenceGasPrice() iotajsonrpc.BigInt {
-	return v.ReferenceGasPrice
-}
+func (v *GetLatestIotaSystemStateEpoch) GetReferenceGasPrice() BigInt { return v.ReferenceGasPrice }
 
 // GetIotaTotalSupply returns GetLatestIotaSystemStateEpoch.IotaTotalSupply, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpoch) GetIotaTotalSupply() iotajsonrpc.BigInt {
-	return v.IotaTotalSupply
-}
+func (v *GetLatestIotaSystemStateEpoch) GetIotaTotalSupply() BigInt { return v.IotaTotalSupply }
 
 // GetSafeMode returns GetLatestIotaSystemStateEpoch.SafeMode, and is useful for accessing the field via an interface.
 func (v *GetLatestIotaSystemStateEpoch) GetSafeMode() GetLatestIotaSystemStateEpochSafeMode {
@@ -3424,36 +3417,36 @@ func (v *GetLatestIotaSystemStateEpochSafeMode) GetGasSummary() GetLatestIotaSys
 // Breakdown of gas costs in effects.
 type GetLatestIotaSystemStateEpochSafeModeGasSummaryGasCostSummary struct {
 	// Gas paid for executing this transaction (in NANOS).
-	ComputationCost iotajsonrpc.BigInt `json:"computationCost"`
+	ComputationCost BigInt `json:"computationCost"`
 	// Part of storage cost that is not reclaimed when data created by this
 	// transaction is cleaned up (in NANOS).
-	NonRefundableStorageFee iotajsonrpc.BigInt `json:"nonRefundableStorageFee"`
+	NonRefundableStorageFee BigInt `json:"nonRefundableStorageFee"`
 	// Gas paid for the data stored on-chain by this transaction (in NANOS).
-	StorageCost iotajsonrpc.BigInt `json:"storageCost"`
+	StorageCost BigInt `json:"storageCost"`
 	// Part of storage cost that can be reclaimed by cleaning up data created
 	// by this transaction (when objects are deleted or an object is
 	// modified, which is treated as a deletion followed by a creation) (in
 	// NANOS).
-	StorageRebate iotajsonrpc.BigInt `json:"storageRebate"`
+	StorageRebate BigInt `json:"storageRebate"`
 }
 
 // GetComputationCost returns GetLatestIotaSystemStateEpochSafeModeGasSummaryGasCostSummary.ComputationCost, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochSafeModeGasSummaryGasCostSummary) GetComputationCost() iotajsonrpc.BigInt {
+func (v *GetLatestIotaSystemStateEpochSafeModeGasSummaryGasCostSummary) GetComputationCost() BigInt {
 	return v.ComputationCost
 }
 
 // GetNonRefundableStorageFee returns GetLatestIotaSystemStateEpochSafeModeGasSummaryGasCostSummary.NonRefundableStorageFee, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochSafeModeGasSummaryGasCostSummary) GetNonRefundableStorageFee() iotajsonrpc.BigInt {
+func (v *GetLatestIotaSystemStateEpochSafeModeGasSummaryGasCostSummary) GetNonRefundableStorageFee() BigInt {
 	return v.NonRefundableStorageFee
 }
 
 // GetStorageCost returns GetLatestIotaSystemStateEpochSafeModeGasSummaryGasCostSummary.StorageCost, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochSafeModeGasSummaryGasCostSummary) GetStorageCost() iotajsonrpc.BigInt {
+func (v *GetLatestIotaSystemStateEpochSafeModeGasSummaryGasCostSummary) GetStorageCost() BigInt {
 	return v.StorageCost
 }
 
 // GetStorageRebate returns GetLatestIotaSystemStateEpochSafeModeGasSummaryGasCostSummary.StorageRebate, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochSafeModeGasSummaryGasCostSummary) GetStorageRebate() iotajsonrpc.BigInt {
+func (v *GetLatestIotaSystemStateEpochSafeModeGasSummaryGasCostSummary) GetStorageRebate() BigInt {
 	return v.StorageRebate
 }
 
@@ -3468,18 +3461,18 @@ type GetLatestIotaSystemStateEpochStorageFund struct {
 	// The system maintains an invariant that the sum of all storage fees into
 	// the storage fund is equal to the sum of all storage rebates out,
 	// the total storage rebates remaining, and the non-refundable balance.
-	NonRefundableBalance iotajsonrpc.BigInt `json:"nonRefundableBalance"`
+	NonRefundableBalance BigInt `json:"nonRefundableBalance"`
 	// Sum of storage rebates of live objects on chain.
-	TotalObjectStorageRebates iotajsonrpc.BigInt `json:"totalObjectStorageRebates"`
+	TotalObjectStorageRebates BigInt `json:"totalObjectStorageRebates"`
 }
 
 // GetNonRefundableBalance returns GetLatestIotaSystemStateEpochStorageFund.NonRefundableBalance, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochStorageFund) GetNonRefundableBalance() iotajsonrpc.BigInt {
+func (v *GetLatestIotaSystemStateEpochStorageFund) GetNonRefundableBalance() BigInt {
 	return v.NonRefundableBalance
 }
 
 // GetTotalObjectStorageRebates returns GetLatestIotaSystemStateEpochStorageFund.TotalObjectStorageRebates, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochStorageFund) GetTotalObjectStorageRebates() iotajsonrpc.BigInt {
+func (v *GetLatestIotaSystemStateEpochStorageFund) GetTotalObjectStorageRebates() BigInt {
 	return v.TotalObjectStorageRebates
 }
 
@@ -3493,20 +3486,20 @@ type GetLatestIotaSystemStateEpochSystemParameters struct {
 	// The maximum number of active validators that the system supports.
 	MaxValidatorCount int `json:"maxValidatorCount"`
 	// Minimum stake needed to become a new validator.
-	MinValidatorJoiningStake iotajsonrpc.BigInt `json:"minValidatorJoiningStake"`
+	MinValidatorJoiningStake BigInt `json:"minValidatorJoiningStake"`
 	// Target duration of an epoch, in milliseconds.
-	DurationMs iotajsonrpc.BigInt `json:"durationMs"`
+	DurationMs BigInt `json:"durationMs"`
 	// Validators with stake below this threshold will enter the grace period
 	// (see `validatorLowStakeGracePeriod`), after which they are removed
 	// from the active validator set.
-	ValidatorLowStakeThreshold iotajsonrpc.BigInt `json:"validatorLowStakeThreshold"`
+	ValidatorLowStakeThreshold BigInt `json:"validatorLowStakeThreshold"`
 	// The number of epochs that a validator has to recover from having less
 	// than `validatorLowStakeThreshold` stake.
-	ValidatorLowStakeGracePeriod iotajsonrpc.BigInt `json:"validatorLowStakeGracePeriod"`
+	ValidatorLowStakeGracePeriod BigInt `json:"validatorLowStakeGracePeriod"`
 	// Validators with stake below this threshold will be removed from the
 	// active validator set at the next epoch boundary, without a grace
 	// period.
-	ValidatorVeryLowStakeThreshold iotajsonrpc.BigInt `json:"validatorVeryLowStakeThreshold"`
+	ValidatorVeryLowStakeThreshold BigInt `json:"validatorVeryLowStakeThreshold"`
 }
 
 // GetMinValidatorCount returns GetLatestIotaSystemStateEpochSystemParameters.MinValidatorCount, and is useful for accessing the field via an interface.
@@ -3520,27 +3513,25 @@ func (v *GetLatestIotaSystemStateEpochSystemParameters) GetMaxValidatorCount() i
 }
 
 // GetMinValidatorJoiningStake returns GetLatestIotaSystemStateEpochSystemParameters.MinValidatorJoiningStake, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochSystemParameters) GetMinValidatorJoiningStake() iotajsonrpc.BigInt {
+func (v *GetLatestIotaSystemStateEpochSystemParameters) GetMinValidatorJoiningStake() BigInt {
 	return v.MinValidatorJoiningStake
 }
 
 // GetDurationMs returns GetLatestIotaSystemStateEpochSystemParameters.DurationMs, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochSystemParameters) GetDurationMs() iotajsonrpc.BigInt {
-	return v.DurationMs
-}
+func (v *GetLatestIotaSystemStateEpochSystemParameters) GetDurationMs() BigInt { return v.DurationMs }
 
 // GetValidatorLowStakeThreshold returns GetLatestIotaSystemStateEpochSystemParameters.ValidatorLowStakeThreshold, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochSystemParameters) GetValidatorLowStakeThreshold() iotajsonrpc.BigInt {
+func (v *GetLatestIotaSystemStateEpochSystemParameters) GetValidatorLowStakeThreshold() BigInt {
 	return v.ValidatorLowStakeThreshold
 }
 
 // GetValidatorLowStakeGracePeriod returns GetLatestIotaSystemStateEpochSystemParameters.ValidatorLowStakeGracePeriod, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochSystemParameters) GetValidatorLowStakeGracePeriod() iotajsonrpc.BigInt {
+func (v *GetLatestIotaSystemStateEpochSystemParameters) GetValidatorLowStakeGracePeriod() BigInt {
 	return v.ValidatorLowStakeGracePeriod
 }
 
 // GetValidatorVeryLowStakeThreshold returns GetLatestIotaSystemStateEpochSystemParameters.ValidatorVeryLowStakeThreshold, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochSystemParameters) GetValidatorVeryLowStakeThreshold() iotajsonrpc.BigInt {
+func (v *GetLatestIotaSystemStateEpochSystemParameters) GetValidatorVeryLowStakeThreshold() BigInt {
 	return v.ValidatorVeryLowStakeThreshold
 }
 
@@ -3564,7 +3555,7 @@ type GetLatestIotaSystemStateEpochValidatorSet struct {
 	PendingRemovals []int `json:"pendingRemovals"`
 	// Total amount of stake for all active validators at the beginning of the
 	// epoch.
-	TotalStake iotajsonrpc.BigInt `json:"totalStake"`
+	TotalStake BigInt `json:"totalStake"`
 	// Object ID of the `Table` storing the mapping from staking pool ids to
 	// the addresses of the corresponding validators. This is needed
 	// because a validator's address can potentially change but the object
@@ -3610,9 +3601,7 @@ func (v *GetLatestIotaSystemStateEpochValidatorSet) GetPendingRemovals() []int {
 }
 
 // GetTotalStake returns GetLatestIotaSystemStateEpochValidatorSet.TotalStake, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochValidatorSet) GetTotalStake() iotajsonrpc.BigInt {
-	return v.TotalStake
-}
+func (v *GetLatestIotaSystemStateEpochValidatorSet) GetTotalStake() BigInt { return v.TotalStake }
 
 // GetStakingPoolMappingsId returns GetLatestIotaSystemStateEpochValidatorSet.StakingPoolMappingsId, and is useful for accessing the field via an interface.
 func (v *GetLatestIotaSystemStateEpochValidatorSet) GetStakingPoolMappingsId() iotago.Address {
@@ -4162,9 +4151,7 @@ func (v *GetObjectObject) GetPreviousTransactionBlock() RPC_OBJECT_FIELDSPreviou
 }
 
 // GetStorageRebate returns GetObjectObject.StorageRebate, and is useful for accessing the field via an interface.
-func (v *GetObjectObject) GetStorageRebate() iotajsonrpc.BigInt {
-	return v.RPC_OBJECT_FIELDS.StorageRebate
-}
+func (v *GetObjectObject) GetStorageRebate() BigInt { return v.RPC_OBJECT_FIELDS.StorageRebate }
 
 // GetDigest returns GetObjectObject.Digest, and is useful for accessing the field via an interface.
 func (v *GetObjectObject) GetDigest() string { return v.RPC_OBJECT_FIELDS.Digest }
@@ -4216,7 +4203,7 @@ type __premarshalGetObjectObject struct {
 
 	PreviousTransactionBlock RPC_OBJECT_FIELDSPreviousTransactionBlock `json:"previousTransactionBlock"`
 
-	StorageRebate iotajsonrpc.BigInt `json:"storageRebate"`
+	StorageRebate BigInt `json:"storageRebate"`
 
 	Digest string `json:"digest"`
 
@@ -4353,7 +4340,7 @@ func (v *GetOwnedObjectsAddressObjectsMoveObjectConnectionNodesMoveObject) GetPr
 }
 
 // GetStorageRebate returns GetOwnedObjectsAddressObjectsMoveObjectConnectionNodesMoveObject.StorageRebate, and is useful for accessing the field via an interface.
-func (v *GetOwnedObjectsAddressObjectsMoveObjectConnectionNodesMoveObject) GetStorageRebate() iotajsonrpc.BigInt {
+func (v *GetOwnedObjectsAddressObjectsMoveObjectConnectionNodesMoveObject) GetStorageRebate() BigInt {
 	return v.RPC_MOVE_OBJECT_FIELDS.StorageRebate
 }
 
@@ -4414,7 +4401,7 @@ type __premarshalGetOwnedObjectsAddressObjectsMoveObjectConnectionNodesMoveObjec
 
 	PreviousTransactionBlock RPC_MOVE_OBJECT_FIELDSPreviousTransactionBlock `json:"previousTransactionBlock"`
 
-	StorageRebate iotajsonrpc.BigInt `json:"storageRebate"`
+	StorageRebate BigInt `json:"storageRebate"`
 
 	Digest string `json:"digest"`
 
@@ -4776,7 +4763,7 @@ type GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjec
 	// The amount of IOTA we would rebate if this object gets deleted or
 	// mutated. This number is recalculated based on the present storage
 	// gas price.
-	StorageRebate iotajsonrpc.BigInt `json:"storageRebate"`
+	StorageRebate BigInt `json:"storageRebate"`
 	// The Base64-encoded BCS serialization of the object's content.
 	Bcs iotago.Base64Data `json:"bcs"`
 	// The set of named templates defined on-chain for the type of this object,
@@ -4821,7 +4808,7 @@ func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveO
 }
 
 // GetStorageRebate returns GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject.StorageRebate, and is useful for accessing the field via an interface.
-func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject) GetStorageRebate() iotajsonrpc.BigInt {
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject) GetStorageRebate() BigInt {
 	return v.StorageRebate
 }
 
@@ -4883,7 +4870,7 @@ type __premarshalGetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldVa
 
 	PreviousTransactionBlock GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectPreviousTransactionBlock `json:"previousTransactionBlock"`
 
-	StorageRebate iotajsonrpc.BigInt `json:"storageRebate"`
+	StorageRebate BigInt `json:"storageRebate"`
 
 	Bcs iotago.Base64Data `json:"bcs"`
 
@@ -5279,13 +5266,11 @@ func (v *GetOwnerDynamicFieldObjectResponse) GetOwner() GetOwnerDynamicFieldObje
 type GetReferenceGasPriceEpoch struct {
 	// The minimum gas price that a quorum of validators are guaranteed to sign
 	// a transaction for.
-	ReferenceGasPrice iotajsonrpc.BigInt `json:"referenceGasPrice"`
+	ReferenceGasPrice BigInt `json:"referenceGasPrice"`
 }
 
 // GetReferenceGasPrice returns GetReferenceGasPriceEpoch.ReferenceGasPrice, and is useful for accessing the field via an interface.
-func (v *GetReferenceGasPriceEpoch) GetReferenceGasPrice() iotajsonrpc.BigInt {
-	return v.ReferenceGasPrice
-}
+func (v *GetReferenceGasPriceEpoch) GetReferenceGasPrice() BigInt { return v.ReferenceGasPrice }
 
 // GetReferenceGasPriceResponse is returned by GetReferenceGasPrice on success.
 type GetReferenceGasPriceResponse struct {
@@ -5338,7 +5323,7 @@ type GetStakesAddressStakedIotasStakedIotaConnectionNodesStakedIota struct {
 }
 
 // GetPrincipal returns GetStakesAddressStakedIotasStakedIotaConnectionNodesStakedIota.Principal, and is useful for accessing the field via an interface.
-func (v *GetStakesAddressStakedIotasStakedIotaConnectionNodesStakedIota) GetPrincipal() iotajsonrpc.BigInt {
+func (v *GetStakesAddressStakedIotasStakedIotaConnectionNodesStakedIota) GetPrincipal() BigInt {
 	return v.RPC_STAKE_FIELDS.Principal
 }
 
@@ -5368,7 +5353,7 @@ func (v *GetStakesAddressStakedIotasStakedIotaConnectionNodesStakedIota) GetAddr
 }
 
 // GetEstimatedReward returns GetStakesAddressStakedIotasStakedIotaConnectionNodesStakedIota.EstimatedReward, and is useful for accessing the field via an interface.
-func (v *GetStakesAddressStakedIotasStakedIotaConnectionNodesStakedIota) GetEstimatedReward() iotajsonrpc.BigInt {
+func (v *GetStakesAddressStakedIotasStakedIotaConnectionNodesStakedIota) GetEstimatedReward() BigInt {
 	return v.RPC_STAKE_FIELDS.EstimatedReward
 }
 
@@ -5398,7 +5383,7 @@ func (v *GetStakesAddressStakedIotasStakedIotaConnectionNodesStakedIota) Unmarsh
 }
 
 type __premarshalGetStakesAddressStakedIotasStakedIotaConnectionNodesStakedIota struct {
-	Principal iotajsonrpc.BigInt `json:"principal"`
+	Principal BigInt `json:"principal"`
 
 	ActivatedEpoch RPC_STAKE_FIELDSActivatedEpoch `json:"activatedEpoch"`
 
@@ -5410,7 +5395,7 @@ type __premarshalGetStakesAddressStakedIotasStakedIotaConnectionNodesStakedIota 
 
 	Address iotago.Address `json:"address"`
 
-	EstimatedReward iotajsonrpc.BigInt `json:"estimatedReward"`
+	EstimatedReward BigInt `json:"estimatedReward"`
 }
 
 func (v *GetStakesAddressStakedIotasStakedIotaConnectionNodesStakedIota) MarshalJSON() ([]byte, error) {
@@ -5516,7 +5501,7 @@ type GetStakesByIdsObjectsObjectConnectionNodesObjectAsMoveObjectAsStakedIota st
 }
 
 // GetPrincipal returns GetStakesByIdsObjectsObjectConnectionNodesObjectAsMoveObjectAsStakedIota.Principal, and is useful for accessing the field via an interface.
-func (v *GetStakesByIdsObjectsObjectConnectionNodesObjectAsMoveObjectAsStakedIota) GetPrincipal() iotajsonrpc.BigInt {
+func (v *GetStakesByIdsObjectsObjectConnectionNodesObjectAsMoveObjectAsStakedIota) GetPrincipal() BigInt {
 	return v.RPC_STAKE_FIELDS.Principal
 }
 
@@ -5546,7 +5531,7 @@ func (v *GetStakesByIdsObjectsObjectConnectionNodesObjectAsMoveObjectAsStakedIot
 }
 
 // GetEstimatedReward returns GetStakesByIdsObjectsObjectConnectionNodesObjectAsMoveObjectAsStakedIota.EstimatedReward, and is useful for accessing the field via an interface.
-func (v *GetStakesByIdsObjectsObjectConnectionNodesObjectAsMoveObjectAsStakedIota) GetEstimatedReward() iotajsonrpc.BigInt {
+func (v *GetStakesByIdsObjectsObjectConnectionNodesObjectAsMoveObjectAsStakedIota) GetEstimatedReward() BigInt {
 	return v.RPC_STAKE_FIELDS.EstimatedReward
 }
 
@@ -5576,7 +5561,7 @@ func (v *GetStakesByIdsObjectsObjectConnectionNodesObjectAsMoveObjectAsStakedIot
 }
 
 type __premarshalGetStakesByIdsObjectsObjectConnectionNodesObjectAsMoveObjectAsStakedIota struct {
-	Principal iotajsonrpc.BigInt `json:"principal"`
+	Principal BigInt `json:"principal"`
 
 	ActivatedEpoch RPC_STAKE_FIELDSActivatedEpoch `json:"activatedEpoch"`
 
@@ -5588,7 +5573,7 @@ type __premarshalGetStakesByIdsObjectsObjectConnectionNodesObjectAsMoveObjectAsS
 
 	Address iotago.Address `json:"address"`
 
-	EstimatedReward iotajsonrpc.BigInt `json:"estimatedReward"`
+	EstimatedReward BigInt `json:"estimatedReward"`
 }
 
 func (v *GetStakesByIdsObjectsObjectConnectionNodesObjectAsMoveObjectAsStakedIota) MarshalJSON() ([]byte, error) {
@@ -5814,7 +5799,7 @@ func (v *MultiGetObjectsObjectsObjectConnectionNodesObject) GetPreviousTransacti
 }
 
 // GetStorageRebate returns MultiGetObjectsObjectsObjectConnectionNodesObject.StorageRebate, and is useful for accessing the field via an interface.
-func (v *MultiGetObjectsObjectsObjectConnectionNodesObject) GetStorageRebate() iotajsonrpc.BigInt {
+func (v *MultiGetObjectsObjectsObjectConnectionNodesObject) GetStorageRebate() BigInt {
 	return v.RPC_OBJECT_FIELDS.StorageRebate
 }
 
@@ -5870,7 +5855,7 @@ type __premarshalMultiGetObjectsObjectsObjectConnectionNodesObject struct {
 
 	PreviousTransactionBlock RPC_OBJECT_FIELDSPreviousTransactionBlock `json:"previousTransactionBlock"`
 
-	StorageRebate iotajsonrpc.BigInt `json:"storageRebate"`
+	StorageRebate BigInt `json:"storageRebate"`
 
 	Digest string `json:"digest"`
 
@@ -6270,7 +6255,7 @@ type PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalan
 	// The address or object whose balance has changed.
 	Owner PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner `json:"owner"`
 	// The signed balance change.
-	Amount iotajsonrpc.BigInt `json:"amount"`
+	Amount BigInt `json:"amount"`
 }
 
 // GetCoinType returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange.CoinType, and is useful for accessing the field via an interface.
@@ -6284,7 +6269,7 @@ func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesB
 }
 
 // GetAmount returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange.Amount, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange) GetAmount() iotajsonrpc.BigInt {
+func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange) GetAmount() BigInt {
 	return v.Amount
 }
 
@@ -7259,7 +7244,7 @@ type RPC_MOVE_OBJECT_FIELDS struct {
 	// The amount of IOTA we would rebate if this object gets deleted or
 	// mutated. This number is recalculated based on the present storage
 	// gas price.
-	StorageRebate iotajsonrpc.BigInt `json:"storageRebate"`
+	StorageRebate BigInt `json:"storageRebate"`
 	// 32-byte hash that identifies the object's contents, encoded as a Base58
 	// string.
 	Digest  string `json:"digest"`
@@ -7303,7 +7288,7 @@ func (v *RPC_MOVE_OBJECT_FIELDS) GetPreviousTransactionBlock() RPC_MOVE_OBJECT_F
 }
 
 // GetStorageRebate returns RPC_MOVE_OBJECT_FIELDS.StorageRebate, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_OBJECT_FIELDS) GetStorageRebate() iotajsonrpc.BigInt { return v.StorageRebate }
+func (v *RPC_MOVE_OBJECT_FIELDS) GetStorageRebate() BigInt { return v.StorageRebate }
 
 // GetDigest returns RPC_MOVE_OBJECT_FIELDS.Digest, and is useful for accessing the field via an interface.
 func (v *RPC_MOVE_OBJECT_FIELDS) GetDigest() string { return v.Digest }
@@ -7366,7 +7351,7 @@ type __premarshalRPC_MOVE_OBJECT_FIELDS struct {
 
 	PreviousTransactionBlock RPC_MOVE_OBJECT_FIELDSPreviousTransactionBlock `json:"previousTransactionBlock"`
 
-	StorageRebate iotajsonrpc.BigInt `json:"storageRebate"`
+	StorageRebate BigInt `json:"storageRebate"`
 
 	Digest string `json:"digest"`
 
@@ -7952,7 +7937,7 @@ type RPC_OBJECT_FIELDS struct {
 	// The amount of IOTA we would rebate if this object gets deleted or
 	// mutated. This number is recalculated based on the present storage
 	// gas price.
-	StorageRebate iotajsonrpc.BigInt `json:"storageRebate"`
+	StorageRebate BigInt `json:"storageRebate"`
 	// 32-byte hash that identifies the object's current contents, encoded as a
 	// Base58 string.
 	Digest string `json:"digest"`
@@ -7993,7 +7978,7 @@ func (v *RPC_OBJECT_FIELDS) GetPreviousTransactionBlock() RPC_OBJECT_FIELDSPrevi
 }
 
 // GetStorageRebate returns RPC_OBJECT_FIELDS.StorageRebate, and is useful for accessing the field via an interface.
-func (v *RPC_OBJECT_FIELDS) GetStorageRebate() iotajsonrpc.BigInt { return v.StorageRebate }
+func (v *RPC_OBJECT_FIELDS) GetStorageRebate() BigInt { return v.StorageRebate }
 
 // GetDigest returns RPC_OBJECT_FIELDS.Digest, and is useful for accessing the field via an interface.
 func (v *RPC_OBJECT_FIELDS) GetDigest() string { return v.Digest }
@@ -8051,7 +8036,7 @@ type __premarshalRPC_OBJECT_FIELDS struct {
 
 	PreviousTransactionBlock RPC_OBJECT_FIELDSPreviousTransactionBlock `json:"previousTransactionBlock"`
 
-	StorageRebate iotajsonrpc.BigInt `json:"storageRebate"`
+	StorageRebate BigInt `json:"storageRebate"`
 
 	Digest string `json:"digest"`
 
@@ -8889,7 +8874,7 @@ func (v *RPC_OBJECT_OWNER_FIELDSShared) GetInitialSharedVersion() uint64 {
 // Represents a `0x3::staking_pool::StakedIota` Move object on-chain.
 type RPC_STAKE_FIELDS struct {
 	// The IOTA that was initially staked.
-	Principal iotajsonrpc.BigInt `json:"principal"`
+	Principal BigInt `json:"principal"`
 	// The epoch at which this stake became active.
 	ActivatedEpoch RPC_STAKE_FIELDSActivatedEpoch `json:"activatedEpoch"`
 	// A stake can be pending, active, or unstaked
@@ -8912,11 +8897,11 @@ type RPC_STAKE_FIELDS struct {
 	// - `current_stake_rate` is the stake rate in the current epoch.
 	//
 	// This value is only available if the stake is active.
-	EstimatedReward iotajsonrpc.BigInt `json:"estimatedReward"`
+	EstimatedReward BigInt `json:"estimatedReward"`
 }
 
 // GetPrincipal returns RPC_STAKE_FIELDS.Principal, and is useful for accessing the field via an interface.
-func (v *RPC_STAKE_FIELDS) GetPrincipal() iotajsonrpc.BigInt { return v.Principal }
+func (v *RPC_STAKE_FIELDS) GetPrincipal() BigInt { return v.Principal }
 
 // GetActivatedEpoch returns RPC_STAKE_FIELDS.ActivatedEpoch, and is useful for accessing the field via an interface.
 func (v *RPC_STAKE_FIELDS) GetActivatedEpoch() RPC_STAKE_FIELDSActivatedEpoch {
@@ -8938,7 +8923,7 @@ func (v *RPC_STAKE_FIELDS) GetContents() RPC_STAKE_FIELDSContentsMoveValue { ret
 func (v *RPC_STAKE_FIELDS) GetAddress() iotago.Address { return v.Address }
 
 // GetEstimatedReward returns RPC_STAKE_FIELDS.EstimatedReward, and is useful for accessing the field via an interface.
-func (v *RPC_STAKE_FIELDS) GetEstimatedReward() iotajsonrpc.BigInt { return v.EstimatedReward }
+func (v *RPC_STAKE_FIELDS) GetEstimatedReward() BigInt { return v.EstimatedReward }
 
 // RPC_STAKE_FIELDSActivatedEpoch includes the requested fields of the GraphQL type Epoch.
 // The GraphQL type's documentation follows.
@@ -8956,16 +8941,14 @@ type RPC_STAKE_FIELDSActivatedEpoch struct {
 	EpochId uint64 `json:"epochId"`
 	// The minimum gas price that a quorum of validators are guaranteed to sign
 	// a transaction for.
-	ReferenceGasPrice iotajsonrpc.BigInt `json:"referenceGasPrice"`
+	ReferenceGasPrice BigInt `json:"referenceGasPrice"`
 }
 
 // GetEpochId returns RPC_STAKE_FIELDSActivatedEpoch.EpochId, and is useful for accessing the field via an interface.
 func (v *RPC_STAKE_FIELDSActivatedEpoch) GetEpochId() uint64 { return v.EpochId }
 
 // GetReferenceGasPrice returns RPC_STAKE_FIELDSActivatedEpoch.ReferenceGasPrice, and is useful for accessing the field via an interface.
-func (v *RPC_STAKE_FIELDSActivatedEpoch) GetReferenceGasPrice() iotajsonrpc.BigInt {
-	return v.ReferenceGasPrice
-}
+func (v *RPC_STAKE_FIELDSActivatedEpoch) GetReferenceGasPrice() BigInt { return v.ReferenceGasPrice }
 
 // RPC_STAKE_FIELDSContentsMoveValue includes the requested fields of the GraphQL type MoveValue.
 type RPC_STAKE_FIELDSContentsMoveValue struct {
@@ -9132,7 +9115,7 @@ type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceCh
 	// The address or object whose balance has changed.
 	Owner RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner `json:"owner"`
 	// The signed balance change.
-	Amount iotajsonrpc.BigInt `json:"amount"`
+	Amount BigInt `json:"amount"`
 }
 
 // GetCoinType returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange.CoinType, and is useful for accessing the field via an interface.
@@ -9146,7 +9129,7 @@ func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalan
 }
 
 // GetAmount returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange.Amount, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange) GetAmount() iotajsonrpc.BigInt {
+func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange) GetAmount() BigInt {
 	return v.Amount
 }
 
@@ -9390,43 +9373,43 @@ func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffects) GetGasS
 // Breakdown of gas costs in effects.
 type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary struct {
 	// Gas paid for executing this transaction (in NANOS).
-	ComputationCost iotajsonrpc.BigInt `json:"computationCost"`
+	ComputationCost BigInt `json:"computationCost"`
 	// Gas burned for executing this transaction (in NANOS).
-	ComputationCostBurned iotajsonrpc.BigInt `json:"computationCostBurned"`
+	ComputationCostBurned BigInt `json:"computationCostBurned"`
 	// Gas paid for the data stored on-chain by this transaction (in NANOS).
-	StorageCost iotajsonrpc.BigInt `json:"storageCost"`
+	StorageCost BigInt `json:"storageCost"`
 	// Part of storage cost that can be reclaimed by cleaning up data created
 	// by this transaction (when objects are deleted or an object is
 	// modified, which is treated as a deletion followed by a creation) (in
 	// NANOS).
-	StorageRebate iotajsonrpc.BigInt `json:"storageRebate"`
+	StorageRebate BigInt `json:"storageRebate"`
 	// Part of storage cost that is not reclaimed when data created by this
 	// transaction is cleaned up (in NANOS).
-	NonRefundableStorageFee iotajsonrpc.BigInt `json:"nonRefundableStorageFee"`
+	NonRefundableStorageFee BigInt `json:"nonRefundableStorageFee"`
 }
 
 // GetComputationCost returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary.ComputationCost, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary) GetComputationCost() iotajsonrpc.BigInt {
+func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary) GetComputationCost() BigInt {
 	return v.ComputationCost
 }
 
 // GetComputationCostBurned returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary.ComputationCostBurned, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary) GetComputationCostBurned() iotajsonrpc.BigInt {
+func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary) GetComputationCostBurned() BigInt {
 	return v.ComputationCostBurned
 }
 
 // GetStorageCost returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary.StorageCost, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary) GetStorageCost() iotajsonrpc.BigInt {
+func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary) GetStorageCost() BigInt {
 	return v.StorageCost
 }
 
 // GetStorageRebate returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary.StorageRebate, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary) GetStorageRebate() iotajsonrpc.BigInt {
+func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary) GetStorageRebate() BigInt {
 	return v.StorageRebate
 }
 
 // GetNonRefundableStorageFee returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary.NonRefundableStorageFee, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary) GetNonRefundableStorageFee() iotajsonrpc.BigInt {
+func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary) GetNonRefundableStorageFee() BigInt {
 	return v.NonRefundableStorageFee
 }
 
@@ -9913,9 +9896,7 @@ func (v *TryGetPastObjectObject) GetPreviousTransactionBlock() RPC_OBJECT_FIELDS
 }
 
 // GetStorageRebate returns TryGetPastObjectObject.StorageRebate, and is useful for accessing the field via an interface.
-func (v *TryGetPastObjectObject) GetStorageRebate() iotajsonrpc.BigInt {
-	return v.RPC_OBJECT_FIELDS.StorageRebate
-}
+func (v *TryGetPastObjectObject) GetStorageRebate() BigInt { return v.RPC_OBJECT_FIELDS.StorageRebate }
 
 // GetDigest returns TryGetPastObjectObject.Digest, and is useful for accessing the field via an interface.
 func (v *TryGetPastObjectObject) GetDigest() string { return v.RPC_OBJECT_FIELDS.Digest }
@@ -9967,7 +9948,7 @@ type __premarshalTryGetPastObjectObject struct {
 
 	PreviousTransactionBlock RPC_OBJECT_FIELDSPreviousTransactionBlock `json:"previousTransactionBlock"`
 
-	StorageRebate iotajsonrpc.BigInt `json:"storageRebate"`
+	StorageRebate BigInt `json:"storageRebate"`
 
 	Digest string `json:"digest"`
 

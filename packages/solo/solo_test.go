@@ -105,7 +105,7 @@ func TestDryRunForRequest(t *testing.T) {
 	txBytes, err := bcs.Marshal(&txData)
 	require.NoError(t, err)
 
-	dryRunRes1, err := ch.Env.L1Client().DryRunTransaction(context.Background(), iotaclient.DryRunTransactionRequest{
+	dryRunRes1, err := ch.Env.L1Client().DryRunTransaction(context.Background(), iotagraphql.DryRunTransactionRequest{
 		TxDataBytes: txBytes,
 	})
 	require.NoError(t, err)

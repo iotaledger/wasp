@@ -23,7 +23,7 @@ func TryMergeAllCoins(ctx context.Context) error {
 	client := cliclients.L1Client()
 	w := wallet.Load()
 
-	coins, err := client.GetAllCoins(ctx, iotaclient.GetAllCoinsRequest{
+	coins, err := client.GetAllCoins(ctx, iotagraphql.GetAllCoinsRequest{
 		Owner: w.Address().AsIotaAddress(),
 	})
 	if err != nil {
@@ -59,7 +59,7 @@ func TryManageCoinsAmount(ctx context.Context) {
 	client := cliclients.L1Client()
 	w := wallet.Load()
 
-	coinPage, err := client.GetCoins(ctx, iotaclient.GetCoinsRequest{
+	coinPage, err := client.GetCoins(ctx, iotagraphql.GetCoinsRequest{
 		Owner: w.Address().AsIotaAddress(),
 	})
 	log.Check(err)
@@ -111,7 +111,7 @@ func TryManageCoinsAmount(ctx context.Context) {
 	log.Check(err)
 	_, err = client.SignAndExecuteTransaction(
 		ctx,
-		&iotaclient.SignAndExecuteTransactionRequest{
+		&iotagraphql.SignAndExecuteTransactionRequest{
 			Signer:      cryptolib.SignerToIotaSigner(w),
 			TxDataBytes: txBytes,
 			Options: &iotagraphql.IotaTransactionBlockResponseOptions{
@@ -171,7 +171,7 @@ func mergeCoinsAndExecute(
 		return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 	}
 	txnResponse, err := client.SignAndExecuteTransaction(
-		ctx, &iotaclient.SignAndExecuteTransactionRequest{
+		ctx, &iotagraphql.SignAndExecuteTransactionRequest{
 			TxDataBytes: txBytes,
 			Signer:      owner,
 			Options:     &iotagraphql.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},

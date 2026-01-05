@@ -204,7 +204,7 @@ func TestSendObjectsBack(t *testing.T) {
 	_, err := ch.PostRequestSync(req, wallet)
 	require.NoError(t, err)
 
-	objRes, err := ch.Env.L1Client().GetObject(ch.Env.Ctx(), iotaclient.GetObjectRequest{
+	objRes, err := ch.Env.L1Client().GetObject(ch.Env.Ctx(), iotagraphql.GetObjectRequest{
 		ObjectID: &obj.ID,
 		Options: &iotagraphql.IotaObjectDataOptions{
 			ShowOwner: true,
@@ -232,7 +232,7 @@ func TestNFTOffledgerWithdraw(t *testing.T) {
 	_, err = ch.PostRequestOffLedger(wdReq, wallet)
 	require.NoError(t, err)
 
-	objRes, err := ch.Env.L1Client().GetObject(ch.Env.Ctx(), iotaclient.GetObjectRequest{
+	objRes, err := ch.Env.L1Client().GetObject(ch.Env.Ctx(), iotagraphql.GetObjectRequest{
 		ObjectID: &obj.ID,
 		Options: &iotagraphql.IotaObjectDataOptions{
 			ShowOwner: true,

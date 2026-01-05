@@ -27,7 +27,7 @@ func TestStartNewChain(t *testing.T) {
 	client := iscmoveclienttest.NewHTTPClient()
 	signer := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
 	time.Sleep(1 * time.Second) // FIXME tmp for graphql
-	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: signer.Address().AsIotaAddress()})
+	getCoinsRes, err := client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{Owner: signer.Address().AsIotaAddress()})
 	require.NoError(t, err)
 
 	anchor1, err := client.StartNewChain(
@@ -82,7 +82,7 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 
 	// Fetch fresh coin references after assetsBagPlaceCoinAmountWithGasCoin modified the gas coin
 	// Sleep to allow indexer to catch up
-	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: cryptolibSigner.Address().AsIotaAddress()})
+	getCoinsRes, err := client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{Owner: cryptolibSigner.Address().AsIotaAddress()})
 	require.NoError(t, err)
 
 	var createAndSendRequestRes *iotagraphql.IotaTransactionBlockResponse
@@ -112,7 +112,7 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 	require.NoError(t, err)
 
 	// Sleep to allow indexer to catch up after request creation
-	getCoinsRes, err = client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: chainSigner.Address().AsIotaAddress()})
+	getCoinsRes, err = client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{Owner: chainSigner.Address().AsIotaAddress()})
 	require.NoError(t, err)
 	gasCoin1 := getCoinsRes.Data[1]
 
@@ -138,7 +138,7 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 	})
 	time.Sleep(1 * time.Second)
 
-	getObjRes, err := client.GetObject(context.Background(), iotaclient.GetObjectRequest{
+	getObjRes, err := client.GetObject(context.Background(), iotagraphql.GetObjectRequest{
 		ObjectID: gasCoin1.CoinObjectID,
 		Options:  &iotagraphql.IotaObjectDataOptions{ShowBcs: true},
 	})

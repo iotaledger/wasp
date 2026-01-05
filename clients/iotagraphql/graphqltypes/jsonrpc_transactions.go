@@ -1,4 +1,4 @@
-package iotajsonrpc
+package graphqltypes
 
 import (
 	"encoding/json"
@@ -203,7 +203,7 @@ type IotaTransactionBlock struct {
 	TxSignatures []string                                        `json:"txSignatures"`
 }
 
-type ObjectChange struct {
+type JsonRpcObjectChange struct {
 	Published *struct {
 		PackageID iotago.ObjectID     `json:"packageId"`
 		Version   *BigInt             `json:"version"`
@@ -254,17 +254,17 @@ type ObjectChange struct {
 	} `json:"created,omitempty"`
 }
 
-func (o ObjectChange) IsBcsEnum() {}
+func (o JsonRpcObjectChange) IsBcsEnum() {}
 
-func (o ObjectChange) Tag() string {
+func (o JsonRpcObjectChange) Tag() string {
 	return "type"
 }
 
-func (o ObjectChange) Content() string {
+func (o JsonRpcObjectChange) Content() string {
 	return ""
 }
 
-func (o ObjectChange) String() string {
+func (o JsonRpcObjectChange) String() string {
 	s := ""
 	if o.Published != nil {
 		s = fmt.Sprintf("Published: %v", o.Published)
@@ -303,7 +303,7 @@ type IotaTransactionBlockResponse struct {
 	TimestampMs             *BigInt                                             `json:"timestampMs,omitempty"`
 	Checkpoint              *BigInt                                             `json:"checkpoint,omitempty"`
 	ConfirmedLocalExecution *bool                                               `json:"confirmedLocalExecution,omitempty"`
-	ObjectChanges           []serialization.TagJson[ObjectChange]               `json:"objectChanges,omitempty"`
+	ObjectChanges           []serialization.TagJson[JsonRpcObjectChange]               `json:"objectChanges,omitempty"`
 	BalanceChanges          []BalanceChange                                     `json:"balanceChanges,omitempty"`
 	Errors                  []string                                            `json:"errors,omitempty"`     // Errors that occurred in fetching/serializing the transaction.
 	RawEffects              []byte                                              `json:"rawEffects,omitempty"` // enable by show_raw_effects
@@ -620,7 +620,7 @@ type TransactionBlocksPage = Page[IotaTransactionBlockResponse, iotago.Transacti
 type DryRunTransactionBlockResponse struct {
 	Effects        serialization.TagJson[IotaTransactionBlockEffects] `json:"effects"`
 	Events         []IotaEvent                                        `json:"events"`
-	ObjectChanges  []serialization.TagJson[ObjectChange]              `json:"objectChanges" bcs:"optional"`
+	ObjectChanges  []serialization.TagJson[JsonRpcObjectChange]              `json:"objectChanges" bcs:"optional"`
 	BalanceChanges []BalanceChange                                    `json:"balanceChanges" bcs:"optional"`
 	Input          serialization.TagJson[IotaTransactionBlockData]    `json:"input"`
 }

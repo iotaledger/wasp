@@ -1,4 +1,4 @@
-package iotajsonrpc_test
+package graphqltypes_test
 
 import (
 	"encoding/json"
@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql/graphqltypes"
 )
 
 func TestIotaEventDecode(t *testing.T) {
@@ -34,7 +34,7 @@ func TestIotaEventDecode(t *testing.T) {
       "bcs": "RAW1DXkf0zRnVOgXGqq2vC7SbCxG790DPBSzCuUHrDN1LIQAAAAAgF51cLjUi+I9AKVPiG3ii58jsQ5vpoI5OmmIBZhBKcuO06jdQses9ChbAHgFG5gBAAAAeAUbmAEAADguDQAAAAAAL1WXv5ABAAA=",
       "timestampMs": "1721197686017"
     }`)
-	var event iotajsonrpc.IotaEvent
+	var event graphqltypes.IotaEvent
 	err := json.Unmarshal(receivingMessage, &event)
 	require.NoError(t, err)
 	require.Equal(

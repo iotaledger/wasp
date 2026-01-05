@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/log"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/client"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
@@ -21,19 +20,19 @@ type L1Config struct {
 }
 
 type L1Client interface {
-	client.IotaClient
+	iotagraphql.IotaClient
 
 	RequestFunds(ctx context.Context, address cryptolib.Address) error
 	Health(ctx context.Context) error
 	L2() L2Client
-	GetIotaClient() client.IotaClient
+	GetIotaClient() iotagraphql.IotaClient
 	WaitForNextVersionForTesting(ctx context.Context, timeout time.Duration, logger log.Logger, currentRef *iotago.ObjectRef, cb func()) (*iotago.ObjectRef, error)
 }
 
 var _ L1Client = &l1Client{}
 
 type l1Client struct {
-	client.IotaClient
+	iotagraphql.IotaClient
 
 	Config L1Config
 }
@@ -55,7 +54,7 @@ func (c *l1Client) L2() L2Client {
 	return iscmoveclient.NewClient(c.GetIotaClient(), c.Config.FaucetURL)
 }
 
-func (c *l1Client) GetIotaClient() client.IotaClient {
+func (c *l1Client) GetIotaClient() iotagraphql.IotaClient {
 	return c
 }
 
@@ -85,7 +84,7 @@ func (c *l1Client) WaitForNextVersionForTesting(ctx context.Context, timeout tim
 			return nil, fmt.Errorf("WaitForNextVersionForTesting: context deadline exceeded while waiting for object version change: %v", currentRef)
 		case <-ticker.C:
 			// Poll for object update
-			newRef, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: currentRef.ObjectID})
+			newRef, err := c.GetObject(ctx, iotagraphql.GetObjectRequest{ObjectID: currentRef.ObjectID})
 			if err != nil {
 				if logger != nil {
 					logger.LogInfof("WaitForNextVersionForTesting: error getting object: %v, retrying...", err)
@@ -121,7 +120,7 @@ func (c *l1Client) WaitForNextVersionForTesting(ctx context.Context, timeout tim
 	}
 }
 
-func NewL1Client(l1Config L1Config, waitUntilEffectsVisible *iotaclient.WaitParams) L1Client {
+func NewL1Client(l1Config L1Config, waitUntilEffectsVisible *iotagraphql.WaitParams) L1Client {
 	graphqlURL := iotaconn.GraphQLURL(l1Config.APIURL)
 	return &l1Client{
 		IotaClient: iotagraphql.NewGraphQLClientWithWaitParams(graphqlURL, waitUntilEffectsVisible),
@@ -129,7 +128,7 @@ func NewL1Client(l1Config L1Config, waitUntilEffectsVisible *iotaclient.WaitPara
 	}
 }
 
-func NewLocalnetClient(waitUntilEffectsVisible *iotaclient.WaitParams) L1Client {
+func NewLocalnetClient(waitUntilEffectsVisible *iotagraphql.WaitParams) L1Client {
 	return NewL1Client(L1Config{
 		APIURL:    iotaconn.LocalnetEndpointURL,
 		FaucetURL: iotaconn.LocalnetFaucetURL,

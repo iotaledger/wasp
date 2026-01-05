@@ -133,7 +133,7 @@ func runImportChain(dbPath string, node string, peers []string, quorum int, chai
 		return err
 	}
 
-	transferAnchor, err := cliclients.L1Client().TransferObject(ctx, iotaclient.TransferObjectRequest{
+	transferAnchor, err := cliclients.L1Client().TransferObject(ctx, iotagraphql.TransferObjectRequest{
 		Signer:    kp.Address().AsIotaAddress(),
 		ObjectID:  anchor.ObjectID,
 		Recipient: result.committeeAddress.AsIotaAddress(),
@@ -143,7 +143,7 @@ func runImportChain(dbPath string, node string, peers []string, quorum int, chai
 		return fmt.Errorf("failed to construct transfer anchor: %w", err)
 	}
 
-	_, err = cliclients.L1Client().SignAndExecuteTransaction(ctx, &iotaclient.SignAndExecuteTransactionRequest{
+	_, err = cliclients.L1Client().SignAndExecuteTransaction(ctx, &iotagraphql.SignAndExecuteTransactionRequest{
 		Signer:      cryptolib.SignerToIotaSigner(kp),
 		TxDataBytes: transferAnchor.TxBytes,
 		Options: &iotagraphql.IotaTransactionBlockResponseOptions{

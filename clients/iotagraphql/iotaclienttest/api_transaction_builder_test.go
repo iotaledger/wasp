@@ -55,17 +55,17 @@ func TestMoveCall(t *testing.T) {
 
 	// txnBytes, err := client.Publish(
 	// 	context.Background(),
-	// 	iotaclient.PublishRequest{
+	// 	iotagraphql.PublishRequest{
 	// 		Sender:          signer.Address(),
 	// 		CompiledModules: sdkVerifyBytecode.Modules,
 	// 		Dependencies:    sdkVerifyBytecode.Dependencies,
-	// 		GasBudget:       iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget),
+	// 		GasBudget:       graphqltypes.NewBigInt(iotaclient.DefaultGasBudget),
 	// 	},
 	// )
 	// require.NoError(t, err)
 	// txnResponse, err := client.SignAndExecuteTransaction(
 	// 	context.Background(),
-	// 	&iotaclient.SignAndExecuteTransactionRequest{
+	// 	&iotagraphql.SignAndExecuteTransactionRequest{
 	// 		TxDataBytes: txnBytes.TxBytes,
 	// 		Signer:      signer,
 	// 		Options: &iotagraphql.IotaTransactionBlockResponseOptions{
@@ -91,13 +91,13 @@ func TestMoveCall(t *testing.T) {
 	// 		Function:  "read_input_bytes_array",
 	// 		TypeArgs:  []string{},
 	// 		Arguments: []any{input},
-	// 		GasBudget: iotajsonrpc.NewBigInt((iotaclient.DefaultGasBudget)),
+	// 		GasBudget: graphqltypes.NewBigInt((iotaclient.DefaultGasBudget)),
 	// 	},
 	// )
 	// require.NoError(t, err)
 	// txnResponse, err = client.SignAndExecuteTransaction(
 	// 	context.Background(),
-	// 	&iotaclient.SignAndExecuteTransactionRequest{
+	// 	&iotagraphql.SignAndExecuteTransactionRequest{
 	// 		TxDataBytes: txnBytes.TxBytes,
 	// 		Signer:      signer,
 	// 		Options: &iotagraphql.IotaTransactionBlockResponseOptions{
@@ -111,7 +111,7 @@ func TestMoveCall(t *testing.T) {
 	// queryEventsRes, err := client.QueryEvents(
 	// 	context.Background(),
 	// 	iotaclient.QueryEventsRequest{
-	// 		Query: &iotajsonrpc.EventFilter{Transaction: &txnResponse.Digest},
+	// 		Query: &graphqltypes.EventFilter{Transaction: &txnResponse.Digest},
 	// 	},
 	// )
 	// require.NoError(t, err)
@@ -135,7 +135,7 @@ func TestPay(t *testing.T) {
 	// recipient := iotatest.MakeSignerWithFunds(1, iotaconn.TestnetFaucetURL)
 
 	// coins, err := client.GetCoins(
-	// 	context.Background(), iotaclient.GetCoinsRequest{
+	// 	context.Background(), iotagraphql.GetCoinsRequest{
 	// 		Owner: signer.Address(),
 	// 		Limit: 10,
 	// 	},
@@ -144,7 +144,7 @@ func TestPay(t *testing.T) {
 	// limit := len(coins.Data) - 1 // need reserve a coin for gas
 
 	// amount := uint64(123)
-	// pickedCoins, err := iotajsonrpc.PickupCoins(
+	// pickedCoins, err := graphqltypes.PickupCoins(
 	// 	coins,
 	// 	new(big.Int).SetUint64(amount),
 	// 	iotaclient.DefaultGasBudget,
@@ -169,18 +169,18 @@ func TestPay(t *testing.T) {
 
 	// txn, err := client.Pay(
 	// 	context.Background(),
-	// 	iotaclient.PayRequest{
+	// 	iotagraphql.PayRequest{
 	// 		Signer:     signer.Address(),
 	// 		InputCoins: pickedCoins.CoinIds(),
 	// 		Recipients: []*iotago.Address{recipient.Address()},
-	// 		Amount:     []*iotajsonrpc.BigInt{iotajsonrpc.NewBigInt(amount)},
+	// 		Amount:     []*graphqltypes.BigInt{graphqltypes.NewBigInt(amount)},
 	// 		Gas:        gasCoin,
-	// 		GasBudget:  iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget),
+	// 		GasBudget:  graphqltypes.NewBigInt(iotaclient.DefaultGasBudget),
 	// 	},
 	// )
 	// require.NoError(t, err)
 
-	// simulate, err := client.DryRunTransaction(context.Background(), iotaclient.DryRunTransactionRequest{
+	// simulate, err := client.DryRunTransaction(context.Background(), iotagraphql.DryRunTransactionRequest{
 	// 	TxDataBytes: txn.TxBytes,
 	// })
 	// require.NoError(t, err)

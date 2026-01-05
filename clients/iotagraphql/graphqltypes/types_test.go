@@ -1,4 +1,4 @@
-package iotajsonrpc_test
+package graphqltypes_test
 
 import (
 	"encoding/json"
@@ -6,13 +6,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql/graphqltypes"
 )
 
 func TestObjectOwnerJsonENDE(t *testing.T) {
 	{
 		var dataStruct struct {
-			Owner *iotajsonrpc.ObjectOwner `json:"owner"`
+			Owner *graphqltypes.ObjectOwner `json:"owner"`
 		}
 		jsonString := []byte(`{"owner":"Immutable"}`)
 
@@ -24,7 +24,7 @@ func TestObjectOwnerJsonENDE(t *testing.T) {
 	}
 	{
 		var dataStruct struct {
-			Owner *iotajsonrpc.ObjectOwner `json:"owner"`
+			Owner *graphqltypes.ObjectOwner `json:"owner"`
 		}
 		jsonString := []byte(`{"owner":{"AddressOwner":"0xfb1f678fcfe31c7c1924319e49614ffbe3a984842ceed559aa2d772e60a2ef8f"}}`)
 
@@ -106,7 +106,7 @@ func TestIsSameStringAddress(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				if got := iotajsonrpc.IsSameAddressString(tt.args.addr1, tt.args.addr2); got != tt.want {
+				if got := graphqltypes.IsSameAddressString(tt.args.addr1, tt.args.addr2); got != tt.want {
 					t.Errorf("IsSameStringAddress(): %v, want %v", got, tt.want)
 				}
 			},

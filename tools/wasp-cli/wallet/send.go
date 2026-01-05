@@ -65,7 +65,7 @@ func initSendFundsCmd() *cobra.Command { //nolint:funlen
 			ptb := iotago.NewProgrammableTransactionBuilder()
 
 			coinPage, err := client.GetAllCoins(
-				context.Background(), iotaclient.GetAllCoinsRequest{
+				context.Background(), iotagraphql.GetAllCoinsRequest{
 					Owner: senderAddress.AsIotaAddress(),
 				},
 			)
@@ -120,7 +120,7 @@ func initSendFundsCmd() *cobra.Command { //nolint:funlen
 
 			res, err := client.SignAndExecuteTransaction(
 				context.Background(),
-				&iotaclient.SignAndExecuteTransactionRequest{
+				&iotagraphql.SignAndExecuteTransactionRequest{
 					Signer:      cryptolib.SignerToIotaSigner(myWallet),
 					TxDataBytes: txBytes,
 					Options: &iotagraphql.IotaTransactionBlockResponseOptions{

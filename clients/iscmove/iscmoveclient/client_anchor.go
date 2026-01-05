@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/client"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 
@@ -149,7 +149,7 @@ func (c *Client) GetAnchorFromObjectID(
 	ctx context.Context,
 	anchorObjectID *iotago.ObjectID,
 ) (*iscmove.AnchorWithRef, error) {
-	getObjectResponse, err := c.GetObject(ctx, iotaclient.GetObjectRequest{
+	getObjectResponse, err := c.GetObject(ctx, iotagraphql.GetObjectRequest{
 		ObjectID: anchorObjectID,
 		Options:  &iotagraphql.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true},
 	})
@@ -171,7 +171,7 @@ func (c *Client) GetPastAnchorFromObjectID(
 	anchorObjectID *iotago.ObjectID,
 	version uint64,
 ) (*iscmove.AnchorWithRef, error) {
-	getObjectResponse, err := c.TryGetPastObject(ctx, iotaclient.TryGetPastObjectRequest{
+	getObjectResponse, err := c.TryGetPastObject(ctx, iotagraphql.TryGetPastObjectRequest{
 		ObjectID: anchorObjectID,
 		Version:  version,
 		Options:  &iotagraphql.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true},
@@ -200,7 +200,7 @@ func (c *Client) GetPastAnchorFromObjectID(
 
 func decodeAnchorBCS(bcsBytes iotago.Base64Data, ref iotago.ObjectRef, owner *iotago.Address) (*iscmove.AnchorWithRef, error) {
 	var moveAnchor iscmove.Anchor
-	err := iotaclient.UnmarshalBCS(bcsBytes, &moveAnchor)
+	err := client.UnmarshalBCS(bcsBytes, &moveAnchor)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
 	}

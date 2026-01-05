@@ -1,8 +1,8 @@
-package client
+package iotagraphql
 
 import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql/graphqltypes"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 )
 
@@ -21,7 +21,7 @@ type GetOwnedObjectsRequest struct {
 	// Address is the owner's Iota address
 	Address *iotago.Address
 	// [optional] Query is the objects query criteria.
-	Query *iotajsonrpc.IotaObjectResponseQuery
+	Query *graphqltypes.IotaObjectResponseQuery
 	// [optional] Cursor is an optional paging cursor.
 	// If provided, the query will start from the next item after the specified cursor.
 	Cursor *iotago.ObjectID
@@ -31,14 +31,14 @@ type GetOwnedObjectsRequest struct {
 }
 
 type QueryEventsRequest struct {
-	Query           *iotajsonrpc.EventFilter
-	Cursor          *iotajsonrpc.EventId // optional
+	Query           *graphqltypes.EventFilter
+	Cursor          *graphqltypes.EventId // optional
 	Limit           *int                 // optional
 	DescendingOrder bool                 // optional
 }
 
 type QueryTransactionBlocksRequest struct {
-	Query           *iotajsonrpc.IotaTransactionBlockResponseQuery
+	Query           *graphqltypes.IotaTransactionBlockResponseQuery
 	Cursor          *iotago.TransactionDigest // optional
 	Limit           *int                      // optional
 	DescendingOrder bool                      // optional
@@ -53,22 +53,21 @@ type ResolveNameServiceNamesRequest struct {
 type DevInspectTransactionBlockRequest struct {
 	SenderAddress *iotago.Address
 	TxKindBytes   iotago.Base64Data
-	GasPrice      *iotajsonrpc.BigInt                              // optional
+	GasPrice      *graphqltypes.BigInt                              // optional
 	Epoch         *uint64                                          // optional
-	Options       *iotajsonrpc.IotaTransactionBlockResponseOptions // optional
-	// additional_args // optional // FIXME
+	Options       *graphqltypes.IotaTransactionBlockResponseOptions // optional
 }
 
 type DryRunTransactionRequest struct {
 	TxDataBytes iotago.Base64Data
-	Options     *iotajsonrpc.IotaTransactionBlockResponseOptions // optional
+	Options     *graphqltypes.IotaTransactionBlockResponseOptions // optional
 }
 
 type ExecuteTransactionBlockRequest struct {
 	TxDataBytes iotago.Base64Data
 	Signatures  []*iotasigner.Signature
-	Options     *iotajsonrpc.IotaTransactionBlockResponseOptions // optional
-	RequestType iotajsonrpc.ExecuteTransactionRequestType        // optional
+	Options     *graphqltypes.IotaTransactionBlockResponseOptions // optional
+	RequestType graphqltypes.ExecuteTransactionRequestType        // optional
 }
 
 type BatchTransactionRequest struct {
@@ -76,7 +75,6 @@ type BatchTransactionRequest struct {
 	TxnParams []map[string]interface{}
 	Gas       *iotago.ObjectID // optional
 	GasBudget uint64
-	// txnBuilderMode // optional // FIXME IotaTransactionBlockBuilderMode
 }
 
 type MergeCoinsRequest struct {
@@ -84,7 +82,7 @@ type MergeCoinsRequest struct {
 	PrimaryCoin *iotago.ObjectID
 	CoinToMerge *iotago.ObjectID
 	Gas         *iotago.ObjectID // optional
-	GasBudget   *iotajsonrpc.BigInt
+	GasBudget   *graphqltypes.BigInt
 }
 
 type MoveCallRequest struct {
@@ -95,32 +93,31 @@ type MoveCallRequest struct {
 	TypeArgs  []string
 	Arguments []any
 	Gas       *iotago.ObjectID // optional
-	GasBudget *iotajsonrpc.BigInt
-	// txnBuilderMode // optional // FIXME IotaTransactionBlockBuilderMode
+	GasBudget *graphqltypes.BigInt
 }
 
 type PayRequest struct {
 	Signer     *iotago.Address
 	InputCoins []*iotago.ObjectID
 	Recipients []*iotago.Address
-	Amount     []*iotajsonrpc.BigInt
+	Amount     []*graphqltypes.BigInt
 	Gas        *iotago.ObjectID // optional
-	GasBudget  *iotajsonrpc.BigInt
+	GasBudget  *graphqltypes.BigInt
 }
 
 type PayAllIotaRequest struct {
 	Signer     *iotago.Address
 	Recipient  *iotago.Address
 	InputCoins []*iotago.ObjectID
-	GasBudget  *iotajsonrpc.BigInt
+	GasBudget  *graphqltypes.BigInt
 }
 
 type PayIotaRequest struct {
 	Signer     *iotago.Address
 	InputCoins []*iotago.ObjectID
 	Recipients []*iotago.Address
-	Amount     []*iotajsonrpc.BigInt
-	GasBudget  *iotajsonrpc.BigInt
+	Amount     []*graphqltypes.BigInt
+	GasBudget  *graphqltypes.BigInt
 }
 
 type PublishRequest struct {
@@ -128,55 +125,55 @@ type PublishRequest struct {
 	CompiledModules []*iotago.Base64Data
 	Dependencies    []*iotago.ObjectID
 	Gas             *iotago.ObjectID // optional
-	GasBudget       *iotajsonrpc.BigInt
+	GasBudget       *graphqltypes.BigInt
 }
 
 type RequestAddStakeRequest struct {
 	Signer    *iotago.Address
 	Coins     []*iotago.ObjectID
-	Amount    *iotajsonrpc.BigInt // optional
+	Amount    *graphqltypes.BigInt // optional
 	Validator *iotago.Address
 	Gas       *iotago.ObjectID // optional
-	GasBudget *iotajsonrpc.BigInt
+	GasBudget *graphqltypes.BigInt
 }
 
 type RequestWithdrawStakeRequest struct {
 	Signer       *iotago.Address
 	StakedIotaID *iotago.ObjectID
 	Gas          *iotago.ObjectID // optional
-	GasBudget    *iotajsonrpc.BigInt
+	GasBudget    *graphqltypes.BigInt
 }
 
 type SplitCoinRequest struct {
 	Signer       *iotago.Address
 	Coin         *iotago.ObjectID
-	SplitAmounts []*iotajsonrpc.BigInt
+	SplitAmounts []*graphqltypes.BigInt
 	Gas          *iotago.ObjectID // optional
-	GasBudget    *iotajsonrpc.BigInt
+	GasBudget    *graphqltypes.BigInt
 }
 
 type SplitCoinEqualRequest struct {
 	Signer     *iotago.Address
 	Coin       *iotago.ObjectID
-	SplitCount *iotajsonrpc.BigInt
+	SplitCount *graphqltypes.BigInt
 	Gas        *iotago.ObjectID // optional
-	GasBudget  *iotajsonrpc.BigInt
+	GasBudget  *graphqltypes.BigInt
 }
 
 type TransferObjectRequest struct {
 	Signer    *iotago.Address
 	ObjectID  *iotago.ObjectID
 	Gas       *iotago.ObjectID // optional
-	GasBudget *iotajsonrpc.BigInt
+	GasBudget *graphqltypes.BigInt
 	Recipient *iotago.Address
 }
 
 type TransferIotaRequest struct {
 	Signer    *iotago.Address
 	ObjectID  *iotago.ObjectID
-	GasBudget *iotajsonrpc.BigInt
+	GasBudget *graphqltypes.BigInt
 	Recipient *iotago.Address
-	Amount    *iotajsonrpc.BigInt // optional
+	Amount    *graphqltypes.BigInt // optional
 }
 
 type GetAllCoinsRequest struct {
@@ -198,44 +195,44 @@ type GetCoinsRequest struct {
 }
 
 type GetCheckpointsRequest struct {
-	Cursor          *iotajsonrpc.BigInt // optional
+	Cursor          *graphqltypes.BigInt // optional
 	Limit           *uint64             // optional
 	DescendingOrder bool
 }
 
 type GetObjectRequest struct {
 	ObjectID *iotago.ObjectID
-	Options  *iotajsonrpc.IotaObjectDataOptions // optional
+	Options  *graphqltypes.IotaObjectDataOptions // optional
 }
 
 type GetTransactionBlockRequest struct {
 	Digest  *iotago.TransactionDigest
-	Options *iotajsonrpc.IotaTransactionBlockResponseOptions // optional
+	Options *graphqltypes.IotaTransactionBlockResponseOptions // optional
 }
 
 type MultiGetObjectsRequest struct {
 	ObjectIDs []*iotago.ObjectID
-	Options   *iotajsonrpc.IotaObjectDataOptions // optional
+	Options   *graphqltypes.IotaObjectDataOptions // optional
 }
 
 type MultiGetTransactionBlocksRequest struct {
 	Digests []*iotago.Digest
-	Options *iotajsonrpc.IotaTransactionBlockResponseOptions // optional
+	Options *graphqltypes.IotaTransactionBlockResponseOptions // optional
 }
 
 type TryGetPastObjectRequest struct {
 	ObjectID *iotago.ObjectID
 	Version  uint64
-	Options  *iotajsonrpc.IotaObjectDataOptions // optional
+	Options  *graphqltypes.IotaObjectDataOptions // optional
 }
 
 type TryMultiGetPastObjectsRequest struct {
-	PastObjects []*iotajsonrpc.IotaGetPastObjectRequest
-	Options     *iotajsonrpc.IotaObjectDataOptions // optional
+	PastObjects []*graphqltypes.IotaGetPastObjectRequest
+	Options     *graphqltypes.IotaObjectDataOptions // optional
 }
 
 type SignAndExecuteTransactionRequest struct {
 	TxDataBytes iotago.Base64Data
 	Signer      iotasigner.Signer
-	Options     *iotajsonrpc.IotaTransactionBlockResponseOptions // optional
+	Options     *graphqltypes.IotaTransactionBlockResponseOptions // optional
 }

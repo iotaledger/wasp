@@ -206,7 +206,7 @@ func (e *ChainEnv) testEstimateGasOnLedger(t *testing.T) {
 	l2GasBudget := lo.Must(strconv.ParseUint(estimatedReceipt.L2.GasBurned, 10, 64))
 
 	executeTx := func(txBytes []byte) (*iotagraphql.IotaTransactionBlockResponse, error) {
-		execRes, err := e.Clu.L1Client().SignAndExecuteTransaction(context.Background(), &iotaclient.SignAndExecuteTransactionRequest{
+		execRes, err := e.Clu.L1Client().SignAndExecuteTransaction(context.Background(), &iotagraphql.SignAndExecuteTransactionRequest{
 			TxDataBytes: txBytes,
 			Signer:      cryptolib.SignerToIotaSigner(sender),
 			Options: &iotagraphql.IotaTransactionBlockResponseOptions{

@@ -25,7 +25,7 @@ import (
 
 func ensureSingleCoin(t *testing.T, cryptolibSigner cryptolib.Signer, client clients.L1Client) {
 	coinType := iotagraphql.IotaCoinType.String()
-	coinObjects, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{
+	coinObjects, err := client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{
 		CoinType: &coinType,
 		Owner:    cryptolibSigner.Address().AsIotaAddress(),
 	})
@@ -65,7 +65,7 @@ func ensureSingleCoin(t *testing.T, cryptolibSigner cryptolib.Signer, client cli
 
 	result, err := client.SignAndExecuteTransaction(
 		context.Background(),
-		&iotaclient.SignAndExecuteTransactionRequest{
+		&iotagraphql.SignAndExecuteTransactionRequest{
 			Signer:      cryptolib.SignerToIotaSigner(cryptolibSigner),
 			TxDataBytes: txnBytes,
 			Options: &iotagraphql.IotaTransactionBlockResponseOptions{
@@ -76,7 +76,7 @@ func ensureSingleCoin(t *testing.T, cryptolibSigner cryptolib.Signer, client cli
 	require.NoError(t, err)
 	t.Logf("SignAndExecuteTransaction, result: %+v", result)
 
-	coinObjects, err = client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{
+	coinObjects, err = client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{
 		CoinType: &coinType,
 		Owner:    cryptolibSigner.Address().AsIotaAddress(),
 	})
@@ -166,7 +166,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 		for i := range 25 {
 			getCoinRef, assetErr := client.GetObject(
 				context.Background(),
-				iotaclient.GetObjectRequest{
+				iotagraphql.GetObjectRequest{
 					ObjectID: testCoinRef[i].ObjectID,
 					Options:  &iotagraphql.IotaObjectDataOptions{ShowType: true},
 				},
@@ -232,7 +232,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 		for i := range 26 {
 			getCoinRef, assetErr := client.GetObject(
 				context.Background(),
-				iotaclient.GetObjectRequest{
+				iotagraphql.GetObjectRequest{
 					ObjectID: testCoinRef[i+25].ObjectID,
 					Options:  &iotagraphql.IotaObjectDataOptions{ShowType: true},
 				},

@@ -1,4 +1,4 @@
-package iotajsonrpc
+package graphqltypes
 
 import "errors"
 

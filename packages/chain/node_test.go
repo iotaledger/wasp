@@ -332,7 +332,7 @@ func (tnc *testNodeConn) PublishTX(
 		return err
 	}
 
-	res, err := tnc.l1Client.ExecuteTransactionBlock(ctx, iotaclient.ExecuteTransactionBlockRequest{
+	res, err := tnc.l1Client.ExecuteTransactionBlock(ctx, iotagraphql.ExecuteTransactionBlockRequest{
 		TxDataBytes: txBytes,
 		Signatures:  tx.Signatures,
 		Options: &iotagraphql.IotaTransactionBlockResponseOptions{
@@ -353,7 +353,7 @@ func (tnc *testNodeConn) PublishTX(
 
 	time.Sleep(1 * time.Second)
 
-	res, err = tnc.l1Client.GetTransactionBlock(ctx, iotaclient.GetTransactionBlockRequest{
+	res, err = tnc.l1Client.GetTransactionBlock(ctx, iotagraphql.GetTransactionBlockRequest{
 		Digest: &res.Digest,
 
 		Options: &iotagraphql.IotaTransactionBlockResponseOptions{
@@ -437,7 +437,7 @@ func (tnc *testNodeConn) ConsensusL1InfoProposal(
 			panic(err)
 		}
 
-		gasCoin, err := tnc.l1Client.GetObject(ctx, iotaclient.GetObjectRequest{
+		gasCoin, err := tnc.l1Client.GetObject(ctx, iotagraphql.GetObjectRequest{
 			ObjectID: stateMetadata.GasCoinObjectID,
 			Options:  &iotagraphql.IotaObjectDataOptions{ShowBcs: true},
 		})

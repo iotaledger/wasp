@@ -10,7 +10,6 @@ import (
 
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/client"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/parameters"
@@ -23,14 +22,14 @@ type L1ParamsFetcher interface {
 }
 
 type l1ParamsFetcher struct {
-	client client.IotaClient
+	client iotagraphql.IotaClient
 	log    log.Logger
 	mu     sync.Mutex
 	latest *parameters.L1Params
 }
 
 // NewL1ParamsFetcher creates a new L1ParamsFetcher
-func NewL1ParamsFetcher(iotaClient client.IotaClient, log log.Logger) L1ParamsFetcher {
+func NewL1ParamsFetcher(iotaClient iotagraphql.IotaClient, log log.Logger) L1ParamsFetcher {
 	return &l1ParamsFetcher{
 		client: iotaClient,
 		log:    log.NewChildLogger("L1ParamsFetcher"),
@@ -66,8 +65,8 @@ func (f *l1ParamsFetcher) shouldFetch() bool {
 }
 
 // FetchLatest fetches the latest L1Params from L1, retrying on failure
-func FetchLatest(ctx context.Context, iotaClient client.IotaClient) (*parameters.L1Params, error) {
-	return iotaclient.Retry(
+func FetchLatest(ctx context.Context, iotaClient iotagraphql.IotaClient) (*parameters.L1Params, error) {
+	return client.Retry(
 		ctx,
 		func() (*parameters.L1Params, error) {
 			system, err := iotaClient.GetLatestIotaSystemState(ctx)
@@ -97,7 +96,7 @@ func FetchLatest(ctx context.Context, iotaClient client.IotaClient) (*parameters
 				),
 			}, nil
 		},
-		iotaclient.DefaultRetryCondition[*parameters.L1Params](),
-		iotaclient.WaitForEffectsEnabled,
+		client.DefaultRetryCondition[*parameters.L1Params](),
+		iotagraphql.WaitForEffectsEnabled,
 	)
 }

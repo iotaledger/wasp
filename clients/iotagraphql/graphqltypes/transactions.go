@@ -16,7 +16,7 @@ type TransactionResponse struct {
 	RawInput       []byte
 	Effects        *TransactionEffects
 	Events         []Event
-	BalanceChanges []BalanceChange
+	BalanceChanges []GqlBalanceChange
 	ObjectChanges  []ObjectChange
 	TimestampMS    *uint64
 	CheckpointSeq  *uint64
@@ -25,48 +25,48 @@ type TransactionResponse struct {
 
 type TransactionEffects struct {
 	// Execution status and metadata
-	Status            ExecutionStatus // Type-safe execution status
-	ExecutedEpoch     uint64          // Direct uint64, not BigInt
-	GasUsed           GasCostSummary  // Flat structure with direct uint64 fields
+	Status            GqlExecutionStatus // Type-safe execution status
+	ExecutedEpoch     uint64             // Direct uint64, not BigInt
+	GasUsed           GqlGasCostSummary  // Flat structure with direct uint64 fields
 	TransactionDigest iotago.TransactionDigest
 
 	// Object references
-	Created              []OwnedObjectRef
-	Mutated              []OwnedObjectRef
-	Unwrapped            []OwnedObjectRef
+	Created              []GqlOwnedObjectRef
+	Mutated              []GqlOwnedObjectRef
+	Unwrapped            []GqlOwnedObjectRef
 	Deleted              []iotago.ObjectRef
 	UnwrappedThenDeleted []iotago.ObjectRef
 	Wrapped              []iotago.ObjectRef
-	GasObject            OwnedObjectRef
+	GasObject            GqlOwnedObjectRef
 	Dependencies         []iotago.TransactionDigest
 	EventsDigest         *iotago.TransactionEventsDigest
 }
 
-type ExecutionStatus struct {
+type GqlExecutionStatus struct {
 	Success bool
 	Error   string
 }
 
 const (
-	ExecutionStatusSuccess = "Success"
-	ExecutionStatusFailure = "Failure"
+	GqlExecutionStatusSuccess = "Success"
+	GqlExecutionStatusFailure = "Failure"
 )
 
-func (s ExecutionStatus) StatusString() string {
+func (s GqlExecutionStatus) StatusString() string {
 	if s.Success {
-		return ExecutionStatusSuccess
+		return GqlExecutionStatusSuccess
 	}
-	return ExecutionStatusFailure
+	return GqlExecutionStatusFailure
 }
 
-type GasCostSummary struct {
+type GqlGasCostSummary struct {
 	ComputationCost         uint64
 	StorageCost             uint64
 	StorageRebate           uint64
 	NonRefundableStorageFee uint64
 }
 
-type OwnedObjectRef struct {
+type GqlOwnedObjectRef struct {
 	ObjectID iotago.ObjectID
 	Version  uint64
 	Digest   iotago.ObjectDigest
@@ -91,7 +91,7 @@ func (t *TransactionResponse) GetCreatedObjectByName(moduleName, objectName stri
 	targetType := moduleName + "::" + objectName
 	for _, created := range t.Effects.Created {
 		// For now, we'll need to match by checking object changes
-		// since we don't have the full type information in OwnedObjectRef
+		// since we don't have the full type information in GqlOwnedObjectRef
 		for _, change := range t.ObjectChanges {
 			if change.ObjectID == created.ObjectID &&
 				change.Type == ObjectChangeCreated &&
@@ -138,7 +138,7 @@ var (
 	ErrPackageIDNotFound = fmt.Errorf("package ID not found in transaction")
 )
 
-type BalanceChange struct {
+type GqlBalanceChange struct {
 	Owner    iotago.Address
 	CoinType string
 	Amount   int64

@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/v2/clients/apiclient"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
@@ -89,7 +88,7 @@ func TestRotationOverlappingCommitteesWithConcurrentRequests(t *testing.T) {
 	chainObjId, err := iotago.ObjectIDFromHex(chain.ChainID.String())
 	require.NoError(t, err)
 
-	object, err := clu.L1Client().GetObject(context.Background(), iotaclient.GetObjectRequest{
+	object, err := clu.L1Client().GetObject(context.Background(), iotagraphql.GetObjectRequest{
 		ObjectID: chainObjId,
 		Options: &iotagraphql.IotaObjectDataOptions{
 			ShowContent: true,

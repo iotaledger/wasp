@@ -58,7 +58,7 @@ func TestCreateOrigin(t *testing.T) {
 	coinType := iotagraphql.IotaCoinType.String()
 	resGetCoins, err := client.GetCoins(
 		context.Background(),
-		iotaclient.GetCoinsRequest{Owner: sentSigner.Address().AsIotaAddress(), CoinType: &coinType},
+		iotagraphql.GetCoinsRequest{Owner: sentSigner.Address().AsIotaAddress(), CoinType: &coinType},
 	)
 	require.NoError(t, err)
 

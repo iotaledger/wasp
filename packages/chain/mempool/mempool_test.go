@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/iotatest"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/chain"
 	consGR "github.com/iotaledger/wasp/v2/packages/chain/consensus/consensusrunner"
 	"github.com/iotaledger/wasp/v2/packages/chain/mempool"
@@ -622,7 +623,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 
 	l1client := l1starter.Instance().L1Client()
 
-	objs, err := l1client.GetAllCoins(context.Background(), iotaclient.GetAllCoinsRequest{
+	objs, err := l1client.GetAllCoins(context.Background(), iotagraphql.GetAllCoinsRequest{
 		Owner: te.chainOwner.Address().AsIotaAddress(),
 	})
 	require.NoError(t, err)

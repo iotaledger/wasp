@@ -46,7 +46,7 @@ func TestKeys(t *testing.T) {
 	client := iscmoveclienttest.NewHTTPClient()
 	iscBytecode := contracts.ISC()
 
-	txnBytes, err := client.Publish(context.Background(), iotaclient.PublishRequest{
+	txnBytes, err := client.Publish(context.Background(), iotagraphql.PublishRequest{
 		Sender:          cryptolibSigner.Address().AsIotaAddress(),
 		CompiledModules: iscBytecode.Modules,
 		Dependencies:    iscBytecode.Dependencies,
@@ -56,7 +56,7 @@ func TestKeys(t *testing.T) {
 
 	txnResponse, err := client.SignAndExecuteTransaction(
 		context.Background(),
-		&iotaclient.SignAndExecuteTransactionRequest{
+		&iotagraphql.SignAndExecuteTransactionRequest{
 			TxDataBytes: txnBytes.TxBytes,
 			Signer:      cryptolib.SignerToIotaSigner(cryptolibSigner),
 			Options: &iotagraphql.IotaTransactionBlockResponseOptions{

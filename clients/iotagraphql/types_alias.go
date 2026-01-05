@@ -1,125 +1,124 @@
 package iotagraphql
 
 import (
-	api "github.com/iotaledger/wasp/v2/clients/iota-go/client"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/client"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql/graphqltypes"
 )
 
-// Re-export request/utility types so callers can stay within the iotagraphql package.
+// Note: Request types (Get*, Query*, etc.) are now defined directly in this package in requests.go
+// WaitParams, RetryCondition, and gas constants are imported from the client package for shared use
+
+// Re-export utility types from client package
 type (
-	GetDynamicFieldObjectRequest      = api.GetDynamicFieldObjectRequest
-	GetDynamicFieldsRequest           = api.GetDynamicFieldsRequest
-	GetOwnedObjectsRequest            = api.GetOwnedObjectsRequest
-	QueryEventsRequest                = api.QueryEventsRequest
-	QueryTransactionBlocksRequest     = api.QueryTransactionBlocksRequest
-	ResolveNameServiceNamesRequest    = api.ResolveNameServiceNamesRequest
-	DevInspectTransactionBlockRequest = api.DevInspectTransactionBlockRequest
-	DryRunTransactionRequest          = api.DryRunTransactionRequest
-	ExecuteTransactionBlockRequest    = api.ExecuteTransactionBlockRequest
-	BatchTransactionRequest           = api.BatchTransactionRequest
-	MergeCoinsRequest                 = api.MergeCoinsRequest
-	MoveCallRequest                   = api.MoveCallRequest
-	PayRequest                        = api.PayRequest
-	PayAllIotaRequest                 = api.PayAllIotaRequest
-	PayIotaRequest                    = api.PayIotaRequest
-	PublishRequest                    = api.PublishRequest
-	RequestAddStakeRequest            = api.RequestAddStakeRequest
-	RequestWithdrawStakeRequest       = api.RequestWithdrawStakeRequest
-	SplitCoinRequest                  = api.SplitCoinRequest
-	SplitCoinEqualRequest             = api.SplitCoinEqualRequest
-	TransferObjectRequest             = api.TransferObjectRequest
-	TransferIotaRequest               = api.TransferIotaRequest
-	GetAllCoinsRequest                = api.GetAllCoinsRequest
-	GetBalanceRequest                 = api.GetBalanceRequest
-	GetCoinsRequest                   = api.GetCoinsRequest
-	GetCheckpointsRequest             = api.GetCheckpointsRequest
-	GetObjectRequest                  = api.GetObjectRequest
-	GetTransactionBlockRequest        = api.GetTransactionBlockRequest
-	MultiGetObjectsRequest            = api.MultiGetObjectsRequest
-	MultiGetTransactionBlocksRequest  = api.MultiGetTransactionBlocksRequest
-	TryGetPastObjectRequest           = api.TryGetPastObjectRequest
-	TryMultiGetPastObjectsRequest     = api.TryMultiGetPastObjectsRequest
-	SignAndExecuteTransactionRequest  = api.SignAndExecuteTransactionRequest
-	WaitParams                        = api.WaitParams
-	RetryCondition[T any]             = api.RetryCondition[T]
+	WaitParams            = client.WaitParams
+	RetryCondition[T any] = client.RetryCondition[T]
 )
 
-// Re-export iotajsonrpc types for backward compatibility with test files
+// Re-export iotajsonrpc types as part of the public API.
+// These types are used by the IotaClient interface and are the common data model
+// across different client implementations (GraphQL, JSON-RPC, etc.).
 type (
-	IotaTransactionBlockResponseOptions = iotajsonrpc.IotaTransactionBlockResponseOptions
-	IotaTransactionBlockResponseQuery   = iotajsonrpc.IotaTransactionBlockResponseQuery
-	IotaTransactionBlockResponse        = iotajsonrpc.IotaTransactionBlockResponse
-	IotaObjectDataOptions               = iotajsonrpc.IotaObjectDataOptions
-	IotaObjectResponseQuery             = iotajsonrpc.IotaObjectResponseQuery
-	IotaObjectDataFilter                = iotajsonrpc.IotaObjectDataFilter
-	IotaObjectResponse                  = iotajsonrpc.IotaObjectResponse
-	IotaPastObjectResponse              = iotajsonrpc.IotaPastObjectResponse
-	IotaSystemStateSummary              = iotajsonrpc.IotaSystemStateSummary
-	IotaCoinMetadata                    = iotajsonrpc.IotaCoinMetadata
-	BigInt                              = iotajsonrpc.BigInt
-	CoinType                            = iotajsonrpc.CoinType
-	Coins                               = iotajsonrpc.Coins
-	CoinPage                            = iotajsonrpc.CoinPage
-	Balance                        = iotajsonrpc.Balance
-	Supply                         = iotajsonrpc.Supply
-	DevInspectResults              = iotajsonrpc.DevInspectResults
-	DynamicFieldPage               = iotajsonrpc.DynamicFieldPage
-	ObjectsPage                    = iotajsonrpc.ObjectsPage
-	TransactionBlocksPage          = iotajsonrpc.TransactionBlocksPage
-	TransactionBytes               = iotajsonrpc.TransactionBytes
-	EventId                                   = iotajsonrpc.EventId
-	ExecuteTransactionRequestType             = iotajsonrpc.ExecuteTransactionRequestType
-	CoinValue                                 = iotajsonrpc.CoinValue
-	ProgrammableTransactionBlockPureInput     = iotajsonrpc.ProgrammableTransactionBlockPureInput
-	IotaTransactionBlockData                  = iotajsonrpc.IotaTransactionBlockData
-	IotaTransactionBlockEffects               = iotajsonrpc.IotaTransactionBlockEffects
-	IotaEvent                                 = iotajsonrpc.IotaEvent
-	ObjectChange                              = iotajsonrpc.ObjectChange
-	BalanceChange                             = iotajsonrpc.BalanceChange
-	IotaObjectData                            = iotajsonrpc.IotaObjectData
-	Coin                                      = iotajsonrpc.Coin
-	TransactionFilter                         = iotajsonrpc.TransactionFilter
+	IotaTransactionBlockResponseOptions   = graphqltypes.IotaTransactionBlockResponseOptions
+	IotaTransactionBlockResponseQuery     = graphqltypes.IotaTransactionBlockResponseQuery
+	IotaTransactionBlockResponse          = graphqltypes.IotaTransactionBlockResponse
+	IotaObjectDataOptions                 = graphqltypes.IotaObjectDataOptions
+	IotaObjectResponseQuery               = graphqltypes.IotaObjectResponseQuery
+	IotaObjectDataFilter                  = graphqltypes.IotaObjectDataFilter
+	IotaObjectResponse                    = graphqltypes.IotaObjectResponse
+	IotaPastObjectResponse                = graphqltypes.IotaPastObjectResponse
+	IotaSystemStateSummary                = graphqltypes.IotaSystemStateSummary
+	IotaCoinMetadata                      = graphqltypes.IotaCoinMetadata
+	BigInt                                = graphqltypes.BigInt
+	CoinType                              = graphqltypes.CoinType
+	Coins                                 = graphqltypes.Coins
+	CoinPage                              = graphqltypes.CoinPage
+	Balance                               = graphqltypes.Balance
+	Supply                                = graphqltypes.Supply
+	DevInspectResults                     = graphqltypes.DevInspectResults
+	DynamicFieldPage                      = graphqltypes.DynamicFieldPage
+	ObjectsPage                           = graphqltypes.ObjectsPage
+	TransactionBlocksPage                 = graphqltypes.TransactionBlocksPage
+	TransactionBytes                      = graphqltypes.TransactionBytes
+	EventPage                             = graphqltypes.EventPage
+	IotaNamePage                          = graphqltypes.IotaNamePage
+	Checkpoint                            = graphqltypes.Checkpoint
+	CheckpointPage                        = graphqltypes.CheckpointPage
+	ProtocolConfig                        = graphqltypes.ProtocolConfig
+	IotaParsedData                        = graphqltypes.IotaParsedData
+	IotaParsedMoveObject                  = graphqltypes.IotaParsedMoveObject
+	IotaRawData                           = graphqltypes.IotaRawData
+	IotaRawMoveObject                     = graphqltypes.IotaRawMoveObject
+	ObjectOwner                           = graphqltypes.ObjectOwner
+	ObjectOwnerInternal                   = graphqltypes.ObjectOwnerInternal
+	IotaTransactionBlockEffectsV1         = graphqltypes.IotaTransactionBlockEffectsV1
+	ExecutionStatus                       = graphqltypes.ExecutionStatus
+	ExecutionResultType                   = graphqltypes.ExecutionResultType
+	MutableReferenceOutputType            = graphqltypes.MutableReferenceOutputType
+	ReturnValueType                       = graphqltypes.ReturnValueType
+	EventId                               = graphqltypes.EventId
+	ExecuteTransactionRequestType         = graphqltypes.ExecuteTransactionRequestType
+	CoinValue                             = graphqltypes.CoinValue
+	ProgrammableTransactionBlockPureInput = graphqltypes.ProgrammableTransactionBlockPureInput
+	IotaTransactionBlockData              = graphqltypes.IotaTransactionBlockData
+	IotaTransactionBlockEffects           = graphqltypes.IotaTransactionBlockEffects
+	IotaEvent                             = graphqltypes.IotaEvent
+	ObjectChange                          = graphqltypes.JsonRpcObjectChange
+	BalanceChange                         = graphqltypes.BalanceChange
+	IotaObjectData                        = graphqltypes.IotaObjectData
+	Coin                                  = graphqltypes.Coin
+	TransactionFilter                     = graphqltypes.TransactionFilter
+	// Note: EventFilter is generated by genqlient and differs from graphqltypes.EventFilter
+	// Re-export event subscription types with "Iota" prefix to avoid naming conflicts
+	IotaEventFilter               = graphqltypes.EventFilter
+	IotaAndOrEventFilter          = graphqltypes.AndOrEventFilter
+	IotaEventFilterMoveEventField = graphqltypes.EventFilterMoveEventField
 	// Note: DryRunTransactionBlockResponse from generated.go is different from iotajsonrpc
 	// Use DryRunResult alias for the iotajsonrpc version to avoid conflicts
-	DryRunResult                              = iotajsonrpc.DryRunTransactionBlockResponse
-	GasCostSummary                            = iotajsonrpc.GasCostSummary
-	PickedCoins                               = iotajsonrpc.PickedCoins
+	DryRunResult            = graphqltypes.DryRunTransactionBlockResponse
+	GasCostSummary          = graphqltypes.GasCostSummary
+	PickedCoins             = graphqltypes.PickedCoins
+	DynamicFieldInfo        = graphqltypes.DynamicFieldInfo
+	IotaObjectResponseError = graphqltypes.IotaObjectResponseError
+	IotaPastObject          = graphqltypes.IotaPastObject
+	VersionTooHigh          = graphqltypes.VersionTooHigh
+	VersionNotFoundData     = graphqltypes.VersionNotFoundData
+	OwnedObjectRef          = graphqltypes.OwnedObjectRef
+	IotaObjectRef           = graphqltypes.IotaObjectRef
 )
 
 const (
-	DefaultGasBudget = api.DefaultGasBudget
-	DefaultGasPrice  = api.DefaultGasPrice
-	MinGasBudget     = api.MinGasBudget
-	MaxGasBudget     = api.MaxGasBudget
+	DefaultGasBudget = client.DefaultGasBudget
+	DefaultGasPrice  = client.DefaultGasPrice
+	MinGasBudget     = client.MinGasBudget
+	MaxGasBudget     = client.MaxGasBudget
 )
 
 // Re-export iotajsonrpc coin picking method constants
 const (
-	PickMethodSmaller = iotajsonrpc.PickMethodSmaller
-	PickMethodBigger  = iotajsonrpc.PickMethodBigger
-	PickMethodByOrder = iotajsonrpc.PickMethodByOrder
+	PickMethodSmaller = graphqltypes.PickMethodSmaller
+	PickMethodBigger  = graphqltypes.PickMethodBigger
+	PickMethodByOrder = graphqltypes.PickMethodByOrder
 )
 
 var (
-	WaitForEffectsDisabled = api.WaitForEffectsDisabled
-	WaitForEffectsEnabled  = api.WaitForEffectsEnabled
+	WaitForEffectsDisabled = client.WaitForEffectsDisabled
+	WaitForEffectsEnabled  = client.WaitForEffectsEnabled
 )
 
 // Re-export iotajsonrpc constants
 var (
-	IotaCoinType                        = iotajsonrpc.IotaCoinType
-	TxnRequestTypeWaitForLocalExecution = iotajsonrpc.TxnRequestTypeWaitForLocalExecution
+	IotaCoinType                        = graphqltypes.IotaCoinType
+	TxnRequestTypeWaitForLocalExecution = graphqltypes.TxnRequestTypeWaitForLocalExecution
 )
 
 // Re-export iotajsonrpc functions
 var (
-	NewBigInt                = iotajsonrpc.NewBigInt
-	NewBigIntInt64           = iotajsonrpc.NewBigIntInt64
-	PickupCoins              = iotajsonrpc.PickupCoins
-	PickupCoinsWithFilter    = iotajsonrpc.PickupCoinsWithFilter
-	PickupCoinWithFilter     = iotajsonrpc.PickupCoinWithFilter
-	PickupCoinsWithCointype  = iotajsonrpc.PickupCoinsWithCointype
-	MustCoinTypeFromString   = iotajsonrpc.MustCoinTypeFromString
-	CoinTypeFromString       = iotajsonrpc.CoinTypeFromString
+	NewBigInt               = graphqltypes.NewBigInt
+	NewBigIntInt64          = graphqltypes.NewBigIntInt64
+	PickupCoins             = graphqltypes.PickupCoins
+	PickupCoinsWithFilter   = graphqltypes.PickupCoinsWithFilter
+	PickupCoinWithFilter    = graphqltypes.PickupCoinWithFilter
+	PickupCoinsWithCointype = graphqltypes.PickupCoinsWithCointype
+	MustCoinTypeFromString  = graphqltypes.MustCoinTypeFromString
+	CoinTypeFromString      = graphqltypes.CoinTypeFromString
 )
-

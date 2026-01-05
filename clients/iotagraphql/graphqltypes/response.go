@@ -1,4 +1,4 @@
-package iotajsonrpc
+package graphqltypes
 
 import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"

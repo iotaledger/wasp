@@ -1,4 +1,4 @@
-package iotajsonrpc_test
+package graphqltypes_test
 
 import (
 	"encoding/json"
@@ -9,17 +9,17 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql/graphqltypes"
 )
 
 func TestCoins_PickIOTACoinsWithGas(t *testing.T) {
 	// coins 1,2,3,4,5
-	testCoins := iotajsonrpc.Coins{
-		{Balance: iotajsonrpc.NewBigInt(3)},
-		{Balance: iotajsonrpc.NewBigInt(5)},
-		{Balance: iotajsonrpc.NewBigInt(1)},
-		{Balance: iotajsonrpc.NewBigInt(4)},
-		{Balance: iotajsonrpc.NewBigInt(2)},
+	testCoins := graphqltypes.Coins{
+		{Balance: graphqltypes.NewBigInt(3)},
+		{Balance: graphqltypes.NewBigInt(5)},
+		{Balance: graphqltypes.NewBigInt(1)},
+		{Balance: graphqltypes.NewBigInt(4)},
+		{Balance: graphqltypes.NewBigInt(2)},
 	}
 	type args struct {
 		amount     *big.Int
@@ -28,10 +28,10 @@ func TestCoins_PickIOTACoinsWithGas(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		cs      iotajsonrpc.Coins
+		cs      graphqltypes.Coins
 		args    args
-		want    iotajsonrpc.Coins
-		want1   *iotajsonrpc.Coin
+		want    graphqltypes.Coins
+		want1   *graphqltypes.Coin
 		wantErr bool
 	}{
 		{
@@ -40,7 +40,7 @@ func TestCoins_PickIOTACoinsWithGas(t *testing.T) {
 			args: args{
 				amount:     new(big.Int),
 				gasAmount:  0,
-				pickMethod: iotajsonrpc.PickMethodSmaller,
+				pickMethod: graphqltypes.PickMethodSmaller,
 			},
 			want:    nil,
 			want1:   nil,
@@ -52,10 +52,10 @@ func TestCoins_PickIOTACoinsWithGas(t *testing.T) {
 			args: args{
 				amount:     big.NewInt(1),
 				gasAmount:  2,
-				pickMethod: iotajsonrpc.PickMethodSmaller,
+				pickMethod: graphqltypes.PickMethodSmaller,
 			},
-			want:    iotajsonrpc.Coins{{Balance: iotajsonrpc.NewBigInt(1)}},
-			want1:   &iotajsonrpc.Coin{Balance: iotajsonrpc.NewBigInt(2)},
+			want:    graphqltypes.Coins{{Balance: graphqltypes.NewBigInt(1)}},
+			want1:   &graphqltypes.Coin{Balance: graphqltypes.NewBigInt(2)},
 			wantErr: false,
 		},
 		{
@@ -64,10 +64,10 @@ func TestCoins_PickIOTACoinsWithGas(t *testing.T) {
 			args: args{
 				amount:     big.NewInt(4),
 				gasAmount:  2,
-				pickMethod: iotajsonrpc.PickMethodSmaller,
+				pickMethod: graphqltypes.PickMethodSmaller,
 			},
-			want:    iotajsonrpc.Coins{{Balance: iotajsonrpc.NewBigInt(1)}, {Balance: iotajsonrpc.NewBigInt(3)}},
-			want1:   &iotajsonrpc.Coin{Balance: iotajsonrpc.NewBigInt(2)},
+			want:    graphqltypes.Coins{{Balance: graphqltypes.NewBigInt(1)}, {Balance: graphqltypes.NewBigInt(3)}},
+			want1:   &graphqltypes.Coin{Balance: graphqltypes.NewBigInt(2)},
 			wantErr: false,
 		},
 		{
@@ -76,14 +76,14 @@ func TestCoins_PickIOTACoinsWithGas(t *testing.T) {
 			args: args{
 				amount:     big.NewInt(6),
 				gasAmount:  2,
-				pickMethod: iotajsonrpc.PickMethodSmaller,
+				pickMethod: graphqltypes.PickMethodSmaller,
 			},
-			want: iotajsonrpc.Coins{
-				{Balance: iotajsonrpc.NewBigInt(1)},
-				{Balance: iotajsonrpc.NewBigInt(3)},
-				{Balance: iotajsonrpc.NewBigInt(4)},
+			want: graphqltypes.Coins{
+				{Balance: graphqltypes.NewBigInt(1)},
+				{Balance: graphqltypes.NewBigInt(3)},
+				{Balance: graphqltypes.NewBigInt(4)},
 			},
-			want1:   &iotajsonrpc.Coin{Balance: iotajsonrpc.NewBigInt(2)},
+			want1:   &graphqltypes.Coin{Balance: graphqltypes.NewBigInt(2)},
 			wantErr: false,
 		},
 		{
@@ -92,9 +92,9 @@ func TestCoins_PickIOTACoinsWithGas(t *testing.T) {
 			args: args{
 				amount:     big.NewInt(6),
 				gasAmount:  6,
-				pickMethod: iotajsonrpc.PickMethodSmaller,
+				pickMethod: graphqltypes.PickMethodSmaller,
 			},
-			want:    iotajsonrpc.Coins{},
+			want:    graphqltypes.Coins{},
 			want1:   nil,
 			wantErr: true,
 		},
@@ -104,10 +104,10 @@ func TestCoins_PickIOTACoinsWithGas(t *testing.T) {
 			args: args{
 				amount:     big.NewInt(100),
 				gasAmount:  3,
-				pickMethod: iotajsonrpc.PickMethodSmaller,
+				pickMethod: graphqltypes.PickMethodSmaller,
 			},
-			want:    iotajsonrpc.Coins{},
-			want1:   &iotajsonrpc.Coin{Balance: iotajsonrpc.NewBigInt(3)},
+			want:    graphqltypes.Coins{},
+			want1:   &graphqltypes.Coin{Balance: graphqltypes.NewBigInt(3)},
 			wantErr: true,
 		},
 		{
@@ -116,10 +116,10 @@ func TestCoins_PickIOTACoinsWithGas(t *testing.T) {
 			args: args{
 				amount:     big.NewInt(3),
 				gasAmount:  3,
-				pickMethod: iotajsonrpc.PickMethodBigger,
+				pickMethod: graphqltypes.PickMethodBigger,
 			},
-			want:    iotajsonrpc.Coins{{Balance: iotajsonrpc.NewBigInt(5)}},
-			want1:   &iotajsonrpc.Coin{Balance: iotajsonrpc.NewBigInt(3)},
+			want:    graphqltypes.Coins{{Balance: graphqltypes.NewBigInt(5)}},
+			want1:   &graphqltypes.Coin{Balance: graphqltypes.NewBigInt(3)},
 			wantErr: false,
 		},
 		{
@@ -128,10 +128,10 @@ func TestCoins_PickIOTACoinsWithGas(t *testing.T) {
 			args: args{
 				amount:     big.NewInt(3),
 				gasAmount:  3,
-				pickMethod: iotajsonrpc.PickMethodByOrder,
+				pickMethod: graphqltypes.PickMethodByOrder,
 			},
-			want:    iotajsonrpc.Coins{{Balance: iotajsonrpc.NewBigInt(5)}},
-			want1:   &iotajsonrpc.Coin{Balance: iotajsonrpc.NewBigInt(3)},
+			want:    graphqltypes.Coins{{Balance: graphqltypes.NewBigInt(5)}},
+			want1:   &graphqltypes.Coin{Balance: graphqltypes.NewBigInt(3)},
 			wantErr: false,
 		},
 	}
@@ -158,12 +158,12 @@ func TestCoins_PickIOTACoinsWithGas(t *testing.T) {
 
 func TestCoins_PickCoins(t *testing.T) {
 	// coins 1,2,3,4,5
-	testCoins := iotajsonrpc.Coins{
-		{Balance: iotajsonrpc.NewBigInt(3)},
-		{Balance: iotajsonrpc.NewBigInt(5)},
-		{Balance: iotajsonrpc.NewBigInt(1)},
-		{Balance: iotajsonrpc.NewBigInt(4)},
-		{Balance: iotajsonrpc.NewBigInt(2)},
+	testCoins := graphqltypes.Coins{
+		{Balance: graphqltypes.NewBigInt(3)},
+		{Balance: graphqltypes.NewBigInt(5)},
+		{Balance: graphqltypes.NewBigInt(1)},
+		{Balance: graphqltypes.NewBigInt(4)},
+		{Balance: graphqltypes.NewBigInt(2)},
 	}
 	type args struct {
 		amount     *big.Int
@@ -171,61 +171,61 @@ func TestCoins_PickCoins(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		cs      iotajsonrpc.Coins
+		cs      graphqltypes.Coins
 		args    args
-		want    iotajsonrpc.Coins
+		want    graphqltypes.Coins
 		wantErr bool
 	}{
 		{
 			name:    "smaller 1",
 			cs:      testCoins,
-			args:    args{amount: big.NewInt(2), pickMethod: iotajsonrpc.PickMethodSmaller},
-			want:    iotajsonrpc.Coins{{Balance: iotajsonrpc.NewBigInt(1)}, {Balance: iotajsonrpc.NewBigInt(2)}},
+			args:    args{amount: big.NewInt(2), pickMethod: graphqltypes.PickMethodSmaller},
+			want:    graphqltypes.Coins{{Balance: graphqltypes.NewBigInt(1)}, {Balance: graphqltypes.NewBigInt(2)}},
 			wantErr: false,
 		},
 		{
 			name: "smaller 2",
 			cs:   testCoins,
-			args: args{amount: big.NewInt(4), pickMethod: iotajsonrpc.PickMethodSmaller},
-			want: iotajsonrpc.Coins{
-				{Balance: iotajsonrpc.NewBigInt(1)},
-				{Balance: iotajsonrpc.NewBigInt(2)},
-				{Balance: iotajsonrpc.NewBigInt(3)},
+			args: args{amount: big.NewInt(4), pickMethod: graphqltypes.PickMethodSmaller},
+			want: graphqltypes.Coins{
+				{Balance: graphqltypes.NewBigInt(1)},
+				{Balance: graphqltypes.NewBigInt(2)},
+				{Balance: graphqltypes.NewBigInt(3)},
 			},
 			wantErr: false,
 		},
 		{
 			name:    "bigger 1",
 			cs:      testCoins,
-			args:    args{amount: big.NewInt(2), pickMethod: iotajsonrpc.PickMethodBigger},
-			want:    iotajsonrpc.Coins{{Balance: iotajsonrpc.NewBigInt(5)}},
+			args:    args{amount: big.NewInt(2), pickMethod: graphqltypes.PickMethodBigger},
+			want:    graphqltypes.Coins{{Balance: graphqltypes.NewBigInt(5)}},
 			wantErr: false,
 		},
 		{
 			name:    "bigger 2",
 			cs:      testCoins,
-			args:    args{amount: big.NewInt(6), pickMethod: iotajsonrpc.PickMethodBigger},
-			want:    iotajsonrpc.Coins{{Balance: iotajsonrpc.NewBigInt(5)}, {Balance: iotajsonrpc.NewBigInt(4)}},
+			args:    args{amount: big.NewInt(6), pickMethod: graphqltypes.PickMethodBigger},
+			want:    graphqltypes.Coins{{Balance: graphqltypes.NewBigInt(5)}, {Balance: graphqltypes.NewBigInt(4)}},
 			wantErr: false,
 		},
 		{
 			name:    "pick by order 1",
 			cs:      testCoins,
-			args:    args{amount: big.NewInt(6), pickMethod: iotajsonrpc.PickMethodByOrder},
-			want:    iotajsonrpc.Coins{{Balance: iotajsonrpc.NewBigInt(3)}, {Balance: iotajsonrpc.NewBigInt(5)}},
+			args:    args{amount: big.NewInt(6), pickMethod: graphqltypes.PickMethodByOrder},
+			want:    graphqltypes.Coins{{Balance: graphqltypes.NewBigInt(3)}, {Balance: graphqltypes.NewBigInt(5)}},
 			wantErr: false,
 		},
 		{
 			name:    "pick by order 2",
 			cs:      testCoins,
-			args:    args{amount: big.NewInt(15), pickMethod: iotajsonrpc.PickMethodByOrder},
+			args:    args{amount: big.NewInt(15), pickMethod: graphqltypes.PickMethodByOrder},
 			want:    testCoins,
 			wantErr: false,
 		},
 		{
 			name:    "pick error",
 			cs:      testCoins,
-			args:    args{amount: big.NewInt(16), pickMethod: iotajsonrpc.PickMethodByOrder},
+			args:    args{amount: big.NewInt(16), pickMethod: graphqltypes.PickMethodByOrder},
 			want:    nil,
 			wantErr: true,
 		},
@@ -247,12 +247,12 @@ func TestCoins_PickCoins(t *testing.T) {
 }
 
 func TestPickupCoins(t *testing.T) {
-	coin := func(n uint64) *iotajsonrpc.Coin {
-		return &iotajsonrpc.Coin{Balance: iotajsonrpc.NewBigInt(uint64(n)), CoinType: iotajsonrpc.IotaCoinType}
+	coin := func(n uint64) *graphqltypes.Coin {
+		return &graphqltypes.Coin{Balance: graphqltypes.NewBigInt(uint64(n)), CoinType: graphqltypes.IotaCoinType}
 	}
 
 	type args struct {
-		inputCoins   *iotajsonrpc.CoinPage
+		inputCoins   *graphqltypes.CoinPage
 		targetAmount *big.Int
 		gasBudget    uint64
 		limit        int
@@ -261,22 +261,22 @@ func TestPickupCoins(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *iotajsonrpc.PickedCoins
+		want    *graphqltypes.PickedCoins
 		wantErr error
 	}{
 		{
 			name: "moreCount = 3",
 			args: args{
-				inputCoins: &iotajsonrpc.CoinPage{
-					Data: []*iotajsonrpc.Coin{
+				inputCoins: &graphqltypes.CoinPage{
+					Data: []*graphqltypes.Coin{
 						coin(1e3), coin(1e5), coin(1e2), coin(1e4),
 					},
 				},
 				targetAmount: big.NewInt(1e3),
 				moreCount:    3,
 			},
-			want: &iotajsonrpc.PickedCoins{
-				Coins: []*iotajsonrpc.Coin{
+			want: &graphqltypes.PickedCoins{
+				Coins: []*graphqltypes.Coin{
 					coin(1e3), coin(1e5), coin(1e2),
 				},
 				TotalAmount:  big.NewInt(1e3 + 1e5 + 1e2),
@@ -286,8 +286,8 @@ func TestPickupCoins(t *testing.T) {
 		{
 			name: "large gas",
 			args: args{
-				inputCoins: &iotajsonrpc.CoinPage{
-					Data: []*iotajsonrpc.Coin{
+				inputCoins: &graphqltypes.CoinPage{
+					Data: []*graphqltypes.Coin{
 						coin(1e3), coin(1e5), coin(1e2), coin(1e4),
 					},
 				},
@@ -295,8 +295,8 @@ func TestPickupCoins(t *testing.T) {
 				gasBudget:    1e9,
 				moreCount:    3,
 			},
-			want: &iotajsonrpc.PickedCoins{
-				Coins: []*iotajsonrpc.Coin{
+			want: &graphqltypes.PickedCoins{
+				Coins: []*graphqltypes.Coin{
 					coin(1e3), coin(1e5), coin(1e2), coin(1e4),
 				},
 				TotalAmount:  big.NewInt(1e3 + 1e5 + 1e2 + 1e4),
@@ -306,43 +306,43 @@ func TestPickupCoins(t *testing.T) {
 		{
 			name: "ErrNoCoinsFound",
 			args: args{
-				inputCoins: &iotajsonrpc.CoinPage{
-					Data: []*iotajsonrpc.Coin{},
+				inputCoins: &graphqltypes.CoinPage{
+					Data: []*graphqltypes.Coin{},
 				},
 				targetAmount: big.NewInt(101000),
 			},
-			wantErr: iotajsonrpc.ErrNoCoinsFound,
+			wantErr: graphqltypes.ErrNoCoinsFound,
 		},
 		{
 			name: "ErrInsufficientBalance",
 			args: args{
-				inputCoins: &iotajsonrpc.CoinPage{
-					Data: []*iotajsonrpc.Coin{
+				inputCoins: &graphqltypes.CoinPage{
+					Data: []*graphqltypes.Coin{
 						coin(1e5), coin(1e6), coin(1e4),
 					},
 				},
 				targetAmount: big.NewInt(1e9),
 			},
-			wantErr: iotajsonrpc.ErrInsufficientBalance,
+			wantErr: graphqltypes.ErrInsufficientBalance,
 		},
 		{
 			name: "ErrNeedMergeCoin 1",
 			args: args{
-				inputCoins: &iotajsonrpc.CoinPage{
-					Data: []*iotajsonrpc.Coin{
+				inputCoins: &graphqltypes.CoinPage{
+					Data: []*graphqltypes.Coin{
 						coin(1e5), coin(1e6), coin(1e4),
 					},
 					HasNextPage: true,
 				},
 				targetAmount: big.NewInt(1e9),
 			},
-			wantErr: iotajsonrpc.ErrNeedMergeCoin,
+			wantErr: graphqltypes.ErrNeedMergeCoin,
 		},
 		{
 			name: "ErrNeedMergeCoin 2",
 			args: args{
-				inputCoins: &iotajsonrpc.CoinPage{
-					Data: []*iotajsonrpc.Coin{
+				inputCoins: &graphqltypes.CoinPage{
+					Data: []*graphqltypes.Coin{
 						coin(1e5), coin(1e6), coin(1e4), coin(1e5),
 					},
 					HasNextPage: false,
@@ -350,13 +350,13 @@ func TestPickupCoins(t *testing.T) {
 				targetAmount: big.NewInt(1e6 + 1e5*2 + 1e3),
 				limit:        3,
 			},
-			wantErr: iotajsonrpc.ErrNeedMergeCoin,
+			wantErr: graphqltypes.ErrNeedMergeCoin,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				got, err := iotajsonrpc.PickupCoins(
+				got, err := graphqltypes.PickupCoins(
 					tt.args.inputCoins,
 					tt.args.targetAmount,
 					tt.args.gasBudget,
@@ -372,7 +372,7 @@ func TestPickupCoins(t *testing.T) {
 
 func TestUnmarshalCoinFields(t *testing.T) {
 	s := []byte(`{"balance":"46952212","id":{"id": "0x0679bceafb254938dc123032e6d2d3c1a3e650a0c681bf0d997d38ff7eb88738"}}`)
-	var coinFields iotajsonrpc.CoinFields
+	var coinFields graphqltypes.CoinFields
 	err := json.Unmarshal(s, &coinFields)
 	require.NoError(t, err)
 	testObjectID := iotago.MustObjectIDFromHex("0x0679bceafb254938dc123032e6d2d3c1a3e650a0c681bf0d997d38ff7eb88738")

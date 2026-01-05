@@ -5,7 +5,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/v2/clients/iota-go/client"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/move"
@@ -14,7 +13,7 @@ import (
 
 func DeployCoinPackage(
 	t require.TestingT,
-	iotaClient client.IotaClient,
+	iotaClient iotagraphql.IotaClient,
 	signer iotasigner.Signer,
 	packageBytecode move.PackageBytecode,
 ) (
@@ -65,7 +64,7 @@ func DeployCoinPackage(
 
 func MintCoins(
 	t require.TestingT,
-	iotaClient client.IotaClient,
+	iotaClient iotagraphql.IotaClient,
 	signer iotasigner.Signer,
 	packageID *iotago.PackageID,
 	moduleName iotago.Identifier,

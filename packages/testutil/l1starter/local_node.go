@@ -14,9 +14,10 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 )
 
-var WaitUntilEffectsVisible = &iotaclient.WaitParams{
+var WaitUntilEffectsVisible = &iotagraphql.WaitParams{
 	Attempts:             10,
 	DelayBetweenAttempts: 1 * time.Second,
 }

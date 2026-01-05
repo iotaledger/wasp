@@ -73,7 +73,7 @@ func TestAssetsBagPlaceCoin(t *testing.T) {
 	time.Sleep(1 * time.Second) // allow minted coin to finalize before use
 	getCoinRef, err := client.GetObject(
 		context.Background(),
-		iotaclient.GetObjectRequest{
+		iotagraphql.GetObjectRequest{
 			ObjectID: coinRef.ObjectID,
 			Options:  &iotagraphql.IotaObjectDataOptions{ShowType: true},
 		},
@@ -122,7 +122,7 @@ func TestAssetsBagPlaceCoinAmount(t *testing.T) {
 	coinRef, _ := buildDeployMintTestcoin(t, client, cryptolibSigner)
 	getCoinRef, err := client.GetObject(
 		context.Background(),
-		iotaclient.GetObjectRequest{
+		iotagraphql.GetObjectRequest{
 			ObjectID: coinRef.ObjectID,
 			Options:  &iotagraphql.IotaObjectDataOptions{ShowType: true},
 		},
@@ -169,7 +169,7 @@ func TestAssetsBagTakeCoinBalanceMergeTo(t *testing.T) {
 	assetsBagMainRef, err := txnResponse.GetCreatedObjectByName(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
-	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: cryptolibSigner.Address().AsIotaAddress()})
+	getCoinsRes, err := client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{Owner: cryptolibSigner.Address().AsIotaAddress()})
 	require.NoError(t, err)
 	mergeToCoin1 := getCoinsRes.Data[2]
 
@@ -209,7 +209,7 @@ func TestAssetsBagTakeCoinBalanceMergeTo(t *testing.T) {
 	require.NoError(t, err)
 	time.Sleep(1 * time.Second) // FIXME tmp for graphql
 
-	getObjRes, err := client.GetObject(context.Background(), iotaclient.GetObjectRequest{
+	getObjRes, err := client.GetObject(context.Background(), iotagraphql.GetObjectRequest{
 		ObjectID: mergeToCoin1.CoinObjectID,
 		Options:  &iotagraphql.IotaObjectDataOptions{ShowBcs: true},
 	})
@@ -243,7 +243,7 @@ func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
 	coinRef, _ := buildDeployMintTestcoin(t, client, cryptolibSigner)
 	getCoinRef, err := client.GetObject(
 		context.Background(),
-		iotaclient.GetObjectRequest{
+		iotagraphql.GetObjectRequest{
 			ObjectID: coinRef.ObjectID,
 			Options:  &iotagraphql.IotaObjectDataOptions{ShowType: true},
 		},
@@ -293,7 +293,7 @@ func TestGetAssetsBagFromAnchorID(t *testing.T) {
 	coinRef, coinType := buildDeployMintTestcoin(t, client, cryptolibSigner)
 	getCoinRef, err := client.GetObject(
 		context.Background(),
-		iotaclient.GetObjectRequest{
+		iotagraphql.GetObjectRequest{
 			ObjectID: coinRef.ObjectID,
 			Options:  &iotagraphql.IotaObjectDataOptions{ShowType: true},
 		},
@@ -398,7 +398,7 @@ func borrowAnchorAssetsAndPlaceCoin(
 
 	execRes, err := client.SignAndExecuteTransaction(
 		ctx,
-		&iotaclient.SignAndExecuteTransactionRequest{
+		&iotagraphql.SignAndExecuteTransactionRequest{
 			TxDataBytes: txnBytes,
 			Signer:      signer,
 			Options: &iotagraphql.IotaTransactionBlockResponseOptions{
@@ -421,7 +421,7 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 	time.Sleep(1 * time.Second)
 	getCoinRef, err := client.GetObject(
 		context.Background(),
-		iotaclient.GetObjectRequest{
+		iotagraphql.GetObjectRequest{
 			ObjectID: coinRef.ObjectID,
 			Options:  &iotagraphql.IotaObjectDataOptions{ShowType: true},
 		},
@@ -460,7 +460,7 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 	require.NoError(t, err)
 	time.Sleep(2 * time.Second)
 
-	assetsBagGetObjectRes, err := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: assetsBagRef.ObjectID})
+	assetsBagGetObjectRes, err := client.GetObject(context.Background(), iotagraphql.GetObjectRequest{ObjectID: assetsBagRef.ObjectID})
 	require.NoError(t, err)
 	tmpAssetsBagRef := assetsBagGetObjectRes.Data.Ref()
 	allowance := iscmove.NewAssets(0).

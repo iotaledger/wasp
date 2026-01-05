@@ -309,7 +309,7 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 
 	getCoinsRes, err := l1Client.GetCoins(
 		context.Background(),
-		iotaclient.GetCoinsRequest{Owner: address.AsIotaAddress()},
+		iotagraphql.GetCoinsRequest{Owner: address.AsIotaAddress()},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("cant get gas coin: %w", err)

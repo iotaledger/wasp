@@ -457,7 +457,7 @@ func (ch *Chain) GetLatestAnchor() *isc.StateAnchor {
 func (env *Solo) GetCoin(id *iotago.ObjectID) *coin.CoinWithRef {
 	getObjRes, err := env.ISCMoveClient().GetObject(
 		env.ctx,
-		iotaclient.GetObjectRequest{
+		iotagraphql.GetObjectRequest{
 			ObjectID: id,
 			Options:  &iotagraphql.IotaObjectDataOptions{ShowBcs: true},
 		},
@@ -573,7 +573,7 @@ func (env *Solo) L1BaseTokenCoins(addr *cryptolib.Address) []*iotagraphql.Coin {
 }
 
 func (env *Solo) L1AllCoins(addr *cryptolib.Address) iotagraphql.Coins {
-	r, err := env.L1Client().GetCoins(env.ctx, iotaclient.GetCoinsRequest{
+	r, err := env.L1Client().GetCoins(env.ctx, iotagraphql.GetCoinsRequest{
 		Owner: addr.AsIotaAddress(),
 		Limit: math.MaxInt,
 	})
@@ -583,7 +583,7 @@ func (env *Solo) L1AllCoins(addr *cryptolib.Address) iotagraphql.Coins {
 
 func (env *Solo) L1Coins(addr *cryptolib.Address, coinType coin.Type) []*iotagraphql.Coin {
 	coinTypeStr := coinType.String()
-	r, err := env.L1Client().GetCoins(env.ctx, iotaclient.GetCoinsRequest{
+	r, err := env.L1Client().GetCoins(env.ctx, iotagraphql.GetCoinsRequest{
 		Owner:    addr.AsIotaAddress(),
 		CoinType: &coinTypeStr,
 		Limit:    50,
@@ -597,7 +597,7 @@ func (env *Solo) L1BaseTokens(addr *cryptolib.Address) coin.Value {
 }
 
 func (env *Solo) L1CoinBalance(addr *cryptolib.Address, coinType coin.Type) coin.Value {
-	r, err := env.L1Client().GetBalance(env.ctx, iotaclient.GetBalanceRequest{
+	r, err := env.L1Client().GetBalance(env.ctx, iotagraphql.GetBalanceRequest{
 		Owner:    addr.AsIotaAddress(),
 		CoinType: coinType.String(),
 	})
@@ -635,7 +635,7 @@ func (env *Solo) executePTB(
 
 	execRes, err := env.L1Client().SignAndExecuteTransaction(
 		env.ctx,
-		&iotaclient.SignAndExecuteTransactionRequest{
+		&iotagraphql.SignAndExecuteTransactionRequest{
 			TxDataBytes: txnBytes,
 			Signer:      cryptolib.SignerToIotaSigner(wallet),
 			Options: &iotagraphql.IotaTransactionBlockResponseOptions{
@@ -701,7 +701,7 @@ func (env *Solo) L1MintObject(owner *cryptolib.KeyPair) isc.IotaObject {
 	})
 	require.NoError(env.T, err)
 
-	o, err := env.ISCMoveClient().GetObject(env.Ctx(), iotaclient.GetObjectRequest{
+	o, err := env.ISCMoveClient().GetObject(env.Ctx(), iotagraphql.GetObjectRequest{
 		ObjectID: testAnchor.ObjectID,
 		Options: &iotagraphql.IotaObjectDataOptions{
 			ShowType: true,

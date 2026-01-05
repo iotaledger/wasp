@@ -96,7 +96,7 @@ func TestRequestsFeed(t *testing.T) {
 	require.Len(t, ownedReqs, 1)
 	require.Equal(t, *requestRef.ObjectID, ownedReqs[0].Object.ID)
 
-	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: anchorOwner.Address().AsIotaAddress()})
+	getCoinsRes, err := client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{Owner: anchorOwner.Address().AsIotaAddress()})
 	require.NoError(t, err)
 
 	_, err = client.ReceiveRequestsAndTransition(

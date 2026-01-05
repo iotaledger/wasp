@@ -25,6 +25,7 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/chainclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/evm/evmtest"
@@ -76,7 +77,7 @@ func (e *ChainEnv) checkRootsOutside() {
 
 func (e *ChainEnv) GetL1Balance(addr *iotago.Address, coinType coin.Type) coin.Value {
 	l1client := e.Chain.Cluster.L1Client()
-	getBalance, err := l1client.GetBalance(context.TODO(), iotaclient.GetBalanceRequest{Owner: addr})
+	getBalance, err := l1client.GetBalance(context.TODO(), iotagraphql.GetBalanceRequest{Owner: addr})
 	require.NoError(e.t, err)
 	return coin.Value(getBalance.TotalBalance.Uint64())
 }

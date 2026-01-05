@@ -10,13 +10,11 @@ import (
 	"github.com/samber/lo"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/client"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/contracts"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/serialization"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
@@ -24,20 +22,20 @@ import (
 
 // Client provides convenient methods to interact with the `isc` Move contracts.
 type Client struct {
-	client.IotaClient
+	iotagraphql.IotaClient
 	faucetURL string
 	// wsClient is only set for websocket clients, needed for subscription methods
 	wsClient *iotaclient.Client
 }
 
-func NewClient(iotaClient client.IotaClient, faucetURL string) *Client {
+func NewClient(iotaClient iotagraphql.IotaClient, faucetURL string) *Client {
 	return &Client{
 		IotaClient: iotaClient,
 		faucetURL:  faucetURL,
 	}
 }
 
-func NewHTTPClient(apiURL, faucetURL string, waitUntilEffectsVisible *iotaclient.WaitParams) *Client {
+func NewHTTPClient(apiURL, faucetURL string, waitUntilEffectsVisible *iotagraphql.WaitParams) *Client {
 	graphqlURL := iotaconn.GraphQLURL(apiURL)
 	return NewClient(
 		iotagraphql.NewGraphQLClientWithWaitParams(graphqlURL, waitUntilEffectsVisible),
@@ -48,7 +46,7 @@ func NewHTTPClient(apiURL, faucetURL string, waitUntilEffectsVisible *iotaclient
 func NewWebsocketClient(
 	ctx context.Context,
 	wsURL, faucetURL string,
-	waitUntilEffectsVisible *iotaclient.WaitParams,
+	waitUntilEffectsVisible *iotagraphql.WaitParams,
 	log log.Logger,
 ) (*Client, error) {
 	ws, err := iotaclient.NewWebsocket(ctx, wsURL, waitUntilEffectsVisible, log)
@@ -116,7 +114,7 @@ func (c *Client) SignAndExecutePTB(
 	}
 	txnResponse, err := c.SignAndExecuteTransaction(
 		ctx,
-		&iotaclient.SignAndExecuteTransactionRequest{
+		&iotagraphql.SignAndExecuteTransactionRequest{
 			TxDataBytes: txnBytes,
 			Signer:      signer,
 			Options: &iotagraphql.IotaTransactionBlockResponseOptions{
@@ -174,7 +172,7 @@ func (c *Client) DevInspectPTB(
 	}
 	txnResponse, err := c.DevInspectTransactionBlock(
 		ctx,
-		iotaclient.DevInspectTransactionBlockRequest{
+		iotagraphql.DevInspectTransactionBlockRequest{
 			SenderAddress: signer.Address(),
 			TxKindBytes:   txnBytes,
 		},
@@ -204,7 +202,7 @@ func (c *Client) WaitUntilStopped() {
 // This method is only available for websocket clients.
 func (c *Client) SubscribeEvent(
 	ctx context.Context,
-	filter *iotajsonrpc.EventFilter,
+	filter *iotagraphql.IotaEventFilter,
 	resultCh chan<- *iotagraphql.IotaEvent,
 ) error {
 	if c.wsClient == nil {
@@ -227,7 +225,7 @@ func (c *Client) SubscribeTransaction(
 }
 
 func (c *Client) GetISCPackageIDForAnchor(ctx context.Context, anchor iotago.ObjectID) (iotago.PackageID, error) {
-	obj, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: &anchor, Options: &iotagraphql.IotaObjectDataOptions{
+	obj, err := c.GetObject(ctx, iotagraphql.GetObjectRequest{ObjectID: &anchor, Options: &iotagraphql.IotaObjectDataOptions{
 		ShowDisplay: true,
 		ShowType:    true,
 	}})
@@ -247,11 +245,11 @@ func (c *Client) GetISCPackageIDForAnchor(ctx context.Context, anchor iotago.Obj
 
 func (c *Client) DeployISCContracts(ctx context.Context, signer iotasigner.Signer) (iotago.PackageID, error) {
 	iscBytecode := contracts.ISC()
-	txnBytes, err := c.Publish(ctx, iotaclient.PublishRequest{
+	txnBytes, err := c.Publish(ctx, iotagraphql.PublishRequest{
 		Sender:          signer.Address(),
 		CompiledModules: iscBytecode.Modules,
 		Dependencies:    iscBytecode.Dependencies,
-		GasBudget:       iotagraphql.NewBigInt(iotaclient.DefaultGasBudget * 10),
+		GasBudget:       iotagraphql.NewBigInt(iotagraphql.DefaultGasBudget * 10),
 	})
 	if err != nil {
 		return iotago.PackageID{}, err
@@ -259,7 +257,7 @@ func (c *Client) DeployISCContracts(ctx context.Context, signer iotasigner.Signe
 
 	txnResponse, err := c.SignAndExecuteTransaction(
 		ctx,
-		&iotaclient.SignAndExecuteTransactionRequest{
+		&iotagraphql.SignAndExecuteTransactionRequest{
 			TxDataBytes: txnBytes.TxBytes,
 			Signer:      signer,
 			Options: &iotagraphql.IotaTransactionBlockResponseOptions{

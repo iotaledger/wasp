@@ -1,4 +1,4 @@
-package iotajsonrpc
+package graphqltypes
 
 type ProtocolConfig struct {
 	MaxSupportedProtocolVersion *BigInt                        `json:"maxSupportedProtocolVersion,omitempty"`

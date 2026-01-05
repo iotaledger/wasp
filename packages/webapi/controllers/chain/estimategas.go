@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/webapi/apierrors"
@@ -62,7 +63,7 @@ func (c *Controller) estimateGasOnLedger(e echo.Context) error {
 	callContext, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	dryRunResponse, err := c.l1Client.DryRunTransaction(callContext, iotaclient.DryRunTransactionRequest{
+	dryRunResponse, err := c.l1Client.DryRunTransaction(callContext, iotagraphql.DryRunTransactionRequest{
 		TxDataBytes: txBytes,
 	})
 	if err != nil {

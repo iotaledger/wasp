@@ -3,7 +3,6 @@ package graphqltypes
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"math/big"
 	"sort"
 
@@ -11,19 +10,22 @@ import (
 )
 
 type Coin struct {
-	CoinType            string
-	CoinObjectID        *iotago.ObjectID
-	Version             uint64
-	Digest              *iotago.ObjectDigest
-	Balance             uint64
-	LockedUntilEpoch    *uint64
-	PreviousTransaction iotago.TransactionDigest
+	CoinType     CoinType             `json:"coinType"`
+	CoinObjectID *iotago.ObjectID     `json:"coinObjectID"`
+	Version      *BigInt              `json:"version"`
+	Digest       *iotago.ObjectDigest `json:"digest"`
+	Balance      *BigInt              `json:"balance"`
+
+	LockedUntilEpoch    *BigInt                  `json:"lockedUntilEpoch,omitempty"`
+	PreviousTransaction iotago.TransactionDigest `json:"previousTransaction"`
 }
+
+type CoinPage = Page[*Coin, string]
 
 func (c *Coin) Ref() *iotago.ObjectRef {
 	return &iotago.ObjectRef{
 		Digest:   c.Digest,
-		Version:  c.Version,
+		Version:  c.Version.Uint64(),
 		ObjectID: c.CoinObjectID,
 	}
 }
@@ -40,7 +42,14 @@ func (c *Coin) String() string {
 }
 
 func (c *Coin) IsIOTA() bool {
-	return c.CoinType == "0x2::iota::IOTA"
+	return MustCoinTypeFromString(c.CoinType.String()) == IotaCoinType
+}
+
+type CoinFields struct {
+	Balance *BigInt
+	ID      struct {
+		ID *iotago.ObjectID
+	}
 }
 
 type Coins []*Coin
@@ -48,15 +57,14 @@ type Coins []*Coin
 func (cs Coins) TotalBalance() *big.Int {
 	total := new(big.Int)
 	for _, coin := range cs {
-		total = total.Add(total, new(big.Int).SetUint64(coin.Balance))
+		total = total.Add(total, new(big.Int).SetUint64(coin.Balance.Uint64()))
 	}
 	return total
 }
 
-// PickCoinNoLess picks a single coin with balance >= amount
 func (cs Coins) PickCoinNoLess(amount uint64) (*Coin, error) {
 	for i, coin := range cs {
-		if coin.Balance >= amount {
+		if coin.Balance.Uint64() >= amount {
 			cs = append(cs[:i], cs[i+1:]...)
 			return coin, nil
 		}
@@ -67,7 +75,6 @@ func (cs Coins) PickCoinNoLess(amount uint64) (*Coin, error) {
 	return nil, errors.New("no coin is enough to cover the gas")
 }
 
-// PickMultipleCoinsNoLess picks multiple coins with total balance >= amount
 func (cs Coins) PickMultipleCoinsNoLess(amount uint64) ([]*Coin, error) {
 	if amount == 0 {
 		return nil, nil
@@ -79,7 +86,7 @@ func (cs Coins) PickMultipleCoinsNoLess(amount uint64) ([]*Coin, error) {
 		if sum >= amount {
 			return coins, nil
 		}
-		bal := c.Balance
+		bal := c.Balance.Uint64()
 
 		need := amount - sum
 		coins = append(coins, c)
@@ -107,25 +114,31 @@ func (cs Coins) ObjectIDs() []*iotago.ObjectID {
 	return coinIDs
 }
 
+func (cs Coins) ObjectIDVals() []iotago.ObjectID {
+	coinIDs := make([]iotago.ObjectID, len(cs))
+	for idx, coin := range cs {
+		coinIDs[idx] = *coin.CoinObjectID
+	}
+	return coinIDs
+}
+
 const (
 	PickMethodSmaller = iota // pick smaller coins to match amount
 	PickMethodBigger         // pick bigger coins to match amount
 	PickMethodByOrder        // pick coins by coins order to match amount
 )
 
-var (
-	ErrCoinsNotMatchRequest = fmt.Errorf("coins not match request")
-	ErrCoinsNeedMoreObject  = fmt.Errorf("need more coins")
-)
-
-// PickIOTACoinsWithGas picks coins >= amount and a gas coin >= gasAmount
+// PickIOTACoinsWithGas pick coins, which sum >= amount, and pick a gas coin >= gasAmount which not in coins
+// if not satisfied amount/gasAmount, an ErrCoinsNotMatchRequest/ErrCoinsNeedMoreObject error will return
+// if gasAmount == 0, a nil gasCoin will return
+// pickMethod, see PickMethodSmaller|PickMethodBigger|PickMethodByOrder
 func (cs Coins) PickIOTACoinsWithGas(amount *big.Int, gasAmount uint64, pickMethod int) (Coins, *Coin, error) {
 	if gasAmount == 0 {
 		res, err := cs.PickCoins(amount, pickMethod)
 		return res, nil, err
 	}
 
-	if amount.Cmp(big.NewInt(0)) == 0 && gasAmount == 0 {
+	if amount.Cmp(new(big.Int)) == 0 && gasAmount == 0 {
 		return make(Coins, 0), nil, nil
 	} else if len(cs) == 0 {
 		return cs, nil, ErrCoinsNeedMoreObject
@@ -135,11 +148,11 @@ func (cs Coins) PickIOTACoinsWithGas(amount *big.Int, gasAmount uint64, pickMeth
 	var gasCoin *Coin
 	var selectIndex int
 	for i := range cs {
-		if cs[i].Balance < gasAmount {
+		if cs[i].Balance.Uint64() < gasAmount {
 			continue
 		}
 
-		if gasCoin == nil || gasCoin.Balance > cs[i].Balance {
+		if gasCoin == nil || gasCoin.Balance.Uint64() > cs[i].Balance.Uint64() {
 			gasCoin = cs[i]
 			selectIndex = i
 		}
@@ -155,7 +168,9 @@ func (cs Coins) PickIOTACoinsWithGas(amount *big.Int, gasAmount uint64, pickMeth
 	return pickCoins, gasCoin, err
 }
 
-// PickCoins picks coins with total >= amount using the specified method
+// PickCoins pick coins, which sum >= amount,
+// pickMethod, see PickMethodSmaller|PickMethodBigger|PickMethodByOrder
+// if not satisfied amount, an ErrCoinsNeedMoreObject error will return
 func (cs Coins) PickCoins(amount *big.Int, pickMethod int) (Coins, error) {
 	var sortedCoins Coins
 	if pickMethod == PickMethodByOrder {
@@ -166,9 +181,9 @@ func (cs Coins) PickCoins(amount *big.Int, pickMethod int) (Coins, error) {
 		sort.Slice(
 			sortedCoins, func(i, j int) bool {
 				if pickMethod == PickMethodSmaller {
-					return sortedCoins[i].Balance < sortedCoins[j].Balance
+					return sortedCoins[i].Balance.Uint64() < sortedCoins[j].Balance.Uint64()
 				} else {
-					return sortedCoins[i].Balance >= sortedCoins[j].Balance
+					return sortedCoins[i].Balance.Uint64() >= sortedCoins[j].Balance.Uint64()
 				}
 			},
 		)
@@ -178,39 +193,11 @@ func (cs Coins) PickCoins(amount *big.Int, pickMethod int) (Coins, error) {
 	total := new(big.Int)
 	for _, coin := range sortedCoins {
 		result = append(result, coin)
-		total = new(big.Int).Add(total, new(big.Int).SetUint64(coin.Balance))
+		total = new(big.Int).Add(total, new(big.Int).SetUint64(coin.Balance.Uint64()))
 		if total.Cmp(amount) >= 0 {
 			return result, nil
 		}
 	}
 
 	return nil, ErrCoinsNeedMoreObject
-}
-
-type Balance struct {
-	CoinType        string
-	CoinObjectCount uint64
-	TotalBalance    uint64
-	LockedBalance   map[uint64]uint64
-}
-
-func (balance *Balance) String() string {
-	b, err := json.Marshal(balance)
-	if err != nil {
-		panic(err)
-	}
-	return string(b)
-}
-
-type CoinMetadata struct {
-	Name        string
-	Symbol      string
-	Decimals    uint8
-	Description string
-	IconUrl     string
-	Id          *iotago.ObjectID
-}
-
-type Supply struct {
-	Value uint64
 }

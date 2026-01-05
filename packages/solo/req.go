@@ -247,7 +247,7 @@ func (env *Solo) makeBaseTokenCoin(
 
 	tx := lo.Must(env.L1Client().PayIota(
 		env.ctx,
-		iotaclient.PayIotaRequest{
+		iotagraphql.PayIotaRequest{
 			Signer:     keyPair.Address().AsIotaAddress(),
 			InputCoins: []*iotago.ObjectID{pickedCoin.CoinObjectID},
 			Amount:     []*iotagraphql.BigInt{iotagraphql.NewBigInt(uint64(value))},
@@ -260,7 +260,7 @@ func (env *Solo) makeBaseTokenCoin(
 	env.MustWithWaitForNextVersion(pickedCoin.Ref(), func() {
 		txnResponse, err := env.L1Client().SignAndExecuteTransaction(
 			env.ctx,
-			&iotaclient.SignAndExecuteTransactionRequest{
+			&iotagraphql.SignAndExecuteTransactionRequest{
 				TxDataBytes: tx.TxBytes,
 				Signer:      cryptolib.SignerToIotaSigner(keyPair),
 				Options: &iotagraphql.IotaTransactionBlockResponseOptions{

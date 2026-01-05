@@ -7,7 +7,6 @@ import (
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/serialization"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql/graphqltypes"
 )
 
@@ -18,7 +17,7 @@ const (
 
 func convertExecuteTransactionBlockToGraphQL(
 	resp *ExecuteTransactionBlockResponse,
-	options *iotajsonrpc.IotaTransactionBlockResponseOptions,
+	options *IotaTransactionBlockResponseOptions,
 ) (*graphqltypes.TransactionResponse, error) {
 	if resp == nil {
 		return nil, fmt.Errorf("response is nil")
@@ -61,7 +60,7 @@ func convertExecuteTransactionBlockToGraphQL(
 	// Create minimal Effects if not decoded
 	if txResp.Effects == nil {
 		txResp.Effects = &graphqltypes.TransactionEffects{
-			Status: graphqltypes.ExecutionStatus{
+			Status: graphqltypes.GqlExecutionStatus{
 				Success: true,
 			},
 		}
@@ -93,7 +92,7 @@ func decodeEffectsFromBCS(bcsData []byte) (*graphqltypes.TransactionEffects, err
 	}
 
 	// Decode BCS to iotajsonrpc type first
-	rawEffects, err := bcs.Unmarshal[iotajsonrpc.IotaTransactionBlockEffects](data)
+	rawEffects, err := bcs.Unmarshal[IotaTransactionBlockEffects](data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
 	}
@@ -104,13 +103,13 @@ func decodeEffectsFromBCS(bcsData []byte) (*graphqltypes.TransactionEffects, err
 	v1 := rawEffects.V1
 
 	effects := &graphqltypes.TransactionEffects{
-		Status: graphqltypes.ExecutionStatus{
+		Status: graphqltypes.GqlExecutionStatus{
 			Success: v1.Status.Status == ExecutionStatusSuccess,
 			Error:   v1.Status.Error,
 		},
 		ExecutedEpoch:     v1.ExecutedEpoch.Uint64(),
 		TransactionDigest: v1.TransactionDigest,
-		GasUsed: graphqltypes.GasCostSummary{
+		GasUsed: graphqltypes.GqlGasCostSummary{
 			ComputationCost:         v1.GasUsed.ComputationCost.Uint64(),
 			StorageCost:             v1.GasUsed.StorageCost.Uint64(),
 			StorageRebate:           v1.GasUsed.StorageRebate.Uint64(),
@@ -120,13 +119,13 @@ func decodeEffectsFromBCS(bcsData []byte) (*graphqltypes.TransactionEffects, err
 
 	// Convert owned refs
 	if len(v1.Created) > 0 {
-		effects.Created = make([]graphqltypes.OwnedObjectRef, len(v1.Created))
+		effects.Created = make([]graphqltypes.GqlOwnedObjectRef, len(v1.Created))
 		for i, ref := range v1.Created {
 			owner, err := convertOwnerFromBCS(ref.Owner)
 			if err != nil {
 				return nil, err
 			}
-			effects.Created[i] = graphqltypes.OwnedObjectRef{
+			effects.Created[i] = graphqltypes.GqlOwnedObjectRef{
 				ObjectID: *ref.Reference.ObjectID,
 				Version:  ref.Reference.Version,
 				Digest:   ref.Reference.Digest,
@@ -136,13 +135,13 @@ func decodeEffectsFromBCS(bcsData []byte) (*graphqltypes.TransactionEffects, err
 	}
 
 	if len(v1.Mutated) > 0 {
-		effects.Mutated = make([]graphqltypes.OwnedObjectRef, len(v1.Mutated))
+		effects.Mutated = make([]graphqltypes.GqlOwnedObjectRef, len(v1.Mutated))
 		for i, ref := range v1.Mutated {
 			owner, err := convertOwnerFromBCS(ref.Owner)
 			if err != nil {
 				return nil, err
 			}
-			effects.Mutated[i] = graphqltypes.OwnedObjectRef{
+			effects.Mutated[i] = graphqltypes.GqlOwnedObjectRef{
 				ObjectID: *ref.Reference.ObjectID,
 				Version:  ref.Reference.Version,
 				Digest:   ref.Reference.Digest,
@@ -156,7 +155,7 @@ func decodeEffectsFromBCS(bcsData []byte) (*graphqltypes.TransactionEffects, err
 	if err != nil {
 		return nil, err
 	}
-	effects.GasObject = graphqltypes.OwnedObjectRef{
+	effects.GasObject = graphqltypes.GqlOwnedObjectRef{
 		ObjectID: *v1.GasObject.Reference.ObjectID,
 		Version:  v1.GasObject.Reference.Version,
 		Digest:   v1.GasObject.Reference.Digest,
@@ -269,12 +268,12 @@ func convertObjectChanges(nodes []ExecuteTransactionBlockExecuteTransactionBlock
 	return changes
 }
 
-func convertBalanceChanges(nodes []ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange) []graphqltypes.BalanceChange {
+func convertBalanceChanges(nodes []ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange) []graphqltypes.GqlBalanceChange {
 	if len(nodes) == 0 {
 		return nil
 	}
 
-	changes := make([]graphqltypes.BalanceChange, 0, len(nodes))
+	changes := make([]graphqltypes.GqlBalanceChange, 0, len(nodes))
 	for _, node := range nodes {
 		// Extract owner address
 		var ownerAddr *iotago.Address
@@ -284,7 +283,7 @@ func convertBalanceChanges(nodes []ExecuteTransactionBlockExecuteTransactionBloc
 		}
 
 		if ownerAddr != nil {
-			changes = append(changes, graphqltypes.BalanceChange{
+			changes = append(changes, graphqltypes.GqlBalanceChange{
 				Owner:    *ownerAddr,
 				CoinType: node.CoinType.Repr,
 				Amount:   node.Amount.Int.Int64(),

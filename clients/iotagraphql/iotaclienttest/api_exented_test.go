@@ -6,7 +6,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/testutil/l1starter"
@@ -17,7 +16,7 @@ func TestGetDynamicFields(t *testing.T) {
 	client := l1starter.Instance().L1Client()
 
 	t.Run("GetObject", func(t *testing.T) {
-		obj, err := client.GetObject(ctx, iotaclient.GetObjectRequest{
+		obj, err := client.GetObject(ctx, iotagraphql.GetObjectRequest{
 			ObjectID: iotago.MustObjectIDFromHex("0x5"),
 			Options: &iotagraphql.IotaObjectDataOptions{
 				ShowContent: true,
@@ -35,7 +34,7 @@ func TestGetDynamicFields(t *testing.T) {
 	})
 
 	t.Run("GetDynamicFields", func(t *testing.T) {
-		resp, err := client.GetDynamicFields(ctx, iotaclient.GetDynamicFieldsRequest{
+		resp, err := client.GetDynamicFields(ctx, iotagraphql.GetDynamicFieldsRequest{
 			ParentObjectID: iotago.MustObjectIDFromHex("0x5"),
 		})
 		require.NoError(t, err)

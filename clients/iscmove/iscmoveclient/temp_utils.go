@@ -9,8 +9,8 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/log"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 )
 
 // TODO this is a 1:1 copy of l1client.WaitForNextVersionForTesting
@@ -44,7 +44,7 @@ func (c *Client) WaitForNextVersionForTesting(ctx context.Context, timeout time.
 			return nil, fmt.Errorf("WaitForNextVersionForTesting: context deadline exceeded while waiting for object version change: %v", currentRef)
 		case <-ticker.C:
 			// Poll for object update
-			newRef, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: currentRef.ObjectID})
+			newRef, err := c.GetObject(ctx, iotagraphql.GetObjectRequest{ObjectID: currentRef.ObjectID})
 			if err != nil {
 				if logger != nil {
 					logger.LogInfof("WaitForNextVersionForTesting: error getting object: %v, retrying...", err)

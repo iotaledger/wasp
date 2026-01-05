@@ -9,7 +9,7 @@ import (
 	"github.com/samber/lo"
 	"golang.org/x/exp/maps"
 
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/client"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
@@ -34,7 +34,7 @@ func (c *Client) CreateAndSendRequest(
 	ctx context.Context,
 	req *CreateAndSendRequestRequest,
 ) (*iotagraphql.IotaTransactionBlockResponse, error) {
-	anchorRes, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: req.AnchorAddress})
+	anchorRes, err := c.GetObject(ctx, iotagraphql.GetObjectRequest{ObjectID: req.AnchorAddress})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor ref: %w", err)
 	}
@@ -79,7 +79,7 @@ type CreateAndSendRequestWithAssetsRequest struct {
 func (c *Client) selectProperGasCoinAndBalance(ctx context.Context, req *CreateAndSendRequestWithAssetsRequest) ([]*iotagraphql.Coin, uint64, error) {
 	iotaBalance := req.Assets.BaseToken()
 
-	coinOptions, err := c.GetCoinObjsForTargetAmount(ctx, req.Signer.Address().AsIotaAddress(), iotaBalance.Uint64(), iotaclient.DefaultGasBudget)
+	coinOptions, err := c.GetCoinObjsForTargetAmount(ctx, req.Signer.Address().AsIotaAddress(), iotaBalance.Uint64(), iotagraphql.DefaultGasBudget)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -97,13 +97,13 @@ func (c *Client) CreateAndSendRequestWithAssets(
 	ctx context.Context,
 	req *CreateAndSendRequestWithAssetsRequest,
 ) (*iotagraphql.IotaTransactionBlockResponse, error) {
-	anchorRes, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: req.AnchorAddress})
+	anchorRes, err := c.GetObject(ctx, iotagraphql.GetObjectRequest{ObjectID: req.AnchorAddress})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor ref: %w", err)
 	}
 	anchorRef := anchorRes.Data.Ref()
 
-	allCoins, err := c.GetAllCoins(ctx, iotaclient.GetAllCoinsRequest{Owner: req.Signer.Address().AsIotaAddress()})
+	allCoins, err := c.GetAllCoins(ctx, iotagraphql.GetAllCoinsRequest{Owner: req.Signer.Address().AsIotaAddress()})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor ref: %w", err)
 	}
@@ -166,7 +166,7 @@ func (c *Client) CreateAndSendRequestWithAssets(
 
 	// Place the non-coin objects
 	for id, t := range req.Assets.Objects.Iterate() {
-		objRes, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: &id})
+		objRes, err := c.GetObject(ctx, iotagraphql.GetObjectRequest{ObjectID: &id})
 		if err != nil {
 			return nil, fmt.Errorf("failed to get object %s: %w", id, err)
 		}
@@ -207,7 +207,7 @@ func (c *Client) GetRequestFromObjectID(
 	ctx context.Context,
 	reqID *iotago.ObjectID,
 ) (*iscmove.RefWithObject[iscmove.Request], error) {
-	getObjectResponse, err := c.GetObject(ctx, iotaclient.GetObjectRequest{
+	getObjectResponse, err := c.GetObject(ctx, iotagraphql.GetObjectRequest{
 		ObjectID: reqID,
 		Options:  &iotagraphql.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true},
 	})
@@ -237,7 +237,7 @@ func (c *Client) parseRequestAndFetchAssetsBag(ctx context.Context, obj *iotagra
 	}
 
 	var intermediateRequest intermediateMoveRequest
-	err := iotaclient.UnmarshalBCS(obj.Bcs.Data.MoveObject.BcsBytes, &intermediateRequest)
+	err := client.UnmarshalBCS(obj.Bcs.Data.MoveObject.BcsBytes, &intermediateRequest)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
 	}
@@ -284,7 +284,7 @@ func (c *Client) pullRequests(ctx context.Context, packageID iotago.Address, anc
 
 	var cursor *iotago.ObjectID
 	for len(pulledRequests) < maxAmountOfRequests {
-		objs, err := c.GetOwnedObjects(ctx, iotaclient.GetOwnedObjectsRequest{
+		objs, err := c.GetOwnedObjects(ctx, iotagraphql.GetOwnedObjectsRequest{
 			Address: anchorAddress,
 			Query:   query,
 			Cursor:  cursor,
