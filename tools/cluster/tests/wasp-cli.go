@@ -8,7 +8,9 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"regexp"
+	"runtime"
 	"slices"
 	"strings"
 	"testing"
@@ -29,7 +31,12 @@ type WaspCLITest struct {
 	Cluster        *cluster.Cluster
 	dir            string
 	WaspCliAddress *cryptolib.Address
+	binPath        string
 }
+
+// waspCliBinPath is set once per package (in TestMain).
+// If empty, newWaspCLITest will build a private binary as a fallback.
+var waspCliBinPath string
 
 func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
 	clu := newCluster(t, opt...)
@@ -41,6 +48,22 @@ func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
 		os.RemoveAll(dir)
 	})
 
+	// Prefer the binary built once in TestMain; if not set, build a private one as a fallback
+	binPath := waspCliBinPath
+	if binPath == "" {
+		// Determine repo root based on this source file location
+		_, thisFile, _, _ := runtime.Caller(0)
+		repoRoot := filepath.Clean(filepath.Join(filepath.Dir(thisFile), "../../.."))
+		binPath = filepath.Join(dir, "wasp-cli")
+		buildCmd := exec.CommandContext(context.Background(), "go", "build", "-o", binPath, "./tools/wasp-cli")
+		buildCmd.Dir = repoRoot
+		buildOut := new(bytes.Buffer)
+		buildCmd.Stdout = buildOut
+		buildCmd.Stderr = buildOut
+		t.Logf("Building wasp-cli (fallback): (cd %s && %s)", buildCmd.Dir, strings.Join(buildCmd.Args, " "))
+		require.NoError(t, buildCmd.Run(), "failed to build wasp-cli: %s", buildOut.String())
+	}
+
 	// creating a config in a temp dir per test. If not provided, wasp-cli will reuse the config from HOME dir, which could mess up other tests or local configuration.
 	err = os.WriteFile(path.Join(dir, "wasp-cli.json"), []byte("{}"), 0o644)
 	require.NoError(t, err)
@@ -49,6 +72,7 @@ func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
 		T:       t,
 		Cluster: clu,
 		dir:     dir,
+		binPath: binPath,
 	}
 	w.MustRun("wallet", "provider", "unsafe_inmemory_testing_seed")
 	w.MustRun("wallet", "init")
@@ -75,8 +99,10 @@ func (w *WaspCLITest) runCmd(args []string, f func(*exec.Cmd)) ([]string, error)
 	w.T.Helper()
 	// -w: wait for requests
 	// -d: debug output
-	cmd := exec.Command("wasp-cli", append([]string{"-c", w.dir + "/wasp-cli.json", "-w=2m", "-d"}, args...)...) //nolint:gosec
+	cmd := exec.Command(w.binPath, append([]string{"-c", w.dir + "/wasp-cli.json", "-w=2m", "-d"}, args...)...) //nolint:gosec
 	cmd.Dir = w.dir
+	// Ensure cli does not fall back to user's HOME; sandbox into the test temp dir
+	cmd.Env = append(os.Environ(), "HOME="+w.dir)
 
 	stdout := new(bytes.Buffer)
 	cmd.Stdout = stdout
