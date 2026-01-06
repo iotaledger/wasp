@@ -12,6 +12,8 @@ import (
 )
 
 // TestMain builds the wasp-cli binary once per package and shares the path via waspCliBinPath.
+// It also ensures the temporary build directory is cleaned up after the test run,
+// unless WASP_CLI_KEEP is set (useful for debugging locally or in CI artifacts).
 func TestMain(m *testing.M) {
 	// Allow bypassing the build if CI provides a prebuilt binary
 	if p := os.Getenv("WASP_CLI_BIN"); p != "" {
@@ -60,7 +62,19 @@ func TestMain(m *testing.M) {
 			panic("failed to build wasp-cli: (cd " + buildCmd.Dir + " && " + strings.Join(buildCmd.Args, " ") + ")\n" + out.String())
 		}
 		waspCliBinPath = binPath
+
+		// Run tests, then cleanup temp build dir unless explicitly kept
+		exitCode := m.Run()
+		if keep := os.Getenv("WASP_CLI_KEEP"); keep == "" || keep == "0" || strings.EqualFold(keep, "false") {
+			_ = os.RemoveAll(tmpDir)
+		} else {
+			// Informative log to stderr so it's visible in CI logs
+			_, _ = os.Stderr.WriteString("[wasp-cli tests] Keeping wasp-cli build dir: " + tmpDir + " (WASP_CLI_KEEP=" + keep + ")\n")
+		}
+
+		os.Exit(exitCode)
 	}
 
+	// If we got here, WASP_CLI_BIN was provided; just run tests normally
 	os.Exit(m.Run())
 }
