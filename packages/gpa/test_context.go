@@ -213,6 +213,7 @@ func (tc *TestContext) tryProcessMessage() {
 			}
 		}
 		if gpaMsg != nil {
+			// fmt.Printf("delivering message: %s -> %s %T %+v\n", msg.Sender.ShortString(), nid.ShortString(), gpaMsg, gpaMsg)
 			newMsgs := tc.setMessageSender(nid, tc.nodes[nid].Message(gpaMsg))
 			if newMsgs != nil {
 				tc.msgsSent += len(newMsgs)

@@ -243,6 +243,10 @@ func (a *acssImpl) handleInput(secretToShare kyber.Scalar) gpa.OutMessages {
 		pubKeys = append(pubKeys, a.peerPKs[peerID])
 	}
 	deal := crypto.NewDeal(a.suite, pubKeys, secretToShare)
+	for i := range a.peerIdx {
+		// only used for testing
+		deal.Shares[i] = a.dealCB(i, deal.Shares[i])
+	}
 	data, err := deal.MarshalBinary()
 	if err != nil {
 		panic(fmt.Sprintf("acss: internal error: %v", err))
