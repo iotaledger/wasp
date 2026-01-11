@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/iotatest"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/isc"
@@ -82,7 +82,7 @@ func createOnLedgerRequest() isc.OnLedgerRequest {
 					ID:   *iotatest.RandomAddress(),
 					Size: 1,
 				},
-				Assets: *iscmove.NewAssets(iotajsonrpc.CoinValue(tokensForGas)),
+				Assets: *iscmove.NewAssets(iotagraphql.CoinValue(tokensForGas)),
 			},
 			AllowanceBCS: bcs.MustMarshal(iscmove.NewAssets(1)),
 			GasBudget:    1000,

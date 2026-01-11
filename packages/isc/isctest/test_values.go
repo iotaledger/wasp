@@ -4,7 +4,7 @@ import (
 	"github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/iotatest"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/isc"
@@ -33,7 +33,7 @@ func testRequestWithRef(ref *iotago.ObjectRef, sender *cryptolib.Address, assetB
 				Args:     [][]byte{[]byte("testarg1"), []byte("testarg2")},
 			},
 			AllowanceBCS: bcs.MustMarshal(iscmove.NewAssets(111).
-				SetCoin(iotajsonrpc.MustCoinTypeFromString("0x1::coin::TEST_A"), 222)),
+				SetCoin(iotagraphql.MustCoinTypeFromString("0x1::coin::TEST_A"), 222)),
 			GasBudget: 1000,
 		},
 	}

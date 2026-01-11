@@ -6,7 +6,7 @@ import (
 	"context"
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
@@ -21,11 +21,11 @@ type L2Client interface {
 	CreateAndSendRequest(
 		ctx context.Context,
 		req *iscmoveclient.CreateAndSendRequestRequest,
-	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
+	) (*iotagraphql.IotaTransactionBlockResponse, error)
 	ReceiveRequestsAndTransition(
 		ctx context.Context,
 		req *iscmoveclient.ReceiveRequestsAndTransitionRequest,
-	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
+	) (*iotagraphql.IotaTransactionBlockResponse, error)
 	GetAssetsBagWithBalances(
 		ctx context.Context,
 		assetsBagID *iotago.ObjectID,
@@ -33,7 +33,7 @@ type L2Client interface {
 	CreateAndSendRequestWithAssets(
 		ctx context.Context,
 		req *iscmoveclient.CreateAndSendRequestWithAssetsRequest,
-	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
+	) (*iotagraphql.IotaTransactionBlockResponse, error)
 	GetAnchorFromObjectID(
 		ctx context.Context,
 		anchorObjectID *iotago.ObjectID,

@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/iotatest"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/chain"
 	consGR "github.com/iotaledger/wasp/v2/packages/chain/consensus/consensusrunner"
 	"github.com/iotaledger/wasp/v2/packages/chain/mempool"
@@ -88,6 +89,7 @@ func TestMempoolBasic(t *testing.T) {
 //   - Get proposals -- all received 1 request.
 func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 	t.Parallel()
+	var err error
 	te := newEnv(t, n, f, reliable)
 	defer te.close()
 
@@ -107,12 +109,20 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 		<-awaitTrackHeadChannels[i]
 	}
 
+	time.Sleep(600 * time.Millisecond) // FIXME tmp for graphql
+	te.anchor, err = te.tcl.UpdateAnchor(te.anchor)
+	require.NoError(t, err)
+
 	onLedgerReq, err := te.tcl.MakeTxAccountsDeposit(te.chainOwner)
 	require.NoError(t, err)
 	for _, node := range te.mempools {
 		node.ReceiveOnLedgerRequest(onLedgerReq.(isc.OnLedgerRequest))
 	}
 	te.anchor = blockFn(te, []isc.Request{onLedgerReq}, te.anchor, tangleTime)
+
+	time.Sleep(600 * time.Millisecond) // FIXME tmp for graphql
+	te.anchor, err = te.tcl.UpdateAnchor(te.anchor)
+	require.NoError(t, err)
 
 	offLedgerReq := isc.NewOffLedgerRequest(
 		te.chainID,
@@ -142,6 +152,10 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 		nodeDecidedReqs := <-decided[i]
 		require.Len(t, nodeDecidedReqs, 1)
 	}
+
+	time.Sleep(600 * time.Millisecond) // FIXME tmp for graphql
+	te.anchor, err = te.tcl.UpdateAnchor(te.anchor)
+	require.NoError(t, err)
 
 	// Make a block consuming those 2 requests.
 	te.anchor = blockFn(te, []isc.Request{offLedgerReq}, te.anchor, tangleTime)
@@ -288,6 +302,10 @@ func TestMempoolsNonceGaps(t *testing.T) {
 			}
 		}
 	}
+
+	time.Sleep(600 * time.Millisecond) // FIXME tmp for graphql
+	te.anchor, err = te.tcl.UpdateAnchor(te.anchor)
+	require.NoError(t, err)
 	// ask for proposal, assert 0,1 are proposed
 	te.anchor = askProposalExpectReqs(te.anchor, offLedgerReqs[0], offLedgerReqs[1])
 
@@ -605,7 +623,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 
 	l1client := l1starter.Instance().L1Client()
 
-	objs, err := l1client.GetAllCoins(context.Background(), iotaclient.GetAllCoinsRequest{
+	objs, err := l1client.GetAllCoins(context.Background(), iotagraphql.GetAllCoinsRequest{
 		Owner: te.chainOwner.Address().AsIotaAddress(),
 	})
 	require.NoError(t, err)

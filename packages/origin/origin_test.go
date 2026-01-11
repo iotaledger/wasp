@@ -3,13 +3,14 @@ package origin_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"pgregory.net/rapid"
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient/iscmoveclienttest"
@@ -50,13 +51,14 @@ func TestCreateOrigin(t *testing.T) {
 	client := iscmoveclienttest.NewHTTPClient()
 	sentSigner := iscmoveclienttest.NewRandomSignerWithFunds(t, 0)
 	stateSigner := iscmoveclienttest.NewRandomSignerWithFunds(t, 1)
+	time.Sleep(1 * time.Second) // FIXME tmp for graphql
 	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
 	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(sentSigner.Address())).Encode()
 
-	coinType := iotajsonrpc.IotaCoinType.String()
+	coinType := iotagraphql.IotaCoinType.String()
 	resGetCoins, err := client.GetCoins(
 		context.Background(),
-		iotaclient.GetCoinsRequest{Owner: sentSigner.Address().AsIotaAddress(), CoinType: &coinType},
+		iotagraphql.GetCoinsRequest{Owner: sentSigner.Address().AsIotaAddress(), CoinType: &coinType},
 	)
 	require.NoError(t, err)
 
@@ -157,7 +159,7 @@ func startNewChain(
 	t *testing.T,
 	client *iscmoveclient.Client,
 	req *iscmoveclient.StartNewChainRequest,
-) (*iotajsonrpc.IotaTransactionBlockResponse, *iscmove.RefWithObject[iscmove.Anchor], error) {
+) (*iotagraphql.IotaTransactionBlockResponse, *iscmove.RefWithObject[iscmove.Anchor], error) {
 	ptb := iotago.NewProgrammableTransactionBuilder()
 	var argInitCoin iotago.Argument
 	if req.InitCoinRef != nil {

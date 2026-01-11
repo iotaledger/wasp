@@ -13,7 +13,7 @@ import (
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/hashing"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/parameters/parameterstest"
@@ -26,7 +26,7 @@ import (
 )
 
 func (ch *Chain) RunOffLedgerRequest(r isc.Request) (
-	*iotajsonrpc.IotaTransactionBlockResponse,
+	*iotagraphql.IotaTransactionBlockResponse,
 	isc.CallArguments,
 	error,
 ) {
@@ -40,7 +40,7 @@ func (ch *Chain) RunOffLedgerRequest(r isc.Request) (
 }
 
 func (ch *Chain) RunOffLedgerRequests(reqs []isc.Request) (
-	*iotajsonrpc.IotaTransactionBlockResponse,
+	*iotagraphql.IotaTransactionBlockResponse,
 	[]*vm.RequestResult,
 ) {
 	defer ch.logRequestLastBlock()
@@ -48,7 +48,7 @@ func (ch *Chain) RunOffLedgerRequests(reqs []isc.Request) (
 }
 
 func (ch *Chain) RunRequestsSync(reqs []isc.Request) (
-	*iotajsonrpc.IotaTransactionBlockResponse,
+	*iotagraphql.IotaTransactionBlockResponse,
 	[]*vm.RequestResult,
 ) {
 	ch.runVMMutex.Lock()
@@ -67,7 +67,7 @@ func (ch *Chain) EstimateGas(req isc.Request) (result *vm.RequestResult) {
 
 // EstimateOnLedgerRequest estimates total Gas Fee, which is composed of L1 gas fee (user spent on creating onledger request)
 // and L2 gas fee (wasp gas fee for proccesing request on L2)
-func (ch *Chain) EstimateOnLedgerRequest(dryRunRes *iotajsonrpc.DryRunTransactionBlockResponse) (result *vm.RequestResult, err error) {
+func (ch *Chain) EstimateOnLedgerRequest(dryRunRes *iotagraphql.DryRunResult) (result *vm.RequestResult, err error) {
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
@@ -107,7 +107,7 @@ func (ch *Chain) runTaskNoLock(reqs []isc.Request, estimateGas bool) *vm.VMTaskR
 }
 
 func (ch *Chain) runRequestsNolock(reqs []isc.Request) (
-	*iotajsonrpc.IotaTransactionBlockResponse,
+	*iotagraphql.IotaTransactionBlockResponse,
 	[]*vm.RequestResult,
 ) {
 	res := ch.runTaskNoLock(reqs, false)
@@ -116,7 +116,7 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request) (
 		res.UnsignedTransaction.Print("-- runRequestsNolock -- ")
 	}
 
-	var ptbRes *iotajsonrpc.IotaTransactionBlockResponse
+	var ptbRes *iotagraphql.IotaTransactionBlockResponse
 
 	ch.Env.MustWithWaitForNextVersion(gasPayment.Ref, func() {
 		ptbRes = ch.Env.executePTB(
