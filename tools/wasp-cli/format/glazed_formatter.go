@@ -16,7 +16,7 @@ import (
 
 	"github.com/go-go-golems/glazed/pkg/middlewares"
 	"github.com/go-go-golems/glazed/pkg/types"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
 )
 
@@ -327,7 +327,7 @@ func (gf *GlazedFormatter) FormatAuthResult(status, node, username, message stri
 }
 
 // FormatWalletBalance formats wallet balance results
-func (gf *GlazedFormatter) FormatWalletBalance(addressIndex uint32, address string, balances []*iotajsonrpc.Balance) error {
+func (gf *GlazedFormatter) FormatWalletBalance(addressIndex uint32, address string, balances []*iotagraphql.Balance) error {
 	data := map[string]interface{}{
 		"address_index": addressIndex,
 		"address":       address,
@@ -366,7 +366,7 @@ func FormatAuthResult(status, node, username, message string) error {
 }
 
 // FormatWalletBalance formats and outputs wallet balance information for a specific address and index.
-func FormatWalletBalance(addressIndex uint32, address string, balances []*iotajsonrpc.Balance) error {
+func FormatWalletBalance(addressIndex uint32, address string, balances []*iotagraphql.Balance) error {
 	return defaultFormatter.FormatWalletBalance(addressIndex, address, balances)
 }
 

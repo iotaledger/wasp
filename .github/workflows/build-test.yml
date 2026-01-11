@@ -29,7 +29,8 @@ jobs:
 
       - name: Build Tests
         # use a regex pattern which never meet any function to build all the tests
-        run: go test ./... -run=XXX -tags=tests_build_only
+        run: |
+          run: go test ./... -run=XXX -tags=tests_build_only
 
   test-short:
     name: Test (short)
@@ -51,7 +52,8 @@ jobs:
       # Here used to be a make build step, but we separated it into another job
 
       - name: Test
-        run: make test-short
+        run: |
+          run: make test-short
 
   golangci:
     name: Lint

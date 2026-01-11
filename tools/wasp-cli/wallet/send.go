@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/cliclients"
@@ -65,7 +65,7 @@ func initSendFundsCmd() *cobra.Command { //nolint:funlen
 			ptb := iotago.NewProgrammableTransactionBuilder()
 
 			coinPage, err := client.GetAllCoins(
-				context.Background(), iotaclient.GetAllCoinsRequest{
+				context.Background(), iotagraphql.GetAllCoinsRequest{
 					Owner: senderAddress.AsIotaAddress(),
 				},
 			)
@@ -73,11 +73,11 @@ func initSendFundsCmd() *cobra.Command { //nolint:funlen
 				return err
 			}
 			for cointype, balance := range tokens.Coins.Iterate() {
-				var pickedCoin *iotajsonrpc.PickedCoins
-				pickedCoin, err = iotajsonrpc.PickupCoinsWithCointype(
+				var pickedCoin *iotagraphql.PickedCoins
+				pickedCoin, err = iotagraphql.PickupCoinsWithCointype(
 					coinPage,
 					balance.BigInt(),
-					iotajsonrpc.MustCoinTypeFromString(cointype.String()),
+					iotagraphql.MustCoinTypeFromString(cointype.String()),
 				)
 				if err != nil {
 					return err
@@ -95,10 +95,10 @@ func initSendFundsCmd() *cobra.Command { //nolint:funlen
 			if err != nil {
 				return fmt.Errorf("failed to find gas payment: %w", err)
 			}
-			coins, err = iotajsonrpc.PickupCoinsWithFilter(
+			coins, err = iotagraphql.PickupCoinsWithFilter(
 				coins,
 				iotaclient.DefaultGasBudget,
-				func(c *iotajsonrpc.Coin) bool { return !pt.IsInInputObjects(c.CoinObjectID) },
+				func(c *iotagraphql.Coin) bool { return !pt.IsInInputObjects(c.CoinObjectID) },
 			)
 			if err != nil {
 				return fmt.Errorf("failed to find gas payment: %w", err)
@@ -120,10 +120,10 @@ func initSendFundsCmd() *cobra.Command { //nolint:funlen
 
 			res, err := client.SignAndExecuteTransaction(
 				context.Background(),
-				&iotaclient.SignAndExecuteTransactionRequest{
+				&iotagraphql.SignAndExecuteTransactionRequest{
 					Signer:      cryptolib.SignerToIotaSigner(myWallet),
 					TxDataBytes: txBytes,
-					Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+					Options: &iotagraphql.IotaTransactionBlockResponseOptions{
 						ShowEffects:       true,
 						ShowObjectChanges: true,
 					},

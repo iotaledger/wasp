@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/wasp/v2/clients"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
@@ -23,14 +23,14 @@ func TryMergeAllCoins(ctx context.Context) error {
 	client := cliclients.L1Client()
 	w := wallet.Load()
 
-	coins, err := client.GetAllCoins(ctx, iotaclient.GetAllCoinsRequest{
+	coins, err := client.GetAllCoins(ctx, iotagraphql.GetAllCoinsRequest{
 		Owner: w.Address().AsIotaAddress(),
 	})
 	if err != nil {
 		return err
 	}
 
-	baseCoins := lo.Filter(coins.Data, func(item *iotajsonrpc.Coin, index int) bool {
+	baseCoins := lo.Filter(coins.Data, func(item *iotagraphql.Coin, index int) bool {
 		return coin.BaseTokenType.MatchesStringType(item.CoinType.String())
 	})
 
@@ -59,12 +59,12 @@ func TryManageCoinsAmount(ctx context.Context) {
 	client := cliclients.L1Client()
 	w := wallet.Load()
 
-	coinPage, err := client.GetCoins(ctx, iotaclient.GetCoinsRequest{
+	coinPage, err := client.GetCoins(ctx, iotagraphql.GetCoinsRequest{
 		Owner: w.Address().AsIotaAddress(),
 	})
 	log.Check(err)
 
-	coins := iotajsonrpc.Coins(coinPage.Data)
+	coins := iotagraphql.Coins(coinPage.Data)
 	var mergeCoins []iotago.Argument
 	sum := uint64(0)
 	ptb := iotago.NewProgrammableTransactionBuilder()
@@ -111,10 +111,10 @@ func TryManageCoinsAmount(ctx context.Context) {
 	log.Check(err)
 	_, err = client.SignAndExecuteTransaction(
 		ctx,
-		&iotaclient.SignAndExecuteTransactionRequest{
+		&iotagraphql.SignAndExecuteTransactionRequest{
 			Signer:      cryptolib.SignerToIotaSigner(w),
 			TxDataBytes: txBytes,
-			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+			Options: &iotagraphql.IotaTransactionBlockResponseOptions{
 				ShowEffects:       true,
 				ShowObjectChanges: true,
 			},
@@ -130,7 +130,7 @@ func mergeCoinsAndExecute(
 	destinationCoin *iotago.ObjectRef,
 	sourceCoins []*iotago.ObjectRef,
 	gasBudget uint64,
-) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+) (*iotagraphql.IotaTransactionBlockResponse, error) {
 	ptb := iotago.NewProgrammableTransactionBuilder()
 	var argCoins []iotago.Argument
 	for _, sourceCoin := range sourceCoins {
@@ -150,10 +150,10 @@ func mergeCoinsAndExecute(
 	if err != nil {
 		return nil, fmt.Errorf("failed to find gas payment: %w", err)
 	}
-	coins, err = iotajsonrpc.PickupCoinsWithFilter(
+	coins, err = iotagraphql.PickupCoinsWithFilter(
 		coins,
 		gasBudget,
-		func(c *iotajsonrpc.Coin) bool { return !pt.IsInInputObjects(c.CoinObjectID) },
+		func(c *iotagraphql.Coin) bool { return !pt.IsInInputObjects(c.CoinObjectID) },
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find gas payment: %w", err)
@@ -171,10 +171,10 @@ func mergeCoinsAndExecute(
 		return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 	}
 	txnResponse, err := client.SignAndExecuteTransaction(
-		ctx, &iotaclient.SignAndExecuteTransactionRequest{
+		ctx, &iotagraphql.SignAndExecuteTransactionRequest{
 			TxDataBytes: txBytes,
 			Signer:      owner,
-			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+			Options:     &iotagraphql.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 		},
 	)
 	if err != nil {

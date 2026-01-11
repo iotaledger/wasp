@@ -8,7 +8,7 @@ import (
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/cliclients"
@@ -27,9 +27,9 @@ func initRequestsCmd() *cobra.Command {
 
 			ctx := context.Background()
 
-			obj, err := cliclients.L1Client().GetObject(ctx, iotaclient.GetObjectRequest{
+			obj, err := cliclients.L1Client().GetObject(ctx, iotagraphql.GetObjectRequest{
 				ObjectID: objectID,
-				Options: &iotajsonrpc.IotaObjectDataOptions{
+				Options: &iotagraphql.IotaObjectDataOptions{
 					ShowType: true,
 				},
 			})
