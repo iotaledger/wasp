@@ -10,8 +10,8 @@ import (
 	"github.com/iotaledger/wasp/v2/clients"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/parameters/parameterstest"
 )
 
@@ -23,7 +23,7 @@ func EnsureCoinSplitWithBalance(
 ) {
 	getCoinsRes, err := client.GetCoins(
 		context.Background(),
-		iotaclient.GetCoinsRequest{Owner: cryptolibSigner.Address()},
+		iotagraphql.GetCoinsRequest{Owner: cryptolibSigner.Address()},
 	)
 	require.NoError(t, err)
 
@@ -64,10 +64,10 @@ func EnsureCoinSplitWithBalance(
 
 	result, err := client.SignAndExecuteTransaction(
 		context.Background(),
-		&iotaclient.SignAndExecuteTransactionRequest{
+		&iotagraphql.SignAndExecuteTransactionRequest{
 			Signer:      cryptolibSigner,
 			TxDataBytes: txnBytes,
-			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+			Options: &iotagraphql.IotaTransactionBlockResponseOptions{
 				ShowEffects:       true,
 				ShowObjectChanges: true,
 			},

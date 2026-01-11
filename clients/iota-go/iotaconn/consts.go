@@ -16,7 +16,7 @@ const (
 	TestnetFaucetURL  = "https://faucet.testnet.iota.cafe/gas"
 	DevnetFaucetURL   = "https://faucet.devnet.iota.cafe/gas"
 
-	LocalnetGraphQLEndpointURL = "http://localhost:9000"
+	LocalnetGraphQLEndpointURL = "http://localhost:9125"
 	AlphanetGraphQLEndpointURL = "https://graphql.iota-rebased-alphanet.iota.cafe"
 	TestnetGraphQLEndpointURL  = "https://graphql.testnet.iota.cafe"
 	DevnetGraphQLEndpointURL   = "https://graphql.devnet.iota.cafe"
@@ -44,5 +44,27 @@ func FaucetURL(apiURL string) string {
 		return LocalnetFaucetURL
 	default:
 		panic("unspecified FaucetURL")
+	}
+}
+
+func GraphQLURL(apiURL string) string {
+	switch apiURL {
+	case AlphanetEndpointURL:
+		return AlphanetGraphQLEndpointURL
+	case AlphanetGraphQLEndpointURL:
+		return AlphanetGraphQLEndpointURL
+	case TestnetEndpointURL:
+		return TestnetGraphQLEndpointURL
+	case TestnetGraphQLEndpointURL:
+		return TestnetGraphQLEndpointURL
+	case DevnetEndpointURL:
+		return DevnetGraphQLEndpointURL
+	case DevnetGraphQLEndpointURL:
+		return DevnetGraphQLEndpointURL
+	case LocalnetEndpointURL: // LocalnetEndpointURL == LocalnetGraphQLEndpointURL
+		return LocalnetGraphQLEndpointURL
+	default:
+		// For unknown URLs (like custom test URLs), assume it's already the correct URL
+		return apiURL
 	}
 }
