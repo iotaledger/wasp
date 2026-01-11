@@ -10,7 +10,6 @@ import (
 
 	"github.com/Khan/genqlient/graphql"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 )
 
 // DevInspectTransactionBlockDryRunTransactionBlockDryRunResult includes the requested fields of the GraphQL type DryRunResult.
@@ -714,13 +713,72 @@ func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTra
 // Effects to the balance (sum of coin values per coin type) owned by an
 // address or object.
 type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange struct {
+	// The address or object whose balance has changed.
+	Owner ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner `json:"owner"`
 	// The signed balance change.
-	Amount iotajsonrpc.BigInt `json:"amount"`
+	Amount BigInt `json:"amount"`
+	// The inner type of the coin whose balance has changed (e.g.
+	// `0x2::iota::IOTA`).
+	CoinType ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeCoinTypeMoveType `json:"coinType"`
+}
+
+// GetOwner returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange.Owner, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange) GetOwner() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner {
+	return v.Owner
 }
 
 // GetAmount returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange.Amount, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange) GetAmount() iotajsonrpc.BigInt {
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange) GetAmount() BigInt {
 	return v.Amount
+}
+
+// GetCoinType returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange.CoinType, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange) GetCoinType() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeCoinTypeMoveType {
+	return v.CoinType
+}
+
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeCoinTypeMoveType includes the requested fields of the GraphQL type MoveType.
+// The GraphQL type's documentation follows.
+//
+// Represents concrete types (no type parameters, no references).
+type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeCoinTypeMoveType struct {
+	// Flat representation of the type signature, as a displayable string.
+	Repr string `json:"repr"`
+}
+
+// GetRepr returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeCoinTypeMoveType.Repr, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeCoinTypeMoveType) GetRepr() string {
+	return v.Repr
+}
+
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner includes the requested fields of the GraphQL type Owner.
+// The GraphQL type's documentation follows.
+//
+// An Owner is an entity that can own an object. Each Owner is identified by a
+// IotaAddress which represents either an Address (corresponding to a public
+// key of an account) or an Object, but never both (it is not known up-front
+// whether a given Owner is an Address or an Object).
+type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner struct {
+	AsAddress ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsAddress `json:"asAddress"`
+}
+
+// GetAsAddress returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner.AsAddress, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner) GetAsAddress() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsAddress {
+	return v.AsAddress
+}
+
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsAddress includes the requested fields of the GraphQL type Address.
+// The GraphQL type's documentation follows.
+//
+// The 32-byte address that is an account address (corresponding to a public
+// key).
+type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsAddress struct {
+	Address iotago.Address `json:"address"`
+}
+
+// GetAddress returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsAddress.Address, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsAddress) GetAddress() iotago.Address {
+	return v.Address
 }
 
 // ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnection includes the requested fields of the GraphQL type ObjectChangeConnection.
@@ -745,6 +803,10 @@ type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransac
 	IdCreated bool `json:"idCreated"`
 	// Whether the ID was deleted in this transaction.
 	IdDeleted bool `json:"idDeleted"`
+	// The contents of the object immediately before the transaction.
+	InputState ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject `json:"inputState"`
+	// The contents of the object immediately after the transaction.
+	OutputState ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject `json:"outputState"`
 }
 
 // GetAddress returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange.Address, and is useful for accessing the field via an interface.
@@ -760,6 +822,630 @@ func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTra
 // GetIdDeleted returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange.IdDeleted, and is useful for accessing the field via an interface.
 func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange) GetIdDeleted() bool {
 	return v.IdDeleted
+}
+
+// GetInputState returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange.InputState, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange) GetInputState() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject {
+	return v.InputState
+}
+
+// GetOutputState returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange.OutputState, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange) GetOutputState() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject {
+	return v.OutputState
+}
+
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject includes the requested fields of the GraphQL type Object.
+// The GraphQL type's documentation follows.
+//
+// An object in IOTA is a package (set of Move bytecode modules) or object
+// (typed data structure with fields) with additional metadata detailing its
+// id, version, transaction digest, owner field indicating how this object can
+// be accessed.
+type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject struct {
+	Version uint64 `json:"version"`
+	// 32-byte hash that identifies the object's current contents, encoded as a
+	// Base58 string.
+	Digest string `json:"digest"`
+	// Attempts to convert the object into a MoveObject
+	AsMoveObject ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObject `json:"asMoveObject"`
+}
+
+// GetVersion returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject.Version, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject) GetVersion() uint64 {
+	return v.Version
+}
+
+// GetDigest returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject.Digest, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject) GetDigest() string {
+	return v.Digest
+}
+
+// GetAsMoveObject returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject.AsMoveObject, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject) GetAsMoveObject() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObject {
+	return v.AsMoveObject
+}
+
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObject includes the requested fields of the GraphQL type MoveObject.
+// The GraphQL type's documentation follows.
+//
+// The representation of an object as a Move Object, which exposes additional
+// information (content, module that governs it, version, is transferable,
+// etc.) about this object.
+type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObject struct {
+	// Displays the contents of the Move object in a JSON string and through
+	// GraphQL types. Also provides the flat representation of the type
+	// signature, and the BCS of the corresponding data.
+	Contents ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValue `json:"contents"`
+}
+
+// GetContents returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObject.Contents, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObject) GetContents() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValue {
+	return v.Contents
+}
+
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValue includes the requested fields of the GraphQL type MoveValue.
+type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValue struct {
+	// The value's Move type.
+	Type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValueTypeMoveType `json:"type"`
+}
+
+// GetType returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValue.Type, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValue) GetType() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValueTypeMoveType {
+	return v.Type
+}
+
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValueTypeMoveType includes the requested fields of the GraphQL type MoveType.
+// The GraphQL type's documentation follows.
+//
+// Represents concrete types (no type parameters, no references).
+type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValueTypeMoveType struct {
+	// Flat representation of the type signature, as a displayable string.
+	Repr string `json:"repr"`
+}
+
+// GetRepr returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValueTypeMoveType.Repr, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValueTypeMoveType) GetRepr() string {
+	return v.Repr
+}
+
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject includes the requested fields of the GraphQL type Object.
+// The GraphQL type's documentation follows.
+//
+// An object in IOTA is a package (set of Move bytecode modules) or object
+// (typed data structure with fields) with additional metadata detailing its
+// id, version, transaction digest, owner field indicating how this object can
+// be accessed.
+type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject struct {
+	Version uint64 `json:"version"`
+	// 32-byte hash that identifies the object's current contents, encoded as a
+	// Base58 string.
+	Digest string `json:"digest"`
+	// The owner type of this object: Immutable, Shared, Parent, Address
+	// Immutable and Shared Objects do not have owners.
+	Owner ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner `json:"-"`
+	// Attempts to convert the object into a MoveObject
+	AsMoveObject ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObject `json:"asMoveObject"`
+}
+
+// GetVersion returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject.Version, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject) GetVersion() uint64 {
+	return v.Version
+}
+
+// GetDigest returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject.Digest, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject) GetDigest() string {
+	return v.Digest
+}
+
+// GetOwner returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject.Owner, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject) GetOwner() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner {
+	return v.Owner
+}
+
+// GetAsMoveObject returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject.AsMoveObject, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject) GetAsMoveObject() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObject {
+	return v.AsMoveObject
+}
+
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject
+		Owner json.RawMessage `json:"owner"`
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	{
+		dst := &v.Owner
+		src := firstPass.Owner
+		if len(src) != 0 && string(src) != "null" {
+			err = __unmarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner(
+				src, dst)
+			if err != nil {
+				return fmt.Errorf(
+					"unable to unmarshal ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject.Owner: %w", err)
+			}
+		}
+	}
+	return nil
+}
+
+type __premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject struct {
+	Version uint64 `json:"version"`
+
+	Digest string `json:"digest"`
+
+	Owner json.RawMessage `json:"owner"`
+
+	AsMoveObject ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObject `json:"asMoveObject"`
+}
+
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject) __premarshalJSON() (*__premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject, error) {
+	var retval __premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject
+
+	retval.Version = v.Version
+	retval.Digest = v.Digest
+	{
+
+		dst := &retval.Owner
+		src := v.Owner
+		var err error
+		*dst, err = __marshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner(
+			&src)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"unable to marshal ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject.Owner: %w", err)
+		}
+	}
+	retval.AsMoveObject = v.AsMoveObject
+	return &retval, nil
+}
+
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObject includes the requested fields of the GraphQL type MoveObject.
+// The GraphQL type's documentation follows.
+//
+// The representation of an object as a Move Object, which exposes additional
+// information (content, module that governs it, version, is transferable,
+// etc.) about this object.
+type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObject struct {
+	// Displays the contents of the Move object in a JSON string and through
+	// GraphQL types. Also provides the flat representation of the type
+	// signature, and the BCS of the corresponding data.
+	Contents ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValue `json:"contents"`
+}
+
+// GetContents returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObject.Contents, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObject) GetContents() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValue {
+	return v.Contents
+}
+
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValue includes the requested fields of the GraphQL type MoveValue.
+type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValue struct {
+	// The value's Move type.
+	Type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValueTypeMoveType `json:"type"`
+}
+
+// GetType returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValue.Type, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValue) GetType() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValueTypeMoveType {
+	return v.Type
+}
+
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValueTypeMoveType includes the requested fields of the GraphQL type MoveType.
+// The GraphQL type's documentation follows.
+//
+// Represents concrete types (no type parameters, no references).
+type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValueTypeMoveType struct {
+	// Flat representation of the type signature, as a displayable string.
+	Repr string `json:"repr"`
+}
+
+// GetRepr returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValueTypeMoveType.Repr, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValueTypeMoveType) GetRepr() string {
+	return v.Repr
+}
+
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner includes the requested fields of the GraphQL interface ObjectOwner.
+//
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner is implemented by the following types:
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared
+// The GraphQL type's documentation follows.
+//
+// The object's owner type: Immutable, Shared, Parent, or Address.
+type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner interface {
+	implementsGraphQLInterfaceExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner()
+	// GetTypename returns the receiver's concrete GraphQL type-name (see interface doc for possible values).
+	GetTypename() string
+	RPC_OBJECT_OWNER_FIELDS
+}
+
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner) implementsGraphQLInterfaceExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner() {
+}
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable) implementsGraphQLInterfaceExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner() {
+}
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent) implementsGraphQLInterfaceExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner() {
+}
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared) implementsGraphQLInterfaceExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner() {
+}
+
+func __unmarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner(b []byte, v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner) error {
+	if string(b) == "null" {
+		return nil
+	}
+
+	var tn struct {
+		TypeName string `json:"__typename"`
+	}
+	err := json.Unmarshal(b, &tn)
+	if err != nil {
+		return err
+	}
+
+	switch tn.TypeName {
+	case "AddressOwner":
+		*v = new(ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner)
+		return json.Unmarshal(b, *v)
+	case "Immutable":
+		*v = new(ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable)
+		return json.Unmarshal(b, *v)
+	case "Parent":
+		*v = new(ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent)
+		return json.Unmarshal(b, *v)
+	case "Shared":
+		*v = new(ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared)
+		return json.Unmarshal(b, *v)
+	case "":
+		return fmt.Errorf(
+			"response was missing ObjectOwner.__typename")
+	default:
+		return fmt.Errorf(
+			`unexpected concrete type for ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner: "%v"`, tn.TypeName)
+	}
+}
+
+func __marshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner(v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner) ([]byte, error) {
+
+	var typename string
+	switch v := (*v).(type) {
+	case *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner:
+		typename = "AddressOwner"
+
+		premarshaled, err := v.__premarshalJSON()
+		if err != nil {
+			return nil, err
+		}
+		result := struct {
+			TypeName string `json:"__typename"`
+			*__premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner
+		}{typename, premarshaled}
+		return json.Marshal(result)
+	case *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable:
+		typename = "Immutable"
+
+		premarshaled, err := v.__premarshalJSON()
+		if err != nil {
+			return nil, err
+		}
+		result := struct {
+			TypeName string `json:"__typename"`
+			*__premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable
+		}{typename, premarshaled}
+		return json.Marshal(result)
+	case *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent:
+		typename = "Parent"
+
+		premarshaled, err := v.__premarshalJSON()
+		if err != nil {
+			return nil, err
+		}
+		result := struct {
+			TypeName string `json:"__typename"`
+			*__premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent
+		}{typename, premarshaled}
+		return json.Marshal(result)
+	case *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared:
+		typename = "Shared"
+
+		premarshaled, err := v.__premarshalJSON()
+		if err != nil {
+			return nil, err
+		}
+		result := struct {
+			TypeName string `json:"__typename"`
+			*__premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared
+		}{typename, premarshaled}
+		return json.Marshal(result)
+	case nil:
+		return []byte("null"), nil
+	default:
+		return nil, fmt.Errorf(
+			`unexpected concrete type for ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner: "%T"`, v)
+	}
+}
+
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner includes the requested fields of the GraphQL type AddressOwner.
+// The GraphQL type's documentation follows.
+//
+// An address-owned object is owned by a specific 32-byte address that is
+// either an account address (derived from a particular signature scheme) or
+// an object ID. An address-owned object is accessible only to its owner and no
+// others.
+type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner struct {
+	Typename                            string `json:"__typename"`
+	RPC_OBJECT_OWNER_FIELDSAddressOwner `json:"-"`
+}
+
+// GetTypename returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner.Typename, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner) GetTypename() string {
+	return v.Typename
+}
+
+// GetOwner returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner.Owner, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner) GetOwner() RPC_OBJECT_OWNER_FIELDSOwner {
+	return v.RPC_OBJECT_OWNER_FIELDSAddressOwner.Owner
+}
+
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(
+		b, &v.RPC_OBJECT_OWNER_FIELDSAddressOwner)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type __premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner struct {
+	Typename string `json:"__typename"`
+
+	Owner RPC_OBJECT_OWNER_FIELDSOwner `json:"owner"`
+}
+
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner) __premarshalJSON() (*__premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner, error) {
+	var retval __premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner
+
+	retval.Typename = v.Typename
+	retval.Owner = v.RPC_OBJECT_OWNER_FIELDSAddressOwner.Owner
+	return &retval, nil
+}
+
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable includes the requested fields of the GraphQL type Immutable.
+// The GraphQL type's documentation follows.
+//
+// An immutable object is an object that can't be mutated, transferred, or
+// deleted. Immutable objects have no owner, so anyone can use them.
+type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable struct {
+	Typename                         string `json:"__typename"`
+	RPC_OBJECT_OWNER_FIELDSImmutable `json:"-"`
+}
+
+// GetTypename returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable.Typename, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable) GetTypename() string {
+	return v.Typename
+}
+
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(
+		b, &v.RPC_OBJECT_OWNER_FIELDSImmutable)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type __premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable struct {
+	Typename string `json:"__typename"`
+}
+
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable) __premarshalJSON() (*__premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable, error) {
+	var retval __premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable
+
+	retval.Typename = v.Typename
+	return &retval, nil
+}
+
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent includes the requested fields of the GraphQL type Parent.
+// The GraphQL type's documentation follows.
+//
+// If the object's owner is a Parent, this object is part of a dynamic field
+// (it is the value of the dynamic field, or the intermediate Field object
+// itself). Also note that if the owner is a parent, then it's guaranteed to be
+// an object.
+type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent struct {
+	Typename                      string `json:"__typename"`
+	RPC_OBJECT_OWNER_FIELDSParent `json:"-"`
+}
+
+// GetTypename returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent.Typename, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent) GetTypename() string {
+	return v.Typename
+}
+
+// GetParent returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent.Parent, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent) GetParent() RPC_OBJECT_OWNER_FIELDSParentObject {
+	return v.RPC_OBJECT_OWNER_FIELDSParent.Parent
+}
+
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(
+		b, &v.RPC_OBJECT_OWNER_FIELDSParent)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type __premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent struct {
+	Typename string `json:"__typename"`
+
+	Parent RPC_OBJECT_OWNER_FIELDSParentObject `json:"parent"`
+}
+
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent) __premarshalJSON() (*__premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent, error) {
+	var retval __premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent
+
+	retval.Typename = v.Typename
+	retval.Parent = v.RPC_OBJECT_OWNER_FIELDSParent.Parent
+	return &retval, nil
+}
+
+// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared includes the requested fields of the GraphQL type Shared.
+// The GraphQL type's documentation follows.
+//
+// A shared object is an object that is shared using the
+// 0x2::transfer::share_object function. Unlike owned objects, once an object
+// is shared, it stays mutable and is accessible by anyone.
+type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared struct {
+	Typename                      string `json:"__typename"`
+	RPC_OBJECT_OWNER_FIELDSShared `json:"-"`
+}
+
+// GetTypename returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared.Typename, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared) GetTypename() string {
+	return v.Typename
+}
+
+// GetInitialSharedVersion returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared.InitialSharedVersion, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared) GetInitialSharedVersion() uint64 {
+	return v.RPC_OBJECT_OWNER_FIELDSShared.InitialSharedVersion
+}
+
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(
+		b, &v.RPC_OBJECT_OWNER_FIELDSShared)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type __premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared struct {
+	Typename string `json:"__typename"`
+
+	InitialSharedVersion uint64 `json:"initialSharedVersion"`
+}
+
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared) __premarshalJSON() (*__premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared, error) {
+	var retval __premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared
+
+	retval.Typename = v.Typename
+	retval.InitialSharedVersion = v.RPC_OBJECT_OWNER_FIELDSShared.InitialSharedVersion
+	return &retval, nil
 }
 
 // ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsTransactionBlock includes the requested fields of the GraphQL type TransactionBlock.
@@ -920,7 +1606,7 @@ type GetAllBalancesAddressBalancesBalanceConnectionNodesBalance struct {
 	// How many coins of this type constitute the balance
 	CoinObjectCount uint64 `json:"coinObjectCount"`
 	// Total balance across all coin objects of the coin type
-	TotalBalance iotajsonrpc.BigInt `json:"totalBalance"`
+	TotalBalance BigInt `json:"totalBalance"`
 }
 
 // GetCoinType returns GetAllBalancesAddressBalancesBalanceConnectionNodesBalance.CoinType, and is useful for accessing the field via an interface.
@@ -934,7 +1620,7 @@ func (v *GetAllBalancesAddressBalancesBalanceConnectionNodesBalance) GetCoinObje
 }
 
 // GetTotalBalance returns GetAllBalancesAddressBalancesBalanceConnectionNodesBalance.TotalBalance, and is useful for accessing the field via an interface.
-func (v *GetAllBalancesAddressBalancesBalanceConnectionNodesBalance) GetTotalBalance() iotajsonrpc.BigInt {
+func (v *GetAllBalancesAddressBalancesBalanceConnectionNodesBalance) GetTotalBalance() BigInt {
 	return v.TotalBalance
 }
 
@@ -1026,7 +1712,7 @@ func (v *GetAllCoinsAddressCoinsCoinConnection) GetNodes() []GetAllCoinsAddressC
 // Some 0x2::coin::Coin Move object.
 type GetAllCoinsAddressCoinsCoinConnectionNodesCoin struct {
 	// Balance of this coin object.
-	CoinBalance iotajsonrpc.BigInt `json:"coinBalance"`
+	CoinBalance BigInt `json:"coinBalance"`
 	// Displays the contents of the Move object in a JSON string and through
 	// GraphQL types. Also provides the flat representation of the type
 	// signature, and the BCS of the corresponding data.
@@ -1041,7 +1727,7 @@ type GetAllCoinsAddressCoinsCoinConnectionNodesCoin struct {
 }
 
 // GetCoinBalance returns GetAllCoinsAddressCoinsCoinConnectionNodesCoin.CoinBalance, and is useful for accessing the field via an interface.
-func (v *GetAllCoinsAddressCoinsCoinConnectionNodesCoin) GetCoinBalance() iotajsonrpc.BigInt {
+func (v *GetAllCoinsAddressCoinsCoinConnectionNodesCoin) GetCoinBalance() BigInt {
 	return v.CoinBalance
 }
 
@@ -1154,7 +1840,7 @@ type GetBalanceAddressBalance struct {
 	// How many coins of this type constitute the balance
 	CoinObjectCount uint64 `json:"coinObjectCount"`
 	// Total balance across all coin objects of the coin type
-	TotalBalance iotajsonrpc.BigInt `json:"totalBalance"`
+	TotalBalance BigInt `json:"totalBalance"`
 }
 
 // GetCoinType returns GetBalanceAddressBalance.CoinType, and is useful for accessing the field via an interface.
@@ -1166,7 +1852,7 @@ func (v *GetBalanceAddressBalance) GetCoinType() GetBalanceAddressBalanceCoinTyp
 func (v *GetBalanceAddressBalance) GetCoinObjectCount() uint64 { return v.CoinObjectCount }
 
 // GetTotalBalance returns GetBalanceAddressBalance.TotalBalance, and is useful for accessing the field via an interface.
-func (v *GetBalanceAddressBalance) GetTotalBalance() iotajsonrpc.BigInt { return v.TotalBalance }
+func (v *GetBalanceAddressBalance) GetTotalBalance() BigInt { return v.TotalBalance }
 
 // GetBalanceAddressBalanceCoinTypeMoveType includes the requested fields of the GraphQL type MoveType.
 // The GraphQL type's documentation follows.
@@ -1279,7 +1965,7 @@ func (v *GetCoinsAddressCoinsCoinConnection) GetNodes() []GetCoinsAddressCoinsCo
 // Some 0x2::coin::Coin Move object.
 type GetCoinsAddressCoinsCoinConnectionNodesCoin struct {
 	// Balance of this coin object.
-	CoinBalance iotajsonrpc.BigInt `json:"coinBalance"`
+	CoinBalance BigInt `json:"coinBalance"`
 	// Displays the contents of the Move object in a JSON string and through
 	// GraphQL types. Also provides the flat representation of the type
 	// signature, and the BCS of the corresponding data.
@@ -1294,9 +1980,7 @@ type GetCoinsAddressCoinsCoinConnectionNodesCoin struct {
 }
 
 // GetCoinBalance returns GetCoinsAddressCoinsCoinConnectionNodesCoin.CoinBalance, and is useful for accessing the field via an interface.
-func (v *GetCoinsAddressCoinsCoinConnectionNodesCoin) GetCoinBalance() iotajsonrpc.BigInt {
-	return v.CoinBalance
-}
+func (v *GetCoinsAddressCoinsCoinConnectionNodesCoin) GetCoinBalance() BigInt { return v.CoinBalance }
 
 // GetContents returns GetCoinsAddressCoinsCoinConnectionNodesCoin.Contents, and is useful for accessing the field via an interface.
 func (v *GetCoinsAddressCoinsCoinConnectionNodesCoin) GetContents() GetCoinsAddressCoinsCoinConnectionNodesCoinContentsMoveValue {
@@ -1667,7 +2351,7 @@ type GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject st
 	// The amount of IOTA we would rebate if this object gets deleted or
 	// mutated. This number is recalculated based on the present storage
 	// gas price.
-	StorageRebate iotajsonrpc.BigInt `json:"storageRebate"`
+	StorageRebate BigInt `json:"storageRebate"`
 	// The Base64-encoded BCS serialization of the object's content.
 	Bcs iotago.Base64Data `json:"bcs"`
 	// The set of named templates defined on-chain for the type of this object,
@@ -1712,7 +2396,7 @@ func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjec
 }
 
 // GetStorageRebate returns GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject.StorageRebate, and is useful for accessing the field via an interface.
-func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject) GetStorageRebate() iotajsonrpc.BigInt {
+func (v *GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObject) GetStorageRebate() BigInt {
 	return v.StorageRebate
 }
 
@@ -1774,7 +2458,7 @@ type __premarshalGetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueM
 
 	PreviousTransactionBlock GetDynamicFieldObjectObjectDynamicObjectFieldDynamicFieldValueMoveObjectPreviousTransactionBlock `json:"previousTransactionBlock"`
 
-	StorageRebate iotajsonrpc.BigInt `json:"storageRebate"`
+	StorageRebate BigInt `json:"storageRebate"`
 
 	Bcs iotago.Base64Data `json:"bcs"`
 
@@ -2616,9 +3300,9 @@ type GetLatestIotaSystemStateEpoch struct {
 	EndTimestamp time.Time `json:"endTimestamp"`
 	// The minimum gas price that a quorum of validators are guaranteed to sign
 	// a transaction for.
-	ReferenceGasPrice iotajsonrpc.BigInt `json:"referenceGasPrice"`
+	ReferenceGasPrice BigInt `json:"referenceGasPrice"`
 	// The total IOTA supply.
-	IotaTotalSupply iotajsonrpc.BigInt `json:"iotaTotalSupply"`
+	IotaTotalSupply BigInt `json:"iotaTotalSupply"`
 	// Information about whether this epoch was started in safe mode, which
 	// happens if the full epoch change logic fails for some reason.
 	SafeMode GetLatestIotaSystemStateEpochSafeMode `json:"safeMode"`
@@ -2652,14 +3336,10 @@ func (v *GetLatestIotaSystemStateEpoch) GetStartTimestamp() time.Time { return v
 func (v *GetLatestIotaSystemStateEpoch) GetEndTimestamp() time.Time { return v.EndTimestamp }
 
 // GetReferenceGasPrice returns GetLatestIotaSystemStateEpoch.ReferenceGasPrice, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpoch) GetReferenceGasPrice() iotajsonrpc.BigInt {
-	return v.ReferenceGasPrice
-}
+func (v *GetLatestIotaSystemStateEpoch) GetReferenceGasPrice() BigInt { return v.ReferenceGasPrice }
 
 // GetIotaTotalSupply returns GetLatestIotaSystemStateEpoch.IotaTotalSupply, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpoch) GetIotaTotalSupply() iotajsonrpc.BigInt {
-	return v.IotaTotalSupply
-}
+func (v *GetLatestIotaSystemStateEpoch) GetIotaTotalSupply() BigInt { return v.IotaTotalSupply }
 
 // GetSafeMode returns GetLatestIotaSystemStateEpoch.SafeMode, and is useful for accessing the field via an interface.
 func (v *GetLatestIotaSystemStateEpoch) GetSafeMode() GetLatestIotaSystemStateEpochSafeMode {
@@ -2737,36 +3417,36 @@ func (v *GetLatestIotaSystemStateEpochSafeMode) GetGasSummary() GetLatestIotaSys
 // Breakdown of gas costs in effects.
 type GetLatestIotaSystemStateEpochSafeModeGasSummaryGasCostSummary struct {
 	// Gas paid for executing this transaction (in NANOS).
-	ComputationCost iotajsonrpc.BigInt `json:"computationCost"`
+	ComputationCost BigInt `json:"computationCost"`
 	// Part of storage cost that is not reclaimed when data created by this
 	// transaction is cleaned up (in NANOS).
-	NonRefundableStorageFee iotajsonrpc.BigInt `json:"nonRefundableStorageFee"`
+	NonRefundableStorageFee BigInt `json:"nonRefundableStorageFee"`
 	// Gas paid for the data stored on-chain by this transaction (in NANOS).
-	StorageCost iotajsonrpc.BigInt `json:"storageCost"`
+	StorageCost BigInt `json:"storageCost"`
 	// Part of storage cost that can be reclaimed by cleaning up data created
 	// by this transaction (when objects are deleted or an object is
 	// modified, which is treated as a deletion followed by a creation) (in
 	// NANOS).
-	StorageRebate iotajsonrpc.BigInt `json:"storageRebate"`
+	StorageRebate BigInt `json:"storageRebate"`
 }
 
 // GetComputationCost returns GetLatestIotaSystemStateEpochSafeModeGasSummaryGasCostSummary.ComputationCost, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochSafeModeGasSummaryGasCostSummary) GetComputationCost() iotajsonrpc.BigInt {
+func (v *GetLatestIotaSystemStateEpochSafeModeGasSummaryGasCostSummary) GetComputationCost() BigInt {
 	return v.ComputationCost
 }
 
 // GetNonRefundableStorageFee returns GetLatestIotaSystemStateEpochSafeModeGasSummaryGasCostSummary.NonRefundableStorageFee, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochSafeModeGasSummaryGasCostSummary) GetNonRefundableStorageFee() iotajsonrpc.BigInt {
+func (v *GetLatestIotaSystemStateEpochSafeModeGasSummaryGasCostSummary) GetNonRefundableStorageFee() BigInt {
 	return v.NonRefundableStorageFee
 }
 
 // GetStorageCost returns GetLatestIotaSystemStateEpochSafeModeGasSummaryGasCostSummary.StorageCost, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochSafeModeGasSummaryGasCostSummary) GetStorageCost() iotajsonrpc.BigInt {
+func (v *GetLatestIotaSystemStateEpochSafeModeGasSummaryGasCostSummary) GetStorageCost() BigInt {
 	return v.StorageCost
 }
 
 // GetStorageRebate returns GetLatestIotaSystemStateEpochSafeModeGasSummaryGasCostSummary.StorageRebate, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochSafeModeGasSummaryGasCostSummary) GetStorageRebate() iotajsonrpc.BigInt {
+func (v *GetLatestIotaSystemStateEpochSafeModeGasSummaryGasCostSummary) GetStorageRebate() BigInt {
 	return v.StorageRebate
 }
 
@@ -2781,18 +3461,18 @@ type GetLatestIotaSystemStateEpochStorageFund struct {
 	// The system maintains an invariant that the sum of all storage fees into
 	// the storage fund is equal to the sum of all storage rebates out,
 	// the total storage rebates remaining, and the non-refundable balance.
-	NonRefundableBalance iotajsonrpc.BigInt `json:"nonRefundableBalance"`
+	NonRefundableBalance BigInt `json:"nonRefundableBalance"`
 	// Sum of storage rebates of live objects on chain.
-	TotalObjectStorageRebates iotajsonrpc.BigInt `json:"totalObjectStorageRebates"`
+	TotalObjectStorageRebates BigInt `json:"totalObjectStorageRebates"`
 }
 
 // GetNonRefundableBalance returns GetLatestIotaSystemStateEpochStorageFund.NonRefundableBalance, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochStorageFund) GetNonRefundableBalance() iotajsonrpc.BigInt {
+func (v *GetLatestIotaSystemStateEpochStorageFund) GetNonRefundableBalance() BigInt {
 	return v.NonRefundableBalance
 }
 
 // GetTotalObjectStorageRebates returns GetLatestIotaSystemStateEpochStorageFund.TotalObjectStorageRebates, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochStorageFund) GetTotalObjectStorageRebates() iotajsonrpc.BigInt {
+func (v *GetLatestIotaSystemStateEpochStorageFund) GetTotalObjectStorageRebates() BigInt {
 	return v.TotalObjectStorageRebates
 }
 
@@ -2806,20 +3486,20 @@ type GetLatestIotaSystemStateEpochSystemParameters struct {
 	// The maximum number of active validators that the system supports.
 	MaxValidatorCount int `json:"maxValidatorCount"`
 	// Minimum stake needed to become a new validator.
-	MinValidatorJoiningStake iotajsonrpc.BigInt `json:"minValidatorJoiningStake"`
+	MinValidatorJoiningStake BigInt `json:"minValidatorJoiningStake"`
 	// Target duration of an epoch, in milliseconds.
-	DurationMs iotajsonrpc.BigInt `json:"durationMs"`
+	DurationMs BigInt `json:"durationMs"`
 	// Validators with stake below this threshold will enter the grace period
 	// (see `validatorLowStakeGracePeriod`), after which they are removed
 	// from the active validator set.
-	ValidatorLowStakeThreshold iotajsonrpc.BigInt `json:"validatorLowStakeThreshold"`
+	ValidatorLowStakeThreshold BigInt `json:"validatorLowStakeThreshold"`
 	// The number of epochs that a validator has to recover from having less
 	// than `validatorLowStakeThreshold` stake.
-	ValidatorLowStakeGracePeriod iotajsonrpc.BigInt `json:"validatorLowStakeGracePeriod"`
+	ValidatorLowStakeGracePeriod BigInt `json:"validatorLowStakeGracePeriod"`
 	// Validators with stake below this threshold will be removed from the
 	// active validator set at the next epoch boundary, without a grace
 	// period.
-	ValidatorVeryLowStakeThreshold iotajsonrpc.BigInt `json:"validatorVeryLowStakeThreshold"`
+	ValidatorVeryLowStakeThreshold BigInt `json:"validatorVeryLowStakeThreshold"`
 }
 
 // GetMinValidatorCount returns GetLatestIotaSystemStateEpochSystemParameters.MinValidatorCount, and is useful for accessing the field via an interface.
@@ -2833,27 +3513,25 @@ func (v *GetLatestIotaSystemStateEpochSystemParameters) GetMaxValidatorCount() i
 }
 
 // GetMinValidatorJoiningStake returns GetLatestIotaSystemStateEpochSystemParameters.MinValidatorJoiningStake, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochSystemParameters) GetMinValidatorJoiningStake() iotajsonrpc.BigInt {
+func (v *GetLatestIotaSystemStateEpochSystemParameters) GetMinValidatorJoiningStake() BigInt {
 	return v.MinValidatorJoiningStake
 }
 
 // GetDurationMs returns GetLatestIotaSystemStateEpochSystemParameters.DurationMs, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochSystemParameters) GetDurationMs() iotajsonrpc.BigInt {
-	return v.DurationMs
-}
+func (v *GetLatestIotaSystemStateEpochSystemParameters) GetDurationMs() BigInt { return v.DurationMs }
 
 // GetValidatorLowStakeThreshold returns GetLatestIotaSystemStateEpochSystemParameters.ValidatorLowStakeThreshold, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochSystemParameters) GetValidatorLowStakeThreshold() iotajsonrpc.BigInt {
+func (v *GetLatestIotaSystemStateEpochSystemParameters) GetValidatorLowStakeThreshold() BigInt {
 	return v.ValidatorLowStakeThreshold
 }
 
 // GetValidatorLowStakeGracePeriod returns GetLatestIotaSystemStateEpochSystemParameters.ValidatorLowStakeGracePeriod, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochSystemParameters) GetValidatorLowStakeGracePeriod() iotajsonrpc.BigInt {
+func (v *GetLatestIotaSystemStateEpochSystemParameters) GetValidatorLowStakeGracePeriod() BigInt {
 	return v.ValidatorLowStakeGracePeriod
 }
 
 // GetValidatorVeryLowStakeThreshold returns GetLatestIotaSystemStateEpochSystemParameters.ValidatorVeryLowStakeThreshold, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochSystemParameters) GetValidatorVeryLowStakeThreshold() iotajsonrpc.BigInt {
+func (v *GetLatestIotaSystemStateEpochSystemParameters) GetValidatorVeryLowStakeThreshold() BigInt {
 	return v.ValidatorVeryLowStakeThreshold
 }
 
@@ -2877,7 +3555,7 @@ type GetLatestIotaSystemStateEpochValidatorSet struct {
 	PendingRemovals []int `json:"pendingRemovals"`
 	// Total amount of stake for all active validators at the beginning of the
 	// epoch.
-	TotalStake iotajsonrpc.BigInt `json:"totalStake"`
+	TotalStake BigInt `json:"totalStake"`
 	// Object ID of the `Table` storing the mapping from staking pool ids to
 	// the addresses of the corresponding validators. This is needed
 	// because a validator's address can potentially change but the object
@@ -2923,9 +3601,7 @@ func (v *GetLatestIotaSystemStateEpochValidatorSet) GetPendingRemovals() []int {
 }
 
 // GetTotalStake returns GetLatestIotaSystemStateEpochValidatorSet.TotalStake, and is useful for accessing the field via an interface.
-func (v *GetLatestIotaSystemStateEpochValidatorSet) GetTotalStake() iotajsonrpc.BigInt {
-	return v.TotalStake
-}
+func (v *GetLatestIotaSystemStateEpochValidatorSet) GetTotalStake() BigInt { return v.TotalStake }
 
 // GetStakingPoolMappingsId returns GetLatestIotaSystemStateEpochValidatorSet.StakingPoolMappingsId, and is useful for accessing the field via an interface.
 func (v *GetLatestIotaSystemStateEpochValidatorSet) GetStakingPoolMappingsId() iotago.Address {
@@ -3446,6 +4122,9 @@ func (v *GetObjectObject) GetObjectId() iotago.Address { return v.RPC_OBJECT_FIE
 // GetVersion returns GetObjectObject.Version, and is useful for accessing the field via an interface.
 func (v *GetObjectObject) GetVersion() uint64 { return v.RPC_OBJECT_FIELDS.Version }
 
+// GetStatus returns GetObjectObject.Status, and is useful for accessing the field via an interface.
+func (v *GetObjectObject) GetStatus() ObjectKind { return v.RPC_OBJECT_FIELDS.Status }
+
 // GetAsMoveObjectType returns GetObjectObject.AsMoveObjectType, and is useful for accessing the field via an interface.
 func (v *GetObjectObject) GetAsMoveObjectType() RPC_OBJECT_FIELDSAsMoveObjectTypeMoveObject {
 	return v.RPC_OBJECT_FIELDS.AsMoveObjectType
@@ -3472,9 +4151,7 @@ func (v *GetObjectObject) GetPreviousTransactionBlock() RPC_OBJECT_FIELDSPreviou
 }
 
 // GetStorageRebate returns GetObjectObject.StorageRebate, and is useful for accessing the field via an interface.
-func (v *GetObjectObject) GetStorageRebate() iotajsonrpc.BigInt {
-	return v.RPC_OBJECT_FIELDS.StorageRebate
-}
+func (v *GetObjectObject) GetStorageRebate() BigInt { return v.RPC_OBJECT_FIELDS.StorageRebate }
 
 // GetDigest returns GetObjectObject.Digest, and is useful for accessing the field via an interface.
 func (v *GetObjectObject) GetDigest() string { return v.RPC_OBJECT_FIELDS.Digest }
@@ -3514,6 +4191,8 @@ type __premarshalGetObjectObject struct {
 
 	Version uint64 `json:"version"`
 
+	Status ObjectKind `json:"status"`
+
 	AsMoveObjectType RPC_OBJECT_FIELDSAsMoveObjectTypeMoveObject `json:"asMoveObjectType"`
 
 	AsMoveObjectContent RPC_OBJECT_FIELDSAsMoveObjectContentMoveObject `json:"asMoveObjectContent"`
@@ -3524,7 +4203,7 @@ type __premarshalGetObjectObject struct {
 
 	PreviousTransactionBlock RPC_OBJECT_FIELDSPreviousTransactionBlock `json:"previousTransactionBlock"`
 
-	StorageRebate iotajsonrpc.BigInt `json:"storageRebate"`
+	StorageRebate BigInt `json:"storageRebate"`
 
 	Digest string `json:"digest"`
 
@@ -3544,6 +4223,7 @@ func (v *GetObjectObject) __premarshalJSON() (*__premarshalGetObjectObject, erro
 
 	retval.ObjectId = v.RPC_OBJECT_FIELDS.ObjectId
 	retval.Version = v.RPC_OBJECT_FIELDS.Version
+	retval.Status = v.RPC_OBJECT_FIELDS.Status
 	retval.AsMoveObjectType = v.RPC_OBJECT_FIELDS.AsMoveObjectType
 	retval.AsMoveObjectContent = v.RPC_OBJECT_FIELDS.AsMoveObjectContent
 	retval.AsMoveObject = v.RPC_OBJECT_FIELDS.AsMoveObject
@@ -3629,6 +4309,11 @@ func (v *GetOwnedObjectsAddressObjectsMoveObjectConnectionNodesMoveObject) GetBc
 	return v.RPC_MOVE_OBJECT_FIELDS.Bcs
 }
 
+// GetStatus returns GetOwnedObjectsAddressObjectsMoveObjectConnectionNodesMoveObject.Status, and is useful for accessing the field via an interface.
+func (v *GetOwnedObjectsAddressObjectsMoveObjectConnectionNodesMoveObject) GetStatus() ObjectKind {
+	return v.RPC_MOVE_OBJECT_FIELDS.Status
+}
+
 // GetContents_type returns GetOwnedObjectsAddressObjectsMoveObjectConnectionNodesMoveObject.Contents_type, and is useful for accessing the field via an interface.
 func (v *GetOwnedObjectsAddressObjectsMoveObjectConnectionNodesMoveObject) GetContents_type() RPC_MOVE_OBJECT_FIELDSContents_typeMoveValue {
 	return v.RPC_MOVE_OBJECT_FIELDS.Contents_type
@@ -3655,7 +4340,7 @@ func (v *GetOwnedObjectsAddressObjectsMoveObjectConnectionNodesMoveObject) GetPr
 }
 
 // GetStorageRebate returns GetOwnedObjectsAddressObjectsMoveObjectConnectionNodesMoveObject.StorageRebate, and is useful for accessing the field via an interface.
-func (v *GetOwnedObjectsAddressObjectsMoveObjectConnectionNodesMoveObject) GetStorageRebate() iotajsonrpc.BigInt {
+func (v *GetOwnedObjectsAddressObjectsMoveObjectConnectionNodesMoveObject) GetStorageRebate() BigInt {
 	return v.RPC_MOVE_OBJECT_FIELDS.StorageRebate
 }
 
@@ -3704,6 +4389,8 @@ type __premarshalGetOwnedObjectsAddressObjectsMoveObjectConnectionNodesMoveObjec
 
 	Bcs iotago.Base64Data `json:"bcs"`
 
+	Status ObjectKind `json:"status"`
+
 	Contents_type RPC_MOVE_OBJECT_FIELDSContents_typeMoveValue `json:"contents_type"`
 
 	Contents_content RPC_MOVE_OBJECT_FIELDSContents_contentMoveValue `json:"contents_content"`
@@ -3714,7 +4401,7 @@ type __premarshalGetOwnedObjectsAddressObjectsMoveObjectConnectionNodesMoveObjec
 
 	PreviousTransactionBlock RPC_MOVE_OBJECT_FIELDSPreviousTransactionBlock `json:"previousTransactionBlock"`
 
-	StorageRebate iotajsonrpc.BigInt `json:"storageRebate"`
+	StorageRebate BigInt `json:"storageRebate"`
 
 	Digest string `json:"digest"`
 
@@ -3736,6 +4423,7 @@ func (v *GetOwnedObjectsAddressObjectsMoveObjectConnectionNodesMoveObject) __pre
 
 	retval.ObjectId = v.RPC_MOVE_OBJECT_FIELDS.ObjectId
 	retval.Bcs = v.RPC_MOVE_OBJECT_FIELDS.Bcs
+	retval.Status = v.RPC_MOVE_OBJECT_FIELDS.Status
 	retval.Contents_type = v.RPC_MOVE_OBJECT_FIELDS.Contents_type
 	retval.Contents_content = v.RPC_MOVE_OBJECT_FIELDS.Contents_content
 	retval.Contents = v.RPC_MOVE_OBJECT_FIELDS.Contents
@@ -4075,7 +4763,7 @@ type GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjec
 	// The amount of IOTA we would rebate if this object gets deleted or
 	// mutated. This number is recalculated based on the present storage
 	// gas price.
-	StorageRebate iotajsonrpc.BigInt `json:"storageRebate"`
+	StorageRebate BigInt `json:"storageRebate"`
 	// The Base64-encoded BCS serialization of the object's content.
 	Bcs iotago.Base64Data `json:"bcs"`
 	// The set of named templates defined on-chain for the type of this object,
@@ -4120,7 +4808,7 @@ func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveO
 }
 
 // GetStorageRebate returns GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject.StorageRebate, and is useful for accessing the field via an interface.
-func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject) GetStorageRebate() iotajsonrpc.BigInt {
+func (v *GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObject) GetStorageRebate() BigInt {
 	return v.StorageRebate
 }
 
@@ -4182,7 +4870,7 @@ type __premarshalGetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldVa
 
 	PreviousTransactionBlock GetOwnerDynamicFieldObjectOwnerDynamicObjectFieldDynamicFieldValueMoveObjectPreviousTransactionBlock `json:"previousTransactionBlock"`
 
-	StorageRebate iotajsonrpc.BigInt `json:"storageRebate"`
+	StorageRebate BigInt `json:"storageRebate"`
 
 	Bcs iotago.Base64Data `json:"bcs"`
 
@@ -4578,13 +5266,11 @@ func (v *GetOwnerDynamicFieldObjectResponse) GetOwner() GetOwnerDynamicFieldObje
 type GetReferenceGasPriceEpoch struct {
 	// The minimum gas price that a quorum of validators are guaranteed to sign
 	// a transaction for.
-	ReferenceGasPrice iotajsonrpc.BigInt `json:"referenceGasPrice"`
+	ReferenceGasPrice BigInt `json:"referenceGasPrice"`
 }
 
 // GetReferenceGasPrice returns GetReferenceGasPriceEpoch.ReferenceGasPrice, and is useful for accessing the field via an interface.
-func (v *GetReferenceGasPriceEpoch) GetReferenceGasPrice() iotajsonrpc.BigInt {
-	return v.ReferenceGasPrice
-}
+func (v *GetReferenceGasPriceEpoch) GetReferenceGasPrice() BigInt { return v.ReferenceGasPrice }
 
 // GetReferenceGasPriceResponse is returned by GetReferenceGasPrice on success.
 type GetReferenceGasPriceResponse struct {
@@ -4637,7 +5323,7 @@ type GetStakesAddressStakedIotasStakedIotaConnectionNodesStakedIota struct {
 }
 
 // GetPrincipal returns GetStakesAddressStakedIotasStakedIotaConnectionNodesStakedIota.Principal, and is useful for accessing the field via an interface.
-func (v *GetStakesAddressStakedIotasStakedIotaConnectionNodesStakedIota) GetPrincipal() iotajsonrpc.BigInt {
+func (v *GetStakesAddressStakedIotasStakedIotaConnectionNodesStakedIota) GetPrincipal() BigInt {
 	return v.RPC_STAKE_FIELDS.Principal
 }
 
@@ -4667,7 +5353,7 @@ func (v *GetStakesAddressStakedIotasStakedIotaConnectionNodesStakedIota) GetAddr
 }
 
 // GetEstimatedReward returns GetStakesAddressStakedIotasStakedIotaConnectionNodesStakedIota.EstimatedReward, and is useful for accessing the field via an interface.
-func (v *GetStakesAddressStakedIotasStakedIotaConnectionNodesStakedIota) GetEstimatedReward() iotajsonrpc.BigInt {
+func (v *GetStakesAddressStakedIotasStakedIotaConnectionNodesStakedIota) GetEstimatedReward() BigInt {
 	return v.RPC_STAKE_FIELDS.EstimatedReward
 }
 
@@ -4697,7 +5383,7 @@ func (v *GetStakesAddressStakedIotasStakedIotaConnectionNodesStakedIota) Unmarsh
 }
 
 type __premarshalGetStakesAddressStakedIotasStakedIotaConnectionNodesStakedIota struct {
-	Principal iotajsonrpc.BigInt `json:"principal"`
+	Principal BigInt `json:"principal"`
 
 	ActivatedEpoch RPC_STAKE_FIELDSActivatedEpoch `json:"activatedEpoch"`
 
@@ -4709,7 +5395,7 @@ type __premarshalGetStakesAddressStakedIotasStakedIotaConnectionNodesStakedIota 
 
 	Address iotago.Address `json:"address"`
 
-	EstimatedReward iotajsonrpc.BigInt `json:"estimatedReward"`
+	EstimatedReward BigInt `json:"estimatedReward"`
 }
 
 func (v *GetStakesAddressStakedIotasStakedIotaConnectionNodesStakedIota) MarshalJSON() ([]byte, error) {
@@ -4815,7 +5501,7 @@ type GetStakesByIdsObjectsObjectConnectionNodesObjectAsMoveObjectAsStakedIota st
 }
 
 // GetPrincipal returns GetStakesByIdsObjectsObjectConnectionNodesObjectAsMoveObjectAsStakedIota.Principal, and is useful for accessing the field via an interface.
-func (v *GetStakesByIdsObjectsObjectConnectionNodesObjectAsMoveObjectAsStakedIota) GetPrincipal() iotajsonrpc.BigInt {
+func (v *GetStakesByIdsObjectsObjectConnectionNodesObjectAsMoveObjectAsStakedIota) GetPrincipal() BigInt {
 	return v.RPC_STAKE_FIELDS.Principal
 }
 
@@ -4845,7 +5531,7 @@ func (v *GetStakesByIdsObjectsObjectConnectionNodesObjectAsMoveObjectAsStakedIot
 }
 
 // GetEstimatedReward returns GetStakesByIdsObjectsObjectConnectionNodesObjectAsMoveObjectAsStakedIota.EstimatedReward, and is useful for accessing the field via an interface.
-func (v *GetStakesByIdsObjectsObjectConnectionNodesObjectAsMoveObjectAsStakedIota) GetEstimatedReward() iotajsonrpc.BigInt {
+func (v *GetStakesByIdsObjectsObjectConnectionNodesObjectAsMoveObjectAsStakedIota) GetEstimatedReward() BigInt {
 	return v.RPC_STAKE_FIELDS.EstimatedReward
 }
 
@@ -4875,7 +5561,7 @@ func (v *GetStakesByIdsObjectsObjectConnectionNodesObjectAsMoveObjectAsStakedIot
 }
 
 type __premarshalGetStakesByIdsObjectsObjectConnectionNodesObjectAsMoveObjectAsStakedIota struct {
-	Principal iotajsonrpc.BigInt `json:"principal"`
+	Principal BigInt `json:"principal"`
 
 	ActivatedEpoch RPC_STAKE_FIELDSActivatedEpoch `json:"activatedEpoch"`
 
@@ -4887,7 +5573,7 @@ type __premarshalGetStakesByIdsObjectsObjectConnectionNodesObjectAsMoveObjectAsS
 
 	Address iotago.Address `json:"address"`
 
-	EstimatedReward iotajsonrpc.BigInt `json:"estimatedReward"`
+	EstimatedReward BigInt `json:"estimatedReward"`
 }
 
 func (v *GetStakesByIdsObjectsObjectConnectionNodesObjectAsMoveObjectAsStakedIota) MarshalJSON() ([]byte, error) {
@@ -5082,6 +5768,11 @@ func (v *MultiGetObjectsObjectsObjectConnectionNodesObject) GetVersion() uint64 
 	return v.RPC_OBJECT_FIELDS.Version
 }
 
+// GetStatus returns MultiGetObjectsObjectsObjectConnectionNodesObject.Status, and is useful for accessing the field via an interface.
+func (v *MultiGetObjectsObjectsObjectConnectionNodesObject) GetStatus() ObjectKind {
+	return v.RPC_OBJECT_FIELDS.Status
+}
+
 // GetAsMoveObjectType returns MultiGetObjectsObjectsObjectConnectionNodesObject.AsMoveObjectType, and is useful for accessing the field via an interface.
 func (v *MultiGetObjectsObjectsObjectConnectionNodesObject) GetAsMoveObjectType() RPC_OBJECT_FIELDSAsMoveObjectTypeMoveObject {
 	return v.RPC_OBJECT_FIELDS.AsMoveObjectType
@@ -5108,7 +5799,7 @@ func (v *MultiGetObjectsObjectsObjectConnectionNodesObject) GetPreviousTransacti
 }
 
 // GetStorageRebate returns MultiGetObjectsObjectsObjectConnectionNodesObject.StorageRebate, and is useful for accessing the field via an interface.
-func (v *MultiGetObjectsObjectsObjectConnectionNodesObject) GetStorageRebate() iotajsonrpc.BigInt {
+func (v *MultiGetObjectsObjectsObjectConnectionNodesObject) GetStorageRebate() BigInt {
 	return v.RPC_OBJECT_FIELDS.StorageRebate
 }
 
@@ -5152,6 +5843,8 @@ type __premarshalMultiGetObjectsObjectsObjectConnectionNodesObject struct {
 
 	Version uint64 `json:"version"`
 
+	Status ObjectKind `json:"status"`
+
 	AsMoveObjectType RPC_OBJECT_FIELDSAsMoveObjectTypeMoveObject `json:"asMoveObjectType"`
 
 	AsMoveObjectContent RPC_OBJECT_FIELDSAsMoveObjectContentMoveObject `json:"asMoveObjectContent"`
@@ -5162,7 +5855,7 @@ type __premarshalMultiGetObjectsObjectsObjectConnectionNodesObject struct {
 
 	PreviousTransactionBlock RPC_OBJECT_FIELDSPreviousTransactionBlock `json:"previousTransactionBlock"`
 
-	StorageRebate iotajsonrpc.BigInt `json:"storageRebate"`
+	StorageRebate BigInt `json:"storageRebate"`
 
 	Digest string `json:"digest"`
 
@@ -5182,6 +5875,7 @@ func (v *MultiGetObjectsObjectsObjectConnectionNodesObject) __premarshalJSON() (
 
 	retval.ObjectId = v.RPC_OBJECT_FIELDS.ObjectId
 	retval.Version = v.RPC_OBJECT_FIELDS.Version
+	retval.Status = v.RPC_OBJECT_FIELDS.Status
 	retval.AsMoveObjectType = v.RPC_OBJECT_FIELDS.AsMoveObjectType
 	retval.AsMoveObjectContent = v.RPC_OBJECT_FIELDS.AsMoveObjectContent
 	retval.AsMoveObject = v.RPC_OBJECT_FIELDS.AsMoveObject
@@ -5453,6 +6147,25 @@ func (v *ObjectKey) GetObjectId() iotago.Address { return v.ObjectId }
 // GetVersion returns ObjectKey.Version, and is useful for accessing the field via an interface.
 func (v *ObjectKey) GetVersion() uint64 { return v.Version }
 
+type ObjectKind string
+
+const (
+	// The object is loaded from serialized data, such as the contents of a
+	// transaction that hasn't been indexed yet.
+	ObjectKindNotIndexed ObjectKind = "NOT_INDEXED"
+	// The object is fetched from the index.
+	ObjectKindIndexed ObjectKind = "INDEXED"
+	// The object is deleted or wrapped and only partial information can be
+	// loaded from the indexer.
+	ObjectKindWrappedOrDeleted ObjectKind = "WRAPPED_OR_DELETED"
+)
+
+var AllObjectKind = []ObjectKind{
+	ObjectKindNotIndexed,
+	ObjectKindIndexed,
+	ObjectKindWrappedOrDeleted,
+}
+
 type ObjectRef struct {
 	// ID of the object.
 	Address iotago.Address `json:"address"`
@@ -5542,7 +6255,7 @@ type PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalan
 	// The address or object whose balance has changed.
 	Owner PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner `json:"owner"`
 	// The signed balance change.
-	Amount iotajsonrpc.BigInt `json:"amount"`
+	Amount BigInt `json:"amount"`
 }
 
 // GetCoinType returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange.CoinType, and is useful for accessing the field via an interface.
@@ -5556,7 +6269,7 @@ func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesB
 }
 
 // GetAmount returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange.Amount, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange) GetAmount() iotajsonrpc.BigInt {
+func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange) GetAmount() BigInt {
 	return v.Amount
 }
 
@@ -6503,6 +7216,15 @@ type RPC_MOVE_OBJECT_FIELDS struct {
 	ObjectId iotago.Address `json:"objectId"`
 	// The Base64-encoded BCS serialization of the object's content.
 	Bcs iotago.Base64Data `json:"bcs"`
+	// The current status of the object as read from the off-chain store. The
+	// possible states are:
+	// - NOT_INDEXED: The object is loaded from serialized data, such as the
+	// contents of a genesis or system package upgrade transaction.
+	// - INDEXED: The object is retrieved from the off-chain index and
+	// represents the most recent or historical state of the object.
+	// - WRAPPED_OR_DELETED: The object is deleted or wrapped and only partial
+	// information can be loaded.
+	Status ObjectKind `json:"status"`
 	// Displays the contents of the Move object in a JSON string and through
 	// GraphQL types. Also provides the flat representation of the type
 	// signature, and the BCS of the corresponding data.
@@ -6522,7 +7244,7 @@ type RPC_MOVE_OBJECT_FIELDS struct {
 	// The amount of IOTA we would rebate if this object gets deleted or
 	// mutated. This number is recalculated based on the present storage
 	// gas price.
-	StorageRebate iotajsonrpc.BigInt `json:"storageRebate"`
+	StorageRebate BigInt `json:"storageRebate"`
 	// 32-byte hash that identifies the object's contents, encoded as a Base58
 	// string.
 	Digest  string `json:"digest"`
@@ -6538,6 +7260,9 @@ func (v *RPC_MOVE_OBJECT_FIELDS) GetObjectId() iotago.Address { return v.ObjectI
 
 // GetBcs returns RPC_MOVE_OBJECT_FIELDS.Bcs, and is useful for accessing the field via an interface.
 func (v *RPC_MOVE_OBJECT_FIELDS) GetBcs() iotago.Base64Data { return v.Bcs }
+
+// GetStatus returns RPC_MOVE_OBJECT_FIELDS.Status, and is useful for accessing the field via an interface.
+func (v *RPC_MOVE_OBJECT_FIELDS) GetStatus() ObjectKind { return v.Status }
 
 // GetContents_type returns RPC_MOVE_OBJECT_FIELDS.Contents_type, and is useful for accessing the field via an interface.
 func (v *RPC_MOVE_OBJECT_FIELDS) GetContents_type() RPC_MOVE_OBJECT_FIELDSContents_typeMoveValue {
@@ -6563,7 +7288,7 @@ func (v *RPC_MOVE_OBJECT_FIELDS) GetPreviousTransactionBlock() RPC_MOVE_OBJECT_F
 }
 
 // GetStorageRebate returns RPC_MOVE_OBJECT_FIELDS.StorageRebate, and is useful for accessing the field via an interface.
-func (v *RPC_MOVE_OBJECT_FIELDS) GetStorageRebate() iotajsonrpc.BigInt { return v.StorageRebate }
+func (v *RPC_MOVE_OBJECT_FIELDS) GetStorageRebate() BigInt { return v.StorageRebate }
 
 // GetDigest returns RPC_MOVE_OBJECT_FIELDS.Digest, and is useful for accessing the field via an interface.
 func (v *RPC_MOVE_OBJECT_FIELDS) GetDigest() string { return v.Digest }
@@ -6614,6 +7339,8 @@ type __premarshalRPC_MOVE_OBJECT_FIELDS struct {
 
 	Bcs iotago.Base64Data `json:"bcs"`
 
+	Status ObjectKind `json:"status"`
+
 	Contents_type RPC_MOVE_OBJECT_FIELDSContents_typeMoveValue `json:"contents_type"`
 
 	Contents_content RPC_MOVE_OBJECT_FIELDSContents_contentMoveValue `json:"contents_content"`
@@ -6624,7 +7351,7 @@ type __premarshalRPC_MOVE_OBJECT_FIELDS struct {
 
 	PreviousTransactionBlock RPC_MOVE_OBJECT_FIELDSPreviousTransactionBlock `json:"previousTransactionBlock"`
 
-	StorageRebate iotajsonrpc.BigInt `json:"storageRebate"`
+	StorageRebate BigInt `json:"storageRebate"`
 
 	Digest string `json:"digest"`
 
@@ -6646,6 +7373,7 @@ func (v *RPC_MOVE_OBJECT_FIELDS) __premarshalJSON() (*__premarshalRPC_MOVE_OBJEC
 
 	retval.ObjectId = v.ObjectId
 	retval.Bcs = v.Bcs
+	retval.Status = v.Status
 	retval.Contents_type = v.Contents_type
 	retval.Contents_content = v.Contents_content
 	retval.Contents = v.Contents
@@ -7186,6 +7914,15 @@ func (v *RPC_MOVE_OBJECT_FIELDSPreviousTransactionBlock) GetDigest() string { re
 type RPC_OBJECT_FIELDS struct {
 	ObjectId iotago.Address `json:"objectId"`
 	Version  uint64         `json:"version"`
+	// The current status of the object as read from the off-chain store. The
+	// possible states are:
+	// - NOT_INDEXED: The object is loaded from serialized data, such as the
+	// contents of a genesis or system package upgrade transaction.
+	// - INDEXED: The object is retrieved from the off-chain index and
+	// represents the most recent or historical state of the object.
+	// - WRAPPED_OR_DELETED: The object is deleted or wrapped and only partial
+	// information can be loaded.
+	Status ObjectKind `json:"status"`
 	// Attempts to convert the object into a MoveObject
 	AsMoveObjectType RPC_OBJECT_FIELDSAsMoveObjectTypeMoveObject `json:"asMoveObjectType"`
 	// Attempts to convert the object into a MoveObject
@@ -7200,7 +7937,7 @@ type RPC_OBJECT_FIELDS struct {
 	// The amount of IOTA we would rebate if this object gets deleted or
 	// mutated. This number is recalculated based on the present storage
 	// gas price.
-	StorageRebate iotajsonrpc.BigInt `json:"storageRebate"`
+	StorageRebate BigInt `json:"storageRebate"`
 	// 32-byte hash that identifies the object's current contents, encoded as a
 	// Base58 string.
 	Digest string `json:"digest"`
@@ -7215,6 +7952,9 @@ func (v *RPC_OBJECT_FIELDS) GetObjectId() iotago.Address { return v.ObjectId }
 
 // GetVersion returns RPC_OBJECT_FIELDS.Version, and is useful for accessing the field via an interface.
 func (v *RPC_OBJECT_FIELDS) GetVersion() uint64 { return v.Version }
+
+// GetStatus returns RPC_OBJECT_FIELDS.Status, and is useful for accessing the field via an interface.
+func (v *RPC_OBJECT_FIELDS) GetStatus() ObjectKind { return v.Status }
 
 // GetAsMoveObjectType returns RPC_OBJECT_FIELDS.AsMoveObjectType, and is useful for accessing the field via an interface.
 func (v *RPC_OBJECT_FIELDS) GetAsMoveObjectType() RPC_OBJECT_FIELDSAsMoveObjectTypeMoveObject {
@@ -7238,7 +7978,7 @@ func (v *RPC_OBJECT_FIELDS) GetPreviousTransactionBlock() RPC_OBJECT_FIELDSPrevi
 }
 
 // GetStorageRebate returns RPC_OBJECT_FIELDS.StorageRebate, and is useful for accessing the field via an interface.
-func (v *RPC_OBJECT_FIELDS) GetStorageRebate() iotajsonrpc.BigInt { return v.StorageRebate }
+func (v *RPC_OBJECT_FIELDS) GetStorageRebate() BigInt { return v.StorageRebate }
 
 // GetDigest returns RPC_OBJECT_FIELDS.Digest, and is useful for accessing the field via an interface.
 func (v *RPC_OBJECT_FIELDS) GetDigest() string { return v.Digest }
@@ -7284,6 +8024,8 @@ type __premarshalRPC_OBJECT_FIELDS struct {
 
 	Version uint64 `json:"version"`
 
+	Status ObjectKind `json:"status"`
+
 	AsMoveObjectType RPC_OBJECT_FIELDSAsMoveObjectTypeMoveObject `json:"asMoveObjectType"`
 
 	AsMoveObjectContent RPC_OBJECT_FIELDSAsMoveObjectContentMoveObject `json:"asMoveObjectContent"`
@@ -7294,7 +8036,7 @@ type __premarshalRPC_OBJECT_FIELDS struct {
 
 	PreviousTransactionBlock RPC_OBJECT_FIELDSPreviousTransactionBlock `json:"previousTransactionBlock"`
 
-	StorageRebate iotajsonrpc.BigInt `json:"storageRebate"`
+	StorageRebate BigInt `json:"storageRebate"`
 
 	Digest string `json:"digest"`
 
@@ -7314,6 +8056,7 @@ func (v *RPC_OBJECT_FIELDS) __premarshalJSON() (*__premarshalRPC_OBJECT_FIELDS, 
 
 	retval.ObjectId = v.ObjectId
 	retval.Version = v.Version
+	retval.Status = v.Status
 	retval.AsMoveObjectType = v.AsMoveObjectType
 	retval.AsMoveObjectContent = v.AsMoveObjectContent
 	retval.AsMoveObject = v.AsMoveObject
@@ -8131,7 +8874,7 @@ func (v *RPC_OBJECT_OWNER_FIELDSShared) GetInitialSharedVersion() uint64 {
 // Represents a `0x3::staking_pool::StakedIota` Move object on-chain.
 type RPC_STAKE_FIELDS struct {
 	// The IOTA that was initially staked.
-	Principal iotajsonrpc.BigInt `json:"principal"`
+	Principal BigInt `json:"principal"`
 	// The epoch at which this stake became active.
 	ActivatedEpoch RPC_STAKE_FIELDSActivatedEpoch `json:"activatedEpoch"`
 	// A stake can be pending, active, or unstaked
@@ -8154,11 +8897,11 @@ type RPC_STAKE_FIELDS struct {
 	// - `current_stake_rate` is the stake rate in the current epoch.
 	//
 	// This value is only available if the stake is active.
-	EstimatedReward iotajsonrpc.BigInt `json:"estimatedReward"`
+	EstimatedReward BigInt `json:"estimatedReward"`
 }
 
 // GetPrincipal returns RPC_STAKE_FIELDS.Principal, and is useful for accessing the field via an interface.
-func (v *RPC_STAKE_FIELDS) GetPrincipal() iotajsonrpc.BigInt { return v.Principal }
+func (v *RPC_STAKE_FIELDS) GetPrincipal() BigInt { return v.Principal }
 
 // GetActivatedEpoch returns RPC_STAKE_FIELDS.ActivatedEpoch, and is useful for accessing the field via an interface.
 func (v *RPC_STAKE_FIELDS) GetActivatedEpoch() RPC_STAKE_FIELDSActivatedEpoch {
@@ -8180,7 +8923,7 @@ func (v *RPC_STAKE_FIELDS) GetContents() RPC_STAKE_FIELDSContentsMoveValue { ret
 func (v *RPC_STAKE_FIELDS) GetAddress() iotago.Address { return v.Address }
 
 // GetEstimatedReward returns RPC_STAKE_FIELDS.EstimatedReward, and is useful for accessing the field via an interface.
-func (v *RPC_STAKE_FIELDS) GetEstimatedReward() iotajsonrpc.BigInt { return v.EstimatedReward }
+func (v *RPC_STAKE_FIELDS) GetEstimatedReward() BigInt { return v.EstimatedReward }
 
 // RPC_STAKE_FIELDSActivatedEpoch includes the requested fields of the GraphQL type Epoch.
 // The GraphQL type's documentation follows.
@@ -8198,16 +8941,14 @@ type RPC_STAKE_FIELDSActivatedEpoch struct {
 	EpochId uint64 `json:"epochId"`
 	// The minimum gas price that a quorum of validators are guaranteed to sign
 	// a transaction for.
-	ReferenceGasPrice iotajsonrpc.BigInt `json:"referenceGasPrice"`
+	ReferenceGasPrice BigInt `json:"referenceGasPrice"`
 }
 
 // GetEpochId returns RPC_STAKE_FIELDSActivatedEpoch.EpochId, and is useful for accessing the field via an interface.
 func (v *RPC_STAKE_FIELDSActivatedEpoch) GetEpochId() uint64 { return v.EpochId }
 
 // GetReferenceGasPrice returns RPC_STAKE_FIELDSActivatedEpoch.ReferenceGasPrice, and is useful for accessing the field via an interface.
-func (v *RPC_STAKE_FIELDSActivatedEpoch) GetReferenceGasPrice() iotajsonrpc.BigInt {
-	return v.ReferenceGasPrice
-}
+func (v *RPC_STAKE_FIELDSActivatedEpoch) GetReferenceGasPrice() BigInt { return v.ReferenceGasPrice }
 
 // RPC_STAKE_FIELDSContentsMoveValue includes the requested fields of the GraphQL type MoveValue.
 type RPC_STAKE_FIELDSContentsMoveValue struct {
@@ -8374,7 +9115,7 @@ type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceCh
 	// The address or object whose balance has changed.
 	Owner RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner `json:"owner"`
 	// The signed balance change.
-	Amount iotajsonrpc.BigInt `json:"amount"`
+	Amount BigInt `json:"amount"`
 }
 
 // GetCoinType returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange.CoinType, and is useful for accessing the field via an interface.
@@ -8388,7 +9129,7 @@ func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalan
 }
 
 // GetAmount returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange.Amount, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange) GetAmount() iotajsonrpc.BigInt {
+func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange) GetAmount() BigInt {
 	return v.Amount
 }
 
@@ -8632,43 +9373,43 @@ func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffects) GetGasS
 // Breakdown of gas costs in effects.
 type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary struct {
 	// Gas paid for executing this transaction (in NANOS).
-	ComputationCost iotajsonrpc.BigInt `json:"computationCost"`
+	ComputationCost BigInt `json:"computationCost"`
 	// Gas burned for executing this transaction (in NANOS).
-	ComputationCostBurned iotajsonrpc.BigInt `json:"computationCostBurned"`
+	ComputationCostBurned BigInt `json:"computationCostBurned"`
 	// Gas paid for the data stored on-chain by this transaction (in NANOS).
-	StorageCost iotajsonrpc.BigInt `json:"storageCost"`
+	StorageCost BigInt `json:"storageCost"`
 	// Part of storage cost that can be reclaimed by cleaning up data created
 	// by this transaction (when objects are deleted or an object is
 	// modified, which is treated as a deletion followed by a creation) (in
 	// NANOS).
-	StorageRebate iotajsonrpc.BigInt `json:"storageRebate"`
+	StorageRebate BigInt `json:"storageRebate"`
 	// Part of storage cost that is not reclaimed when data created by this
 	// transaction is cleaned up (in NANOS).
-	NonRefundableStorageFee iotajsonrpc.BigInt `json:"nonRefundableStorageFee"`
+	NonRefundableStorageFee BigInt `json:"nonRefundableStorageFee"`
 }
 
 // GetComputationCost returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary.ComputationCost, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary) GetComputationCost() iotajsonrpc.BigInt {
+func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary) GetComputationCost() BigInt {
 	return v.ComputationCost
 }
 
 // GetComputationCostBurned returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary.ComputationCostBurned, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary) GetComputationCostBurned() iotajsonrpc.BigInt {
+func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary) GetComputationCostBurned() BigInt {
 	return v.ComputationCostBurned
 }
 
 // GetStorageCost returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary.StorageCost, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary) GetStorageCost() iotajsonrpc.BigInt {
+func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary) GetStorageCost() BigInt {
 	return v.StorageCost
 }
 
 // GetStorageRebate returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary.StorageRebate, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary) GetStorageRebate() iotajsonrpc.BigInt {
+func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary) GetStorageRebate() BigInt {
 	return v.StorageRebate
 }
 
 // GetNonRefundableStorageFee returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary.NonRefundableStorageFee, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary) GetNonRefundableStorageFee() iotajsonrpc.BigInt {
+func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary) GetNonRefundableStorageFee() BigInt {
 	return v.NonRefundableStorageFee
 }
 
@@ -9126,6 +9867,9 @@ func (v *TryGetPastObjectObject) GetObjectId() iotago.Address { return v.RPC_OBJ
 // GetVersion returns TryGetPastObjectObject.Version, and is useful for accessing the field via an interface.
 func (v *TryGetPastObjectObject) GetVersion() uint64 { return v.RPC_OBJECT_FIELDS.Version }
 
+// GetStatus returns TryGetPastObjectObject.Status, and is useful for accessing the field via an interface.
+func (v *TryGetPastObjectObject) GetStatus() ObjectKind { return v.RPC_OBJECT_FIELDS.Status }
+
 // GetAsMoveObjectType returns TryGetPastObjectObject.AsMoveObjectType, and is useful for accessing the field via an interface.
 func (v *TryGetPastObjectObject) GetAsMoveObjectType() RPC_OBJECT_FIELDSAsMoveObjectTypeMoveObject {
 	return v.RPC_OBJECT_FIELDS.AsMoveObjectType
@@ -9152,9 +9896,7 @@ func (v *TryGetPastObjectObject) GetPreviousTransactionBlock() RPC_OBJECT_FIELDS
 }
 
 // GetStorageRebate returns TryGetPastObjectObject.StorageRebate, and is useful for accessing the field via an interface.
-func (v *TryGetPastObjectObject) GetStorageRebate() iotajsonrpc.BigInt {
-	return v.RPC_OBJECT_FIELDS.StorageRebate
-}
+func (v *TryGetPastObjectObject) GetStorageRebate() BigInt { return v.RPC_OBJECT_FIELDS.StorageRebate }
 
 // GetDigest returns TryGetPastObjectObject.Digest, and is useful for accessing the field via an interface.
 func (v *TryGetPastObjectObject) GetDigest() string { return v.RPC_OBJECT_FIELDS.Digest }
@@ -9194,6 +9936,8 @@ type __premarshalTryGetPastObjectObject struct {
 
 	Version uint64 `json:"version"`
 
+	Status ObjectKind `json:"status"`
+
 	AsMoveObjectType RPC_OBJECT_FIELDSAsMoveObjectTypeMoveObject `json:"asMoveObjectType"`
 
 	AsMoveObjectContent RPC_OBJECT_FIELDSAsMoveObjectContentMoveObject `json:"asMoveObjectContent"`
@@ -9204,7 +9948,7 @@ type __premarshalTryGetPastObjectObject struct {
 
 	PreviousTransactionBlock RPC_OBJECT_FIELDSPreviousTransactionBlock `json:"previousTransactionBlock"`
 
-	StorageRebate iotajsonrpc.BigInt `json:"storageRebate"`
+	StorageRebate BigInt `json:"storageRebate"`
 
 	Digest string `json:"digest"`
 
@@ -9224,6 +9968,7 @@ func (v *TryGetPastObjectObject) __premarshalJSON() (*__premarshalTryGetPastObje
 
 	retval.ObjectId = v.RPC_OBJECT_FIELDS.ObjectId
 	retval.Version = v.RPC_OBJECT_FIELDS.Version
+	retval.Status = v.RPC_OBJECT_FIELDS.Status
 	retval.AsMoveObjectType = v.RPC_OBJECT_FIELDS.AsMoveObjectType
 	retval.AsMoveObjectContent = v.RPC_OBJECT_FIELDS.AsMoveObjectContent
 	retval.AsMoveObject = v.RPC_OBJECT_FIELDS.AsMoveObject
@@ -10298,11 +11043,45 @@ mutation ExecuteTransactionBlock ($txBytes: String!, $signatures: [String!]!, $s
 					address
 					idCreated
 					idDeleted
+					inputState {
+						version
+						digest
+						asMoveObject {
+							contents {
+								type {
+									repr
+								}
+							}
+						}
+					}
+					outputState {
+						version
+						digest
+						owner {
+							__typename
+							... RPC_OBJECT_OWNER_FIELDS
+						}
+						asMoveObject {
+							contents {
+								type {
+									repr
+								}
+							}
+						}
+					}
 				}
 			}
 			balanceChanges {
 				nodes {
+					owner {
+						asAddress {
+							address
+						}
+					}
 					amount
+					coinType {
+						repr
+					}
 				}
 			}
 		}
@@ -10400,6 +11179,27 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 				}
 			}
 		}
+	}
+}
+fragment RPC_OBJECT_OWNER_FIELDS on ObjectOwner {
+	__typename
+	... on AddressOwner {
+		owner {
+			asObject {
+				address
+			}
+			asAddress {
+				address
+			}
+		}
+	}
+	... on Parent {
+		parent {
+			address
+		}
+	}
+	... on Shared {
+		initialSharedVersion
 	}
 }
 fragment RPC_EVENTS_FIELDS on Event {
@@ -10709,7 +11509,7 @@ func GetCoins(
 
 // The query executed by GetDynamicFieldObject.
 const GetDynamicFieldObject_Operation = `
-query GetDynamicFieldObject ($parentId: IotaAddress!, $name: DynamicFieldName!, $showBcs: Boolean!, $showPreviousTransaction: Boolean!, $showDisplay: Boolean!, $showStorageRebate: Boolean!) {
+query GetDynamicFieldObject ($parentId: IotaAddress!, $name: DynamicFieldName!, $showBcs: Boolean = false, $showPreviousTransaction: Boolean = false, $showDisplay: Boolean = false, $showStorageRebate: Boolean = false) {
 	object(address: $parentId) {
 		dynamicObjectField(name: $name) {
 			name {
@@ -10964,6 +11764,7 @@ query GetObject ($id: IotaAddress!, $showBcs: Boolean = false, $showOwner: Boole
 fragment RPC_OBJECT_FIELDS on Object {
 	objectId: address
 	version
+	status
 	asMoveObjectType: asMoveObject @include(if: $showType) {
 		contents {
 			type {
@@ -10999,6 +11800,7 @@ fragment RPC_OBJECT_FIELDS on Object {
 	storageRebate @include(if: $showStorageRebate)
 	digest
 	version
+	status
 	display @include(if: $showDisplay) {
 		key
 		value
@@ -11158,6 +11960,7 @@ query GetOwnedObjects ($owner: IotaAddress!, $limit: Int, $cursor: String, $show
 fragment RPC_MOVE_OBJECT_FIELDS on MoveObject {
 	objectId: address
 	bcs @include(if: $showBcs)
+	status
 	contents_type: contents @include(if: $showType) {
 		type {
 			repr
@@ -11263,7 +12066,7 @@ func GetOwnedObjects(
 
 // The query executed by GetOwnerDynamicFieldObject.
 const GetOwnerDynamicFieldObject_Operation = `
-query GetOwnerDynamicFieldObject ($ownerId: IotaAddress!, $name: DynamicFieldName!, $showBcs: Boolean!, $showPreviousTransaction: Boolean!, $showDisplay: Boolean!, $showStorageRebate: Boolean!) {
+query GetOwnerDynamicFieldObject ($ownerId: IotaAddress!, $name: DynamicFieldName!, $showBcs: Boolean = false, $showPreviousTransaction: Boolean = false, $showDisplay: Boolean = false, $showStorageRebate: Boolean = false) {
 	owner(address: $ownerId) {
 		dynamicObjectField(name: $name) {
 			name {
@@ -11684,6 +12487,7 @@ query MultiGetObjects ($ids: [IotaAddress!]!, $limit: Int, $cursor: String, $sho
 fragment RPC_OBJECT_FIELDS on Object {
 	objectId: address
 	version
+	status
 	asMoveObjectType: asMoveObject @include(if: $showType) {
 		contents {
 			type {
@@ -11719,6 +12523,7 @@ fragment RPC_OBJECT_FIELDS on Object {
 	storageRebate @include(if: $showStorageRebate)
 	digest
 	version
+	status
 	display @include(if: $showDisplay) {
 		key
 		value
@@ -12336,6 +13141,7 @@ query TryGetPastObject ($id: IotaAddress!, $version: UInt53, $showBcs: Boolean =
 fragment RPC_OBJECT_FIELDS on Object {
 	objectId: address
 	version
+	status
 	asMoveObjectType: asMoveObject @include(if: $showType) {
 		contents {
 			type {
@@ -12371,6 +13177,7 @@ fragment RPC_OBJECT_FIELDS on Object {
 	storageRebate @include(if: $showStorageRebate)
 	digest
 	version
+	status
 	display @include(if: $showDisplay) {
 		key
 		value

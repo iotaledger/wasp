@@ -2,13 +2,13 @@ query GetDynamicFieldObject(
 	$parentId: IotaAddress!,
 	$name: DynamicFieldName!,
 	# @genqlient(pointer: true)
-	$showBcs: Boolean!,
+	$showBcs: Boolean = false,
 	# @genqlient(pointer: true)
-	$showPreviousTransaction: Boolean!,
+	$showPreviousTransaction: Boolean = false,
 	# @genqlient(pointer: true)
-	$showDisplay: Boolean!,
+	$showDisplay: Boolean = false,
 	# @genqlient(pointer: true)
-	$showStorageRebate: Boolean!,
+	$showStorageRebate: Boolean = false,
 ) {
 	object(address: $parentId) {
 		dynamicObjectField(name: $name) {
@@ -71,13 +71,13 @@ query GetOwnerDynamicFieldObject(
 	$ownerId: IotaAddress!,
 	$name: DynamicFieldName!,
 	# @genqlient(pointer: true)
-	$showBcs: Boolean!,
+	$showBcs: Boolean = false,
 	# @genqlient(pointer: true)
-	$showPreviousTransaction: Boolean!,
+	$showPreviousTransaction: Boolean = false,
 	# @genqlient(pointer: true)
-	$showDisplay: Boolean!,
+	$showDisplay: Boolean = false,
 	# @genqlient(pointer: true)
-	$showStorageRebate: Boolean!,
+	$showStorageRebate: Boolean = false,
 ) {
 	owner(address: $ownerId) {
 		dynamicObjectField(name: $name) {

@@ -27,11 +27,44 @@ mutation ExecuteTransactionBlock(
 					address
 					idCreated
 					idDeleted
+					inputState {
+						version
+						digest
+						asMoveObject {
+							contents {
+								type {
+									repr
+								}
+							}
+						}
+					}
+					outputState {
+						version
+						digest
+						owner {
+							...RPC_OBJECT_OWNER_FIELDS
+						}
+						asMoveObject {
+							contents {
+								type {
+									repr
+								}
+							}
+						}
+					}
 				}
 			}
 			balanceChanges {
 				nodes {
+					owner {
+						asAddress {
+							address
+						}
+					}
 					amount
+					coinType {
+						repr
+					}
 				}
 			}
 		}		
