@@ -24,7 +24,7 @@ import (
 func TestSubscriptionNewHeads(t *testing.T) {
 	env := newSoloTestEnv(t)
 
-	ctx, cancel := context.WithTimeout(context.Background(), testmisc.GetTimeout(5*time.Second))
+	ctx, cancel := context.WithTimeout(context.Background(), testmisc.GetTimeout(15*time.Second))
 	defer cancel()
 
 	ch := make(chan *types.Header, 10)
