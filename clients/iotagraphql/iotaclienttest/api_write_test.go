@@ -4,7 +4,6 @@ import (
 	"context"
 	"math/big"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -19,29 +18,9 @@ import (
 	testcommon "github.com/iotaledger/wasp/v2/clients/iota-go/test_common"
 )
 
-// waitForCoins polls GetCoins until at least one coin is returned or timeout occurs.
-func waitForCoins(ctx context.Context, client *clients.GraphQLClient, owner *iotago.Address, limit int, timeout time.Duration) (*iotajsonrpc.CoinPage, error) {
-	deadline := time.Now().Add(timeout)
-	var lastErr error
-	for time.Now().Before(deadline) {
-		cp, err := client.GetCoins(ctx, iotaclient.GetCoinsRequest{Owner: owner, Limit: limit})
-		if err == nil && len(cp.Data) > 0 {
-			return cp, nil
-		}
-		if err != nil {
-			lastErr = err
-		}
-		time.Sleep(1 * time.Second)
-	}
-	if lastErr != nil {
-		return nil, lastErr
-	}
-	return client.GetCoins(ctx, iotaclient.GetCoinsRequest{Owner: owner, Limit: limit})
-}
-
 func TestDevInspectTransactionBlock(t *testing.T) {
 	client := clients.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
-	sender := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL)
+	sender := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL, client)
 
 	limit := int(3)
 	coinPages, err := client.GetCoins(
@@ -112,8 +91,8 @@ func TestDryRunTransaction(t *testing.T) {
 
 func TestExecuteTransactionBlock(t *testing.T) {
 	client := clients.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
-	signer := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL)
-	coins, err := waitForCoins(context.Background(), client, signer.Address(), 10, 30*time.Second)
+	signer := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL, client)
+	coins, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: signer.Address(), Limit: 10})
 	require.NoError(t, err)
 	require.NotEmpty(t, coins.Data, "no coins indexed for %v after faucet", signer.Address().String())
 	pickedCoins, err := iotajsonrpc.PickupCoins(coins, big.NewInt(100), iotaclient.DefaultGasBudget, 0, 0)
@@ -143,8 +122,8 @@ func TestExecuteTransactionBlock(t *testing.T) {
 
 func TestSignAndExecuteTransaction(t *testing.T) {
 	client := clients.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
-	signer := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL)
-	coins, err := waitForCoins(context.Background(), client, signer.Address(), 10, 30*time.Second)
+	signer := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL, client)
+	coins, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: signer.Address(), Limit: 10})
 	require.NoError(t, err)
 	require.NotEmpty(t, coins.Data, "no coins indexed for %v after faucet", signer.Address().String())
 	pickedCoins, err := iotajsonrpc.PickupCoins(coins, big.NewInt(100), iotaclient.DefaultGasBudget, 0, 0)

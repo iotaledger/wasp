@@ -20,7 +20,7 @@ func TestRequestAddDelegation(t *testing.T) {
 	}
 
 	client := l1starter.Instance().L1Client()
-	signer := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
+	signer := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL(), client)
 
 	coins, err := client.GetCoins(
 		context.Background(), iotaclient.GetCoinsRequest{
