@@ -18,7 +18,7 @@ import (
 
 func TestMintToken(t *testing.T) {
 	client := l1starter.Instance().L1Client()
-	signer := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
+	signer := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL(), client)
 
 	tokenPackageID, treasuryCap := DeployCoinPackage(
 		t,

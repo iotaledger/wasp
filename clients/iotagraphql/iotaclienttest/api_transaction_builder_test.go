@@ -51,7 +51,7 @@ func TestMergeCoins(t *testing.T) {
 func TestMoveCall(t *testing.T) {
 	t.Skip("TODO")
 	client := clients.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
-	signer := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL)
+	signer := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL, client)
 
 	sdkVerifyBytecode := contracts.SDKVerify()
 
@@ -133,8 +133,8 @@ func TestMoveCall(t *testing.T) {
 func TestPay(t *testing.T) {
 	t.Skip("FIXME there is only 1 coin object, because there is only 1 coin object returned from faucet")
 	client := clients.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
-	signer := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL)
-	recipient := iotatest.MakeSignerWithFunds(1, iotaconn.TestnetFaucetURL)
+	signer := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL, client)
+	recipient := iotatest.MakeSignerWithFunds(1, iotaconn.TestnetFaucetURL, client)
 
 	coins, err := client.GetCoins(
 		context.Background(), iotaclient.GetCoinsRequest{
@@ -205,8 +205,8 @@ func TestPay(t *testing.T) {
 func TestPayAllIota(t *testing.T) {
 	t.Skip("FIXME there is only 1 coin object, because there is only 1 coin object returned from faucet")
 	client := clients.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
-	signer := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL)
-	recipient := iotatest.MakeSignerWithFunds(1, iotaconn.TestnetFaucetURL)
+	signer := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL, client)
+	recipient := iotatest.MakeSignerWithFunds(1, iotaconn.TestnetFaucetURL, client)
 
 	limit := int(3)
 	coinPages, err := client.GetCoins(
@@ -256,9 +256,9 @@ func TestPayAllIota(t *testing.T) {
 func TestPayIota(t *testing.T) {
 	t.Skip("TODO")
 	client := clients.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
-	signer := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL)
-	recipient1 := iotatest.MakeSignerWithFunds(1, iotaconn.TestnetFaucetURL)
-	recipient2 := iotatest.MakeSignerWithFunds(2, iotaconn.TestnetFaucetURL)
+	signer := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL, client)
+	recipient1 := iotatest.MakeSignerWithFunds(1, iotaconn.TestnetFaucetURL, client)
+	recipient2 := iotatest.MakeSignerWithFunds(2, iotaconn.TestnetFaucetURL, client)
 
 	limit := int(4)
 	coinPages, err := client.GetCoins(
@@ -325,7 +325,7 @@ func TestPayIota(t *testing.T) {
 func TestPublish(t *testing.T) {
 	t.Skip("TODO")
 	client := clients.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
-	signer := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL)
+	signer := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL, client)
 
 	testcoinBytecode := contracts.Testcoin()
 
@@ -357,7 +357,7 @@ func TestPublish(t *testing.T) {
 func TestSplitCoin(t *testing.T) {
 	t.Skip("TODO")
 	client := clients.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
-	signer := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL)
+	signer := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL, client)
 
 	limit := int(4)
 	coinPages, err := client.GetCoins(
@@ -401,8 +401,8 @@ func TestSplitCoin(t *testing.T) {
 func TestTransferObject(t *testing.T) {
 	t.Skip("TODO")
 	client := clients.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
-	signer := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL)
-	recipient := iotatest.MakeSignerWithFunds(1, iotaconn.TestnetFaucetURL)
+	signer := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL, client)
+	recipient := iotatest.MakeSignerWithFunds(1, iotaconn.TestnetFaucetURL, client)
 
 	limit := int(3)
 	coinPages, err := client.GetCoins(
