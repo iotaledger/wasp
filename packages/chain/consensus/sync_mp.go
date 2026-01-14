@@ -25,7 +25,7 @@ func NewSyncMempool(
 	}
 }
 
-func (s *SyncMempool) BaseAnchorReceived(baseAnchor *isc.StateAnchor) gpa.OutMessages {
+func (s *SyncMempool) BaseAnchorReceived(baseAnchor *isc.StateAnchor) []gpa.MessageOut {
 	if s.baseAnchorReceived {
 		return nil
 	}
@@ -34,7 +34,7 @@ func (s *SyncMempool) BaseAnchorReceived(baseAnchor *isc.StateAnchor) gpa.OutMes
 	return s.c.uponMempoolProposalInputsReady(s.baseAnchor)
 }
 
-func (s *SyncMempool) ProposalReceived(requestRefs []*isc.RequestRef) gpa.OutMessages {
+func (s *SyncMempool) ProposalReceived(requestRefs []*isc.RequestRef) []gpa.MessageOut {
 	if s.proposalReceived {
 		return nil
 	}
@@ -42,7 +42,7 @@ func (s *SyncMempool) ProposalReceived(requestRefs []*isc.RequestRef) gpa.OutMes
 	return s.c.uponMempoolProposalReceived(requestRefs)
 }
 
-func (s *SyncMempool) RequestsNeeded(requestRefs []*isc.RequestRef) gpa.OutMessages {
+func (s *SyncMempool) RequestsNeeded(requestRefs []*isc.RequestRef) []gpa.MessageOut {
 	if s.requestsNeeded {
 		return nil
 	}
@@ -50,7 +50,7 @@ func (s *SyncMempool) RequestsNeeded(requestRefs []*isc.RequestRef) gpa.OutMessa
 	return s.c.uponMempoolRequestsNeeded(requestRefs)
 }
 
-func (s *SyncMempool) RequestsReceived(requests []isc.Request) gpa.OutMessages {
+func (s *SyncMempool) RequestsReceived(requests []isc.Request) []gpa.MessageOut {
 	if s.requestsReceived {
 		return nil
 	}

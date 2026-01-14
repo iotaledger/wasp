@@ -56,7 +56,7 @@ func testCommitteeLogBasic(t *testing.T, n, f int) {
 	//
 	// Construct the algorithm nodes.
 	gpaNodeIDs := gpa.NodeIDsFromPublicKeys(peerPubKeys)
-	gpaNodes := map[gpa.NodeID]gpa.GPA{}
+	gpaNodes := map[gpa.NodeID]*committeelog.CommitteeLog{}
 	for i := range gpaNodeIDs {
 		dkShare, err := committeeKeyShares[i].LoadDKShare(committeeAddress)
 		require.NoError(t, err)
@@ -83,9 +83,12 @@ func testCommitteeLogBasic(t *testing.T, n, f int) {
 			log.NewChildLogger(fmt.Sprintf("N%v", i)),
 		)
 		require.NoError(t, err)
-		gpaNodes[gpaNodeIDs[i]] = committeeLogInst.AsGPA()
+		gpaNodes[gpaNodeIDs[i]] = committeeLogInst
 	}
+
 	gpaTC := gpa.NewTestContext(gpaNodes)
+	gpaTC.WithoutSerialization()
+
 	//
 	// Start the algorithms.
 	gpaTC.RunAll()
@@ -136,7 +139,7 @@ func testCommitteeLogBasic(t *testing.T, n, f int) {
 ////////////////////////////////////////////////////////////////////////////////
 // Helper functions.
 
-func inputAnchorConfirmed(gpaNodes map[gpa.NodeID]gpa.GPA, ao *isc.StateAnchor) map[gpa.NodeID]gpa.Input {
+func inputAnchorConfirmed(gpaNodes map[gpa.NodeID]*committeelog.CommitteeLog, ao *isc.StateAnchor) map[gpa.NodeID]gpa.Input {
 	inputs := map[gpa.NodeID]gpa.Input{}
 	for n := range gpaNodes {
 		inputs[n] = committeelog.NewInputAnchorConfirmed(ao)

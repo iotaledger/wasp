@@ -5,7 +5,11 @@ package gpa
 
 import (
 	"fmt"
+	"slices"
 	"time"
+
+	"fortio.org/safecast"
+	"github.com/samber/lo"
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
@@ -26,7 +30,7 @@ type ackHandler struct {
 	nested       GPA
 	resendPeriod time.Duration
 	initialized  *shrinkingmap.ShrinkingMap[NodeID, bool]
-	initPending  *shrinkingmap.ShrinkingMap[NodeID, []Message]
+	initPending  *shrinkingmap.ShrinkingMap[NodeID, []any]
 	counters     *shrinkingmap.ShrinkingMap[NodeID, int] // For numbering the outgoing messages.
 	sentUnacked  *shrinkingmap.ShrinkingMap[NodeID, *shrinkingmap.ShrinkingMap[int, *ackHandlerBatch]]
 	recvAcksIn   *shrinkingmap.ShrinkingMap[NodeID, map[int]*int]
@@ -36,8 +40,8 @@ type AckHandler interface {
 	GPA
 	DismissPeer(peerID NodeID) // To avoid resending messages to dead peers.
 	MakeTickInput(time.Time) Input
-	NestedMessage(msg Message) OutMessages
-	NestedCall(c func(GPA) OutMessages) OutMessages
+	NestedMessage(msg MessageIn[any]) []MessageOut
+	NestedCall(c func(GPA) []MessageOut) []MessageOut
 }
 
 var _ AckHandler = &ackHandler{}
@@ -48,7 +52,7 @@ func NewAckHandler(me NodeID, nested GPA, resendPeriod time.Duration) AckHandler
 		nested:       nested,
 		resendPeriod: resendPeriod,
 		initialized:  shrinkingmap.New[NodeID, bool](),
-		initPending:  shrinkingmap.New[NodeID, []Message](),
+		initPending:  shrinkingmap.New[NodeID, []any](),
 		counters:     shrinkingmap.New[NodeID, int](),
 		sentUnacked:  shrinkingmap.New[NodeID, *shrinkingmap.ShrinkingMap[int, *ackHandlerBatch]](),
 		recvAcksIn:   shrinkingmap.New[NodeID, map[int]*int](),
@@ -67,7 +71,7 @@ func (a *ackHandler) MakeTickInput(timestamp time.Time) Input {
 	return &ackHandlerTick{timestamp: timestamp}
 }
 
-func (a *ackHandler) Input(input Input) OutMessages {
+func (a *ackHandler) Input(input Input) []MessageOut {
 	switch input := input.(type) {
 	case *ackHandlerTick:
 		return a.handleTickMsg(input)
@@ -76,22 +80,22 @@ func (a *ackHandler) Input(input Input) OutMessages {
 	}
 }
 
-func (a *ackHandler) Message(msg Message) OutMessages {
-	switch msg := msg.(type) {
+func (a *ackHandler) Message(msg MessageIn[any]) []MessageOut {
+	switch msg.Payload.(type) {
 	case *ackHandlerReset:
-		return a.handleResetMsg(msg)
+		return a.handleResetMsg(AsTypedMessageIn[*ackHandlerReset](msg))
 	case *ackHandlerBatch:
-		return a.handleBatchMsg(msg)
+		return a.handleBatchMsg(AsTypedMessageIn[*ackHandlerBatch](msg))
 	default:
 		panic(fmt.Errorf("unexpected message type: %+v", msg))
 	}
 }
 
-func (a *ackHandler) NestedMessage(msg Message) OutMessages {
+func (a *ackHandler) NestedMessage(msg MessageIn[any]) []MessageOut {
 	return a.makeBatches(a.nested.Message(msg))
 }
 
-func (a *ackHandler) NestedCall(c func(GPA) OutMessages) OutMessages {
+func (a *ackHandler) NestedCall(c func(GPA) []MessageOut) []MessageOut {
 	return a.makeBatches(c(a.nested))
 }
 
@@ -103,10 +107,22 @@ func (a *ackHandler) StatusString() string {
 	return fmt.Sprintf("{ACK:%s}", a.nested.StatusString())
 }
 
-func (a *ackHandler) UnmarshalMessage(data []byte) (Message, error) {
-	msg, err := UnmarshalMessage(data, Mapper{
-		msgTypeAckHandlerReset: func() Message { return &ackHandlerReset{} },
-		msgTypeAckHandlerBatch: func() Message { return &ackHandlerBatch{nestedGPA: a.nested} },
+func (a *ackHandler) MarshalPayload(payload any) ([]byte, error) {
+	switch p := payload.(type) {
+	case *ackHandlerReset:
+		return MarshalPayload(msgTypeAckHandlerReset, p)
+	case *ackHandlerBatch:
+		p.nestedGPA = a.nested
+		return MarshalPayload(msgTypeAckHandlerBatch, p)
+	default:
+		return nil, fmt.Errorf("unexpected payload type %T", payload)
+	}
+}
+
+func (a *ackHandler) UnmarshalPayload(data []byte) (any, error) {
+	msg, err := UnmarshalPayload(data, PayloadAllocator{
+		msgTypeAckHandlerReset: func() any { return &ackHandlerReset{} },
+		msgTypeAckHandlerBatch: func() any { return &ackHandlerBatch{nestedGPA: a.nested} },
 	})
 	if err != nil {
 		fmt.Printf("ack, err=%v\n", err) // TODO: Clean this up.
@@ -114,135 +130,130 @@ func (a *ackHandler) UnmarshalMessage(data []byte) (Message, error) {
 	return msg, err
 }
 
-func (a *ackHandler) handleTickMsg(msg *ackHandlerTick) OutMessages {
+func (a *ackHandler) handleTickMsg(msg *ackHandlerTick) []MessageOut {
 	resendOlderThan := msg.timestamp.Add(-a.resendPeriod)
-	resendMsgs := NoMessages()
-	a.sentUnacked.ForEach(func(_ NodeID, nodeSentUnacked *shrinkingmap.ShrinkingMap[int, *ackHandlerBatch]) bool {
+	var resendMsgs []MessageOut
+	a.sentUnacked.ForEach(func(nodeID NodeID, nodeSentUnacked *shrinkingmap.ShrinkingMap[int, *ackHandlerBatch]) bool {
 		nodeSentUnacked.ForEach(func(batchID int, batch *ackHandlerBatch) bool {
 			if batch.sent == nil {
-				// Don't resent, just mark the current timestamp.
+				// Don't resend, just mark the current timestamp.
 				// We have sent it after the previous tick.
 				batch.sent = &msg.timestamp
 			} else if batch.sent.Before(resendOlderThan) {
-				// Resent it, timeout is already passed.
+				// Resend it, timeout is already passed.
 				batch.sent = &msg.timestamp
-				resendMsgs.Add(batch)
+				resendMsgs = append(resendMsgs, NewMessageOut(nodeID, batch))
 			}
-
 			return true
 		})
 		return true
 	})
 
 	a.initPending.ForEachKey(func(nodeID NodeID) bool {
-		resendMsgs.Add(&ackHandlerReset{BasicMessage: NewBasicMessage(nodeID), response: false, latestID: 0})
+		resendMsgs = append(resendMsgs, NewMessageOut(nodeID, &ackHandlerReset{
+			response: false,
+			latestID: 0,
+		}))
 		return true
 	})
 	return resendMsgs
 }
 
-func (a *ackHandler) handleResetMsg(msg *ackHandlerReset) OutMessages {
-	from := msg.sender
-	if !msg.response {
+func (a *ackHandler) handleResetMsg(msg MessageIn[*ackHandlerReset]) []MessageOut {
+	from := msg.Sender
+	if !msg.Payload.response {
 		maxID := 0
-
-		if recvAcksIn, exists := a.recvAcksIn.Get(msg.sender); exists {
+		if recvAcksIn, exists := a.recvAcksIn.Get(msg.Sender); exists {
 			for id := range recvAcksIn {
 				if id > maxID {
 					maxID = id
 				}
 			}
 		}
-		return NoMessages().Add(&ackHandlerReset{
-			BasicMessage: NewBasicMessage(msg.sender),
-			response:     true,
-			latestID:     maxID,
-		})
+		return []MessageOut{NewMessageOut(msg.Sender, &ackHandlerReset{
+			response: true,
+			latestID: maxID,
+		})}
 	}
 	if ini, exists := a.initialized.Get(from); exists && ini {
 		return nil
 	}
-	a.counters.Set(msg.sender, msg.latestID+1)
-	a.initialized.Set(msg.sender, true)
-	return a.makeBatches(NoMessages())
+	a.counters.Set(msg.Sender, msg.Payload.latestID+1)
+	a.initialized.Set(msg.Sender, true)
+	return a.makeBatches(nil)
 }
 
-func (a *ackHandler) handleBatchMsg(msgBatch *ackHandlerBatch) OutMessages {
+func (a *ackHandler) handleBatchMsg(msgBatch MessageIn[*ackHandlerBatch]) []MessageOut {
 	//
 	// Process the received acknowledgements.
 	// Drop all the outgoing batches, that are now acknowledged.
-	for _, ackedBatchID := range msgBatch.acks {
-		if unacked, exists := a.sentUnacked.Get(msgBatch.sender); exists {
+	for _, ackedBatchID := range msgBatch.Payload.acks {
+		if unacked, exists := a.sentUnacked.Get(msgBatch.Sender); exists {
 			unacked.Delete(ackedBatchID)
 		}
 	}
 	//
 	// Was that ack-only message?
-	if msgBatch.id == nil {
+	if msgBatch.Payload.id == nil {
 		// That was ack-only batch, nothing more to do with it.
-		return NoMessages()
+		return nil
 	}
 
-	peerRecvAcksIn, _ := a.recvAcksIn.GetOrCreate(msgBatch.sender, func() map[int]*int { return make(map[int]*int) })
+	peerRecvAcksIn, _ := a.recvAcksIn.GetOrCreate(msgBatch.Sender, func() map[int]*int { return make(map[int]*int) })
 
-	batchAckedIn, exists := peerRecvAcksIn[*msgBatch.id]
+	batchAckedIn, exists := peerRecvAcksIn[*msgBatch.Payload.id]
 	if exists {
 		// Was received already before.
 		if batchAckedIn == nil {
 			// Not acknowledged yet, just send an ack-only message for now.
 			// The sender has already re-sent the message, so it waits for the ack.
-			return NoMessages().Add(&ackHandlerBatch{
-				recipient: msgBatch.sender,
-				id:        nil,                 // That's ack-only.
-				msgs:      []Message{},         // No payload.
-				acks:      []int{*msgBatch.id}, // Ack single message.
-				sent:      nil,                 // We will not track this message, it has no payload.
-			})
+			return []MessageOut{NewMessageOut(msgBatch.Sender, &ackHandlerBatch{
+				id:   nil,                         // That's ack-only.
+				msgs: nil,                         // No payload.
+				acks: []int{*msgBatch.Payload.id}, // Ack single message.
+				sent: nil,                         // We will not track this message, it has no payload.
+			})}
 		}
 		//
 		// We have acked it already. If we have the batch with an ack, we
 		// resent it. Otherwise the ack was already acked and this message
 		// is outdated and can be ignored.
-		peerSentUnacked, exists := a.sentUnacked.Get(msgBatch.sender)
+		peerSentUnacked, exists := a.sentUnacked.Get(msgBatch.Sender)
 		if !exists {
-			return NoMessages()
+			return nil
 		}
 		ackedBatch, exists := peerSentUnacked.Get(*batchAckedIn)
 		if !exists {
-			return NoMessages()
+			return nil
 		}
 		now := time.Now()
 		ackedBatch.sent = &now
-		return NoMessages().Add(ackedBatch)
+		return []MessageOut{NewMessageOut(msgBatch.Sender, ackedBatch)}
 	}
 	//
-	// That's new batch, we have to process it.
-	nestedMsgs := NoMessages()
-	for i := range msgBatch.msgs {
-		nestedMsgs.AddAll(a.nested.Message(msgBatch.msgs[i]))
+	// That's a new batch, we have to process it.
+	var nestedMsgs []MessageOut
+	for _, p := range msgBatch.Payload.msgs {
+		nestedMsgs = slices.Concat(nestedMsgs, a.nested.Message(NewMessageIn(msgBatch.Sender, p)))
 	}
 
-	sender, _ := a.recvAcksIn.GetOrCreate(msgBatch.sender, func() map[int]*int { return make(map[int]*int) })
-	sender[*msgBatch.id] = nil
+	sender, _ := a.recvAcksIn.GetOrCreate(msgBatch.Sender, func() map[int]*int { return make(map[int]*int) })
+	sender[*msgBatch.Payload.id] = nil
 
 	return a.makeBatches(nestedMsgs)
 }
 
-func (a *ackHandler) makeBatches(msgs OutMessages) OutMessages {
-	if msgs == nil {
-		return nil
-	}
-	groupedMsgs := map[NodeID][]Message{}
-	msgs.MustIterate(func(msg Message) {
-		msgRecipient := msg.Recipient()
-		if recipientMsgs, ok := groupedMsgs[msgRecipient]; ok {
-			groupedMsgs[msgRecipient] = append(recipientMsgs, msg)
-		} else {
-			groupedMsgs[msgRecipient] = []Message{msg}
-		}
-	})
+func (a *ackHandler) makeBatches(msgs []MessageOut) []MessageOut {
+	groupedMsgs := lo.MapEntries(
+		lo.GroupBy(msgs, func(msg MessageOut) NodeID { return msg.Recipient }),
+		func(nodeID NodeID, msgsForNode []MessageOut) (NodeID, []any) {
+			return nodeID, lo.Map(msgsForNode, func(msg MessageOut, _ int) any {
+				return msg.Payload
+			})
+		},
+	)
 
-	a.initPending.ForEach(func(nodeID NodeID, pending []Message) bool {
+	a.initPending.ForEach(func(nodeID NodeID, pending []any) bool {
 		if gr, ok := groupedMsgs[nodeID]; ok {
 			groupedMsgs[nodeID] = append(gr, pending...)
 		} else {
@@ -252,12 +263,15 @@ func (a *ackHandler) makeBatches(msgs OutMessages) OutMessages {
 	})
 	a.initPending.Clear()
 
-	batches := NoMessages()
+	var batches []MessageOut
 	for nodeID, batchMsgs := range groupedMsgs {
 		if initialized, exists := a.initialized.Get(nodeID); !exists || !initialized {
-			pending, _ := a.initPending.GetOrCreate(nodeID, func() []Message { return make([]Message, 0, 1) })
+			pending, _ := a.initPending.GetOrCreate(nodeID, func() []any { return make([]any, 0, 1) })
 			a.initPending.Set(nodeID, append(pending, batchMsgs...))
-			batches.Add(&ackHandlerReset{BasicMessage: NewBasicMessage(nodeID), response: false, latestID: 0})
+			batches = append(batches, NewMessageOut(nodeID, &ackHandlerReset{
+				response: false,
+				latestID: 0,
+			}))
 			continue
 		}
 		//
@@ -279,96 +293,74 @@ func (a *ackHandler) makeBatches(msgs OutMessages) OutMessages {
 		//
 		// Produce the batch and register it as unacked.
 		batch := &ackHandlerBatch{
-			sender:    a.me,
-			recipient: nodeID,
-			id:        &batchID,
-			acks:      acks,
-			msgs:      batchMsgs,
-			sent:      nil, // Will be set after first resend, to avoid resend to early.
+			id:   &batchID,
+			acks: acks,
+			msgs: batchMsgs,
+			sent: nil, // Will be set after first resend, to avoid resend too early.
 		}
 		unackedMap, _ := a.sentUnacked.GetOrCreate(nodeID, func() *shrinkingmap.ShrinkingMap[int, *ackHandlerBatch] {
 			return shrinkingmap.New[int, *ackHandlerBatch]()
 		})
 		unackedMap.Set(*batch.id, batch)
-		batches.Add(batch)
+		batches = append(batches, NewMessageOut(nodeID, batch))
 	}
 	return batches
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// ackHandlerReset
+// ackHandlerNewReset
 
 type ackHandlerReset struct {
-	BasicMessage
 	response bool `bcs:"export"`
 	latestID int  `bcs:"export"`
 }
 
-var _ Message = new(ackHandlerReset)
-
-func (msg *ackHandlerReset) MsgType() MessageType {
-	return msgTypeAckHandlerReset
-}
-
 ////////////////////////////////////////////////////////////////////////////////
-// ackHandlerBatch
+// ackHandlerNewBatch
 
 // Message conveying the message batches and acknowledgements.
 type ackHandlerBatch struct {
-	sender    NodeID
-	recipient NodeID
 	id        *int       // That's ACK only, if nil.
-	msgs      []Message  // Messages in the batch.
+	msgs      []any      // Messages in the batch.
 	acks      []int      // Acknowledged batches.
 	sent      *time.Time // Transient, only used for outgoing messages, not sent to the outside.
 	nestedGPA GPA        // Transient, for un-marshaling only.
 }
 
-var _ Message = new(ackHandlerBatch)
-
-func (msg *ackHandlerBatch) MsgType() MessageType {
-	return msgTypeAckHandlerBatch
-}
-
-func (msg *ackHandlerBatch) Recipient() NodeID {
-	return msg.recipient
-}
-
-func (msg *ackHandlerBatch) SetSender(sender NodeID) {
-	msg.sender = sender
-	for _, msg := range msg.msgs {
-		msg.SetSender(sender)
-	}
-}
-
 func (msg *ackHandlerBatch) MarshalBCS(e *bcs.Encoder) error {
 	e.EncodeOptional(msg.id)
 
-	msgsBytes, err := MarshalMessages(msg.msgs)
+	n, err := safecast.Convert[uint16](len(msg.msgs))
 	if err != nil {
-		return fmt.Errorf("msgs: %w", err)
+		return fmt.Errorf("too many nested messages to marshal: %w", err)
+	}
+	e.Encode(n)
+	for _, p := range msg.msgs {
+		msgBytes, err := msg.nestedGPA.MarshalPayload(p)
+		if err != nil {
+			return fmt.Errorf("marshaling nested payload: %w", err)
+		}
+		e.Encode(msgBytes)
 	}
 
-	e.Encode(msgsBytes)
 	e.Encode(msg.acks)
-
 	return nil
 }
 
 func (msg *ackHandlerBatch) UnmarshalBCS(d *bcs.Decoder) error {
 	msg.id = nil
-
 	d.DecodeOptional(&msg.id)
 
-	msgsBytes := bcs.Decode[[][]byte](d)
-	msg.msgs = make([]Message, len(msgsBytes))
-
-	for i := range msgsBytes {
-		var err error
-		msg.msgs[i], err = msg.nestedGPA.UnmarshalMessage(msgsBytes[i])
+	var n uint16
+	d.Decode(&n)
+	msg.msgs = make([]any, n)
+	for i := uint16(0); i < n; i++ {
+		msgBytes := bcs.Decode[[]byte](d)
+		payload, err := msg.nestedGPA.UnmarshalPayload(msgBytes)
 		if err != nil {
-			return err
+			return fmt.Errorf("msgs[%d]: %w", i, err)
 		}
+		msg.msgs[i] = payload
 	}
 
 	msg.acks = bcs.Decode[[]int](d)
@@ -377,7 +369,7 @@ func (msg *ackHandlerBatch) UnmarshalBCS(d *bcs.Decoder) error {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// ackHandlerTick
+// ackHandlerNewTick
 
 // Event representing a timer tick.
 type ackHandlerTick struct {

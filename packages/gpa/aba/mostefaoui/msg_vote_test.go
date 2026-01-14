@@ -5,12 +5,10 @@ import (
 	"testing"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/v2/packages/gpa"
 )
 
 func TestMsgVoteCodec(t *testing.T) {
-	msg := &msgVote{
-		gpa.BasicMessage{},
+	msg := &MsgVote{
 		math.MaxUint16,
 		AUX,
 		true,

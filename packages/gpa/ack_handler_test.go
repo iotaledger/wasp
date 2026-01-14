@@ -4,6 +4,7 @@
 package gpa
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -58,7 +59,7 @@ func TestAckHandlerBatchCodec(t *testing.T) {
 	testMsgs := []ackHandlerBatch{
 		{
 			id: lo.ToPtr(42),
-			msgs: []Message{
+			msgs: []any{
 				&TestMessage{ID: 50},
 				&TestMessage{ID: 100},
 			},
@@ -67,7 +68,7 @@ func TestAckHandlerBatchCodec(t *testing.T) {
 		},
 		{
 			id:        lo.ToPtr(42),
-			msgs:      []Message{},
+			msgs:      []any{},
 			acks:      []int{1, 2, 3},
 			nestedGPA: &testGPA{},
 		},
@@ -105,10 +106,19 @@ type testGPA struct {
 
 var _ GPA = &testGPA{}
 
-func (g *testGPA) UnmarshalMessage(data []byte) (Message, error) {
-	return UnmarshalMessage(data, Mapper{
-		msgTypeTest: func() Message { return &TestMessage{} },
-	}, nil)
+func (g *testGPA) MarshalPayload(msg any) ([]byte, error) {
+	switch msg.(type) {
+	case *TestMessage:
+		return MarshalPayload(msgTypeTest, msg)
+	default:
+		panic(fmt.Sprintf("testGPA: unknown payload type %T", msg))
+	}
+}
+
+func (g *testGPA) UnmarshalPayload(data []byte) (any, error) {
+	return UnmarshalPayload(data, PayloadAllocator{
+		msgTypeTest: func() any { return &TestMessage{} },
+	})
 }
 
 func TestAckHandlerResetCodec(t *testing.T) {

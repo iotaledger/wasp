@@ -6,12 +6,12 @@ package distsign
 import (
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/sign/dss"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/tcrypto"
 )
 
@@ -32,12 +32,11 @@ func TestMsgPartialSigSerialization(t *testing.T) {
 	partialSig, err := dss.PartialSig()
 	require.NoError(t, err)
 
-	msg := &msgPartialSig{
-		gpa.BasicMessage{},
-		s,
-		partialSig,
-	}
+	msg, err := NewMsgPartialSig(partialSig)
+	require.NoError(t, err)
 
-	msgEnv := bcs.MustMarshal(msg)
-	bcs.MustUnmarshalInto(msgEnv, &msgPartialSig{suite: s})
+	msgEnc := bcs.MustMarshal(&msg)
+	msgDec := bcs.MustUnmarshal[MsgPartialSig](msgEnc)
+	require.Equal(t, msg, msgDec)
+	require.Equal(t, partialSig, lo.Must(msgDec.PartialSig(s)))
 }

@@ -4,9 +4,11 @@
 package acss_test
 
 import (
+	"fmt"
 	"math/rand"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
@@ -75,14 +77,15 @@ func genericTest(
 		return e
 	}
 	faulty := nodeIDs[:silentNodes]
-	nodes := map[gpa.NodeID]gpa.GPA{}
+	nodes := map[gpa.NodeID]*acss.ACSS{}
 	for _, nid := range nodeIDs {
 		nodes[nid] = acss.New(suite, nodeIDs, nodePKs, f, nid, nodeSKs[nid], dealer, dealCB, log.NewChildLogger(nid.ShortString()))
-		if isNodeInList(nid, faulty) {
-			nodes[nid] = &silentNode{nested: nodes[nid]}
-		}
 	}
-	gpa.NewTestContext(nodes).WithInputs(map[gpa.NodeID]gpa.Input{dealer: secretToShare}).RunAll()
+	tc := gpa.NewTestContext(nodes).WithInputs(map[gpa.NodeID]gpa.Input{dealer: secretToShare})
+	tc.WithoutSerialization()
+	SetSilentNodes(tc, faulty)
+	tc.RunAll()
+
 	outPriShares := []*share.PriShare{}
 	for i, n := range nodes {
 		o := n.Output()
@@ -109,30 +112,31 @@ func isNodeInList(n gpa.NodeID, list []gpa.NodeID) bool {
 
 // silent node don't respond to any messages.
 // If it is the dealer, if performs the initial share.
-type silentNode struct {
-	nested gpa.GPA
-}
+func SetSilentNodes[Obj any](tc *gpa.TestContext[Obj], silentNodes []gpa.NodeID) {
+	nodes := tc.Nodes()
+	for _, nid := range silentNodes {
+		if _, exists := nodes[nid]; !exists {
+			panic(fmt.Errorf("node %s does not exist in the test context - cannot set as silent node", nid.ShortString()))
+		}
+	}
 
-var _ gpa.GPA = &silentNode{}
+	functors := tc.Functors()
 
-func (s *silentNode) Input(input gpa.Input) gpa.OutMessages {
-	// Return the messages, if that's a dealer, otherwise the execution is not meaningful.
-	return s.nested.Input(input)
-}
+	origApplyMessage := functors.ApplyMessage
+	functors.ApplyMessage = func(nid gpa.NodeID, obj Obj, msg gpa.MessageIn[any]) []gpa.MessageOut {
+		if lo.Contains(silentNodes, nid) {
+			return nil
+		}
+		return origApplyMessage(nid, obj, msg)
+	}
 
-func (s *silentNode) Message(msg gpa.Message) gpa.OutMessages {
-	// Just drop all the received messages.
-	return nil
-}
+	origStatusString := functors.StatusString
+	functors.StatusString = func(nid gpa.NodeID, obj Obj) string {
+		if lo.Contains(silentNodes, nid) {
+			return fmt.Sprintf("StatusString{silentNode=%v}", nid)
+		}
+		return origStatusString(nid, obj)
+	}
 
-func (s *silentNode) Output() gpa.Output {
-	return s.nested.Output()
-}
-
-func (s *silentNode) StatusString() string {
-	return "{silentNode}"
-}
-
-func (s *silentNode) UnmarshalMessage(data []byte) (gpa.Message, error) {
-	return s.nested.UnmarshalMessage(data)
+	tc.SetFunctors(functors)
 }

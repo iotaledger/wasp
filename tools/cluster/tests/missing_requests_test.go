@@ -10,6 +10,10 @@ import (
 )
 
 func TestMissingRequests(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode")
+	}
+
 	clu := newCluster(t, waspClusterOpts{nNodes: 4})
 	cmt := []int{0, 1, 2, 3}
 	threshold := uint16(4)

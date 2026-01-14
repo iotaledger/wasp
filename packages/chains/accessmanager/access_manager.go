@@ -192,31 +192,28 @@ func (ami *AccessMgr) handleDistTimeTick(timestamp time.Time) {
 }
 
 func (ami *AccessMgr) handleNetMessage(recv *peering.PeerMessageIn) {
-	msg, err := ami.dist.UnmarshalMessage(recv.MsgData)
+	msg, err := ami.dist.UnmarshalPayload(recv.MsgData)
 	if err != nil {
 		ami.log.LogWarnf("cannot parse message: %v", err)
 		return
 	}
-	msg.SetSender(ami.pubKeyAsNodeID(recv.SenderPubKey))
-	outMsgs := ami.dist.Message(msg) // Output is handled via callbacks in this case.
+	// Output is handled via callbacks in this case.
+	outMsgs := ami.dist.Message(gpa.NewMessageIn(ami.pubKeyAsNodeID(recv.SenderPubKey), msg))
 	ami.sendMessages(outMsgs)
 }
 
-func (ami *AccessMgr) sendMessages(outMsgs gpa.OutMessages) {
+func (ami *AccessMgr) sendMessages(outMsgs []gpa.MessageOut) {
 	if len(ami.dismissPeerBuf) != 0 {
 		for _, dismissPeerPub := range ami.dismissPeerBuf {
 			ami.dist.DismissPeer(ami.pubKeyAsNodeID(dismissPeerPub))
 		}
 		ami.dismissPeerBuf = []*cryptolib.PublicKey{}
 	}
-	if outMsgs == nil {
-		return
-	}
-	outMsgs.MustIterate(func(msg gpa.Message) {
-		msgBytes := lo.Must(gpa.MarshalMessage(msg))
+	for _, msg := range outMsgs {
+		msgBytes := lo.Must(ami.dist.MarshalPayload(msg.Payload))
 		pm := peering.NewPeerMessageData(ami.netPeeringID, peering.ReceiverAccessMgr, msgTypeAccessMgr, msgBytes)
-		ami.net.SendMsgByPubKey(ami.netPeerPubs[msg.Recipient()], pm)
-	})
+		ami.net.SendMsgByPubKey(ami.netPeerPubs[msg.Recipient], pm)
+	}
 }
 
 func (ami *AccessMgr) pubKeyAsNodeID(pubKey *cryptolib.PublicKey) gpa.NodeID {

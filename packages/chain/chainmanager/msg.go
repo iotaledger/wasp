@@ -4,25 +4,37 @@
 package chainmanager
 
 import (
+	"fmt"
+
+	"github.com/iotaledger/wasp/v2/packages/chain/committeelog"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
-	"github.com/iotaledger/wasp/v2/packages/state"
 )
 
 const (
-	msgTypeCommitteeLog gpa.MessageType = iota
+	msgTypeMsgNextLogIndex gpa.MessageType = iota
 	msgTypeBlockProduced
 )
 
-func (cmi *ChainMgr) UnmarshalMessage(data []byte) (gpa.Message, error) {
-	return gpa.UnmarshalMessage(data, gpa.Mapper{
-		msgTypeCommitteeLog: func() gpa.Message { return new(msgCommitteeLog) },
-		msgTypeBlockProduced: func() gpa.Message {
-			msgBlock := new(msgBlockProduced)
+func (cmi *ChainMgr) MarshalPayload(payload any) ([]byte, error) {
+	switch p := payload.(type) {
+	case gpa.PayloadWithKey[cryptolib.Address, any]:
+		switch p.Payload.(type) {
+		case committeelog.MsgNextLogIndex:
+			return gpa.MarshalPayload(msgTypeMsgNextLogIndex, p)
+		default:
+			panic(fmt.Errorf("chainMgr: unexpected payload type: %T", p.Payload))
+		}
+	case msgBlockProduced:
+		return gpa.MarshalPayload(msgTypeBlockProduced, p)
+	default:
+		panic(fmt.Errorf("chainMgr: unknown payload type %T", payload))
+	}
+}
 
-			// TODO: Validate if we ever have different block implementations.
-			msgBlock.block = state.NewBlock()
-
-			return msgBlock
-		},
+func (cmi *ChainMgr) UnmarshalPayload(data []byte) (any, error) {
+	return gpa.UnmarshalPayload(data, gpa.PayloadAllocator{
+		msgTypeMsgNextLogIndex: func() any { return gpa.PayloadWithKey[cryptolib.Address, committeelog.MsgNextLogIndex]{} },
+		msgTypeBlockProduced:   func() any { return msgBlockProduced{} },
 	})
 }

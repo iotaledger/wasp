@@ -33,6 +33,7 @@ package nonce
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 
 	"github.com/samber/lo"
@@ -44,6 +45,7 @@ import (
 
 	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/gpa/acss"
+	rbc "github.com/iotaledger/wasp/v2/packages/gpa/rbc/bracha"
 )
 
 type Output struct {
@@ -54,30 +56,23 @@ type Output struct {
 	Threshold int
 }
 
-type nonceDistributedKeyGenerationImpl struct {
+type NonceDistributedKeyGeneration struct {
 	suite     suites.Suite
 	n         int
 	f         int
 	me        gpa.NodeID
 	myIdx     int
 	nodeIDs   []gpa.NodeID
-	acss      []gpa.GPA
+	acss      []*acss.ACSS
 	st        map[int]*share.PriShare // > Let Si = {}; Ti = {}
 	stCommits map[int][]kyber.Point   // Commits for Si.
 	agreedT   []int                   // Output from the external consensus.
 	output    gpa.Output              // Output of the ADKG, can be intermediate (PriShare=nil).
-	wrapper   *gpa.MsgWrapper
 	log       log.Logger
 }
 
-var _ gpa.GPA = &nonceDistributedKeyGenerationImpl{}
-
 const (
-	msgWrapperACSS byte = iota // subsystem code.
-)
-
-const (
-	msgTypeWrapped gpa.MessageType = iota
+	SubsystemID string = "nonce"
 )
 
 func New(
@@ -88,7 +83,7 @@ func New(
 	me gpa.NodeID,
 	mySK kyber.Scalar,
 	log log.Logger,
-) gpa.GPA {
+) *NonceDistributedKeyGeneration {
 	myIdx := -1
 	for i := range nodeIDs {
 		if nodeIDs[i] == me {
@@ -98,7 +93,7 @@ func New(
 	if myIdx == -1 {
 		panic("i'm not in the peer list")
 	}
-	n := &nonceDistributedKeyGenerationImpl{
+	n := &NonceDistributedKeyGeneration{
 		suite:     suite,
 		n:         len(nodeIDs),
 		f:         f,
@@ -110,49 +105,49 @@ func New(
 		stCommits: map[int][]kyber.Point{},   // Commits for Si/Ti.
 		agreedT:   nil,                       // Will be set, when output from the consensus will be received.
 		output:    nil,                       // Can be intermediate (PriShare == nil) or final (PriShare != nil).
-		wrapper:   nil,
 		log:       log,
 	}
-	n.wrapper = gpa.NewMsgWrapper(msgTypeWrapped, n.subsystemFunc)
-	n.acss = make([]gpa.GPA, len(nodeIDs))
+	n.acss = make([]*acss.ACSS, len(nodeIDs))
 	for i := range n.acss {
 		n.acss[i] = acss.New(suite, nodeIDs, peerPKs, f, me, mySK, nodeIDs[i], nil, log)
 	}
-	return gpa.NewOwnHandler(me, n)
+	return n
 }
 
-func (n *nonceDistributedKeyGenerationImpl) Input(input gpa.Input) gpa.OutMessages {
+func (n *NonceDistributedKeyGeneration) Input(input gpa.Input) []gpa.MessageOut {
 	switch input := input.(type) {
 	case *inputStart:
 		secret := n.suite.Scalar().Pick(n.suite.RandomStream())
-		msgs := n.wrapper.WrapMessages(msgWrapperACSS, n.myIdx, n.acss[n.myIdx].Input(secret))
-		return n.tryHandleACSSTermination(n.myIdx, msgs)
+		msgs := gpa.AddKey(SubsystemID, n.myIdx, n.acss[n.myIdx].Input(secret))
+		return slices.Concat(msgs, n.tryHandleACSSTermination(n.myIdx))
 	case *inputAgreementResult:
 		return n.handleAgreementResult(input)
 	}
 	panic(fmt.Errorf("unexpected input %T: %+v", input, input))
 }
 
-func (n *nonceDistributedKeyGenerationImpl) Message(msg gpa.Message) gpa.OutMessages {
-	switch msgT := msg.(type) {
-	case *gpa.WrappingMsg:
-		switch msgT.Subsystem() {
-		case msgWrapperACSS:
-			return n.handleACSSMessage(msgT)
-		default:
-			n.log.LogWarnf("unexpected message subsystem: %+v", msg)
-			return nil
-		}
-	default:
-		panic(fmt.Errorf("unexpected message: %+v", msg))
-	}
-}
+// func (n *NonceDistributedKeyGeneration) wrapACSSMessagesOut(acssIndex int, msgs acss.[]gpa.PayloadOut) []gpa.PayloadOut {
+// 	wrappedMsgs := &[]gpa.PayloadOutV{}
+// 	wrappedMsgs.Vote = lo.Map(msgs.Vote, func(m gpa.PayloadOut[acss.MsgVote], _ int) gpa.PayloadOut[MsgACSSVote] {
+// 		return gpa.NewPayloadOut[MsgACSSVote](m.Recipient, MsgACSSVote{Index: acssIndex, MsgVote: m.Payload})
+// 	})
+// 	wrappedMsgs.RBCCEPayload = lo.Map(msgs.RBCCEPayload, func(m gpa.PayloadOut[acss.MsgRBCCEPayload], _ int) gpa.PayloadOut[MsgACSSRBCCEPayload] {
+// 		return gpa.NewPayloadOut[MsgACSSRBCCEPayload](m.Recipient, MsgACSSRBCCEPayload{Index: acssIndex, MsgRBCCEPayload: m.Payload})
+// 	})
+// 	wrappedMsgs.ImplicateRecover = lo.Map(msgs.ImplicateRecover, func(m gpa.PayloadOut[acss.MsgImplicateRecover], _ int) gpa.PayloadOut[MsgACSSImplicateRecover] {
+// 		return gpa.NewPayloadOut[MsgACSSImplicateRecover](m.Recipient, MsgACSSImplicateRecover{Index: acssIndex, MsgImplicateRecover: m.Payload})
+// 	})
+// 	wrappedMsgs.Bracha = lo.Map(msgs.Bracha, func(m gpa.PayloadOut[rbc.MsgBracha], _ int) gpa.PayloadOut[MsgACSSBracha] {
+// 		return gpa.NewPayloadOut[MsgACSSBracha](m.Recipient, MsgACSSBracha{Index: acssIndex, MsgBracha: m.Payload})
+// 	})
+// 	return wrappedMsgs
+// }
 
-func (n *nonceDistributedKeyGenerationImpl) Output() gpa.Output {
+func (n *NonceDistributedKeyGeneration) Output() gpa.Output {
 	return n.output
 }
 
-func (n *nonceDistributedKeyGenerationImpl) StatusString() string {
+func (n *NonceDistributedKeyGeneration) StatusString() string {
 	acssStats := ""
 	for i := range n.acss {
 		acssStats += "\n" + n.acss[i].StatusString()
@@ -160,25 +155,43 @@ func (n *nonceDistributedKeyGenerationImpl) StatusString() string {
 	return fmt.Sprintf("{ADKG:Nonce, acss: %s}", acssStats)
 }
 
-func (n *nonceDistributedKeyGenerationImpl) handleACSSMessage(msg *gpa.WrappingMsg) gpa.OutMessages {
-	msgIndex := msg.Index()
-	msgs := n.wrapper.WrapMessages(msgWrapperACSS, msgIndex, n.acss[msgIndex].Message(msg.Wrapped()))
-	return n.tryHandleACSSTermination(msgIndex, msgs)
+func (n *NonceDistributedKeyGeneration) HandleACSSMsgBracha(acssIndex int, m gpa.MessageIn[rbc.MsgBracha]) []gpa.MessageOut {
+	outMsgs := n.acss[acssIndex].HandleRBCMsgBracha(m)
+	return slices.Concat(
+		gpa.AddKey(SubsystemID, acssIndex, outMsgs),
+		n.tryHandleACSSTermination(acssIndex),
+	)
 }
 
-func (n *nonceDistributedKeyGenerationImpl) tryHandleACSSTermination(acssIndex int, msgs gpa.OutMessages) gpa.OutMessages {
+func (n *NonceDistributedKeyGeneration) HandleACSSMsgVote(acssIndex int, msg gpa.MessageIn[acss.MsgVote]) []gpa.MessageOut {
+	outMsgs := n.acss[acssIndex].HandleMsgVote(msg)
+	return slices.Concat(
+		gpa.AddKey(SubsystemID, acssIndex, outMsgs),
+		n.tryHandleACSSTermination(acssIndex),
+	)
+}
+
+func (n *NonceDistributedKeyGeneration) HandleACSSMsgImplicateRecover(acssIndex int, msg gpa.MessageIn[acss.MsgImplicateRecover]) []gpa.MessageOut {
+	outMsgs := n.acss[acssIndex].HandleImplicateRecoverReceived(msg)
+	return slices.Concat(
+		gpa.AddKey(SubsystemID, acssIndex, outMsgs),
+		n.tryHandleACSSTermination(acssIndex),
+	)
+}
+
+func (n *NonceDistributedKeyGeneration) tryHandleACSSTermination(acssIndex int) []gpa.MessageOut {
 	out := n.acss[acssIndex].Output()
 	if out != nil && n.st[acssIndex] == nil {
 		acssOutput, ok := out.(*acss.Output)
 		if !ok {
 			panic(fmt.Errorf("acss output wrong type: %+v", out))
 		}
-		msgs.AddAll(n.handleACSSOutput(acssIndex, acssOutput.PriShare, acssOutput.Commits))
+		return n.handleACSSOutput(acssIndex, acssOutput.PriShare, acssOutput.Commits)
 	}
-	return msgs
+	return nil
 }
 
-func (n *nonceDistributedKeyGenerationImpl) handleACSSOutput(index int, priShare *share.PriShare, commits []kyber.Point) gpa.OutMessages {
+func (n *NonceDistributedKeyGeneration) handleACSSOutput(index int, priShare *share.PriShare, commits []kyber.Point) []gpa.MessageOut {
 	j := index
 	if _, ok := n.st[j]; ok {
 		// Already set. Ignore the duplicate messages.
@@ -200,7 +213,7 @@ func (n *nonceDistributedKeyGenerationImpl) handleACSSOutput(index int, priShare
 	return n.tryMakeFinalOutput()
 }
 
-func (n *nonceDistributedKeyGenerationImpl) handleAgreementResult(input *inputAgreementResult) gpa.OutMessages {
+func (n *NonceDistributedKeyGeneration) handleAgreementResult(input *inputAgreementResult) []gpa.MessageOut {
 	if n.agreedT != nil {
 		return nil
 	}
@@ -240,7 +253,7 @@ func (n *nonceDistributedKeyGenerationImpl) handleAgreementResult(input *inputAg
 	return n.tryMakeFinalOutput()
 }
 
-func (n *nonceDistributedKeyGenerationImpl) tryMakeFinalOutput() gpa.OutMessages {
+func (n *NonceDistributedKeyGeneration) tryMakeFinalOutput() []gpa.MessageOut {
 	if n.agreedT == nil {
 		return nil
 	}

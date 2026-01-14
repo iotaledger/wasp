@@ -9,21 +9,13 @@ import (
 )
 
 type msgShareRequest struct {
-	gpa.BasicMessage
 	ttl     byte        `bcs:"export"`
 	request isc.Request `bcs:"export"`
 }
 
-var _ gpa.Message = new(msgShareRequest)
-
-func newMsgShareRequest(request isc.Request, ttl byte, recipient gpa.NodeID) gpa.Message {
-	return &msgShareRequest{
-		BasicMessage: gpa.NewBasicMessage(recipient),
-		request:      request,
-		ttl:          ttl,
-	}
-}
-
-func (msg *msgShareRequest) MsgType() gpa.MessageType {
-	return msgTypeShareRequest
+func newMsgShareRequest(request isc.Request, ttl byte, recipient gpa.NodeID) gpa.MessageOut {
+	return gpa.NewMessageOut(recipient, msgShareRequest{
+		request: request,
+		ttl:     ttl,
+	})
 }

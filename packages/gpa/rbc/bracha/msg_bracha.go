@@ -4,28 +4,36 @@
 package bracha
 
 import (
-	"github.com/iotaledger/wasp/v2/packages/gpa"
+	"fmt"
 )
 
+// The type for message kinds (only one of these in this case).
 type msgBrachaType byte
 
 const (
-	// The type for message kinds (only one of these in this case).
-	msgType gpa.MessageType = iota
-
 	msgBrachaTypePropose msgBrachaType = iota
 	msgBrachaTypeEcho
 	msgBrachaTypeReady
 )
 
-type msgBracha struct {
-	gpa.BasicMessage
+func (msgBrachaType msgBrachaType) String() string {
+	switch msgBrachaType {
+	case msgBrachaTypePropose:
+		return "Propose"
+	case msgBrachaTypeEcho:
+		return "Echo"
+	case msgBrachaTypeReady:
+		return "Ready"
+	default:
+		return "UnknownBrachaMsgType"
+	}
+}
+
+type MsgBracha struct {
 	brachaType msgBrachaType `bcs:"export"` // Type
 	value      []byte        `bcs:"export"` // Value
 }
 
-var _ gpa.Message = new(msgBracha)
-
-func (msg *msgBracha) MsgType() gpa.MessageType {
-	return msgType
+func (msg *MsgBracha) String() string {
+	return fmt.Sprintf("Bracha.%s(%q)", msg.brachaType.String(), msg.value)
 }

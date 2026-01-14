@@ -12,7 +12,6 @@ import (
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
-	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/isc/isctest"
 )
@@ -20,8 +19,7 @@ import (
 func TestMsgShareRequestSerialization(t *testing.T) {
 	{
 		req := isc.NewOffLedgerRequest(isctest.RandomChainID(), isc.NewMessage(3, 14, isc.NewCallArguments([]byte{1, 2, 3})), 1337, 100).Sign(cryptolib.NewKeyPair())
-		msg := &msgShareRequest{
-			gpa.BasicMessage{},
+		msg := msgShareRequest{
 			byte(rand.Intn(math.MaxUint8)),
 			req,
 		}
@@ -30,8 +28,7 @@ func TestMsgShareRequestSerialization(t *testing.T) {
 	}
 	{
 		req := isc.NewOffLedgerRequest(isctest.TestChainID, isc.NewMessage(3, 14, isc.NewCallArguments([]byte{1, 2, 3})), 1337, 100).Sign(cryptolib.TestKeyPair)
-		msg := &msgShareRequest{
-			gpa.BasicMessage{},
+		msg := msgShareRequest{
 			123,
 			req,
 		}
@@ -43,8 +40,7 @@ func TestMsgShareRequestSerialization(t *testing.T) {
 		req, err := isc.OnLedgerFromMoveRequest(isctest.RandomRequestWithRef(), sender)
 		require.NoError(t, err)
 
-		msg := &msgShareRequest{
-			gpa.BasicMessage{},
+		msg := msgShareRequest{
 			byte(rand.Intn(math.MaxUint8)),
 			req,
 		}
@@ -56,8 +52,7 @@ func TestMsgShareRequestSerialization(t *testing.T) {
 		req, err := isc.OnLedgerFromMoveRequest(isctest.TestRequestWithRef, sender)
 		require.NoError(t, err)
 
-		msg := &msgShareRequest{
-			gpa.BasicMessage{},
+		msg := msgShareRequest{
 			123,
 			req,
 		}

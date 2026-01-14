@@ -11,7 +11,6 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	bcs "github.com/iotaledger/bcs-go"
-
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/util"
 )
@@ -48,95 +47,89 @@ func (niT NodeID) ShortString() string {
 	return hexutil.Encode(niT[:4]) // 4 bytes - 8 hexadecimal digits
 }
 
-type Message interface {
-	Recipient() NodeID // The sender should indicate the recipient.
-	SetSender(NodeID)  // The transport later will set a validated sender for a message.
-	MsgType() MessageType
+func NewMessageIn[Payload any](sender NodeID, payload Payload) MessageIn[Payload] {
+	return MessageIn[Payload]{
+		Sender:  sender,
+		Payload: payload,
+	}
 }
 
-type BasicMessage struct {
-	sender    NodeID
-	recipient NodeID
+type TypedMessageOut[Payload any] struct {
+	Recipient NodeID
+	Payload   Payload
 }
 
-func NewBasicMessage(recipient NodeID) BasicMessage {
-	return BasicMessage{recipient: recipient}
+func NewMessageOut(recipient NodeID, payload any) MessageOut {
+	return MessageOut{
+		Recipient: recipient,
+		Payload:   payload,
+	}
 }
 
-func (msg *BasicMessage) Recipient() NodeID {
-	return msg.recipient
+func AsTypedMessageIn[Payload any](msg MessageIn[any]) MessageIn[Payload] {
+	return MessageIn[Payload]{
+		Sender:  msg.Sender,
+		Payload: msg.Payload.(Payload),
+	}
 }
 
-func (msg *BasicMessage) Sender() NodeID {
-	return msg.sender
+type MessageIn[Payload any] struct {
+	Sender  NodeID
+	Payload Payload
 }
 
-func (msg *BasicMessage) SetSender(sender NodeID) {
-	msg.sender = sender
+type MessageOut = TypedMessageOut[any]
+
+// TODO: Refactor or remove this before merge
+type PayloadWithKey[Key, Payload any] struct {
+	SubsystemID string
+	Key         Key
+	Payload     Payload
 }
 
-type Input interface{}
-
-type Output interface{}
-
-// OutMessages is a buffer for collecting out messages.
-// It is used to decrease array reallocations, if a slice would be used directly.
-// Additionally, you can safely append to the OutMessages while you iterate over it.
-// It should be implemented as a deep-list, allowing efficient appends and iterations.
-type OutMessages interface {
-	//
-	// Add single message to the out messages.
-	Add(msg Message) OutMessages
-	//
-	// Add several messages.
-	AddMany(msgs []Message) OutMessages
-	//
-	// Add all the messages collected to other OutMessages.
-	// The added OutMsgs object is marked done here.
-	AddAll(msgs OutMessages) OutMessages
-	//
-	// Mark this instance as freezed, after this it cannot be appended.
-	Done() OutMessages
-	//
-	// Returns a number of elements in the collection.
-	Count() int
-	//
-	// Iterates over the collection, stops on first error.
-	// Collection can be appended while iterating.
-	Iterate(callback func(msg Message) error) error
-	//
-	// Iterated over the collection.
-	// Collection can be appended while iterating.
-	MustIterate(callback func(msg Message))
-	//
-	// Returns contents of the collection as an array of messages.
-	AsArray() []Message
+func AddKey[Key any](subsystemID string, key Key, msgs []MessageOut) []MessageOut {
+	ret := make([]MessageOut, len(msgs))
+	for i, msg := range msgs {
+		ret[i] = MessageOut{
+			Recipient: msg.Recipient,
+			Payload: PayloadWithKey[Key, any]{
+				SubsystemID: subsystemID,
+				Key:         key,
+				Payload:     msg.Payload,
+			},
+		}
+	}
+	return ret
 }
+
+type (
+	Input  any
+	Output any
+)
 
 // GPA is a generic interface for functional style distributed algorithms.
 // GPA stands for Generic Pure Algorithm.
 type GPA interface {
-	Input(inp Input) OutMessages     // Can return nil for NoMessages.
-	Message(msg Message) OutMessages // Can return nil for NoMessages.
+	Input(inp Input) []MessageOut
+	Message(msg MessageIn[any]) []MessageOut
 	Output() Output
 	StatusString() string // Status of the protocol as a string.
-	UnmarshalMessage(data []byte) (Message, error)
+	UnmarshalPayload(data []byte) (any, error)
+	MarshalPayload(payload any) ([]byte, error)
 }
 
 type (
-	Mapper   map[MessageType]func() Message
-	Fallback map[MessageType]func(data []byte) (Message, error)
+	PayloadAllocator map[MessageType]func() any
 )
 
-func MarshalMessage(msg Message) ([]byte, error) {
+func MarshalPayload(msgType MessageType, payload any) ([]byte, error) {
 	e := bcs.NewBytesEncoder()
-	e.WriteByte(msg.MsgType())
-	e.Encode(msg)
-
+	e.WriteByte(msgType)
+	e.Encode(payload)
 	return e.Bytes(), e.Err()
 }
 
-func UnmarshalMessage(data []byte, mapper Mapper, fallback ...Fallback) (Message, error) {
+func UnmarshalPayload(data []byte, mapper PayloadAllocator) (any, error) {
 	r := bytes.NewReader(data)
 
 	msgType, err := bcs.UnmarshalStream[MessageType](r)
@@ -148,37 +141,10 @@ func UnmarshalMessage(data []byte, mapper Mapper, fallback ...Fallback) (Message
 	if allocator != nil {
 		msg := allocator()
 		_, err := bcs.UnmarshalStreamInto(r, &msg)
-
 		return msg, err
 	}
 
-	if len(fallback) == 0 {
-		return nil, fmt.Errorf("unexpected message type %d", msgType)
-	}
-	if len(fallback) > 1 {
-		return nil, fmt.Errorf("too many fallbacks specified: %d", len(fallback))
-	}
-
-	unmarshaler := fallback[0][msgType]
-	if unmarshaler == nil {
-		return nil, fmt.Errorf("unexpected message type %d", msgType)
-	}
-
-	return unmarshaler(data[1:])
-}
-
-func MarshalMessages(msgs []Message) ([][]byte, error) {
-	msgsBytes := make([][]byte, len(msgs))
-	var err error
-
-	for i := range msgs {
-		msgsBytes[i], err = MarshalMessage(msgs[i])
-		if err != nil {
-			return nil, fmt.Errorf("msgs[%d]: %w", i, err)
-		}
-	}
-
-	return msgsBytes, nil
+	return nil, fmt.Errorf("unexpected message type %d", msgType)
 }
 
 type Logger interface {

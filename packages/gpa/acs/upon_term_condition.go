@@ -9,11 +9,11 @@ import "github.com/iotaledger/wasp/v2/packages/gpa"
 type uponTermCondition struct {
 	n      int
 	term   map[gpa.NodeID]bool
-	termCB func() gpa.OutMessages
+	termCB func() []gpa.MessageOut
 	done   bool
 }
 
-func newUponTermCondition(n int, termCB func() gpa.OutMessages) *uponTermCondition {
+func newUponTermCondition(n int, termCB func() []gpa.MessageOut) *uponTermCondition {
 	return &uponTermCondition{
 		n:      n,
 		term:   map[gpa.NodeID]bool{},
@@ -22,7 +22,7 @@ func newUponTermCondition(n int, termCB func() gpa.OutMessages) *uponTermConditi
 	}
 }
 
-func (u *uponTermCondition) abaTerminated(nodeID gpa.NodeID) gpa.OutMessages {
+func (u *uponTermCondition) abaTerminated(nodeID gpa.NodeID) []gpa.MessageOut {
 	if u.done {
 		return nil
 	}

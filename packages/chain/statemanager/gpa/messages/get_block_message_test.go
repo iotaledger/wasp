@@ -5,7 +5,6 @@ import (
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/packages/chain/statemanager/gpa/utils"
-	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/state/statetest"
 )
 
@@ -15,21 +14,19 @@ func TestMarshalUnmarshalGetBlockMessage(t *testing.T) {
 		// note that sender/receiver node IDs are transient
 		// so don't use a random non-null node id here
 		commitment := blocks[i].L1Commitment()
-		msg := NewGetBlockMessage(commitment, gpa.NodeID{})
+		msg := NewGetBlockMessage(commitment)
 		bcs.TestCodec(t, msg)
 	}
 }
 
 func TestGetBlockMessageSerialization(t *testing.T) {
-	msg := &GetBlockMessage{
-		gpa.BasicMessage{},
+	msg := GetBlockMessage{
 		statetest.NewRandL1Commitment(),
 	}
 
 	bcs.TestCodec(t, msg)
 
-	bcs.TestCodecAndHash(t, &GetBlockMessage{
-		gpa.BasicMessage{},
+	bcs.TestCodecAndHash(t, GetBlockMessage{
 		statetest.TestL1Commitment,
 	}, "30dd892c3980")
 }

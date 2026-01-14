@@ -31,7 +31,7 @@ func testBasic(t *testing.T, index int) {
 	log := testlogger.NewLogger(t)
 	suite := tcrypto.DefaultBLSSuite()
 	nodeIDs := gpa.MakeTestNodeIDs(nodeCount)
-	nodes := map[gpa.NodeID]gpa.GPA{}
+	nodes := map[gpa.NodeID]*semi.CCSemi{}
 	_, commits, priShares := testpeers.MakeSharedSecret(suite, nodeCount, threshold)
 	for i, ni := range nodeIDs {
 		target := blssig.New(suite, nodeIDs, commits, priShares[i], threshold, nodeIDs[i], []byte{1, 2, 3}, log)
@@ -42,6 +42,7 @@ func testBasic(t *testing.T, index int) {
 		inputs[nodeIDs[i]] = nil
 	}
 	tc := gpa.NewTestContext(nodes)
+	tc.WithoutSerialization()
 	tc.WithInputs(inputs).RunAll()
 	tc.PrintAllStatusStrings("done", t.Logf)
 	for _, ni := range nodeIDs {

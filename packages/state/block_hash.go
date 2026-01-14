@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/testutil/testval"
 )
 
 const BlockHashSize = 20
@@ -49,3 +50,5 @@ func RandomBlockHash() BlockHash {
 	_, _ = rand.Read(b[:])
 	return b
 }
+
+var TestBlockHash = BlockHash(testval.TestBytes(BlockHashSize))

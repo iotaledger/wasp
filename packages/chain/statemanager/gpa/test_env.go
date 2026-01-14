@@ -35,10 +35,10 @@ type testEnv struct {
 	bf         *gpautils.BlockFactory
 	nodeIDs    []gpa.NodeID
 	parameters StateManagerParameters
-	sms        map[gpa.NodeID]gpa.GPA
+	sms        map[gpa.NodeID]*StateManager
 	stores     map[gpa.NodeID]state.Store
 	snapms     map[gpa.NodeID]snapshots.SnapshotManager
-	tc         *gpa.TestContext
+	tc         *gpa.TestContext[*StateManager]
 	log        log.Logger
 }
 
@@ -116,7 +116,7 @@ func (teT *testEnv) addVariedNodes(
 	createWALFun func(gpa.NodeID) gpautils.TestBlockWAL,
 	createSnapMFun func(nodeID gpa.NodeID, origStore, nodeStore state.Store, tp timeutil.TimeProvider, log log.Logger) snapshots.SnapshotManager,
 ) {
-	sms := make(map[gpa.NodeID]gpa.GPA)
+	sms := make(map[gpa.NodeID]*StateManager)
 	stores := make(map[gpa.NodeID]state.Store)
 	snapms := make(map[gpa.NodeID]snapshots.SnapshotManager)
 	chainID := teT.bf.GetChainID()

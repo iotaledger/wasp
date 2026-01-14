@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testval"
 )
 
@@ -21,9 +20,7 @@ func TestMsgImplicateRecoverSerialization(t *testing.T) {
 		b := make([]byte, 10)
 		_, err := cryptorand.Read(b)
 		require.NoError(t, err)
-		msg := &msgImplicateRecover{
-			gpa.NodeID{},
-			gpa.NodeID{},
+		msg := &MsgImplicateRecover{
 			msgImplicateRecoverKindIMPLICATE,
 			int(uint16(rand.Intn(math.MaxUint16 + 1))),
 			b,
@@ -32,9 +29,7 @@ func TestMsgImplicateRecoverSerialization(t *testing.T) {
 		bcs.TestCodec(t, msg)
 	}
 	{
-		msg := &msgImplicateRecover{
-			gpa.NodeID{},
-			gpa.NodeID{},
+		msg := &MsgImplicateRecover{
 			msgImplicateRecoverKindIMPLICATE,
 			int(math.MaxUint16),
 			testval.TestBytes(10),
@@ -46,9 +41,7 @@ func TestMsgImplicateRecoverSerialization(t *testing.T) {
 		b := make([]byte, 10)
 		_, err := cryptorand.Read(b)
 		require.NoError(t, err)
-		msg := &msgImplicateRecover{
-			gpa.NodeID{},
-			gpa.NodeID{},
+		msg := &MsgImplicateRecover{
 			msgImplicateRecoverKindRECOVER,
 			int(uint16(rand.Intn(math.MaxUint16 + 1))),
 			b,
@@ -57,9 +50,7 @@ func TestMsgImplicateRecoverSerialization(t *testing.T) {
 		bcs.TestCodec(t, msg)
 	}
 	{
-		msg := &msgImplicateRecover{
-			gpa.NodeID{},
-			gpa.NodeID{},
+		msg := &MsgImplicateRecover{
 			msgImplicateRecoverKindRECOVER,
 			int(math.MaxUint16),
 			testval.TestBytes(10),

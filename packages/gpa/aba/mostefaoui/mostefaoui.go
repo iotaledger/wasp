@@ -72,10 +72,13 @@ package mostefaoui
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/v2/packages/gpa"
+	"github.com/iotaledger/wasp/v2/packages/gpa/cc/blssig"
+	"github.com/iotaledger/wasp/v2/packages/gpa/cc/semi"
 )
 
 // Output is the structure provided as an output of the algorithm.
@@ -89,34 +92,30 @@ type Output struct {
 
 // ABA is the public API for this protocol.
 const (
-	subsystemCC byte = iota
+	SubsystemID string = "aba"
 )
 
 type ABA struct {
-	nodeIDs            []gpa.NodeID            // Nodes in the consensus.
-	nodeIdx            map[gpa.NodeID]bool     // For a fast check, if peer is known.
-	round              int                     // The current round.
-	varBinVals         *varBinVals             // The `binValues` variable (based on BVAL msgs).
-	varAuxVals         *varAuxVals             // The `vals` variable (based on AUX msgs).
-	varDone            *varDone                // Termination condition.
-	uponDecisionInputs *uponDecisionInputs     // Decision condition.
-	ccInsts            []gpa.GPA               // Common coin instances for all the rounds.
-	ccCreateFun        func(round int) gpa.GPA // Function to create CC instances.
-	output             *Output                 // The current output of the algorithm.
-	postponedMsgs      []*msgVote              // Buffer for future round messages.
-	msgWrapper         *gpa.MsgWrapper         // Helper to wrap messages for sub-components.
-	asGPA              gpa.GPA                 // This object, but with required wrappers.
-	log                log.Logger              // A logger.
+	nodeIDs            []gpa.NodeID                 // Nodes in the consensus.
+	nodeIdx            map[gpa.NodeID]bool          // For a fast check, if peer is known.
+	round              int                          // The current round.
+	varBinVals         *varBinVals                  // The `binValues` variable (based on BVAL msgs).
+	varAuxVals         *varAuxVals                  // The `vals` variable (based on AUX msgs).
+	varDone            *varDone                     // Termination condition.
+	uponDecisionInputs *uponDecisionInputs          // Decision condition.
+	ccInsts            []*semi.CCSemi               // Common coin instances for all the rounds.
+	ccCreateFun        func(round int) *semi.CCSemi // Function to create CC instances.
+	output             *Output                      // The current output of the algorithm.
+	postponedMsgs      []gpa.MessageIn[MsgVote]     // Buffer for future round messages.
+	log                log.Logger                   // A logger.
 }
-
-var _ gpa.GPA = &ABA{}
 
 // New creates a single node for a consensus.
 //
 // Here `ccCreateFun` is used as a factory function to create Common Coin instances for each round.
 // This way this implementation is made independent of particular CC instance. The created CC
 // is expected to take `nil` inputs and produce `*bool` outputs.
-func New(nodeIDs []gpa.NodeID, me gpa.NodeID, f int, ccCreateFun func(round int) gpa.GPA, log log.Logger) *ABA {
+func New(nodeIDs []gpa.NodeID, me gpa.NodeID, f int, ccCreateFun func(round int) *semi.CCSemi, log log.Logger) *ABA {
 	nodeIdx := map[gpa.NodeID]bool{}
 	for _, n := range nodeIDs {
 		nodeIdx[n] = true
@@ -125,37 +124,31 @@ func New(nodeIDs []gpa.NodeID, me gpa.NodeID, f int, ccCreateFun func(round int)
 		nodeIDs:       nodeIDs,
 		nodeIdx:       nodeIdx,
 		round:         -1,
-		ccInsts:       []gpa.GPA{},
+		ccInsts:       []*semi.CCSemi{},
 		ccCreateFun:   ccCreateFun,
 		output:        nil,
-		postponedMsgs: []*msgVote{},
+		postponedMsgs: []gpa.MessageIn[MsgVote]{},
 		log:           log,
 	}
 	a.varBinVals = newBinVals(nodeIDs, f, a.uponBinValuesUpdated)
 	a.varAuxVals = newAuxVals(nodeIDs, f, a.uponAuxValsReady)
 	a.varDone = newVarDone(nodeIDs, me, f, a.uponTerminationCondition, log)
 	a.uponDecisionInputs = newUponDecisionInputs(a.uponDecisionInputsReceived)
-	a.msgWrapper = gpa.NewMsgWrapper(msgTypeWrapped, a.selectSubsystem)
-	a.asGPA = gpa.NewOwnHandler(me, a)
 	return a
 }
 
-// Helper for routing messages to sub-protocols (i.e. CC instances).
-func (a *ABA) selectSubsystem(subsystem byte, index int) (gpa.GPA, error) {
-	if subsystem == subsystemCC {
-		if index > a.round+10 {
-			return nil, fmt.Errorf("cc round=%v to far in future, our round=%v", index, a.round)
-		}
-		return a.ccInst(index), nil
+func (a *ABA) selectCC(round int) (*semi.CCSemi, error) {
+	if round > a.round+10 {
+		return nil, fmt.Errorf("cc round=%v to far in future, our round=%v", round, a.round)
 	}
-	return nil, fmt.Errorf("unexpected subsystem=%v, index=%v", subsystem, index)
+	return a.ccInst(round), nil
 }
 
 // Creates and returns a CC instance for a particular round.
 // CC instances are not cleaned up, as the algorithm is supposed to terminate in few rounds.
-func (a *ABA) ccInst(round int) gpa.GPA {
+func (a *ABA) ccInst(round int) *semi.CCSemi {
 	if round >= len(a.ccInsts) {
-		add := make([]gpa.GPA, round-len(a.ccInsts)+1)
+		add := make([]*semi.CCSemi, round-len(a.ccInsts)+1)
 		a.ccInsts = append(a.ccInsts, add...)
 	}
 	if a.ccInsts[round] == nil {
@@ -164,16 +157,11 @@ func (a *ABA) ccInst(round int) gpa.GPA {
 	return a.ccInsts[round]
 }
 
-// AsGPA implements the ABA interface.
-func (a *ABA) AsGPA() gpa.GPA {
-	return a.asGPA
-}
-
 // Input implements the gpa.GPA interface.
 //
 // > • upon receiving input b_input, set est_0 := b_input and proceed as
 // >   follows in consecutive epochs, with increasing labels r:
-func (a *ABA) Input(input gpa.Input) gpa.OutMessages {
+func (a *ABA) Input(input gpa.Input) []gpa.MessageOut {
 	if a.round != -1 {
 		panic(fmt.Errorf("duplicate input to BBA: %v", input))
 	}
@@ -187,7 +175,7 @@ func (a *ABA) Input(input gpa.Input) gpa.OutMessages {
 //
 // >     – multicast BVAL_r(est_r)
 // >     – bin_values_r := {}
-func (a *ABA) startRound(round int, est bool) gpa.OutMessages {
+func (a *ABA) startRound(round int, est bool) []gpa.MessageOut {
 	if a.output != nil && a.output.Terminated {
 		// Don't start the next round if the algorithm is already terminated.
 		return nil
@@ -195,62 +183,51 @@ func (a *ABA) startRound(round int, est bool) gpa.OutMessages {
 	if round != a.round+1 {
 		panic(fmt.Errorf("non-sequential rounds %v->%v", a.round, round))
 	}
-	msgs := gpa.NoMessages()
 	a.round = round
 	a.varAuxVals.startRound(a.round)
 	a.varDone.startRound(round)
 	a.uponDecisionInputs.startRound()
-	msgs.AddAll(a.varBinVals.startRound(a.round, est))
+	msgs := a.varBinVals.startRound(a.round, est)
 	//
 	// Start the CC.
-	subGPA, subMsgs, err := a.msgWrapper.DelegateInput(subsystemCC, round, nil)
+	cc, err := a.selectCC(round)
 	if err != nil {
-		panic(fmt.Errorf("failed to provide input to CC: %v", err))
+		panic(fmt.Errorf("failed to select CC: %v", err))
 	}
-	msgs.AddAll(subMsgs)
-	if out := subGPA.Output(); out != nil {
-		msgs.AddAll(a.uponDecisionInputs.ccOutputReceived(*out.(*bool)))
+
+	msgs = slices.Concat(
+		msgs,
+		gpa.AddKey(SubsystemID, round, cc.Input(nil)),
+	)
+
+	if out := cc.Output(); out != nil {
+		msgs = slices.Concat(msgs, a.uponDecisionInputs.ccOutputReceived(*out.(*bool)))
 	}
 	//
 	// Resend postponed messages, if any.
 	if len(a.postponedMsgs) > 0 {
 		oldPostponedMsgs := a.postponedMsgs
-		a.postponedMsgs = []*msgVote{}
+		a.postponedMsgs = []gpa.MessageIn[MsgVote]{}
 		for _, m := range oldPostponedMsgs {
-			msgs.AddAll(a.handleMsgVote(m))
+			msgs = slices.Concat(msgs, a.HandleMsgVote(m))
 		}
 	}
 	return msgs
 }
 
-// Message implements the gpa.GPA interface.
-// Here we only route the messages to appropriate objects.
-func (a *ABA) Message(msg gpa.Message) gpa.OutMessages {
-	switch msgT := msg.(type) {
-	case *msgVote: // The BVAL and AUX messages.
-		return a.handleMsgVote(msgT)
-	case *msgDone: // The DONE messages for the termination.
-		return a.handleMsgDone(msgT)
-	case *gpa.WrappingMsg: // The CC messages.
-		return a.handleMsgWrapped(msgT)
-	}
-	a.log.LogWarnf("unexpected message of type %T: %+v", msg, msg)
-	return nil
-}
-
-func (a *ABA) handleMsgVote(msgT *msgVote) gpa.OutMessages {
-	if _, ok := a.nodeIdx[msgT.Sender()]; !ok {
+func (a *ABA) HandleMsgVote(msgT gpa.MessageIn[MsgVote]) []gpa.MessageOut {
+	if _, ok := a.nodeIdx[msgT.Sender]; !ok {
 		a.log.LogWarnf("unknown sender: %+v", msgT)
 		return nil // Unknown sender.
 	}
-	if msgT.round < a.round || (a.output != nil && a.output.Terminated) {
+	if msgT.Payload.round < a.round || (a.output != nil && a.output.Terminated) {
 		return nil // Outdated message.
 	}
-	if msgT.round > a.round {
+	if msgT.Payload.round > a.round {
 		a.postponedMsgs = append(a.postponedMsgs, msgT)
 		return nil // Will be processed later.
 	}
-	switch msgT.voteType {
+	switch msgT.Payload.voteType {
 	case BVAL:
 		return a.varBinVals.msgVoteBVALReceived(msgT)
 	case AUX:
@@ -260,25 +237,26 @@ func (a *ABA) handleMsgVote(msgT *msgVote) gpa.OutMessages {
 	return nil
 }
 
-func (a *ABA) handleMsgDone(msgT *msgDone) gpa.OutMessages {
-	if _, ok := a.nodeIdx[msgT.Sender()]; !ok {
+func (a *ABA) HandleMsgDone(msgT gpa.MessageIn[MsgDone]) []gpa.MessageOut {
+	if _, ok := a.nodeIdx[msgT.Sender]; !ok {
 		return nil // Unknown sender.
 	}
 	return a.varDone.msgDoneReceived(msgT)
 }
 
-func (a *ABA) handleMsgWrapped(msgT *gpa.WrappingMsg) gpa.OutMessages {
-	msgs := gpa.NoMessages()
-	subGPA, subMsgs, err := a.msgWrapper.DelegateMessage(msgT)
+func (a *ABA) HandleCCMsg(ccIndex int, msgT gpa.MessageIn[blssig.MsgSigShare]) []gpa.MessageOut {
+	cc, err := a.selectCC(ccIndex)
 	if err != nil {
 		a.log.LogWarnf("cannot select subsystem: %v", err)
 		return nil
 	}
-	msgs.AddAll(subMsgs)
-	if msgT.Subsystem() == subsystemCC && msgT.Index() == a.round && !a.uponDecisionInputs.haveCC() {
-		ccOut := subGPA.Output()
+
+	subMsgs := cc.HandleMsgSigShare(msgT)
+	msgs := gpa.AddKey(SubsystemID, ccIndex, subMsgs)
+	if ccIndex == a.round && !a.uponDecisionInputs.haveCC() {
+		ccOut := cc.Output()
 		if ccOut != nil {
-			msgs.AddAll(a.uponDecisionInputs.ccOutputReceived(*ccOut.(*bool)))
+			msgs = slices.Concat(msgs, a.uponDecisionInputs.ccOutputReceived(*ccOut.(*bool)))
 		}
 	}
 	return msgs
@@ -292,7 +270,7 @@ func (a *ABA) handleMsgWrapped(msgT *gpa.WrappingMsg) gpa.OutMessages {
 // >           bin_values_r may continue to change as BVAL_r messages
 // >           are received, thus this condition may be triggered upon
 // >           arrival of either an AUX_r or a BVAL_r message)
-func (a *ABA) uponBinValuesUpdated(binValues []bool) gpa.OutMessages {
+func (a *ABA) uponBinValuesUpdated(binValues []bool) []gpa.MessageOut {
 	return a.varAuxVals.binValuesUpdated(binValues)
 }
 
@@ -302,7 +280,7 @@ func (a *ABA) uponBinValuesUpdated(binValues []bool) gpa.OutMessages {
 // >           bin_values_r may continue to change as BVAL_r messages
 // >           are received, thus this condition may be triggered upon
 // >           arrival of either an AUX_r or a BVAL_r message)
-func (a *ABA) uponAuxValsReady(auxVals []bool) gpa.OutMessages {
+func (a *ABA) uponAuxValsReady(auxVals []bool) []gpa.MessageOut {
 	return a.uponDecisionInputs.auxValsReady(auxVals)
 }
 
@@ -310,16 +288,17 @@ func (a *ABA) uponAuxValsReady(auxVals []bool) gpa.OutMessages {
 // >             · est_r+1 := b
 // >             · if (b = s%2) then output b
 // >         ∗ else est_r+1 := s%2
-func (a *ABA) uponDecisionInputsReceived(cc bool, auxVals []bool) gpa.OutMessages {
+func (a *ABA) uponDecisionInputsReceived(cc bool, auxVals []bool) []gpa.MessageOut {
 	if len(auxVals) == 1 {
 		nextEst := auxVals[0]
 		if nextEst == cc {
 			if a.output == nil {
 				a.output = &Output{Value: nextEst, Terminated: a.varDone.isDone()}
 			}
-			msgs := gpa.NoMessages()
-			msgs.AddAll(a.varDone.outputProduced())
-			return msgs.AddAll(a.startRound(a.round+1, nextEst))
+			return slices.Concat(
+				a.varDone.outputProduced(),
+				a.startRound(a.round+1, nextEst),
+			)
 		}
 		return a.startRound(a.round+1, nextEst)
 	}
@@ -327,11 +306,10 @@ func (a *ABA) uponDecisionInputsReceived(cc bool, auxVals []bool) gpa.OutMessage
 }
 
 // Here we get notification from `varDone` on the termination.
-func (a *ABA) uponTerminationCondition() gpa.OutMessages {
+func (a *ABA) uponTerminationCondition() {
 	if a.output != nil {
 		a.output.Terminated = true
 	}
-	return nil
 }
 
 // Output implements the gpa.GPA interface.

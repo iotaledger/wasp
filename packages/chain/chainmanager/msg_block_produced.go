@@ -13,23 +13,15 @@ import (
 // This message is used to inform access nodes on new blocks
 // produced so that they can update their active state faster.
 type msgBlockProduced struct {
-	gpa.BasicMessage
 	tx    *iotasigner.SignedTransaction `bcs:"export"`
 	block state.Block                   `bcs:"export"`
 }
 
-var _ gpa.Message = new(msgBlockProduced)
-
-func NewMsgBlockProduced(recipient gpa.NodeID, tx *iotasigner.SignedTransaction, block state.Block) gpa.Message {
-	return &msgBlockProduced{
-		BasicMessage: gpa.NewBasicMessage(recipient),
-		tx:           tx,
-		block:        block,
-	}
-}
-
-func (msg *msgBlockProduced) MsgType() gpa.MessageType {
-	return msgTypeBlockProduced
+func NewMsgBlockProduced(recipient gpa.NodeID, tx *iotasigner.SignedTransaction, block state.Block) gpa.MessageOut {
+	return gpa.NewMessageOut(recipient, msgBlockProduced{
+		tx:    tx,
+		block: block,
+	})
 }
 
 func (msg *msgBlockProduced) String() string {

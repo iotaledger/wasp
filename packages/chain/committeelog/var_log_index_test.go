@@ -23,17 +23,19 @@ func TestVarLogIndexV2Basic(t *testing.T) {
 	initLI := committeelog.NilLogIndex().Next()
 	//
 	vliOut := committeelog.NilLogIndex()
-	vli := committeelog.NewVarLogIndex(nodeIDs, n, f, initLI, func(li committeelog.LogIndex) gpa.OutMessages {
+	vli := committeelog.NewVarLogIndex(nodeIDs, n, f, initLI, func(li committeelog.LogIndex) []gpa.MessageOut {
 		vliOut = li
 		return nil
 	}, nil, log)
 	//
 	nextLI := initLI.Next()
 	require.NotEqual(t, nextLI, vliOut)
-	nextLIMsg := committeelog.NewMsgNextLogIndex(nodeIDs[0], nextLI, committeelog.MsgNextLogIndexCauseStarted, false)
+	nextLIMsg := committeelog.NewMsgNextLogIndex(nextLI, committeelog.MsgNextLogIndexCauseStarted, false)
 	for i := 0; i < n-f; i++ {
-		nextLIMsg.SetSender(nodeIDs[i])
-		vli.MsgNextLogIndexReceived(nextLIMsg)
+		vli.MsgNextLogIndexReceived(gpa.MessageIn[committeelog.MsgNextLogIndex]{
+			Sender:  nodeIDs[i],
+			Payload: *nextLIMsg,
+		})
 	}
 	require.Equal(t, nextLI, vliOut)
 }
@@ -48,7 +50,7 @@ func TestVarLogIndexV2Other(t *testing.T) {
 	initLI := committeelog.NilLogIndex().Next()
 	//
 	vliOut := committeelog.NilLogIndex()
-	vli := committeelog.NewVarLogIndex(nodeIDs, n, f, initLI, func(li committeelog.LogIndex) gpa.OutMessages {
+	vli := committeelog.NewVarLogIndex(nodeIDs, n, f, initLI, func(li committeelog.LogIndex) []gpa.MessageOut {
 		vliOut = li
 		return nil
 	}, nil, log)
@@ -57,10 +59,12 @@ func TestVarLogIndexV2Other(t *testing.T) {
 	li18 := committeelog.LogIndex(18)
 	require.Equal(t, committeelog.NilLogIndex(), vliOut)
 
-	msgWithSender := func(sender gpa.NodeID, li committeelog.LogIndex) *committeelog.MsgNextLogIndex {
-		msg := committeelog.NewMsgNextLogIndex(nodeIDs[0], li, committeelog.MsgNextLogIndexCauseStarted, false)
-		msg.SetSender(sender)
-		return msg
+	msgWithSender := func(sender gpa.NodeID, li committeelog.LogIndex) gpa.MessageIn[committeelog.MsgNextLogIndex] {
+		msg := committeelog.NewMsgNextLogIndex(li, committeelog.MsgNextLogIndexCauseStarted, false)
+		return gpa.MessageIn[committeelog.MsgNextLogIndex]{
+			Sender:  sender,
+			Payload: *msg,
+		}
 	}
 
 	vli.MsgNextLogIndexReceived(msgWithSender(nodeIDs[0], li15))

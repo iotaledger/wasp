@@ -3,10 +3,6 @@
 
 package acss
 
-import (
-	"github.com/iotaledger/wasp/v2/packages/gpa"
-)
-
 type msgImplicateKind byte
 
 const (
@@ -14,25 +10,10 @@ const (
 	msgImplicateRecoverKindRECOVER
 )
 
-// The <IMPLICATE, i, skᵢ> and <RECOVER, i, skᵢ> messages.
-type msgImplicateRecover struct {
-	sender    gpa.NodeID
-	recipient gpa.NodeID
-	kind      msgImplicateKind `bcs:"export"`
-	i         int              `bcs:"export,type=u16"`
-	data      []byte           `bcs:"export"` // Either implication or the recovered secret.
-}
+type MsgImplicateRecover struct {
+	// The <IMPLICATE, i, skᵢ> and <RECOVER, i, skᵢ> messages.
 
-var _ gpa.Message = new(msgImplicateRecover)
-
-func (msg *msgImplicateRecover) Recipient() gpa.NodeID {
-	return msg.recipient
-}
-
-func (msg *msgImplicateRecover) SetSender(sender gpa.NodeID) {
-	msg.sender = sender
-}
-
-func (msg *msgImplicateRecover) MsgType() gpa.MessageType {
-	return msgTypeImplicateRecover
+	kind msgImplicateKind `bcs:"export"`
+	i    int              `bcs:"export,type=u16"`
+	data []byte           `bcs:"export"` // Either implication or the recovered secret.
 }

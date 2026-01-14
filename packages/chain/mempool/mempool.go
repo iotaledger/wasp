@@ -137,7 +137,7 @@ type mempoolImpl struct {
 	tangleTime                     time.Time
 	onLedgerPool                   RequestPool[isc.OnLedgerRequest] // TODO limit this pool
 	offLedgerPool                  *OffLedgerPool                   // TODO maybe use `RequestPool` too?
-	distSync                       gpa.GPA
+	distSync                       *distsync.DistSync
 	chainHeadAnchor                *isc.StateAnchor
 	chainHeadState                 state.State
 	serverNodesUpdatedPipe         pipe.Pipe[*reqServerNodesUpdated]
@@ -873,13 +873,13 @@ func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
 }
 
 func (mpi *mempoolImpl) handleNetMessage(recv *peering.PeerMessageIn) {
-	msg, err := mpi.distSync.UnmarshalMessage(recv.MsgData)
+	msg, err := mpi.distSync.UnmarshalPayload(recv.MsgData)
 	if err != nil {
 		mpi.log.LogWarnf("cannot parse message: %v", err)
 		return
 	}
-	msg.SetSender(mpi.pubKeyAsNodeID(recv.SenderPubKey))
-	outMsgs := mpi.distSync.Message(msg) // Output is handled via callbacks in this case.
+	// Output is handled via callbacks in this case.
+	outMsgs := mpi.distSync.Message(gpa.NewMessageIn(mpi.pubKeyAsNodeID(recv.SenderPubKey), msg))
 	mpi.sendMessages(outMsgs)
 }
 
@@ -968,15 +968,15 @@ func (mpi *mempoolImpl) tryCleanupProcessed(chainState state.State) {
 	mpi.offLedgerPool.Cleanup(unprocessedPredicate[isc.OffLedgerRequest](chainState, mpi.log))
 }
 
-func (mpi *mempoolImpl) sendMessages(outMsgs gpa.OutMessages) {
+func (mpi *mempoolImpl) sendMessages(outMsgs []gpa.MessageOut) {
 	if outMsgs == nil {
 		return
 	}
-	outMsgs.MustIterate(func(msg gpa.Message) {
-		msgBytes := lo.Must(gpa.MarshalMessage(msg))
+	for _, msg := range outMsgs {
+		msgBytes := lo.Must(mpi.distSync.MarshalPayload(msg.Payload))
 		pm := peering.NewPeerMessageData(mpi.netPeeringID, peering.ReceiverMempool, msgTypeMempool, msgBytes)
-		mpi.net.SendMsgByPubKey(mpi.netPeerPubs[msg.Recipient()], pm)
-	})
+		mpi.net.SendMsgByPubKey(mpi.netPeerPubs[msg.Recipient], pm)
+	}
 }
 
 func (mpi *mempoolImpl) pubKeyAsNodeID(pubKey *cryptolib.PublicKey) gpa.NodeID {

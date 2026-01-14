@@ -30,11 +30,14 @@ package acs
 import (
 	"fmt"
 	"math"
+	"slices"
 
 	"github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/gpa/aba/mostefaoui"
+	"github.com/iotaledger/wasp/v2/packages/gpa/cc/blssig"
+	"github.com/iotaledger/wasp/v2/packages/gpa/cc/semi"
 	"github.com/iotaledger/wasp/v2/packages/gpa/rbc/bracha"
 )
 
@@ -44,47 +47,42 @@ type Output struct {
 }
 
 const (
-	subsystemRBC byte = iota
-	subsystemABA
+	SubsystemID string = "acs"
 )
 
 type ACS struct {
-	nodeIDs    []gpa.NodeID           // Nodes in the consensus.
-	nodeIdx    map[gpa.NodeID]int     // For a fast check, if peer is known.
-	me         gpa.NodeID             // Out name.
-	n          int                    // Number of nodes in the cluster.
-	f          int                    // Max number of tolerated faulty nodes.
-	rbcInsts   map[gpa.NodeID]gpa.GPA // RBC instances.
-	rbcInput   bool                   // Have we provided our input?
-	rbcOutputs map[gpa.NodeID][]byte  // Outputs received from the RBC.
-	abaInsts   map[gpa.NodeID]gpa.GPA // ABA Instances.
-	abaInputs  map[gpa.NodeID]bool    // Inputs already provided to ABAs.
-	abaOutputs map[gpa.NodeID]bool    // Outputs already received from ABAs.
-	output     *Output                // Output we produced.
-	termCond   *uponTermCondition     // Tracks the termination condition.
-	msgWrapper *gpa.MsgWrapper        // Helper to wrap messages for sub-components.
-	asGPA      gpa.GPA                // This object with required wrappers.
-	log        log.Logger             // A logger.
+	nodeIDs    []gpa.NodeID                   // Nodes in the consensus.
+	nodeIdx    map[gpa.NodeID]int             // For a fast check, if peer is known.
+	me         gpa.NodeID                     // Out name.
+	n          int                            // Number of nodes in the cluster.
+	f          int                            // Max number of tolerated faulty nodes.
+	rbcInsts   map[gpa.NodeID]*bracha.RBC     // RBC instances.
+	rbcInput   bool                           // Have we provided our input?
+	rbcOutputs map[gpa.NodeID][]byte          // Outputs received from the RBC.
+	abaInsts   map[gpa.NodeID]*mostefaoui.ABA // ABA Instances.
+	abaInputs  map[gpa.NodeID]bool            // Inputs already provided to ABAs.
+	abaOutputs map[gpa.NodeID]bool            // Outputs already received from ABAs.
+	output     *Output                        // Output we produced.
+	termCond   *uponTermCondition             // Tracks the termination condition.
+	log        log.Logger                     // A logger.
 }
-
-var _ gpa.GPA = &ACS{}
 
 // New creates a new instance of the ACS protocol.
 // > Let {RBC_i}_N refer to N instances of the reliable broadcast protocol,
 // > where P_i is the sender of RBC_i. Let {BA_i}_N refer to N instances
 // > of the binary byzantine agreement protocol.
-func New(nodeIDs []gpa.NodeID, me gpa.NodeID, f int, ccCreateFun func(node gpa.NodeID, round int) gpa.GPA, log log.Logger) *ACS {
+func New(nodeIDs []gpa.NodeID, me gpa.NodeID, f int, ccCreateFun func(node gpa.NodeID, round int) *semi.CCSemi, log log.Logger) *ACS {
 	nodeIdx := map[gpa.NodeID]int{}
-	rbcInsts := map[gpa.NodeID]gpa.GPA{}
-	abaInsts := map[gpa.NodeID]gpa.GPA{}
+	rbcInsts := map[gpa.NodeID]*bracha.RBC{}
+	abaInsts := map[gpa.NodeID]*mostefaoui.ABA{}
 	for i, nid := range nodeIDs {
 		nidCopy := nid
-		ccCreateFunForNode := func(round int) gpa.GPA {
+		ccCreateFunForNode := func(round int) *semi.CCSemi {
 			return ccCreateFun(nidCopy, round)
 		}
 		nodeIdx[nid] = i
 		rbcInsts[nid] = bracha.New(nodeIDs, f, me, nid, math.MaxInt, func(b []byte) bool { return true }, log) // TODO: MaxInt.
-		abaInsts[nid] = mostefaoui.New(nodeIDs, me, f, ccCreateFunForNode, log).AsGPA()
+		abaInsts[nid] = mostefaoui.New(nodeIDs, me, f, ccCreateFunForNode, log)
 	}
 
 	n := len(nodeIDs)
@@ -104,33 +102,28 @@ func New(nodeIDs []gpa.NodeID, me gpa.NodeID, f int, ccCreateFun func(node gpa.N
 		log:        log,
 	}
 	a.termCond = newUponTermCondition(n, a.uponTermCondition)
-	a.msgWrapper = gpa.NewMsgWrapper(msgTypeWrapped, a.selectSubsystem)
-	a.asGPA = gpa.NewOwnHandler(me, a)
 	return a
 }
 
-// Helper for routing messages to sub-protocols (i.e. RBC and ABA instances).
-func (a *ACS) selectSubsystem(subsystem byte, index int) (gpa.GPA, error) {
+func (a *ACS) getRBCInst(index int) (*bracha.RBC, error) {
 	if index < 0 || index >= a.n {
-		return nil, fmt.Errorf("unexpected index=%v for subsystem", index)
+		return nil, fmt.Errorf("unexpected index=%v for RBC", index)
 	}
 	nid := a.nodeIDs[index]
-	switch subsystem {
-	case subsystemRBC:
-		return a.rbcInsts[nid], nil
-	case subsystemABA:
-		return a.abaInsts[nid], nil
-	}
-	return nil, fmt.Errorf("unexpected subsystem=%v, index=%v", subsystem, index)
+	return a.rbcInsts[nid], nil
 }
 
-func (a *ACS) AsGPA() gpa.GPA {
-	return a.asGPA
+func (a *ACS) getABAInst(index int) (*mostefaoui.ABA, error) {
+	if index < 0 || index >= a.n {
+		return nil, fmt.Errorf("unexpected index=%v for ABA", index)
+	}
+	nid := a.nodeIDs[index]
+	return a.abaInsts[nid], nil
 }
 
 // Input implements the gpa.GPA interface:
 // >   • upon receiving input v_i, input v_i to RBC_i
-func (a *ACS) Input(input gpa.Input) gpa.OutMessages {
+func (a *ACS) Input(input gpa.Input) []gpa.MessageOut {
 	if _, ok := input.([]byte); !ok {
 		panic("input has to be []byte")
 	}
@@ -138,45 +131,69 @@ func (a *ACS) Input(input gpa.Input) gpa.OutMessages {
 		return nil // Duplicate input.
 	}
 	a.rbcInput = true
-	msgs := gpa.NoMessages()
-	sub, subMsgs, err := a.msgWrapper.DelegateInput(subsystemRBC, a.nodeIdx[a.me], input)
-	if err != nil {
-		panic(fmt.Errorf("cannot provide input to RBC: %w", err))
-	}
-	msgs.AddAll(subMsgs)
-	msgs.AddAll(a.tryHandleRBCOutput(a.me, sub))
-	return msgs
+	rbcInst := a.rbcInsts[a.me]
+	subMsgs := gpa.AddKey(SubsystemID, a.nodeIdx[a.me], rbcInst.Input(input))
+	return slices.Concat(
+		subMsgs,
+		a.tryHandleRBCOutput(a.me, rbcInst),
+	)
 }
 
-func (a *ACS) Message(msg gpa.Message) gpa.OutMessages {
-	msgT, ok := msg.(*gpa.WrappingMsg)
-	if !ok {
-		a.log.LogWarnf("unexpected message of type %T: %+v", msg, msg)
-		return nil
-	}
-	msgs := gpa.NoMessages()
-	sub, subMsgs, err := a.msgWrapper.DelegateMessage(msgT)
+func (a *ACS) HandleRBCMsgBracha(index int, msg gpa.MessageIn[bracha.MsgBracha]) []gpa.MessageOut {
+	rbcInst, err := a.getRBCInst(index)
 	if err != nil {
-		a.log.LogWarnf("cannot delegate a message: %v", err)
+		a.log.LogWarnf("cannot select subsystem: %v", err)
 		return nil
 	}
-	msgs.AddAll(subMsgs)
-	switch msgT.Subsystem() {
-	case subsystemRBC:
-		msgs.AddAll(a.tryHandleRBCOutput(a.nodeIDs[msgT.Index()], sub))
-		return msgs
-	case subsystemABA:
-		msgs.AddAll(a.tryHandleABAOutput(a.nodeIDs[msgT.Index()], sub))
-		return msgs
-	default:
-		a.log.LogWarnf("unexpected subsystem: %v", msgT.Subsystem())
+	subMsgs := rbcInst.HandleMsgBracha(msg)
+	return slices.Concat(
+		gpa.AddKey(SubsystemID, index, subMsgs),
+		a.tryHandleRBCOutput(a.nodeIDs[index], rbcInst),
+	)
+}
+
+func (a *ACS) HandleABAMsgVote(index int, msg gpa.MessageIn[mostefaoui.MsgVote]) []gpa.MessageOut {
+	abaInst, err := a.getABAInst(index)
+	if err != nil {
+		a.log.LogWarnf("cannot select subsystem: %v", err)
 		return nil
 	}
+	subMsgs := abaInst.HandleMsgVote(msg)
+	return slices.Concat(
+		gpa.AddKey(SubsystemID, index, subMsgs),
+		a.tryHandleABAOutput(a.nodeIDs[index], abaInst),
+	)
+}
+
+func (a *ACS) HandleABAMsgDone(index int, msg gpa.MessageIn[mostefaoui.MsgDone]) []gpa.MessageOut {
+	abaInst, err := a.getABAInst(index)
+	if err != nil {
+		a.log.LogWarnf("cannot select subsystem: %v", err)
+		return nil
+	}
+	subMsgs := abaInst.HandleMsgDone(msg)
+	return slices.Concat(
+		gpa.AddKey(SubsystemID, index, subMsgs),
+		a.tryHandleABAOutput(a.nodeIDs[index], abaInst),
+	)
+}
+
+func (a *ACS) HandleCCMsgSigShare(abaIndex, ccIndex int, msg gpa.MessageIn[blssig.MsgSigShare]) []gpa.MessageOut {
+	abaInst, err := a.getABAInst(abaIndex)
+	if err != nil {
+		a.log.LogWarnf("cannot select subsystem: %v", err)
+		return nil
+	}
+	subMsgs := abaInst.HandleCCMsg(ccIndex, msg)
+	return slices.Concat(
+		gpa.AddKey(SubsystemID, abaIndex, subMsgs),
+		a.tryHandleABAOutput(a.nodeIDs[abaIndex], abaInst),
+	)
 }
 
 // >   • upon delivery of v_j from RBC_j, if input has not yet been
 // >     provided to BA_j, then provide input 1 to BA_j.
-func (a *ACS) tryHandleRBCOutput(nodeID gpa.NodeID, rbcInst gpa.GPA) gpa.OutMessages {
+func (a *ACS) tryHandleRBCOutput(nodeID gpa.NodeID, rbcInst *bracha.RBC) []gpa.MessageOut {
 	out := rbcInst.Output()
 	if out == nil {
 		return nil // Output not ready yet.
@@ -191,28 +208,26 @@ func (a *ACS) tryHandleRBCOutput(nodeID gpa.NodeID, rbcInst gpa.GPA) gpa.OutMess
 		return nil // We already provided an input to the ABA.
 	}
 	a.abaInputs[nodeID] = true
-	msgs := gpa.NoMessages()
-	sub, subMsgs, err := a.msgWrapper.DelegateInput(subsystemABA, a.nodeIdx[nodeID], true)
-	if err != nil {
-		panic(fmt.Errorf("cannot provide input to ABA: %w", err))
-	}
-	msgs.AddAll(subMsgs)
-	msgs.AddAll(a.tryHandleABAOutput(nodeID, sub))
-	return msgs
+	sub := a.abaInsts[nodeID]
+	subMsgs := sub.Input(true)
+	return slices.Concat(
+		gpa.AddKey(SubsystemID, a.nodeIdx[nodeID], subMsgs),
+		a.tryHandleABAOutput(nodeID, sub),
+	)
 }
 
 // >   • upon delivery of value 1 from at least N − f instances of BA,
 // >     provide input 0 to each instance of BA that has not yet been
 // >     provided input.
-func (a *ACS) tryHandleABAOutput(nodeID gpa.NodeID, abaInst gpa.GPA) gpa.OutMessages {
+func (a *ACS) tryHandleABAOutput(nodeID gpa.NodeID, abaInst *mostefaoui.ABA) []gpa.MessageOut {
 	out := abaInst.Output()
 	if out == nil {
 		return nil // Output not ready yet.
 	}
 	abaOut := out.(*mostefaoui.Output)
-	msgs := gpa.NoMessages()
+	var msgs []gpa.MessageOut
 	if abaOut.Terminated {
-		msgs.AddAll(a.termCond.abaTerminated(nodeID))
+		msgs = a.termCond.abaTerminated(nodeID)
 	}
 
 	if _, ok := a.abaOutputs[nodeID]; ok {
@@ -237,12 +252,13 @@ func (a *ACS) tryHandleABAOutput(nodeID gpa.NodeID, abaInst gpa.GPA) gpa.OutMess
 				continue // Input was already provided.
 			}
 			a.abaInputs[nid] = false
-			sub, subMsgs, err := a.msgWrapper.DelegateInput(subsystemABA, a.nodeIdx[nid], false)
-			if err != nil {
-				panic(fmt.Errorf("cannot provide input to ABA: %w", err))
-			}
-			msgs.AddAll(subMsgs)
-			msgs.AddAll(a.tryHandleABAOutput(nid, sub))
+			sub := a.abaInsts[nid]
+			subMsgs := sub.Input(false)
+			msgs = slices.Concat(
+				msgs,
+				gpa.AddKey(SubsystemID, a.nodeIdx[nid], subMsgs),
+				a.tryHandleABAOutput(nid, sub),
+			)
 		}
 	}
 	return msgs
@@ -274,7 +290,7 @@ func (a *ACS) tryOutput() {
 	}
 }
 
-func (a *ACS) uponTermCondition() gpa.OutMessages {
+func (a *ACS) uponTermCondition() []gpa.MessageOut {
 	if a.output != nil {
 		a.output.Terminated = true
 	}

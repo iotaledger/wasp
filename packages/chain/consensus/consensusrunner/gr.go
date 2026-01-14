@@ -10,12 +10,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/samber/lo"
 	"go.uber.org/atomic"
 
-	"github.com/samber/lo"
-
 	"github.com/iotaledger/hive.go/log"
-
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/packages/chain/committeelog"
 	"github.com/iotaledger/wasp/v2/packages/chain/consensus"
@@ -400,13 +398,12 @@ func (r *ConsensusRunner) handleRedeliveryTick(t time.Time) {
 }
 
 func (r *ConsensusRunner) handleNetMessage(recv *peering.PeerMessageIn) {
-	msg, err := r.consInst.UnmarshalMessage(recv.MsgData)
+	msg, err := r.consInst.UnmarshalPayload(recv.MsgData)
 	if err != nil {
 		r.log.LogWarnf("cannot parse message: %v", err)
 		return
 	}
-	msg.SetSender(gpa.NodeIDFromPublicKey(recv.SenderPubKey))
-	outMsgs := r.consInst.Message(msg)
+	outMsgs := r.consInst.Message(gpa.NewMessageIn(gpa.NodeIDFromPublicKey(recv.SenderPubKey), msg))
 	r.sendMessages(outMsgs)
 	r.tryHandleOutput()
 }
@@ -463,13 +460,13 @@ func (r *ConsensusRunner) provideOutput(output *consensus.Output) {
 	}
 }
 
-func (r *ConsensusRunner) sendMessages(outMsgs gpa.OutMessages) {
+func (r *ConsensusRunner) sendMessages(outMsgs []gpa.MessageOut) {
 	if outMsgs == nil {
 		return
 	}
-	outMsgs.MustIterate(func(msg gpa.Message) {
-		msgBytes := lo.Must(gpa.MarshalMessage(msg))
+	for _, msg := range outMsgs {
+		msgBytes := lo.Must(r.consInst.MarshalPayload(msg.Payload))
 		pm := peering.NewPeerMessageData(r.netPeeringID, peering.ReceiverChainCons, msgTypeCons, msgBytes)
-		r.net.SendMsgByPubKey(r.netPeerPubs[msg.Recipient()], pm)
-	})
+		r.net.SendMsgByPubKey(r.netPeerPubs[msg.Recipient], pm)
+	}
 }

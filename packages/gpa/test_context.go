@@ -5,16 +5,26 @@ package gpa
 
 import (
 	"bytes"
+	"fmt"
+	"maps"
 	"math/rand"
+	"reflect"
 	"sort"
+	"strings"
 
 	"github.com/samber/lo"
 )
 
+type pendingMessage struct {
+	Recipient NodeID
+	Msg       MessageIn[any]
+}
+
 // TestContext imitates a cluster of nodes and the medium performing the message exchange.
 // Inputs are processes in-order for each node individually.
-type TestContext struct {
-	nodes           map[NodeID]GPA                     // Nodes to test.
+type TestContext[Obj any] struct {
+	functors        TestContextFunctors[Obj]
+	nodes           map[NodeID]Obj                     // Nodes to test.
 	inputs          map[NodeID][]Input                 // Not yet provided inputs.
 	inputCh         <-chan map[NodeID]Input            // A way to provide additional inputs w/o synchronizing other parts.
 	inputProb       float64                            // A probability to process input, instead of a message (if any).
@@ -22,100 +32,122 @@ type TestContext struct {
 	outputHandler   func(nodeID NodeID, output Output) // User can check outputs w/o synchronizing other parts.
 	msgDeliveryProb float64                            // A probability to deliver a message (to not discard/loose it).
 	msgSerialize    bool                               // Use serialization/deserialization when delivering the messages?
-	msgCh           <-chan SenderMessage               // A way to provide additional messages w/o synchronizing other parts.
-	msgs            []SenderMessage                    // Not yet delivered messages.
+	msgs            []pendingMessage                   // Not yet delivered messages.
 	msgsSent        int                                // Stats.
 	msgsRecv        int                                // Stats.
+	bytesRecv       int
 }
 
-func NewTestContext(nodes map[NodeID]GPA) *TestContext {
-	inputs := map[NodeID][]Input{}
-	for n := range nodes {
-		inputs[n] = []Input{}
+func NewTestContext[Obj any](nodes map[NodeID]Obj, functors ...TestContextFunctors[Obj]) *TestContext[Obj] {
+	if len(functors) == 0 {
+		functors = []TestContextFunctors[Obj]{{}}
 	}
-	tc := TestContext{
+
+	tc := TestContext[Obj]{
 		msgSerialize:    true,
-		nodes:           nodes,
-		inputs:          inputs,
+		inputs:          map[NodeID][]Input{},
 		inputProb:       1.0,
 		inputCount:      0,
 		msgDeliveryProb: 1.0,
-		msgs:            []SenderMessage{},
+		msgs:            []pendingMessage{},
 	}
+
+	tc.SetNodes(nodes)
+	tc.SetFunctors(functors[0])
+
 	return &tc
 }
 
-func (tc *TestContext) WithoutSerialization() *TestContext {
+func (tc *TestContext[Obj]) WithoutSerialization() *TestContext[Obj] {
 	tc.msgSerialize = false
 	return tc
 }
 
-func (tc *TestContext) MsgCounts() (int, int) {
+func (tc *TestContext[Obj]) Nodes() map[NodeID]Obj {
+	return maps.Clone(tc.nodes)
+}
+
+func (tc *TestContext[Obj]) SetNodes(nodes map[NodeID]Obj) {
+	tc.nodes = nodes
+
+	for n := range nodes {
+		if _, exists := tc.inputs[n]; !exists {
+			tc.inputs[n] = []Input{}
+		}
+	}
+}
+
+func (tc *TestContext[Obj]) Functors() TestContextFunctors[Obj] {
+	return tc.functors
+}
+
+func (tc *TestContext[Obj]) SetFunctors(functors TestContextFunctors[Obj]) {
+	tc.functors = functors
+	setDefaultFunctors(&tc.functors)
+}
+
+func (tc *TestContext[Obj]) MsgCounts() (int, int) {
 	return tc.msgsSent, tc.msgsRecv
 }
 
 // AddInputs adds new inputs to the existing set.
 // The inputs will be overridden, if exist for the same nodes.
-func (tc *TestContext) AddInputs(inputs map[NodeID]Input) {
+func (tc *TestContext[Obj]) AddInputs(inputs map[NodeID]Input) {
 	for nid := range inputs {
 		tc.inputs[nid] = append(tc.inputs[nid], inputs[nid])
 	}
 	tc.inputCount += len(inputs)
 }
 
-func (tc *TestContext) WithInput(nodeID NodeID, input Input) *TestContext {
+func (tc *TestContext[Obj]) WithInput(nodeID NodeID, input Input) *TestContext[Obj] {
 	tc.AddInputs(map[NodeID]Input{nodeID: input})
 	return tc
 }
 
-func (tc *TestContext) WithInputs(inputs map[NodeID]Input) *TestContext {
+func (tc *TestContext[Obj]) WithInputs(inputs map[NodeID]Input) *TestContext[Obj] {
 	tc.AddInputs(inputs)
 	return tc
 }
 
-func (tc *TestContext) WithInputChannel(inputCh <-chan map[NodeID]Input) *TestContext {
+func (tc *TestContext[Obj]) WithInputChannel(inputCh <-chan map[NodeID]Input) *TestContext[Obj] {
 	tc.inputCh = inputCh
 	return tc
 }
 
-func (tc *TestContext) WithInputProbability(inputProb float64) *TestContext {
+func (tc *TestContext[Obj]) WithInputProbability(inputProb float64) *TestContext[Obj] {
 	tc.inputProb = inputProb
 	return tc
 }
 
-func (tc *TestContext) WithMessageDeliveryProbability(msgDeliveryProb float64) *TestContext {
+func (tc *TestContext[Obj]) WithMessageDeliveryProbability(msgDeliveryProb float64) *TestContext[Obj] {
 	tc.msgDeliveryProb = msgDeliveryProb
 	return tc
 }
 
-func (tc *TestContext) WithMessages(sender NodeID, msgs []Message) *TestContext {
+func (tc *TestContext[Obj]) WithMessages(recipient NodeID, msgs []MessageIn[any]) *TestContext[Obj] {
+	tc.addMessages(lo.Map(msgs, func(m MessageIn[any], _ int) pendingMessage {
+		return pendingMessage{Recipient: recipient, Msg: m}
+	}))
+	return tc
+}
+
+func (tc *TestContext[Obj]) addMessages(msgs []pendingMessage) {
 	tc.msgsSent += len(msgs)
-	tc.msgs = append(tc.msgs, tc.setMessageSender(sender, NoMessages().AddMany(msgs))...)
-	return tc
+	tc.msgs = append(tc.msgs, msgs...)
 }
 
-func (tc *TestContext) WithMessage(sender NodeID, msg Message) *TestContext {
+func (tc *TestContext[Obj]) WithMessage(recipient NodeID, msg MessageIn[any]) *TestContext[Obj] {
 	tc.msgsSent++
-	tc.msgs = append(tc.msgs, tc.setMessageSender(sender, NoMessages().Add(msg))...)
+	tc.msgs = append(tc.msgs, pendingMessage{Recipient: recipient, Msg: msg})
 	return tc
 }
 
-func (tc *TestContext) WithMessageChannel(msgCh <-chan SenderMessage) *TestContext {
-	tc.msgCh = msgCh
-	return tc
-}
-
-func (tc *TestContext) WithOutputHandler(outputHandler func(nodeID NodeID, output Output)) *TestContext {
+func (tc *TestContext[Obj]) WithOutputHandler(outputHandler func(nodeID NodeID, output Output)) *TestContext[Obj] {
 	tc.outputHandler = outputHandler
 	return tc
 }
 
-func (tc *TestContext) WithCall(sender NodeID, call func() []Message) *TestContext {
-	msgs := call()
-	return tc.WithMessages(sender, msgs)
-}
-
-func (tc *TestContext) RunUntil(predicate func() bool) {
+func (tc *TestContext[Obj]) RunUntil(predicate func() bool) {
 	loop := make(chan bool, 1)
 	loop <- true
 	keepLooping := func() {
@@ -138,13 +170,6 @@ func (tc *TestContext) RunUntil(predicate func() bool) {
 				tc.inputs[nid] = append(tc.inputs[nid], input)
 			}
 			tc.inputCount += len(inputs)
-		case msg, ok := <-tc.msgCh:
-			keepLooping()
-			if !ok {
-				tc.msgCh = nil
-				continue
-			}
-			tc.msgs = append(tc.msgs, msg)
 		case <-loop:
 			if predicate() {
 				return
@@ -156,7 +181,7 @@ func (tc *TestContext) RunUntil(predicate func() bool) {
 				loop <- true
 				continue
 			}
-			if tc.inputCh == nil && tc.msgCh == nil {
+			if tc.inputCh == nil {
 				// Channels are closed and there is no more inputs or messages. Stop it.
 				return
 			}
@@ -165,7 +190,7 @@ func (tc *TestContext) RunUntil(predicate func() bool) {
 	}
 }
 
-func (tc *TestContext) tryProcessInput() {
+func (tc *TestContext[Obj]) tryProcessInput() {
 	if tc.inputCount > 0 && (rand.Float64() <= tc.inputProb || len(tc.msgs) == 0) {
 		rnd := rand.Intn(tc.inputCount)
 		var rndNID NodeID
@@ -182,63 +207,69 @@ func (tc *TestContext) tryProcessInput() {
 		}
 		tc.inputCount--
 
-		newMsgs := tc.setMessageSender(rndNID, tc.nodes[rndNID].Input(rndInp))
-		if newMsgs != nil {
-			tc.msgsSent += len(newMsgs)
-			tc.msgs = append(tc.msgs, newMsgs...)
-		}
+		// fmt.Printf("-> %s :: INPUT %s\n", rndNID.ShortString(), rndInp)
+		msgs := tc.functors.ApplyInput(rndNID, tc.nodes[rndNID], rndInp)
+		tc.addMessages(lo.Map(msgs, func(m MessageOut, _ int) pendingMessage {
+			return pendingMessage{Recipient: m.Recipient, Msg: NewMessageIn(rndNID, m.Payload)}
+		}))
 		tc.tryCallOutputHandler(rndNID)
 	}
 }
 
-func (tc *TestContext) tryProcessMessage() {
+func (tc *TestContext[Obj]) tryProcessMessage() {
 	if len(tc.msgs) == 0 {
 		return
 	}
-	msgIdx := rand.Intn(len(tc.msgs))
-	msg := tc.msgs[msgIdx]
-	nid := msg.Message.Recipient()
-	tc.msgs = append(tc.msgs[:msgIdx], tc.msgs[msgIdx+1:]...)
+
+	// select a random message, swap it with the last one and decrease the slice length
+	rnd := rand.Intn(len(tc.msgs))
+	pendingMsg := tc.msgs[rnd]
+	tc.msgs[rnd] = tc.msgs[len(tc.msgs)-1]
+	tc.msgs = tc.msgs[:len(tc.msgs)-1]
+
 	tc.msgsRecv++
-	if rand.Float64() <= tc.msgDeliveryProb { // Deliver some messages.
-		gpaMsg := msg.Message
-		if tc.msgSerialize {
-			msgBytes := lo.Must(MarshalMessage(msg.Message))
-			if m, err := tc.nodes[nid].UnmarshalMessage(msgBytes); err == nil {
-				gpaMsg = m
-				gpaMsg.SetSender(msg.Sender)
-			} else {
-				// E.g. silent node cannot decode messages.
-				gpaMsg = nil
-			}
-		}
-		if gpaMsg != nil {
-			newMsgs := tc.setMessageSender(nid, tc.nodes[nid].Message(gpaMsg))
-			if newMsgs != nil {
-				tc.msgsSent += len(newMsgs)
-				tc.msgs = append(tc.msgs, newMsgs...)
-			}
-			tc.tryCallOutputHandler(nid)
-		}
+	if rand.Float64() > tc.msgDeliveryProb {
+		// message dropped
+		return
 	}
+
+	nid := pendingMsg.Recipient
+	msg := pendingMsg.Msg
+	if tc.msgSerialize {
+		msgBytes := lo.Must(tc.functors.MarshalPayload(msg.Sender, tc.nodes[msg.Sender], msg.Payload))
+		tc.bytesRecv += len(msgBytes)
+		m, err := tc.functors.UnmarshalPayload(nid, tc.nodes[nid], msgBytes)
+		if err != nil {
+			// E.g. silent node cannot decode messages.
+			return
+		}
+		msg = NewMessageIn(msg.Sender, m)
+	}
+	// fmt.Printf("%s -> %s :: %s (count: %d / %d bytes)\n", msg.Sender.ShortString(), nid.ShortString(), msg.Payload, tc.msgsRecv, tc.bytesRecv)
+	msgs := tc.functors.ApplyMessage(nid, tc.nodes[nid], msg)
+	tc.addMessages(lo.Map(msgs, func(m TypedMessageOut[any], _ int) pendingMessage {
+		return pendingMessage{Recipient: m.Recipient, Msg: NewMessageIn(nid, m.Payload)}
+	}))
+	tc.tryCallOutputHandler(nid)
 }
 
-func (tc *TestContext) tryCallOutputHandler(nid NodeID) {
-	out := tc.nodes[nid].Output()
+func (tc *TestContext[Obj]) tryCallOutputHandler(nid NodeID) {
+	out := tc.functors.Output(nid, tc.nodes[nid])
 	if out != nil && tc.outputHandler != nil {
 		tc.outputHandler(nid, out)
 	}
 }
 
-func (tc *TestContext) RunAll() {
+func (tc *TestContext[Obj]) RunAll() {
 	tc.RunUntil(tc.OutOfMessagesPredicate())
 }
 
 // NumberOfOutputs returns a number of non-nil outputs.
-func (tc *TestContext) NumberOfOutputs() int {
+func (tc *TestContext[Obj]) NumberOfOutputs() int {
 	outNum := 0
-	for _, node := range tc.nodes {
-		if node.Output() != nil {
+	for nid, node := range tc.nodes {
+		output := tc.functors.Output(nid, node)
+		if output != nil {
 			outNum++
 		}
 	}
@@ -246,32 +277,19 @@ func (tc *TestContext) NumberOfOutputs() int {
 }
 
 // NumberOfOutputsPredicate runs until there will be at least outNum of non-nil outputs generated.
-func (tc *TestContext) NumberOfOutputsPredicate(outNum int) func() bool {
+func (tc *TestContext[Obj]) NumberOfOutputsPredicate(outNum int) func() bool {
 	return func() bool {
 		return tc.NumberOfOutputs() >= outNum
 	}
 }
 
 // OutOfMessagesPredicate runs until all the messages will be processed.
-func (tc *TestContext) OutOfMessagesPredicate() func() bool {
+func (tc *TestContext[Obj]) OutOfMessagesPredicate() func() bool {
 	return func() bool { return false }
 }
 
-func (tc *TestContext) setMessageSender(sender NodeID, msgs OutMessages) []SenderMessage {
-	if msgs == nil {
-		return nil
-	}
-	msgArray := msgs.AsArray()
-	result := make([]SenderMessage, len(msgArray))
-	for i := range msgArray {
-		msgArray[i].SetSender(sender)
-		result[i] = SenderMessage{Sender: sender, Message: msgArray[i]}
-	}
-	return result
-}
-
-func (tc *TestContext) PrintAllStatusStrings(prefix string, logFunc func(format string, args ...any)) {
-	logFunc("TC[%p] Status, |inputs|=%v, inputsCh=%v, |msgs|=%v, msgsCh=%v", tc, tc.inputCount, tc.inputCh != nil, len(tc.msgs), tc.msgCh != nil)
+func (tc *TestContext[Obj]) PrintAllStatusStrings(prefix string, logFunc func(format string, args ...any)) {
+	logFunc("TC[%p] Status, |inputs|=%v, inputsCh=%v, |msgs|=%v", tc, tc.inputCount, tc.inputCh != nil, len(tc.msgs))
 	keys := []NodeID{}
 	for nid := range tc.nodes {
 		keys = append(keys, nid)
@@ -281,11 +299,293 @@ func (tc *TestContext) PrintAllStatusStrings(prefix string, logFunc func(format 
 		return bytes.Compare(keys[i][:], keys[j][:]) < 0
 	})
 	for _, nidStr := range keys {
-		logFunc("TC[%p] %v [node=%v]: %v", tc, prefix, nidStr, tc.nodes[nidStr].StatusString())
+		logFunc("TC[%p] %v [node=%v]: %v", tc, prefix, nidStr, tc.functors.StatusString(nidStr, tc.nodes[nidStr]))
 	}
 }
 
-type SenderMessage struct {
-	Sender  NodeID
-	Message Message
+func ToAnyPayloadsOut[Payload any](payloads []TypedMessageOut[Payload]) []MessageOut {
+	res := make([]MessageOut, len(payloads))
+	for i, p := range payloads {
+		res[i] = MessageOut{
+			Recipient: p.Recipient,
+			Payload:   p.Payload,
+		}
+	}
+	return res
+}
+
+func FindAndInvokeInputHandler(obj any, input Input) []MessageOut {
+	type genericInputHandler interface {
+		Input(input Input) []MessageOut
+	}
+	if handler, ok := obj.(genericInputHandler); ok {
+		return handler.Input(input)
+	}
+
+	objV := reflect.ValueOf(obj)
+	objT := objV.Type()
+
+	handlerMethodT := reflect.FuncOf([]reflect.Type{objT, reflect.TypeOf(input)}, []reflect.Type{reflect.TypeOf([]MessageOut{})}, false)
+	handlerPtrMethodT := reflect.FuncOf([]reflect.Type{objT, reflect.PointerTo(reflect.TypeOf(input))}, []reflect.Type{reflect.TypeOf([]MessageOut{})}, false)
+
+	for i := 0; i < objT.NumMethod(); i++ {
+		methodT := objT.Method(i)
+		if methodT.Type == handlerMethodT {
+			result := methodT.Func.Call([]reflect.Value{objV, reflect.ValueOf(input)})
+			return result[0].Interface().([]MessageOut)
+		}
+		if methodT.Type == handlerPtrMethodT {
+			// TODO: copy non-addressable value
+			result := methodT.Func.Call([]reflect.Value{objV, reflect.ValueOf(input).Addr()})
+			return result[0].Interface().([]MessageOut)
+		}
+	}
+
+	panic(fmt.Errorf("no input handler found with signature %v or %v", handlerMethodT, handlerPtrMethodT))
+}
+
+func FindAndInvokeMessageHandler(obj any, msg MessageIn[any]) []MessageOut {
+	type genericMessageHandler interface {
+		Message(msg MessageIn[any]) []MessageOut
+	}
+	if handler, ok := obj.(genericMessageHandler); ok {
+		return handler.Message(msg)
+	}
+
+	// There is no good instruments with work with generics in Go reflection.
+	// So we are forced to fallback to name-based heuristics.
+	// We could just hard-code name, but then tests would break after renamings. So we dynamically get current name of type.
+	samplePayloadWithKey := PayloadWithKey[struct{}, struct{}]{}
+
+	switch {
+	case isSameGenericType(reflect.TypeOf(msg.Payload), reflect.TypeOf(samplePayloadWithKey)):
+		return findAndInvokePayloadWithKeyMessageHandler(obj, msg)
+	default:
+		return findAndInvokeSimpleMessageHandler(obj, msg)
+	}
+}
+
+func findAndInvokeSimpleMessageHandler(obj any, msg MessageIn[any]) []MessageOut {
+	objV := reflect.ValueOf(obj)
+	objT := objV.Type()
+	msgV := reflect.ValueOf(msg)
+
+	for i := 0; i < objT.NumMethod(); i++ {
+		methodT := objT.Method(i)
+
+		if methodT.Type.NumIn() != 2 || methodT.Type.NumOut() != 1 {
+			continue
+		}
+		if methodT.Type.Out(0) != reflect.TypeOf([]MessageOut{}) {
+			continue
+		}
+		if methodT.Type.In(0) != objT {
+			panic(fmt.Errorf("mismatched receiver type: %v != %v", methodT.Type.In(0), objT))
+		}
+
+		msgArgT := methodT.Type.In(1)
+		isMsgIn, payloadArgT := isMessageInType(msgArgT)
+		if !isMsgIn || payloadArgT.Type != reflect.TypeOf(msg.Payload) {
+			continue
+		}
+
+		// We have a match.
+		convertedMsgV := reflect.New(msgArgT).Elem()
+
+		for i := 0; i < msgArgT.NumField(); i++ {
+			fieldV := msgV.Field(i)
+			destFieldV := convertedMsgV.Field(i)
+
+			if i == payloadArgT.Index[0] {
+				convertedFieldV := fieldV.Elem().Convert(destFieldV.Type())
+				destFieldV.Set(convertedFieldV)
+			} else {
+				destFieldV.Set(fieldV)
+			}
+		}
+
+		result := methodT.Func.Call([]reflect.Value{objV, convertedMsgV})
+		return result[0].Interface().([]MessageOut)
+	}
+
+	panic(fmt.Errorf("no message handler found for message with payload type %T in object of type %T", msg.Payload, obj))
+}
+
+func findAndInvokePayloadWithKeyMessageHandler(obj any, msg MessageIn[any]) []MessageOut {
+	objV := reflect.ValueOf(obj)
+	objT := objV.Type()
+	msgV := reflect.ValueOf(msg)
+	payloadWithKeyV := reflect.ValueOf(msg.Payload)
+	keyV := payloadWithKeyV.Field(getPayloadWithKeyKeyFieldIndex())
+	payloadV := payloadWithKeyV.Field(getPayloadWithKeyPayloadFieldIndex()).Elem()
+	payloadT := payloadV.Type()
+
+	for i := 0; i < objT.NumMethod(); i++ {
+		methodT := objT.Method(i)
+
+		if methodT.Type.NumIn() != 3 || methodT.Type.NumOut() != 1 {
+			continue
+		}
+		if methodT.Type.Out(0) != reflect.TypeOf([]MessageOut{}) {
+			continue
+		}
+		if methodT.Type.In(0) != objT {
+			panic(fmt.Errorf("mismatched receiver type: %v != %v", methodT.Type.In(0), objT))
+		}
+
+		keyArgT := methodT.Type.In(1)
+		if keyArgT != keyV.Type() {
+			continue
+		}
+
+		msgArgT := methodT.Type.In(2)
+		isMsgIn, payloadArgT := isMessageInType(msgArgT)
+		if !isMsgIn || payloadArgT.Type != payloadT {
+			continue
+		}
+
+		// We have a match.
+		convertedMsgV := reflect.New(msgArgT).Elem()
+
+		for i := 0; i < msgArgT.NumField(); i++ {
+			fieldV := msgV.Field(i)
+			destFieldV := convertedMsgV.Field(i)
+
+			if i == payloadArgT.Index[0] {
+				convertedFieldV := payloadV.Convert(destFieldV.Type())
+				destFieldV.Set(convertedFieldV)
+			} else {
+				destFieldV.Set(fieldV)
+			}
+		}
+
+		result := methodT.Func.Call([]reflect.Value{objV, keyV, convertedMsgV})
+		return result[0].Interface().([]MessageOut)
+	}
+
+	panic(fmt.Errorf("no message handler found for message with payload type %T in object of type %T", msg.Payload, obj))
+}
+
+func isMessageInType(t reflect.Type) (isMessageIn bool, payloadField reflect.StructField) {
+	// There is no good instruments with work with generics in Go reflection.
+	// So we are forced to fallback to name-based heuristics.
+	// We could just hard-code name, but then tests would break after renamings. So we dynamically get current name of type.
+	type privatePayloadType struct{}
+	sampleTypeT := reflect.TypeOf(MessageIn[privatePayloadType]{})
+
+	if !isSameGenericType(t, sampleTypeT) {
+		return false, reflect.StructField{}
+	}
+
+	// We also dynamically find Payload field - also to handle future renamings.
+	payloadFieldIndex := getFieldIndexOfType(sampleTypeT, reflect.TypeOf(privatePayloadType{}))
+
+	return true, t.Field(payloadFieldIndex)
+}
+
+func isSameGenericType(t1, t2 reflect.Type) bool {
+	name1 := getGenericTypeName(t1)
+	if name1 == "" {
+		return false // not a generic type
+	}
+	name2 := getGenericTypeName(t2)
+	if name2 == "" {
+		return false // not a generic type
+	}
+	return name1 == name2
+}
+
+func getGenericTypeName(t reflect.Type) string {
+	paramsStart := strings.Index(t.Name(), "[")
+	if paramsStart < 0 {
+		// not a generic type
+		return ""
+	}
+	return t.Name()[:paramsStart]
+}
+
+func getFieldIndexOfType(structType reflect.Type, fieldType reflect.Type) int {
+	for i := 0; i < structType.NumField(); i++ {
+		field := structType.Field(i)
+		if field.Type == fieldType {
+			return i
+		}
+	}
+	panic(fmt.Errorf("no field of type %v found in struct %v", fieldType, structType))
+}
+
+// func getPayloadWithKeySubsystemIDFieldIndex(structType reflect.Type) int {
+// 	samplePayloadWithKey := PayloadWithKey[struct{}, struct{}]{}
+// 	const fieldName = "SubsystemID"
+// 	f, found := reflect.TypeOf(samplePayloadWithKey).FieldByName(fieldName)
+// 	if !found {
+// 		panic(fmt.Errorf("no %v field found in %T", fieldName, samplePayloadWithKey))
+// 	}
+// 	return f.Index[0]
+// }
+
+func getPayloadWithKeyKeyFieldIndex() int {
+	type privateKeyType struct{}
+	samplePayloadWithKey := PayloadWithKey[privateKeyType, struct{}]{}
+	return getFieldIndexOfType(reflect.TypeOf(samplePayloadWithKey), reflect.TypeOf(privateKeyType{}))
+}
+
+func getPayloadWithKeyPayloadFieldIndex() int {
+	type privatePayloadType struct{}
+	samplePayloadWithKey := PayloadWithKey[struct{}, privatePayloadType]{}
+	return getFieldIndexOfType(reflect.TypeOf(samplePayloadWithKey), reflect.TypeOf(privatePayloadType{}))
+}
+
+type TestContextFunctors[Obj any] struct {
+	ApplyInput       func(nodeID NodeID, obj Obj, input Input) []MessageOut
+	ApplyMessage     func(nodeID NodeID, obj Obj, msg MessageIn[any]) []MessageOut
+	Output           func(nodeID NodeID, obj Obj) any
+	StatusString     func(nodeID NodeID, obj Obj) string
+	MarshalPayload   func(nodeID NodeID, obj Obj, msg any) ([]byte, error)
+	UnmarshalPayload func(nodeID NodeID, obj Obj, data []byte) (any, error)
+}
+
+func setDefaultFunctors[Obj any](functors *TestContextFunctors[Obj]) {
+	if functors.ApplyInput == nil {
+		functors.ApplyInput = func(nodeID NodeID, obj Obj, input Input) []MessageOut {
+			return FindAndInvokeInputHandler(obj, input)
+		}
+	}
+	if functors.ApplyMessage == nil {
+		functors.ApplyMessage = func(nodeID NodeID, obj Obj, msg MessageIn[any]) []MessageOut {
+			return FindAndInvokeMessageHandler(obj, msg)
+		}
+	}
+	if functors.MarshalPayload == nil {
+		type marshaler interface {
+			MarshalPayload(msg any) ([]byte, error)
+		}
+		functors.MarshalPayload = func(nodeID NodeID, obj Obj, msg any) ([]byte, error) {
+			return interface{}(obj).(marshaler).MarshalPayload(msg)
+		}
+	}
+	if functors.UnmarshalPayload == nil {
+		type unmarshaler interface {
+			UnmarshalPayload(data []byte) (any, error)
+		}
+		functors.UnmarshalPayload = func(nodeID NodeID, obj Obj, data []byte) (any, error) {
+			return interface{}(obj).(unmarshaler).UnmarshalPayload(data)
+		}
+	}
+	if functors.Output == nil {
+		functors.Output = func(nodeID NodeID, obj Obj) any {
+			type outputter interface {
+				Output() Output
+			}
+			return interface{}(obj).(outputter).Output()
+		}
+	}
+	if functors.StatusString == nil {
+		functors.StatusString = func(nodeID NodeID, obj Obj) string {
+			type statusStringer interface {
+				StatusString() string
+			}
+			return interface{}(obj).(statusStringer).StatusString()
+		}
+	}
 }

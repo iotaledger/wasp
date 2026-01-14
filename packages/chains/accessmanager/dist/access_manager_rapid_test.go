@@ -37,7 +37,7 @@ type accessMgrSM struct {
 	genChainID      *rapid.Generator[isc.ChainID]
 	//
 	// These are set up for each scenario.
-	tc      *gpa.TestContext
+	tc      *gpa.TestContext[gpa.GPA]
 	nodes   map[gpa.NodeID]gpa.GPA
 	servers map[gpa.NodeID]map[isc.ChainID][]*cryptolib.PublicKey
 	//

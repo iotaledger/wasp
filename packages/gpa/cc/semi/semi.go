@@ -11,21 +11,20 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/v2/packages/gpa"
+	"github.com/iotaledger/wasp/v2/packages/gpa/cc/blssig"
 )
 
-type ccSemi struct {
-	target gpa.GPA
+type CCSemi struct {
+	target *blssig.CC
 	index  int
 	output *bool
 }
 
-var _ gpa.GPA = &ccSemi{}
-
-func New(index int, target gpa.GPA) gpa.GPA {
-	return &ccSemi{index: index, target: target}
+func New(index int, target *blssig.CC) *CCSemi {
+	return &CCSemi{index: index, target: target}
 }
 
-func (cc *ccSemi) Input(input gpa.Input) gpa.OutMessages {
+func (cc *CCSemi) Input(input gpa.Input) []gpa.MessageOut {
 	if input != nil {
 		panic(errors.New("input must be nil"))
 	}
@@ -40,42 +39,40 @@ func (cc *ccSemi) Input(input gpa.Input) gpa.OutMessages {
 		cc.output = &coin
 		return nil
 	}
-	return cc.checkOutput(cc.target.Input(input))
-}
-
-func (cc *ccSemi) Message(msg gpa.Message) gpa.OutMessages {
-	if cc.output != nil {
-		return nil
-	}
-	return cc.checkOutput(cc.target.Message(msg))
-}
-
-func (cc *ccSemi) checkOutput(msgs gpa.OutMessages) gpa.OutMessages {
-	if cc.output != nil {
-		return msgs
-	}
-	out := cc.target.Output()
-	if out != nil {
-		cc.output = out.(*bool)
-	}
+	msgs := cc.target.Input(input)
+	cc.checkOutput()
 	return msgs
 }
 
-func (cc *ccSemi) Output() gpa.Output {
+func (cc *CCSemi) HandleMsgSigShare(msg gpa.MessageIn[blssig.MsgSigShare]) []gpa.MessageOut {
+	if cc.output != nil {
+		return nil
+	}
+	msgs := cc.target.HandleMsgSigShare(msg)
+	cc.checkOutput()
+	return msgs
+}
+
+func (cc *CCSemi) checkOutput() {
+	if cc.output != nil {
+		return
+	}
+	if out := cc.target.Output(); out != nil {
+		cc.output = out.(*bool)
+	}
+}
+
+func (cc *CCSemi) Output() gpa.Output {
 	if cc.output == nil {
 		return nil // Untyped nil.
 	}
 	return cc.output
 }
 
-func (cc *ccSemi) StatusString() string {
+func (cc *CCSemi) StatusString() string {
 	if cc.output != nil {
 		// Try produce compact output.
 		return fmt.Sprintf("{CC:semi, index=%v, output=%v}", cc.index, *cc.output)
 	}
 	return fmt.Sprintf("{CC:semi, index=%v, output=%v, target=%v}", cc.index, cc.output, cc.target.StatusString())
-}
-
-func (cc *ccSemi) UnmarshalMessage(data []byte) (gpa.Message, error) {
-	return cc.target.UnmarshalMessage(data)
 }

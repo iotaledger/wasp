@@ -25,10 +25,10 @@ type uponDecisionInputs struct {
 	ccValue    bool
 	auxVals    []bool
 	done       bool
-	doneCB     func(cc bool, auxVals []bool) gpa.OutMessages
+	doneCB     func(cc bool, auxVals []bool) []gpa.MessageOut
 }
 
-func newUponDecisionInputs(doneCB func(cc bool, auxVals []bool) gpa.OutMessages) *uponDecisionInputs {
+func newUponDecisionInputs(doneCB func(cc bool, auxVals []bool) []gpa.MessageOut) *uponDecisionInputs {
 	u := &uponDecisionInputs{doneCB: doneCB}
 	u.startRound()
 	return u
@@ -41,7 +41,7 @@ func (u *uponDecisionInputs) startRound() {
 	u.done = false
 }
 
-func (u *uponDecisionInputs) ccOutputReceived(cc bool) gpa.OutMessages {
+func (u *uponDecisionInputs) ccOutputReceived(cc bool) []gpa.MessageOut {
 	if u.ccReceived {
 		return nil
 	}
@@ -50,7 +50,7 @@ func (u *uponDecisionInputs) ccOutputReceived(cc bool) gpa.OutMessages {
 	return u.tryOutput()
 }
 
-func (u *uponDecisionInputs) auxValsReady(auxVals []bool) gpa.OutMessages {
+func (u *uponDecisionInputs) auxValsReady(auxVals []bool) []gpa.MessageOut {
 	if u.auxVals != nil {
 		return nil
 	}
@@ -58,7 +58,7 @@ func (u *uponDecisionInputs) auxValsReady(auxVals []bool) gpa.OutMessages {
 	return u.tryOutput()
 }
 
-func (u *uponDecisionInputs) tryOutput() gpa.OutMessages {
+func (u *uponDecisionInputs) tryOutput() []gpa.MessageOut {
 	if u.done || !u.ccReceived || u.auxVals == nil {
 		return nil
 	}

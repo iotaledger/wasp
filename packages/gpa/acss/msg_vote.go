@@ -3,10 +3,6 @@
 
 package acss
 
-import (
-	"github.com/iotaledger/wasp/v2/packages/gpa"
-)
-
 type msgVoteKind byte
 
 const (
@@ -15,13 +11,6 @@ const (
 )
 
 // This message is used a vote for the "Bracha-style totality" agreement.
-type msgVote struct {
-	gpa.BasicMessage
+type MsgVote struct {
 	kind msgVoteKind `bcs:"export"`
-}
-
-var _ gpa.Message = new(msgVote)
-
-func (m *msgVote) MsgType() gpa.MessageType {
-	return msgTypeVote
 }

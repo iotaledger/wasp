@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testval"
 )
 
@@ -18,20 +17,14 @@ func TestMsgRBCCEPayloadSerialization(t *testing.T) {
 	b := make([]byte, 10)
 	_, err := rand.Read(b)
 	require.NoError(t, err)
-	msg := &msgRBCCEPayload{
-		gpa.BasicMessage{},
-		nil,
+	msg := &MsgRBCCEPayload{
 		b,
-		nil,
 	}
 
 	bcs.TestCodec(t, msg)
 
-	msg = &msgRBCCEPayload{
-		gpa.BasicMessage{},
-		nil,
+	msg = &MsgRBCCEPayload{
 		testval.TestBytes(10),
-		nil,
 	}
 
 	bcs.TestCodecAndHash(t, msg, "9a5a2e001fcf")

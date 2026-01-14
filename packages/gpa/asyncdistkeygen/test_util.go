@@ -43,11 +43,13 @@ func MakeTestDistributedKey(
 	}
 	//
 	// Setup nodes.
-	nodes := map[gpa.NodeID]gpa.GPA{}
+	nodes := map[gpa.NodeID]*nonce.NonceDistributedKeyGeneration{}
 	for _, nid := range nodeIDs {
 		nodes[nid] = nonce.New(suite, nodeIDs, nodePKs, f, nid, nodeSKs[nid], log)
 	}
 	tc := gpa.NewTestContext(nodes)
+	tc.WithoutSerialization()
+
 	//
 	// Run the DKG
 	inputs := make(map[gpa.NodeID]gpa.Input)
