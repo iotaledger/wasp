@@ -18,6 +18,7 @@ require (
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	fortio.org/safecast v1.0.0 // indirect
+	github.com/Khan/genqlient v0.8.1 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/VictoriaMetrics/fastcache v1.12.2 // indirect
 	github.com/benbjohnson/clock v1.3.5 // indirect
@@ -182,6 +183,7 @@ require (
 	github.com/tyler-smith/go-bip39 v1.1.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
+	github.com/vektah/gqlparser/v2 v2.5.19 // indirect
 	github.com/wlynxg/anet v0.0.5 // indirect
 	github.com/wollac/iota-crypto-demo v0.0.0-20221117162917-b10619eccb98 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect

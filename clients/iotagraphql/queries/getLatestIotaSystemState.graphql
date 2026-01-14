@@ -4,6 +4,7 @@ query GetLatestIotaSystemState {
 		startTimestamp
 		endTimestamp
 		referenceGasPrice
+		iotaTotalSupply
 		safeMode {
 			enabled
 			gasSummary {

@@ -22,6 +22,18 @@ mutation ExecuteTransactionBlock(
 			transactionBlock {
 				...RPC_TRANSACTION_FIELDS
 			}
-		}
+			objectChanges {
+				nodes {
+					address
+					idCreated
+					idDeleted
+				}
+			}
+			balanceChanges {
+				nodes {
+					amount
+				}
+			}
+		}		
 	}
 }

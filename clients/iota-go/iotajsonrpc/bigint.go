@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
-	"strings"
 )
 
 type Uint128 = BigInt
@@ -26,25 +25,23 @@ func (w *BigInt) UnmarshalText(data []byte) error {
 }
 
 func (w *BigInt) UnmarshalJSON(data []byte) error {
-	// FIXME we may just simply call in the following way
-	// var s string
-	// json.Unmarshal(data, &s)
-	rawData := strings.TrimSpace(string(data))
-	if strings.HasPrefix(rawData, `"`) && strings.HasSuffix(rawData, `"`) {
-		rawData = rawData[1 : len(rawData)-1]
-	}
 	if w.Int == nil {
 		w.Int = new(big.Int)
 	}
-	if rawData == "null" {
-		w.SetInt64(0)
+	// Handle string-wrapped numbers (e.g., "\"123\"" in JSON)
+	if len(data) > 0 && data[0] == '"' {
+		var s string
+		if err := json.Unmarshal(data, &s); err != nil {
+			return err
+		}
+		_, ok := w.Int.SetString(s, 10)
+		if !ok {
+			return fmt.Errorf("invalid number string: %s", s)
+		}
 		return nil
 	}
-	_, ok := w.SetString(rawData, 10)
-	if ok {
-		return nil
-	}
-	return fmt.Errorf("json data [%s] is not T", string(data))
+	// Delegate to standard big.Int unmarshaling for numeric values
+	return w.Int.UnmarshalJSON(data)
 }
 
 func (w *BigInt) MarshalJSON() ([]byte, error) {
@@ -52,7 +49,8 @@ func (w *BigInt) MarshalJSON() ([]byte, error) {
 }
 
 func (w *BigInt) Clone() *BigInt {
-	ret := NewBigInt(0)
-	ret.Set(w.Int)
-	return ret
+	if w.Int == nil {
+		return NewBigInt(0)
+	}
+	return &BigInt{new(big.Int).Set(w.Int)}
 }

@@ -98,6 +98,13 @@ func (t IotaTransactionBlockEffects) Content() string {
 }
 
 func (t IotaTransactionBlockEffects) GasFee() int64 {
+	// Check for nil pointers in GasUsed fields
+	if t.V1 == nil || t.V1.GasUsed.StorageCost == nil ||
+		t.V1.GasUsed.StorageRebate == nil ||
+		t.V1.GasUsed.ComputationCost == nil {
+		return 0
+	}
+
 	return t.V1.GasUsed.StorageCost.Int64() -
 		t.V1.GasUsed.StorageRebate.Int64() +
 		t.V1.GasUsed.ComputationCost.Int64()
@@ -196,55 +203,67 @@ type IotaTransactionBlock struct {
 	TxSignatures []string                                        `json:"txSignatures"`
 }
 
+type ObjectChangePublished struct {
+	PackageID iotago.ObjectID     `json:"packageId"`
+	Version   *BigInt             `json:"version"`
+	Digest    iotago.ObjectDigest `json:"digest"`
+	Nodules   []string            `json:"nodules"`
+}
+
+type ObjectChangeTransferred struct {
+	Sender     iotago.Address      `json:"sender"`
+	Recipient  ObjectOwner         `json:"recipient"`
+	ObjectType string              `json:"objectType"`
+	ObjectID   iotago.ObjectID     `json:"objectId"`
+	Version    *BigInt             `json:"version"`
+	Digest     iotago.ObjectDigest `json:"digest"`
+}
+
+type ObjectChangeMutated struct {
+	Sender          iotago.Address      `json:"sender"`
+	Owner           ObjectOwner         `json:"owner"`
+	ObjectType      string              `json:"objectType"`
+	ObjectID        iotago.ObjectID     `json:"objectId"`
+	Version         *BigInt             `json:"version"`
+	PreviousVersion *BigInt             `json:"previousVersion"`
+	Digest          iotago.ObjectDigest `json:"digest"`
+}
+
+type ObjectChangeDeleted struct {
+	Sender     iotago.Address  `json:"sender"`
+	ObjectType string          `json:"objectType"`
+	ObjectID   iotago.ObjectID `json:"objectId"`
+	Version    *BigInt         `json:"version"`
+}
+
+type ObjectChangeWrapped struct {
+	Sender     iotago.Address  `json:"sender"`
+	ObjectType string          `json:"objectType"`
+	ObjectID   iotago.ObjectID `json:"objectId"`
+	Version    *BigInt         `json:"version"`
+}
+
+type ObjectChangeCreated struct {
+	Sender     iotago.Address      `json:"sender"`
+	Owner      ObjectOwner         `json:"owner"`
+	ObjectType string              `json:"objectType"`
+	ObjectID   iotago.ObjectID     `json:"objectId"`
+	Version    *BigInt             `json:"version"`
+	Digest     iotago.ObjectDigest `json:"digest"`
+}
+
 type ObjectChange struct {
-	Published *struct {
-		PackageID iotago.ObjectID     `json:"packageId"`
-		Version   *BigInt             `json:"version"`
-		Digest    iotago.ObjectDigest `json:"digest"`
-		Nodules   []string            `json:"nodules"`
-	} `json:"published,omitempty"`
+	Published *ObjectChangePublished `json:"published,omitempty"`
 	// Transfer objects to new address / wrap in another object
-	Transferred *struct {
-		Sender     iotago.Address      `json:"sender"`
-		Recipient  ObjectOwner         `json:"recipient"`
-		ObjectType string              `json:"objectType"`
-		ObjectID   iotago.ObjectID     `json:"objectId"`
-		Version    *BigInt             `json:"version"`
-		Digest     iotago.ObjectDigest `json:"digest"`
-	} `json:"transferred,omitempty"`
+	Transferred *ObjectChangeTransferred `json:"transferred,omitempty"`
 	// Object mutated.
-	Mutated *struct {
-		Sender          iotago.Address      `json:"sender"`
-		Owner           ObjectOwner         `json:"owner"`
-		ObjectType      string              `json:"objectType"`
-		ObjectID        iotago.ObjectID     `json:"objectId"`
-		Version         *BigInt             `json:"version"`
-		PreviousVersion *BigInt             `json:"previousVersion"`
-		Digest          iotago.ObjectDigest `json:"digest"`
-	} `json:"mutated,omitempty"`
+	Mutated *ObjectChangeMutated `json:"mutated,omitempty"`
 	// Delete object j
-	Deleted *struct {
-		Sender     iotago.Address  `json:"sender"`
-		ObjectType string          `json:"objectType"`
-		ObjectID   iotago.ObjectID `json:"objectId"`
-		Version    *BigInt         `json:"version"`
-	} `json:"deleted,omitempty"`
+	Deleted *ObjectChangeDeleted `json:"deleted,omitempty"`
 	// Wrapped object
-	Wrapped *struct {
-		Sender     iotago.Address  `json:"sender"`
-		ObjectType string          `json:"objectType"`
-		ObjectID   iotago.ObjectID `json:"objectId"`
-		Version    *BigInt         `json:"version"`
-	} `json:"wrapped,omitempty"`
+	Wrapped *ObjectChangeWrapped `json:"wrapped,omitempty"`
 	// New object creation
-	Created *struct {
-		Sender     iotago.Address      `json:"sender"`
-		Owner      ObjectOwner         `json:"owner"`
-		ObjectType string              `json:"objectType"`
-		ObjectID   iotago.ObjectID     `json:"objectId"`
-		Version    *BigInt             `json:"version"`
-		Digest     iotago.ObjectDigest `json:"digest"`
-	} `json:"created,omitempty"`
+	Created *ObjectChangeCreated `json:"created,omitempty"`
 }
 
 func (o ObjectChange) IsBcsEnum() {}

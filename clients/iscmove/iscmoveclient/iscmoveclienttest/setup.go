@@ -5,9 +5,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/iotaledger/hive.go/log"
+	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"

@@ -17,7 +17,7 @@ type InputObjectKind map[string]interface{}
 
 type TransactionBytes struct {
 	// the gas object to be used
-	Gas []iotago.ObjectRef `json:"gas"`
+	Gas []*iotago.ObjectRef `json:"gas"`
 
 	// objects to be used in this transaction
 	InputObjects []InputObjectKind `json:"inputObjects"`
@@ -45,18 +45,18 @@ type TransferIota struct {
 	Amount    uint64         `json:"amount"`
 }
 type Pay struct {
-	Coins      []iotago.ObjectRef `json:"coins"`
-	Recipients []iotago.Address   `json:"recipients"`
-	Amounts    []uint64           `json:"amounts"`
+	Coins      []*iotago.ObjectRef `json:"coins"`
+	Recipients []iotago.Address    `json:"recipients"`
+	Amounts    []uint64            `json:"amounts"`
 }
 type PayIota struct {
-	Coins      []iotago.ObjectRef `json:"coins"`
-	Recipients []iotago.Address   `json:"recipients"`
-	Amounts    []uint64           `json:"amounts"`
+	Coins      []*iotago.ObjectRef `json:"coins"`
+	Recipients []iotago.Address    `json:"recipients"`
+	Amounts    []uint64            `json:"amounts"`
 }
 type PayAllIota struct {
-	Coins     []iotago.ObjectRef `json:"coins"`
-	Recipient iotago.Address     `json:"recipient"`
+	Coins     []*iotago.ObjectRef `json:"coins"`
+	Recipient iotago.Address      `json:"recipient"`
 }
 type ChangeEpoch struct {
 	Epoch             interface{} `json:"epoch"`

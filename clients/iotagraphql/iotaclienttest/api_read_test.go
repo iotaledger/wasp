@@ -9,17 +9,17 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/v2/clients"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 	testcommon "github.com/iotaledger/wasp/v2/clients/iota-go/test_common"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 )
 
 func TestGetObject(t *testing.T) {
 	ctx := context.Background()
-	client := clients.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
+	client := iotagraphql.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
 	owner := iotago.MustAddressFromHex(testcommon.TestAddress)
 
 	limit := int(1)
@@ -44,7 +44,7 @@ func TestGetObject(t *testing.T) {
 
 func TestGetTransactionBlock(t *testing.T) {
 	ctx := context.Background()
-	client := clients.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
+	client := iotagraphql.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
 	owner := iotago.MustAddressFromHex(testcommon.TestAddress)
 
 	limit := int(1)
@@ -66,7 +66,7 @@ func TestGetTransactionBlock(t *testing.T) {
 
 func TestQueryTransactionBlocks(t *testing.T) {
 	ctx := context.Background()
-	client := clients.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
+	client := iotagraphql.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
 
 	resp, err := client.QueryTransactionBlocks(ctx, iotaclient.QueryTransactionBlocksRequest{
 		Limit: lo.ToPtr(int(3)),
@@ -78,7 +78,7 @@ func TestQueryTransactionBlocks(t *testing.T) {
 func TestTryGetPastObject(t *testing.T) {
 	t.Skip("May fail")
 	ctx := context.Background()
-	client := clients.NewGraphQLClientWithTimeout(iotaconn.TestnetGraphQLEndpointURL, 120*time.Second)
+	client := iotagraphql.NewGraphQLClientWithTimeout(iotaconn.TestnetGraphQLEndpointURL, 120*time.Second, nil)
 	owner := iotago.MustAddressFromHex(testcommon.TestAddress)
 
 	limit := int(1)

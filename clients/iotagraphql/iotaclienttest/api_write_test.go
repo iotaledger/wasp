@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/v2/clients"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
@@ -16,10 +15,11 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotatest"
 	testcommon "github.com/iotaledger/wasp/v2/clients/iota-go/test_common"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 )
 
 func TestDevInspectTransactionBlock(t *testing.T) {
-	client := clients.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
+	client := iotagraphql.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
 	sender := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL)
 
 	limit := int(3)
@@ -58,7 +58,7 @@ func TestDevInspectTransactionBlock(t *testing.T) {
 }
 
 func TestDryRunTransaction(t *testing.T) {
-	client := clients.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
+	client := iotagraphql.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
 
 	signer := iotago.MustAddressFromHex(testcommon.TestAddress)
 	coins, err := client.GetCoins(
@@ -90,7 +90,7 @@ func TestDryRunTransaction(t *testing.T) {
 }
 
 func TestExecuteTransactionBlock(t *testing.T) {
-	client := clients.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
+	client := iotagraphql.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
 	signer := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL)
 	coins, err := client.GetCoins(
 		context.Background(), iotaclient.GetCoinsRequest{
@@ -125,7 +125,7 @@ func TestExecuteTransactionBlock(t *testing.T) {
 }
 
 func TestSignAndExecuteTransaction(t *testing.T) {
-	client := clients.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
+	client := iotagraphql.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
 	signer := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL)
 	coins, err := client.GetCoins(
 		context.Background(), iotaclient.GetCoinsRequest{

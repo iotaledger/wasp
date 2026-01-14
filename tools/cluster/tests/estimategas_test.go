@@ -62,7 +62,7 @@ func (e *ChainEnv) testEstimateGasOnLedger(t *testing.T) {
 		// we get an error regarding version of some object (presumably treasuryCap).
 		coinPackageID, treasuryCap := iotaclienttest.DeployCoinPackage(
 			t,
-			e.Clu.L1Client().IotaClient(),
+			e.Clu.L1Client().GetIotaClient(),
 			cryptolib.SignerToIotaSigner(sender),
 			contracts.Testcoin(),
 		)
@@ -74,7 +74,7 @@ func (e *ChainEnv) testEstimateGasOnLedger(t *testing.T) {
 		))
 		testcoinRef := iotaclienttest.MintCoins(
 			t,
-			e.Clu.L1Client().IotaClient(),
+			e.Clu.L1Client().GetIotaClient(),
 			cryptolib.SignerToIotaSigner(sender),
 			coinPackageID,
 			contracts.TestcoinModuleName,

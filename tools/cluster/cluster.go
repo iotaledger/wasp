@@ -40,7 +40,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/evm/evmlogger"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/origin"
-	"github.com/iotaledger/wasp/v2/packages/parameters"
+	"github.com/iotaledger/wasp/v2/packages/parameters/l1paramsfetcher"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/v2/packages/transaction"
@@ -57,7 +57,7 @@ type Cluster struct {
 	DataPath          string
 	OriginatorKeyPair *cryptolib.KeyPair
 	l1                clients.L1Client
-	l1ParamsFetcher   parameters.L1ParamsFetcher
+	l1ParamsFetcher   l1paramsfetcher.L1ParamsFetcher
 	waspCmds          []*waspCmd
 	t                 *testing.T
 	log               log.Logger
@@ -105,7 +105,7 @@ func New(name string, config *ClusterConfig, dataPath string, t *testing.T, log 
 		t:                 t,
 		log:               log,
 		l1:                client,
-		l1ParamsFetcher:   parameters.NewL1ParamsFetcher(client.IotaClient(), log),
+		l1ParamsFetcher:   l1paramsfetcher.NewL1ParamsFetcher(client.GetIotaClient(), log),
 		DataPath:          dataPath,
 	}
 }
