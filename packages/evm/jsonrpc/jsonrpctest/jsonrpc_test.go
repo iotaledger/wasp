@@ -502,6 +502,36 @@ func TestRPCCallNonView(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestRPCCallTimestampAndBlockNumber(t *testing.T) {
+	env := newSoloTestEnv(t)
+	creator, creatorAddress := env.soloChain.NewEthereumAccountWithL2Funds()
+	contractABI, err := abi.JSON(strings.NewReader(evmtest.ISCTestContractABI))
+	require.NoError(t, err)
+	_, _, contractAddress := env.DeployEVMContract(creator, contractABI, evmtest.ISCTestContractBytecode)
+
+	bi := env.soloChain.GetLatestBlockInfo()
+	require.EqualValues(t, 1, bi.NumSuccessfulRequests)
+
+	ret, err := env.Client.CallContract(context.Background(), ethereum.CallMsg{
+		From: creatorAddress,
+		To:   &contractAddress,
+		Data: lo.Must(contractABI.Pack("getTimestampAndBlockNumber")),
+		Gas:  100_000,
+	}, nil)
+	require.NoError(t, err)
+
+	var v struct {
+		Timestamp   *big.Int
+		BlockNumber *big.Int
+	}
+	v.BlockNumber = new(big.Int)
+	err = contractABI.UnpackIntoInterface(&v, "getTimestampAndBlockNumber", ret)
+	require.NoError(t, err)
+
+	require.EqualValues(t, bi.BlockIndex, v.BlockNumber.Uint64())
+	require.EqualValues(t, uint64(bi.Timestamp.Unix()), v.Timestamp.Uint64())
+}
+
 func TestRPCAccessHistoricalState(t *testing.T) {
 	env := newSoloTestEnv(t)
 	env.TestRPCAccessHistoricalState()

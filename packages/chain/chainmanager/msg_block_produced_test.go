@@ -28,7 +28,7 @@ func TestMsgBlockProducedSerialization(t *testing.T) {
 		statetest.TestBlock(),
 	}
 
-	bcs.TestCodecAndHash(t, msg, "6b906810f98b", &msgBlockProduced{
+	bcs.TestCodecAndHash(t, msg, "5e2ca0997270", &msgBlockProduced{
 		block: state.NewBlock(),
 	})
 }

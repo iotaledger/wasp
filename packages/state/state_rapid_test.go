@@ -9,9 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"pgregory.net/rapid"
 
-	"github.com/iotaledger/wasp/v2/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/v2/packages/kv"
-	"github.com/iotaledger/wasp/v2/packages/kv/codec"
 	"github.com/iotaledger/wasp/v2/packages/kvstore"
 	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
 	"github.com/iotaledger/wasp/v2/packages/state"
@@ -32,9 +30,11 @@ func newStateSM() *stateSM {
 	sm := new(stateSM)
 	sm.store = statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	sm.draft = sm.store.NewOriginStateDraft()
-	sm.draft.Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.Encode(uint32(0)))
 	sm.model = mapdb.NewMapDB()
-	sm.model.Set([]byte(coreutil.StatePrefixBlockIndex), codec.Encode(uint32(0)))
+	sm.draft.Iterate("", func(k kv.Key, v []byte) bool {
+		sm.model.Set([]byte(k), v)
+		return true
+	})
 	return sm
 }
 
@@ -120,7 +120,6 @@ func TestRapidReproduced(t *testing.T) {
 	var err error
 	store := statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	draft := store.NewOriginStateDraft()
-	draft.Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.Encode(uint32(0)))
 	draft.Set(kv.Key([]byte{0}), []byte{0})
 	draft.Set(kv.Key([]byte{1}), []byte{0})
 	draft.Set(kv.Key([]byte{0x10}), []byte{0})
@@ -146,7 +145,6 @@ func TestRapidReproduced(t *testing.T) {
 func TestRapidReproduced2(t *testing.T) {
 	store := statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	draft := store.NewOriginStateDraft()
-	draft.Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.Encode(uint32(0)))
 	draft.Set(kv.Key([]byte{0x2}), []byte{0x1})
 	draft.Set(kv.Key([]byte{0x7}), []byte{0x1})
 

@@ -37,8 +37,8 @@ func TestBlocklog_BlockInfo(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, bi)
 	require.EqualValues(t, 0, bi.BlockIndex)
-	require.EqualValues(t, 1, bi.TotalRequests)
-	require.EqualValues(t, 1, bi.NumSuccessfulRequests)
+	require.EqualValues(t, 0, bi.TotalRequests)
+	require.EqualValues(t, 0, bi.NumSuccessfulRequests)
 	require.EqualValues(t, 0, bi.NumOffLedgerRequests)
 	t.Logf("%s", bi.String())
 
@@ -91,8 +91,10 @@ func TestBlocklog_BlockInfoSeveral(t *testing.T) {
 		require.NotNil(t, bi1)
 		t.Logf("%s", bi1.String())
 		require.EqualValues(t, blockIndex, bi1.BlockIndex)
-		require.EqualValues(t, 1, bi1.TotalRequests)
-		require.EqualValues(t, 1, bi1.NumSuccessfulRequests)
+		if blockIndex > 0 {
+			require.EqualValues(t, 1, bi1.TotalRequests)
+			require.EqualValues(t, 1, bi1.NumSuccessfulRequests)
+		}
 		require.LessOrEqual(t, bi1.NumOffLedgerRequests, bi1.TotalRequests)
 	}
 }

@@ -23,14 +23,14 @@ var Processor = Contract.Processor(nil,
 
 var ErrBlockNotFound = coreerrors.Register("Block not found").Create()
 
-func (s *StateWriter) SetInitialState(l1Params *parameters.L1Params) {
+func (s *StateWriter) SetInitialState(l1Params *parameters.L1Params, timestamp time.Time) {
 	s.SaveNextBlockInfo(&BlockInfo{
 		SchemaVersion:         BlockInfoLatestSchemaVersion,
 		BlockIndex:            0,
-		Timestamp:             time.Time{},
+		Timestamp:             timestamp,
 		L1Params:              l1Params,
-		TotalRequests:         1,
-		NumSuccessfulRequests: 1,
+		TotalRequests:         0,
+		NumSuccessfulRequests: 0,
 		NumOffLedgerRequests:  0,
 	})
 }

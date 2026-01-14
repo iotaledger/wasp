@@ -248,7 +248,6 @@ func (clu *Cluster) RunDistributedKeyGeneration(committeeNodes []int, threshold 
 		addr, err = apilib.RunDistributedKeyGeneration(context.Background(), client, peerPubKeys, threshold, timeout...)
 		return err
 	}, 5)
-
 	if err != nil {
 		return nil, err
 	}

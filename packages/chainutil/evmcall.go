@@ -23,6 +23,8 @@ func EVMCall(
 	store indexedstore.IndexedStore,
 	processors *processors.Config,
 	log log.Logger,
+	blockTime time.Time,
+	entropy hashing.HashValue,
 	call ethereum.CallMsg,
 ) ([]byte, error) {
 	latestState, err := store.LatestState()
@@ -48,8 +50,8 @@ func EVMCall(
 		store,
 		processors,
 		log,
-		time.Now(),
-		hashing.PseudoRandomHash(nil),
+		blockTime,
+		entropy,
 		iscReq,
 		true,
 	)

@@ -3,19 +3,18 @@ package origin
 
 import (
 	"fmt"
-	"time"
+	"sync"
+
+	"github.com/samber/lo"
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/isc/coreutil"
-	"github.com/iotaledger/wasp/v2/packages/kv"
-	"github.com/iotaledger/wasp/v2/packages/kv/codec"
 	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
 	"github.com/iotaledger/wasp/v2/packages/parameters"
 	"github.com/iotaledger/wasp/v2/packages/state"
-	"github.com/iotaledger/wasp/v2/packages/state/statetest"
 	"github.com/iotaledger/wasp/v2/packages/transaction"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/blocklog"
@@ -83,7 +82,7 @@ func L1Commitment(
 ) *state.L1Commitment {
 	block, _ := InitChain(
 		v,
-		statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()),
+		lo.Must(state.NewStore(mapdb.NewMapDB(), false, new(sync.Mutex))),
 		args,
 		gasCoinObjectID,
 		originDeposit,
@@ -125,8 +124,6 @@ func InitChain(
 	}
 
 	d := store.NewOriginStateDraft()
-	d.Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.Encode(uint32(0)))
-	d.Set(kv.Key(coreutil.StatePrefixTimestamp), codec.Encode(time.Unix(0, 0)))
 
 	contracts := []*coreutil.ContractInfo{
 		root.Contract,
@@ -151,7 +148,7 @@ func InitChain(
 	// init the state of each core contract
 	root.NewStateWriter(root.Contract.StateSubrealm(d)).SetInitialState(v, contracts)
 	accounts.NewStateWriter(v, accounts.Contract.StateSubrealm(d)).SetInitialState(originDeposit, l1Params.BaseToken)
-	blocklog.NewStateWriter(blocklog.Contract.StateSubrealm(d)).SetInitialState(l1Params)
+	blocklog.NewStateWriter(blocklog.Contract.StateSubrealm(d)).SetInitialState(l1Params, d.Timestamp())
 	errors.NewStateWriter(errors.Contract.StateSubrealm(d)).SetInitialState()
 	governance.NewStateWriter(governance.Contract.StateSubrealm(d)).SetInitialState(initParams.ChainAdmin, blockKeepAmount)
 	evmimpl.SetInitialState(evm.Contract.StateSubrealm(d), initParams.EVMChainID)

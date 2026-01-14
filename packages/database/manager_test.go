@@ -14,10 +14,8 @@ import (
 	hivedb "github.com/iotaledger/hive.go/db"
 	"github.com/iotaledger/wasp/v2/packages/kvstore"
 
-	"github.com/iotaledger/wasp/v2/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/v2/packages/isc/isctest"
 	"github.com/iotaledger/wasp/v2/packages/kv"
-	"github.com/iotaledger/wasp/v2/packages/kv/codec"
 	"github.com/iotaledger/wasp/v2/packages/registry"
 	"github.com/iotaledger/wasp/v2/packages/state"
 )
@@ -78,8 +76,6 @@ func TestWriteAmplification(t *testing.T) {
 	require.NotNil(t, chainStore)
 
 	originSD := chainStore.NewOriginStateDraft()
-	originSD.Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.Encode[uint32](uint32(0)))
-	originSD.Set(kv.Key(coreutil.StatePrefixTimestamp), codec.Encode[time.Time](time.Unix(0, 0)))
 	originBlock, _, _ := lo.Must3(chainStore.Commit(originSD))
 	require.NotNil(t, originBlock)
 

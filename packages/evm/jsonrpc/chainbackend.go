@@ -22,7 +22,13 @@ import (
 // ChainBackend provides access to the underlying ISC chain.
 type ChainBackend interface {
 	EVMSendTransaction(tx *types.Transaction) error
-	EVMCall(anchor *isc.StateAnchor, callMsg ethereum.CallMsg, l1Params *parameters.L1Params) ([]byte, error)
+	EVMCall(
+		anchor *isc.StateAnchor,
+		blockTime time.Time,
+		entropy hashing.HashValue,
+		callMsg ethereum.CallMsg,
+		l1Params *parameters.L1Params,
+	) ([]byte, error)
 	EVMEstimateGas(anchor *isc.StateAnchor, callMsg ethereum.CallMsg, l1Params *parameters.L1Params) (uint64, error)
 	EVMTrace(
 		anchor *isc.StateAnchor,

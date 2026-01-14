@@ -77,13 +77,21 @@ func (b *WaspEVMBackend) EVMSendTransaction(tx *types.Transaction) error {
 	return nil
 }
 
-func (b *WaspEVMBackend) EVMCall(anchor *isc.StateAnchor, callMsg ethereum.CallMsg, l1Params *parameters.L1Params) ([]byte, error) {
+func (b *WaspEVMBackend) EVMCall(
+	anchor *isc.StateAnchor,
+	blockTime time.Time,
+	entropy hashing.HashValue,
+	callMsg ethereum.CallMsg,
+	l1Params *parameters.L1Params,
+) ([]byte, error) {
 	return chainutil.EVMCall(
 		anchor,
 		l1Params,
 		b.chain.Store(),
 		b.chain.Processors(),
 		b.chain.Log(),
+		blockTime,
+		entropy,
 		callMsg,
 	)
 }
