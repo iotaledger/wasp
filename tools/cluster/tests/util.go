@@ -263,7 +263,6 @@ func (e *ChainEnv) sendNRequests(clusterTestEnv *clusterTestEnv, numRequests int
 }
 
 func (e *ChainEnv) verifyNRequests(ctx context.Context, transactions chan *types.Transaction, numRequests int64, readNodeIndexes []int, storageContractAddr common.Address, cb func(tx *types.Transaction)) error {
-
 outer:
 	for {
 		select {
@@ -389,7 +388,6 @@ func newClusterTestEnv(t *testing.T, env *ChainEnv, nodeIndex int) *clusterTestE
 	rawClient, err := rpc.DialHTTP(jsonRPCEndpoint)
 	require.NoError(t, err)
 	client := ethclient.NewClient(rawClient)
-	t.Cleanup(client.Close)
 
 	waitTxConfirmed := func(txHash common.Hash) error {
 		c := env.Chain.Client(nil, nodeIndex)
@@ -417,7 +415,7 @@ func newClusterTestEnv(t *testing.T, env *ChainEnv, nodeIndex int) *clusterTestE
 			ChainID:         evm.DefaultChainID,
 			WaitTxConfirmed: waitTxConfirmed,
 		},
-		ChainEnv: *env,
+		ChainEnv: env,
 	}
 	e.Env.NewAccountWithL2Funds = e.newEthereumAccountWithL2Funds
 	return e
@@ -463,5 +461,5 @@ func (e *clusterTestEnv) newEthereumAccountWithL2Funds(baseTokens ...coin.Value)
 
 type clusterTestEnv struct {
 	jsonrpctest.Env
-	ChainEnv
+	*ChainEnv
 }

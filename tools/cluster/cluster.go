@@ -125,7 +125,17 @@ func (clu *Cluster) NewKeyPairWithFunds() (*cryptolib.KeyPair, *cryptolib.Addres
 }
 
 func (clu *Cluster) RequestFunds(addr *cryptolib.Address) error {
-	return clu.l1.RequestFunds(context.Background(), *addr)
+	err := clu.l1.RequestFunds(context.Background(), *addr)
+	if err != nil {
+		return err
+	}
+
+	return Retry(func() error {
+		if clu.L1BaseTokens(addr) > 0 {
+			return nil
+		}
+		return errors.New("funds not available yet")
+	}, 10)
 }
 
 func (clu *Cluster) L1Client() clients.L1Client {
@@ -248,7 +258,6 @@ func (clu *Cluster) RunDistributedKeyGeneration(committeeNodes []int, threshold 
 		addr, err = apilib.RunDistributedKeyGeneration(context.Background(), client, peerPubKeys, threshold, timeout...)
 		return err
 	}, 5)
-
 	if err != nil {
 		return nil, err
 	}

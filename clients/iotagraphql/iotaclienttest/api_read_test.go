@@ -66,7 +66,7 @@ func TestGetTransactionBlock(t *testing.T) {
 
 func TestQueryTransactionBlocks(t *testing.T) {
 	ctx := context.Background()
-	client := clients.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
+	client := clients.NewGraphQLClientWithTimeout(iotaconn.TestnetGraphQLEndpointURL, 60*time.Second)
 
 	resp, err := client.QueryTransactionBlocks(ctx, iotaclient.QueryTransactionBlocksRequest{
 		Limit: lo.ToPtr(int(3)),

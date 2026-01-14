@@ -9,9 +9,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"golang.org/x/sync/errgroup"
 
-	"github.com/iotaledger/wasp/v2/clients/apiclient"
 	"github.com/iotaledger/wasp/v2/clients/chainclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/packages/coin"
@@ -23,21 +21,19 @@ import (
 
 // executed in cluster_test.go
 func (e *ChainEnv) testSpamEVM(t *testing.T) {
-	//TODO: increase to 10K as in original test. Now it's not passing
+	// TODO: increase to 10K as in original test. Now it's not passing
 	const numRequests = 600
 
 	numRequestsPerAccount := 100
 	numAccounts := numRequests / numRequestsPerAccount
 
-	var eg errgroup.Group
-	for range numAccounts {
-		eg.Go(func() error {
-			return e.checkNRequests(newClusterTestEnv(t, e, 0), int64(numRequestsPerAccount), 0, []int{0}, 30*time.Second)
+	for i := range numAccounts {
+		t.Run(fmt.Sprintf("account-%d", i), func(t *testing.T) {
+			t.Parallel()
+			err := e.checkNRequests(newClusterTestEnv(t, e, 0), int64(numRequestsPerAccount), 0, []int{0}, 30*time.Second)
+			require.NoError(t, err)
 		})
 	}
-
-	err := eg.Wait()
-	require.NoError(t, err)
 }
 
 // executed in cluster_test.go
@@ -90,15 +86,17 @@ func (e *ChainEnv) testSpamOnledger(t *testing.T) {
 				}
 				reqSentTime := time.Now()
 				// wait for the request to be processed
-				var receipt []*apiclient.ReceiptResponse
-				receipt, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, req, false, 1*time.Minute)
-				if err != nil {
-					reqErrorChan <- err
+				receipt, er := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, req, false, 1*time.Minute)
+				if er != nil {
+					reqErrorChan <- er
 					return
 				}
 
-				gasFeeCharged, err := util.DecodeUint64(receipt[0].GasFeeCharged)
-				require.NoError(t, err)
+				gasFeeCharged, er := util.DecodeUint64(receipt[0].GasFeeCharged)
+				if er != nil {
+					reqErrorChan <- er
+					return
+				}
 				wallets[walletIndex].gasChargedTotal.Add(gasFeeCharged)
 
 				processingDuration := uint64(time.Since(reqSentTime).Seconds())
