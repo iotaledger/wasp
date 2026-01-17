@@ -8,7 +8,7 @@ import (
 
 	bcs "github.com/iotaledger/bcs-go"
 
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/hashing"
 )
@@ -38,12 +38,12 @@ func (l *L1Params) Hash() hashing.HashValue {
 }
 
 type Protocol struct {
-	Epoch                 *iotajsonrpc.BigInt `json:"epoch" swagger:"required"`
-	ProtocolVersion       *iotajsonrpc.BigInt `json:"protocol_version" swagger:"required"`
-	SystemStateVersion    *iotajsonrpc.BigInt `json:"system_state_version" swagger:"required"`
-	ReferenceGasPrice     *iotajsonrpc.BigInt `json:"reference_gas_price" swagger:"required"`
-	EpochStartTimestampMs *iotajsonrpc.BigInt `json:"epoch_start_timestamp_ms" swagger:"required"`
-	EpochDurationMs       *iotajsonrpc.BigInt `json:"epoch_duration_ms" swagger:"required"`
+	Epoch                 *iotagraphql.BigInt `json:"epoch" swagger:"required"`
+	ProtocolVersion       *iotagraphql.BigInt `json:"protocol_version" swagger:"required"`
+	SystemStateVersion    *iotagraphql.BigInt `json:"system_state_version" swagger:"required"`
+	ReferenceGasPrice     *iotagraphql.BigInt `json:"reference_gas_price" swagger:"required"`
+	EpochStartTimestampMs *iotagraphql.BigInt `json:"epoch_start_timestamp_ms" swagger:"required"`
+	EpochDurationMs       *iotagraphql.BigInt `json:"epoch_duration_ms" swagger:"required"`
 }
 
 func (p *Protocol) String() string {
@@ -75,7 +75,7 @@ func IotaCoinInfoFromBytes(b []byte) (*IotaCoinInfo, error) {
 
 func IotaCoinInfoFromL1Metadata(
 	coinType coin.Type,
-	metadata *iotajsonrpc.IotaCoinMetadata,
+	metadata *iotagraphql.IotaCoinMetadata,
 	totalSupply coin.Value,
 ) *IotaCoinInfo {
 	return &IotaCoinInfo{
@@ -84,7 +84,7 @@ func IotaCoinInfoFromL1Metadata(
 		Name:        metadata.Name,
 		Symbol:      metadata.Symbol,
 		Description: metadata.Description,
-		IconURL:     metadata.IconUrl,
+		IconURL:     metadata.IconURL,
 		TotalSupply: totalSupply,
 	}
 }

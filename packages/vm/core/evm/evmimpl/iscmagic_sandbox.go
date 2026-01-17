@@ -8,7 +8,7 @@ import (
 	"github.com/holiman/uint256"
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/hashing"
@@ -121,7 +121,7 @@ func (h *magicContractHandler) Send(
 	assets := iscmagic.ISCAssets{}
 	if legacyAssets.BaseTokens > 0 {
 		assets.Coins = append(assets.Coins, iscmagic.CoinBalance{
-			CoinType: iscmagic.CoinType(iotajsonrpc.IotaCoinType),
+			CoinType: iscmagic.CoinType(iotagraphql.IotaCoinType),
 			Amount:   legacyAssets.BaseTokens,
 		})
 	}

@@ -6,11 +6,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/iotatest"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 	testcommon "github.com/iotaledger/wasp/v2/clients/iota-go/test_common"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmovetest"
@@ -56,7 +55,7 @@ func TestISCCodec(t *testing.T) {
 	bcs.TestCodecAndHash(t, iscmove.AssetsBagWithBalances{
 		AssetsBag: iscmovetest.TestAssetsBag,
 		Assets: *iscmove.NewAssets(123456).
-			SetCoin(iotajsonrpc.MustCoinTypeFromString("0x1::a::A"), 100).
+			SetCoin(iotagraphql.MustCoinTypeFromString("0x1::a::A"), 100).
 			AddObject(*iotatest.TestAddress, iotago.MustTypeFromString("0x2::a::B")),
 	}, "17fd55be42d7")
 }
@@ -75,7 +74,7 @@ func TestUnmarshalBCS(t *testing.T) {
 		},
 		Message: *iscmovetest.RandomMessage(),
 		Allowance: bcs.MustMarshal(iscmove.NewAssets(0).
-			SetCoin(iotajsonrpc.IotaCoinType, 100).
+			SetCoin(iotagraphql.IotaCoinType, 100).
 			AddObject(iotago.ObjectID{}, iotago.MustTypeFromString("0x1::a::A"))),
 		GasBudget: 100,
 	}
@@ -84,6 +83,6 @@ func TestUnmarshalBCS(t *testing.T) {
 
 	var targetReq iscmoveclient.MoveRequest
 
-	err = iotaclient.UnmarshalBCS(b, &targetReq)
+	err = iotagraphql.UnmarshalBCS(b, &targetReq)
 	require.Nil(t, err)
 }

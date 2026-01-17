@@ -8,7 +8,7 @@ import (
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/iotatest"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/isc"
@@ -28,15 +28,15 @@ func TestAssetsBagWithBalancesToAssets(t *testing.T) {
 			Size: 2,
 		},
 		Assets: *iscmove.NewAssets(33).
-			SetCoin(iotajsonrpc.MustCoinTypeFromString("0xa1::a::A"), 11).
-			SetCoin(iotajsonrpc.MustCoinTypeFromString("0xa2::b::B"), 22).
+			SetCoin(iotagraphql.MustCoinTypeFromString("0xa1::a::A"), 11).
+			SetCoin(iotagraphql.MustCoinTypeFromString("0xa2::b::B"), 22).
 			AddObject(iotago.Address{1, 2, 3}, iotago.MustTypeFromString("0xa1::c::C")),
 	}
 	assets, err := isc.AssetsFromAssetsBagWithBalances(&assetsBag)
 	require.NoError(t, err)
-	require.Equal(t, assetsBag.Coins.Get(iotajsonrpc.IotaCoinType), iotajsonrpc.CoinValue(assets.BaseTokens()))
-	require.Equal(t, assetsBag.Coins.Get(iotajsonrpc.MustCoinTypeFromString("0xa1::a::A")), iotajsonrpc.CoinValue(assets.CoinBalance(coin.MustTypeFromString("0xa1::a::A"))))
-	require.Equal(t, assetsBag.Coins.Get(iotajsonrpc.MustCoinTypeFromString("0xa2::b::B")), iotajsonrpc.CoinValue(assets.CoinBalance(coin.MustTypeFromString("0xa2::b::B"))))
+	require.Equal(t, assetsBag.Coins.Get(iotagraphql.IotaCoinType), iotagraphql.CoinValue(assets.BaseTokens()))
+	require.Equal(t, assetsBag.Coins.Get(iotagraphql.MustCoinTypeFromString("0xa1::a::A")), iotagraphql.CoinValue(assets.CoinBalance(coin.MustTypeFromString("0xa1::a::A"))))
+	require.Equal(t, assetsBag.Coins.Get(iotagraphql.MustCoinTypeFromString("0xa2::b::B")), iotagraphql.CoinValue(assets.CoinBalance(coin.MustTypeFromString("0xa2::b::B"))))
 	require.Equal(t, assetsBag.Objects.MustGet(iotago.Address{1, 2, 3}), iotago.MustTypeFromString("0xa1::c::C"))
 }
 

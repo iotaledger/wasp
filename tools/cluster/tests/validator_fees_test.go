@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/v2/clients/chainclient"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/isc"
@@ -52,8 +52,8 @@ func TestValidatorFees(t *testing.T) {
 	}
 	govClient := chain.Client(chain.OriginatorKeyPair)
 	reqTx, err := govClient.PostRequest(context.Background(), governance.FuncSetFeePolicy.Message(newGasFeePolicy), chainclient.PostRequestParams{
-		Transfer:  isc.NewAssets(iotaclient.DefaultGasBudget + 10),
-		GasBudget: iotaclient.DefaultGasBudget,
+		Transfer:  isc.NewAssets(iotagraphql.DefaultGasBudget + 10),
+		GasBudget: iotagraphql.DefaultGasBudget,
 	})
 	require.NoError(t, err)
 	_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chain.ChainID, reqTx, false, 30*time.Second)
@@ -66,8 +66,8 @@ func TestValidatorFees(t *testing.T) {
 	scClient := chainclient.New(clu.L1Client(), clu.WaspClient(0), chainID, userWallet)
 	for i := 0; i < 20; i++ {
 		reqTx, err := scClient.PostRequest(context.Background(), accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
-			Transfer:  isc.NewAssets(iotaclient.DefaultGasBudget + 100),
-			GasBudget: iotaclient.DefaultGasBudget,
+			Transfer:  isc.NewAssets(iotagraphql.DefaultGasBudget + 100),
+			GasBudget: iotagraphql.DefaultGasBudget,
 		})
 		require.NoError(t, err)
 		_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chainID, reqTx, false, 30*time.Second)

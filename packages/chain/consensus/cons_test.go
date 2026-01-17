@@ -13,7 +13,7 @@ import (
 	hivelog "github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/iotatest"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/packages/chain/consensus"
 	"github.com/iotaledger/wasp/v2/packages/coin"
@@ -722,7 +722,7 @@ func RandomOnLedgerDepositRequest(senders ...*cryptolib.Address) isc.OnLedgerReq
 	ref := iotatest.RandomObjectRef()
 	a := iscmove.AssetsBagWithBalances{
 		AssetsBag: iscmove.AssetsBag{ID: *iotatest.RandomAddress(), Size: 1},
-		Assets:    *iscmove.NewAssets(iotajsonrpc.CoinValue(rand.Int63())),
+		Assets:    *iscmove.NewAssets(iotagraphql.CoinValue(rand.Int63())),
 	}
 	req := iscmove.RefWithObject[iscmove.Request]{
 		ObjectRef: *ref,

@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/v2/clients/chainclient"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/evm/iscmagic"
@@ -47,7 +47,7 @@ func initRegisterERC20NativeTokenCmd() *cobra.Command {
 
 			request := evm.FuncRegisterERC20Coin.Message(coinType)
 			postRequest(ctx, client, chainAliasName, request, chainclient.PostRequestParams{
-				GasBudget: iotaclient.DefaultGasBudget,
+				GasBudget: iotagraphql.DefaultGasBudget,
 			}, withOffLedger)
 
 			log.Printf("ERC20 contract deployed at address %s", iscmagic.ERC20CoinAddress(coinType))

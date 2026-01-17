@@ -10,7 +10,7 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/v2/packages/coin"
@@ -30,7 +30,7 @@ import (
 func TestInitLoad(t *testing.T) {
 	env := solo.New(t)
 	user, userAddr := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
-	env.AssertL1BaseTokens(userAddr, iotaclient.FundsFromFaucetAmount)
+	env.AssertL1BaseTokens(userAddr, coin.Value(iotagraphql.FundsFromFaucetAmount))
 	var originAmount coin.Value = 10 * isc.Million
 	ch, _ := env.NewChainExt(user, originAmount, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 
@@ -493,8 +493,8 @@ func TestInvalidAllowance(t *testing.T) {
 			},
 			AllowanceBCS:     []byte{1, 2, 3}, // invalid allowance
 			OnchainGasBudget: math.MaxUint64,
-			GasPrice:         iotaclient.DefaultGasPrice,
-			GasBudget:        iotaclient.DefaultGasBudget,
+			GasPrice:         iotagraphql.DefaultGasPrice,
+			GasBudget:        iotagraphql.DefaultGasBudget,
 		},
 	)
 	require.NoError(t, err)

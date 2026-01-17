@@ -10,7 +10,7 @@ import (
 
 	"github.com/iotaledger/wasp/v2/clients/apiclient"
 	"github.com/iotaledger/wasp/v2/clients/chainclient"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/testcore/contracts/inccounter"
@@ -23,7 +23,7 @@ func (e *ChainEnv) testPermissionlessAccessNode(t *testing.T) {
 	keyPair, _, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(e.t, err)
 
-	e.DepositFunds(iotaclient.DefaultGasBudget, keyPair)
+	e.DepositFunds(iotagraphql.DefaultGasBudget, keyPair)
 
 	// spin a new node
 	clu2 := newCluster(t, waspClusterOpts{
@@ -137,7 +137,7 @@ func (e *ChainEnv) testPermissionlessAccessNode(t *testing.T) {
 		} else {
 			t.Logf("could not fetch ISC nonce from committee, using synthetic nonce: %v", err2)
 		}
-		tmp := isc.NewOffLedgerRequest(e.Chain.ChainID, inccounter.FuncIncCounter.Message(nil), nonce, iotaclient.DefaultGasBudget)
+		tmp := isc.NewOffLedgerRequest(e.Chain.ChainID, inccounter.FuncIncCounter.Message(nil), nonce, iotagraphql.DefaultGasBudget)
 		tmp.WithNonce(nonce)
 		req = tmp.Sign(keyPair)
 	}

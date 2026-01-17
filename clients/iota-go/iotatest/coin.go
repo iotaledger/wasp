@@ -8,10 +8,9 @@ import (
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/clients"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/parameters/parameterstest"
 )
 
@@ -23,7 +22,7 @@ func EnsureCoinSplitWithBalance(
 ) {
 	getCoinsRes, err := client.GetCoins(
 		context.Background(),
-		iotaclient.GetCoinsRequest{Owner: cryptolibSigner.Address()},
+		iotagraphql.GetCoinsRequest{Owner: cryptolibSigner.Address()},
 	)
 	require.NoError(t, err)
 
@@ -35,7 +34,7 @@ func EnsureCoinSplitWithBalance(
 		context.Background(),
 		cryptolibSigner.Address(),
 		splitBalance,
-		iotaclient.DefaultGasBudget,
+		iotagraphql.DefaultGasBudget,
 	)
 	require.NoError(t, err)
 
@@ -55,7 +54,7 @@ func EnsureCoinSplitWithBalance(
 		cryptolibSigner.Address(),
 		txb.Finish(),
 		[]*iotago.ObjectRef{coins[0].Ref()},
-		iotaclient.DefaultGasBudget,
+		iotagraphql.DefaultGasBudget,
 		parameterstest.L1Mock.Protocol.ReferenceGasPrice.Uint64(),
 	)
 
@@ -64,10 +63,10 @@ func EnsureCoinSplitWithBalance(
 
 	result, err := client.SignAndExecuteTransaction(
 		context.Background(),
-		&iotaclient.SignAndExecuteTransactionRequest{
+		&iotagraphql.SignAndExecuteTransactionRequest{
 			Signer:      cryptolibSigner,
 			TxDataBytes: txnBytes,
-			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+			Options: &iotagraphql.IotaTransactionBlockResponseOptions{
 				ShowEffects:       true,
 				ShowObjectChanges: true,
 			},

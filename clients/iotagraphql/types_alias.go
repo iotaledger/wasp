@@ -1,18 +1,11 @@
 package iotagraphql
 
 import (
-	"github.com/iotaledger/wasp/v2/clients/iota-go/client"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql/graphqltypes"
 )
 
 // Note: Request types (Get*, Query*, etc.) are now defined directly in this package in requests.go
-// WaitParams, RetryCondition, and gas constants are imported from the client package for shared use
-
-// Re-export utility types from client package
-type (
-	WaitParams            = client.WaitParams
-	RetryCondition[T any] = client.RetryCondition[T]
-)
+// WaitParams, RetryCondition, and gas constants are defined in helpers.go
 
 // Re-export iotajsonrpc types as part of the public API.
 // These types are used by the IotaClient interface and are the common data model
@@ -87,23 +80,11 @@ type (
 	IotaObjectRef           = graphqltypes.IotaObjectRef
 )
 
-const (
-	DefaultGasBudget = client.DefaultGasBudget
-	DefaultGasPrice  = client.DefaultGasPrice
-	MinGasBudget     = client.MinGasBudget
-	MaxGasBudget     = client.MaxGasBudget
-)
-
 // Re-export iotajsonrpc coin picking method constants
 const (
 	PickMethodSmaller = graphqltypes.PickMethodSmaller
 	PickMethodBigger  = graphqltypes.PickMethodBigger
 	PickMethodByOrder = graphqltypes.PickMethodByOrder
-)
-
-var (
-	WaitForEffectsDisabled = client.WaitForEffectsDisabled
-	WaitForEffectsEnabled  = client.WaitForEffectsEnabled
 )
 
 // Re-export iotajsonrpc constants

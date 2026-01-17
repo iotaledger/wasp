@@ -14,7 +14,6 @@ import (
 
 	"github.com/Khan/genqlient/graphql"
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/client"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/serialization"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
@@ -377,16 +376,14 @@ func (c *GraphQLClient) GetDynamicFieldObject(
 		return nil, fmt.Errorf("failed to marshal value to JSON: %w", err)
 	}
 
-	// BCS encode the JSON bytes
-	var bcsData []byte
-	bcsData, err = bcs.Marshal(&valueJSON)
+	bcsData, err := bcs.Marshal(&valueJSON)
 	if err != nil {
 		return nil, fmt.Errorf("failed to BCS-encode value: %w", err)
 	}
 
 	nameInput := DynamicFieldName{
 		Type: req.Name.Type,
-		Bcs:  iotago.Base64Data(bcsData),
+		Bcs:  bcsData,
 	}
 
 	// Query with all options enabled to match JSON-RPC behavior
@@ -442,7 +439,6 @@ func (c *GraphQLClient) GetDynamicFieldObject(
 		}
 	}
 
-	// Return error if both failed
 	if objErr != nil {
 		return nil, fmt.Errorf("failed to get dynamic field object as object: %w", objErr)
 	}
@@ -1066,7 +1062,6 @@ func (c *GraphQLClient) Publish(
 		return nil, fmt.Errorf("Publish: at least one compiled module is required")
 	}
 
-	// Convert Base64Data modules to [][]byte
 	modules := make([][]byte, len(req.CompiledModules))
 	for i, module := range req.CompiledModules {
 		if module == nil {
@@ -1075,13 +1070,11 @@ func (c *GraphQLClient) Publish(
 		modules[i] = module.Data()
 	}
 
-	// Build the PTB
 	ptb := iotago.NewProgrammableTransactionBuilder()
 	capArg := ptb.PublishUpgradeable(modules, req.Dependencies)
 	ptb.TransferArgs(req.Sender, []iotago.Argument{capArg})
 	pt := ptb.Finish()
 
-	// Get gas budget
 	gasBudget := uint64(DefaultGasBudget)
 	if req.GasBudget != nil {
 		var err error
@@ -1091,17 +1084,14 @@ func (c *GraphQLClient) Publish(
 		}
 	}
 
-	// Resolve gas object
 	gasRef, err := c.resolveGasObject(ctx, req.Sender, req.Gas, nil)
 	if err != nil {
 		return nil, err
 	}
 	gasPayment := []*iotago.ObjectRef{gasRef}
 
-	// Create input objects (only gas for Publish, dependencies are package IDs)
 	inputObjects := []graphqltypes.InputObjectKind{newInputObjectKind(gasRef)}
 
-	// Build the transaction
 	tx := iotago.NewProgrammable(
 		req.Sender,
 		pt,
@@ -1110,7 +1100,6 @@ func (c *GraphQLClient) Publish(
 		DefaultGasPrice,
 	)
 
-	// Serialize transaction
 	txBytes, err := bcs.Marshal(&tx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to serialize transaction: %w", err)
@@ -1515,7 +1504,7 @@ func (c *GraphQLClient) GetAllCoins(ctx context.Context, req GetAllCoinsRequest)
 	nodes := resp.Address.Coins.Nodes
 	coins := make([]*Coin, 0, len(nodes))
 	for _, node := range nodes {
-		coin, err := convertGraphQLAllCoin(&node)
+		coin, err := convertCoinNode(allCoinNodeWrapper{&node})
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert coin: %w", err)
 		}
@@ -1590,7 +1579,7 @@ func (c *GraphQLClient) GetCoins(ctx context.Context, req GetCoinsRequest) (*Coi
 	nodes := resp.Address.Coins.Nodes
 	coins := make([]*Coin, 0, len(nodes))
 	for _, node := range nodes {
-		coin, err := convertGraphQLCoin(&node)
+		coin, err := convertCoinNode(coinNodeWrapper{&node})
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert coin: %w", err)
 		}
@@ -1671,14 +1660,6 @@ func convertCoinNode(node coinNode) (*Coin, error) {
 	}, nil
 }
 
-func convertGraphQLCoin(node *GetCoinsAddressCoinsCoinConnectionNodesCoin) (*Coin, error) {
-	return convertCoinNode(coinNodeWrapper{node})
-}
-
-func convertGraphQLAllCoin(node *GetAllCoinsAddressCoinsCoinConnectionNodesCoin) (*Coin, error) {
-	return convertCoinNode(allCoinNodeWrapper{node})
-}
-
 func (c *GraphQLClient) GetTotalSupply(ctx context.Context, coinType string) (*Supply, error) {
 	resp, err := GetLatestIotaSystemState(ctx, c.client)
 	if err != nil {
@@ -1727,7 +1708,7 @@ func (c *GraphQLClient) GetObject(ctx context.Context, req GetObjectRequest) (*I
 		showContent = &trueVal
 	}
 
-	return client.Retry(
+	return Retry(
 		ctx,
 		func() (*IotaObjectResponse, error) {
 			resp, err := GetObject(ctx, c.client, objAddr,
@@ -2641,7 +2622,7 @@ func applyShowEffects(
 		result.Effects = &serialization.TagJson[IotaTransactionBlockEffects]{
 			Data: IotaTransactionBlockEffects{
 				V1: &IotaTransactionBlockEffectsV1{
-					Status:  ExecutionStatus{Status: ExecutionStatusSuccess},
+					Status:  ExecutionStatus{Status: graphqltypes.ExecutionStatusSuccess},
 					GasUsed: GasCostSummary{},
 				},
 			},
@@ -2874,7 +2855,7 @@ func convertGraphQLEffects(
 	}
 
 	var decodedEffects IotaTransactionBlockEffects
-	if err := client.UnmarshalBCS(bcsData, &decodedEffects); err != nil {
+	if err := UnmarshalBCS(bcsData, &decodedEffects); err != nil {
 		return nil, fmt.Errorf("failed to decode BCS effects: %w", err)
 	}
 
@@ -3319,7 +3300,7 @@ func convertDevInspectResults(resp *DevInspectTransactionBlockResponse) (*DevIns
 				Data: IotaTransactionBlockEffects{
 					V1: &IotaTransactionBlockEffectsV1{
 						Status: ExecutionStatus{
-							Status: ExecutionStatusSuccess,
+							Status: graphqltypes.ExecutionStatusSuccess,
 						},
 						GasUsed: GasCostSummary{},
 					},
@@ -3332,7 +3313,7 @@ func convertDevInspectResults(resp *DevInspectTransactionBlockResponse) (*DevIns
 			Data: IotaTransactionBlockEffects{
 				V1: &IotaTransactionBlockEffectsV1{
 					Status: ExecutionStatus{
-						Status: ExecutionStatusSuccess,
+						Status: graphqltypes.ExecutionStatusSuccess,
 					},
 					GasUsed: GasCostSummary{},
 				},
@@ -3395,7 +3376,7 @@ func convertDryRunResults(resp *DryRunTransactionBlockResponse) (*DryRunResult, 
 				Data: IotaTransactionBlockEffects{
 					V1: &IotaTransactionBlockEffectsV1{
 						Status: ExecutionStatus{
-							Status: ExecutionStatusSuccess,
+							Status: graphqltypes.ExecutionStatusSuccess,
 						},
 						GasUsed: GasCostSummary{},
 					},
@@ -3408,7 +3389,7 @@ func convertDryRunResults(resp *DryRunTransactionBlockResponse) (*DryRunResult, 
 			Data: IotaTransactionBlockEffects{
 				V1: &IotaTransactionBlockEffectsV1{
 					Status: ExecutionStatus{
-						Status: ExecutionStatusSuccess,
+						Status: graphqltypes.ExecutionStatusSuccess,
 					},
 					GasUsed: GasCostSummary{},
 				},
@@ -3431,7 +3412,7 @@ func convertDryRunResults(resp *DryRunTransactionBlockResponse) (*DryRunResult, 
 	var input serialization.TagJson[IotaTransactionBlockData]
 	if len(dryRunResult.Transaction.Bcs) > 0 {
 		var txData IotaTransactionBlockData
-		if err := client.UnmarshalBCS(dryRunResult.Transaction.Bcs, &txData); err != nil {
+		if err := UnmarshalBCS(dryRunResult.Transaction.Bcs, &txData); err != nil {
 			return nil, fmt.Errorf("failed to decode input transaction: %w", err)
 		}
 		input = serialization.TagJson[IotaTransactionBlockData]{
@@ -3507,7 +3488,7 @@ func applyExecuteShowEffects(
 		result.Effects = &serialization.TagJson[IotaTransactionBlockEffects]{
 			Data: IotaTransactionBlockEffects{
 				V1: &IotaTransactionBlockEffectsV1{
-					Status:  ExecutionStatus{Status: ExecutionStatusSuccess},
+					Status:  ExecutionStatus{Status: graphqltypes.ExecutionStatusSuccess},
 					GasUsed: GasCostSummary{},
 				},
 			},

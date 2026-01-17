@@ -3,16 +3,16 @@ package vmtxbuilder_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/clients"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 	testcommon "github.com/iotaledger/wasp/v2/clients/iota-go/test_common"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient/iscmoveclienttest"
@@ -34,6 +34,8 @@ func TestTxBuilderBasic(t *testing.T) {
 	iscPackage, err := client.L2().DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(chainSigner))
 	require.NoError(t, err)
 
+	time.Sleep(1 * time.Second) // FIXME tmp for graphql
+
 	anchor, err := client.L2().StartNewChain(
 		context.Background(),
 		&iscmoveclient.StartNewChainRequest{
@@ -41,19 +43,20 @@ func TestTxBuilderBasic(t *testing.T) {
 			AnchorOwner:   chainSigner.Address(),
 			PackageID:     iscPackage,
 			StateMetadata: []byte{1, 2, 3, 4},
-			GasPrice:      iotaclient.DefaultGasPrice,
-			GasBudget:     iotaclient.DefaultGasBudget,
+			GasPrice:      iotagraphql.DefaultGasPrice,
+			GasBudget:     iotagraphql.DefaultGasBudget,
 		},
 	)
 	require.NoError(t, err)
 
-	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: chainSigner.Address().AsIotaAddress()})
+	getCoinsRes, err := client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{Owner: chainSigner.Address().AsIotaAddress()})
 	require.NoError(t, err)
 	selectedGasCoin := getCoinsRes.Data[0].Ref()
 
 	stateAnchor := isc.NewStateAnchor(anchor, iscPackage)
 	txb := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage, &stateAnchor, chainSigner.Address())
 
+	time.Sleep(1 * time.Second) // FIXME tmp for graphql
 	req1 := createIscmoveReq(t, client, senderSigner, iscPackage, anchor)
 	txb.ConsumeRequest(req1)
 	req2 := createIscmoveReq(t, client, senderSigner, iscPackage, anchor)
@@ -65,28 +68,30 @@ func TestTxBuilderBasic(t *testing.T) {
 		chainSigner.Address().AsIotaAddress(),
 		pt,
 		[]*iotago.ObjectRef{selectedGasCoin},
-		iotaclient.DefaultGasBudget,
-		iotaclient.DefaultGasPrice,
+		iotagraphql.DefaultGasBudget,
+		iotagraphql.DefaultGasPrice,
 	)
 	txnBytes, err := bcs.Marshal(&tx)
 	require.NoError(t, err)
 
 	txnResponse, err := client.SignAndExecuteTransaction(
 		context.Background(),
-		&iotaclient.SignAndExecuteTransactionRequest{
+		&iotagraphql.SignAndExecuteTransactionRequest{
 			TxDataBytes: txnBytes,
 			Signer:      cryptolib.SignerToIotaSigner(chainSigner),
-			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+			Options:     &iotagraphql.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 		},
 	)
-
 	require.NoError(t, err)
 	require.True(t, txnResponse.Effects.Data.IsSuccess())
+	time.Sleep(1 * time.Second) // FIXME tmp for graphql
 
-	getObjReq1, _ := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: req1.RequestRef().ObjectID, Options: &iotajsonrpc.IotaObjectDataOptions{ShowContent: true}})
-	require.NotNil(t, getObjReq1.Error.Data.Deleted)
-	getObjReq2, _ := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: req2.RequestRef().ObjectID})
-	require.NotNil(t, getObjReq2.Error.Data.Deleted)
+	getObjReq1, _ := client.GetObject(context.Background(), iotagraphql.GetObjectRequest{ObjectID: req1.RequestRef().ObjectID, Options: &iotagraphql.IotaObjectDataOptions{ShowContent: true}})
+	require.NotNil(t, getObjReq1.Data)
+	require.Equal(t, "WRAPPED_OR_DELETED", getObjReq1.Data.Status)
+	getObjReq2, _ := client.GetObject(context.Background(), iotagraphql.GetObjectRequest{ObjectID: req2.RequestRef().ObjectID})
+	require.NotNil(t, getObjReq2.Data)
+	require.Equal(t, "WRAPPED_OR_DELETED", getObjReq2.Data.Status)
 }
 
 func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
@@ -97,7 +102,9 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 	iscPackage, err := client.L2().DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(chainSigner))
 	require.NoError(t, err)
 
-	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: chainSigner.Address().AsIotaAddress()})
+	time.Sleep(1 * time.Second) // FIXME tmp for graphql
+
+	getCoinsRes, err := client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{Owner: chainSigner.Address().AsIotaAddress()})
 	require.NoError(t, err)
 
 	anchor, err := client.L2().StartNewChain(
@@ -109,19 +116,19 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 			StateMetadata: []byte{1, 2, 3, 4},
 			InitCoinRef:   getCoinsRes.Data[1].Ref(),
 			GasPayments:   []*iotago.ObjectRef{getCoinsRes.Data[0].Ref()},
-			GasPrice:      iotaclient.DefaultGasPrice,
-			GasBudget:     iotaclient.DefaultGasBudget,
+			GasPrice:      iotagraphql.DefaultGasPrice,
+			GasBudget:     iotagraphql.DefaultGasBudget,
 		},
 	)
 	require.NoError(t, err)
 
 	selectedGasCoin := getCoinsRes.Data[2].Ref()
 	stateAnchor := isc.NewStateAnchor(anchor, iscPackage)
+	time.Sleep(1 * time.Second) // FIXME tmp for graphql
 	txb1 := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage, &stateAnchor, chainSigner.Address())
 
 	req1 := createIscmoveReq(t, client, senderSigner, iscPackage, anchor)
 	txb1.ConsumeRequest(req1)
-
 	// stateMetadata := transaction.NewStateMetadata(isc.SchemaVersion(1), commitment, &gas.FeePolicy{}, isc.CallArguments{}, "http://dummy")
 	// ptb := txb.BuildTransactionEssence(stateMetadata.Bytes())
 	stateMetadata1 := []byte("dummy stateMetadata1")
@@ -131,26 +138,27 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 		chainSigner.Address().AsIotaAddress(),
 		ptb1,
 		[]*iotago.ObjectRef{selectedGasCoin},
-		iotaclient.DefaultGasBudget,
-		iotaclient.DefaultGasPrice,
+		iotagraphql.DefaultGasBudget,
+		iotagraphql.DefaultGasPrice,
 	)
 	txnBytes1, err := bcs.Marshal(&tx1)
 	require.NoError(t, err)
 
 	txnResponse1, err := client.SignAndExecuteTransaction(
 		context.Background(),
-		&iotaclient.SignAndExecuteTransactionRequest{
+		&iotagraphql.SignAndExecuteTransactionRequest{
 			TxDataBytes: txnBytes1,
 			Signer:      cryptolib.SignerToIotaSigner(chainSigner),
-			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+			Options:     &iotagraphql.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 		},
 	)
-
 	require.NoError(t, err)
 	require.True(t, txnResponse1.Effects.Data.IsSuccess())
+	time.Sleep(1 * time.Second) // FIXME tmp for graphql
 
-	getObjReq1, _ := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: req1.RequestRef().ObjectID, Options: &iotajsonrpc.IotaObjectDataOptions{ShowContent: true}})
-	require.NotNil(t, getObjReq1.Error.Data.Deleted)
+	getObjReq1, _ := client.GetObject(context.Background(), iotagraphql.GetObjectRequest{ObjectID: req1.RequestRef().ObjectID, Options: &iotagraphql.IotaObjectDataOptions{ShowContent: true}})
+	require.NotNil(t, getObjReq1.Data)
+	require.Equal(t, "WRAPPED_OR_DELETED", getObjReq1.Data.Status)
 
 	// reset
 	tmp, err := client.UpdateObjectRef(context.Background(), &anchor.ObjectRef)
@@ -165,37 +173,39 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 
 	zeroAssets := iscmove.NewEmptyAssets()
 	req3 := createIscmoveReqWithAssets(t, client, senderSigner, iscPackage, anchor, zeroAssets)
+	time.Sleep(1 * time.Second) // FIXME tmp for graphql
 	txb2.ConsumeRequest(req3)
 	stateMetadata2 := []byte("dummy stateMetadata2")
 	pt2 := txb2.BuildTransactionEssence(stateMetadata2, 123)
 
-	getCoinsRes, err = client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: chainSigner.Address().AsIotaAddress()})
+	getCoinsRes, err = client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{Owner: chainSigner.Address().AsIotaAddress()})
 	require.NoError(t, err)
 
 	tx2 := iotago.NewProgrammable(
 		chainSigner.Address().AsIotaAddress(),
 		pt2,
 		[]*iotago.ObjectRef{getCoinsRes.Data[0].Ref()},
-		iotaclient.DefaultGasBudget,
-		iotaclient.DefaultGasPrice,
+		iotagraphql.DefaultGasBudget,
+		iotagraphql.DefaultGasPrice,
 	)
 	txnBytes2, err := bcs.Marshal(&tx2)
 	require.NoError(t, err)
 
 	txnResponse2, err := client.SignAndExecuteTransaction(
 		context.Background(),
-		&iotaclient.SignAndExecuteTransactionRequest{
+		&iotagraphql.SignAndExecuteTransactionRequest{
 			TxDataBytes: txnBytes2,
 			Signer:      cryptolib.SignerToIotaSigner(chainSigner),
-			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+			Options:     &iotagraphql.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 		},
 	)
-
 	require.NoError(t, err)
 	require.True(t, txnResponse2.Effects.Data.IsSuccess())
+	time.Sleep(1 * time.Second)
 
-	getObjReq2, _ := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: req2.RequestRef().ObjectID})
-	require.NotNil(t, getObjReq2.Error.Data.Deleted)
+	getObjReq2, _ := client.GetObject(context.Background(), iotagraphql.GetObjectRequest{ObjectID: req2.RequestRef().ObjectID})
+	require.NotNil(t, getObjReq2.Data)
+	require.Equal(t, "WRAPPED_OR_DELETED", getObjReq2.Data.Status)
 }
 
 func TestRotateAndBuildTx(t *testing.T) {
@@ -204,6 +214,7 @@ func TestRotateAndBuildTx(t *testing.T) {
 	rotateRecipientSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 2)
 	iscPackage, err := client.L2().DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(chainSigner))
 	require.NoError(t, err)
+	time.Sleep(1 * time.Second) // FIXME tmp for graphql
 
 	anchor, err := client.L2().StartNewChain(
 		context.Background(),
@@ -212,18 +223,19 @@ func TestRotateAndBuildTx(t *testing.T) {
 			AnchorOwner:   chainSigner.Address(),
 			PackageID:     iscPackage,
 			StateMetadata: []byte{1, 2, 3, 4},
-			GasPrice:      iotaclient.DefaultGasPrice,
-			GasBudget:     iotaclient.DefaultGasBudget,
+			GasPrice:      iotagraphql.DefaultGasPrice,
+			GasBudget:     iotagraphql.DefaultGasBudget,
 		},
 	)
 	require.NoError(t, err)
 
-	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: chainSigner.Address().AsIotaAddress()})
+	getCoinsRes, err := client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{Owner: chainSigner.Address().AsIotaAddress()})
 	require.NoError(t, err)
 
 	selectedGasCoin := getCoinsRes.Data[0].Ref()
 
 	stateAnchor := isc.NewStateAnchor(anchor, iscPackage)
+	time.Sleep(1 * time.Second) // FIXME tmp for graphql
 	txb := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage, &stateAnchor, chainSigner.Address())
 
 	txb.RotationTransaction(rotateRecipientSigner.Address().AsIotaAddress())
@@ -234,34 +246,33 @@ func TestRotateAndBuildTx(t *testing.T) {
 		chainSigner.Address().AsIotaAddress(),
 		pt,
 		[]*iotago.ObjectRef{selectedGasCoin},
-		iotaclient.DefaultGasBudget,
-		iotaclient.DefaultGasPrice,
+		iotagraphql.DefaultGasBudget,
+		iotagraphql.DefaultGasPrice,
 	)
 	txnBytes, err := bcs.Marshal(&tx)
 	require.NoError(t, err)
 
 	txnResponse, err := client.SignAndExecuteTransaction(
 		context.Background(),
-		&iotaclient.SignAndExecuteTransactionRequest{
+		&iotagraphql.SignAndExecuteTransactionRequest{
 			TxDataBytes: txnBytes,
 			Signer:      cryptolib.SignerToIotaSigner(chainSigner),
-			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+			Options:     &iotagraphql.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 		},
 	)
-
 	require.NoError(t, err)
 	require.True(t, txnResponse.Effects.Data.IsSuccess())
-
-	getObjRes, err := client.GetObject(context.Background(), iotaclient.GetObjectRequest{
+	time.Sleep(1 * time.Second)
+	getObjRes, err := client.GetObject(context.Background(), iotagraphql.GetObjectRequest{
 		ObjectID: anchor.ObjectID,
-		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowOwner: true},
+		Options:  &iotagraphql.IotaObjectDataOptions{ShowOwner: true},
 	})
 	require.NoError(t, err)
 	require.Equal(t, rotateRecipientSigner.Address().AsIotaAddress(), getObjRes.Data.Owner.AddressOwner)
 
-	gasCoinGetObjRes, err := client.GetObject(context.Background(), iotaclient.GetObjectRequest{
+	gasCoinGetObjRes, err := client.GetObject(context.Background(), iotagraphql.GetObjectRequest{
 		ObjectID: selectedGasCoin.ObjectID,
-		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowOwner: true},
+		Options:  &iotagraphql.IotaObjectDataOptions{ShowOwner: true},
 	})
 	require.NoError(t, err)
 	require.Equal(t, rotateRecipientSigner.Address().AsIotaAddress(), gasCoinGetObjRes.Data.Owner.AddressOwner)
@@ -274,7 +285,7 @@ func createIscmoveReq(
 	iscPackage iotago.Address,
 	anchor *iscmove.AnchorWithRef,
 ) isc.OnLedgerRequest {
-	err := iotaclient.RequestFundsFromFaucet(context.Background(), signer.Address().AsIotaAddress(), l1starter.Instance().FaucetURL())
+	err := iotagraphql.RequestFundsFromFaucet(context.Background(), signer.Address().AsIotaAddress(), l1starter.Instance().FaucetURL())
 	require.NoError(t, err)
 
 	createAndSendRequestRes, err := client.L2().CreateAndSendRequestWithAssets(
@@ -287,11 +298,12 @@ func createIscmoveReq(
 			Message:          iscmovetest.RandomMessage(),
 			AllowanceBCS:     nil,
 			OnchainGasBudget: 100,
-			GasPrice:         iotaclient.DefaultGasPrice,
-			GasBudget:        iotaclient.DefaultGasBudget,
+			GasPrice:         iotagraphql.DefaultGasPrice,
+			GasBudget:        iotagraphql.DefaultGasBudget,
 		},
 	)
 	require.NoError(t, err)
+	time.Sleep(1 * time.Second) // FIXME tmp for graphql
 	reqRef, err := createAndSendRequestRes.GetCreatedObjectByName(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)
 	reqWithObj, err := client.L2().GetRequestFromObjectID(context.Background(), reqRef.ObjectID)
@@ -310,7 +322,7 @@ func createIscmoveReqWithAssets(
 	anchor *iscmove.AnchorWithRef,
 	assets *iscmove.Assets,
 ) isc.OnLedgerRequest {
-	err := iotaclient.RequestFundsFromFaucet(context.Background(), signer.Address().AsIotaAddress(), l1starter.Instance().FaucetURL())
+	err := iotagraphql.RequestFundsFromFaucet(context.Background(), signer.Address().AsIotaAddress(), l1starter.Instance().FaucetURL())
 	require.NoError(t, err)
 
 	createAndSendRequestRes, err := client.L2().CreateAndSendRequestWithAssets(
@@ -323,8 +335,8 @@ func createIscmoveReqWithAssets(
 			Message:          iscmovetest.RandomMessage(),
 			AllowanceBCS:     lo.Must(bcs.Marshal(assets)),
 			OnchainGasBudget: 100,
-			GasPrice:         iotaclient.DefaultGasPrice,
-			GasBudget:        iotaclient.DefaultGasBudget,
+			GasPrice:         iotagraphql.DefaultGasPrice,
+			GasBudget:        iotagraphql.DefaultGasBudget,
 		},
 	)
 	require.NoError(t, err)

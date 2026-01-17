@@ -16,9 +16,8 @@ import (
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/clients"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/apilib"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/isc"
@@ -105,10 +104,10 @@ func CreateAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet w
 
 	result, err := client.SignAndExecuteTransaction(
 		ctx,
-		&iotaclient.SignAndExecuteTransactionRequest{
+		&iotagraphql.SignAndExecuteTransactionRequest{
 			Signer:      cryptolib.SignerToIotaSigner(wallet),
 			TxDataBytes: txnBytes,
-			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+			Options: &iotagraphql.IotaTransactionBlockResponseOptions{
 				ShowEffects:       true,
 				ShowObjectChanges: true,
 			},

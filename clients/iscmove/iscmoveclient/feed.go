@@ -7,10 +7,9 @@ import (
 
 	"github.com/iotaledger/hive.go/log"
 
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/serialization"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/packages/transaction"
 )
@@ -31,12 +30,12 @@ func NewChainFeed(
 	wsURL string,
 	httpURL string,
 ) (*ChainFeed, error) {
-	wsClient, err := NewWebsocketClient(ctx, wsURL, "", iotaclient.WaitForEffectsEnabled, log)
+	wsClient, err := NewWebsocketClient(ctx, wsURL, "", iotagraphql.WaitForEffectsEnabled)
 	if err != nil {
 		return nil, err
 	}
 
-	httpClient := NewHTTPClient(httpURL, "", iotaclient.WaitForEffectsEnabled)
+	httpClient := NewHTTPClient(httpURL, "", iotagraphql.WaitForEffectsEnabled)
 
 	return &ChainFeed{
 		wsClient:      wsClient,
@@ -94,17 +93,17 @@ func (f *ChainFeed) subscribeToNewRequests(
 	requests chan<- *iscmove.RefWithObject[iscmove.Request],
 ) {
 	for {
-		events := make(chan *iotajsonrpc.IotaEvent)
+		events := make(chan *iotagraphql.IotaEvent)
 		err := f.wsClient.SubscribeEvent(
 			ctx,
-			&iotajsonrpc.EventFilter{
-				And: &iotajsonrpc.AndOrEventFilter{
-					Filter1: &iotajsonrpc.EventFilter{MoveEventType: &iotago.StructTag{
+			&iotagraphql.IotaEventFilter{
+				And: &iotagraphql.IotaAndOrEventFilter{
+					Filter1: &iotagraphql.IotaEventFilter{MoveEventType: &iotago.StructTag{
 						Address: &f.iscPackageID,
 						Module:  iscmove.RequestModuleName,
 						Name:    iscmove.RequestEventObjectName,
 					}},
-					Filter2: &iotajsonrpc.EventFilter{MoveEventField: &iotajsonrpc.EventFilterMoveEventField{
+					Filter2: &iotagraphql.IotaEventFilter{MoveEventField: &iotagraphql.IotaEventFilterMoveEventField{
 						Path:  iscmove.RequestEventAnchorFieldName,
 						Value: anchorID.String(),
 					}},
@@ -131,7 +130,7 @@ func (f *ChainFeed) subscribeToNewRequests(
 
 func (f *ChainFeed) consumeRequestEvents(
 	ctx context.Context,
-	events <-chan *iotajsonrpc.IotaEvent,
+	events <-chan *iotagraphql.IotaEvent,
 	requests chan<- *iscmove.RefWithObject[iscmove.Request],
 ) {
 	for {
@@ -143,7 +142,7 @@ func (f *ChainFeed) consumeRequestEvents(
 				return
 			}
 			var reqEvent iscmove.RequestEvent
-			err := iotaclient.UnmarshalBCS(ev.Bcs, &reqEvent)
+			err := iotagraphql.UnmarshalBCS(ev.Bcs, &reqEvent)
 			if err != nil {
 				f.log.LogErrorf("consumeRequestEvents: cannot decode RequestEvent BCS: %s", err)
 				continue
@@ -167,10 +166,10 @@ func (f *ChainFeed) subscribeToAnchorUpdates(
 	anchorCh chan<- *iscmove.AnchorWithRef,
 ) {
 	for {
-		changes := make(chan *serialization.TagJson[iotajsonrpc.IotaTransactionBlockEffects])
+		changes := make(chan *serialization.TagJson[iotagraphql.IotaTransactionBlockEffects])
 		err := f.wsClient.SubscribeTransaction(
 			ctx,
-			&iotajsonrpc.TransactionFilter{
+			&iotagraphql.TransactionFilter{
 				ChangedObject: &f.anchorAddress,
 			},
 			changes,
@@ -194,7 +193,7 @@ func (f *ChainFeed) subscribeToAnchorUpdates(
 
 func (f *ChainFeed) consumeAnchorUpdates(
 	ctx context.Context,
-	changes <-chan *serialization.TagJson[iotajsonrpc.IotaTransactionBlockEffects],
+	changes <-chan *serialization.TagJson[iotagraphql.IotaTransactionBlockEffects],
 	anchorCh chan<- *iscmove.AnchorWithRef,
 ) {
 	for {
@@ -212,10 +211,10 @@ func (f *ChainFeed) consumeAnchorUpdates(
 
 				f.log.LogDebugf("POLLING ANCHOR %s, %s", f.anchorAddress, time.Now().String())
 
-				r, err := f.httpClient.TryGetPastObject(ctx, iotaclient.TryGetPastObjectRequest{
+				r, err := f.httpClient.TryGetPastObject(ctx, iotagraphql.TryGetPastObjectRequest{
 					ObjectID: &f.anchorAddress,
 					Version:  obj.Reference.Version,
-					Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true, ShowContent: true},
+					Options:  &iotagraphql.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true, ShowContent: true},
 				})
 				if err != nil {
 					f.log.LogErrorf("consumeAnchorUpdates: cannot fetch Anchor: %s", err)
@@ -227,7 +226,7 @@ func (f *ChainFeed) consumeAnchorUpdates(
 				}
 
 				var anchor *iscmove.Anchor
-				err = iotaclient.UnmarshalBCS(r.Data.VersionFound.Bcs.Data.MoveObject.BcsBytes, &anchor)
+				err = iotagraphql.UnmarshalBCS(r.Data.VersionFound.Bcs.Data.MoveObject.BcsBytes, &anchor)
 				if err != nil {
 					f.log.LogErrorf("ID: %s\nAssetBagID: %s\n", anchor.ID, anchor.Assets.Value.ID)
 					f.log.LogErrorf("consumeAnchorUpdates: failed to unmarshal BCS: %s", err)
@@ -258,15 +257,15 @@ func (f *ChainFeed) GetChainGasCoin(ctx context.Context) (*iotago.ObjectRef, uin
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to fetch anchor: %w", err)
 	}
-	getObjRes, err := f.httpClient.GetObject(ctx, iotaclient.GetObjectRequest{
+	getObjRes, err := f.httpClient.GetObject(ctx, iotagraphql.GetObjectRequest{
 		ObjectID: metadata.GasCoinObjectID,
-		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
+		Options:  &iotagraphql.IotaObjectDataOptions{ShowBcs: true},
 	})
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to fetch gas coin object: %w", err)
 	}
 	var moveGasCoin MoveCoin
-	err = iotaclient.UnmarshalBCS(getObjRes.Data.Bcs.Data.MoveObject.BcsBytes, &moveGasCoin)
+	err = iotagraphql.UnmarshalBCS(getObjRes.Data.Bcs.Data.MoveObject.BcsBytes, &moveGasCoin)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to decode gas coin object: %w", err)
 	}

@@ -5,11 +5,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/iotaledger/hive.go/log"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/testutil/l1starter"
@@ -24,7 +23,7 @@ func NewRandomSignerWithFunds(t *testing.T, index int) cryptolib.Signer {
 	return NewSignerWithFunds(t, seed[:], index)
 }
 
-func NewWebSocketClient(ctx context.Context, log log.Logger) (*iscmoveclient.Client, error) {
+func NewWebSocketClient(ctx context.Context) (*iscmoveclient.Client, error) {
 	if l1starter.IsLocalConfigured() { //nolint:contextcheck
 		panic("Right now no WS support")
 	}
@@ -34,7 +33,6 @@ func NewWebSocketClient(ctx context.Context, log log.Logger) (*iscmoveclient.Cli
 		iotaconn.AlphanetWebsocketEndpointURL,
 		l1starter.Instance().FaucetURL(),
 		l1starter.WaitUntilEffectsVisible,
-		log,
 	)
 }
 
@@ -61,7 +59,7 @@ func NewAlphanetSignerWithFunds(t *testing.T, seed []byte, index int) cryptolib.
 func newSignerWithFunds(t *testing.T, seed []byte, index int, faucetURL string) cryptolib.Signer {
 	seed[0] += byte(index)
 	kp := cryptolib.KeyPairFromSeed(cryptolib.Seed(seed))
-	err := iotaclient.RequestFundsFromFaucet(context.Background(), kp.Address().AsIotaAddress(), faucetURL)
+	err := iotagraphql.RequestFundsFromFaucet(context.Background(), kp.Address().AsIotaAddress(), faucetURL)
 	require.NoError(t, err)
 	return kp
 }

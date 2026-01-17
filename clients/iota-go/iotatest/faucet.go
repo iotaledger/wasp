@@ -3,8 +3,8 @@ package iotatest
 import (
 	"context"
 
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testkey"
 )
 
@@ -17,7 +17,7 @@ func MakeSignerWithFundsFromSeed(seed []byte, index int, faucetURL string) iotas
 
 	// there are only 256 different signers can be generated
 	signer := iotasigner.NewSignerByIndex(seed, keySchemeFlag, index)
-	err := iotaclient.RequestFundsFromFaucet(context.Background(), signer.Address(), faucetURL)
+	err := iotagraphql.RequestFundsFromFaucet(context.Background(), signer.Address(), faucetURL)
 	if err != nil {
 		panic(err)
 	}

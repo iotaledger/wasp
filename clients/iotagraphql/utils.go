@@ -1,46 +1,38 @@
-package iotaclient
+package iotagraphql
 
 import (
+	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
+	bcs "github.com/iotaledger/bcs-go"
 )
 
-type Client struct {
-	transport transport
-
-	// If WaitUntilEffectsVisible is set, it takes effect on any sent transaction with WaitForLocalExecution. It is
-	// necessary because if the L1 node is overloaded, it may return an effects cert without actually having ececuted
-	// the tx locally.
-	WaitUntilEffectsVisible *WaitParams
-}
+const (
+	DefaultGasBudget = 10_000_000
+	DefaultGasPrice  = 1000
+	MinGasBudget     = 1_000_000
+	MaxGasBudget     = 50_000_000_000
+)
 
 type WaitParams struct {
 	Attempts             int
 	DelayBetweenAttempts time.Duration
 }
 
-var WaitForEffectsDisabled *WaitParams = nil
-var WaitForEffectsEnabled *WaitParams = &WaitParams{
-	Attempts:             5,
-	DelayBetweenAttempts: 2 * time.Second,
-}
-
-type transport interface {
-	Call(ctx context.Context, v any, method iotaconn.JsonRPCMethod, args ...any) error
-	Subscribe(ctx context.Context, v chan<- []byte, method iotaconn.JsonRPCMethod, args ...any) error
-	WaitUntilStopped()
-}
-
-func (c *Client) WaitUntilStopped() {
-	c.transport.WaitUntilStopped()
-}
+var (
+	WaitForEffectsDisabled *WaitParams = nil
+	WaitForEffectsEnabled  *WaitParams = &WaitParams{
+		Attempts:             5,
+		DelayBetweenAttempts: 2 * time.Second,
+	}
+)
 
 type RetryCondition[T any] func(result T, err error) bool
 
-// Retry retries a function until the condition is met or the context is cancelled
+// Retry retries a function until the condition is met or the context is canceled
 func Retry[T any](
 	ctx context.Context,
 	f func() (T, error),
@@ -78,7 +70,7 @@ func Retry[T any](
 	return result, fmt.Errorf("retry failed after %d attempts: %v", params.Attempts, err)
 }
 
-// RetryOnError retries a function until the error is nil or the context is cancelled
+// RetryOnError retries a function until the error is nil or the context is canceled
 func RetryOnError[T any](ctx context.Context, f func() (T, error), params *WaitParams) (T, error) {
 	return Retry(ctx, f, DefaultRetryCondition[T](), params)
 }
@@ -88,4 +80,18 @@ func DefaultRetryCondition[T any]() RetryCondition[T] {
 	return func(result T, err error) bool {
 		return err != nil
 	}
+}
+
+// UnmarshalBCS is a shortcut for bcs.Unmarshal that also verifies
+// that the consumed bytes is exactly len(data).
+func UnmarshalBCS[Obj any](data []byte, obj *Obj) error {
+	r := bytes.NewReader(data)
+
+	if _, err := bcs.UnmarshalStreamInto(r, obj); err != nil {
+		return err
+	}
+	if r.Len() != 0 {
+		return errors.New("excess bytes")
+	}
+	return nil
 }

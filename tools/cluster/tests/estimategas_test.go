@@ -16,11 +16,10 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/apiclient"
 	"github.com/iotaledger/wasp/v2/clients/chainclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/contracts"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient/iotaclienttest"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	testcommon "github.com/iotaledger/wasp/v2/clients/iota-go/test_common"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql/iotaclienttest"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient/iscmoveclienttest"
@@ -46,7 +45,7 @@ func (e *ChainEnv) testEstimateGasOnLedger(t *testing.T) {
 		MaxGasPerRequest:       gas.LimitsDefault.MaxGasPerRequest,
 		MaxGasExternalViewCall: gas.LimitsDefault.MaxGasExternalViewCall,
 	}), chainclient.PostRequestParams{
-		GasBudget: iotaclient.DefaultGasBudget,
+		GasBudget: iotagraphql.DefaultGasBudget,
 	})
 	require.NoError(t, err)
 	_, err = e.Clu.MultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, tx, true, 10*time.Second)
@@ -95,8 +94,8 @@ func (e *ChainEnv) testEstimateGasOnLedger(t *testing.T) {
 			l1starter.ISCPackageID(),
 			argAssetsBag,
 			iotago.GetArgumentGasCoin(),
-			iotajsonrpc.CoinValue(2*iotaclient.DefaultGasBudget),
-			iotajsonrpc.IotaCoinType,
+			iotagraphql.CoinValue(2*iotagraphql.DefaultGasBudget),
+			iotagraphql.IotaCoinType,
 		)
 
 		// Place some TESTCOINs into new asset bag
@@ -105,8 +104,8 @@ func (e *ChainEnv) testEstimateGasOnLedger(t *testing.T) {
 			l1starter.ISCPackageID(),
 			argAssetsBag,
 			ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: testcoinRef}),
-			iotajsonrpc.CoinValue(122),
-			iotajsonrpc.CoinType(testcoinType.String()),
+			iotagraphql.CoinValue(122),
+			iotagraphql.CoinType(testcoinType.String()),
 		)
 
 		ptb = iscmoveclient.PTBOptionNoneIotaCoin(ptb)
@@ -138,9 +137,9 @@ func (e *ChainEnv) testEstimateGasOnLedger(t *testing.T) {
 			lo.Must(iotago.ObjectTypeFromString(l1starter.ISCPackageID().String()+"::anchor::Anchor")),
 		)
 
-		allowanceVal := iotajsonrpc.CoinValue(1 * isc.Million)
+		allowanceVal := iotagraphql.CoinValue(1 * isc.Million)
 		allowance := iscmove.NewAssets(allowanceVal)
-		allowance.SetCoin(iotajsonrpc.MustCoinTypeFromString(testcoinType.String()), iotajsonrpc.CoinValue(10))
+		allowance.SetCoin(iotagraphql.MustCoinTypeFromString(testcoinType.String()), iotagraphql.CoinValue(10))
 
 		// Deposit funds from L1 asset bag into L2 account
 		ptb = iscmoveclient.PTBCreateAndSendRequest(
@@ -159,13 +158,13 @@ func (e *ChainEnv) testEstimateGasOnLedger(t *testing.T) {
 		pt := ptb.Finish()
 
 		// Find proper coin objects to pay for gas
-		// coinsForGas, err := e.Clu.L1Client().GetCoinObjsForTargetAmount(context.Background(), sender.Address().AsIotaAddress(), pt, iotaclient.DefaultGasPrice, l1GasBudget)
-		coins, err := e.Clu.L1Client().GetCoinObjsForTargetAmount(context.Background(), sender.Address().AsIotaAddress(), iotaclient.DefaultGasPrice, l1GasBudget)
+		// coinsForGas, err := e.Clu.L1Client().GetCoinObjsForTargetAmount(context.Background(), sender.Address().AsIotaAddress(), pt, iotagraphql.DefaultGasPrice, l1GasBudget)
+		coins, err := e.Clu.L1Client().GetCoinObjsForTargetAmount(context.Background(), sender.Address().AsIotaAddress(), iotagraphql.DefaultGasPrice, l1GasBudget)
 		require.NoError(t, err)
-		coins, err = iotajsonrpc.PickupCoinsWithFilter(
+		coins, err = iotagraphql.PickupCoinsWithFilter(
 			coins,
 			l1GasBudget,
-			func(c *iotajsonrpc.Coin) bool { return !pt.IsInInputObjects(c.CoinObjectID) },
+			func(c *iotagraphql.Coin) bool { return !pt.IsInInputObjects(c.CoinObjectID) },
 		)
 		require.NoError(t, err)
 		coinsForGas := coins.CoinRefs()
@@ -176,7 +175,7 @@ func (e *ChainEnv) testEstimateGasOnLedger(t *testing.T) {
 			pt,
 			coinsForGas,
 			l1GasBudget,
-			iotaclient.DefaultGasPrice,
+			iotagraphql.DefaultGasPrice,
 		)
 
 		txBytes, err := bcs.Marshal(&txData)
@@ -205,11 +204,11 @@ func (e *ChainEnv) testEstimateGasOnLedger(t *testing.T) {
 	l1GasBudget := lo.Must(strconv.ParseUint(estimatedReceipt.L1.GasBudget, 10, 64))
 	l2GasBudget := lo.Must(strconv.ParseUint(estimatedReceipt.L2.GasBurned, 10, 64))
 
-	executeTx := func(txBytes []byte) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
-		execRes, err := e.Clu.L1Client().SignAndExecuteTransaction(context.Background(), &iotaclient.SignAndExecuteTransactionRequest{
+	executeTx := func(txBytes []byte) (*iotagraphql.IotaTransactionBlockResponse, error) {
+		execRes, err := e.Clu.L1Client().SignAndExecuteTransaction(context.Background(), &iotagraphql.SignAndExecuteTransactionRequest{
 			TxDataBytes: txBytes,
 			Signer:      cryptolib.SignerToIotaSigner(sender),
-			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+			Options: &iotagraphql.IotaTransactionBlockResponseOptions{
 				ShowEffects:        true,
 				ShowObjectChanges:  true,
 				ShowBalanceChanges: true,
@@ -303,7 +302,7 @@ func (e *ChainEnv) testEstimateGasOffLedger(t *testing.T) {
 	client := e.Chain.Client(keyPair)
 	par := chainclient.PostRequestParams{
 		Allowance:   isc.NewAssets(5000),
-		GasBudget:   iotaclient.DefaultGasBudget,
+		GasBudget:   iotagraphql.DefaultGasBudget,
 		L2GasBudget: 1 * isc.Million,
 	}
 	req, err := client.PostOffLedgerRequest(

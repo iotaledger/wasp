@@ -27,8 +27,10 @@ var (
 )
 
 type Ports struct {
-	RPC    int
-	Faucet int
+	RPC     int
+	Faucet  int
+	Indexer int
+	GraphQL int
 }
 
 type Config struct {

@@ -10,9 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
@@ -43,7 +42,7 @@ func TestDepositFundsToGasCoin(t *testing.T) {
 	committeeAddress := lo.Must(cryptolib.AddressFromHex("0x6e6d126fc61cbf50672f1738580c7b275e7c4727912842d71ee33e195f9879fe"))
 	gasCoinID := lo.Must(iotago.ObjectIDFromHex("0x9e274660552ed50402c8015c5388478415cde8a06d114af48fd2e3ec365c562d"))
 
-	gasCoin, err := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: gasCoinID})
+	gasCoin, err := client.GetObject(context.Background(), iotagraphql.GetObjectRequest{ObjectID: gasCoinID})
 	require.NoError(t, err)
 
 	gasCoinRef := gasCoin.Data.Ref()
@@ -54,42 +53,42 @@ func TestDepositFundsToGasCoin(t *testing.T) {
 	require.NoError(t, client.RequestFunds(context.Background(), *kp.Address()))
 
 	baseCoin := coin.BaseTokenType.String()
-	coins, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{
+	coins, err := client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{
 		CoinType: &baseCoin,
 		Owner:    kp.Address().AsIotaAddress(),
 	})
 	require.NoError(t, err)
 
-	res, err := client.TransferIota(context.Background(), iotaclient.TransferIotaRequest{
+	res, err := client.TransferIota(context.Background(), iotagraphql.TransferIotaRequest{
 		Signer:    kp.Address().AsIotaAddress(),
-		GasBudget: iotajsonrpc.NewBigIntInt64(iotaclient.DefaultGasBudget),
+		GasBudget: iotagraphql.NewBigIntInt64(iotagraphql.DefaultGasBudget),
 		Recipient: committeeAddress.AsIotaAddress(),
 		ObjectID:  coins.Data[1].CoinObjectID,
 	})
 	require.NoError(t, err)
 
-	response, err := client.SignAndExecuteTransaction(context.Background(), &iotaclient.SignAndExecuteTransactionRequest{
+	response, err := client.SignAndExecuteTransaction(context.Background(), &iotagraphql.SignAndExecuteTransactionRequest{
 		Signer:      cryptolib.SignerToIotaSigner(wallet),
 		TxDataBytes: res.TxBytes,
-		Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+		Options: &iotagraphql.IotaTransactionBlockResponseOptions{
 			ShowObjectChanges: true,
 			ShowEffects:       true,
 		},
 	})
 	require.NoError(t, err)
 
-	res2, err := client.TransferIota(context.Background(), iotaclient.TransferIotaRequest{
+	res2, err := client.TransferIota(context.Background(), iotagraphql.TransferIotaRequest{
 		Signer:    kp.Address().AsIotaAddress(),
-		GasBudget: iotajsonrpc.NewBigIntInt64(iotaclient.DefaultGasBudget),
+		GasBudget: iotagraphql.NewBigIntInt64(iotagraphql.DefaultGasBudget),
 		Recipient: committeeAddress.AsIotaAddress(),
 		ObjectID:  coins.Data[0].CoinObjectID,
 	})
 	require.NoError(t, err)
 
-	response2, err := client.SignAndExecuteTransaction(context.Background(), &iotaclient.SignAndExecuteTransactionRequest{
+	response2, err := client.SignAndExecuteTransaction(context.Background(), &iotagraphql.SignAndExecuteTransactionRequest{
 		Signer:      cryptolib.SignerToIotaSigner(wallet),
 		TxDataBytes: res2.TxBytes,
-		Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+		Options: &iotagraphql.IotaTransactionBlockResponseOptions{
 			ShowObjectChanges: true,
 			ShowEffects:       true,
 		},
@@ -119,7 +118,7 @@ func TestDepositFundsToGasCoin(t *testing.T) {
 		committeeAddress.AsIotaAddress(),
 		ptb.Finish(),
 		[]*iotago.ObjectRef{selectedCoinToPayForGas},
-		iotaclient.DefaultGasBudget,
+		iotagraphql.DefaultGasBudget,
 		parameterstest.L1Mock.Protocol.ReferenceGasPrice.Uint64(),
 	)
 
@@ -150,7 +149,7 @@ func TestCreateTX(t *testing.T) {
 	l1Params := lo.Must(l1paramsfetcher.FetchLatest(context.Background(), client.GetIotaClient()))
 	newGasCoinAddress := lo.Must(chain.CreateAndSendGasCoin(context.Background(), client, wallet, committeeAddress.AsIotaAddress(), l1Params))
 
-	gasCoin := lo.Must(client.GetObject(context.Background(), iotaclient.GetObjectRequest{
+	gasCoin := lo.Must(client.GetObject(context.Background(), iotagraphql.GetObjectRequest{
 		ObjectID: &newGasCoinAddress,
 	})).Data.Ref()
 

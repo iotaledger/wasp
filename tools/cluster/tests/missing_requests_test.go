@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 )
 
 func TestMissingRequests(t *testing.T) {
@@ -25,7 +25,7 @@ func TestMissingRequests(t *testing.T) {
 	require.NoError(t, err)
 
 	// deposit funds before sending the off-ledger request
-	chEnv.DepositFunds(iotaclient.DefaultGasBudget, userWallet)
+	chEnv.DepositFunds(iotagraphql.DefaultGasBudget, userWallet)
 
 	// send N requests to node 0
 	const numRequests = 5

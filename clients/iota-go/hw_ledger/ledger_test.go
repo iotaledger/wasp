@@ -15,6 +15,7 @@ import (
 	ledger_go "github.com/iotaledger/wasp/v2/clients/iota-go/hw_ledger/ledger-go"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 )
 
 func initializeLedger(t *testing.T) *HWLedger {
@@ -65,7 +66,7 @@ func TestDeployChain(t *testing.T) {
 			APIURL:    iotaconn.AlphanetEndpointURL,
 			FaucetURL: iotaconn.AlphanetFaucetURL,
 		},
-		iotaclient.WaitForEffectsEnabled,
+		iotagraphql.WaitForEffectsEnabled,
 	)
 
 	pubKey, err := dev.GetPublicKey("44'/4218'/123'/0'/0'", false)

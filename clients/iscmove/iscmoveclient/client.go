@@ -6,16 +6,12 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/iotaledger/hive.go/log"
 	"github.com/samber/lo"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/client"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/contracts"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/serialization"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
@@ -23,48 +19,40 @@ import (
 
 // Client provides convenient methods to interact with the `isc` Move contracts.
 type Client struct {
-	client.IotaClient
+	iotagraphql.IotaClient
 	faucetURL string
-	// FIXME this should be removed after we migrate to GqraphQL subscriptions
-	wsClient *iotaclient.Client
 }
 
-func NewClient(iotaClient client.IotaClient, faucetURL string) *Client {
+func NewClient(iotaClient iotagraphql.IotaClient, faucetURL string) *Client {
 	return &Client{
 		IotaClient: iotaClient,
 		faucetURL:  faucetURL,
 	}
 }
 
-func NewHTTPClient(apiURL, faucetURL string, waitUntilEffectsVisible *iotaclient.WaitParams) *Client {
+func NewHTTPClient(apiURL, faucetURL string, waitUntilEffectsVisible *iotagraphql.WaitParams) *Client {
 	return NewClient(
 		iotagraphql.NewGraphQLClientWithWaitParams(apiURL, waitUntilEffectsVisible),
 		faucetURL,
 	)
 }
 
+// NewWebsocketClient creates a new client. Note: websocket subscriptions are not
+// currently supported, so this just creates an HTTP-based GraphQL client.
 func NewWebsocketClient(
 	ctx context.Context,
 	wsURL, faucetURL string,
-	waitUntilEffectsVisible *iotaclient.WaitParams,
-	log log.Logger,
+	waitUntilEffectsVisible *iotagraphql.WaitParams,
 ) (*Client, error) {
-	ws, err := iotaclient.NewWebsocket(ctx, wsURL, waitUntilEffectsVisible, log)
-	if err != nil {
-		return nil, err
-	}
-	return &Client{
-		IotaClient: ws,
-		faucetURL:  faucetURL,
-		wsClient:   ws,
-	}, nil
+	_ = ctx
+	return NewHTTPClient(wsURL, faucetURL, waitUntilEffectsVisible), nil
 }
 
 func (c *Client) RequestFunds(ctx context.Context, address cryptolib.Address) error {
 	if c.faucetURL == "" {
 		panic("missing faucetURL")
 	}
-	return iotaclient.RequestFundsFromFaucet(ctx, address.AsIotaAddress(), c.faucetURL)
+	return iotagraphql.RequestFundsFromFaucet(ctx, address.AsIotaAddress(), c.faucetURL)
 }
 
 func (c *Client) Health(ctx context.Context) error {
@@ -79,17 +67,17 @@ func (c *Client) SignAndExecutePTB(
 	gasPayments []*iotago.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
-) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+) (*iotagraphql.IotaTransactionBlockResponse, error) {
 	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
 	if len(gasPayments) == 0 {
 		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasPrice, gasBudget)
 		if err != nil {
 			return nil, fmt.Errorf("failed to find gas payment: %w", err)
 		}
-		coins, err = iotajsonrpc.PickupCoinsWithFilter(
+		coins, err = iotagraphql.PickupCoinsWithFilter(
 			coins,
 			gasBudget,
-			func(c *iotajsonrpc.Coin) bool { return !pt.IsInInputObjects(c.CoinObjectID) },
+			func(c *iotagraphql.Coin) bool { return !pt.IsInInputObjects(c.CoinObjectID) },
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to find gas payment: %w", err)
@@ -114,10 +102,10 @@ func (c *Client) SignAndExecutePTB(
 	}
 	txnResponse, err := c.SignAndExecuteTransaction(
 		ctx,
-		&iotaclient.SignAndExecuteTransactionRequest{
+		&iotagraphql.SignAndExecuteTransactionRequest{
 			TxDataBytes: txnBytes,
 			Signer:      signer,
-			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+			Options: &iotagraphql.IotaTransactionBlockResponseOptions{
 				ShowEffects:        true,
 				ShowObjectChanges:  true,
 				ShowBalanceChanges: true,
@@ -140,17 +128,17 @@ func (c *Client) DevInspectPTB(
 	gasPayments []*iotago.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
-) (*iotajsonrpc.DevInspectResults, error) {
+) (*iotagraphql.DevInspectResults, error) {
 	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
 	if len(gasPayments) == 0 {
 		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasPrice, gasBudget)
 		if err != nil {
 			return nil, fmt.Errorf("failed to find gas payment: %w", err)
 		}
-		coins, err = iotajsonrpc.PickupCoinsWithFilter(
+		coins, err = iotagraphql.PickupCoinsWithFilter(
 			coins,
 			gasBudget,
-			func(c *iotajsonrpc.Coin) bool { return !pt.IsInInputObjects(c.CoinObjectID) },
+			func(c *iotagraphql.Coin) bool { return !pt.IsInInputObjects(c.CoinObjectID) },
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to find gas payment: %w", err)
@@ -172,7 +160,7 @@ func (c *Client) DevInspectPTB(
 	}
 	txnResponse, err := c.DevInspectTransactionBlock(
 		ctx,
-		iotaclient.DevInspectTransactionBlockRequest{
+		iotagraphql.DevInspectTransactionBlockRequest{
 			SenderAddress: signer.Address(),
 			TxKindBytes:   txnBytes,
 		},
@@ -189,46 +177,29 @@ func (c *Client) DevInspectPTB(
 	return txnResponse, nil
 }
 
-// WaitUntilStopped waits until the websocket client is stopped.
-// This method is only available for websocket clients.
-// FIXME this should be removed after we migrate to GqraphQL subscriptions
-func (c *Client) WaitUntilStopped() {
-	if c.wsClient == nil {
-		panic("WaitUntilStopped is only available for websocket clients")
-	}
-	c.wsClient.WaitUntilStopped()
-}
+// WaitUntilStopped is a no-op placeholder. Websocket subscriptions are not currently supported.
+func (c *Client) WaitUntilStopped() {}
 
-// SubscribeEvent subscribes to events matching the given filter.
-// This method is only available for websocket clients.
-// FIXME this should be removed after we migrate to GqraphQL subscriptions
+// SubscribeEvent is not currently supported (websocket subscriptions not implemented).
 func (c *Client) SubscribeEvent(
 	ctx context.Context,
-	filter *iotajsonrpc.EventFilter,
-	resultCh chan<- *iotajsonrpc.IotaEvent,
+	filter *iotagraphql.IotaEventFilter,
+	resultCh chan<- *iotagraphql.IotaEvent,
 ) error {
-	if c.wsClient == nil {
-		return fmt.Errorf("SubscribeEvent is only available for websocket clients")
-	}
-	return c.wsClient.SubscribeEvent(ctx, filter, resultCh)
+	return fmt.Errorf("SubscribeEvent is not supported: websocket subscriptions not implemented")
 }
 
-// SubscribeTransaction subscribes to transactions matching the given filter.
-// This method is only available for websocket clients.
-// FIXME this should be removed after we migrate to GqraphQL subscriptions
+// SubscribeTransaction is not currently supported (websocket subscriptions not implemented).
 func (c *Client) SubscribeTransaction(
 	ctx context.Context,
-	filter *iotajsonrpc.TransactionFilter,
-	resultCh chan<- *serialization.TagJson[iotajsonrpc.IotaTransactionBlockEffects],
+	filter *iotagraphql.TransactionFilter,
+	resultCh chan<- *serialization.TagJson[iotagraphql.IotaTransactionBlockEffects],
 ) error {
-	if c.wsClient == nil {
-		return fmt.Errorf("SubscribeTransaction is only available for websocket clients")
-	}
-	return c.wsClient.SubscribeTransaction(ctx, filter, resultCh)
+	return fmt.Errorf("SubscribeTransaction is not supported: websocket subscriptions not implemented")
 }
 
 func (c *Client) GetISCPackageIDForAnchor(ctx context.Context, anchor iotago.ObjectID) (iotago.PackageID, error) {
-	obj, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: &anchor, Options: &iotajsonrpc.IotaObjectDataOptions{
+	obj, err := c.GetObject(ctx, iotagraphql.GetObjectRequest{ObjectID: &anchor, Options: &iotagraphql.IotaObjectDataOptions{
 		ShowDisplay: true,
 		ShowType:    true,
 	}})
@@ -248,11 +219,11 @@ func (c *Client) GetISCPackageIDForAnchor(ctx context.Context, anchor iotago.Obj
 
 func (c *Client) DeployISCContracts(ctx context.Context, signer iotasigner.Signer) (iotago.PackageID, error) {
 	iscBytecode := contracts.ISC()
-	txnBytes, err := c.Publish(ctx, iotaclient.PublishRequest{
+	txnBytes, err := c.Publish(ctx, iotagraphql.PublishRequest{
 		Sender:          signer.Address(),
 		CompiledModules: iscBytecode.Modules,
 		Dependencies:    iscBytecode.Dependencies,
-		GasBudget:       iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget * 10),
+		GasBudget:       iotagraphql.NewBigInt(iotagraphql.DefaultGasBudget * 10),
 	})
 	if err != nil {
 		return iotago.PackageID{}, err
@@ -260,10 +231,10 @@ func (c *Client) DeployISCContracts(ctx context.Context, signer iotasigner.Signe
 
 	txnResponse, err := c.SignAndExecuteTransaction(
 		ctx,
-		&iotaclient.SignAndExecuteTransactionRequest{
+		&iotagraphql.SignAndExecuteTransactionRequest{
 			TxDataBytes: txnBytes.TxBytes,
 			Signer:      signer,
-			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+			Options: &iotagraphql.IotaTransactionBlockResponseOptions{
 				ShowEffects:       true,
 				ShowObjectChanges: true,
 			},

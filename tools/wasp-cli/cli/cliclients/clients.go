@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/apiclient"
 	"github.com/iotaledger/wasp/v2/clients/apiextensions"
 	"github.com/iotaledger/wasp/v2/clients/chainclient"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/components/app"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/config"
@@ -62,7 +62,7 @@ func L1Client() clients.L1Client {
 	return clients.NewL1Client(clients.L1Config{
 		APIURL:    config.L1APIAddress(),
 		FaucetURL: config.L1FaucetAddress(),
-	}, iotaclient.WaitForEffectsEnabled)
+	}, iotagraphql.WaitForEffectsEnabled)
 }
 
 func ChainClient(waspClient *apiclient.APIClient, chainID isc.ChainID) *chainclient.Client {

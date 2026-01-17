@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 )
@@ -52,7 +52,7 @@ func PTBAssetsBagPlaceCoin(
 	packageID iotago.PackageID,
 	argAssetsBag iotago.Argument,
 	argCoin iotago.Argument,
-	coinType iotajsonrpc.CoinType,
+	coinType iotagraphql.CoinType,
 ) *iotago.ProgrammableTransactionBuilder {
 	ptb.Command(
 		iotago.Command{
@@ -98,8 +98,8 @@ func PTBAssetsBagPlaceCoinWithAmount(
 	packageID iotago.PackageID,
 	argAssetsBag iotago.Argument,
 	argCoin iotago.Argument,
-	amount iotajsonrpc.CoinValue,
-	coinType iotajsonrpc.CoinType,
+	amount iotagraphql.CoinValue,
+	coinType iotagraphql.CoinType,
 ) *iotago.ProgrammableTransactionBuilder {
 	splitCoinArg := ptb.Command(
 		iotago.Command{
@@ -194,7 +194,7 @@ func PTBAssetsBagTakeCoinBalanceMergeTo(
 	packageID iotago.PackageID,
 	argAssetsBag iotago.Argument,
 	amount uint64,
-	coinType iotajsonrpc.CoinType,
+	coinType iotagraphql.CoinType,
 ) *iotago.ProgrammableTransactionBuilder {
 	typeTag, err := iotago.TypeTagFromString(coinType.String())
 	if err != nil {
