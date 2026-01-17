@@ -9,21 +9,20 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 	testcommon "github.com/iotaledger/wasp/v2/clients/iota-go/test_common"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
+	"github.com/iotaledger/wasp/v2/packages/testutil/l1starter"
 )
 
 func TestGetObject(t *testing.T) {
 	ctx := context.Background()
-	client := iotagraphql.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
-	owner := iotago.MustAddressFromHex(testcommon.TestAddress)
+	client := l1starter.Instance().L1Client()
+	owner := l1starter.ISCPackageOwner.Address()
 
 	limit := int(1)
-	coinsResp, err := client.GetCoins(ctx, iotaclient.GetCoinsRequest{
+	coinsResp, err := client.GetCoins(ctx, iotagraphql.GetCoinsRequest{
 		Owner: owner,
 		Limit: limit,
 	})
@@ -31,9 +30,9 @@ func TestGetObject(t *testing.T) {
 	require.NotEmpty(t, coinsResp.Data)
 
 	coin := coinsResp.Data[0]
-	objResp, err := client.GetObject(ctx, iotaclient.GetObjectRequest{
+	objResp, err := client.GetObject(ctx, iotagraphql.GetObjectRequest{
 		ObjectID: coin.CoinObjectID,
-		Options: &iotajsonrpc.IotaObjectDataOptions{
+		Options: &iotagraphql.IotaObjectDataOptions{
 			ShowContent: true,
 			ShowType:    true,
 		},
@@ -44,11 +43,11 @@ func TestGetObject(t *testing.T) {
 
 func TestGetTransactionBlock(t *testing.T) {
 	ctx := context.Background()
-	client := iotagraphql.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
-	owner := iotago.MustAddressFromHex(testcommon.TestAddress)
+	client := l1starter.Instance().L1Client()
+	owner := l1starter.ISCPackageOwner.Address()
 
 	limit := int(1)
-	coinsResp, err := client.GetCoins(ctx, iotaclient.GetCoinsRequest{
+	coinsResp, err := client.GetCoins(ctx, iotagraphql.GetCoinsRequest{
 		Owner: owner,
 		Limit: limit,
 	})
@@ -56,7 +55,7 @@ func TestGetTransactionBlock(t *testing.T) {
 	require.NotEmpty(t, coinsResp.Data)
 
 	digest := &coinsResp.Data[0].PreviousTransaction
-	resp, err := client.GetTransactionBlock(ctx, iotaclient.GetTransactionBlockRequest{
+	resp, err := client.GetTransactionBlock(ctx, iotagraphql.GetTransactionBlockRequest{
 		Digest: digest,
 	})
 	require.NoError(t, err)
@@ -66,9 +65,9 @@ func TestGetTransactionBlock(t *testing.T) {
 
 func TestQueryTransactionBlocks(t *testing.T) {
 	ctx := context.Background()
-	client := iotagraphql.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
+	client := l1starter.Instance().L1Client()
 
-	resp, err := client.QueryTransactionBlocks(ctx, iotaclient.QueryTransactionBlocksRequest{
+	resp, err := client.QueryTransactionBlocks(ctx, iotagraphql.QueryTransactionBlocksRequest{
 		Limit: lo.ToPtr(int(3)),
 	})
 	require.NoError(t, err)
@@ -78,11 +77,11 @@ func TestQueryTransactionBlocks(t *testing.T) {
 func TestTryGetPastObject(t *testing.T) {
 	t.Skip("May fail")
 	ctx := context.Background()
-	client := iotagraphql.NewGraphQLClientWithTimeout(iotaconn.TestnetGraphQLEndpointURL, 120*time.Second, nil)
+	client := iotagraphql.NewGraphQLClientWithTimeout(iotaconn.LocalnetGraphQLEndpointURL, 120*time.Second, nil)
 	owner := iotago.MustAddressFromHex(testcommon.TestAddress)
 
 	limit := int(1)
-	coinsResp, err := client.GetCoins(ctx, iotaclient.GetCoinsRequest{
+	coinsResp, err := client.GetCoins(ctx, iotagraphql.GetCoinsRequest{
 		Owner: owner,
 		Limit: limit,
 	})
@@ -92,7 +91,7 @@ func TestTryGetPastObject(t *testing.T) {
 	coin := coinsResp.Data[0]
 	version := coin.Version.Uint64()
 
-	resp, err := client.TryGetPastObject(ctx, iotaclient.TryGetPastObjectRequest{
+	resp, err := client.TryGetPastObject(ctx, iotagraphql.TryGetPastObjectRequest{
 		ObjectID: coin.CoinObjectID,
 		Version:  version,
 	})
