@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/isc"
@@ -114,7 +114,8 @@ func TestManyRequests2(t *testing.T) {
 	for i := range users {
 		expectedBalance := coin.Value(repeats[i]) * (baseTokensSentPerRequest - estimate.GasFeeCharged)
 		chain.AssertL2BaseTokens(isc.NewAddressAgentID(userAddr[i]), expectedBalance)
-		chain.Env.AssertL1BaseTokens(userAddr[i], iotaclient.FundsFromFaucetAmount-coin.Value(repeats[i])*baseTokensSentPerRequest-l1Gas[i])
+		initialBalance := coin.Value(iotagraphql.FundsFromFaucetAmount)
+		chain.Env.AssertL1BaseTokens(userAddr[i], initialBalance-coin.Value(repeats[i])*baseTokensSentPerRequest-l1Gas[i])
 	}
 
 	gasCoinValueAfter := chain.GetLatestGasCoin().Value

@@ -8,7 +8,7 @@ import (
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/iotatest"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
@@ -20,7 +20,7 @@ type EstimationRequest struct {
 	GasBudget    json.Number
 }
 
-func DecodeCreateAndSendRequest(msg *EstimationRequest, cmd *iotago.ProgrammableMoveCall, inputs []iotajsonrpc.ProgrammableTransactionBlockPureInput) error {
+func DecodeCreateAndSendRequest(msg *EstimationRequest, cmd *iotago.ProgrammableMoveCall, inputs []iotagraphql.ProgrammableTransactionBlockPureInput) error {
 	if len(cmd.Arguments) != 7 {
 		return errors.New("create_and_send_request has invalid parameters")
 	}
@@ -58,7 +58,7 @@ func DecodeCreateAndSendRequest(msg *EstimationRequest, cmd *iotago.Programmable
 	return nil
 }
 
-func DecodeCoin(assets *Assets, cmd *iotago.ProgrammableMoveCall, inputs []iotajsonrpc.ProgrammableTransactionBlockPureInput) error {
+func DecodeCoin(assets *Assets, cmd *iotago.ProgrammableMoveCall, inputs []iotagraphql.ProgrammableTransactionBlockPureInput) error {
 	var err error
 	if len(cmd.Arguments) != 2 {
 		return fmt.Errorf("malformed PTB")
@@ -80,7 +80,7 @@ func DecodeCoin(assets *Assets, cmd *iotago.ProgrammableMoveCall, inputs []iotaj
 	return nil
 }
 
-func DecodeAsset(assets *Assets, cmd *iotago.ProgrammableMoveCall, inputs []iotajsonrpc.ProgrammableTransactionBlockPureInput) error {
+func DecodeAsset(assets *Assets, cmd *iotago.ProgrammableMoveCall, inputs []iotagraphql.ProgrammableTransactionBlockPureInput) error {
 	var err error
 	if len(cmd.Arguments) != 2 {
 		return fmt.Errorf("malformed PTB")
@@ -110,7 +110,7 @@ func DecodeAsset(assets *Assets, cmd *iotago.ProgrammableMoveCall, inputs []iota
 // The upside is that a user can pass an unsigned transaction to estimate.
 // The downside is that any time we change create_and_send_request in the move contract, we need to update this logic.
 // I don't expect it to change often if ever, so that seems to be a straight forward way.
-func DecodeDryRunTransaction(dryRunRes *iotajsonrpc.DryRunTransactionBlockResponse) (*Assets, *EstimationRequest, *cryptolib.Address, error) {
+func DecodeDryRunTransaction(dryRunRes *iotagraphql.DryRunResult) (*Assets, *EstimationRequest, *cryptolib.Address, error) {
 	tx := dryRunRes.Input.Data.V1.Transaction.Data.ProgrammableTransaction
 
 	var cmds []struct {
@@ -129,7 +129,7 @@ func DecodeDryRunTransaction(dryRunRes *iotajsonrpc.DryRunTransactionBlockRespon
 		if cmd := moveCall.MoveCall; cmd != nil {
 			// take all placed coins into assets
 			if cmd.Function == "place_coin" {
-				var inputs []iotajsonrpc.ProgrammableTransactionBlockPureInput
+				var inputs []iotagraphql.ProgrammableTransactionBlockPureInput
 				if err := json.Unmarshal(tx.Inputs, &inputs); err != nil {
 					return nil, nil, cryptolib.NewEmptyAddress(), fmt.Errorf("can't decode place_coin command: %w", err)
 				}
@@ -140,7 +140,7 @@ func DecodeDryRunTransaction(dryRunRes *iotajsonrpc.DryRunTransactionBlockRespon
 			}
 
 			if cmd.Function == "place_asset" {
-				var inputs []iotajsonrpc.ProgrammableTransactionBlockPureInput
+				var inputs []iotagraphql.ProgrammableTransactionBlockPureInput
 				if err := json.Unmarshal(tx.Inputs, &inputs); err != nil {
 					return nil, nil, cryptolib.NewEmptyAddress(), fmt.Errorf("can't decode place_asset command: %w", err)
 				}
@@ -151,7 +151,7 @@ func DecodeDryRunTransaction(dryRunRes *iotajsonrpc.DryRunTransactionBlockRespon
 			}
 
 			if cmd.Function == "create_and_send_request" {
-				var inputs []iotajsonrpc.ProgrammableTransactionBlockPureInput
+				var inputs []iotagraphql.ProgrammableTransactionBlockPureInput
 				if err := json.Unmarshal(tx.Inputs, &inputs); err != nil {
 					return nil, nil, cryptolib.NewEmptyAddress(), fmt.Errorf("can't decode create_and_send_request command: %w", err)
 				}

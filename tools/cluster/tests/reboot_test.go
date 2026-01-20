@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/v2/clients/chainclient"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/isc"
@@ -70,11 +70,11 @@ func TestRebootDuringTasks(t *testing.T) {
 
 	// keep the nodes spammed with deposit requests
 	go func() {
-		depositAmount := coin.Value(10_000 + iotaclient.DefaultGasBudget)
+		depositAmount := coin.Value(10_000 + iotagraphql.DefaultGasBudget)
 		for i := 0; i < postCount; i++ {
 			_, err = client.PostRequest(context.Background(), accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
 				Transfer:  isc.NewAssets(depositAmount),
-				GasBudget: iotaclient.DefaultGasBudget,
+				GasBudget: iotagraphql.DefaultGasBudget,
 			})
 			fmt.Printf("=====> deposit request sent: %d\n", i)
 			require.NoError(t, err)

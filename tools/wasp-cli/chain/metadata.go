@@ -8,7 +8,7 @@ import (
 
 	"github.com/iotaledger/wasp/v2/clients/apiclient"
 	"github.com/iotaledger/wasp/v2/clients/chainclient"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/cliclients"
@@ -189,6 +189,6 @@ func updateMetadata(ctx context.Context, client *apiclient.APIClient, node strin
 	}
 
 	postRequest(ctx, client, chainAliasName, governance.FuncSetMetadata.Message(&publicURL, &chainMetadata), chainclient.PostRequestParams{
-		GasBudget: iotaclient.DefaultGasBudget,
+		GasBudget: iotagraphql.DefaultGasBudget,
 	}, withOffLedger)
 }

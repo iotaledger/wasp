@@ -15,9 +15,8 @@ import (
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/v2/clients"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/v2/packages/chain"
 	"github.com/iotaledger/wasp/v2/packages/chain/consensus/consensusrunner"
@@ -79,7 +78,7 @@ func New(
 	httpClient := clients.NewL1Client(clients.L1Config{
 		APIURL:    httpURL,
 		FaucetURL: "",
-	}, iotaclient.WaitForEffectsEnabled)
+	}, iotagraphql.WaitForEffectsEnabled)
 
 	return &nodeConnection{
 		Logger:              log,
@@ -159,16 +158,16 @@ func (nc *nodeConnection) ConsensusL1InfoProposal(
 			panic(err)
 		}
 
-		gasCoinGetObjectRes, err := nc.httpClient.GetObject(ctx, iotaclient.GetObjectRequest{
+		gasCoinGetObjectRes, err := nc.httpClient.GetObject(ctx, iotagraphql.GetObjectRequest{
 			ObjectID: stateMetadata.GasCoinObjectID,
-			Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
+			Options:  &iotagraphql.IotaObjectDataOptions{ShowBcs: true},
 		})
 		if err != nil {
 			panic(err)
 		}
 
 		var gasCoin iscmoveclient.MoveCoin
-		err = iotaclient.UnmarshalBCS(gasCoinGetObjectRes.Data.Bcs.Data.MoveObject.BcsBytes, &gasCoin)
+		err = iotagraphql.UnmarshalBCS(gasCoinGetObjectRes.Data.Bcs.Data.MoveObject.BcsBytes, &gasCoin)
 		if err != nil {
 			panic(err)
 		}

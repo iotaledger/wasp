@@ -8,10 +8,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/contracts"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 	testcommon "github.com/iotaledger/wasp/v2/clients/iota-go/test_common"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient/iscmoveclienttest"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
@@ -29,7 +28,7 @@ type PTBTestWrapperRequest struct {
 func PTBTestWrapper(
 	req *PTBTestWrapperRequest,
 	f func(ptb *iotago.ProgrammableTransactionBuilder) *iotago.ProgrammableTransactionBuilder,
-) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+) (*iotagraphql.IotaTransactionBlockResponse, error) {
 	ptb := iotago.NewProgrammableTransactionBuilder()
 	return req.Client.SignAndExecutePTB(
 		context.Background(),
@@ -46,20 +45,20 @@ func TestKeys(t *testing.T) {
 	client := iscmoveclienttest.NewHTTPClient()
 	iscBytecode := contracts.ISC()
 
-	txnBytes, err := client.Publish(context.Background(), iotaclient.PublishRequest{
+	txnBytes, err := client.Publish(context.Background(), iotagraphql.PublishRequest{
 		Sender:          cryptolibSigner.Address().AsIotaAddress(),
 		CompiledModules: iscBytecode.Modules,
 		Dependencies:    iscBytecode.Dependencies,
-		GasBudget:       iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget * 10),
+		GasBudget:       iotagraphql.NewBigInt(iotagraphql.DefaultGasBudget * 10),
 	})
 	require.NoError(t, err)
 
 	txnResponse, err := client.SignAndExecuteTransaction(
 		context.Background(),
-		&iotaclient.SignAndExecuteTransactionRequest{
+		&iotagraphql.SignAndExecuteTransactionRequest{
 			TxDataBytes: txnBytes.TxBytes,
 			Signer:      cryptolib.SignerToIotaSigner(cryptolibSigner),
-			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+			Options: &iotagraphql.IotaTransactionBlockResponseOptions{
 				ShowEffects:       true,
 				ShowObjectChanges: true,
 			},

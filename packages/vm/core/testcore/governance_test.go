@@ -9,7 +9,7 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/isc"
@@ -47,7 +47,7 @@ func TestGovernanceAccessNodes(t *testing.T) {
 			governance.NewNodeOwnershipCertificate(node1KP, node1OwnerAddr).Bytes(),
 			"http://my-api/url",
 			false,
-		)).AddBaseTokens(iotaclient.DefaultGasBudget),
+		)).AddBaseTokens(iotagraphql.DefaultGasBudget),
 		node1OwnerKP, // Sender should match data used to create the Cert field value.
 	)
 	require.NoError(t, err)
@@ -69,7 +69,7 @@ func TestGovernanceAccessNodes(t *testing.T) {
 			governance.ChangeAccessNodeActions{
 				governance.AcceptAccessNodeAction(node1KP.GetPublicKey()),
 			},
-		)).AddBaseTokens(iotaclient.DefaultGasBudget),
+		)).AddBaseTokens(iotagraphql.DefaultGasBudget),
 		chainKP,
 	)
 	require.NoError(t, err)

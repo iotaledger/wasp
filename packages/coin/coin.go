@@ -9,7 +9,7 @@ import (
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 )
 
 // Value is the balance of a given coin
@@ -54,7 +54,7 @@ func ValueFromString(s string) (Value, error) {
 	return Value(value), nil
 }
 
-var BaseTokenType = MustTypeFromString(iotajsonrpc.IotaCoinType.String())
+var BaseTokenType = MustTypeFromString(iotagraphql.IotaCoinType.String())
 
 func IsBaseToken(t string) (bool, error) {
 	return BaseTokenType.EqualsStr(t)

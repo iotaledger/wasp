@@ -2,19 +2,19 @@
 package parameterstest
 
 import (
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/parameters"
 )
 
 var L1Mock = &parameters.L1Params{
 	Protocol: &parameters.Protocol{
-		Epoch:                 iotajsonrpc.NewBigInt(100),
-		ProtocolVersion:       iotajsonrpc.NewBigInt(1),
-		SystemStateVersion:    iotajsonrpc.NewBigInt(1),
-		ReferenceGasPrice:     iotajsonrpc.NewBigInt(1000),
-		EpochStartTimestampMs: iotajsonrpc.NewBigInt(1734538812318),
-		EpochDurationMs:       iotajsonrpc.NewBigInt(86400000),
+		Epoch:                 iotagraphql.NewBigInt(100),
+		ProtocolVersion:       iotagraphql.NewBigInt(1),
+		SystemStateVersion:    iotagraphql.NewBigInt(1),
+		ReferenceGasPrice:     iotagraphql.NewBigInt(1000),
+		EpochStartTimestampMs: iotagraphql.NewBigInt(1734538812318),
+		EpochDurationMs:       iotagraphql.NewBigInt(86400000),
 	},
 	BaseToken: &parameters.IotaCoinInfo{
 		CoinType:    coin.BaseTokenType,

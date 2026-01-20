@@ -18,7 +18,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/v2/clients/chainclient"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/evm/evmtest"
@@ -78,8 +78,8 @@ func (e *ChainEnv) DepositFunds(amount coin.Value, keyPair *cryptolib.KeyPair) {
 	client := e.Chain.Client(keyPair)
 	params := chainclient.PostRequestParams{
 		Transfer:  isc.NewAssets(amount),
-		Allowance: isc.NewAssets(amount - iotaclient.DefaultGasBudget),
-		GasBudget: iotaclient.DefaultGasBudget,
+		Allowance: isc.NewAssets(amount - iotagraphql.DefaultGasBudget),
+		GasBudget: iotagraphql.DefaultGasBudget,
 	}
 	tx, err := client.PostRequest(context.Background(), accounts.FuncDeposit.Message(), params)
 	require.NoError(e.t, err)
@@ -94,7 +94,7 @@ func (e *ChainEnv) TransferFundsTo(assets *isc.Assets, keyPair *cryptolib.KeyPai
 	tx, err := client.PostRequest(context.Background(), accounts.FuncTransferAllowanceTo.Message(targetAccount), chainclient.PostRequestParams{
 		Transfer:    transferAssets.AddBaseTokens(coin.Value(l2GasFee)),
 		Allowance:   assets,
-		GasBudget:   iotaclient.DefaultGasBudget,
+		GasBudget:   iotagraphql.DefaultGasBudget,
 		L2GasBudget: uint64(l2GasFee),
 	})
 	require.NoError(e.t, err)

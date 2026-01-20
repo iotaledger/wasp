@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 )
@@ -359,7 +359,7 @@ func PTBReceiveRequestsAndTransition(
 			packageID,
 			argAnchorAssets,
 			topUpAmount,
-			iotajsonrpc.IotaCoinType,
+			iotagraphql.IotaCoinType,
 		)
 	}
 

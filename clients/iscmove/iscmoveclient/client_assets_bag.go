@@ -5,9 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 )
 
@@ -15,7 +14,7 @@ func (c *Client) GetAssetsBagWithBalances(
 	ctx context.Context,
 	assetsBagID *iotago.ObjectID,
 ) (*iscmove.AssetsBagWithBalances, error) {
-	fields, err := c.GetDynamicFields(ctx, iotaclient.GetDynamicFieldsRequest{ParentObjectID: assetsBagID})
+	fields, err := c.GetDynamicFields(ctx, iotagraphql.GetDynamicFieldsRequest{ParentObjectID: assetsBagID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get DynamicFields in AssetsBag: %w", err)
 	}
@@ -37,9 +36,9 @@ func (c *Client) GetAssetsBagWithBalances(
 
 		if isCoin {
 			// Convert coin type from the dynamic field name
-			cointype, err := iotajsonrpc.CoinTypeFromString("0x" + data.Name.Value.(string))
+			cointype, err := iotagraphql.CoinTypeFromString("0x" + data.Name.Value.(string))
 			if err != nil {
-				return nil, fmt.Errorf("failed to convert cointype from iotajsonrpc: %w", err)
+				return nil, fmt.Errorf("failed to convert cointype: %w", err)
 			}
 
 			var balanceJSON []byte
@@ -47,9 +46,9 @@ func (c *Client) GetAssetsBagWithBalances(
 			// Check if it's a DynamicObject or DynamicField
 			if data.Type.Data.DynamicObject != nil {
 				// DynamicObject: use GetObject with the ObjectID
-				resGetObject, err2 := c.GetObject(ctx, iotaclient.GetObjectRequest{
+				resGetObject, err2 := c.GetObject(ctx, iotagraphql.GetObjectRequest{
 					ObjectID: &data.ObjectID,
-					Options:  &iotajsonrpc.IotaObjectDataOptions{ShowContent: true},
+					Options:  &iotagraphql.IotaObjectDataOptions{ShowContent: true},
 				})
 				if err2 != nil {
 					return nil, fmt.Errorf("failed to call GetObject for Balance (coin type %s): %w", cointype, err2)
@@ -61,11 +60,11 @@ func (c *Client) GetAssetsBagWithBalances(
 
 				balanceJSON = resGetObject.Data.Content.Data.MoveObject.Fields
 			} else if data.Type.Data.DynamicField != nil {
-				// DynamicField: extract the value directly from the ValueJson field
-				if len(data.ValueJson) == 0 {
-					return nil, fmt.Errorf("ValueJson is empty for wrapped dynamic field (coin type %s)", cointype)
+				// DynamicField: extract the value directly from the ValueJSON field
+				if len(data.ValueJSON) == 0 {
+					return nil, fmt.Errorf("ValueJSON is empty for wrapped dynamic field (coin type %s)", cointype)
 				}
-				balanceJSON = data.ValueJson
+				balanceJSON = data.ValueJSON
 			} else {
 				return nil, fmt.Errorf("coin dynamic field is neither DynamicObject nor DynamicField: %+v", data)
 			}
@@ -76,7 +75,7 @@ func (c *Client) GetAssetsBagWithBalances(
 			}
 
 			var coinBalance struct {
-				Value *iotajsonrpc.BigInt `json:"value"`
+				Value *iotagraphql.BigInt `json:"value"`
 			}
 
 			err = json.Unmarshal(balanceJSON, &coinBalance)
@@ -84,7 +83,7 @@ func (c *Client) GetAssetsBagWithBalances(
 				return nil, fmt.Errorf("failed to unmarshal balance JSON: %w", err)
 			}
 
-			bag.SetCoin(cointype, iotajsonrpc.CoinValue(coinBalance.Value.Uint64()))
+			bag.SetCoin(cointype, iotagraphql.CoinValue(coinBalance.Value.Uint64()))
 		} else {
 			// non-coin asset (i.e. an "object", nft, etc)
 			typ, err := iotago.ObjectTypeFromString(data.ObjectType)

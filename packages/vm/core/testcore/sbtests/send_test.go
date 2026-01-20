@@ -6,8 +6,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
+	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/solo"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/accounts"
@@ -150,7 +150,7 @@ func TestPingBaseTokens1(t *testing.T) {
 	t.Logf("----- BEFORE -----\nUser funds left: %s\nCommon account: %s", userFundsBefore, commonBefore)
 
 	expectedBack := solo.BaseTokensForL2Gas
-	ch.Env.AssertL1BaseTokens(userAddr, iotaclient.FundsFromFaucetAmount)
+	ch.Env.AssertL1BaseTokens(userAddr, coin.Value(iotagraphql.FundsFromFaucetAmount))
 
 	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncPingAllowanceBack.Name).
 		AddBaseTokens(expectedBack * 2). // add extra base tokens besides allowance in order to estimate the gas fees
@@ -189,7 +189,7 @@ func TestSendObjectsBack(t *testing.T) {
 
 	obj := ch.Env.L1MintObject(wallet)
 
-	const baseTokensToSend = iotaclient.DefaultGasBudget
+	const baseTokensToSend = iotagraphql.DefaultGasBudget
 	assetsToSend := isc.NewAssets(baseTokensToSend)
 	assetsToAllow := isc.NewEmptyAssets().AddObject(obj)
 
@@ -203,9 +203,9 @@ func TestSendObjectsBack(t *testing.T) {
 	_, err := ch.PostRequestSync(req, wallet)
 	require.NoError(t, err)
 
-	objRes, err := ch.Env.L1Client().GetObject(ch.Env.Ctx(), iotaclient.GetObjectRequest{
+	objRes, err := ch.Env.L1Client().GetObject(ch.Env.Ctx(), iotagraphql.GetObjectRequest{
 		ObjectID: &obj.ID,
-		Options: &iotajsonrpc.IotaObjectDataOptions{
+		Options: &iotagraphql.IotaObjectDataOptions{
 			ShowOwner: true,
 		},
 	})
@@ -231,9 +231,9 @@ func TestNFTOffledgerWithdraw(t *testing.T) {
 	_, err = ch.PostRequestOffLedger(wdReq, wallet)
 	require.NoError(t, err)
 
-	objRes, err := ch.Env.L1Client().GetObject(ch.Env.Ctx(), iotaclient.GetObjectRequest{
+	objRes, err := ch.Env.L1Client().GetObject(ch.Env.Ctx(), iotagraphql.GetObjectRequest{
 		ObjectID: &obj.ID,
-		Options: &iotajsonrpc.IotaObjectDataOptions{
+		Options: &iotagraphql.IotaObjectDataOptions{
 			ShowOwner: true,
 		},
 	})

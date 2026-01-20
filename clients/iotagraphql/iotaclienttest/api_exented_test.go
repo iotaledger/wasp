@@ -6,25 +6,19 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
-	testcommon "github.com/iotaledger/wasp/v2/clients/iota-go/test_common"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
+	"github.com/iotaledger/wasp/v2/packages/testutil/l1starter"
 )
 
 func TestGetDynamicFields(t *testing.T) {
 	ctx := context.Background()
-	client := iotagraphql.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
-
-	// Test object that contains dynamic fields on testnet
-	testObjectID := iotago.MustObjectIDFromHex("0xabe5833dcc82909869439112ff1fe5090bcb7cc0f22f6a5bf9241e3a864f7e3c")
+	client := l1starter.Instance().L1Client()
 
 	t.Run("GetObject", func(t *testing.T) {
-		obj, err := client.GetObject(ctx, iotaclient.GetObjectRequest{
-			ObjectID: testObjectID,
-			Options: &iotajsonrpc.IotaObjectDataOptions{
+		obj, err := client.GetObject(ctx, iotagraphql.GetObjectRequest{
+			ObjectID: iotago.MustObjectIDFromHex("0x5"),
+			Options: &iotagraphql.IotaObjectDataOptions{
 				ShowContent: true,
 				ShowType:    true,
 			},
@@ -40,8 +34,8 @@ func TestGetDynamicFields(t *testing.T) {
 	})
 
 	t.Run("GetDynamicFields", func(t *testing.T) {
-		resp, err := client.GetDynamicFields(ctx, iotaclient.GetDynamicFieldsRequest{
-			ParentObjectID: testObjectID,
+		resp, err := client.GetDynamicFields(ctx, iotagraphql.GetDynamicFieldsRequest{
+			ParentObjectID: iotago.MustObjectIDFromHex("0x5"),
 		})
 		require.NoError(t, err)
 		require.NotNil(t, resp)
@@ -67,25 +61,25 @@ func TestGetDynamicFields(t *testing.T) {
 func TestGetOwnedObjects(t *testing.T) {
 	ctx := context.Background()
 	// Use the dynamically mapped port from the local test instance
-	client := iotagraphql.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
-	owner := iotago.MustAddressFromHex(testcommon.TestAddress)
+	client := l1starter.Instance().L1Client()
+	owner := l1starter.ISCPackageOwner.Address()
 
 	t.Run(
 		"struct tag", func(t *testing.T) {
 			structTag, err := iotago.StructTagFromString("0x2::coin::Coin<0x2::iota::IOTA>")
 			require.NoError(t, err)
-			query := iotajsonrpc.IotaObjectResponseQuery{
-				Filter: &iotajsonrpc.IotaObjectDataFilter{
+			query := iotagraphql.IotaObjectResponseQuery{
+				Filter: &iotagraphql.IotaObjectDataFilter{
 					StructType: structTag,
 				},
-				Options: &iotajsonrpc.IotaObjectDataOptions{
+				Options: &iotagraphql.IotaObjectDataOptions{
 					ShowType:    true,
 					ShowContent: true,
 				},
 			}
 			limit := int(10)
 			objs, err := client.GetOwnedObjects(
-				ctx, iotaclient.GetOwnedObjectsRequest{
+				ctx, iotagraphql.GetOwnedObjectsRequest{
 					Address: owner,
 					Query:   &query,
 					Limit:   &limit,
@@ -99,18 +93,18 @@ func TestGetOwnedObjects(t *testing.T) {
 
 	t.Run(
 		"move module", func(t *testing.T) {
-			query := iotajsonrpc.IotaObjectResponseQuery{
-				Filter: &iotajsonrpc.IotaObjectDataFilter{
+			query := iotagraphql.IotaObjectResponseQuery{
+				Filter: &iotagraphql.IotaObjectDataFilter{
 					AddressOwner: owner,
 				},
-				Options: &iotajsonrpc.IotaObjectDataOptions{
+				Options: &iotagraphql.IotaObjectDataOptions{
 					ShowType:    true,
 					ShowContent: true,
 				},
 			}
 			limit := int(9)
 			objs, err := client.GetOwnedObjects(
-				ctx, iotaclient.GetOwnedObjectsRequest{
+				ctx, iotagraphql.GetOwnedObjectsRequest{
 					Address: owner,
 					Query:   &query,
 					Limit:   &limit,

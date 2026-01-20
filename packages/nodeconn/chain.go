@@ -10,10 +10,9 @@ import (
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/hive.go/log"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/v2/packages/chain"
@@ -101,7 +100,7 @@ func (ncc *ncChain) postTxLoop(ctx context.Context, packageID iotago.PackageID) 
 
 		// Executing the transaction via DryRun before posting to make sure the transaction is valid, as failed transactions cost gas!
 		// Repeatedly failing transactions == sad gas coin
-		dryRes, err := ncc.nodeConn.httpClient.DryRunTransaction(task.ctx, iotaclient.DryRunTransactionRequest{
+		dryRes, err := ncc.nodeConn.httpClient.DryRunTransaction(task.ctx, iotagraphql.DryRunTransactionRequest{
 			TxDataBytes: txBytes,
 		})
 		if err != nil {
@@ -120,14 +119,14 @@ func (ncc *ncChain) postTxLoop(ctx context.Context, packageID iotago.PackageID) 
 			ncc.LogDebug("successfully dry-run Anchor transaction")
 		}
 
-		res, err := ncc.nodeConn.httpClient.ExecuteTransactionBlock(task.ctx, iotaclient.ExecuteTransactionBlockRequest{
+		res, err := ncc.nodeConn.httpClient.ExecuteTransactionBlock(task.ctx, iotagraphql.ExecuteTransactionBlockRequest{
 			TxDataBytes: txBytes,
 			Signatures:  task.tx.Signatures,
-			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+			Options: &iotagraphql.IotaTransactionBlockResponseOptions{
 				ShowObjectChanges: true,
 				ShowEffects:       true,
 			},
-			RequestType: iotajsonrpc.TxnRequestTypeWaitForLocalExecution,
+			RequestType: iotagraphql.TxnRequestTypeWaitForLocalExecution,
 		})
 
 		if err != nil {
