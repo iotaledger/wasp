@@ -4,6 +4,7 @@ import (
 	"context"
 	"math/big"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -92,9 +93,12 @@ func TestDryRunTransaction(t *testing.T) {
 func TestExecuteTransactionBlock(t *testing.T) {
 	client := clients.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
 	signer := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL, client)
-	coins, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: signer.Address(), Limit: 10})
-	require.NoError(t, err)
-	require.NotEmpty(t, coins.Data, "no coins indexed for %v after faucet", signer.Address().String())
+	var coins *iotajsonrpc.CoinPage
+	var err error
+	require.Eventually(t, func() bool {
+		coins, err = client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: signer.Address(), Limit: 10})
+		return err == nil && len(coins.Data) > 0
+	}, 300*time.Second, 5*time.Second, "no coins indexed for %v after faucet", signer.Address().String())
 	pickedCoins, err := iotajsonrpc.PickupCoins(coins, big.NewInt(100), iotaclient.DefaultGasBudget, 0, 0)
 	require.NoError(t, err)
 	tx, err := client.PayAllIota(
@@ -123,9 +127,12 @@ func TestExecuteTransactionBlock(t *testing.T) {
 func TestSignAndExecuteTransaction(t *testing.T) {
 	client := clients.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
 	signer := iotatest.MakeSignerWithFunds(0, iotaconn.TestnetFaucetURL, client)
-	coins, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: signer.Address(), Limit: 10})
-	require.NoError(t, err)
-	require.NotEmpty(t, coins.Data, "no coins indexed for %v after faucet", signer.Address().String())
+	var coins *iotajsonrpc.CoinPage
+	var err error
+	require.Eventually(t, func() bool {
+		coins, err = client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: signer.Address(), Limit: 10})
+		return err == nil && len(coins.Data) > 0
+	}, 300*time.Second, 5*time.Second, "no coins indexed for %v after faucet", signer.Address().String())
 	pickedCoins, err := iotajsonrpc.PickupCoins(coins, big.NewInt(100), iotaclient.DefaultGasBudget, 0, 0)
 	require.NoError(t, err)
 	tx, err := client.PayAllIota(

@@ -23,12 +23,15 @@ func TestGetObject(t *testing.T) {
 	owner := iotago.MustAddressFromHex(testcommon.TestAddress)
 
 	limit := int(1)
-	coinsResp, err := client.GetCoins(ctx, iotaclient.GetCoinsRequest{
-		Owner: owner,
-		Limit: limit,
-	})
-	require.NoError(t, err)
-	require.NotEmpty(t, coinsResp.Data)
+	var coinsResp *iotajsonrpc.CoinPage
+	var err error
+	require.Eventually(t, func() bool {
+		coinsResp, err = client.GetCoins(ctx, iotaclient.GetCoinsRequest{
+			Owner: owner,
+			Limit: limit,
+		})
+		return err == nil && len(coinsResp.Data) > 0
+	}, 120*time.Second, 5*time.Second)
 
 	coin := coinsResp.Data[0]
 	objResp, err := client.GetObject(ctx, iotaclient.GetObjectRequest{
@@ -48,12 +51,15 @@ func TestGetTransactionBlock(t *testing.T) {
 	owner := iotago.MustAddressFromHex(testcommon.TestAddress)
 
 	limit := int(1)
-	coinsResp, err := client.GetCoins(ctx, iotaclient.GetCoinsRequest{
-		Owner: owner,
-		Limit: limit,
-	})
-	require.NoError(t, err)
-	require.NotEmpty(t, coinsResp.Data)
+	var coinsResp *iotajsonrpc.CoinPage
+	var err error
+	require.Eventually(t, func() bool {
+		coinsResp, err = client.GetCoins(ctx, iotaclient.GetCoinsRequest{
+			Owner: owner,
+			Limit: limit,
+		})
+		return err == nil && len(coinsResp.Data) > 0
+	}, 120*time.Second, 5*time.Second)
 
 	digest := &coinsResp.Data[0].PreviousTransaction
 	resp, err := client.GetTransactionBlock(ctx, iotaclient.GetTransactionBlockRequest{
@@ -68,11 +74,14 @@ func TestQueryTransactionBlocks(t *testing.T) {
 	ctx := context.Background()
 	client := clients.NewGraphQLClientWithTimeout(iotaconn.TestnetGraphQLEndpointURL, 60*time.Second)
 
-	resp, err := client.QueryTransactionBlocks(ctx, iotaclient.QueryTransactionBlocksRequest{
-		Limit: lo.ToPtr(int(3)),
-	})
-	require.NoError(t, err)
-	require.NotEmpty(t, resp.Data)
+	var resp *iotajsonrpc.TransactionBlocksPage
+	var err error
+	require.Eventually(t, func() bool {
+		resp, err = client.QueryTransactionBlocks(ctx, iotaclient.QueryTransactionBlocksRequest{
+			Limit: lo.ToPtr(int(3)),
+		})
+		return err == nil && len(resp.Data) > 0
+	}, 3*time.Minute, 5*time.Second)
 }
 
 func TestTryGetPastObject(t *testing.T) {
@@ -82,12 +91,15 @@ func TestTryGetPastObject(t *testing.T) {
 	owner := iotago.MustAddressFromHex(testcommon.TestAddress)
 
 	limit := int(1)
-	coinsResp, err := client.GetCoins(ctx, iotaclient.GetCoinsRequest{
-		Owner: owner,
-		Limit: limit,
-	})
-	require.NoError(t, err)
-	require.NotEmpty(t, coinsResp.Data)
+	var coinsResp *iotajsonrpc.CoinPage
+	var err error
+	require.Eventually(t, func() bool {
+		coinsResp, err = client.GetCoins(ctx, iotaclient.GetCoinsRequest{
+			Owner: owner,
+			Limit: limit,
+		})
+		return err == nil && len(coinsResp.Data) > 0
+	}, 120*time.Second, 5*time.Second)
 
 	coin := coinsResp.Data[0]
 	version := coin.Version.Uint64()
