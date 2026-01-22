@@ -38,6 +38,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/state/statetest"
 	"github.com/iotaledger/wasp/v2/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/v2/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/v2/packages/transaction"
 	"github.com/iotaledger/wasp/v2/packages/vm"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/coreprocessors"
@@ -265,7 +266,7 @@ func (env *Solo) MustWithWaitForNextVersion(currentRef *iotago.ObjectRef, cb fun
 // This tries to make sure that an object meant to be used multiple times, does not get referenced twice with the same ref.
 // Handle with care. Only use it on objects that are expected to be used again, like a GasCoin/Generic coin/Requests
 func (env *Solo) WithWaitForNextVersion(currentRef *iotago.ObjectRef, cb func()) (*iotago.ObjectRef, error) {
-	return env.L1Client().WaitForNextVersionForTesting(context.Background(), 30*time.Second, env.logger, currentRef, cb)
+	return env.L1Client().WaitForNextVersionForTesting(context.Background(), testmisc.GetTimeout(30*time.Second), env.logger, currentRef, cb)
 }
 
 func (env *Solo) deployChain(chainAdmin *cryptolib.KeyPair, initCommonAccountBaseTokens coin.Value, name string, evmChainID uint16, blockKeepAmount int32) chainData {
