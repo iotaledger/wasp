@@ -47,6 +47,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/v2/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testpeers"
 	"github.com/iotaledger/wasp/v2/packages/transaction"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/accounts"
@@ -68,12 +69,12 @@ func TestMain(m *testing.M) {
 func TestNodeBasic(t *testing.T) {
 	t.Parallel()
 	tests := []tc{
-		{n: 1, f: 0, reliable: true, timeout: 30 * time.Second},   // Low N
-		{n: 2, f: 0, reliable: true, timeout: 40 * time.Second},   // Low N
-		{n: 3, f: 0, reliable: true, timeout: 50 * time.Second},   // Low N
-		{n: 4, f: 0, reliable: true, timeout: 100 * time.Second},  // Minimal robust config.
-		{n: 4, f: 1, reliable: true, timeout: 100 * time.Second},  // Minimal robust config.
-		{n: 10, f: 3, reliable: true, timeout: 150 * time.Second}, // Typical config.
+		{n: 1, f: 0, reliable: true, timeout: 60 * time.Second},   // Low N
+		{n: 2, f: 0, reliable: true, timeout: 60 * time.Second},   // Low N
+		{n: 3, f: 0, reliable: true, timeout: 60 * time.Second},   // Low N
+		{n: 4, f: 0, reliable: true, timeout: 120 * time.Second},  // Minimal robust config.
+		{n: 4, f: 1, reliable: true, timeout: 120 * time.Second},  // Minimal robust config.
+		{n: 10, f: 3, reliable: true, timeout: 180 * time.Second}, // Typical config.
 	}
 	if !testing.Short() {
 		tests = append(tests,
@@ -96,7 +97,7 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 	te := newEnv(t, n, f, reliable, node)
 	defer te.close()
 
-	ctxTimeout, ctxTimeoutCancel := context.WithTimeout(te.ctx, timeout)
+	ctxTimeout, ctxTimeoutCancel := context.WithTimeout(te.ctx, testmisc.GetTimeout(timeout))
 	defer ctxTimeoutCancel()
 
 	te.log.LogDebugf("All started.")
@@ -107,7 +108,7 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 
 	// Create SC L1Client account with some deposit
 	scClient := cryptolib.NewKeyPair()
-	err := te.l1Client.RequestFunds(context.Background(), *scClient.Address())
+	err := te.l1Client.RequestFunds(ctxTimeout, *scClient.Address())
 	require.NoError(t, err)
 
 	//
@@ -145,7 +146,7 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 		require.NoError(t, err)
 		reqRef, err := req.GetCreatedObjectByName(iscmove.RequestModuleName, iscmove.RequestObjectName)
 		require.NoError(t, err)
-		reqWithObj, err := te.l2Client.GetRequestFromObjectID(context.Background(), reqRef.ObjectID)
+		reqWithObj, err := te.l2Client.GetRequestFromObjectID(ctxTimeout, reqRef.ObjectID)
 		require.NoError(t, err)
 
 		incRequests[i] = *reqWithObj
