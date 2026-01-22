@@ -2,8 +2,10 @@ package webapi_test
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"testing"
 	"time"
@@ -46,19 +48,22 @@ func TestInternalServerErrors(t *testing.T) {
 		log.NewLogger(log.WithHandler(logger)),
 	)
 
-	time.Sleep(5 * time.Second)
-
 	// Add an endpoint that just panics with "foobar" and start the server
 	exceptionText := "foobar"
 	e.GET("/test", func(c echo.Context) error { panic(exceptionText) })
+
+	l, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	e.Listener = l
+
 	go func() {
-		err := e.Start(":9999")
-		require.ErrorIs(t, http.ErrServerClosed, err)
+		err := e.Start("")
+		require.ErrorIs(t, err, http.ErrServerClosed)
 	}()
 	defer e.Shutdown(context.Background())
 
 	// query the endpoint
-	req, err := http.NewRequest(http.MethodGet, "http://localhost:9999/test", http.NoBody)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://%s/test", e.Listener.Addr().String()), http.NoBody)
 	require.NoError(t, err)
 
 	res, err := http.DefaultClient.Do(req)
@@ -69,7 +74,7 @@ func TestInternalServerErrors(t *testing.T) {
 	res.Body.Close()
 
 	// assert the exception is not present in the response (prevent leaking errors)
-	require.Equal(t, res.StatusCode, http.StatusInternalServerError)
+	require.Equal(t, http.StatusInternalServerError, res.StatusCode)
 	require.NotContains(t, string(resBody), exceptionText)
 
 	// assert the exception is logged
