@@ -22,6 +22,7 @@ import (
 )
 
 func TestAccounts_Deposit(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t, &solo.InitOptions{})
 	sender, _ := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	ch := env.NewChain()
@@ -36,6 +37,7 @@ func TestAccounts_Deposit(t *testing.T) {
 }
 
 func TestAccounts_DepositWithObject(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t, &solo.InitOptions{})
 	sender, _ := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	ch := env.NewChain()
@@ -52,6 +54,7 @@ func TestAccounts_DepositWithObject(t *testing.T) {
 
 // allowance shouldn't allow you to bypass gas fees.
 func TestAccounts_DepositCheatAllowance(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t, &solo.InitOptions{})
 	sender, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	senderAgentID := isc.NewAddressAgentID(senderAddr)
@@ -76,6 +79,7 @@ func TestAccounts_DepositCheatAllowance(t *testing.T) {
 }
 
 func TestAccounts_WithdrawEverything(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t, &solo.InitOptions{})
 	sender, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	senderAgentID := isc.NewAddressAgentID(senderAddr)
@@ -194,6 +198,7 @@ func (v *accountsDepositTest) printBalances(prefix string) {
 }
 
 func TestAccounts_WithdrawDepositCoins(t *testing.T) {
+	t.Parallel()
 	t.Run("withdraw with empty", func(t *testing.T) {
 		v := initWithdrawTest(t)
 		_, err := v.ch.PostRequestSync(v.req, v.user)
@@ -238,6 +243,7 @@ func TestAccounts_WithdrawDepositCoins(t *testing.T) {
 }
 
 func TestAccounts_TransferAndCheckBaseTokens(t *testing.T) {
+	t.Parallel()
 	// initializes it all and prepares withdraw request, does not post it
 	v := initWithdrawTest(t)
 	initialCommonAccountBaseTokens := v.ch.L2CommonAccountAssets().BaseTokens()
@@ -254,6 +260,7 @@ func TestAccounts_TransferAndCheckBaseTokens(t *testing.T) {
 }
 
 func TestAccounts_TransferPartialAssets(t *testing.T) {
+	t.Parallel()
 	// setup a chain with some base tokens and native tokens for user1
 	v := initWithdrawTest(t)
 	v.ch.MustDepositBaseTokensToL2(solo.BaseTokensForL2Gas, v.ch.ChainAdmin)
@@ -291,6 +298,7 @@ func TestAccounts_TransferPartialAssets(t *testing.T) {
 }
 
 func TestAccounts_DepositRandomContractMinFee(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t, &solo.InitOptions{})
 	ch := env.NewChain()
 
@@ -308,6 +316,7 @@ func TestAccounts_DepositRandomContractMinFee(t *testing.T) {
 }
 
 func TestAccounts_AllowanceNotEnoughFunds(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t, &solo.InitOptions{})
 	ch := env.NewChain()
 
@@ -336,6 +345,7 @@ func TestAccounts_AllowanceNotEnoughFunds(t *testing.T) {
 }
 
 func TestAccounts_DepositWithNoGasBudget(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t, &solo.InitOptions{})
 	senderWallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	ch := env.NewChain()
@@ -357,6 +367,7 @@ func TestAccounts_DepositWithNoGasBudget(t *testing.T) {
 }
 
 func TestAccounts_RequestWithNoGasBudget(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t, &solo.InitOptions{})
 	ch := env.NewChain()
 	senderWallet, _ := env.NewKeyPairWithFunds()
@@ -379,6 +390,7 @@ func TestAccounts_RequestWithNoGasBudget(t *testing.T) {
 }
 
 func TestAccounts_Nonces(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t, &solo.InitOptions{})
 	ch := env.NewChain()
 	senderWallet, _ := env.NewKeyPairWithFunds()
@@ -418,6 +430,7 @@ func TestAccounts_Nonces(t *testing.T) {
 }
 
 func TestAccounts_AdjustCommonAccountBaseTokens(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t, &solo.InitOptions{})
 	sender, _ := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	ch := env.NewChain()

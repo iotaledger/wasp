@@ -83,7 +83,7 @@ func TestCallFibonacciIndirect(t *testing.T) {
 	require.EqualValues(t, fibonacci(fiboN), ret)
 }
 
-func TestIndirectCallFibonacci(t *testing.T) { //nolint:dupl
+func TestIndirectCallFibonacci(t *testing.T) {
 	_, chain := setupChain(t)
 	setupTestSandboxSC(t, chain, nil)
 
@@ -107,7 +107,7 @@ func TestIndirectCallFibonacci(t *testing.T) { //nolint:dupl
 	require.EqualValues(t, 1, r)
 }
 
-func TestIndirectCallFibonacciIndirect(t *testing.T) { //nolint:dupl
+func TestIndirectCallFibonacciIndirect(t *testing.T) {
 	_, chain := setupChain(t)
 	setupTestSandboxSC(t, chain, nil)
 

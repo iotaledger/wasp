@@ -54,6 +54,7 @@ func getBurnedGas(ch *solo.Chain, reqID isc.RequestID, err error) (uint64, error
 }
 
 func TestManyEvents(t *testing.T) {
+	t.Parallel()
 	ch := setupTest(t)
 
 	postEvents := func(n uint32) (uint64, error) {
@@ -89,6 +90,7 @@ func TestManyEvents(t *testing.T) {
 }
 
 func TestEventTooLarge(t *testing.T) {
+	t.Parallel()
 	ch := setupTest(t)
 
 	postEvent := func(n uint32) (uint64, error) {
@@ -138,6 +140,7 @@ func getEventsForBlock(t *testing.T, chain *solo.Chain, blockNumber ...uint32) [
 }
 
 func TestGetEvents(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t)
 	ch := env.NewChain()
 

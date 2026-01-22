@@ -37,6 +37,7 @@ func setupErrorsTest(t *testing.T) *solo.Chain {
 // Panicked vmerrors will be stored as is.
 
 func TestUntypedError(t *testing.T) {
+	t.Parallel()
 	chain := setupErrorsTest(t)
 
 	_, _, _, _, err := chain.PostRequestSyncTx(
@@ -51,6 +52,7 @@ func TestUntypedError(t *testing.T) {
 
 // This test does not supply the required kv pair 'ParamErrorMessageFormat' which makes the kvdecoder fail with an xerror
 func TestPanicDueMissingErrorMessage(t *testing.T) {
+	t.Parallel()
 	chain := setupErrorsTest(t)
 
 	req := solo.NewCallParamsEx(errors.Contract.Name, errors.FuncRegisterError.Name).
@@ -68,6 +70,7 @@ func TestPanicDueMissingErrorMessage(t *testing.T) {
 }
 
 func TestSuccessfulRegisterError(t *testing.T) {
+	t.Parallel()
 	chain := setupErrorsTest(t)
 
 	req := solo.NewCallParams(errors.FuncRegisterError.Message("poof")).
@@ -80,6 +83,7 @@ func TestSuccessfulRegisterError(t *testing.T) {
 }
 
 func TestRetrievalOfErrorMessage(t *testing.T) {
+	t.Parallel()
 	chain := setupErrorsTest(t)
 
 	errorCode, err := errors.FuncRegisterError.Call(testerrors.MessageToTest, func(msg isc.Message) (isc.CallArguments, error) {
@@ -103,6 +107,7 @@ func TestRetrievalOfErrorMessage(t *testing.T) {
 }
 
 func TestErrorRegistrationWithCustomContract(t *testing.T) {
+	t.Parallel()
 	chain := setupErrorsTest(t)
 
 	req := solo.NewCallParams(testerrors.FuncRegisterErrors.Message(nil)).
@@ -116,6 +121,7 @@ func TestErrorRegistrationWithCustomContract(t *testing.T) {
 }
 
 func TestPanicWithCustomContractWithArgs(t *testing.T) {
+	t.Parallel()
 	chain := setupErrorsTest(t)
 
 	// Register error
@@ -143,6 +149,7 @@ func TestPanicWithCustomContractWithArgs(t *testing.T) {
 }
 
 func TestPanicWithCustomContractWithoutArgs(t *testing.T) {
+	t.Parallel()
 	chain := setupErrorsTest(t)
 
 	// Register error
@@ -175,6 +182,7 @@ func TestPanicWithCustomContractWithoutArgs(t *testing.T) {
 }
 
 func TestUnresolvedErrorIsStoredInReceiptAndIsEqualToVMErrorWithoutArgs(t *testing.T) {
+	t.Parallel()
 	chain := setupErrorsTest(t)
 
 	// Register error
@@ -208,6 +216,7 @@ func TestUnresolvedErrorIsStoredInReceiptAndIsEqualToVMErrorWithoutArgs(t *testi
 }
 
 func TestUnresolvedErrorIsStoredInReceiptAndIsEqualToVMErrorWithArgs(t *testing.T) {
+	t.Parallel()
 	chain := setupErrorsTest(t)
 
 	// Register error
@@ -240,6 +249,7 @@ func TestUnresolvedErrorIsStoredInReceiptAndIsEqualToVMErrorWithArgs(t *testing.
 }
 
 func TestIsComparer(t *testing.T) {
+	t.Parallel()
 	template := isc.NewVMErrorTemplate(isc.NewVMErrorCode(1234, 1), "fooBar")
 	vmerror := template.Create()
 	vmerrorUnresolved := vmerror.AsUnresolvedError()

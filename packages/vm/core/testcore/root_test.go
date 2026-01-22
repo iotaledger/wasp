@@ -22,12 +22,14 @@ func TestMain(m *testing.M) {
 }
 
 func TestRootBasic(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t)
 	chain := env.NewChain()
 	chain.CheckChain()
 }
 
 func TestEntryPointNotFound(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t)
 	chain := env.NewChain()
 
@@ -39,6 +41,7 @@ func TestEntryPointNotFound(t *testing.T) {
 }
 
 func TestGetInfo(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t)
 	chain := env.NewChain()
 
@@ -56,6 +59,7 @@ func TestGetInfo(t *testing.T) {
 }
 
 func TestChangeAdminAuthorized(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t, &solo.InitOptions{
 		Debug:           true,
 		PrintStackTrace: true,
@@ -88,6 +92,7 @@ func TestChangeAdminAuthorized(t *testing.T) {
 }
 
 func TestChangeAdminUnauthorized(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t)
 	chain := env.NewChain()
 

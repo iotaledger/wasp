@@ -15,6 +15,7 @@ import (
 )
 
 func TestBlocklog_BlockInfoLatest(t *testing.T) {
+	t.Parallel()
 	corecontracts.PrintWellKnownHnames()
 	env := solo.New(t)
 	chain := env.NewChain()
@@ -29,6 +30,7 @@ func TestBlocklog_BlockInfoLatest(t *testing.T) {
 }
 
 func TestBlocklog_BlockInfo(t *testing.T) {
+	t.Parallel()
 	corecontracts.PrintWellKnownHnames()
 	env := solo.New(t)
 	chain := env.NewChain()
@@ -53,6 +55,7 @@ func TestBlocklog_BlockInfo(t *testing.T) {
 }
 
 func TestBlocklog_BlockInfoLatestWithRequest(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t)
 
 	ch := env.NewChain()
@@ -73,6 +76,7 @@ func TestBlocklog_BlockInfoLatestWithRequest(t *testing.T) {
 }
 
 func TestBlocklog_BlockInfoSeveral(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t)
 	ch := env.NewChain()
 
@@ -98,6 +102,7 @@ func TestBlocklog_BlockInfoSeveral(t *testing.T) {
 }
 
 func TestBlocklog_RequestIsProcessed(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t)
 	ch := env.NewChain()
 
@@ -118,6 +123,7 @@ func TestBlocklog_RequestIsProcessed(t *testing.T) {
 }
 
 func TestBlocklog_RequestReceipt(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t)
 	ch := env.NewChain()
 
@@ -143,6 +149,7 @@ func TestBlocklog_RequestReceipt(t *testing.T) {
 }
 
 func TestBlocklog_RequestReceiptsForBlocks(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t)
 	ch := env.NewChain()
 
@@ -165,6 +172,7 @@ func TestBlocklog_RequestReceiptsForBlocks(t *testing.T) {
 }
 
 func TestBlocklog_RequestIDsForBlocks(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t)
 	ch := env.NewChain()
 
@@ -185,6 +193,7 @@ func TestBlocklog_RequestIDsForBlocks(t *testing.T) {
 }
 
 func TestBlocklog_ViewGetRequestReceipt(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t)
 	ch := env.NewChain()
 	// try to get a receipt for a request that does not exist
@@ -193,6 +202,7 @@ func TestBlocklog_ViewGetRequestReceipt(t *testing.T) {
 }
 
 func TestBlocklog_Pruning(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t, &solo.InitOptions{Debug: true})
 
 	ch, _ := env.NewChainExt(nil, 0, "chain1", 0, 10)

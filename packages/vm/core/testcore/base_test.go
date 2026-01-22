@@ -28,6 +28,7 @@ import (
 )
 
 func TestInitLoad(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t)
 	user, userAddr := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	env.AssertL1BaseTokens(userAddr, iotaclient.FundsFromFaucetAmount)
@@ -45,6 +46,7 @@ func TestInitLoad(t *testing.T) {
 
 // TestLedgerBaseConsistency deploys chain and check consistency of L1 and L2 ledgers
 func TestLedgerBaseConsistency(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t, &solo.InitOptions{
 		Debug:           true,
 		PrintStackTrace: true,
@@ -64,6 +66,7 @@ func TestLedgerBaseConsistency(t *testing.T) {
 
 // TestLedgerBaseConsistencyWithRequiredTopUpFee deploys a chain and checks the consistency of L1 and L2 ledgers after topping up fees
 func TestLedgerBaseConsistencyWithRequiredTopUpFee(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t, &solo.InitOptions{
 		Debug:           true,
 		PrintStackTrace: true,
@@ -153,6 +156,7 @@ func TestLedgerBaseConsistencyWithRequiredTopUpFee(t *testing.T) {
 
 // TestNoTargetPostOnLedger test what happens when sending requests to non-existent contract or entry point
 func TestNoTargetPostOnLedger(t *testing.T) {
+	t.Parallel()
 	for _, test := range []struct {
 		Name               string
 		Req                *solo.CallParams
@@ -256,6 +260,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 }
 
 func TestNoTargetView(t *testing.T) {
+	t.Parallel()
 	t.Run("no contract view", func(t *testing.T) {
 		env := solo.New(t)
 		chain := env.NewChain()
@@ -271,6 +276,7 @@ func TestNoTargetView(t *testing.T) {
 }
 
 func TestSandboxStackOverflow(t *testing.T) {
+	t.Parallel()
 	if testing.Short() {
 		t.Skip("short mode")
 	}
@@ -289,6 +295,7 @@ func TestSandboxStackOverflow(t *testing.T) {
 }
 
 func TestEstimateGas(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t)
 	ch := env.NewChain()
 	ch.MustDepositBaseTokensToL2(10000, nil)
@@ -388,6 +395,7 @@ func TestEstimateGas(t *testing.T) {
 }
 
 func TestFeeBasic(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t)
 	chain := env.NewChain()
 	feePolicy := chain.GetGasFeePolicy()
@@ -395,6 +403,7 @@ func TestFeeBasic(t *testing.T) {
 }
 
 func TestBurnLog(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t)
 	ch := env.NewChain()
 
@@ -409,6 +418,7 @@ func TestBurnLog(t *testing.T) {
 }
 
 func TestMessageSize(t *testing.T) {
+	t.Parallel()
 	t.Skipf("This test needs to be properly validated and fixed. Its only temporarily deactivated.")
 
 	env := solo.New(t, &solo.InitOptions{
@@ -458,6 +468,7 @@ func TestMessageSize(t *testing.T) {
 }
 
 func TestInvalidSignatureRequestsAreNotProcessed(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t)
 	ch := env.NewChain()
 
@@ -476,6 +487,7 @@ func TestInvalidSignatureRequestsAreNotProcessed(t *testing.T) {
 }
 
 func TestInvalidAllowance(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t)
 	ch := env.NewChain()
 
@@ -505,6 +517,7 @@ func TestInvalidAllowance(t *testing.T) {
 }
 
 func TestBatchWithSkippedRequestsReceipts(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t)
 	ch := env.NewChain()
 	user, _ := env.NewKeyPairWithFunds()

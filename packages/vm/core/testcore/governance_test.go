@@ -25,6 +25,7 @@ import (
 )
 
 func TestGovernanceAccessNodes(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t)
 	node1KP, _ := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	node1OwnerKP, node1OwnerAddr := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
@@ -102,6 +103,7 @@ func TestGovernanceAccessNodes(t *testing.T) {
 }
 
 func TestMaintenanceMode(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t)
 	ch := env.NewChain()
 
@@ -237,6 +239,7 @@ func TestMaintenanceMode(t *testing.T) {
 }
 
 func TestGovernanceMetadata(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t)
 	ch := env.NewChain(true)
 
@@ -327,6 +330,7 @@ func TestGovernanceMetadata(t *testing.T) {
 }
 
 func TestGovernanceL1Metadata(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t)
 	ch := env.NewChain()
 
@@ -390,6 +394,7 @@ func TestGovernanceL1Metadata(t *testing.T) {
 }
 
 func TestGovernanceGasFee(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t, &solo.InitOptions{Debug: true, PrintStackTrace: true})
 	ch := env.NewChain()
 	fp := ch.GetGasFeePolicy()
@@ -400,6 +405,7 @@ func TestGovernanceGasFee(t *testing.T) {
 }
 
 func TestGovernanceZeroGasFee(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t, &solo.InitOptions{Debug: true, PrintStackTrace: true})
 	ch := env.NewChain()
 
@@ -467,6 +473,7 @@ func TestGovernanceZeroGasFee(t *testing.T) {
 }
 
 func TestGovernanceSetMustGetPayoutAgentID(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t, &solo.InitOptions{Debug: true, PrintStackTrace: true})
 	ch := env.NewChain()
 
@@ -496,6 +503,7 @@ func TestGovernanceSetMustGetPayoutAgentID(t *testing.T) {
 }
 
 func TestGovernanceGasCoinTargetValue(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t, &solo.InitOptions{Debug: true, PrintStackTrace: true})
 	ch := env.NewChain()
 	initRetDict, err := ch.CallView(governance.ViewGetGasCoinTargetValue.Message())
@@ -520,6 +528,7 @@ func TestGovernanceGasCoinTargetValue(t *testing.T) {
 }
 
 func TestGovernanceCallsNoBalance(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t)
 	ch := env.NewChain(false)
 
@@ -537,6 +546,7 @@ func TestGovernanceCallsNoBalance(t *testing.T) {
 }
 
 func TestGovernanceGasPayout(t *testing.T) {
+	t.Parallel()
 	env := solo.New(t, &solo.InitOptions{
 		Debug:           true,
 		PrintStackTrace: true,
