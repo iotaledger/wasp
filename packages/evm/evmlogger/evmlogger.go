@@ -4,14 +4,19 @@ package evmlogger
 import (
 	"context"
 	"log/slog"
+	"sync"
 
 	"github.com/ethereum/go-ethereum/log"
 
 	hiveLog "github.com/iotaledger/hive.go/log"
 )
 
+var initOnce sync.Once
+
 func Init(hiveLogger hiveLog.Logger) {
-	log.SetDefault(log.NewLogger(&hiveLogHandler{hiveLogger}))
+	initOnce.Do(func() {
+		log.SetDefault(log.NewLogger(&hiveLogHandler{hiveLogger}))
+	})
 }
 
 type hiveLogHandler struct{ hiveLog.Logger }
