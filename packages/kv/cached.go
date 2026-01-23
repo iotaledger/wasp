@@ -13,7 +13,7 @@ type cachedKVStoreReader struct {
 // IMPORTANT: there is no logic for cache invalidation, so make sure that the
 // underlying KVStoreReader is never mutated.
 func NewCachedKVStoreReader(r KVStoreReader) KVStoreReader {
-	cache, err := cache.NewCacheParition()
+	cache, err := cache.NewCachePartition()
 	if err != nil {
 		panic(err)
 	}

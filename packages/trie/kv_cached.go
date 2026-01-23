@@ -10,7 +10,7 @@ type cachedKVReader struct {
 }
 
 func makeCachedKVReader(r KVReader) KVReader {
-	cache, err := cache.NewCacheParition()
+	cache, err := cache.NewCachePartition()
 	if err != nil {
 		panic(err)
 	}

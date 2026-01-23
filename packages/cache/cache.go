@@ -4,6 +4,7 @@ package cache
 import (
 	"errors"
 	"sync"
+	"sync/atomic"
 
 	"github.com/VictoriaMetrics/fastcache"
 )
@@ -51,7 +52,7 @@ var (
 	mutex = &sync.Mutex{}
 
 	// the fastcache
-	cache *fastcache.Cache
+	cache atomic.Pointer[fastcache.Cache]
 )
 
 // SetCacheSize sets the cache size
@@ -74,34 +75,36 @@ func GetStats() *Stats {
 	defer mutex.Unlock()
 
 	// cache disabled
-	if cache == nil {
+	fc := cache.Load()
+	if fc == nil {
 		return nil
 	}
 
 	stats := &fastcache.Stats{}
-	cache.UpdateStats(stats)
+	fc.UpdateStats(stats)
 	return &Stats{
 		Stats:      stats,
 		NumHandles: handleCounter,
 	}
 }
 
-// NewCacheParition creates a new cache partition
+// NewCachePartition creates a new cache partition
 // initializes the cache if not already happened
-func NewCacheParition() (CacheInterface, error) {
+func NewCachePartition() (CacheInterface, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
 	// initialize the cache first time it is used
 	if cacheSize != 0 {
 		initOnce.Do(func() {
-			cache = fastcache.New(cacheSize)
+			cache.Store(fastcache.New(cacheSize))
 		})
 	}
 
+	fc := cache.Load()
 	// if cache disabled or we used all handles
 	// return a cache (as failsafe) that does nothing
-	if cache == nil || handleCounter >= (1<<(partitionSize*8))-1 {
+	if fc == nil || handleCounter >= (1<<(partitionSize*8))-1 {
 		return &CacheNoop{}, nil
 	}
 
@@ -130,9 +133,17 @@ func (c *CacheNoop) Add(key []byte, value []byte) {
 }
 
 func (c *CachePartition) Get(key []byte) ([]byte, bool) {
-	return cache.HasGet(nil, append(c.partition[:], key...))
+	fc := cache.Load()
+	if fc == nil {
+		return nil, false
+	}
+	return fc.HasGet(nil, append(c.partition[:], key...))
 }
 
 func (c *CachePartition) Add(key []byte, value []byte) {
-	cache.Set(append(c.partition[:], key...), value)
+	fc := cache.Load()
+	if fc == nil {
+		return
+	}
+	fc.Set(append(c.partition[:], key...), value)
 }
