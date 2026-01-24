@@ -189,6 +189,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		},
 	} {
 		t.Run(test.Name, func(t *testing.T) {
+			t.Parallel()
 			env := solo.New(t, &solo.InitOptions{
 				Debug:           true,
 				PrintStackTrace: true,
@@ -262,12 +263,14 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 func TestNoTargetView(t *testing.T) {
 	t.Parallel()
 	t.Run("no contract view", func(t *testing.T) {
+		t.Parallel()
 		env := solo.New(t)
 		chain := env.NewChain()
 		_, err := chain.CallViewEx("dummyContract", "dummyEP")
 		require.Error(t, err)
 	})
 	t.Run("no EP view", func(t *testing.T) {
+		t.Parallel()
 		env := solo.New(t)
 		chain := env.NewChain()
 		_, err := chain.CallViewEx(root.Contract.Name, "dummyEP")
@@ -359,6 +362,7 @@ func TestEstimateGas(t *testing.T) {
 		},
 	} {
 		t.Run(testCase.Desc, func(t *testing.T) {
+			t.Parallel()
 			keyPair, addr := env.NewKeyPairWithFunds()
 			agentID := isc.NewAddressAgentID(addr)
 

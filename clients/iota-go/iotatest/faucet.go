@@ -13,9 +13,6 @@ import (
 )
 
 func MakeSignerWithFunds(index int, faucetURL string, reader ...iotaclient.CoinReader) iotasigner.Signer {
-	if index == 0 {
-		index = rand.Intn(256)
-	}
 	return MakeSignerWithFundsFromSeed(testkey.NewTestSeedBytes(), index, faucetURL, reader...)
 }
 

@@ -200,11 +200,13 @@ func (v *accountsDepositTest) printBalances(prefix string) {
 func TestAccounts_WithdrawDepositCoins(t *testing.T) {
 	t.Parallel()
 	t.Run("withdraw with empty", func(t *testing.T) {
+		t.Parallel()
 		v := initWithdrawTest(t)
 		_, err := v.ch.PostRequestSync(v.req, v.user)
 		testmisc.RequireErrorToBe(t, err, "not enough allowance")
 	})
 	t.Run("withdraw almost all", func(t *testing.T) {
+		t.Parallel()
 		v := initWithdrawTest(t)
 		toWithdraw := v.ch.L2Assets(v.userAgentID)
 		t.Logf("assets to withdraw: %s", toWithdraw.String())
@@ -218,6 +220,7 @@ func TestAccounts_WithdrawDepositCoins(t *testing.T) {
 	})
 
 	t.Run("accounting and pruning", func(t *testing.T) {
+		t.Parallel()
 		// mint 100 tokens from chain 1 and withdraw those to L1
 		v := initWithdrawTest(t)
 

@@ -57,8 +57,8 @@ func TestInternalServerErrors(t *testing.T) {
 	e.Listener = l
 
 	go func() {
-		err := e.Start("")
-		require.ErrorIs(t, err, http.ErrServerClosed)
+		err2 := e.Start("")
+		require.ErrorIs(t, err2, http.ErrServerClosed)
 	}()
 	defer e.Shutdown(context.Background())
 
