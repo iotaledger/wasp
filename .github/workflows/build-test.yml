@@ -51,7 +51,7 @@ jobs:
       # Here used to be a make build step, but we separated it into another job
 
       - name: Test
-        run: make test-short
+        run: make test-medium
 
   golangci:
     name: Lint

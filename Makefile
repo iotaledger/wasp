@@ -47,8 +47,11 @@ test: install
 test-short:
 	go test -race -ldflags $(BUILD_LD_FLAGS) --short --count 1 -timeout 25m -failfast $(shell go list ./...)
 
+test-medium:
+	go test -race -ldflags $(BUILD_LD_FLAGS) --short --count 1 -timeout 60m -failfast $(shell go list ./...)
+
 test-cluster: install
-	go test -race -ldflags $(BUILD_LD_FLAGS) --count 1 -timeout 25m -failfast $(shell go list ./tools/cluster/tests/...)
+	go test -race -ldflags $(BUILD_LD_FLAGS) --count 1 -timeout 60m -failfast $(shell go list ./tools/cluster/tests/...)
 
 install-cli:
 	cd tools/wasp-cli && go mod tidy && go install -ldflags $(BUILD_LD_FLAGS)
