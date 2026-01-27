@@ -272,12 +272,16 @@ func (env *Solo) WithWaitForNextVersion(currentRef *iotago.ObjectRef, cb func())
 func (env *Solo) deployChain(chainAdmin *cryptolib.KeyPair, initCommonAccountBaseTokens coin.Value, name string, evmChainID uint16, blockKeepAmount int32) chainData {
 	env.logger.LogDebugf("deploying new chain '%s'", name)
 
+	env.chainsMutex.RLock()
+	chainsLen := len(env.chains)
+	env.chainsMutex.RUnlock()
+
 	if chainAdmin == nil {
-		chainAdmin = env.NewKeyPairFromIndex(-1000 + len(env.chains)) // making new originator for each new chain
+		chainAdmin = env.NewKeyPairFromIndex(-1000 + chainsLen) // making new originator for each new chain
 		env.GetFundsFromFaucet(chainAdmin.Address())
 	}
 
-	anchorOwner := env.NewKeyPairFromIndex(-2000 + len(env.chains))
+	anchorOwner := env.NewKeyPairFromIndex(-2000 + chainsLen)
 	env.GetFundsFromFaucet(anchorOwner.Address())
 
 	initParams := origin.NewInitParams(
