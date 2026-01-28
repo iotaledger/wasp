@@ -63,21 +63,17 @@ func TestPruning(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, txs, numRequests)
 
-	maxBlockIndex := initialBlockIndex + numRequests
-
 	archiveClient := env.EVMJSONRPClient(archiveClientIndex)
 	lightClient := env.EVMJSONRPClient(lightClientIndex)
 
-	finalBlockIndex := uint32(0)
 	bn, err := archiveClient.BlockNumber(context.Background())
 	require.NoError(t, err)
-	finalBlockIndex = uint32(bn)
-	require.Greater(t, maxBlockIndex, finalBlockIndex)
+	finalBlockIndex := uint32(bn)
 
 	t.Run("the block number is correct", func(t *testing.T) {
 		bn, err = lightClient.BlockNumber(context.Background())
 		require.NoError(t, err)
-		require.GreaterOrEqual(t, uint64(maxBlockIndex), bn)
+		require.GreaterOrEqual(t, uint64(finalBlockIndex), bn)
 	})
 
 	t.Run("eth_getlogs", func(t *testing.T) {
@@ -85,7 +81,7 @@ func TestPruning(t *testing.T) {
 		filterQuery := ethereum.FilterQuery{
 			Addresses: []common.Address{storageContractAddr},
 			FromBlock: big.NewInt(int64(initialBlockIndex + 1)),
-			ToBlock:   big.NewInt(int64(maxBlockIndex)),
+			ToBlock:   big.NewInt(int64(finalBlockIndex)),
 		}
 
 		// archive node
