@@ -33,7 +33,6 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/origin"
 	"github.com/iotaledger/wasp/v2/packages/parameters"
 	"github.com/iotaledger/wasp/v2/packages/publisher"
-	"github.com/iotaledger/wasp/v2/packages/state"
 	"github.com/iotaledger/wasp/v2/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/v2/packages/state/statetest"
 	"github.com/iotaledger/wasp/v2/packages/testutil/l1starter"
@@ -269,9 +268,7 @@ func (env *Solo) WithWaitForNextVersion(currentRef *iotago.ObjectRef, cb func())
 	return env.L1Client().WaitForNextVersionForTesting(context.Background(), testmisc.GetTimeout(30*time.Second), env.logger, currentRef, cb)
 }
 
-func (env *Solo) deployChain(chainAdmin *cryptolib.KeyPair, initCommonAccountBaseTokens coin.Value, name string, evmChainID uint16, blockKeepAmount int32) chainData {
-	env.logger.LogDebugf("deploying new chain '%s'", name)
-
+func (env *Solo) getChainIdentities(chainAdmin *cryptolib.KeyPair) (*cryptolib.KeyPair, *cryptolib.KeyPair) {
 	env.chainsMutex.RLock()
 	chainsLen := len(env.chains)
 	env.chainsMutex.RUnlock()
@@ -283,34 +280,15 @@ func (env *Solo) deployChain(chainAdmin *cryptolib.KeyPair, initCommonAccountBas
 
 	anchorOwner := env.NewKeyPairFromIndex(-2000 + chainsLen)
 	env.GetFundsFromFaucet(anchorOwner.Address())
+	return chainAdmin, anchorOwner
+}
 
-	initParams := origin.NewInitParams(
-		isc.NewAddressAgentID(chainAdmin.Address()),
-		evmChainID,
-		blockKeepAmount,
-		true,
-	)
-
-	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
-	db := mapdb.NewMapDB()
-	store := indexedstore.New(statetest.NewStoreWithUniqueWriteMutex(db))
-
-	gasCoinRef := env.makeBaseTokenCoin(anchorOwner, isc.GasCoinTargetValue, nil)
-	env.logger.LogInfof("Chain Originator address: %v\n", anchorOwner)
-	env.logger.LogInfof("GAS COIN BEFORE PULL: %v\n", gasCoinRef)
-
-	var block state.Block
-	var stateMetadata *transaction.StateMetadata
-
-	block, stateMetadata = origin.InitChain(
-		schemaVersion,
-		store,
-		initParams.Encode(),
-		*gasCoinRef.ObjectID,
-		initCommonAccountBaseTokens,
-		env.L1Params(),
-	)
-
+func (env *Solo) startChainOnL1(
+	anchorOwner *cryptolib.KeyPair,
+	stateMetadata *transaction.StateMetadata,
+	gasCoinRef *iotago.ObjectRef,
+	initCommonAccountBaseTokens coin.Value,
+) *iscmove.AnchorWithRef {
 	var initCoin *iotago.ObjectRef
 
 	if initCommonAccountBaseTokens > 0 {
@@ -353,6 +331,40 @@ func (env *Solo) deployChain(chainAdmin *cryptolib.KeyPair, initCommonAccountBas
 	})
 
 	require.NoError(env.T, err)
+	return anchorRef
+}
+
+func (env *Solo) deployChain(chainAdmin *cryptolib.KeyPair, initCommonAccountBaseTokens coin.Value, name string, evmChainID uint16, blockKeepAmount int32) chainData {
+	env.logger.LogDebugf("deploying new chain '%s'", name)
+
+	chainAdmin, anchorOwner := env.getChainIdentities(chainAdmin)
+
+	initParams := origin.NewInitParams(
+		isc.NewAddressAgentID(chainAdmin.Address()),
+		evmChainID,
+		blockKeepAmount,
+		true,
+	)
+
+	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
+	db := mapdb.NewMapDB()
+	store := indexedstore.New(statetest.NewStoreWithUniqueWriteMutex(db))
+
+	gasCoinRef := env.makeBaseTokenCoin(anchorOwner, isc.GasCoinTargetValue, nil)
+	env.logger.LogInfof("Chain Originator address: %v\n", anchorOwner)
+	env.logger.LogInfof("GAS COIN BEFORE PULL: %v\n", gasCoinRef)
+
+	block, stateMetadata := origin.InitChain(
+		schemaVersion,
+		store,
+		initParams.Encode(),
+		*gasCoinRef.ObjectID,
+		initCommonAccountBaseTokens,
+		env.L1Params(),
+	)
+
+	anchorRef := env.startChainOnL1(anchorOwner, stateMetadata, gasCoinRef, initCommonAccountBaseTokens)
+
 	chainID := isc.ChainIDFromObjectID(anchorRef.Object.ID)
 
 	env.logger.LogInfof(
