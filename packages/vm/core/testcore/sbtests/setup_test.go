@@ -30,8 +30,11 @@ func setupChain(t *testing.T) (*solo.Solo, *solo.Chain) {
 		Debug:             false,
 		GasBurnLogEnabled: true,
 	})
-	chain, _ := env.NewChainExt(nil, 10_000, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
-	err := chain.SendFromL1ToL2AccountBaseTokens(coin.Value(iotagraphql.FundsFromFaucetAmount/10), solo.BaseTokensForL2Gas, chain.AdminAgentID(), chain.ChainAdmin)
+	chain, _ := env.NewChainExt(nil, 100_000, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
+	// Keep the initial L1->L2 transfer size proportional to the faucet funds, so tests don't
+	// implicitly depend on a particular gas policy configuration.
+	transferTotal := coin.Value(iotagraphql.FundsFromFaucetAmount / 10)
+	err := chain.SendFromL1ToL2AccountBaseTokens(transferTotal, transferTotal, chain.AdminAgentID(), chain.ChainAdmin)
 	require.NoError(t, err)
 	return env, chain
 }

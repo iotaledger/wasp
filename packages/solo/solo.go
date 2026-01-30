@@ -6,6 +6,7 @@ package solo
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"math"
 	"slices"
 	"sync"
@@ -236,7 +237,7 @@ func (env *Solo) GetChainByName(name string) *Chain {
 
 var (
 	BaseTokensForL2Gas          = gas.FeeFromGasWithGasPerToken(gas.LimitsDefault.MaxGasPerRequest, gas.DefaultGasPerToken)
-	DefaultChainAdminBaseTokens = 2 * BaseTokensForL2Gas
+	DefaultChainAdminBaseTokens = BaseTokensForL2Gas
 )
 
 // NewChain deploys a new default chain instance.
@@ -305,7 +306,6 @@ func (env *Solo) deployChain(chainAdmin *cryptolib.KeyPair, initCommonAccountBas
 		initCommonAccountBaseTokens,
 		env.L1Params(),
 	)
-	time.Sleep(1 * time.Second) // FIXME tmp for graphql
 
 	var initCoin *iotago.ObjectRef
 
@@ -675,7 +675,7 @@ func (env *Solo) L1MintCoin(
 	treasuryCapObject *iotago.ObjectRef,
 	mintAmount uint64,
 ) (coinRef *iotago.ObjectRef) {
-	return iotaclienttest.MintCoins(
+	coinRef = iotaclienttest.MintCoins(
 		env.T,
 		env.L1Client().GetIotaClient(),
 		cryptolib.SignerToIotaSigner(keyPair),
@@ -685,6 +685,43 @@ func (env *Solo) L1MintCoin(
 		treasuryCapObject,
 		mintAmount,
 	)
+
+	// Construct the coin type string: <packageID>::<moduleName>::<typeTag>
+	coinType := fmt.Sprintf("%s::%s::%s", packageID.String(), moduleName, typeTag)
+
+	// Wait for the coin to be available via GetCoins before returning
+	env.WaitForCoinToBeIndexed(keyPair.Address().AsIotaAddress(), coinRef.ObjectID, coinType)
+	return coinRef
+}
+
+// WaitForCoinToBeIndexed polls until the coin is available via GetCoins with the specific coin type
+func (env *Solo) WaitForCoinToBeIndexed(owner *iotago.Address, coinID *iotago.ObjectID, coinType string) {
+	ctx, cancel := context.WithTimeout(env.ctx, 60*time.Second)
+	defer cancel()
+
+	ticker := time.NewTicker(250 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			env.T.Fatalf("timeout waiting for coin %v of type %s to be indexed", coinID, coinType)
+		case <-ticker.C:
+			// Query for this specific coin type using GetCoins
+			coins, err := env.ISCMoveClient().GetCoins(ctx, iotagraphql.GetCoinsRequest{
+				Owner:    owner,
+				CoinType: &coinType,
+			})
+			if err != nil {
+				continue
+			}
+			for _, c := range coins.Data {
+				if c.CoinObjectID.Equals(*coinID) {
+					return // Coin found
+				}
+			}
+		}
+	}
 }
 
 func (env *Solo) L1MintObject(owner *cryptolib.KeyPair) isc.IotaObject {

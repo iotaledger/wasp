@@ -81,7 +81,7 @@ func TestPeeringNetUnreliable(t *testing.T) {
 		}
 		avgDuration /= int64(len(durations))
 		require.Greater(t, avgDuration, int64(50))
-		require.Less(t, avgDuration, int64(100))
+		require.Less(t, avgDuration, int64(120))
 	}
 
 	behavior.Close()

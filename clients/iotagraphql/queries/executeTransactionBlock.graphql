@@ -19,6 +19,8 @@ mutation ExecuteTransactionBlock(
 	executeTransactionBlock(txBytes: $txBytes, signatures: $signatures) {
 		errors
 		effects {
+			status
+			errors
 			transactionBlock {
 				...RPC_TRANSACTION_FIELDS
 			}

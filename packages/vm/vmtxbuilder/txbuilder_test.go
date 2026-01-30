@@ -3,7 +3,6 @@ package vmtxbuilder_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
@@ -34,8 +33,6 @@ func TestTxBuilderBasic(t *testing.T) {
 	iscPackage, err := client.L2().DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(chainSigner))
 	require.NoError(t, err)
 
-	time.Sleep(1 * time.Second) // FIXME tmp for graphql
-
 	anchor, err := client.L2().StartNewChain(
 		context.Background(),
 		&iscmoveclient.StartNewChainRequest{
@@ -56,7 +53,6 @@ func TestTxBuilderBasic(t *testing.T) {
 	stateAnchor := isc.NewStateAnchor(anchor, iscPackage)
 	txb := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage, &stateAnchor, chainSigner.Address())
 
-	time.Sleep(1 * time.Second) // FIXME tmp for graphql
 	req1 := createIscmoveReq(t, client, senderSigner, iscPackage, anchor)
 	txb.ConsumeRequest(req1)
 	req2 := createIscmoveReq(t, client, senderSigner, iscPackage, anchor)
@@ -84,7 +80,6 @@ func TestTxBuilderBasic(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.True(t, txnResponse.Effects.Data.IsSuccess())
-	time.Sleep(1 * time.Second) // FIXME tmp for graphql
 
 	getObjReq1, _ := client.GetObject(context.Background(), iotagraphql.GetObjectRequest{ObjectID: req1.RequestRef().ObjectID, Options: &iotagraphql.IotaObjectDataOptions{ShowContent: true}})
 	require.NotNil(t, getObjReq1.Data)
@@ -101,8 +96,6 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 	recipientSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 2)
 	iscPackage, err := client.L2().DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(chainSigner))
 	require.NoError(t, err)
-
-	time.Sleep(1 * time.Second) // FIXME tmp for graphql
 
 	getCoinsRes, err := client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{Owner: chainSigner.Address().AsIotaAddress()})
 	require.NoError(t, err)
@@ -124,7 +117,6 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 
 	selectedGasCoin := getCoinsRes.Data[2].Ref()
 	stateAnchor := isc.NewStateAnchor(anchor, iscPackage)
-	time.Sleep(1 * time.Second) // FIXME tmp for graphql
 	txb1 := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage, &stateAnchor, chainSigner.Address())
 
 	req1 := createIscmoveReq(t, client, senderSigner, iscPackage, anchor)
@@ -154,7 +146,6 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.True(t, txnResponse1.Effects.Data.IsSuccess())
-	time.Sleep(1 * time.Second) // FIXME tmp for graphql
 
 	getObjReq1, _ := client.GetObject(context.Background(), iotagraphql.GetObjectRequest{ObjectID: req1.RequestRef().ObjectID, Options: &iotagraphql.IotaObjectDataOptions{ShowContent: true}})
 	require.NotNil(t, getObjReq1.Data)
@@ -173,7 +164,6 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 
 	zeroAssets := iscmove.NewEmptyAssets()
 	req3 := createIscmoveReqWithAssets(t, client, senderSigner, iscPackage, anchor, zeroAssets)
-	time.Sleep(1 * time.Second) // FIXME tmp for graphql
 	txb2.ConsumeRequest(req3)
 	stateMetadata2 := []byte("dummy stateMetadata2")
 	pt2 := txb2.BuildTransactionEssence(stateMetadata2, 123)
@@ -201,7 +191,6 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.True(t, txnResponse2.Effects.Data.IsSuccess())
-	time.Sleep(1 * time.Second)
 
 	getObjReq2, _ := client.GetObject(context.Background(), iotagraphql.GetObjectRequest{ObjectID: req2.RequestRef().ObjectID})
 	require.NotNil(t, getObjReq2.Data)
@@ -214,7 +203,6 @@ func TestRotateAndBuildTx(t *testing.T) {
 	rotateRecipientSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 2)
 	iscPackage, err := client.L2().DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(chainSigner))
 	require.NoError(t, err)
-	time.Sleep(1 * time.Second) // FIXME tmp for graphql
 
 	anchor, err := client.L2().StartNewChain(
 		context.Background(),
@@ -235,7 +223,6 @@ func TestRotateAndBuildTx(t *testing.T) {
 	selectedGasCoin := getCoinsRes.Data[0].Ref()
 
 	stateAnchor := isc.NewStateAnchor(anchor, iscPackage)
-	time.Sleep(1 * time.Second) // FIXME tmp for graphql
 	txb := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage, &stateAnchor, chainSigner.Address())
 
 	txb.RotationTransaction(rotateRecipientSigner.Address().AsIotaAddress())
@@ -262,7 +249,6 @@ func TestRotateAndBuildTx(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.True(t, txnResponse.Effects.Data.IsSuccess())
-	time.Sleep(1 * time.Second)
 	getObjRes, err := client.GetObject(context.Background(), iotagraphql.GetObjectRequest{
 		ObjectID: anchor.ObjectID,
 		Options:  &iotagraphql.IotaObjectDataOptions{ShowOwner: true},
@@ -303,7 +289,6 @@ func createIscmoveReq(
 		},
 	)
 	require.NoError(t, err)
-	time.Sleep(1 * time.Second) // FIXME tmp for graphql
 	reqRef, err := createAndSendRequestRes.GetCreatedObjectByName(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)
 	reqWithObj, err := client.L2().GetRequestFromObjectID(context.Background(), reqRef.ObjectID)

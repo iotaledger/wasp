@@ -672,6 +672,13 @@ func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResult) GetEffec
 //
 // The effects representing the result of executing a transaction block.
 type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffects struct {
+	// Whether the transaction executed successfully or not.
+	Status ExecutionStatus `json:"status"`
+	// The reason for a transaction failure, if it did fail.
+	// If the error is a Move abort, the error message will be resolved to a
+	// human-readable form if possible, otherwise it will fall back to
+	// displaying the abort code and location.
+	Errors string `json:"errors"`
 	// The transaction that ran to produce these effects.
 	TransactionBlock ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsTransactionBlock `json:"transactionBlock"`
 	// The effect this transaction had on objects on-chain.
@@ -679,6 +686,16 @@ type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransac
 	// The effect this transaction had on the balances (sum of coin values per
 	// coin type) of addresses and objects.
 	BalanceChanges ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnection `json:"balanceChanges"`
+}
+
+// GetStatus returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffects.Status, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffects) GetStatus() ExecutionStatus {
+	return v.Status
+}
+
+// GetErrors returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffects.Errors, and is useful for accessing the field via an interface.
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffects) GetErrors() string {
+	return v.Errors
 }
 
 // GetTransactionBlock returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffects.TransactionBlock, and is useful for accessing the field via an interface.
@@ -1561,6 +1578,21 @@ type ExecuteTransactionBlockResponse struct {
 // GetExecuteTransactionBlock returns ExecuteTransactionBlockResponse.ExecuteTransactionBlock, and is useful for accessing the field via an interface.
 func (v *ExecuteTransactionBlockResponse) GetExecuteTransactionBlock() ExecuteTransactionBlockExecuteTransactionBlockExecutionResult {
 	return v.ExecuteTransactionBlock
+}
+
+// The execution status of this transaction block: success or failure.
+type ExecutionStatus string
+
+const (
+	// The transaction block was successfully executed
+	ExecutionStatusSuccess ExecutionStatus = "SUCCESS"
+	// The transaction block could not be executed
+	ExecutionStatusFailure ExecutionStatus = "FAILURE"
+)
+
+var AllExecutionStatus = []ExecutionStatus{
+	ExecutionStatusSuccess,
+	ExecutionStatusFailure,
 }
 
 // GetAllBalancesAddress includes the requested fields of the GraphQL type Address.
@@ -9032,6 +9064,13 @@ func (v *RPC_TRANSACTION_FIELDS) GetEffects() RPC_TRANSACTION_FIELDSEffectsTrans
 //
 // The effects representing the result of executing a transaction block.
 type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects struct {
+	// Whether the transaction executed successfully or not.
+	Status ExecutionStatus `json:"status"`
+	// The reason for a transaction failure, if it did fail.
+	// If the error is a Move abort, the error message will be resolved to a
+	// human-readable form if possible, otherwise it will fall back to
+	// displaying the abort code and location.
+	Errors string `json:"errors"`
 	// Base64 encoded bcs serialization of the on-chain transaction effects.
 	Bcs iotago.Base64Data `json:"bcs"`
 	// Events emitted by this transaction block.
@@ -9049,6 +9088,14 @@ type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects struct {
 	// The effect this transaction had on objects on-chain.
 	ObjectChanges RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnection `json:"objectChanges"`
 }
+
+// GetStatus returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects.Status, and is useful for accessing the field via an interface.
+func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects) GetStatus() ExecutionStatus {
+	return v.Status
+}
+
+// GetErrors returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects.Errors, and is useful for accessing the field via an interface.
+func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects) GetErrors() string { return v.Errors }
 
 // GetBcs returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects.Bcs, and is useful for accessing the field via an interface.
 func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects) GetBcs() iotago.Base64Data {
@@ -10730,6 +10777,8 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 	}
 	signatures
 	effects {
+		status
+		errors
 		bcs @include(if: $showEffects)
 		bcs @include(if: $showObjectChanges)
 		bcs @include(if: $showRawEffects)
@@ -10890,6 +10939,8 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 	}
 	signatures
 	effects {
+		status
+		errors
 		bcs @include(if: $showEffects)
 		bcs @include(if: $showObjectChanges)
 		bcs @include(if: $showRawEffects)
@@ -11035,6 +11086,8 @@ mutation ExecuteTransactionBlock ($txBytes: String!, $signatures: [String!]!, $s
 	executeTransactionBlock(txBytes: $txBytes, signatures: $signatures) {
 		errors
 		effects {
+			status
+			errors
 			transactionBlock {
 				... RPC_TRANSACTION_FIELDS
 			}
@@ -11096,6 +11149,8 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 	}
 	signatures
 	effects {
+		status
+		errors
 		bcs @include(if: $showEffects)
 		bcs @include(if: $showObjectChanges)
 		bcs @include(if: $showRawEffects)
@@ -12332,6 +12387,8 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 	}
 	signatures
 	effects {
+		status
+		errors
 		bcs @include(if: $showEffects)
 		bcs @include(if: $showObjectChanges)
 		bcs @include(if: $showRawEffects)
@@ -12620,6 +12677,8 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 	}
 	signatures
 	effects {
+		status
+		errors
 		bcs @include(if: $showEffects)
 		bcs @include(if: $showObjectChanges)
 		bcs @include(if: $showRawEffects)
@@ -12980,6 +13039,8 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 	}
 	signatures
 	effects {
+		status
+		errors
 		bcs @include(if: $showEffects)
 		bcs @include(if: $showObjectChanges)
 		bcs @include(if: $showRawEffects)

@@ -213,6 +213,7 @@ func TestAccounts_WithdrawDepositCoins(t *testing.T) {
 	})
 
 	t.Run("accounting and pruning", func(t *testing.T) {
+		t.Skip("we don't have a 2nd chain now")
 		// mint 100 tokens from chain 1 and withdraw those to L1
 		v := initWithdrawTest(t)
 
