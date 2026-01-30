@@ -67,6 +67,8 @@ type Solo struct {
 	publisher            *publisher.Publisher
 	ctx                  context.Context
 	mockTime             time.Time
+	mockTimeMutex        sync.RWMutex
+	publisherWG          sync.WaitGroup
 	l1ParamsFetcher      parameters.L1ParamsFetcher
 
 	l1Config L1Config
@@ -158,7 +160,6 @@ func New(t Context, initOptions ...*InitOptions) *Solo {
 	}
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	t.Cleanup(cancelCtx)
 
 	ret := &Solo{
 		T:                    t,
@@ -176,7 +177,14 @@ func New(t Context, initOptions ...*InitOptions) *Solo {
 		ret.logger.LogInfof("solo publisher: %s %s %v", ev.Kind, ev.ChainID, ev.String())
 	})
 
-	go ret.publisher.Run(ctx)
+	ret.publisherWG.Add(1)
+	go func() {
+		defer ret.publisherWG.Done()
+		ret.publisher.Run(ctx)
+	}()
+
+	t.Cleanup(ret.publisherWG.Wait)
+	t.Cleanup(cancelCtx)
 
 	return ret
 }
