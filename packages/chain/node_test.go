@@ -343,7 +343,6 @@ func (tnc *testNodeConn) PublishTX(
 			ShowBalanceChanges: true,
 			ShowRawEffects:     true,
 		},
-		RequestType: iotagraphql.TxnRequestTypeWaitForLocalExecution,
 	})
 	if err != nil {
 		tnc.t.Logf("ExecuteTransactionBlock, err=%v", err)
@@ -445,7 +444,7 @@ func (tnc *testNodeConn) ConsensusL1InfoProposal(
 		}
 
 		var moveBalance iscmoveclient.MoveCoin
-		err = iotagraphql.UnmarshalBCS(gasCoin.Data.Bcs.Data.MoveObject.BcsBytes, &moveBalance)
+		err = iotagraphql.UnmarshalBCS(gasCoin.Data.Bcs.MoveObject.BcsBytes, &moveBalance)
 		if err != nil {
 			panic("failed to decode gas coin object: " + err.Error())
 		}

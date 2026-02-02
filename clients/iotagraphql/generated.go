@@ -6146,27 +6146,27 @@ type ObjectFilter struct {
 	// Generic types can be queried by either the generic type name, e.g.
 	// `0x2::coin::Coin`, or by the full type name, such as
 	// `0x2::coin::Coin<0x2::iota::IOTA>`.
-	Type string `json:"type"`
+	Type *string `json:"type"`
 	// Filter for live objects by their current owners.
-	Owner iotago.Address `json:"owner"`
+	Owner *iotago.Address `json:"owner"`
 	// Filter for live objects by their IDs.
-	ObjectIds []iotago.Address `json:"objectIds"`
+	ObjectIds []*iotago.Address `json:"objectIds"`
 	// Filter for live or potentially historical objects by their ID and
 	// version.
-	ObjectKeys []ObjectKey `json:"objectKeys"`
+	ObjectKeys []*ObjectKey `json:"objectKeys"`
 }
 
 // GetType returns ObjectFilter.Type, and is useful for accessing the field via an interface.
-func (v *ObjectFilter) GetType() string { return v.Type }
+func (v *ObjectFilter) GetType() *string { return v.Type }
 
 // GetOwner returns ObjectFilter.Owner, and is useful for accessing the field via an interface.
-func (v *ObjectFilter) GetOwner() iotago.Address { return v.Owner }
+func (v *ObjectFilter) GetOwner() *iotago.Address { return v.Owner }
 
 // GetObjectIds returns ObjectFilter.ObjectIds, and is useful for accessing the field via an interface.
-func (v *ObjectFilter) GetObjectIds() []iotago.Address { return v.ObjectIds }
+func (v *ObjectFilter) GetObjectIds() []*iotago.Address { return v.ObjectIds }
 
 // GetObjectKeys returns ObjectFilter.ObjectKeys, and is useful for accessing the field via an interface.
-func (v *ObjectFilter) GetObjectKeys() []ObjectKey { return v.ObjectKeys }
+func (v *ObjectFilter) GetObjectKeys() []*ObjectKey { return v.ObjectKeys }
 
 type ObjectKey struct {
 	ObjectId iotago.Address `json:"objectId"`

@@ -57,11 +57,7 @@ func (c *l1Client) GetIotaClient() iotagraphql.IotaClient {
 	return c
 }
 
-// WaitForNextVersionForTesting waits for an object to change its version.
-// This tries to make sure that an object meant to be used multiple times, does not get referenced twice with the same ref.
-// Handle with care. Only use it on objects that are expected to be used again, like a GasCoin/Generic coin/Requests
 func (c *l1Client) WaitForNextVersionForTesting(ctx context.Context, timeout time.Duration, logger log.Logger, currentRef *iotago.ObjectRef, cb func()) (*iotago.ObjectRef, error) {
-	// Some 'sugar' to make dynamic refs handling easier (where refs can be nil or set depending on state)
 	if currentRef == nil {
 		cb()
 		return currentRef, nil
@@ -69,11 +65,9 @@ func (c *l1Client) WaitForNextVersionForTesting(ctx context.Context, timeout tim
 
 	cb()
 
-	// Create a ticker for polling
 	ticker := time.NewTicker(250 * time.Millisecond)
 	defer ticker.Stop()
 
-	// Add timeout to context if not already set
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
@@ -82,7 +76,6 @@ func (c *l1Client) WaitForNextVersionForTesting(ctx context.Context, timeout tim
 		case <-ctx.Done():
 			return nil, fmt.Errorf("WaitForNextVersionForTesting: context deadline exceeded while waiting for object version change: %v", currentRef)
 		case <-ticker.C:
-			// Poll for object update
 			newRef, err := c.GetObject(ctx, iotagraphql.GetObjectRequest{ObjectID: currentRef.ObjectID})
 			if err != nil {
 				if logger != nil {
@@ -93,7 +86,7 @@ func (c *l1Client) WaitForNextVersionForTesting(ctx context.Context, timeout tim
 
 			if newRef.Error != nil {
 				// The provided object got consumed and is gone. We can return.
-				if newRef.Error.Data.Deleted != nil || newRef.Error.Data.NotExists != nil {
+				if newRef.Error.Deleted != nil || newRef.Error.NotExists != nil {
 					return currentRef, nil
 				}
 

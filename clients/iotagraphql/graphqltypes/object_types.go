@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/serialization"
 )
 
 type IotaObjectRef struct {
@@ -99,11 +98,11 @@ type IotaObjectData struct {
 	/**
 	 * Move object content or package content, default to be undefined unless IotaObjectDataOptions.showContent is set to true
 	 */
-	Content *serialization.TagJson[IotaParsedData] `json:"content,omitempty"`
+	Content *IotaParsedData `json:"content,omitempty"`
 	/**
 	 * Move object content or package content in BCS bytes, default to be undefined unless IotaObjectDataOptions.showBcs is set to true
 	 */
-	Bcs *serialization.TagJson[IotaRawData] `json:"bcs,omitempty"`
+	Bcs *IotaRawData `json:"bcs,omitempty"`
 	/**
 	 * The owner of this object. Default to be undefined unless IotaObjectDataOptions.showOwner is set to true
 	 */
@@ -193,13 +192,13 @@ func (e IotaObjectResponseError) Content() string {
 }
 
 type IotaObjectResponse struct {
-	Data  *IotaObjectData                                 `json:"data,omitempty"`
-	Error *serialization.TagJson[IotaObjectResponseError] `json:"error,omitempty"`
+	Data  *IotaObjectData          `json:"data,omitempty"`
+	Error *IotaObjectResponseError `json:"error,omitempty"`
 }
 
 func (r IotaObjectResponse) ResponseError() error {
 	if r.Error != nil {
-		return fmt.Errorf("%s", r.Error.Data.String())
+		return fmt.Errorf("%s", r.Error.String())
 	}
 	return nil
 }
@@ -231,7 +230,7 @@ type IotaObjectResponseQuery struct {
 	Options *IotaObjectDataOptions `json:"options,omitempty"`
 }
 
-type IotaPastObjectResponse = serialization.TagJson[IotaPastObject]
+type IotaPastObjectResponse = IotaPastObject
 
 type IotaPastObject struct {
 	// The object exists and is found with this version

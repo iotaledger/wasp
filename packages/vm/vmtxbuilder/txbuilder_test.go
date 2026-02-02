@@ -79,7 +79,7 @@ func TestTxBuilderBasic(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
-	require.True(t, txnResponse.Effects.Data.IsSuccess())
+	require.True(t, txnResponse.Effects.IsSuccess())
 
 	getObjReq1, _ := client.GetObject(context.Background(), iotagraphql.GetObjectRequest{ObjectID: req1.RequestRef().ObjectID, Options: &iotagraphql.IotaObjectDataOptions{ShowContent: true}})
 	require.NotNil(t, getObjReq1.Data)
@@ -145,7 +145,7 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
-	require.True(t, txnResponse1.Effects.Data.IsSuccess())
+	require.True(t, txnResponse1.Effects.IsSuccess())
 
 	getObjReq1, _ := client.GetObject(context.Background(), iotagraphql.GetObjectRequest{ObjectID: req1.RequestRef().ObjectID, Options: &iotagraphql.IotaObjectDataOptions{ShowContent: true}})
 	require.NotNil(t, getObjReq1.Data)
@@ -190,7 +190,7 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
-	require.True(t, txnResponse2.Effects.Data.IsSuccess())
+	require.True(t, txnResponse2.Effects.IsSuccess())
 
 	getObjReq2, _ := client.GetObject(context.Background(), iotagraphql.GetObjectRequest{ObjectID: req2.RequestRef().ObjectID})
 	require.NotNil(t, getObjReq2.Data)
@@ -248,7 +248,7 @@ func TestRotateAndBuildTx(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
-	require.True(t, txnResponse.Effects.Data.IsSuccess())
+	require.True(t, txnResponse.Effects.IsSuccess())
 	getObjRes, err := client.GetObject(context.Background(), iotagraphql.GetObjectRequest{
 		ObjectID: anchor.ObjectID,
 		Options:  &iotagraphql.IotaObjectDataOptions{ShowOwner: true},

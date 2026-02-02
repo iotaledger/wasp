@@ -11,7 +11,6 @@ import (
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/contracts"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/serialization"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
@@ -134,8 +133,8 @@ func (c *Client) SignAndExecutePTB(
 	if err != nil {
 		return nil, fmt.Errorf("can't execute the transaction: %w", err)
 	}
-	if !txnResponse.Effects.Data.IsSuccess() {
-		return nil, fmt.Errorf("failed to execute the transaction: %s", txnResponse.Effects.Data.V1.Status.Error)
+	if !txnResponse.Effects.IsSuccess() {
+		return nil, fmt.Errorf("failed to execute the transaction: %s", txnResponse.Effects.V1.Status.Error)
 	}
 	return txnResponse, nil
 }
@@ -190,8 +189,8 @@ func (c *Client) DevInspectPTB(
 	if txnResponse.Error != "" {
 		return nil, fmt.Errorf("execute error: %s", txnResponse.Error)
 	}
-	if !txnResponse.Effects.Data.IsSuccess() {
-		return nil, fmt.Errorf("failed to execute the transaction: %s", txnResponse.Effects.Data.V1.Status.Error)
+	if !txnResponse.Effects.IsSuccess() {
+		return nil, fmt.Errorf("failed to execute the transaction: %s", txnResponse.Effects.V1.Status.Error)
 	}
 	return txnResponse, nil
 }
@@ -212,7 +211,7 @@ func (c *Client) SubscribeEvent(
 func (c *Client) SubscribeTransaction(
 	ctx context.Context,
 	filter *iotagraphql.TransactionFilter,
-	resultCh chan<- *serialization.TagJson[iotagraphql.IotaTransactionBlockEffects],
+	resultCh chan<- *iotagraphql.IotaTransactionBlockEffects,
 ) error {
 	return fmt.Errorf("SubscribeTransaction is not supported: websocket subscriptions not implemented")
 }
@@ -263,7 +262,7 @@ func (c *Client) DeployISCContracts(ctx context.Context, signer iotasigner.Signe
 		return iotago.PackageID{}, err
 	}
 
-	if !txnResponse.Effects.Data.IsSuccess() {
+	if !txnResponse.Effects.IsSuccess() {
 		return iotago.PackageID{}, errors.New("publish ISC contracts failed")
 	}
 	packageID := lo.Must(txnResponse.GetPublishedPackageID())

@@ -44,7 +44,7 @@ func TestPTBMoveCall(t *testing.T) {
 				},
 			)
 			require.NoError(t, err)
-			require.True(t, txnResponse.Effects.Data.IsSuccess())
+			require.True(t, txnResponse.Effects.IsSuccess())
 
 			packageID, err := txnResponse.GetPublishedPackageID()
 			require.NoError(t, err)
@@ -101,9 +101,9 @@ func TestPTBMoveCall(t *testing.T) {
 			})
 			require.NoError(t, err)
 
-			require.Empty(t, simulate.Effects.Data.V1.Status.Error)
-			require.True(t, simulate.Effects.Data.IsSuccess())
-			require.Equal(t, coins[0].CoinObjectID, simulate.Effects.Data.V1.GasObject.Reference.ObjectID)
+			require.Empty(t, simulate.Effects.V1.Status.Error)
+			require.True(t, simulate.Effects.IsSuccess())
+			require.Equal(t, coins[0].CoinObjectID, simulate.Effects.V1.GasObject.Reference.ObjectID)
 		},
 	)
 }
@@ -287,20 +287,20 @@ func TestPTBPayIota(t *testing.T) {
 		TxDataBytes: txBytes,
 	})
 	require.NoError(t, err)
-	require.Empty(t, simulate.Effects.Data.V1.Status.Error)
-	require.True(t, simulate.Effects.Data.IsSuccess())
-	require.Equal(t, coin.CoinObjectID.String(), simulate.Effects.Data.V1.GasObject.Reference.ObjectID.String())
+	require.Empty(t, simulate.Effects.V1.Status.Error)
+	require.True(t, simulate.Effects.IsSuccess())
+	require.Equal(t, coin.CoinObjectID.String(), simulate.Effects.V1.GasObject.Reference.ObjectID.String())
 
 	// 1 for Mutated, 2 created (the 2 transfer in pay_iota pt),
 	require.Len(t, simulate.ObjectChanges, 3)
 	for _, change := range simulate.ObjectChanges {
-		if change.Data.Mutated != nil {
-			require.Equal(t, coin.CoinObjectID, &change.Data.Mutated.ObjectID)
-		} else if change.Data.Created != nil {
+		if change.Mutated != nil {
+			require.Equal(t, coin.CoinObjectID, &change.Mutated.ObjectID)
+		} else if change.Created != nil {
 			require.Contains(
 				t,
 				[]*iotago.Address{recipient1.Address(), recipient2.Address()},
-				change.Data.Created.Owner.AddressOwner,
+				change.Created.Owner.AddressOwner,
 			)
 		}
 	}

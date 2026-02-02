@@ -74,7 +74,7 @@ func TestMoveCall(t *testing.T) {
 	// 	},
 	// )
 	// require.NoError(t, err)
-	// require.True(t, txnResponse.Effects.Data.IsSuccess())
+	// require.True(t, txnResponse.Effects.IsSuccess())
 
 	// packageID, err := txnResponse.GetPublishedPackageID()
 	// require.NoError(t, err)
@@ -105,7 +105,7 @@ func TestMoveCall(t *testing.T) {
 	// 	},
 	// )
 	// require.NoError(t, err)
-	// require.True(t, txnResponse.Effects.Data.IsSuccess())
+	// require.True(t, txnResponse.Effects.IsSuccess())
 
 	// queryEventsRes, err := client.QueryEvents(
 	// 	context.Background(),
@@ -183,8 +183,8 @@ func TestPay(t *testing.T) {
 	// 	TxDataBytes: txn.TxBytes,
 	// })
 	// require.NoError(t, err)
-	// require.Empty(t, simulate.Effects.Data.V1.Status.Error)
-	// require.True(t, simulate.Effects.Data.IsSuccess())
+	// require.Empty(t, simulate.Effects.V1.Status.Error)
+	// require.True(t, simulate.Effects.IsSuccess())
 
 	// // TODO: Enable balance changes validation once GraphQL dry run supports it
 	// // require.Len(t, simulate.BalanceChanges, 2)
@@ -232,16 +232,16 @@ func TestPayAllIota(t *testing.T) {
 		TxDataBytes: txn.TxBytes,
 	})
 	require.NoError(t, err)
-	require.Empty(t, simulate.Effects.Data.V1.Status.Error)
-	require.True(t, simulate.Effects.Data.IsSuccess())
+	require.Empty(t, simulate.Effects.V1.Status.Error)
+	require.True(t, simulate.Effects.IsSuccess())
 
 	// require.Len(t, simulate.ObjectChanges, limit)
 	// delObjNum := uint(0)
 	// for _, change := range simulate.ObjectChanges {
-	// 	if change.Data.Mutated != nil {
-	// 		require.Equal(t, *signer.Address(), change.Data.Mutated.Sender)
-	// 		require.Contains(t, coins.ObjectIDVals(), change.Data.Mutated.ObjectID)
-	// 	} else if change.Data.Deleted != nil {
+	// 	if change.Mutated != nil {
+	// 		require.Equal(t, *signer.Address(), change.Mutated.Sender)
+	// 		require.Contains(t, coins.ObjectIDVals(), change.Mutated.ObjectID)
+	// 	} else if change.Deleted != nil {
 	// 		delObjNum += 1
 	// 	}
 	// }
@@ -292,8 +292,8 @@ func TestPayIota(t *testing.T) {
 		TxDataBytes: txn.TxBytes,
 	})
 	require.NoError(t, err)
-	require.Empty(t, simulate.Effects.Data.V1.Status.Error)
-	require.True(t, simulate.Effects.Data.IsSuccess())
+	require.Empty(t, simulate.Effects.V1.Status.Error)
+	require.True(t, simulate.Effects.IsSuccess())
 
 	// 3 stands for the three amounts (3 crated IOTA objects) in unsafe_payIota API
 	amountNum := uint(3)
@@ -301,13 +301,13 @@ func TestPayIota(t *testing.T) {
 	delObjNum := uint(0)
 	createdObjNum := uint(0)
 	for _, change := range simulate.ObjectChanges {
-		if change.Data.Mutated != nil {
-			require.Equal(t, *signer.Address(), change.Data.Mutated.Sender)
-			require.Contains(t, coins.ObjectIDVals(), change.Data.Mutated.ObjectID)
-		} else if change.Data.Created != nil {
+		if change.Mutated != nil {
+			require.Equal(t, *signer.Address(), change.Mutated.Sender)
+			require.Contains(t, coins.ObjectIDVals(), change.Mutated.ObjectID)
+		} else if change.Created != nil {
 			createdObjNum += 1
-			require.Equal(t, *signer.Address(), change.Data.Created.Sender)
-		} else if change.Data.Deleted != nil {
+			require.Equal(t, *signer.Address(), change.Created.Sender)
+		} else if change.Deleted != nil {
 			delObjNum += 1
 		}
 	}
@@ -350,7 +350,7 @@ func TestPublish(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
-	require.True(t, txnResponse.Effects.Data.IsSuccess())
+	require.True(t, txnResponse.Effects.IsSuccess())
 
 	// Verify that published package is returned correctly
 	packageID, err := txnResponse.GetPublishedPackageID()
@@ -393,14 +393,14 @@ func TestSplitCoin(t *testing.T) {
 		TxDataBytes: txn.TxBytes,
 	})
 	require.NoError(t, err)
-	require.Empty(t, simulate.Effects.Data.V1.Status.Error)
-	require.True(t, simulate.Effects.Data.IsSuccess())
+	require.Empty(t, simulate.Effects.V1.Status.Error)
+	require.True(t, simulate.Effects.IsSuccess())
 
 	// 2 mutated and 2 created (split coins)
 	require.Len(t, simulate.ObjectChanges, 4)
 	require.Len(t, simulate.BalanceChanges, 1)
 	amt, _ := strconv.ParseInt(simulate.BalanceChanges[0].Amount, 10, 64)
-	require.Equal(t, amt, -simulate.Effects.Data.GasFee())
+	require.Equal(t, amt, -simulate.Effects.GasFee())
 }
 
 func TestTransferObject(t *testing.T) {
@@ -434,8 +434,8 @@ func TestTransferObject(t *testing.T) {
 		TxDataBytes: txn.TxBytes,
 	})
 	require.NoError(t, err)
-	require.Empty(t, simulate.Effects.Data.V1.Status.Error)
-	require.True(t, simulate.Effects.Data.IsSuccess())
+	require.Empty(t, simulate.Effects.V1.Status.Error)
+	require.True(t, simulate.Effects.IsSuccess())
 
 	// one is transferred object, one is the gas object
 	require.Len(t, simulate.ObjectChanges, 2)

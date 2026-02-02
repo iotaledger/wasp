@@ -20,7 +20,7 @@ func (c *Client) GetCoin(
 		return nil, fmt.Errorf("failed to call GetObject: %w", err)
 	}
 	var moveCoin MoveCoin
-	err = iotagraphql.UnmarshalBCS(getCoinRes.Data.Bcs.Data.MoveObject.BcsBytes, &moveCoin)
+	err = iotagraphql.UnmarshalBCS(getCoinRes.Data.Bcs.MoveObject.BcsBytes, &moveCoin)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarhal MoveCoin: %w", err)
 	}

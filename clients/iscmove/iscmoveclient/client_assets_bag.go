@@ -44,7 +44,7 @@ func (c *Client) GetAssetsBagWithBalances(
 			var balanceJSON []byte
 
 			// Check if it's a DynamicObject or DynamicField
-			if data.Type.Data.DynamicObject != nil {
+			if data.Type.DynamicObject != nil {
 				// DynamicObject: use GetObject with the ObjectID
 				resGetObject, err2 := c.GetObject(ctx, iotagraphql.GetObjectRequest{
 					ObjectID: &data.ObjectID,
@@ -54,12 +54,12 @@ func (c *Client) GetAssetsBagWithBalances(
 					return nil, fmt.Errorf("failed to call GetObject for Balance (coin type %s): %w", cointype, err2)
 				}
 
-				if resGetObject.Data == nil || resGetObject.Data.Content == nil || resGetObject.Data.Content.Data.MoveObject == nil {
+				if resGetObject.Data == nil || resGetObject.Data.Content == nil || resGetObject.Data.Content.MoveObject == nil {
 					return nil, fmt.Errorf("content data of AssetBag nil! (%s)", assetsBagID)
 				}
 
-				balanceJSON = resGetObject.Data.Content.Data.MoveObject.Fields
-			} else if data.Type.Data.DynamicField != nil {
+				balanceJSON = resGetObject.Data.Content.MoveObject.Fields
+			} else if data.Type.DynamicField != nil {
 				// DynamicField: extract the value directly from the ValueJSON field
 				if len(data.ValueJSON) == 0 {
 					return nil, fmt.Errorf("ValueJSON is empty for wrapped dynamic field (coin type %s)", cointype)

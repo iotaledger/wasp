@@ -48,7 +48,6 @@ type (
 	MutableReferenceOutputType            = graphqltypes.MutableReferenceOutputType
 	ReturnValueType                       = graphqltypes.ReturnValueType
 	EventID                               = graphqltypes.EventID
-	ExecuteTransactionRequestType         = graphqltypes.ExecuteTransactionRequestType
 	CoinValue                             = graphqltypes.CoinValue
 	ProgrammableTransactionBlockPureInput = graphqltypes.ProgrammableTransactionBlockPureInput
 	IotaTransactionBlockData              = graphqltypes.IotaTransactionBlockData
@@ -88,8 +87,7 @@ const (
 
 // Re-export iotajsonrpc constants
 var (
-	IotaCoinType                        = graphqltypes.IotaCoinType
-	TxnRequestTypeWaitForLocalExecution = graphqltypes.TxnRequestTypeWaitForLocalExecution
+	IotaCoinType = graphqltypes.IotaCoinType
 )
 
 // Re-export iotajsonrpc functions

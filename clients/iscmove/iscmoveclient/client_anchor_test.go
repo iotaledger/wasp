@@ -60,6 +60,7 @@ func TestStartNewChain(t *testing.T) {
 
 func TestReceiveRequestAndTransition(t *testing.T) {
 	client := iscmoveclienttest.NewHTTPClient()
+	l1Client := l1starter.Instance().L1Client()
 	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
 	chainSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 1)
 
@@ -89,7 +90,7 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 	require.NoError(t, err)
 
 	var createAndSendRequestRes *iotagraphql.IotaTransactionBlockResponse
-	client.MustWaitForNextVersionForTesting(context.Background(), 30*time.Second, nil, getCoinsRes.Data[1].Ref(), func() {
+	_, err = l1Client.WaitForNextVersionForTesting(context.Background(), 30*time.Second, nil, getCoinsRes.Data[1].Ref(), func() {
 		createAndSendRequestRes, err = client.CreateAndSendRequest(
 			context.Background(),
 			&iscmoveclient.CreateAndSendRequestRequest{
@@ -109,6 +110,7 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 
 		require.NoError(t, err)
 	})
+	require.NoError(t, err)
 
 	requestRef, err := createAndSendRequestRes.GetCreatedObjectByName(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)
@@ -117,8 +119,8 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 	require.NoError(t, err)
 	gasCoin1 := getCoinsRes.Data[1]
 
-	client.MustWaitForNextVersionForTesting(context.Background(), 30*time.Second, nil, requestRef, func() {
-		client.MustWaitForNextVersionForTesting(context.Background(), 30*time.Second, nil, gasCoin1.Ref(), func() {
+	_, err = l1Client.WaitForNextVersionForTesting(context.Background(), 30*time.Second, nil, requestRef, func() {
+		_, err = l1Client.WaitForNextVersionForTesting(context.Background(), 30*time.Second, nil, gasCoin1.Ref(), func() {
 			txnResponse, err = client.ReceiveRequestsAndTransition(
 				context.Background(),
 				&iscmoveclient.ReceiveRequestsAndTransitionRequest{
@@ -136,7 +138,9 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 			)
 			require.NoError(t, err)
 		})
+		require.NoError(t, err)
 	})
+	require.NoError(t, err)
 
 	getObjRes, err := client.GetObject(context.Background(), iotagraphql.GetObjectRequest{
 		ObjectID: gasCoin1.CoinObjectID,
@@ -144,9 +148,9 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 	})
 	require.NoError(t, err)
 	var gasCoin2 iscmoveclient.MoveCoin
-	err = iotagraphql.UnmarshalBCS(getObjRes.Data.Bcs.Data.MoveObject.BcsBytes, &gasCoin2)
+	err = iotagraphql.UnmarshalBCS(getObjRes.Data.Bcs.MoveObject.BcsBytes, &gasCoin2)
 	require.NoError(t, err)
-	require.Equal(t, gasCoin1.Balance.Int64()+topUpAmount-txnResponse.Effects.Data.GasFee(), int64(gasCoin2.Balance))
+	require.Equal(t, gasCoin1.Balance.Int64()+topUpAmount-txnResponse.Effects.GasFee(), int64(gasCoin2.Balance))
 }
 
 func startNewChain(t *testing.T, client *iscmoveclient.Client, signer cryptolib.Signer) *iscmove.AnchorWithRef {

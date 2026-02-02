@@ -125,3 +125,5 @@ type IotaClient interface {
 		options *IotaTransactionBlockResponseOptions,
 	) (*IotaTransactionBlockResponse, error)
 }
+
+var _ IotaClient = (*GraphQLClient)(nil)

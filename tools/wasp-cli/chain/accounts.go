@@ -232,7 +232,7 @@ func initDepositCmd() *cobra.Command {
 
 			if printReceipt {
 				if err := format.FormatSuccess("l1_gas_fee", map[string]interface{}{
-					"amount": res.Effects.Data.GasFee(),
+					"amount": res.Effects.GasFee(),
 				}); err != nil {
 					return err
 				}

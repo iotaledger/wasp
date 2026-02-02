@@ -103,7 +103,7 @@ func TestCreateOrigin(t *testing.T) {
 
 	balancesSentSinger2, err := client.GetAllBalances(context.Background(), sentSigner.Address().AsIotaAddress())
 	require.NoError(t, err)
-	require.EqualValues(t, balancesSentSigner1[0].TotalBalance.Int64()-originDeposit.Balance.Int64()-txnResponse.Effects.Data.GasFee(), balancesSentSinger2[0].TotalBalance.Int64())
+	require.EqualValues(t, balancesSentSigner1[0].TotalBalance.Int64()-originDeposit.Balance.Int64()-txnResponse.Effects.GasFee(), balancesSentSinger2[0].TotalBalance.Int64())
 	balancesStateSinger2, err := client.GetAllBalances(context.Background(), stateSigner.Address().AsIotaAddress())
 	require.NoError(t, err)
 	require.Equal(t, balancesStateSinger1[0], balancesStateSinger2[0])

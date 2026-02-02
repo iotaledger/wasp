@@ -271,14 +271,14 @@ func (env *Solo) makeBaseTokenCoin(
 		)
 
 		require.NoError(env.T, err)
-		require.True(env.T, txnResponse.Effects.Data.IsSuccess())
+		require.True(env.T, txnResponse.Effects.IsSuccess())
 
 		for _, change := range txnResponse.ObjectChanges {
-			if change.Data.Created != nil {
+			if change.Created != nil {
 				baseTokenCoin = &iotago.ObjectRef{
-					ObjectID: &change.Data.Created.ObjectID,
-					Version:  change.Data.Created.Version.Uint64(),
-					Digest:   &change.Data.Created.Digest,
+					ObjectID: &change.Created.ObjectID,
+					Version:  change.Created.Version.Uint64(),
+					Digest:   &change.Created.Digest,
 				}
 			}
 		}

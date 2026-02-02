@@ -2,7 +2,6 @@ package graphqltypes
 
 import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/serialization"
 )
 
 type AuthSignInfo interface{}
@@ -20,8 +19,8 @@ type ParsedTransactionResponse interface{}
 type ExecuteTransactionEffects struct {
 	TransactionEffectsDigest string `json:"transactionEffectsDigest"`
 
-	Effects      serialization.TagJson[IotaTransactionBlockEffects] `json:"effects"`
-	AuthSignInfo *AuthSignInfo                                      `json:"authSignInfo"`
+	Effects      IotaTransactionBlockEffects `json:"effects"`
+	AuthSignInfo *AuthSignInfo               `json:"authSignInfo"`
 }
 
 type ExecuteTransactionResponse struct {

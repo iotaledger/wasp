@@ -167,7 +167,7 @@ func (nc *nodeConnection) ConsensusL1InfoProposal(
 		}
 
 		var gasCoin iscmoveclient.MoveCoin
-		err = iotagraphql.UnmarshalBCS(gasCoinGetObjectRes.Data.Bcs.Data.MoveObject.BcsBytes, &gasCoin)
+		err = iotagraphql.UnmarshalBCS(gasCoinGetObjectRes.Data.Bcs.MoveObject.BcsBytes, &gasCoin)
 		if err != nil {
 			panic(err)
 		}
