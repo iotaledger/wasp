@@ -25,7 +25,7 @@ import (
 var defaultFalse = false
 
 const (
-	SingleCoinFundsFromFaucetAmount = uint64(1_000_000_000)
+	SingleCoinFundsFromFaucetAmount = uint64(2_000_000_000)
 	FundsFromFaucetAmount           = SingleCoinFundsFromFaucetAmount * 5
 )
 
@@ -34,6 +34,7 @@ type GraphQLClient struct {
 	client                  graphql.Client
 	httpClient              *http.Client
 	WaitUntilEffectsVisible *WaitParams
+	tickingTime             time.Duration
 }
 
 func NewGraphQLClient(url string) *GraphQLClient {
@@ -53,6 +54,7 @@ func NewGraphQLClientWithTimeout(url string, timeout time.Duration, waitParams *
 		client:                  graphql.NewClient(url, httpClient),
 		httpClient:              httpClient,
 		WaitUntilEffectsVisible: waitParams,
+		tickingTime:             250 * time.Millisecond,
 	}
 }
 
@@ -91,7 +93,7 @@ func RequestFundsFromFaucetAndWait(ctx context.Context, address *iotago.Address,
 func getBalance(ctx context.Context, client *GraphQLClient, address *iotago.Address) *big.Int {
 	balance, err := client.GetBalance(ctx, GetBalanceRequest{Owner: address})
 	if err != nil || balance.TotalBalance == nil {
-		return big.NewInt(0)
+		panic(fmt.Sprintf("failed to get balance for address %s: %v", address, err))
 	}
 	return balance.TotalBalance.Int
 }
@@ -1451,7 +1453,9 @@ func (c *GraphQLClient) waitForUpdatedGasPayments(
 			updated[i] = payment
 			continue
 		}
-		fresh, err := c.waitForNewerObjectRef(ctx, payment, 30*time.Second)
+		timeoutCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		fresh, err := c.waitForNewerObjectRef(timeoutCtx, payment)
+		cancel()
 		if err != nil {
 			return nil, err
 		}
@@ -1463,12 +1467,9 @@ func (c *GraphQLClient) waitForUpdatedGasPayments(
 func (c *GraphQLClient) waitForNewerObjectRef(
 	ctx context.Context,
 	current *iotago.ObjectRef,
-	timeout time.Duration,
 ) (*iotago.ObjectRef, error) {
-	ticker := time.NewTicker(200 * time.Millisecond)
+	ticker := time.NewTicker(c.tickingTime)
 	defer ticker.Stop()
-	timer := time.NewTimer(timeout)
-	defer timer.Stop()
 
 	for {
 		updated, err := c.UpdateObjectRef(ctx, current)
@@ -1480,9 +1481,7 @@ func (c *GraphQLClient) waitForNewerObjectRef(
 
 		select {
 		case <-ctx.Done():
-			return nil, ctx.Err()
-		case <-timer.C:
-			return nil, fmt.Errorf("timed out waiting for updated object ref: %v", current)
+			return nil, fmt.Errorf("waiting for updated object ref: %w", ctx.Err())
 		case <-ticker.C:
 		}
 	}
@@ -1516,6 +1515,7 @@ func (c *GraphQLClient) MintToken(
 	tokenName string,
 	treasuryCap *iotago.ObjectRef,
 	mintAmount uint64,
+	maxRetries int,
 	options *IotaTransactionBlockResponseOptions,
 ) (*IotaTransactionBlockResponse, error) {
 	var err error
@@ -1523,7 +1523,7 @@ func (c *GraphQLClient) MintToken(
 	var txnResponse *IotaTransactionBlockResponse
 	var gasPayments []*iotago.ObjectRef
 
-	for i := 0; i < 5; i++ {
+	for i := 0; i < maxRetries; i++ {
 		// Update treasuryCap ref to get the latest version
 		updatedTreasuryCap, updateErr := c.UpdateObjectRef(ctx, treasuryCap)
 		if updateErr != nil {
@@ -1581,7 +1581,7 @@ func (c *GraphQLClient) MintToken(
 		if err == nil {
 			return txnResponse, nil
 		}
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(c.tickingTime)
 	}
 	return nil, fmt.Errorf("can't execute MintToken in time: %w", err)
 }
@@ -2083,7 +2083,7 @@ func (c *GraphQLClient) SignAndExecuteTxWithRetry(
 		if err == nil {
 			return txnResponse, nil
 		}
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(c.tickingTime)
 	}
 	return nil, fmt.Errorf("can't execute the transaction in time: %w", err)
 }

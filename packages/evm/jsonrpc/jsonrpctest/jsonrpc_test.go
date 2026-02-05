@@ -693,10 +693,6 @@ func TestRPCTraceFailedTx(t *testing.T) {
 	require.NoError(t, err)
 	_, _, contractAddress := env.DeployEVMContract(creator, contractABI, evmtest.ISCTestContractBytecode)
 
-	// Record the block info before sending the failing transaction
-	biBefore := env.soloChain.GetLatestBlockInfo()
-
-	// Use super high gas that the sender can't afford - this triggers RPC-level rejection
 	tx := types.MustSignNewTx(creator, types.NewEIP155Signer(big.NewInt(int64(env.ChainID))),
 		&types.LegacyTx{
 			Nonce:    env.NonceAt(creatorAddress),
@@ -708,24 +704,27 @@ func TestRPCTraceFailedTx(t *testing.T) {
 		})
 
 	_, err = env.SendTransactionAndWait(tx)
-	require.ErrorContains(t, err, "sender doesn't have enough L2 funds to cover tx gas budget")
+	require.ErrorContains(t, err, "insufficient funds for gas * price + value")
 
-	// No new block should be created since the tx was rejected at RPC level
-	biAfter := env.soloChain.GetLatestBlockInfo()
-	require.EqualValues(t, biBefore.BlockIndex, biAfter.BlockIndex)
+	bi := env.soloChain.GetLatestBlockInfo()
+	require.EqualValues(t, 0, bi.NumSuccessfulRequests)
 
-	// Tracing should fail because the transaction was never submitted to the chain
 	t.Run("callTracer", func(t *testing.T) {
 		_, err := env.traceTransactionWithCallTracer(tx.Hash())
-		require.ErrorContains(t, err, "transaction not found")
+		require.ErrorContains(t, err, "expected exactly one top-level call")
 	})
 
 	t.Run("prestate", func(t *testing.T) {
-		_, err := env.traceTransactionWithPrestate(tx.Hash())
-		require.ErrorContains(t, err, "transaction not found")
+		accountMap, err := env.traceTransactionWithPrestate(tx.Hash())
+		// t.Logf("%s", lo.Must(json.MarshalIndent(accountMap, "", "  ")))
+		require.NoError(t, err)
+		require.NotEmpty(t, accountMap)
 
-		_, err = env.traceTransactionWithPrestateDiff(tx.Hash())
-		require.ErrorContains(t, err, "transaction not found")
+		diff, err := env.traceTransactionWithPrestateDiff(tx.Hash())
+		// t.Logf("%s", lo.Must(json.MarshalIndent(diff, "", "  ")))
+		require.NoError(t, err)
+		require.NotEmpty(t, diff.Pre)
+		require.Empty(t, diff.Post)
 	})
 }
 

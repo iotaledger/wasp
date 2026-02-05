@@ -694,12 +694,18 @@ func (env *Solo) L1MintCoin(
 	return coinRef
 }
 
-// WaitForCoinToBeIndexed polls until the coin is available via GetCoins with the specific coin type
-func (env *Solo) WaitForCoinToBeIndexed(owner *iotago.Address, coinID *iotago.ObjectID, coinType string) {
+// WaitForCoinToBeIndexed polls until the coin is available via GetCoins with the specific coin type.
+// An optional pollInterval can be provided; defaults to 250ms.
+func (env *Solo) WaitForCoinToBeIndexed(owner *iotago.Address, coinID *iotago.ObjectID, coinType string, pollInterval ...time.Duration) {
+	interval := 250 * time.Millisecond
+	if len(pollInterval) > 0 {
+		interval = pollInterval[0]
+	}
+
 	ctx, cancel := context.WithTimeout(env.ctx, 60*time.Second)
 	defer cancel()
 
-	ticker := time.NewTicker(250 * time.Millisecond)
+	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
 	for {
