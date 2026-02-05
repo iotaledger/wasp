@@ -38,6 +38,9 @@ build-lint: build lint
 gendoc:
 	./scripts/gendoc.sh
 
+genqlient:
+	cd clients/iotagraphql && GOTOOLCHAIN=go1.24.6 go run github.com/Khan/genqlient@v0.8.1
+
 test-full: install
 	go test -tags runheavy -race -ldflags $(BUILD_LD_FLAGS) ./... --timeout 60m --count 1 -failfast
 
@@ -99,4 +102,4 @@ deps-versions:
 		awk -F ":" '{ print $$1 }' | \
 		{ read from ; read to; awk -v s="$$from" -v e="$$to" 'NR>1*s&&NR<1*e' packages/testutil/privtangle/privtangle.go; }
 
-.PHONY: all compile-solidity build-cli build-full build build-lint test-full test test-short install-cli install-full install lint gofumpt-list docker-build deps-versions
+.PHONY: all compile-solidity build-cli build-full build build-lint test-full test test-short install-cli install-full install lint gofumpt-list docker-build deps-versions genqlient

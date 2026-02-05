@@ -5,9 +5,10 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/serialization"
-	"github.com/samber/lo"
 )
 
 type ExecuteTransactionRequestType string

@@ -25,18 +25,14 @@ type IotaClient interface {
 		ctx context.Context,
 		req QueryTransactionBlocksRequest,
 	) (*TransactionBlocksPage, error)
-	DevInspectTransactionBlock(
-		ctx context.Context,
-		req DevInspectTransactionBlockRequest,
-	) (*DevInspectResults, error)
 	DryRunTransaction(
 		ctx context.Context,
 		req DryRunTransactionRequest,
-	) (*DryRunResult, error)
+	) (*DryRunTransactionBlockResponse, error)
 	ExecuteTransactionBlock(
 		ctx context.Context,
 		req ExecuteTransactionBlockRequest,
-	) (*IotaTransactionBlockResponse, error)
+	) (*ExecuteTransactionBlockResponse, error)
 	GetLatestIotaSystemState(ctx context.Context) (*IotaSystemStateSummary, error)
 	GetReferenceGasPrice(ctx context.Context) (*BigInt, error)
 
@@ -84,7 +80,7 @@ type IotaClient interface {
 
 	// Extended API
 	GetObject(ctx context.Context, req GetObjectRequest) (*IotaObjectResponse, error)
-	GetTransactionBlock(ctx context.Context, req GetTransactionBlockRequest) (*IotaTransactionBlockResponse, error)
+	GetTransactionBlock(ctx context.Context, req GetTransactionBlockRequest) (*GetTransactionBlockResponse, error)
 	TryGetPastObject(
 		ctx context.Context,
 		req TryGetPastObjectRequest,
@@ -100,7 +96,7 @@ type IotaClient interface {
 	SignAndExecuteTransaction(
 		ctx context.Context,
 		req *SignAndExecuteTransactionRequest,
-	) (*IotaTransactionBlockResponse, error)
+	) (*ExecuteTransactionBlockResponse, error)
 	UpdateObjectRef(
 		ctx context.Context,
 		ref *iotago.ObjectRef,
@@ -113,7 +109,7 @@ type IotaClient interface {
 		treasuryCap *iotago.ObjectRef,
 		mintAmount uint64,
 		options *IotaTransactionBlockResponseOptions,
-	) (*IotaTransactionBlockResponse, error)
+	) (*ExecuteTransactionBlockResponse, error)
 	SignAndExecuteTxWithRetry(
 		ctx context.Context,
 		signer iotasigner.Signer,
@@ -122,5 +118,5 @@ type IotaClient interface {
 		gasBudget uint64,
 		gasPrice uint64,
 		options *IotaTransactionBlockResponseOptions,
-	) (*IotaTransactionBlockResponse, error)
+	) (*ExecuteTransactionBlockResponse, error)
 }

@@ -50,14 +50,6 @@ type ResolveNameServiceNamesRequest struct {
 	Limit  *int             // optional
 }
 
-type DevInspectTransactionBlockRequest struct {
-	SenderAddress *iotago.Address
-	TxKindBytes   iotago.Base64Data
-	GasPrice      *graphqltypes.BigInt                              // optional
-	Epoch         *uint64                                           // optional
-	Options       *graphqltypes.IotaTransactionBlockResponseOptions // optional
-}
-
 type DryRunTransactionRequest struct {
 	TxDataBytes iotago.Base64Data
 	Options     *graphqltypes.IotaTransactionBlockResponseOptions // optional

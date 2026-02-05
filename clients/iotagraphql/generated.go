@@ -12,382 +12,113 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 )
 
-// DevInspectTransactionBlockDryRunTransactionBlockDryRunResult includes the requested fields of the GraphQL type DryRunResult.
-type DevInspectTransactionBlockDryRunTransactionBlockDryRunResult struct {
-	// The error that occurred during dry run execution, if any.
-	Error string `json:"error"`
-	// The intermediate results for each command of the dry run execution,
-	// including contents of mutated references and return values.
-	Results []DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffect `json:"results"`
-	// The transaction block representing the dry run execution.
-	Transaction DevInspectTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock `json:"transaction"`
+// Balance change fields
+type BALANCE_CHANGE struct {
+	// The address or object whose balance has changed.
+	Owner BALANCE_CHANGEOwner `json:"owner"`
+	// The signed balance change.
+	Amount BigInt `json:"amount"`
+	// The inner type of the coin whose balance has changed (e.g.
+	// `0x2::iota::IOTA`).
+	CoinType BALANCE_CHANGECoinTypeMoveType `json:"coinType"`
 }
 
-// GetError returns DevInspectTransactionBlockDryRunTransactionBlockDryRunResult.Error, and is useful for accessing the field via an interface.
-func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResult) GetError() string {
-	return v.Error
+// GetOwner returns BALANCE_CHANGE.Owner, and is useful for accessing the field via an interface.
+func (v *BALANCE_CHANGE) GetOwner() BALANCE_CHANGEOwner { return v.Owner }
+
+// GetAmount returns BALANCE_CHANGE.Amount, and is useful for accessing the field via an interface.
+func (v *BALANCE_CHANGE) GetAmount() BigInt { return v.Amount }
+
+// GetCoinType returns BALANCE_CHANGE.CoinType, and is useful for accessing the field via an interface.
+func (v *BALANCE_CHANGE) GetCoinType() BALANCE_CHANGECoinTypeMoveType { return v.CoinType }
+
+// BALANCE_CHANGECoinTypeMoveType includes the requested fields of the GraphQL type MoveType.
+// The GraphQL type's documentation follows.
+//
+// Represents concrete types (no type parameters, no references).
+type BALANCE_CHANGECoinTypeMoveType struct {
+	// Flat representation of the type signature, as a displayable string.
+	Repr string `json:"repr"`
 }
 
-// GetResults returns DevInspectTransactionBlockDryRunTransactionBlockDryRunResult.Results, and is useful for accessing the field via an interface.
-func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResult) GetResults() []DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffect {
-	return v.Results
+// GetRepr returns BALANCE_CHANGECoinTypeMoveType.Repr, and is useful for accessing the field via an interface.
+func (v *BALANCE_CHANGECoinTypeMoveType) GetRepr() string { return v.Repr }
+
+// BALANCE_CHANGEOwner includes the requested fields of the GraphQL type Owner.
+// The GraphQL type's documentation follows.
+//
+// An Owner is an entity that can own an object. Each Owner is identified by a
+// IotaAddress which represents either an Address (corresponding to a public
+// key of an account) or an Object, but never both (it is not known up-front
+// whether a given Owner is an Address or an Object).
+type BALANCE_CHANGEOwner struct {
+	AsAddress BALANCE_CHANGEOwnerAsAddress `json:"asAddress"`
+	AsObject  BALANCE_CHANGEOwnerAsObject  `json:"asObject"`
 }
 
-// GetTransaction returns DevInspectTransactionBlockDryRunTransactionBlockDryRunResult.Transaction, and is useful for accessing the field via an interface.
-func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResult) GetTransaction() DevInspectTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock {
-	return v.Transaction
+// GetAsAddress returns BALANCE_CHANGEOwner.AsAddress, and is useful for accessing the field via an interface.
+func (v *BALANCE_CHANGEOwner) GetAsAddress() BALANCE_CHANGEOwnerAsAddress { return v.AsAddress }
+
+// GetAsObject returns BALANCE_CHANGEOwner.AsObject, and is useful for accessing the field via an interface.
+func (v *BALANCE_CHANGEOwner) GetAsObject() BALANCE_CHANGEOwnerAsObject { return v.AsObject }
+
+// BALANCE_CHANGEOwnerAsAddress includes the requested fields of the GraphQL type Address.
+// The GraphQL type's documentation follows.
+//
+// The 32-byte address that is an account address (corresponding to a public
+// key).
+type BALANCE_CHANGEOwnerAsAddress struct {
+	Address iotago.Address `json:"address"`
 }
 
-// DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffect includes the requested fields of the GraphQL type DryRunEffect.
-type DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffect struct {
-	// Changes made to arguments that were mutably borrowed by each command in
-	// this transaction.
-	MutatedReferences []DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutation `json:"mutatedReferences"`
-	// Return results of each command in this transaction.
-	ReturnValues []DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectReturnValuesDryRunReturn `json:"returnValues"`
+// GetAddress returns BALANCE_CHANGEOwnerAsAddress.Address, and is useful for accessing the field via an interface.
+func (v *BALANCE_CHANGEOwnerAsAddress) GetAddress() iotago.Address { return v.Address }
+
+// BALANCE_CHANGEOwnerAsObject includes the requested fields of the GraphQL type Object.
+// The GraphQL type's documentation follows.
+//
+// An object in IOTA is a package (set of Move bytecode modules) or object
+// (typed data structure with fields) with additional metadata detailing its
+// id, version, transaction digest, owner field indicating how this object can
+// be accessed.
+type BALANCE_CHANGEOwnerAsObject struct {
+	Address iotago.Address `json:"address"`
 }
 
-// GetMutatedReferences returns DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffect.MutatedReferences, and is useful for accessing the field via an interface.
-func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffect) GetMutatedReferences() []DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutation {
-	return v.MutatedReferences
+// GetAddress returns BALANCE_CHANGEOwnerAsObject.Address, and is useful for accessing the field via an interface.
+func (v *BALANCE_CHANGEOwnerAsObject) GetAddress() iotago.Address { return v.Address }
+
+// BalanceChangeData includes the requested fields of the GraphQL type BalanceChange.
+// The GraphQL type's documentation follows.
+//
+// Effects to the balance (sum of coin values per coin type) owned by an
+// address or object.
+type BalanceChangeData struct {
+	BALANCE_CHANGE `json:"-"`
 }
 
-// GetReturnValues returns DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffect.ReturnValues, and is useful for accessing the field via an interface.
-func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffect) GetReturnValues() []DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectReturnValuesDryRunReturn {
-	return v.ReturnValues
+// GetOwner returns BalanceChangeData.Owner, and is useful for accessing the field via an interface.
+func (v *BalanceChangeData) GetOwner() BALANCE_CHANGEOwner { return v.BALANCE_CHANGE.Owner }
+
+// GetAmount returns BalanceChangeData.Amount, and is useful for accessing the field via an interface.
+func (v *BalanceChangeData) GetAmount() BigInt { return v.BALANCE_CHANGE.Amount }
+
+// GetCoinType returns BalanceChangeData.CoinType, and is useful for accessing the field via an interface.
+func (v *BalanceChangeData) GetCoinType() BALANCE_CHANGECoinTypeMoveType {
+	return v.BALANCE_CHANGE.CoinType
 }
 
-// DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutation includes the requested fields of the GraphQL type DryRunMutation.
-type DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutation struct {
-	Input DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputTransactionArgument `json:"-"`
-	Type  DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationTypeMoveType             `json:"type"`
-	Bcs   iotago.Base64Data                                                                                                                      `json:"bcs"`
-}
-
-// GetInput returns DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutation.Input, and is useful for accessing the field via an interface.
-func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutation) GetInput() DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputTransactionArgument {
-	return v.Input
-}
-
-// GetType returns DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutation.Type, and is useful for accessing the field via an interface.
-func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutation) GetType() DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationTypeMoveType {
-	return v.Type
-}
-
-// GetBcs returns DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutation.Bcs, and is useful for accessing the field via an interface.
-func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutation) GetBcs() iotago.Base64Data {
-	return v.Bcs
-}
-
-func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutation) UnmarshalJSON(b []byte) error {
+func (v *BalanceChangeData) UnmarshalJSON(b []byte) error {
 
 	if string(b) == "null" {
 		return nil
 	}
 
 	var firstPass struct {
-		*DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutation
-		Input json.RawMessage `json:"input"`
+		*BalanceChangeData
 		graphql.NoUnmarshalJSON
 	}
-	firstPass.DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutation = v
-
-	err := json.Unmarshal(b, &firstPass)
-	if err != nil {
-		return err
-	}
-
-	{
-		dst := &v.Input
-		src := firstPass.Input
-		if len(src) != 0 && string(src) != "null" {
-			err = __unmarshalDevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputTransactionArgument(
-				src, dst)
-			if err != nil {
-				return fmt.Errorf(
-					"unable to unmarshal DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutation.Input: %w", err)
-			}
-		}
-	}
-	return nil
-}
-
-type __premarshalDevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutation struct {
-	Input json.RawMessage `json:"input"`
-
-	Type DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationTypeMoveType `json:"type"`
-
-	Bcs iotago.Base64Data `json:"bcs"`
-}
-
-func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutation) MarshalJSON() ([]byte, error) {
-	premarshaled, err := v.__premarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(premarshaled)
-}
-
-func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutation) __premarshalJSON() (*__premarshalDevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutation, error) {
-	var retval __premarshalDevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutation
-
-	{
-
-		dst := &retval.Input
-		src := v.Input
-		var err error
-		*dst, err = __marshalDevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputTransactionArgument(
-			&src)
-		if err != nil {
-			return nil, fmt.Errorf(
-				"unable to marshal DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutation.Input: %w", err)
-		}
-	}
-	retval.Type = v.Type
-	retval.Bcs = v.Bcs
-	return &retval, nil
-}
-
-// DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInput includes the requested fields of the GraphQL type Input.
-// The GraphQL type's documentation follows.
-//
-// One of the input objects or primitive values to the programmable transaction
-// block.
-type DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInput struct {
-	Typename string `json:"__typename"`
-	// Index of the programmable transaction block input (0-indexed).
-	InputIndex int `json:"inputIndex"`
-}
-
-// GetTypename returns DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInput.Typename, and is useful for accessing the field via an interface.
-func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInput) GetTypename() string {
-	return v.Typename
-}
-
-// GetInputIndex returns DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInput.InputIndex, and is useful for accessing the field via an interface.
-func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInput) GetInputIndex() int {
-	return v.InputIndex
-}
-
-// DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputGasCoin includes the requested fields of the GraphQL type GasCoin.
-// The GraphQL type's documentation follows.
-//
-// Access to the gas inputs, after they have been smashed into one coin. The
-// gas coin can only be used by reference, except for with
-// `TransferObjectsTransaction` that can accept it by value.
-type DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputGasCoin struct {
-	Typename string `json:"__typename"`
-}
-
-// GetTypename returns DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputGasCoin.Typename, and is useful for accessing the field via an interface.
-func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputGasCoin) GetTypename() string {
-	return v.Typename
-}
-
-// DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputResult includes the requested fields of the GraphQL type Result.
-// The GraphQL type's documentation follows.
-//
-// The result of another transaction command.
-type DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputResult struct {
-	Typename string `json:"__typename"`
-	// The index of the previous command (0-indexed) that returned this result.
-	Cmd int `json:"cmd"`
-	// If the previous command returns multiple values, this is the index of
-	// the individual result among the multiple results from that command
-	// (also 0-indexed).
-	ResultIndex int `json:"resultIndex"`
-}
-
-// GetTypename returns DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputResult.Typename, and is useful for accessing the field via an interface.
-func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputResult) GetTypename() string {
-	return v.Typename
-}
-
-// GetCmd returns DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputResult.Cmd, and is useful for accessing the field via an interface.
-func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputResult) GetCmd() int {
-	return v.Cmd
-}
-
-// GetResultIndex returns DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputResult.ResultIndex, and is useful for accessing the field via an interface.
-func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputResult) GetResultIndex() int {
-	return v.ResultIndex
-}
-
-// DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputTransactionArgument includes the requested fields of the GraphQL interface TransactionArgument.
-//
-// DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputTransactionArgument is implemented by the following types:
-// DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputGasCoin
-// DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInput
-// DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputResult
-// The GraphQL type's documentation follows.
-//
-// An argument to a programmable transaction command.
-type DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputTransactionArgument interface {
-	implementsGraphQLInterfaceDevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputTransactionArgument()
-	// GetTypename returns the receiver's concrete GraphQL type-name (see interface doc for possible values).
-	GetTypename() string
-}
-
-func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputGasCoin) implementsGraphQLInterfaceDevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputTransactionArgument() {
-}
-func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInput) implementsGraphQLInterfaceDevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputTransactionArgument() {
-}
-func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputResult) implementsGraphQLInterfaceDevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputTransactionArgument() {
-}
-
-func __unmarshalDevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputTransactionArgument(b []byte, v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputTransactionArgument) error {
-	if string(b) == "null" {
-		return nil
-	}
-
-	var tn struct {
-		TypeName string `json:"__typename"`
-	}
-	err := json.Unmarshal(b, &tn)
-	if err != nil {
-		return err
-	}
-
-	switch tn.TypeName {
-	case "GasCoin":
-		*v = new(DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputGasCoin)
-		return json.Unmarshal(b, *v)
-	case "Input":
-		*v = new(DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInput)
-		return json.Unmarshal(b, *v)
-	case "Result":
-		*v = new(DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputResult)
-		return json.Unmarshal(b, *v)
-	case "":
-		return fmt.Errorf(
-			"response was missing TransactionArgument.__typename")
-	default:
-		return fmt.Errorf(
-			`unexpected concrete type for DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputTransactionArgument: "%v"`, tn.TypeName)
-	}
-}
-
-func __marshalDevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputTransactionArgument(v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputTransactionArgument) ([]byte, error) {
-
-	var typename string
-	switch v := (*v).(type) {
-	case *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputGasCoin:
-		typename = "GasCoin"
-
-		result := struct {
-			TypeName string `json:"__typename"`
-			*DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputGasCoin
-		}{typename, v}
-		return json.Marshal(result)
-	case *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInput:
-		typename = "Input"
-
-		result := struct {
-			TypeName string `json:"__typename"`
-			*DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInput
-		}{typename, v}
-		return json.Marshal(result)
-	case *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputResult:
-		typename = "Result"
-
-		result := struct {
-			TypeName string `json:"__typename"`
-			*DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputResult
-		}{typename, v}
-		return json.Marshal(result)
-	case nil:
-		return []byte("null"), nil
-	default:
-		return nil, fmt.Errorf(
-			`unexpected concrete type for DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationInputTransactionArgument: "%T"`, v)
-	}
-}
-
-// DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationTypeMoveType includes the requested fields of the GraphQL type MoveType.
-// The GraphQL type's documentation follows.
-//
-// Represents concrete types (no type parameters, no references).
-type DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationTypeMoveType struct {
-	// Flat representation of the type signature, as a displayable string.
-	Repr string `json:"repr"`
-}
-
-// GetRepr returns DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationTypeMoveType.Repr, and is useful for accessing the field via an interface.
-func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectMutatedReferencesDryRunMutationTypeMoveType) GetRepr() string {
-	return v.Repr
-}
-
-// DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectReturnValuesDryRunReturn includes the requested fields of the GraphQL type DryRunReturn.
-type DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectReturnValuesDryRunReturn struct {
-	Type DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectReturnValuesDryRunReturnTypeMoveType `json:"type"`
-	Bcs  iotago.Base64Data                                                                                                   `json:"bcs"`
-}
-
-// GetType returns DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectReturnValuesDryRunReturn.Type, and is useful for accessing the field via an interface.
-func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectReturnValuesDryRunReturn) GetType() DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectReturnValuesDryRunReturnTypeMoveType {
-	return v.Type
-}
-
-// GetBcs returns DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectReturnValuesDryRunReturn.Bcs, and is useful for accessing the field via an interface.
-func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectReturnValuesDryRunReturn) GetBcs() iotago.Base64Data {
-	return v.Bcs
-}
-
-// DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectReturnValuesDryRunReturnTypeMoveType includes the requested fields of the GraphQL type MoveType.
-// The GraphQL type's documentation follows.
-//
-// Represents concrete types (no type parameters, no references).
-type DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectReturnValuesDryRunReturnTypeMoveType struct {
-	// Flat representation of the type signature, as a displayable string.
-	Repr string `json:"repr"`
-}
-
-// GetRepr returns DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectReturnValuesDryRunReturnTypeMoveType.Repr, and is useful for accessing the field via an interface.
-func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultResultsDryRunEffectReturnValuesDryRunReturnTypeMoveType) GetRepr() string {
-	return v.Repr
-}
-
-// DevInspectTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock includes the requested fields of the GraphQL type TransactionBlock.
-type DevInspectTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock struct {
-	RPC_TRANSACTION_FIELDS `json:"-"`
-}
-
-// GetDigest returns DevInspectTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock.Digest, and is useful for accessing the field via an interface.
-func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock) GetDigest() string {
-	return v.RPC_TRANSACTION_FIELDS.Digest
-}
-
-// GetBcs returns DevInspectTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock.Bcs, and is useful for accessing the field via an interface.
-func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock) GetBcs() iotago.Base64Data {
-	return v.RPC_TRANSACTION_FIELDS.Bcs
-}
-
-// GetSender returns DevInspectTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock.Sender, and is useful for accessing the field via an interface.
-func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock) GetSender() RPC_TRANSACTION_FIELDSSenderAddress {
-	return v.RPC_TRANSACTION_FIELDS.Sender
-}
-
-// GetSignatures returns DevInspectTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock.Signatures, and is useful for accessing the field via an interface.
-func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock) GetSignatures() []iotago.Base64Data {
-	return v.RPC_TRANSACTION_FIELDS.Signatures
-}
-
-// GetEffects returns DevInspectTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock.Effects, and is useful for accessing the field via an interface.
-func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock) GetEffects() RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects {
-	return v.RPC_TRANSACTION_FIELDS.Effects
-}
-
-func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock) UnmarshalJSON(b []byte) error {
-
-	if string(b) == "null" {
-		return nil
-	}
-
-	var firstPass struct {
-		*DevInspectTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock
-		graphql.NoUnmarshalJSON
-	}
-	firstPass.DevInspectTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock = v
+	firstPass.BalanceChangeData = v
 
 	err := json.Unmarshal(b, &firstPass)
 	if err != nil {
@@ -395,26 +126,22 @@ func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultTransaction
 	}
 
 	err = json.Unmarshal(
-		b, &v.RPC_TRANSACTION_FIELDS)
+		b, &v.BALANCE_CHANGE)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-type __premarshalDevInspectTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock struct {
-	Digest string `json:"digest"`
+type __premarshalBalanceChangeData struct {
+	Owner BALANCE_CHANGEOwner `json:"owner"`
 
-	Bcs iotago.Base64Data `json:"bcs"`
+	Amount BigInt `json:"amount"`
 
-	Sender RPC_TRANSACTION_FIELDSSenderAddress `json:"sender"`
-
-	Signatures []iotago.Base64Data `json:"signatures"`
-
-	Effects RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects `json:"effects"`
+	CoinType BALANCE_CHANGECoinTypeMoveType `json:"coinType"`
 }
 
-func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock) MarshalJSON() ([]byte, error) {
+func (v *BalanceChangeData) MarshalJSON() ([]byte, error) {
 	premarshaled, err := v.__premarshalJSON()
 	if err != nil {
 		return nil, err
@@ -422,42 +149,13 @@ func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultTransaction
 	return json.Marshal(premarshaled)
 }
 
-func (v *DevInspectTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock) __premarshalJSON() (*__premarshalDevInspectTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock, error) {
-	var retval __premarshalDevInspectTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock
+func (v *BalanceChangeData) __premarshalJSON() (*__premarshalBalanceChangeData, error) {
+	var retval __premarshalBalanceChangeData
 
-	retval.Digest = v.RPC_TRANSACTION_FIELDS.Digest
-	retval.Bcs = v.RPC_TRANSACTION_FIELDS.Bcs
-	retval.Sender = v.RPC_TRANSACTION_FIELDS.Sender
-	retval.Signatures = v.RPC_TRANSACTION_FIELDS.Signatures
-	retval.Effects = v.RPC_TRANSACTION_FIELDS.Effects
+	retval.Owner = v.BALANCE_CHANGE.Owner
+	retval.Amount = v.BALANCE_CHANGE.Amount
+	retval.CoinType = v.BALANCE_CHANGE.CoinType
 	return &retval, nil
-}
-
-// DevInspectTransactionBlockResponse is returned by DevInspectTransactionBlock on success.
-type DevInspectTransactionBlockResponse struct {
-	// Simulate running a transaction to inspect its effects without
-	// committing to them on-chain.
-	//
-	// `txBytes` either a `TransactionData` struct or a `TransactionKind`
-	// struct, BCS-encoded and then Base64-encoded.  The expected
-	// type is controlled by the presence or absence of `txMeta`: If
-	// present, `txBytes` is assumed to be a `TransactionKind`, if
-	// absent, then `TransactionData`.
-	//
-	// `txMeta` the data that is missing from a `TransactionKind` to make
-	// a `TransactionData` (sender address and gas information).  All
-	// its fields are nullable.
-	//
-	// `skipChecks` optional flag to disable the usual verification
-	// checks that prevent access to objects that are owned by
-	// addresses other than the sender, and calling non-public,
-	// non-entry functions, and some other checks.  Defaults to false.
-	DryRunTransactionBlock DevInspectTransactionBlockDryRunTransactionBlockDryRunResult `json:"dryRunTransactionBlock"`
-}
-
-// GetDryRunTransactionBlock returns DevInspectTransactionBlockResponse.DryRunTransactionBlock, and is useful for accessing the field via an interface.
-func (v *DevInspectTransactionBlockResponse) GetDryRunTransactionBlock() DevInspectTransactionBlockDryRunTransactionBlockDryRunResult {
-	return v.DryRunTransactionBlock
 }
 
 // DryRunTransactionBlockDryRunTransactionBlockDryRunResult includes the requested fields of the GraphQL type DryRunResult.
@@ -465,101 +163,15 @@ type DryRunTransactionBlockDryRunTransactionBlockDryRunResult struct {
 	// The error that occurred during dry run execution, if any.
 	Error string `json:"error"`
 	// The transaction block representing the dry run execution.
-	Transaction DryRunTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock `json:"transaction"`
+	Transaction TxBlockData `json:"transaction"`
 }
 
 // GetError returns DryRunTransactionBlockDryRunTransactionBlockDryRunResult.Error, and is useful for accessing the field via an interface.
 func (v *DryRunTransactionBlockDryRunTransactionBlockDryRunResult) GetError() string { return v.Error }
 
 // GetTransaction returns DryRunTransactionBlockDryRunTransactionBlockDryRunResult.Transaction, and is useful for accessing the field via an interface.
-func (v *DryRunTransactionBlockDryRunTransactionBlockDryRunResult) GetTransaction() DryRunTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock {
+func (v *DryRunTransactionBlockDryRunTransactionBlockDryRunResult) GetTransaction() TxBlockData {
 	return v.Transaction
-}
-
-// DryRunTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock includes the requested fields of the GraphQL type TransactionBlock.
-type DryRunTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock struct {
-	RPC_TRANSACTION_FIELDS `json:"-"`
-}
-
-// GetDigest returns DryRunTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock.Digest, and is useful for accessing the field via an interface.
-func (v *DryRunTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock) GetDigest() string {
-	return v.RPC_TRANSACTION_FIELDS.Digest
-}
-
-// GetBcs returns DryRunTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock.Bcs, and is useful for accessing the field via an interface.
-func (v *DryRunTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock) GetBcs() iotago.Base64Data {
-	return v.RPC_TRANSACTION_FIELDS.Bcs
-}
-
-// GetSender returns DryRunTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock.Sender, and is useful for accessing the field via an interface.
-func (v *DryRunTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock) GetSender() RPC_TRANSACTION_FIELDSSenderAddress {
-	return v.RPC_TRANSACTION_FIELDS.Sender
-}
-
-// GetSignatures returns DryRunTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock.Signatures, and is useful for accessing the field via an interface.
-func (v *DryRunTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock) GetSignatures() []iotago.Base64Data {
-	return v.RPC_TRANSACTION_FIELDS.Signatures
-}
-
-// GetEffects returns DryRunTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock.Effects, and is useful for accessing the field via an interface.
-func (v *DryRunTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock) GetEffects() RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects {
-	return v.RPC_TRANSACTION_FIELDS.Effects
-}
-
-func (v *DryRunTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock) UnmarshalJSON(b []byte) error {
-
-	if string(b) == "null" {
-		return nil
-	}
-
-	var firstPass struct {
-		*DryRunTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock
-		graphql.NoUnmarshalJSON
-	}
-	firstPass.DryRunTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock = v
-
-	err := json.Unmarshal(b, &firstPass)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(
-		b, &v.RPC_TRANSACTION_FIELDS)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-type __premarshalDryRunTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock struct {
-	Digest string `json:"digest"`
-
-	Bcs iotago.Base64Data `json:"bcs"`
-
-	Sender RPC_TRANSACTION_FIELDSSenderAddress `json:"sender"`
-
-	Signatures []iotago.Base64Data `json:"signatures"`
-
-	Effects RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects `json:"effects"`
-}
-
-func (v *DryRunTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock) MarshalJSON() ([]byte, error) {
-	premarshaled, err := v.__premarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(premarshaled)
-}
-
-func (v *DryRunTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock) __premarshalJSON() (*__premarshalDryRunTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock, error) {
-	var retval __premarshalDryRunTransactionBlockDryRunTransactionBlockDryRunResultTransactionTransactionBlock
-
-	retval.Digest = v.RPC_TRANSACTION_FIELDS.Digest
-	retval.Bcs = v.RPC_TRANSACTION_FIELDS.Bcs
-	retval.Sender = v.RPC_TRANSACTION_FIELDS.Sender
-	retval.Signatures = v.RPC_TRANSACTION_FIELDS.Signatures
-	retval.Effects = v.RPC_TRANSACTION_FIELDS.Effects
-	return &retval, nil
 }
 
 // DryRunTransactionBlockResponse is returned by DryRunTransactionBlock on success.
@@ -604,44 +216,164 @@ func (v *DynamicFieldName) GetType() string { return v.Type }
 // GetBcs returns DynamicFieldName.Bcs, and is useful for accessing the field via an interface.
 func (v *DynamicFieldName) GetBcs() iotago.Base64Data { return v.Bcs }
 
-// Represents optional available filters for events.
-type EventFilter struct {
-	// Filter down to events from transactions sent by this address.
-	Sender iotago.Address `json:"sender"`
-	// Filter down to the events from this transaction (given by its
-	// transaction digest).
-	TransactionDigest string `json:"transactionDigest"`
-	// Events emitted by a particular module. An event is emitted by a
-	// particular module if some function in the module is called by a
-	// PTB and emits an event.
+// Event fields
+type EVENT_FIELDS struct {
+	// The Move module containing some function that when called by
+	// a programmable transaction block (PTB) emitted this event.
+	// For example, if a PTB invokes A::m1::foo, which internally
+	// calls A::m2::emit_event to emit an event,
+	// the sending module would be A::m1.
+	SendingModule EVENT_FIELDSSendingModuleMoveModule `json:"sendingModule"`
+	// Address of the sender of the event
+	Sender EVENT_FIELDSSenderAddress `json:"sender"`
+	// Representation of a Move value in JSON, where:
 	//
-	// Modules can be filtered by their package, or package::module.
-	// We currently do not support filtering by emitting module and event type
-	// at the same time so if both are provided in one filter, the query will
-	// error.
-	EmittingModule string `json:"emittingModule"`
-	// This field is used to specify the type of event emitted.
+	// - Addresses, IDs, and UIDs are represented in canonical form, as JSON
+	// strings.
+	// - Bools are represented by JSON boolean literals.
+	// - u8, u16, and u32 are represented as JSON numbers.
+	// - u64, u128, and u256 are represented as JSON strings.
+	// - Vectors are represented by JSON arrays.
+	// - Structs are represented by JSON objects.
+	// - Empty optional values are represented by `null`.
 	//
-	// Events can be filtered by their type's package, package::module,
-	// or their fully qualified type name.
-	//
-	// Generic types can be queried by either the generic type name, e.g.
-	// `0x2::coin::Coin`, or by the full type name, such as
-	// `0x2::coin::Coin<0x2::iota::IOTA>`.
-	EventType string `json:"eventType"`
+	// This form is offered as a less verbose convenience in cases where the
+	// layout of the type is known by the client.
+	Json json.RawMessage `json:"json"`
+	// UTC timestamp in milliseconds since epoch (1/1/1970)
+	Timestamp time.Time `json:"timestamp"`
 }
 
-// GetSender returns EventFilter.Sender, and is useful for accessing the field via an interface.
-func (v *EventFilter) GetSender() iotago.Address { return v.Sender }
+// GetSendingModule returns EVENT_FIELDS.SendingModule, and is useful for accessing the field via an interface.
+func (v *EVENT_FIELDS) GetSendingModule() EVENT_FIELDSSendingModuleMoveModule { return v.SendingModule }
 
-// GetTransactionDigest returns EventFilter.TransactionDigest, and is useful for accessing the field via an interface.
-func (v *EventFilter) GetTransactionDigest() string { return v.TransactionDigest }
+// GetSender returns EVENT_FIELDS.Sender, and is useful for accessing the field via an interface.
+func (v *EVENT_FIELDS) GetSender() EVENT_FIELDSSenderAddress { return v.Sender }
 
-// GetEmittingModule returns EventFilter.EmittingModule, and is useful for accessing the field via an interface.
-func (v *EventFilter) GetEmittingModule() string { return v.EmittingModule }
+// GetJson returns EVENT_FIELDS.Json, and is useful for accessing the field via an interface.
+func (v *EVENT_FIELDS) GetJson() json.RawMessage { return v.Json }
 
-// GetEventType returns EventFilter.EventType, and is useful for accessing the field via an interface.
-func (v *EventFilter) GetEventType() string { return v.EventType }
+// GetTimestamp returns EVENT_FIELDS.Timestamp, and is useful for accessing the field via an interface.
+func (v *EVENT_FIELDS) GetTimestamp() time.Time { return v.Timestamp }
+
+// EVENT_FIELDSSenderAddress includes the requested fields of the GraphQL type Address.
+// The GraphQL type's documentation follows.
+//
+// The 32-byte address that is an account address (corresponding to a public
+// key).
+type EVENT_FIELDSSenderAddress struct {
+	Address iotago.Address `json:"address"`
+}
+
+// GetAddress returns EVENT_FIELDSSenderAddress.Address, and is useful for accessing the field via an interface.
+func (v *EVENT_FIELDSSenderAddress) GetAddress() iotago.Address { return v.Address }
+
+// EVENT_FIELDSSendingModuleMoveModule includes the requested fields of the GraphQL type MoveModule.
+// The GraphQL type's documentation follows.
+//
+// Represents a module in Move, a library that defines struct types
+// and functions that operate on these types.
+type EVENT_FIELDSSendingModuleMoveModule struct {
+	// The package that this Move module was defined in
+	Package EVENT_FIELDSSendingModuleMoveModulePackageMovePackage `json:"package"`
+	// The module's (unqualified) name.
+	Name string `json:"name"`
+}
+
+// GetPackage returns EVENT_FIELDSSendingModuleMoveModule.Package, and is useful for accessing the field via an interface.
+func (v *EVENT_FIELDSSendingModuleMoveModule) GetPackage() EVENT_FIELDSSendingModuleMoveModulePackageMovePackage {
+	return v.Package
+}
+
+// GetName returns EVENT_FIELDSSendingModuleMoveModule.Name, and is useful for accessing the field via an interface.
+func (v *EVENT_FIELDSSendingModuleMoveModule) GetName() string { return v.Name }
+
+// EVENT_FIELDSSendingModuleMoveModulePackageMovePackage includes the requested fields of the GraphQL type MovePackage.
+// The GraphQL type's documentation follows.
+//
+// A MovePackage is a kind of Move object that represents code that has been
+// published on chain. It exposes information about its modules, type
+// definitions, functions, and dependencies.
+type EVENT_FIELDSSendingModuleMoveModulePackageMovePackage struct {
+	Address iotago.Address `json:"address"`
+}
+
+// GetAddress returns EVENT_FIELDSSendingModuleMoveModulePackageMovePackage.Address, and is useful for accessing the field via an interface.
+func (v *EVENT_FIELDSSendingModuleMoveModulePackageMovePackage) GetAddress() iotago.Address {
+	return v.Address
+}
+
+// EventData includes the requested fields of the GraphQL type Event.
+type EventData struct {
+	EVENT_FIELDS `json:"-"`
+}
+
+// GetSendingModule returns EventData.SendingModule, and is useful for accessing the field via an interface.
+func (v *EventData) GetSendingModule() EVENT_FIELDSSendingModuleMoveModule {
+	return v.EVENT_FIELDS.SendingModule
+}
+
+// GetSender returns EventData.Sender, and is useful for accessing the field via an interface.
+func (v *EventData) GetSender() EVENT_FIELDSSenderAddress { return v.EVENT_FIELDS.Sender }
+
+// GetJson returns EventData.Json, and is useful for accessing the field via an interface.
+func (v *EventData) GetJson() json.RawMessage { return v.EVENT_FIELDS.Json }
+
+// GetTimestamp returns EventData.Timestamp, and is useful for accessing the field via an interface.
+func (v *EventData) GetTimestamp() time.Time { return v.EVENT_FIELDS.Timestamp }
+
+func (v *EventData) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*EventData
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.EventData = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(
+		b, &v.EVENT_FIELDS)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type __premarshalEventData struct {
+	SendingModule EVENT_FIELDSSendingModuleMoveModule `json:"sendingModule"`
+
+	Sender EVENT_FIELDSSenderAddress `json:"sender"`
+
+	Json json.RawMessage `json:"json"`
+
+	Timestamp time.Time `json:"timestamp"`
+}
+
+func (v *EventData) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *EventData) __premarshalJSON() (*__premarshalEventData, error) {
+	var retval __premarshalEventData
+
+	retval.SendingModule = v.EVENT_FIELDS.SendingModule
+	retval.Sender = v.EVENT_FIELDS.Sender
+	retval.Json = v.EVENT_FIELDS.Json
+	retval.Timestamp = v.EVENT_FIELDS.Timestamp
+	return &retval, nil
+}
 
 // ExecuteTransactionBlockExecuteTransactionBlockExecutionResult includes the requested fields of the GraphQL type ExecutionResult.
 // The GraphQL type's documentation follows.
@@ -654,7 +386,7 @@ type ExecuteTransactionBlockExecuteTransactionBlockExecutionResult struct {
 	// The effects of the executed transaction. Since the transaction was just
 	// executed and not indexed yet, fields including `balance_changes`,
 	// `timestamp` and `checkpoint` are not available.
-	Effects ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffects `json:"effects"`
+	Effects TxEffects `json:"effects"`
 }
 
 // GetErrors returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResult.Errors, and is useful for accessing the field via an interface.
@@ -663,875 +395,8 @@ func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResult) GetError
 }
 
 // GetEffects returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResult.Effects, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResult) GetEffects() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffects {
+func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResult) GetEffects() TxEffects {
 	return v.Effects
-}
-
-// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffects includes the requested fields of the GraphQL type TransactionBlockEffects.
-// The GraphQL type's documentation follows.
-//
-// The effects representing the result of executing a transaction block.
-type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffects struct {
-	// The transaction that ran to produce these effects.
-	TransactionBlock ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsTransactionBlock `json:"transactionBlock"`
-	// The effect this transaction had on objects on-chain.
-	ObjectChanges ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnection `json:"objectChanges"`
-	// The effect this transaction had on the balances (sum of coin values per
-	// coin type) of addresses and objects.
-	BalanceChanges ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnection `json:"balanceChanges"`
-}
-
-// GetTransactionBlock returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffects.TransactionBlock, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffects) GetTransactionBlock() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsTransactionBlock {
-	return v.TransactionBlock
-}
-
-// GetObjectChanges returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffects.ObjectChanges, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffects) GetObjectChanges() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnection {
-	return v.ObjectChanges
-}
-
-// GetBalanceChanges returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffects.BalanceChanges, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffects) GetBalanceChanges() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnection {
-	return v.BalanceChanges
-}
-
-// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnection includes the requested fields of the GraphQL type BalanceChangeConnection.
-type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnection struct {
-	// A list of nodes.
-	Nodes []ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange `json:"nodes"`
-}
-
-// GetNodes returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnection) GetNodes() []ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange {
-	return v.Nodes
-}
-
-// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange includes the requested fields of the GraphQL type BalanceChange.
-// The GraphQL type's documentation follows.
-//
-// Effects to the balance (sum of coin values per coin type) owned by an
-// address or object.
-type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange struct {
-	// The address or object whose balance has changed.
-	Owner ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner `json:"owner"`
-	// The signed balance change.
-	Amount BigInt `json:"amount"`
-	// The inner type of the coin whose balance has changed (e.g.
-	// `0x2::iota::IOTA`).
-	CoinType ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeCoinTypeMoveType `json:"coinType"`
-}
-
-// GetOwner returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange.Owner, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange) GetOwner() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner {
-	return v.Owner
-}
-
-// GetAmount returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange.Amount, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange) GetAmount() BigInt {
-	return v.Amount
-}
-
-// GetCoinType returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange.CoinType, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange) GetCoinType() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeCoinTypeMoveType {
-	return v.CoinType
-}
-
-// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeCoinTypeMoveType includes the requested fields of the GraphQL type MoveType.
-// The GraphQL type's documentation follows.
-//
-// Represents concrete types (no type parameters, no references).
-type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeCoinTypeMoveType struct {
-	// Flat representation of the type signature, as a displayable string.
-	Repr string `json:"repr"`
-}
-
-// GetRepr returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeCoinTypeMoveType.Repr, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeCoinTypeMoveType) GetRepr() string {
-	return v.Repr
-}
-
-// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner includes the requested fields of the GraphQL type Owner.
-// The GraphQL type's documentation follows.
-//
-// An Owner is an entity that can own an object. Each Owner is identified by a
-// IotaAddress which represents either an Address (corresponding to a public
-// key of an account) or an Object, but never both (it is not known up-front
-// whether a given Owner is an Address or an Object).
-type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner struct {
-	AsAddress ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsAddress `json:"asAddress"`
-}
-
-// GetAsAddress returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner.AsAddress, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner) GetAsAddress() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsAddress {
-	return v.AsAddress
-}
-
-// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsAddress includes the requested fields of the GraphQL type Address.
-// The GraphQL type's documentation follows.
-//
-// The 32-byte address that is an account address (corresponding to a public
-// key).
-type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsAddress struct {
-	Address iotago.Address `json:"address"`
-}
-
-// GetAddress returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsAddress.Address, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsAddress) GetAddress() iotago.Address {
-	return v.Address
-}
-
-// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnection includes the requested fields of the GraphQL type ObjectChangeConnection.
-type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnection struct {
-	// A list of nodes.
-	Nodes []ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange `json:"nodes"`
-}
-
-// GetNodes returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnection) GetNodes() []ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange {
-	return v.Nodes
-}
-
-// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange includes the requested fields of the GraphQL type ObjectChange.
-// The GraphQL type's documentation follows.
-//
-// Effect on an individual Object (keyed by its ID).
-type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange struct {
-	// The address of the object that has changed.
-	Address iotago.Address `json:"address"`
-	// Whether the ID was created in this transaction.
-	IdCreated bool `json:"idCreated"`
-	// Whether the ID was deleted in this transaction.
-	IdDeleted bool `json:"idDeleted"`
-	// The contents of the object immediately before the transaction.
-	InputState ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject `json:"inputState"`
-	// The contents of the object immediately after the transaction.
-	OutputState ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject `json:"outputState"`
-}
-
-// GetAddress returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange.Address, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange) GetAddress() iotago.Address {
-	return v.Address
-}
-
-// GetIdCreated returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange.IdCreated, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange) GetIdCreated() bool {
-	return v.IdCreated
-}
-
-// GetIdDeleted returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange.IdDeleted, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange) GetIdDeleted() bool {
-	return v.IdDeleted
-}
-
-// GetInputState returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange.InputState, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange) GetInputState() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject {
-	return v.InputState
-}
-
-// GetOutputState returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange.OutputState, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange) GetOutputState() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject {
-	return v.OutputState
-}
-
-// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject includes the requested fields of the GraphQL type Object.
-// The GraphQL type's documentation follows.
-//
-// An object in IOTA is a package (set of Move bytecode modules) or object
-// (typed data structure with fields) with additional metadata detailing its
-// id, version, transaction digest, owner field indicating how this object can
-// be accessed.
-type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject struct {
-	Version uint64 `json:"version"`
-	// 32-byte hash that identifies the object's current contents, encoded as a
-	// Base58 string.
-	Digest string `json:"digest"`
-	// Attempts to convert the object into a MoveObject
-	AsMoveObject ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObject `json:"asMoveObject"`
-}
-
-// GetVersion returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject.Version, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject) GetVersion() uint64 {
-	return v.Version
-}
-
-// GetDigest returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject.Digest, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject) GetDigest() string {
-	return v.Digest
-}
-
-// GetAsMoveObject returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject.AsMoveObject, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject) GetAsMoveObject() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObject {
-	return v.AsMoveObject
-}
-
-// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObject includes the requested fields of the GraphQL type MoveObject.
-// The GraphQL type's documentation follows.
-//
-// The representation of an object as a Move Object, which exposes additional
-// information (content, module that governs it, version, is transferable,
-// etc.) about this object.
-type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObject struct {
-	// Displays the contents of the Move object in a JSON string and through
-	// GraphQL types. Also provides the flat representation of the type
-	// signature, and the BCS of the corresponding data.
-	Contents ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValue `json:"contents"`
-}
-
-// GetContents returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObject.Contents, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObject) GetContents() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValue {
-	return v.Contents
-}
-
-// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValue includes the requested fields of the GraphQL type MoveValue.
-type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValue struct {
-	// The value's Move type.
-	Type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValueTypeMoveType `json:"type"`
-}
-
-// GetType returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValue.Type, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValue) GetType() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValueTypeMoveType {
-	return v.Type
-}
-
-// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValueTypeMoveType includes the requested fields of the GraphQL type MoveType.
-// The GraphQL type's documentation follows.
-//
-// Represents concrete types (no type parameters, no references).
-type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValueTypeMoveType struct {
-	// Flat representation of the type signature, as a displayable string.
-	Repr string `json:"repr"`
-}
-
-// GetRepr returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValueTypeMoveType.Repr, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValueTypeMoveType) GetRepr() string {
-	return v.Repr
-}
-
-// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject includes the requested fields of the GraphQL type Object.
-// The GraphQL type's documentation follows.
-//
-// An object in IOTA is a package (set of Move bytecode modules) or object
-// (typed data structure with fields) with additional metadata detailing its
-// id, version, transaction digest, owner field indicating how this object can
-// be accessed.
-type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject struct {
-	Version uint64 `json:"version"`
-	// 32-byte hash that identifies the object's current contents, encoded as a
-	// Base58 string.
-	Digest string `json:"digest"`
-	// The owner type of this object: Immutable, Shared, Parent, Address
-	// Immutable and Shared Objects do not have owners.
-	Owner ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner `json:"-"`
-	// Attempts to convert the object into a MoveObject
-	AsMoveObject ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObject `json:"asMoveObject"`
-}
-
-// GetVersion returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject.Version, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject) GetVersion() uint64 {
-	return v.Version
-}
-
-// GetDigest returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject.Digest, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject) GetDigest() string {
-	return v.Digest
-}
-
-// GetOwner returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject.Owner, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject) GetOwner() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner {
-	return v.Owner
-}
-
-// GetAsMoveObject returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject.AsMoveObject, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject) GetAsMoveObject() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObject {
-	return v.AsMoveObject
-}
-
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject) UnmarshalJSON(b []byte) error {
-
-	if string(b) == "null" {
-		return nil
-	}
-
-	var firstPass struct {
-		*ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject
-		Owner json.RawMessage `json:"owner"`
-		graphql.NoUnmarshalJSON
-	}
-	firstPass.ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject = v
-
-	err := json.Unmarshal(b, &firstPass)
-	if err != nil {
-		return err
-	}
-
-	{
-		dst := &v.Owner
-		src := firstPass.Owner
-		if len(src) != 0 && string(src) != "null" {
-			err = __unmarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner(
-				src, dst)
-			if err != nil {
-				return fmt.Errorf(
-					"unable to unmarshal ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject.Owner: %w", err)
-			}
-		}
-	}
-	return nil
-}
-
-type __premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject struct {
-	Version uint64 `json:"version"`
-
-	Digest string `json:"digest"`
-
-	Owner json.RawMessage `json:"owner"`
-
-	AsMoveObject ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObject `json:"asMoveObject"`
-}
-
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject) MarshalJSON() ([]byte, error) {
-	premarshaled, err := v.__premarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(premarshaled)
-}
-
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject) __premarshalJSON() (*__premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject, error) {
-	var retval __premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject
-
-	retval.Version = v.Version
-	retval.Digest = v.Digest
-	{
-
-		dst := &retval.Owner
-		src := v.Owner
-		var err error
-		*dst, err = __marshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner(
-			&src)
-		if err != nil {
-			return nil, fmt.Errorf(
-				"unable to marshal ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject.Owner: %w", err)
-		}
-	}
-	retval.AsMoveObject = v.AsMoveObject
-	return &retval, nil
-}
-
-// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObject includes the requested fields of the GraphQL type MoveObject.
-// The GraphQL type's documentation follows.
-//
-// The representation of an object as a Move Object, which exposes additional
-// information (content, module that governs it, version, is transferable,
-// etc.) about this object.
-type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObject struct {
-	// Displays the contents of the Move object in a JSON string and through
-	// GraphQL types. Also provides the flat representation of the type
-	// signature, and the BCS of the corresponding data.
-	Contents ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValue `json:"contents"`
-}
-
-// GetContents returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObject.Contents, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObject) GetContents() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValue {
-	return v.Contents
-}
-
-// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValue includes the requested fields of the GraphQL type MoveValue.
-type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValue struct {
-	// The value's Move type.
-	Type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValueTypeMoveType `json:"type"`
-}
-
-// GetType returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValue.Type, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValue) GetType() ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValueTypeMoveType {
-	return v.Type
-}
-
-// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValueTypeMoveType includes the requested fields of the GraphQL type MoveType.
-// The GraphQL type's documentation follows.
-//
-// Represents concrete types (no type parameters, no references).
-type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValueTypeMoveType struct {
-	// Flat representation of the type signature, as a displayable string.
-	Repr string `json:"repr"`
-}
-
-// GetRepr returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValueTypeMoveType.Repr, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValueTypeMoveType) GetRepr() string {
-	return v.Repr
-}
-
-// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner includes the requested fields of the GraphQL interface ObjectOwner.
-//
-// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner is implemented by the following types:
-// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner
-// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable
-// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent
-// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared
-// The GraphQL type's documentation follows.
-//
-// The object's owner type: Immutable, Shared, Parent, or Address.
-type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner interface {
-	implementsGraphQLInterfaceExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner()
-	// GetTypename returns the receiver's concrete GraphQL type-name (see interface doc for possible values).
-	GetTypename() string
-	RPC_OBJECT_OWNER_FIELDS
-}
-
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner) implementsGraphQLInterfaceExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner() {
-}
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable) implementsGraphQLInterfaceExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner() {
-}
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent) implementsGraphQLInterfaceExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner() {
-}
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared) implementsGraphQLInterfaceExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner() {
-}
-
-func __unmarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner(b []byte, v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner) error {
-	if string(b) == "null" {
-		return nil
-	}
-
-	var tn struct {
-		TypeName string `json:"__typename"`
-	}
-	err := json.Unmarshal(b, &tn)
-	if err != nil {
-		return err
-	}
-
-	switch tn.TypeName {
-	case "AddressOwner":
-		*v = new(ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner)
-		return json.Unmarshal(b, *v)
-	case "Immutable":
-		*v = new(ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable)
-		return json.Unmarshal(b, *v)
-	case "Parent":
-		*v = new(ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent)
-		return json.Unmarshal(b, *v)
-	case "Shared":
-		*v = new(ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared)
-		return json.Unmarshal(b, *v)
-	case "":
-		return fmt.Errorf(
-			"response was missing ObjectOwner.__typename")
-	default:
-		return fmt.Errorf(
-			`unexpected concrete type for ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner: "%v"`, tn.TypeName)
-	}
-}
-
-func __marshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner(v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner) ([]byte, error) {
-
-	var typename string
-	switch v := (*v).(type) {
-	case *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner:
-		typename = "AddressOwner"
-
-		premarshaled, err := v.__premarshalJSON()
-		if err != nil {
-			return nil, err
-		}
-		result := struct {
-			TypeName string `json:"__typename"`
-			*__premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner
-		}{typename, premarshaled}
-		return json.Marshal(result)
-	case *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable:
-		typename = "Immutable"
-
-		premarshaled, err := v.__premarshalJSON()
-		if err != nil {
-			return nil, err
-		}
-		result := struct {
-			TypeName string `json:"__typename"`
-			*__premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable
-		}{typename, premarshaled}
-		return json.Marshal(result)
-	case *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent:
-		typename = "Parent"
-
-		premarshaled, err := v.__premarshalJSON()
-		if err != nil {
-			return nil, err
-		}
-		result := struct {
-			TypeName string `json:"__typename"`
-			*__premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent
-		}{typename, premarshaled}
-		return json.Marshal(result)
-	case *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared:
-		typename = "Shared"
-
-		premarshaled, err := v.__premarshalJSON()
-		if err != nil {
-			return nil, err
-		}
-		result := struct {
-			TypeName string `json:"__typename"`
-			*__premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared
-		}{typename, premarshaled}
-		return json.Marshal(result)
-	case nil:
-		return []byte("null"), nil
-	default:
-		return nil, fmt.Errorf(
-			`unexpected concrete type for ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwner: "%T"`, v)
-	}
-}
-
-// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner includes the requested fields of the GraphQL type AddressOwner.
-// The GraphQL type's documentation follows.
-//
-// An address-owned object is owned by a specific 32-byte address that is
-// either an account address (derived from a particular signature scheme) or
-// an object ID. An address-owned object is accessible only to its owner and no
-// others.
-type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner struct {
-	Typename                            string `json:"__typename"`
-	RPC_OBJECT_OWNER_FIELDSAddressOwner `json:"-"`
-}
-
-// GetTypename returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner.Typename, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner) GetTypename() string {
-	return v.Typename
-}
-
-// GetOwner returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner.Owner, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner) GetOwner() RPC_OBJECT_OWNER_FIELDSOwner {
-	return v.RPC_OBJECT_OWNER_FIELDSAddressOwner.Owner
-}
-
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner) UnmarshalJSON(b []byte) error {
-
-	if string(b) == "null" {
-		return nil
-	}
-
-	var firstPass struct {
-		*ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner
-		graphql.NoUnmarshalJSON
-	}
-	firstPass.ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner = v
-
-	err := json.Unmarshal(b, &firstPass)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(
-		b, &v.RPC_OBJECT_OWNER_FIELDSAddressOwner)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-type __premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner struct {
-	Typename string `json:"__typename"`
-
-	Owner RPC_OBJECT_OWNER_FIELDSOwner `json:"owner"`
-}
-
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner) MarshalJSON() ([]byte, error) {
-	premarshaled, err := v.__premarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(premarshaled)
-}
-
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner) __premarshalJSON() (*__premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner, error) {
-	var retval __premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerAddressOwner
-
-	retval.Typename = v.Typename
-	retval.Owner = v.RPC_OBJECT_OWNER_FIELDSAddressOwner.Owner
-	return &retval, nil
-}
-
-// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable includes the requested fields of the GraphQL type Immutable.
-// The GraphQL type's documentation follows.
-//
-// An immutable object is an object that can't be mutated, transferred, or
-// deleted. Immutable objects have no owner, so anyone can use them.
-type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable struct {
-	Typename                         string `json:"__typename"`
-	RPC_OBJECT_OWNER_FIELDSImmutable `json:"-"`
-}
-
-// GetTypename returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable.Typename, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable) GetTypename() string {
-	return v.Typename
-}
-
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable) UnmarshalJSON(b []byte) error {
-
-	if string(b) == "null" {
-		return nil
-	}
-
-	var firstPass struct {
-		*ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable
-		graphql.NoUnmarshalJSON
-	}
-	firstPass.ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable = v
-
-	err := json.Unmarshal(b, &firstPass)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(
-		b, &v.RPC_OBJECT_OWNER_FIELDSImmutable)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-type __premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable struct {
-	Typename string `json:"__typename"`
-}
-
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable) MarshalJSON() ([]byte, error) {
-	premarshaled, err := v.__premarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(premarshaled)
-}
-
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable) __premarshalJSON() (*__premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable, error) {
-	var retval __premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerImmutable
-
-	retval.Typename = v.Typename
-	return &retval, nil
-}
-
-// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent includes the requested fields of the GraphQL type Parent.
-// The GraphQL type's documentation follows.
-//
-// If the object's owner is a Parent, this object is part of a dynamic field
-// (it is the value of the dynamic field, or the intermediate Field object
-// itself). Also note that if the owner is a parent, then it's guaranteed to be
-// an object.
-type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent struct {
-	Typename                      string `json:"__typename"`
-	RPC_OBJECT_OWNER_FIELDSParent `json:"-"`
-}
-
-// GetTypename returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent.Typename, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent) GetTypename() string {
-	return v.Typename
-}
-
-// GetParent returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent.Parent, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent) GetParent() RPC_OBJECT_OWNER_FIELDSParentObject {
-	return v.RPC_OBJECT_OWNER_FIELDSParent.Parent
-}
-
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent) UnmarshalJSON(b []byte) error {
-
-	if string(b) == "null" {
-		return nil
-	}
-
-	var firstPass struct {
-		*ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent
-		graphql.NoUnmarshalJSON
-	}
-	firstPass.ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent = v
-
-	err := json.Unmarshal(b, &firstPass)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(
-		b, &v.RPC_OBJECT_OWNER_FIELDSParent)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-type __premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent struct {
-	Typename string `json:"__typename"`
-
-	Parent RPC_OBJECT_OWNER_FIELDSParentObject `json:"parent"`
-}
-
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent) MarshalJSON() ([]byte, error) {
-	premarshaled, err := v.__premarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(premarshaled)
-}
-
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent) __premarshalJSON() (*__premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent, error) {
-	var retval __premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerParent
-
-	retval.Typename = v.Typename
-	retval.Parent = v.RPC_OBJECT_OWNER_FIELDSParent.Parent
-	return &retval, nil
-}
-
-// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared includes the requested fields of the GraphQL type Shared.
-// The GraphQL type's documentation follows.
-//
-// A shared object is an object that is shared using the
-// 0x2::transfer::share_object function. Unlike owned objects, once an object
-// is shared, it stays mutable and is accessible by anyone.
-type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared struct {
-	Typename                      string `json:"__typename"`
-	RPC_OBJECT_OWNER_FIELDSShared `json:"-"`
-}
-
-// GetTypename returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared.Typename, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared) GetTypename() string {
-	return v.Typename
-}
-
-// GetInitialSharedVersion returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared.InitialSharedVersion, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared) GetInitialSharedVersion() uint64 {
-	return v.RPC_OBJECT_OWNER_FIELDSShared.InitialSharedVersion
-}
-
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared) UnmarshalJSON(b []byte) error {
-
-	if string(b) == "null" {
-		return nil
-	}
-
-	var firstPass struct {
-		*ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared
-		graphql.NoUnmarshalJSON
-	}
-	firstPass.ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared = v
-
-	err := json.Unmarshal(b, &firstPass)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(
-		b, &v.RPC_OBJECT_OWNER_FIELDSShared)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-type __premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared struct {
-	Typename string `json:"__typename"`
-
-	InitialSharedVersion uint64 `json:"initialSharedVersion"`
-}
-
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared) MarshalJSON() ([]byte, error) {
-	premarshaled, err := v.__premarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(premarshaled)
-}
-
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared) __premarshalJSON() (*__premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared, error) {
-	var retval __premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectOwnerShared
-
-	retval.Typename = v.Typename
-	retval.InitialSharedVersion = v.RPC_OBJECT_OWNER_FIELDSShared.InitialSharedVersion
-	return &retval, nil
-}
-
-// ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsTransactionBlock includes the requested fields of the GraphQL type TransactionBlock.
-type ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsTransactionBlock struct {
-	RPC_TRANSACTION_FIELDS `json:"-"`
-}
-
-// GetDigest returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsTransactionBlock.Digest, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsTransactionBlock) GetDigest() string {
-	return v.RPC_TRANSACTION_FIELDS.Digest
-}
-
-// GetBcs returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsTransactionBlock.Bcs, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsTransactionBlock) GetBcs() iotago.Base64Data {
-	return v.RPC_TRANSACTION_FIELDS.Bcs
-}
-
-// GetSender returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsTransactionBlock.Sender, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsTransactionBlock) GetSender() RPC_TRANSACTION_FIELDSSenderAddress {
-	return v.RPC_TRANSACTION_FIELDS.Sender
-}
-
-// GetSignatures returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsTransactionBlock.Signatures, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsTransactionBlock) GetSignatures() []iotago.Base64Data {
-	return v.RPC_TRANSACTION_FIELDS.Signatures
-}
-
-// GetEffects returns ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsTransactionBlock.Effects, and is useful for accessing the field via an interface.
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsTransactionBlock) GetEffects() RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects {
-	return v.RPC_TRANSACTION_FIELDS.Effects
-}
-
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsTransactionBlock) UnmarshalJSON(b []byte) error {
-
-	if string(b) == "null" {
-		return nil
-	}
-
-	var firstPass struct {
-		*ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsTransactionBlock
-		graphql.NoUnmarshalJSON
-	}
-	firstPass.ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsTransactionBlock = v
-
-	err := json.Unmarshal(b, &firstPass)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(
-		b, &v.RPC_TRANSACTION_FIELDS)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-type __premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsTransactionBlock struct {
-	Digest string `json:"digest"`
-
-	Bcs iotago.Base64Data `json:"bcs"`
-
-	Sender RPC_TRANSACTION_FIELDSSenderAddress `json:"sender"`
-
-	Signatures []iotago.Base64Data `json:"signatures"`
-
-	Effects RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects `json:"effects"`
-}
-
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsTransactionBlock) MarshalJSON() ([]byte, error) {
-	premarshaled, err := v.__premarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(premarshaled)
-}
-
-func (v *ExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsTransactionBlock) __premarshalJSON() (*__premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsTransactionBlock, error) {
-	var retval __premarshalExecuteTransactionBlockExecuteTransactionBlockExecutionResultEffectsTransactionBlockEffectsTransactionBlock
-
-	retval.Digest = v.RPC_TRANSACTION_FIELDS.Digest
-	retval.Bcs = v.RPC_TRANSACTION_FIELDS.Bcs
-	retval.Sender = v.RPC_TRANSACTION_FIELDS.Sender
-	retval.Signatures = v.RPC_TRANSACTION_FIELDS.Signatures
-	retval.Effects = v.RPC_TRANSACTION_FIELDS.Effects
-	return &retval, nil
 }
 
 // ExecuteTransactionBlockResponse is returned by ExecuteTransactionBlock on success.
@@ -1561,6 +426,21 @@ type ExecuteTransactionBlockResponse struct {
 // GetExecuteTransactionBlock returns ExecuteTransactionBlockResponse.ExecuteTransactionBlock, and is useful for accessing the field via an interface.
 func (v *ExecuteTransactionBlockResponse) GetExecuteTransactionBlock() ExecuteTransactionBlockExecuteTransactionBlockExecutionResult {
 	return v.ExecuteTransactionBlock
+}
+
+// The execution status of this transaction block: success or failure.
+type ExecutionStatus string
+
+const (
+	// The transaction block was successfully executed
+	ExecutionStatusSuccess ExecutionStatus = "SUCCESS"
+	// The transaction block could not be executed
+	ExecutionStatusFailure ExecutionStatus = "FAILURE"
+)
+
+var AllExecutionStatus = []ExecutionStatus{
+	ExecutionStatusSuccess,
+	ExecutionStatusFailure,
 }
 
 // GetAllBalancesAddress includes the requested fields of the GraphQL type Address.
@@ -5635,99 +4515,11 @@ func (v *GetStakesResponse) GetAddress() GetStakesAddress { return v.Address }
 // GetTransactionBlockResponse is returned by GetTransactionBlock on success.
 type GetTransactionBlockResponse struct {
 	// Fetch a transaction block by its transaction digest.
-	TransactionBlock GetTransactionBlockTransactionBlock `json:"transactionBlock"`
+	TransactionBlock TxBlockData `json:"transactionBlock"`
 }
 
 // GetTransactionBlock returns GetTransactionBlockResponse.TransactionBlock, and is useful for accessing the field via an interface.
-func (v *GetTransactionBlockResponse) GetTransactionBlock() GetTransactionBlockTransactionBlock {
-	return v.TransactionBlock
-}
-
-// GetTransactionBlockTransactionBlock includes the requested fields of the GraphQL type TransactionBlock.
-type GetTransactionBlockTransactionBlock struct {
-	RPC_TRANSACTION_FIELDS `json:"-"`
-}
-
-// GetDigest returns GetTransactionBlockTransactionBlock.Digest, and is useful for accessing the field via an interface.
-func (v *GetTransactionBlockTransactionBlock) GetDigest() string {
-	return v.RPC_TRANSACTION_FIELDS.Digest
-}
-
-// GetBcs returns GetTransactionBlockTransactionBlock.Bcs, and is useful for accessing the field via an interface.
-func (v *GetTransactionBlockTransactionBlock) GetBcs() iotago.Base64Data {
-	return v.RPC_TRANSACTION_FIELDS.Bcs
-}
-
-// GetSender returns GetTransactionBlockTransactionBlock.Sender, and is useful for accessing the field via an interface.
-func (v *GetTransactionBlockTransactionBlock) GetSender() RPC_TRANSACTION_FIELDSSenderAddress {
-	return v.RPC_TRANSACTION_FIELDS.Sender
-}
-
-// GetSignatures returns GetTransactionBlockTransactionBlock.Signatures, and is useful for accessing the field via an interface.
-func (v *GetTransactionBlockTransactionBlock) GetSignatures() []iotago.Base64Data {
-	return v.RPC_TRANSACTION_FIELDS.Signatures
-}
-
-// GetEffects returns GetTransactionBlockTransactionBlock.Effects, and is useful for accessing the field via an interface.
-func (v *GetTransactionBlockTransactionBlock) GetEffects() RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects {
-	return v.RPC_TRANSACTION_FIELDS.Effects
-}
-
-func (v *GetTransactionBlockTransactionBlock) UnmarshalJSON(b []byte) error {
-
-	if string(b) == "null" {
-		return nil
-	}
-
-	var firstPass struct {
-		*GetTransactionBlockTransactionBlock
-		graphql.NoUnmarshalJSON
-	}
-	firstPass.GetTransactionBlockTransactionBlock = v
-
-	err := json.Unmarshal(b, &firstPass)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(
-		b, &v.RPC_TRANSACTION_FIELDS)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-type __premarshalGetTransactionBlockTransactionBlock struct {
-	Digest string `json:"digest"`
-
-	Bcs iotago.Base64Data `json:"bcs"`
-
-	Sender RPC_TRANSACTION_FIELDSSenderAddress `json:"sender"`
-
-	Signatures []iotago.Base64Data `json:"signatures"`
-
-	Effects RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects `json:"effects"`
-}
-
-func (v *GetTransactionBlockTransactionBlock) MarshalJSON() ([]byte, error) {
-	premarshaled, err := v.__premarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(premarshaled)
-}
-
-func (v *GetTransactionBlockTransactionBlock) __premarshalJSON() (*__premarshalGetTransactionBlockTransactionBlock, error) {
-	var retval __premarshalGetTransactionBlockTransactionBlock
-
-	retval.Digest = v.RPC_TRANSACTION_FIELDS.Digest
-	retval.Bcs = v.RPC_TRANSACTION_FIELDS.Bcs
-	retval.Sender = v.RPC_TRANSACTION_FIELDS.Sender
-	retval.Signatures = v.RPC_TRANSACTION_FIELDS.Signatures
-	retval.Effects = v.RPC_TRANSACTION_FIELDS.Effects
-	return &retval, nil
-}
+func (v *GetTransactionBlockResponse) GetTransactionBlock() TxBlockData { return v.TransactionBlock }
 
 // MultiGetObjectsObjectsObjectConnection includes the requested fields of the GraphQL type ObjectConnection.
 type MultiGetObjectsObjectsObjectConnection struct {
@@ -5966,7 +4758,7 @@ type MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnection struct
 	// Information to aid in pagination.
 	PageInfo MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionPageInfo `json:"pageInfo"`
 	// A list of nodes.
-	Nodes []MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock `json:"nodes"`
+	Nodes []TxBlockData `json:"nodes"`
 }
 
 // GetPageInfo returns MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnection.PageInfo, and is useful for accessing the field via an interface.
@@ -5975,94 +4767,8 @@ func (v *MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnection) G
 }
 
 // GetNodes returns MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnection) GetNodes() []MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock {
+func (v *MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnection) GetNodes() []TxBlockData {
 	return v.Nodes
-}
-
-// MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock includes the requested fields of the GraphQL type TransactionBlock.
-type MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock struct {
-	RPC_TRANSACTION_FIELDS `json:"-"`
-}
-
-// GetDigest returns MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock.Digest, and is useful for accessing the field via an interface.
-func (v *MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock) GetDigest() string {
-	return v.RPC_TRANSACTION_FIELDS.Digest
-}
-
-// GetBcs returns MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock.Bcs, and is useful for accessing the field via an interface.
-func (v *MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock) GetBcs() iotago.Base64Data {
-	return v.RPC_TRANSACTION_FIELDS.Bcs
-}
-
-// GetSender returns MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock.Sender, and is useful for accessing the field via an interface.
-func (v *MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock) GetSender() RPC_TRANSACTION_FIELDSSenderAddress {
-	return v.RPC_TRANSACTION_FIELDS.Sender
-}
-
-// GetSignatures returns MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock.Signatures, and is useful for accessing the field via an interface.
-func (v *MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock) GetSignatures() []iotago.Base64Data {
-	return v.RPC_TRANSACTION_FIELDS.Signatures
-}
-
-// GetEffects returns MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock.Effects, and is useful for accessing the field via an interface.
-func (v *MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock) GetEffects() RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects {
-	return v.RPC_TRANSACTION_FIELDS.Effects
-}
-
-func (v *MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock) UnmarshalJSON(b []byte) error {
-
-	if string(b) == "null" {
-		return nil
-	}
-
-	var firstPass struct {
-		*MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock
-		graphql.NoUnmarshalJSON
-	}
-	firstPass.MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock = v
-
-	err := json.Unmarshal(b, &firstPass)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(
-		b, &v.RPC_TRANSACTION_FIELDS)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-type __premarshalMultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock struct {
-	Digest string `json:"digest"`
-
-	Bcs iotago.Base64Data `json:"bcs"`
-
-	Sender RPC_TRANSACTION_FIELDSSenderAddress `json:"sender"`
-
-	Signatures []iotago.Base64Data `json:"signatures"`
-
-	Effects RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects `json:"effects"`
-}
-
-func (v *MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock) MarshalJSON() ([]byte, error) {
-	premarshaled, err := v.__premarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(premarshaled)
-}
-
-func (v *MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock) __premarshalJSON() (*__premarshalMultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock, error) {
-	var retval __premarshalMultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock
-
-	retval.Digest = v.RPC_TRANSACTION_FIELDS.Digest
-	retval.Bcs = v.RPC_TRANSACTION_FIELDS.Bcs
-	retval.Sender = v.RPC_TRANSACTION_FIELDS.Sender
-	retval.Signatures = v.RPC_TRANSACTION_FIELDS.Signatures
-	retval.Effects = v.RPC_TRANSACTION_FIELDS.Effects
-	return &retval, nil
 }
 
 // MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
@@ -6098,6 +4804,967 @@ func (v *MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionPag
 // GetEndCursor returns MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
 func (v *MultiGetTransactionBlocksTransactionBlocksTransactionBlockConnectionPageInfo) GetEndCursor() string {
 	return v.EndCursor
+}
+
+// Object change fields
+type OBJECT_CHANGE struct {
+	// The address of the object that has changed.
+	Address iotago.Address `json:"address"`
+	// Whether the ID was created in this transaction.
+	IdCreated bool `json:"idCreated"`
+	// Whether the ID was deleted in this transaction.
+	IdDeleted bool `json:"idDeleted"`
+	// The contents of the object immediately before the transaction.
+	InputState OBJECT_CHANGEInputStateObject `json:"inputState"`
+	// The contents of the object immediately after the transaction.
+	OutputState OBJECT_CHANGEOutputStateObject `json:"outputState"`
+}
+
+// GetAddress returns OBJECT_CHANGE.Address, and is useful for accessing the field via an interface.
+func (v *OBJECT_CHANGE) GetAddress() iotago.Address { return v.Address }
+
+// GetIdCreated returns OBJECT_CHANGE.IdCreated, and is useful for accessing the field via an interface.
+func (v *OBJECT_CHANGE) GetIdCreated() bool { return v.IdCreated }
+
+// GetIdDeleted returns OBJECT_CHANGE.IdDeleted, and is useful for accessing the field via an interface.
+func (v *OBJECT_CHANGE) GetIdDeleted() bool { return v.IdDeleted }
+
+// GetInputState returns OBJECT_CHANGE.InputState, and is useful for accessing the field via an interface.
+func (v *OBJECT_CHANGE) GetInputState() OBJECT_CHANGEInputStateObject { return v.InputState }
+
+// GetOutputState returns OBJECT_CHANGE.OutputState, and is useful for accessing the field via an interface.
+func (v *OBJECT_CHANGE) GetOutputState() OBJECT_CHANGEOutputStateObject { return v.OutputState }
+
+// OBJECT_CHANGEInputStateObject includes the requested fields of the GraphQL type Object.
+// The GraphQL type's documentation follows.
+//
+// An object in IOTA is a package (set of Move bytecode modules) or object
+// (typed data structure with fields) with additional metadata detailing its
+// id, version, transaction digest, owner field indicating how this object can
+// be accessed.
+type OBJECT_CHANGEInputStateObject struct {
+	Version uint64 `json:"version"`
+	// 32-byte hash that identifies the object's current contents, encoded as a
+	// Base58 string.
+	Digest string `json:"digest"`
+	// Attempts to convert the object into a MoveObject
+	AsMoveObject OBJECT_CHANGEInputStateObjectAsMoveObject `json:"asMoveObject"`
+}
+
+// GetVersion returns OBJECT_CHANGEInputStateObject.Version, and is useful for accessing the field via an interface.
+func (v *OBJECT_CHANGEInputStateObject) GetVersion() uint64 { return v.Version }
+
+// GetDigest returns OBJECT_CHANGEInputStateObject.Digest, and is useful for accessing the field via an interface.
+func (v *OBJECT_CHANGEInputStateObject) GetDigest() string { return v.Digest }
+
+// GetAsMoveObject returns OBJECT_CHANGEInputStateObject.AsMoveObject, and is useful for accessing the field via an interface.
+func (v *OBJECT_CHANGEInputStateObject) GetAsMoveObject() OBJECT_CHANGEInputStateObjectAsMoveObject {
+	return v.AsMoveObject
+}
+
+// OBJECT_CHANGEInputStateObjectAsMoveObject includes the requested fields of the GraphQL type MoveObject.
+// The GraphQL type's documentation follows.
+//
+// The representation of an object as a Move Object, which exposes additional
+// information (content, module that governs it, version, is transferable,
+// etc.) about this object.
+type OBJECT_CHANGEInputStateObjectAsMoveObject struct {
+	// Displays the contents of the Move object in a JSON string and through
+	// GraphQL types. Also provides the flat representation of the type
+	// signature, and the BCS of the corresponding data.
+	Contents OBJECT_CHANGEInputStateObjectAsMoveObjectContentsMoveValue `json:"contents"`
+}
+
+// GetContents returns OBJECT_CHANGEInputStateObjectAsMoveObject.Contents, and is useful for accessing the field via an interface.
+func (v *OBJECT_CHANGEInputStateObjectAsMoveObject) GetContents() OBJECT_CHANGEInputStateObjectAsMoveObjectContentsMoveValue {
+	return v.Contents
+}
+
+// OBJECT_CHANGEInputStateObjectAsMoveObjectContentsMoveValue includes the requested fields of the GraphQL type MoveValue.
+type OBJECT_CHANGEInputStateObjectAsMoveObjectContentsMoveValue struct {
+	// The value's Move type.
+	Type OBJECT_CHANGEInputStateObjectAsMoveObjectContentsMoveValueTypeMoveType `json:"type"`
+}
+
+// GetType returns OBJECT_CHANGEInputStateObjectAsMoveObjectContentsMoveValue.Type, and is useful for accessing the field via an interface.
+func (v *OBJECT_CHANGEInputStateObjectAsMoveObjectContentsMoveValue) GetType() OBJECT_CHANGEInputStateObjectAsMoveObjectContentsMoveValueTypeMoveType {
+	return v.Type
+}
+
+// OBJECT_CHANGEInputStateObjectAsMoveObjectContentsMoveValueTypeMoveType includes the requested fields of the GraphQL type MoveType.
+// The GraphQL type's documentation follows.
+//
+// Represents concrete types (no type parameters, no references).
+type OBJECT_CHANGEInputStateObjectAsMoveObjectContentsMoveValueTypeMoveType struct {
+	// Flat representation of the type signature, as a displayable string.
+	Repr string `json:"repr"`
+}
+
+// GetRepr returns OBJECT_CHANGEInputStateObjectAsMoveObjectContentsMoveValueTypeMoveType.Repr, and is useful for accessing the field via an interface.
+func (v *OBJECT_CHANGEInputStateObjectAsMoveObjectContentsMoveValueTypeMoveType) GetRepr() string {
+	return v.Repr
+}
+
+// OBJECT_CHANGEOutputStateObject includes the requested fields of the GraphQL type Object.
+// The GraphQL type's documentation follows.
+//
+// An object in IOTA is a package (set of Move bytecode modules) or object
+// (typed data structure with fields) with additional metadata detailing its
+// id, version, transaction digest, owner field indicating how this object can
+// be accessed.
+type OBJECT_CHANGEOutputStateObject struct {
+	Version uint64 `json:"version"`
+	// 32-byte hash that identifies the object's current contents, encoded as a
+	// Base58 string.
+	Digest string `json:"digest"`
+	// The owner type of this object: Immutable, Shared, Parent, Address
+	// Immutable and Shared Objects do not have owners.
+	Owner OBJECT_CHANGEOutputStateObjectOwner `json:"-"`
+	// Attempts to convert the object into a MoveObject
+	AsMoveObject OBJECT_CHANGEOutputStateObjectAsMoveObject `json:"asMoveObject"`
+	// Attempts to convert the object into a MovePackage
+	AsMovePackage OBJECT_CHANGEOutputStateObjectAsMovePackage `json:"asMovePackage"`
+}
+
+// GetVersion returns OBJECT_CHANGEOutputStateObject.Version, and is useful for accessing the field via an interface.
+func (v *OBJECT_CHANGEOutputStateObject) GetVersion() uint64 { return v.Version }
+
+// GetDigest returns OBJECT_CHANGEOutputStateObject.Digest, and is useful for accessing the field via an interface.
+func (v *OBJECT_CHANGEOutputStateObject) GetDigest() string { return v.Digest }
+
+// GetOwner returns OBJECT_CHANGEOutputStateObject.Owner, and is useful for accessing the field via an interface.
+func (v *OBJECT_CHANGEOutputStateObject) GetOwner() OBJECT_CHANGEOutputStateObjectOwner {
+	return v.Owner
+}
+
+// GetAsMoveObject returns OBJECT_CHANGEOutputStateObject.AsMoveObject, and is useful for accessing the field via an interface.
+func (v *OBJECT_CHANGEOutputStateObject) GetAsMoveObject() OBJECT_CHANGEOutputStateObjectAsMoveObject {
+	return v.AsMoveObject
+}
+
+// GetAsMovePackage returns OBJECT_CHANGEOutputStateObject.AsMovePackage, and is useful for accessing the field via an interface.
+func (v *OBJECT_CHANGEOutputStateObject) GetAsMovePackage() OBJECT_CHANGEOutputStateObjectAsMovePackage {
+	return v.AsMovePackage
+}
+
+func (v *OBJECT_CHANGEOutputStateObject) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*OBJECT_CHANGEOutputStateObject
+		Owner json.RawMessage `json:"owner"`
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.OBJECT_CHANGEOutputStateObject = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	{
+		dst := &v.Owner
+		src := firstPass.Owner
+		if len(src) != 0 && string(src) != "null" {
+			err = __unmarshalOBJECT_CHANGEOutputStateObjectOwner(
+				src, dst)
+			if err != nil {
+				return fmt.Errorf(
+					"unable to unmarshal OBJECT_CHANGEOutputStateObject.Owner: %w", err)
+			}
+		}
+	}
+	return nil
+}
+
+type __premarshalOBJECT_CHANGEOutputStateObject struct {
+	Version uint64 `json:"version"`
+
+	Digest string `json:"digest"`
+
+	Owner json.RawMessage `json:"owner"`
+
+	AsMoveObject OBJECT_CHANGEOutputStateObjectAsMoveObject `json:"asMoveObject"`
+
+	AsMovePackage OBJECT_CHANGEOutputStateObjectAsMovePackage `json:"asMovePackage"`
+}
+
+func (v *OBJECT_CHANGEOutputStateObject) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *OBJECT_CHANGEOutputStateObject) __premarshalJSON() (*__premarshalOBJECT_CHANGEOutputStateObject, error) {
+	var retval __premarshalOBJECT_CHANGEOutputStateObject
+
+	retval.Version = v.Version
+	retval.Digest = v.Digest
+	{
+
+		dst := &retval.Owner
+		src := v.Owner
+		var err error
+		*dst, err = __marshalOBJECT_CHANGEOutputStateObjectOwner(
+			&src)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"unable to marshal OBJECT_CHANGEOutputStateObject.Owner: %w", err)
+		}
+	}
+	retval.AsMoveObject = v.AsMoveObject
+	retval.AsMovePackage = v.AsMovePackage
+	return &retval, nil
+}
+
+// OBJECT_CHANGEOutputStateObjectAsMoveObject includes the requested fields of the GraphQL type MoveObject.
+// The GraphQL type's documentation follows.
+//
+// The representation of an object as a Move Object, which exposes additional
+// information (content, module that governs it, version, is transferable,
+// etc.) about this object.
+type OBJECT_CHANGEOutputStateObjectAsMoveObject struct {
+	// Displays the contents of the Move object in a JSON string and through
+	// GraphQL types. Also provides the flat representation of the type
+	// signature, and the BCS of the corresponding data.
+	Contents OBJECT_CHANGEOutputStateObjectAsMoveObjectContentsMoveValue `json:"contents"`
+}
+
+// GetContents returns OBJECT_CHANGEOutputStateObjectAsMoveObject.Contents, and is useful for accessing the field via an interface.
+func (v *OBJECT_CHANGEOutputStateObjectAsMoveObject) GetContents() OBJECT_CHANGEOutputStateObjectAsMoveObjectContentsMoveValue {
+	return v.Contents
+}
+
+// OBJECT_CHANGEOutputStateObjectAsMoveObjectContentsMoveValue includes the requested fields of the GraphQL type MoveValue.
+type OBJECT_CHANGEOutputStateObjectAsMoveObjectContentsMoveValue struct {
+	// The value's Move type.
+	Type OBJECT_CHANGEOutputStateObjectAsMoveObjectContentsMoveValueTypeMoveType `json:"type"`
+}
+
+// GetType returns OBJECT_CHANGEOutputStateObjectAsMoveObjectContentsMoveValue.Type, and is useful for accessing the field via an interface.
+func (v *OBJECT_CHANGEOutputStateObjectAsMoveObjectContentsMoveValue) GetType() OBJECT_CHANGEOutputStateObjectAsMoveObjectContentsMoveValueTypeMoveType {
+	return v.Type
+}
+
+// OBJECT_CHANGEOutputStateObjectAsMoveObjectContentsMoveValueTypeMoveType includes the requested fields of the GraphQL type MoveType.
+// The GraphQL type's documentation follows.
+//
+// Represents concrete types (no type parameters, no references).
+type OBJECT_CHANGEOutputStateObjectAsMoveObjectContentsMoveValueTypeMoveType struct {
+	// Flat representation of the type signature, as a displayable string.
+	Repr string `json:"repr"`
+}
+
+// GetRepr returns OBJECT_CHANGEOutputStateObjectAsMoveObjectContentsMoveValueTypeMoveType.Repr, and is useful for accessing the field via an interface.
+func (v *OBJECT_CHANGEOutputStateObjectAsMoveObjectContentsMoveValueTypeMoveType) GetRepr() string {
+	return v.Repr
+}
+
+// OBJECT_CHANGEOutputStateObjectAsMovePackage includes the requested fields of the GraphQL type MovePackage.
+// The GraphQL type's documentation follows.
+//
+// A MovePackage is a kind of Move object that represents code that has been
+// published on chain. It exposes information about its modules, type
+// definitions, functions, and dependencies.
+type OBJECT_CHANGEOutputStateObjectAsMovePackage struct {
+	// Paginate through the MoveModules defined in this package.
+	Modules OBJECT_CHANGEOutputStateObjectAsMovePackageModulesMoveModuleConnection `json:"modules"`
+}
+
+// GetModules returns OBJECT_CHANGEOutputStateObjectAsMovePackage.Modules, and is useful for accessing the field via an interface.
+func (v *OBJECT_CHANGEOutputStateObjectAsMovePackage) GetModules() OBJECT_CHANGEOutputStateObjectAsMovePackageModulesMoveModuleConnection {
+	return v.Modules
+}
+
+// OBJECT_CHANGEOutputStateObjectAsMovePackageModulesMoveModuleConnection includes the requested fields of the GraphQL type MoveModuleConnection.
+type OBJECT_CHANGEOutputStateObjectAsMovePackageModulesMoveModuleConnection struct {
+	// A list of nodes.
+	Nodes []OBJECT_CHANGEOutputStateObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule `json:"nodes"`
+}
+
+// GetNodes returns OBJECT_CHANGEOutputStateObjectAsMovePackageModulesMoveModuleConnection.Nodes, and is useful for accessing the field via an interface.
+func (v *OBJECT_CHANGEOutputStateObjectAsMovePackageModulesMoveModuleConnection) GetNodes() []OBJECT_CHANGEOutputStateObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule {
+	return v.Nodes
+}
+
+// OBJECT_CHANGEOutputStateObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule includes the requested fields of the GraphQL type MoveModule.
+// The GraphQL type's documentation follows.
+//
+// Represents a module in Move, a library that defines struct types
+// and functions that operate on these types.
+type OBJECT_CHANGEOutputStateObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule struct {
+	// The module's (unqualified) name.
+	Name string `json:"name"`
+}
+
+// GetName returns OBJECT_CHANGEOutputStateObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule.Name, and is useful for accessing the field via an interface.
+func (v *OBJECT_CHANGEOutputStateObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule) GetName() string {
+	return v.Name
+}
+
+// OBJECT_CHANGEOutputStateObjectOwner includes the requested fields of the GraphQL interface ObjectOwner.
+//
+// OBJECT_CHANGEOutputStateObjectOwner is implemented by the following types:
+// OBJECT_CHANGEOutputStateObjectOwnerAddressOwner
+// OBJECT_CHANGEOutputStateObjectOwnerImmutable
+// OBJECT_CHANGEOutputStateObjectOwnerParent
+// OBJECT_CHANGEOutputStateObjectOwnerShared
+// The GraphQL type's documentation follows.
+//
+// The object's owner type: Immutable, Shared, Parent, or Address.
+type OBJECT_CHANGEOutputStateObjectOwner interface {
+	implementsGraphQLInterfaceOBJECT_CHANGEOutputStateObjectOwner()
+	// GetTypename returns the receiver's concrete GraphQL type-name (see interface doc for possible values).
+	GetTypename() string
+	OBJECT_OWNER
+}
+
+func (v *OBJECT_CHANGEOutputStateObjectOwnerAddressOwner) implementsGraphQLInterfaceOBJECT_CHANGEOutputStateObjectOwner() {
+}
+func (v *OBJECT_CHANGEOutputStateObjectOwnerImmutable) implementsGraphQLInterfaceOBJECT_CHANGEOutputStateObjectOwner() {
+}
+func (v *OBJECT_CHANGEOutputStateObjectOwnerParent) implementsGraphQLInterfaceOBJECT_CHANGEOutputStateObjectOwner() {
+}
+func (v *OBJECT_CHANGEOutputStateObjectOwnerShared) implementsGraphQLInterfaceOBJECT_CHANGEOutputStateObjectOwner() {
+}
+
+func __unmarshalOBJECT_CHANGEOutputStateObjectOwner(b []byte, v *OBJECT_CHANGEOutputStateObjectOwner) error {
+	if string(b) == "null" {
+		return nil
+	}
+
+	var tn struct {
+		TypeName string `json:"__typename"`
+	}
+	err := json.Unmarshal(b, &tn)
+	if err != nil {
+		return err
+	}
+
+	switch tn.TypeName {
+	case "AddressOwner":
+		*v = new(OBJECT_CHANGEOutputStateObjectOwnerAddressOwner)
+		return json.Unmarshal(b, *v)
+	case "Immutable":
+		*v = new(OBJECT_CHANGEOutputStateObjectOwnerImmutable)
+		return json.Unmarshal(b, *v)
+	case "Parent":
+		*v = new(OBJECT_CHANGEOutputStateObjectOwnerParent)
+		return json.Unmarshal(b, *v)
+	case "Shared":
+		*v = new(OBJECT_CHANGEOutputStateObjectOwnerShared)
+		return json.Unmarshal(b, *v)
+	case "":
+		return fmt.Errorf(
+			"response was missing ObjectOwner.__typename")
+	default:
+		return fmt.Errorf(
+			`unexpected concrete type for OBJECT_CHANGEOutputStateObjectOwner: "%v"`, tn.TypeName)
+	}
+}
+
+func __marshalOBJECT_CHANGEOutputStateObjectOwner(v *OBJECT_CHANGEOutputStateObjectOwner) ([]byte, error) {
+
+	var typename string
+	switch v := (*v).(type) {
+	case *OBJECT_CHANGEOutputStateObjectOwnerAddressOwner:
+		typename = "AddressOwner"
+
+		premarshaled, err := v.__premarshalJSON()
+		if err != nil {
+			return nil, err
+		}
+		result := struct {
+			TypeName string `json:"__typename"`
+			*__premarshalOBJECT_CHANGEOutputStateObjectOwnerAddressOwner
+		}{typename, premarshaled}
+		return json.Marshal(result)
+	case *OBJECT_CHANGEOutputStateObjectOwnerImmutable:
+		typename = "Immutable"
+
+		premarshaled, err := v.__premarshalJSON()
+		if err != nil {
+			return nil, err
+		}
+		result := struct {
+			TypeName string `json:"__typename"`
+			*__premarshalOBJECT_CHANGEOutputStateObjectOwnerImmutable
+		}{typename, premarshaled}
+		return json.Marshal(result)
+	case *OBJECT_CHANGEOutputStateObjectOwnerParent:
+		typename = "Parent"
+
+		premarshaled, err := v.__premarshalJSON()
+		if err != nil {
+			return nil, err
+		}
+		result := struct {
+			TypeName string `json:"__typename"`
+			*__premarshalOBJECT_CHANGEOutputStateObjectOwnerParent
+		}{typename, premarshaled}
+		return json.Marshal(result)
+	case *OBJECT_CHANGEOutputStateObjectOwnerShared:
+		typename = "Shared"
+
+		premarshaled, err := v.__premarshalJSON()
+		if err != nil {
+			return nil, err
+		}
+		result := struct {
+			TypeName string `json:"__typename"`
+			*__premarshalOBJECT_CHANGEOutputStateObjectOwnerShared
+		}{typename, premarshaled}
+		return json.Marshal(result)
+	case nil:
+		return []byte("null"), nil
+	default:
+		return nil, fmt.Errorf(
+			`unexpected concrete type for OBJECT_CHANGEOutputStateObjectOwner: "%T"`, v)
+	}
+}
+
+// OBJECT_CHANGEOutputStateObjectOwnerAddressOwner includes the requested fields of the GraphQL type AddressOwner.
+// The GraphQL type's documentation follows.
+//
+// An address-owned object is owned by a specific 32-byte address that is
+// either an account address (derived from a particular signature scheme) or
+// an object ID. An address-owned object is accessible only to its owner and no
+// others.
+type OBJECT_CHANGEOutputStateObjectOwnerAddressOwner struct {
+	Typename                 string `json:"__typename"`
+	OBJECT_OWNERAddressOwner `json:"-"`
+}
+
+// GetTypename returns OBJECT_CHANGEOutputStateObjectOwnerAddressOwner.Typename, and is useful for accessing the field via an interface.
+func (v *OBJECT_CHANGEOutputStateObjectOwnerAddressOwner) GetTypename() string { return v.Typename }
+
+// GetOwner returns OBJECT_CHANGEOutputStateObjectOwnerAddressOwner.Owner, and is useful for accessing the field via an interface.
+func (v *OBJECT_CHANGEOutputStateObjectOwnerAddressOwner) GetOwner() OBJECT_OWNEROwner {
+	return v.OBJECT_OWNERAddressOwner.Owner
+}
+
+func (v *OBJECT_CHANGEOutputStateObjectOwnerAddressOwner) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*OBJECT_CHANGEOutputStateObjectOwnerAddressOwner
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.OBJECT_CHANGEOutputStateObjectOwnerAddressOwner = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(
+		b, &v.OBJECT_OWNERAddressOwner)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type __premarshalOBJECT_CHANGEOutputStateObjectOwnerAddressOwner struct {
+	Typename string `json:"__typename"`
+
+	Owner OBJECT_OWNEROwner `json:"owner"`
+}
+
+func (v *OBJECT_CHANGEOutputStateObjectOwnerAddressOwner) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *OBJECT_CHANGEOutputStateObjectOwnerAddressOwner) __premarshalJSON() (*__premarshalOBJECT_CHANGEOutputStateObjectOwnerAddressOwner, error) {
+	var retval __premarshalOBJECT_CHANGEOutputStateObjectOwnerAddressOwner
+
+	retval.Typename = v.Typename
+	retval.Owner = v.OBJECT_OWNERAddressOwner.Owner
+	return &retval, nil
+}
+
+// OBJECT_CHANGEOutputStateObjectOwnerImmutable includes the requested fields of the GraphQL type Immutable.
+// The GraphQL type's documentation follows.
+//
+// An immutable object is an object that can't be mutated, transferred, or
+// deleted. Immutable objects have no owner, so anyone can use them.
+type OBJECT_CHANGEOutputStateObjectOwnerImmutable struct {
+	Typename              string `json:"__typename"`
+	OBJECT_OWNERImmutable `json:"-"`
+}
+
+// GetTypename returns OBJECT_CHANGEOutputStateObjectOwnerImmutable.Typename, and is useful for accessing the field via an interface.
+func (v *OBJECT_CHANGEOutputStateObjectOwnerImmutable) GetTypename() string { return v.Typename }
+
+func (v *OBJECT_CHANGEOutputStateObjectOwnerImmutable) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*OBJECT_CHANGEOutputStateObjectOwnerImmutable
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.OBJECT_CHANGEOutputStateObjectOwnerImmutable = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(
+		b, &v.OBJECT_OWNERImmutable)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type __premarshalOBJECT_CHANGEOutputStateObjectOwnerImmutable struct {
+	Typename string `json:"__typename"`
+}
+
+func (v *OBJECT_CHANGEOutputStateObjectOwnerImmutable) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *OBJECT_CHANGEOutputStateObjectOwnerImmutable) __premarshalJSON() (*__premarshalOBJECT_CHANGEOutputStateObjectOwnerImmutable, error) {
+	var retval __premarshalOBJECT_CHANGEOutputStateObjectOwnerImmutable
+
+	retval.Typename = v.Typename
+	return &retval, nil
+}
+
+// OBJECT_CHANGEOutputStateObjectOwnerParent includes the requested fields of the GraphQL type Parent.
+// The GraphQL type's documentation follows.
+//
+// If the object's owner is a Parent, this object is part of a dynamic field
+// (it is the value of the dynamic field, or the intermediate Field object
+// itself). Also note that if the owner is a parent, then it's guaranteed to be
+// an object.
+type OBJECT_CHANGEOutputStateObjectOwnerParent struct {
+	Typename           string `json:"__typename"`
+	OBJECT_OWNERParent `json:"-"`
+}
+
+// GetTypename returns OBJECT_CHANGEOutputStateObjectOwnerParent.Typename, and is useful for accessing the field via an interface.
+func (v *OBJECT_CHANGEOutputStateObjectOwnerParent) GetTypename() string { return v.Typename }
+
+// GetParent returns OBJECT_CHANGEOutputStateObjectOwnerParent.Parent, and is useful for accessing the field via an interface.
+func (v *OBJECT_CHANGEOutputStateObjectOwnerParent) GetParent() OBJECT_OWNERParentObject {
+	return v.OBJECT_OWNERParent.Parent
+}
+
+func (v *OBJECT_CHANGEOutputStateObjectOwnerParent) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*OBJECT_CHANGEOutputStateObjectOwnerParent
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.OBJECT_CHANGEOutputStateObjectOwnerParent = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(
+		b, &v.OBJECT_OWNERParent)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type __premarshalOBJECT_CHANGEOutputStateObjectOwnerParent struct {
+	Typename string `json:"__typename"`
+
+	Parent OBJECT_OWNERParentObject `json:"parent"`
+}
+
+func (v *OBJECT_CHANGEOutputStateObjectOwnerParent) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *OBJECT_CHANGEOutputStateObjectOwnerParent) __premarshalJSON() (*__premarshalOBJECT_CHANGEOutputStateObjectOwnerParent, error) {
+	var retval __premarshalOBJECT_CHANGEOutputStateObjectOwnerParent
+
+	retval.Typename = v.Typename
+	retval.Parent = v.OBJECT_OWNERParent.Parent
+	return &retval, nil
+}
+
+// OBJECT_CHANGEOutputStateObjectOwnerShared includes the requested fields of the GraphQL type Shared.
+// The GraphQL type's documentation follows.
+//
+// A shared object is an object that is shared using the
+// 0x2::transfer::share_object function. Unlike owned objects, once an object
+// is shared, it stays mutable and is accessible by anyone.
+type OBJECT_CHANGEOutputStateObjectOwnerShared struct {
+	Typename           string `json:"__typename"`
+	OBJECT_OWNERShared `json:"-"`
+}
+
+// GetTypename returns OBJECT_CHANGEOutputStateObjectOwnerShared.Typename, and is useful for accessing the field via an interface.
+func (v *OBJECT_CHANGEOutputStateObjectOwnerShared) GetTypename() string { return v.Typename }
+
+// GetInitialSharedVersion returns OBJECT_CHANGEOutputStateObjectOwnerShared.InitialSharedVersion, and is useful for accessing the field via an interface.
+func (v *OBJECT_CHANGEOutputStateObjectOwnerShared) GetInitialSharedVersion() uint64 {
+	return v.OBJECT_OWNERShared.InitialSharedVersion
+}
+
+func (v *OBJECT_CHANGEOutputStateObjectOwnerShared) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*OBJECT_CHANGEOutputStateObjectOwnerShared
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.OBJECT_CHANGEOutputStateObjectOwnerShared = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(
+		b, &v.OBJECT_OWNERShared)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type __premarshalOBJECT_CHANGEOutputStateObjectOwnerShared struct {
+	Typename string `json:"__typename"`
+
+	InitialSharedVersion uint64 `json:"initialSharedVersion"`
+}
+
+func (v *OBJECT_CHANGEOutputStateObjectOwnerShared) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *OBJECT_CHANGEOutputStateObjectOwnerShared) __premarshalJSON() (*__premarshalOBJECT_CHANGEOutputStateObjectOwnerShared, error) {
+	var retval __premarshalOBJECT_CHANGEOutputStateObjectOwnerShared
+
+	retval.Typename = v.Typename
+	retval.InitialSharedVersion = v.OBJECT_OWNERShared.InitialSharedVersion
+	return &retval, nil
+}
+
+// Object owner fields (union type)
+//
+// OBJECT_OWNER is implemented by the following types:
+// OBJECT_OWNERAddressOwner
+// OBJECT_OWNERImmutable
+// OBJECT_OWNERParent
+// OBJECT_OWNERShared
+type OBJECT_OWNER interface {
+	implementsGraphQLInterfaceOBJECT_OWNER()
+	// GetTypename returns the receiver's concrete GraphQL type-name (see interface doc for possible values).
+	GetTypename() string
+}
+
+func (v *OBJECT_OWNERAddressOwner) implementsGraphQLInterfaceOBJECT_OWNER() {}
+func (v *OBJECT_OWNERImmutable) implementsGraphQLInterfaceOBJECT_OWNER()    {}
+func (v *OBJECT_OWNERParent) implementsGraphQLInterfaceOBJECT_OWNER()       {}
+func (v *OBJECT_OWNERShared) implementsGraphQLInterfaceOBJECT_OWNER()       {}
+
+func __unmarshalOBJECT_OWNER(b []byte, v *OBJECT_OWNER) error {
+	if string(b) == "null" {
+		return nil
+	}
+
+	var tn struct {
+		TypeName string `json:"__typename"`
+	}
+	err := json.Unmarshal(b, &tn)
+	if err != nil {
+		return err
+	}
+
+	switch tn.TypeName {
+	case "AddressOwner":
+		*v = new(OBJECT_OWNERAddressOwner)
+		return json.Unmarshal(b, *v)
+	case "Immutable":
+		*v = new(OBJECT_OWNERImmutable)
+		return json.Unmarshal(b, *v)
+	case "Parent":
+		*v = new(OBJECT_OWNERParent)
+		return json.Unmarshal(b, *v)
+	case "Shared":
+		*v = new(OBJECT_OWNERShared)
+		return json.Unmarshal(b, *v)
+	case "":
+		return fmt.Errorf(
+			"response was missing ObjectOwner.__typename")
+	default:
+		return fmt.Errorf(
+			`unexpected concrete type for OBJECT_OWNER: "%v"`, tn.TypeName)
+	}
+}
+
+func __marshalOBJECT_OWNER(v *OBJECT_OWNER) ([]byte, error) {
+
+	var typename string
+	switch v := (*v).(type) {
+	case *OBJECT_OWNERAddressOwner:
+		typename = "AddressOwner"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*OBJECT_OWNERAddressOwner
+		}{typename, v}
+		return json.Marshal(result)
+	case *OBJECT_OWNERImmutable:
+		typename = "Immutable"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*OBJECT_OWNERImmutable
+		}{typename, v}
+		return json.Marshal(result)
+	case *OBJECT_OWNERParent:
+		typename = "Parent"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*OBJECT_OWNERParent
+		}{typename, v}
+		return json.Marshal(result)
+	case *OBJECT_OWNERShared:
+		typename = "Shared"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*OBJECT_OWNERShared
+		}{typename, v}
+		return json.Marshal(result)
+	case nil:
+		return []byte("null"), nil
+	default:
+		return nil, fmt.Errorf(
+			`unexpected concrete type for OBJECT_OWNER: "%T"`, v)
+	}
+}
+
+// Object owner fields (union type)
+type OBJECT_OWNERAddressOwner struct {
+	Typename string            `json:"__typename"`
+	Owner    OBJECT_OWNEROwner `json:"owner"`
+}
+
+// GetTypename returns OBJECT_OWNERAddressOwner.Typename, and is useful for accessing the field via an interface.
+func (v *OBJECT_OWNERAddressOwner) GetTypename() string { return v.Typename }
+
+// GetOwner returns OBJECT_OWNERAddressOwner.Owner, and is useful for accessing the field via an interface.
+func (v *OBJECT_OWNERAddressOwner) GetOwner() OBJECT_OWNEROwner { return v.Owner }
+
+// Object owner fields (union type)
+type OBJECT_OWNERImmutable struct {
+	Typename string `json:"__typename"`
+}
+
+// GetTypename returns OBJECT_OWNERImmutable.Typename, and is useful for accessing the field via an interface.
+func (v *OBJECT_OWNERImmutable) GetTypename() string { return v.Typename }
+
+// OBJECT_OWNEROwner includes the requested fields of the GraphQL type Owner.
+// The GraphQL type's documentation follows.
+//
+// An Owner is an entity that can own an object. Each Owner is identified by a
+// IotaAddress which represents either an Address (corresponding to a public
+// key of an account) or an Object, but never both (it is not known up-front
+// whether a given Owner is an Address or an Object).
+type OBJECT_OWNEROwner struct {
+	AsObject  OBJECT_OWNEROwnerAsObject  `json:"asObject"`
+	AsAddress OBJECT_OWNEROwnerAsAddress `json:"asAddress"`
+}
+
+// GetAsObject returns OBJECT_OWNEROwner.AsObject, and is useful for accessing the field via an interface.
+func (v *OBJECT_OWNEROwner) GetAsObject() OBJECT_OWNEROwnerAsObject { return v.AsObject }
+
+// GetAsAddress returns OBJECT_OWNEROwner.AsAddress, and is useful for accessing the field via an interface.
+func (v *OBJECT_OWNEROwner) GetAsAddress() OBJECT_OWNEROwnerAsAddress { return v.AsAddress }
+
+// OBJECT_OWNEROwnerAsAddress includes the requested fields of the GraphQL type Address.
+// The GraphQL type's documentation follows.
+//
+// The 32-byte address that is an account address (corresponding to a public
+// key).
+type OBJECT_OWNEROwnerAsAddress struct {
+	Address iotago.Address `json:"address"`
+}
+
+// GetAddress returns OBJECT_OWNEROwnerAsAddress.Address, and is useful for accessing the field via an interface.
+func (v *OBJECT_OWNEROwnerAsAddress) GetAddress() iotago.Address { return v.Address }
+
+// OBJECT_OWNEROwnerAsObject includes the requested fields of the GraphQL type Object.
+// The GraphQL type's documentation follows.
+//
+// An object in IOTA is a package (set of Move bytecode modules) or object
+// (typed data structure with fields) with additional metadata detailing its
+// id, version, transaction digest, owner field indicating how this object can
+// be accessed.
+type OBJECT_OWNEROwnerAsObject struct {
+	Address iotago.Address `json:"address"`
+}
+
+// GetAddress returns OBJECT_OWNEROwnerAsObject.Address, and is useful for accessing the field via an interface.
+func (v *OBJECT_OWNEROwnerAsObject) GetAddress() iotago.Address { return v.Address }
+
+// Object owner fields (union type)
+type OBJECT_OWNERParent struct {
+	Typename string                   `json:"__typename"`
+	Parent   OBJECT_OWNERParentObject `json:"parent"`
+}
+
+// GetTypename returns OBJECT_OWNERParent.Typename, and is useful for accessing the field via an interface.
+func (v *OBJECT_OWNERParent) GetTypename() string { return v.Typename }
+
+// GetParent returns OBJECT_OWNERParent.Parent, and is useful for accessing the field via an interface.
+func (v *OBJECT_OWNERParent) GetParent() OBJECT_OWNERParentObject { return v.Parent }
+
+// OBJECT_OWNERParentObject includes the requested fields of the GraphQL type Object.
+// The GraphQL type's documentation follows.
+//
+// An object in IOTA is a package (set of Move bytecode modules) or object
+// (typed data structure with fields) with additional metadata detailing its
+// id, version, transaction digest, owner field indicating how this object can
+// be accessed.
+type OBJECT_OWNERParentObject struct {
+	Address iotago.Address `json:"address"`
+}
+
+// GetAddress returns OBJECT_OWNERParentObject.Address, and is useful for accessing the field via an interface.
+func (v *OBJECT_OWNERParentObject) GetAddress() iotago.Address { return v.Address }
+
+// Object owner fields (union type)
+type OBJECT_OWNERShared struct {
+	Typename             string `json:"__typename"`
+	InitialSharedVersion uint64 `json:"initialSharedVersion"`
+}
+
+// GetTypename returns OBJECT_OWNERShared.Typename, and is useful for accessing the field via an interface.
+func (v *OBJECT_OWNERShared) GetTypename() string { return v.Typename }
+
+// GetInitialSharedVersion returns OBJECT_OWNERShared.InitialSharedVersion, and is useful for accessing the field via an interface.
+func (v *OBJECT_OWNERShared) GetInitialSharedVersion() uint64 { return v.InitialSharedVersion }
+
+// ObjectChangeData includes the requested fields of the GraphQL type ObjectChange.
+// The GraphQL type's documentation follows.
+//
+// Effect on an individual Object (keyed by its ID).
+type ObjectChangeData struct {
+	OBJECT_CHANGE `json:"-"`
+}
+
+// GetAddress returns ObjectChangeData.Address, and is useful for accessing the field via an interface.
+func (v *ObjectChangeData) GetAddress() iotago.Address { return v.OBJECT_CHANGE.Address }
+
+// GetIdCreated returns ObjectChangeData.IdCreated, and is useful for accessing the field via an interface.
+func (v *ObjectChangeData) GetIdCreated() bool { return v.OBJECT_CHANGE.IdCreated }
+
+// GetIdDeleted returns ObjectChangeData.IdDeleted, and is useful for accessing the field via an interface.
+func (v *ObjectChangeData) GetIdDeleted() bool { return v.OBJECT_CHANGE.IdDeleted }
+
+// GetInputState returns ObjectChangeData.InputState, and is useful for accessing the field via an interface.
+func (v *ObjectChangeData) GetInputState() OBJECT_CHANGEInputStateObject {
+	return v.OBJECT_CHANGE.InputState
+}
+
+// GetOutputState returns ObjectChangeData.OutputState, and is useful for accessing the field via an interface.
+func (v *ObjectChangeData) GetOutputState() OBJECT_CHANGEOutputStateObject {
+	return v.OBJECT_CHANGE.OutputState
+}
+
+func (v *ObjectChangeData) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*ObjectChangeData
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.ObjectChangeData = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(
+		b, &v.OBJECT_CHANGE)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type __premarshalObjectChangeData struct {
+	Address iotago.Address `json:"address"`
+
+	IdCreated bool `json:"idCreated"`
+
+	IdDeleted bool `json:"idDeleted"`
+
+	InputState OBJECT_CHANGEInputStateObject `json:"inputState"`
+
+	OutputState OBJECT_CHANGEOutputStateObject `json:"outputState"`
+}
+
+func (v *ObjectChangeData) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *ObjectChangeData) __premarshalJSON() (*__premarshalObjectChangeData, error) {
+	var retval __premarshalObjectChangeData
+
+	retval.Address = v.OBJECT_CHANGE.Address
+	retval.IdCreated = v.OBJECT_CHANGE.IdCreated
+	retval.IdDeleted = v.OBJECT_CHANGE.IdDeleted
+	retval.InputState = v.OBJECT_CHANGE.InputState
+	retval.OutputState = v.OBJECT_CHANGE.OutputState
+	return &retval, nil
 }
 
 // Constrains the set of objects returned. All filters are optional, and the
@@ -6166,581 +5833,6 @@ var AllObjectKind = []ObjectKind{
 	ObjectKindWrappedOrDeleted,
 }
 
-type ObjectRef struct {
-	// ID of the object.
-	Address iotago.Address `json:"address"`
-	// Version or sequence number of the object.
-	Version uint64 `json:"version"`
-	// Digest of the object.
-	Digest string `json:"digest"`
-}
-
-// GetAddress returns ObjectRef.Address, and is useful for accessing the field via an interface.
-func (v *ObjectRef) GetAddress() iotago.Address { return v.Address }
-
-// GetVersion returns ObjectRef.Version, and is useful for accessing the field via an interface.
-func (v *ObjectRef) GetVersion() uint64 { return v.Version }
-
-// GetDigest returns ObjectRef.Digest, and is useful for accessing the field via an interface.
-func (v *ObjectRef) GetDigest() string { return v.Digest }
-
-// PAGINATE_TRANSACTION_LISTS includes the GraphQL fields of TransactionBlock requested by the fragment PAGINATE_TRANSACTION_LISTS.
-type PAGINATE_TRANSACTION_LISTS struct {
-	// The effects field captures the results to the chain of executing this
-	// transaction.
-	Effects PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffects `json:"effects"`
-}
-
-// GetEffects returns PAGINATE_TRANSACTION_LISTS.Effects, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTS) GetEffects() PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffects {
-	return v.Effects
-}
-
-// PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffects includes the requested fields of the GraphQL type TransactionBlockEffects.
-// The GraphQL type's documentation follows.
-//
-// The effects representing the result of executing a transaction block.
-type PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffects struct {
-	// Events emitted by this transaction block.
-	Events PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsEventsEventConnection `json:"events"`
-	// The effect this transaction had on the balances (sum of coin values per
-	// coin type) of addresses and objects.
-	BalanceChanges PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnection `json:"balanceChanges"`
-	// The effect this transaction had on objects on-chain.
-	ObjectChanges PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnection `json:"objectChanges"`
-}
-
-// GetEvents returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffects.Events, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffects) GetEvents() PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsEventsEventConnection {
-	return v.Events
-}
-
-// GetBalanceChanges returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffects.BalanceChanges, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffects) GetBalanceChanges() PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnection {
-	return v.BalanceChanges
-}
-
-// GetObjectChanges returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffects.ObjectChanges, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffects) GetObjectChanges() PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnection {
-	return v.ObjectChanges
-}
-
-// PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnection includes the requested fields of the GraphQL type BalanceChangeConnection.
-type PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnection struct {
-	// Information to aid in pagination.
-	PageInfo PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionPageInfo `json:"pageInfo"`
-	// A list of nodes.
-	Nodes []PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange `json:"nodes"`
-}
-
-// GetPageInfo returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnection.PageInfo, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnection) GetPageInfo() PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionPageInfo {
-	return v.PageInfo
-}
-
-// GetNodes returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnection) GetNodes() []PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange {
-	return v.Nodes
-}
-
-// PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange includes the requested fields of the GraphQL type BalanceChange.
-// The GraphQL type's documentation follows.
-//
-// Effects to the balance (sum of coin values per coin type) owned by an
-// address or object.
-type PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange struct {
-	// The inner type of the coin whose balance has changed (e.g.
-	// `0x2::iota::IOTA`).
-	CoinType PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeCoinTypeMoveType `json:"coinType"`
-	// The address or object whose balance has changed.
-	Owner PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner `json:"owner"`
-	// The signed balance change.
-	Amount BigInt `json:"amount"`
-}
-
-// GetCoinType returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange.CoinType, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange) GetCoinType() PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeCoinTypeMoveType {
-	return v.CoinType
-}
-
-// GetOwner returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange.Owner, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange) GetOwner() PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner {
-	return v.Owner
-}
-
-// GetAmount returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange.Amount, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange) GetAmount() BigInt {
-	return v.Amount
-}
-
-// PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeCoinTypeMoveType includes the requested fields of the GraphQL type MoveType.
-// The GraphQL type's documentation follows.
-//
-// Represents concrete types (no type parameters, no references).
-type PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeCoinTypeMoveType struct {
-	// Flat representation of the type signature, as a displayable string.
-	Repr string `json:"repr"`
-}
-
-// GetRepr returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeCoinTypeMoveType.Repr, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeCoinTypeMoveType) GetRepr() string {
-	return v.Repr
-}
-
-// PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner includes the requested fields of the GraphQL type Owner.
-// The GraphQL type's documentation follows.
-//
-// An Owner is an entity that can own an object. Each Owner is identified by a
-// IotaAddress which represents either an Address (corresponding to a public
-// key of an account) or an Object, but never both (it is not known up-front
-// whether a given Owner is an Address or an Object).
-type PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner struct {
-	AsObject  PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsObject  `json:"asObject"`
-	AsAddress PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsAddress `json:"asAddress"`
-}
-
-// GetAsObject returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner.AsObject, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner) GetAsObject() PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsObject {
-	return v.AsObject
-}
-
-// GetAsAddress returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner.AsAddress, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner) GetAsAddress() PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsAddress {
-	return v.AsAddress
-}
-
-// PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsAddress includes the requested fields of the GraphQL type Address.
-// The GraphQL type's documentation follows.
-//
-// The 32-byte address that is an account address (corresponding to a public
-// key).
-type PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsAddress struct {
-	Address iotago.Address `json:"address"`
-}
-
-// GetAddress returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsAddress.Address, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsAddress) GetAddress() iotago.Address {
-	return v.Address
-}
-
-// PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsObject includes the requested fields of the GraphQL type Object.
-// The GraphQL type's documentation follows.
-//
-// An object in IOTA is a package (set of Move bytecode modules) or object
-// (typed data structure with fields) with additional metadata detailing its
-// id, version, transaction digest, owner field indicating how this object can
-// be accessed.
-type PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsObject struct {
-	Address iotago.Address `json:"address"`
-}
-
-// GetAddress returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsObject.Address, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsObject) GetAddress() iotago.Address {
-	return v.Address
-}
-
-// PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
-// The GraphQL type's documentation follows.
-//
-// Information about pagination in a connection
-type PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionPageInfo struct {
-	// When paginating forwards, are there more items?
-	HasNextPage bool `json:"hasNextPage"`
-	// When paginating forwards, the cursor to continue.
-	EndCursor string `json:"endCursor"`
-}
-
-// GetHasNextPage returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionPageInfo) GetHasNextPage() bool {
-	return v.HasNextPage
-}
-
-// GetEndCursor returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionPageInfo) GetEndCursor() string {
-	return v.EndCursor
-}
-
-// PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsEventsEventConnection includes the requested fields of the GraphQL type EventConnection.
-type PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsEventsEventConnection struct {
-	// Information to aid in pagination.
-	PageInfo PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsEventsEventConnectionPageInfo `json:"pageInfo"`
-	// A list of nodes.
-	Nodes []PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent `json:"nodes"`
-}
-
-// GetPageInfo returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsEventsEventConnection.PageInfo, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsEventsEventConnection) GetPageInfo() PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsEventsEventConnectionPageInfo {
-	return v.PageInfo
-}
-
-// GetNodes returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsEventsEventConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsEventsEventConnection) GetNodes() []PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent {
-	return v.Nodes
-}
-
-// PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent includes the requested fields of the GraphQL type Event.
-type PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent struct {
-	RPC_EVENTS_FIELDS `json:"-"`
-}
-
-// GetSendingModule returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent.SendingModule, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent) GetSendingModule() RPC_EVENTS_FIELDSSendingModuleMoveModule {
-	return v.RPC_EVENTS_FIELDS.SendingModule
-}
-
-// GetSender returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent.Sender, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent) GetSender() RPC_EVENTS_FIELDSSenderAddress {
-	return v.RPC_EVENTS_FIELDS.Sender
-}
-
-// GetJson returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent.Json, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent) GetJson() json.RawMessage {
-	return v.RPC_EVENTS_FIELDS.Json
-}
-
-// GetTimestamp returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent.Timestamp, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent) GetTimestamp() time.Time {
-	return v.RPC_EVENTS_FIELDS.Timestamp
-}
-
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent) UnmarshalJSON(b []byte) error {
-
-	if string(b) == "null" {
-		return nil
-	}
-
-	var firstPass struct {
-		*PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent
-		graphql.NoUnmarshalJSON
-	}
-	firstPass.PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent = v
-
-	err := json.Unmarshal(b, &firstPass)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(
-		b, &v.RPC_EVENTS_FIELDS)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-type __premarshalPAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent struct {
-	SendingModule RPC_EVENTS_FIELDSSendingModuleMoveModule `json:"sendingModule"`
-
-	Sender RPC_EVENTS_FIELDSSenderAddress `json:"sender"`
-
-	Json json.RawMessage `json:"json"`
-
-	Timestamp time.Time `json:"timestamp"`
-}
-
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent) MarshalJSON() ([]byte, error) {
-	premarshaled, err := v.__premarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(premarshaled)
-}
-
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent) __premarshalJSON() (*__premarshalPAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent, error) {
-	var retval __premarshalPAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent
-
-	retval.SendingModule = v.RPC_EVENTS_FIELDS.SendingModule
-	retval.Sender = v.RPC_EVENTS_FIELDS.Sender
-	retval.Json = v.RPC_EVENTS_FIELDS.Json
-	retval.Timestamp = v.RPC_EVENTS_FIELDS.Timestamp
-	return &retval, nil
-}
-
-// PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsEventsEventConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
-// The GraphQL type's documentation follows.
-//
-// Information about pagination in a connection
-type PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsEventsEventConnectionPageInfo struct {
-	// When paginating forwards, are there more items?
-	HasNextPage bool `json:"hasNextPage"`
-	// When paginating forwards, the cursor to continue.
-	EndCursor string `json:"endCursor"`
-}
-
-// GetHasNextPage returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsEventsEventConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsEventsEventConnectionPageInfo) GetHasNextPage() bool {
-	return v.HasNextPage
-}
-
-// GetEndCursor returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsEventsEventConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsEventsEventConnectionPageInfo) GetEndCursor() string {
-	return v.EndCursor
-}
-
-// PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnection includes the requested fields of the GraphQL type ObjectChangeConnection.
-type PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnection struct {
-	// Information to aid in pagination.
-	PageInfo PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionPageInfo `json:"pageInfo"`
-	// A list of nodes.
-	Nodes []PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange `json:"nodes"`
-}
-
-// GetPageInfo returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnection.PageInfo, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnection) GetPageInfo() PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionPageInfo {
-	return v.PageInfo
-}
-
-// GetNodes returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnection) GetNodes() []PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange {
-	return v.Nodes
-}
-
-// PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange includes the requested fields of the GraphQL type ObjectChange.
-// The GraphQL type's documentation follows.
-//
-// Effect on an individual Object (keyed by its ID).
-type PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange struct {
-	// The address of the object that has changed.
-	Address iotago.Address `json:"address"`
-	// The contents of the object immediately before the transaction.
-	InputState PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject `json:"inputState"`
-	// The contents of the object immediately after the transaction.
-	OutputState PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject `json:"outputState"`
-}
-
-// GetAddress returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange.Address, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange) GetAddress() iotago.Address {
-	return v.Address
-}
-
-// GetInputState returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange.InputState, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange) GetInputState() PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject {
-	return v.InputState
-}
-
-// GetOutputState returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange.OutputState, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange) GetOutputState() PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject {
-	return v.OutputState
-}
-
-// PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject includes the requested fields of the GraphQL type Object.
-// The GraphQL type's documentation follows.
-//
-// An object in IOTA is a package (set of Move bytecode modules) or object
-// (typed data structure with fields) with additional metadata detailing its
-// id, version, transaction digest, owner field indicating how this object can
-// be accessed.
-type PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject struct {
-	Version uint64 `json:"version"`
-	// 32-byte hash that identifies the object's current contents, encoded as a
-	// Base58 string.
-	Digest string `json:"digest"`
-	// Attempts to convert the object into a MoveObject
-	AsMoveObject PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObject `json:"asMoveObject"`
-}
-
-// GetVersion returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject.Version, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject) GetVersion() uint64 {
-	return v.Version
-}
-
-// GetDigest returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject.Digest, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject) GetDigest() string {
-	return v.Digest
-}
-
-// GetAsMoveObject returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject.AsMoveObject, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject) GetAsMoveObject() PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObject {
-	return v.AsMoveObject
-}
-
-// PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObject includes the requested fields of the GraphQL type MoveObject.
-// The GraphQL type's documentation follows.
-//
-// The representation of an object as a Move Object, which exposes additional
-// information (content, module that governs it, version, is transferable,
-// etc.) about this object.
-type PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObject struct {
-	// Displays the contents of the Move object in a JSON string and through
-	// GraphQL types. Also provides the flat representation of the type
-	// signature, and the BCS of the corresponding data.
-	Contents PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValue `json:"contents"`
-}
-
-// GetContents returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObject.Contents, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObject) GetContents() PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValue {
-	return v.Contents
-}
-
-// PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValue includes the requested fields of the GraphQL type MoveValue.
-type PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValue struct {
-	// The value's Move type.
-	Type PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValueTypeMoveType `json:"type"`
-}
-
-// GetType returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValue.Type, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValue) GetType() PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValueTypeMoveType {
-	return v.Type
-}
-
-// PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValueTypeMoveType includes the requested fields of the GraphQL type MoveType.
-// The GraphQL type's documentation follows.
-//
-// Represents concrete types (no type parameters, no references).
-type PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValueTypeMoveType struct {
-	// Flat representation of the type signature, as a displayable string.
-	Repr string `json:"repr"`
-}
-
-// GetRepr returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValueTypeMoveType.Repr, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValueTypeMoveType) GetRepr() string {
-	return v.Repr
-}
-
-// PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject includes the requested fields of the GraphQL type Object.
-// The GraphQL type's documentation follows.
-//
-// An object in IOTA is a package (set of Move bytecode modules) or object
-// (typed data structure with fields) with additional metadata detailing its
-// id, version, transaction digest, owner field indicating how this object can
-// be accessed.
-type PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject struct {
-	Version uint64 `json:"version"`
-	// 32-byte hash that identifies the object's current contents, encoded as a
-	// Base58 string.
-	Digest string `json:"digest"`
-	// Attempts to convert the object into a MoveObject
-	AsMoveObject PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObject `json:"asMoveObject"`
-	// Attempts to convert the object into a MovePackage
-	AsMovePackage PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackage `json:"asMovePackage"`
-}
-
-// GetVersion returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject.Version, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject) GetVersion() uint64 {
-	return v.Version
-}
-
-// GetDigest returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject.Digest, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject) GetDigest() string {
-	return v.Digest
-}
-
-// GetAsMoveObject returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject.AsMoveObject, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject) GetAsMoveObject() PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObject {
-	return v.AsMoveObject
-}
-
-// GetAsMovePackage returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject.AsMovePackage, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject) GetAsMovePackage() PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackage {
-	return v.AsMovePackage
-}
-
-// PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObject includes the requested fields of the GraphQL type MoveObject.
-// The GraphQL type's documentation follows.
-//
-// The representation of an object as a Move Object, which exposes additional
-// information (content, module that governs it, version, is transferable,
-// etc.) about this object.
-type PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObject struct {
-	// Displays the contents of the Move object in a JSON string and through
-	// GraphQL types. Also provides the flat representation of the type
-	// signature, and the BCS of the corresponding data.
-	Contents PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValue `json:"contents"`
-}
-
-// GetContents returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObject.Contents, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObject) GetContents() PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValue {
-	return v.Contents
-}
-
-// PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValue includes the requested fields of the GraphQL type MoveValue.
-type PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValue struct {
-	// The value's Move type.
-	Type PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValueTypeMoveType `json:"type"`
-}
-
-// GetType returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValue.Type, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValue) GetType() PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValueTypeMoveType {
-	return v.Type
-}
-
-// PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValueTypeMoveType includes the requested fields of the GraphQL type MoveType.
-// The GraphQL type's documentation follows.
-//
-// Represents concrete types (no type parameters, no references).
-type PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValueTypeMoveType struct {
-	// Flat representation of the type signature, as a displayable string.
-	Repr string `json:"repr"`
-}
-
-// GetRepr returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValueTypeMoveType.Repr, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValueTypeMoveType) GetRepr() string {
-	return v.Repr
-}
-
-// PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackage includes the requested fields of the GraphQL type MovePackage.
-// The GraphQL type's documentation follows.
-//
-// A MovePackage is a kind of Move object that represents code that has been
-// published on chain. It exposes information about its modules, type
-// definitions, functions, and dependencies.
-type PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackage struct {
-	// Paginate through the MoveModules defined in this package.
-	Modules PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackageModulesMoveModuleConnection `json:"modules"`
-}
-
-// GetModules returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackage.Modules, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackage) GetModules() PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackageModulesMoveModuleConnection {
-	return v.Modules
-}
-
-// PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackageModulesMoveModuleConnection includes the requested fields of the GraphQL type MoveModuleConnection.
-type PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackageModulesMoveModuleConnection struct {
-	// A list of nodes.
-	Nodes []PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule `json:"nodes"`
-}
-
-// GetNodes returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackageModulesMoveModuleConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackageModulesMoveModuleConnection) GetNodes() []PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule {
-	return v.Nodes
-}
-
-// PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule includes the requested fields of the GraphQL type MoveModule.
-// The GraphQL type's documentation follows.
-//
-// Represents a module in Move, a library that defines struct types
-// and functions that operate on these types.
-type PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule struct {
-	// The module's (unqualified) name.
-	Name string `json:"name"`
-}
-
-// GetName returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule.Name, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule) GetName() string {
-	return v.Name
-}
-
-// PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
-// The GraphQL type's documentation follows.
-//
-// Information about pagination in a connection
-type PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionPageInfo struct {
-	// When paginating forwards, are there more items?
-	HasNextPage bool `json:"hasNextPage"`
-	// When paginating forwards, the cursor to continue.
-	EndCursor string `json:"endCursor"`
-}
-
-// GetHasNextPage returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionPageInfo) GetHasNextPage() bool {
-	return v.HasNextPage
-}
-
-// GetEndCursor returns PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
-func (v *PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionPageInfo) GetEndCursor() string {
-	return v.EndCursor
-}
-
 // PaginateTransactionBlockListsResponse is returned by PaginateTransactionBlockLists on success.
 type PaginateTransactionBlockListsResponse struct {
 	// Fetch a transaction block by its transaction digest.
@@ -6754,194 +5846,161 @@ func (v *PaginateTransactionBlockListsResponse) GetTransactionBlock() PaginateTr
 
 // PaginateTransactionBlockListsTransactionBlock includes the requested fields of the GraphQL type TransactionBlock.
 type PaginateTransactionBlockListsTransactionBlock struct {
-	PAGINATE_TRANSACTION_LISTS `json:"-"`
+	// The effects field captures the results to the chain of executing this
+	// transaction.
+	Effects PaginateTransactionBlockListsTransactionBlockEffects `json:"effects"`
 }
 
 // GetEffects returns PaginateTransactionBlockListsTransactionBlock.Effects, and is useful for accessing the field via an interface.
-func (v *PaginateTransactionBlockListsTransactionBlock) GetEffects() PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffects {
-	return v.PAGINATE_TRANSACTION_LISTS.Effects
+func (v *PaginateTransactionBlockListsTransactionBlock) GetEffects() PaginateTransactionBlockListsTransactionBlockEffects {
+	return v.Effects
 }
 
-func (v *PaginateTransactionBlockListsTransactionBlock) UnmarshalJSON(b []byte) error {
-
-	if string(b) == "null" {
-		return nil
-	}
-
-	var firstPass struct {
-		*PaginateTransactionBlockListsTransactionBlock
-		graphql.NoUnmarshalJSON
-	}
-	firstPass.PaginateTransactionBlockListsTransactionBlock = v
-
-	err := json.Unmarshal(b, &firstPass)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(
-		b, &v.PAGINATE_TRANSACTION_LISTS)
-	if err != nil {
-		return err
-	}
-	return nil
+// PaginateTransactionBlockListsTransactionBlockEffects includes the requested fields of the GraphQL type TransactionBlockEffects.
+// The GraphQL type's documentation follows.
+//
+// The effects representing the result of executing a transaction block.
+type PaginateTransactionBlockListsTransactionBlockEffects struct {
+	// Events emitted by this transaction block.
+	Events PaginateTransactionBlockListsTransactionBlockEffectsEventsEventConnection `json:"events"`
+	// The effect this transaction had on the balances (sum of coin values per
+	// coin type) of addresses and objects.
+	BalanceChanges PaginateTransactionBlockListsTransactionBlockEffectsBalanceChangesBalanceChangeConnection `json:"balanceChanges"`
+	// The effect this transaction had on objects on-chain.
+	ObjectChanges PaginateTransactionBlockListsTransactionBlockEffectsObjectChangesObjectChangeConnection `json:"objectChanges"`
 }
 
-type __premarshalPaginateTransactionBlockListsTransactionBlock struct {
-	Effects PAGINATE_TRANSACTION_LISTSEffectsTransactionBlockEffects `json:"effects"`
+// GetEvents returns PaginateTransactionBlockListsTransactionBlockEffects.Events, and is useful for accessing the field via an interface.
+func (v *PaginateTransactionBlockListsTransactionBlockEffects) GetEvents() PaginateTransactionBlockListsTransactionBlockEffectsEventsEventConnection {
+	return v.Events
 }
 
-func (v *PaginateTransactionBlockListsTransactionBlock) MarshalJSON() ([]byte, error) {
-	premarshaled, err := v.__premarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(premarshaled)
+// GetBalanceChanges returns PaginateTransactionBlockListsTransactionBlockEffects.BalanceChanges, and is useful for accessing the field via an interface.
+func (v *PaginateTransactionBlockListsTransactionBlockEffects) GetBalanceChanges() PaginateTransactionBlockListsTransactionBlockEffectsBalanceChangesBalanceChangeConnection {
+	return v.BalanceChanges
 }
 
-func (v *PaginateTransactionBlockListsTransactionBlock) __premarshalJSON() (*__premarshalPaginateTransactionBlockListsTransactionBlock, error) {
-	var retval __premarshalPaginateTransactionBlockListsTransactionBlock
-
-	retval.Effects = v.PAGINATE_TRANSACTION_LISTS.Effects
-	return &retval, nil
+// GetObjectChanges returns PaginateTransactionBlockListsTransactionBlockEffects.ObjectChanges, and is useful for accessing the field via an interface.
+func (v *PaginateTransactionBlockListsTransactionBlockEffects) GetObjectChanges() PaginateTransactionBlockListsTransactionBlockEffectsObjectChangesObjectChangeConnection {
+	return v.ObjectChanges
 }
 
-// QueryEventsEventsEventConnection includes the requested fields of the GraphQL type EventConnection.
-type QueryEventsEventsEventConnection struct {
+// PaginateTransactionBlockListsTransactionBlockEffectsBalanceChangesBalanceChangeConnection includes the requested fields of the GraphQL type BalanceChangeConnection.
+type PaginateTransactionBlockListsTransactionBlockEffectsBalanceChangesBalanceChangeConnection struct {
 	// Information to aid in pagination.
-	PageInfo QueryEventsEventsEventConnectionPageInfo `json:"pageInfo"`
+	PageInfo PaginateTransactionBlockListsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionPageInfo `json:"pageInfo"`
 	// A list of nodes.
-	Nodes []QueryEventsEventsEventConnectionNodesEvent `json:"nodes"`
+	Nodes []BalanceChangeData `json:"nodes"`
 }
 
-// GetPageInfo returns QueryEventsEventsEventConnection.PageInfo, and is useful for accessing the field via an interface.
-func (v *QueryEventsEventsEventConnection) GetPageInfo() QueryEventsEventsEventConnectionPageInfo {
+// GetPageInfo returns PaginateTransactionBlockListsTransactionBlockEffectsBalanceChangesBalanceChangeConnection.PageInfo, and is useful for accessing the field via an interface.
+func (v *PaginateTransactionBlockListsTransactionBlockEffectsBalanceChangesBalanceChangeConnection) GetPageInfo() PaginateTransactionBlockListsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionPageInfo {
 	return v.PageInfo
 }
 
-// GetNodes returns QueryEventsEventsEventConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *QueryEventsEventsEventConnection) GetNodes() []QueryEventsEventsEventConnectionNodesEvent {
+// GetNodes returns PaginateTransactionBlockListsTransactionBlockEffectsBalanceChangesBalanceChangeConnection.Nodes, and is useful for accessing the field via an interface.
+func (v *PaginateTransactionBlockListsTransactionBlockEffectsBalanceChangesBalanceChangeConnection) GetNodes() []BalanceChangeData {
 	return v.Nodes
 }
 
-// QueryEventsEventsEventConnectionNodesEvent includes the requested fields of the GraphQL type Event.
-type QueryEventsEventsEventConnectionNodesEvent struct {
-	RPC_EVENTS_FIELDS `json:"-"`
-}
-
-// GetSendingModule returns QueryEventsEventsEventConnectionNodesEvent.SendingModule, and is useful for accessing the field via an interface.
-func (v *QueryEventsEventsEventConnectionNodesEvent) GetSendingModule() RPC_EVENTS_FIELDSSendingModuleMoveModule {
-	return v.RPC_EVENTS_FIELDS.SendingModule
-}
-
-// GetSender returns QueryEventsEventsEventConnectionNodesEvent.Sender, and is useful for accessing the field via an interface.
-func (v *QueryEventsEventsEventConnectionNodesEvent) GetSender() RPC_EVENTS_FIELDSSenderAddress {
-	return v.RPC_EVENTS_FIELDS.Sender
-}
-
-// GetJson returns QueryEventsEventsEventConnectionNodesEvent.Json, and is useful for accessing the field via an interface.
-func (v *QueryEventsEventsEventConnectionNodesEvent) GetJson() json.RawMessage {
-	return v.RPC_EVENTS_FIELDS.Json
-}
-
-// GetTimestamp returns QueryEventsEventsEventConnectionNodesEvent.Timestamp, and is useful for accessing the field via an interface.
-func (v *QueryEventsEventsEventConnectionNodesEvent) GetTimestamp() time.Time {
-	return v.RPC_EVENTS_FIELDS.Timestamp
-}
-
-func (v *QueryEventsEventsEventConnectionNodesEvent) UnmarshalJSON(b []byte) error {
-
-	if string(b) == "null" {
-		return nil
-	}
-
-	var firstPass struct {
-		*QueryEventsEventsEventConnectionNodesEvent
-		graphql.NoUnmarshalJSON
-	}
-	firstPass.QueryEventsEventsEventConnectionNodesEvent = v
-
-	err := json.Unmarshal(b, &firstPass)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(
-		b, &v.RPC_EVENTS_FIELDS)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-type __premarshalQueryEventsEventsEventConnectionNodesEvent struct {
-	SendingModule RPC_EVENTS_FIELDSSendingModuleMoveModule `json:"sendingModule"`
-
-	Sender RPC_EVENTS_FIELDSSenderAddress `json:"sender"`
-
-	Json json.RawMessage `json:"json"`
-
-	Timestamp time.Time `json:"timestamp"`
-}
-
-func (v *QueryEventsEventsEventConnectionNodesEvent) MarshalJSON() ([]byte, error) {
-	premarshaled, err := v.__premarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(premarshaled)
-}
-
-func (v *QueryEventsEventsEventConnectionNodesEvent) __premarshalJSON() (*__premarshalQueryEventsEventsEventConnectionNodesEvent, error) {
-	var retval __premarshalQueryEventsEventsEventConnectionNodesEvent
-
-	retval.SendingModule = v.RPC_EVENTS_FIELDS.SendingModule
-	retval.Sender = v.RPC_EVENTS_FIELDS.Sender
-	retval.Json = v.RPC_EVENTS_FIELDS.Json
-	retval.Timestamp = v.RPC_EVENTS_FIELDS.Timestamp
-	return &retval, nil
-}
-
-// QueryEventsEventsEventConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
+// PaginateTransactionBlockListsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
 // The GraphQL type's documentation follows.
 //
 // Information about pagination in a connection
-type QueryEventsEventsEventConnectionPageInfo struct {
+type PaginateTransactionBlockListsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionPageInfo struct {
 	// When paginating forwards, are there more items?
 	HasNextPage bool `json:"hasNextPage"`
-	// When paginating backwards, are there more items?
-	HasPreviousPage bool `json:"hasPreviousPage"`
 	// When paginating forwards, the cursor to continue.
 	EndCursor string `json:"endCursor"`
-	// When paginating backwards, the cursor to continue.
-	StartCursor string `json:"startCursor"`
 }
 
-// GetHasNextPage returns QueryEventsEventsEventConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
-func (v *QueryEventsEventsEventConnectionPageInfo) GetHasNextPage() bool { return v.HasNextPage }
-
-// GetHasPreviousPage returns QueryEventsEventsEventConnectionPageInfo.HasPreviousPage, and is useful for accessing the field via an interface.
-func (v *QueryEventsEventsEventConnectionPageInfo) GetHasPreviousPage() bool {
-	return v.HasPreviousPage
+// GetHasNextPage returns PaginateTransactionBlockListsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
+func (v *PaginateTransactionBlockListsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionPageInfo) GetHasNextPage() bool {
+	return v.HasNextPage
 }
 
-// GetEndCursor returns QueryEventsEventsEventConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
-func (v *QueryEventsEventsEventConnectionPageInfo) GetEndCursor() string { return v.EndCursor }
-
-// GetStartCursor returns QueryEventsEventsEventConnectionPageInfo.StartCursor, and is useful for accessing the field via an interface.
-func (v *QueryEventsEventsEventConnectionPageInfo) GetStartCursor() string { return v.StartCursor }
-
-// QueryEventsResponse is returned by QueryEvents on success.
-type QueryEventsResponse struct {
-	// Query events that are emitted in the network.
-	// We currently do not support filtering by emitting module and event type
-	// at the same time so if both are provided in one filter, the query will
-	// error.
-	Events QueryEventsEventsEventConnection `json:"events"`
+// GetEndCursor returns PaginateTransactionBlockListsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
+func (v *PaginateTransactionBlockListsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionPageInfo) GetEndCursor() string {
+	return v.EndCursor
 }
 
-// GetEvents returns QueryEventsResponse.Events, and is useful for accessing the field via an interface.
-func (v *QueryEventsResponse) GetEvents() QueryEventsEventsEventConnection { return v.Events }
+// PaginateTransactionBlockListsTransactionBlockEffectsEventsEventConnection includes the requested fields of the GraphQL type EventConnection.
+type PaginateTransactionBlockListsTransactionBlockEffectsEventsEventConnection struct {
+	// Information to aid in pagination.
+	PageInfo PaginateTransactionBlockListsTransactionBlockEffectsEventsEventConnectionPageInfo `json:"pageInfo"`
+	// A list of nodes.
+	Nodes []EventData `json:"nodes"`
+}
+
+// GetPageInfo returns PaginateTransactionBlockListsTransactionBlockEffectsEventsEventConnection.PageInfo, and is useful for accessing the field via an interface.
+func (v *PaginateTransactionBlockListsTransactionBlockEffectsEventsEventConnection) GetPageInfo() PaginateTransactionBlockListsTransactionBlockEffectsEventsEventConnectionPageInfo {
+	return v.PageInfo
+}
+
+// GetNodes returns PaginateTransactionBlockListsTransactionBlockEffectsEventsEventConnection.Nodes, and is useful for accessing the field via an interface.
+func (v *PaginateTransactionBlockListsTransactionBlockEffectsEventsEventConnection) GetNodes() []EventData {
+	return v.Nodes
+}
+
+// PaginateTransactionBlockListsTransactionBlockEffectsEventsEventConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
+// The GraphQL type's documentation follows.
+//
+// Information about pagination in a connection
+type PaginateTransactionBlockListsTransactionBlockEffectsEventsEventConnectionPageInfo struct {
+	// When paginating forwards, are there more items?
+	HasNextPage bool `json:"hasNextPage"`
+	// When paginating forwards, the cursor to continue.
+	EndCursor string `json:"endCursor"`
+}
+
+// GetHasNextPage returns PaginateTransactionBlockListsTransactionBlockEffectsEventsEventConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
+func (v *PaginateTransactionBlockListsTransactionBlockEffectsEventsEventConnectionPageInfo) GetHasNextPage() bool {
+	return v.HasNextPage
+}
+
+// GetEndCursor returns PaginateTransactionBlockListsTransactionBlockEffectsEventsEventConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
+func (v *PaginateTransactionBlockListsTransactionBlockEffectsEventsEventConnectionPageInfo) GetEndCursor() string {
+	return v.EndCursor
+}
+
+// PaginateTransactionBlockListsTransactionBlockEffectsObjectChangesObjectChangeConnection includes the requested fields of the GraphQL type ObjectChangeConnection.
+type PaginateTransactionBlockListsTransactionBlockEffectsObjectChangesObjectChangeConnection struct {
+	// Information to aid in pagination.
+	PageInfo PaginateTransactionBlockListsTransactionBlockEffectsObjectChangesObjectChangeConnectionPageInfo `json:"pageInfo"`
+	// A list of nodes.
+	Nodes []ObjectChangeData `json:"nodes"`
+}
+
+// GetPageInfo returns PaginateTransactionBlockListsTransactionBlockEffectsObjectChangesObjectChangeConnection.PageInfo, and is useful for accessing the field via an interface.
+func (v *PaginateTransactionBlockListsTransactionBlockEffectsObjectChangesObjectChangeConnection) GetPageInfo() PaginateTransactionBlockListsTransactionBlockEffectsObjectChangesObjectChangeConnectionPageInfo {
+	return v.PageInfo
+}
+
+// GetNodes returns PaginateTransactionBlockListsTransactionBlockEffectsObjectChangesObjectChangeConnection.Nodes, and is useful for accessing the field via an interface.
+func (v *PaginateTransactionBlockListsTransactionBlockEffectsObjectChangesObjectChangeConnection) GetNodes() []ObjectChangeData {
+	return v.Nodes
+}
+
+// PaginateTransactionBlockListsTransactionBlockEffectsObjectChangesObjectChangeConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
+// The GraphQL type's documentation follows.
+//
+// Information about pagination in a connection
+type PaginateTransactionBlockListsTransactionBlockEffectsObjectChangesObjectChangeConnectionPageInfo struct {
+	// When paginating forwards, are there more items?
+	HasNextPage bool `json:"hasNextPage"`
+	// When paginating forwards, the cursor to continue.
+	EndCursor string `json:"endCursor"`
+}
+
+// GetHasNextPage returns PaginateTransactionBlockListsTransactionBlockEffectsObjectChangesObjectChangeConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
+func (v *PaginateTransactionBlockListsTransactionBlockEffectsObjectChangesObjectChangeConnectionPageInfo) GetHasNextPage() bool {
+	return v.HasNextPage
+}
+
+// GetEndCursor returns PaginateTransactionBlockListsTransactionBlockEffectsObjectChangesObjectChangeConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
+func (v *PaginateTransactionBlockListsTransactionBlockEffectsObjectChangesObjectChangeConnectionPageInfo) GetEndCursor() string {
+	return v.EndCursor
+}
 
 // QueryTransactionBlocksResponse is returned by QueryTransactionBlocks on success.
 type QueryTransactionBlocksResponse struct {
@@ -6983,7 +6042,7 @@ type QueryTransactionBlocksTransactionBlocksTransactionBlockConnection struct {
 	// Information to aid in pagination.
 	PageInfo QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionPageInfo `json:"pageInfo"`
 	// A list of nodes.
-	Nodes []QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock `json:"nodes"`
+	Nodes []TxBlockData `json:"nodes"`
 }
 
 // GetPageInfo returns QueryTransactionBlocksTransactionBlocksTransactionBlockConnection.PageInfo, and is useful for accessing the field via an interface.
@@ -6992,94 +6051,8 @@ func (v *QueryTransactionBlocksTransactionBlocksTransactionBlockConnection) GetP
 }
 
 // GetNodes returns QueryTransactionBlocksTransactionBlocksTransactionBlockConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *QueryTransactionBlocksTransactionBlocksTransactionBlockConnection) GetNodes() []QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock {
+func (v *QueryTransactionBlocksTransactionBlocksTransactionBlockConnection) GetNodes() []TxBlockData {
 	return v.Nodes
-}
-
-// QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock includes the requested fields of the GraphQL type TransactionBlock.
-type QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock struct {
-	RPC_TRANSACTION_FIELDS `json:"-"`
-}
-
-// GetDigest returns QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock.Digest, and is useful for accessing the field via an interface.
-func (v *QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock) GetDigest() string {
-	return v.RPC_TRANSACTION_FIELDS.Digest
-}
-
-// GetBcs returns QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock.Bcs, and is useful for accessing the field via an interface.
-func (v *QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock) GetBcs() iotago.Base64Data {
-	return v.RPC_TRANSACTION_FIELDS.Bcs
-}
-
-// GetSender returns QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock.Sender, and is useful for accessing the field via an interface.
-func (v *QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock) GetSender() RPC_TRANSACTION_FIELDSSenderAddress {
-	return v.RPC_TRANSACTION_FIELDS.Sender
-}
-
-// GetSignatures returns QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock.Signatures, and is useful for accessing the field via an interface.
-func (v *QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock) GetSignatures() []iotago.Base64Data {
-	return v.RPC_TRANSACTION_FIELDS.Signatures
-}
-
-// GetEffects returns QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock.Effects, and is useful for accessing the field via an interface.
-func (v *QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock) GetEffects() RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects {
-	return v.RPC_TRANSACTION_FIELDS.Effects
-}
-
-func (v *QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock) UnmarshalJSON(b []byte) error {
-
-	if string(b) == "null" {
-		return nil
-	}
-
-	var firstPass struct {
-		*QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock
-		graphql.NoUnmarshalJSON
-	}
-	firstPass.QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock = v
-
-	err := json.Unmarshal(b, &firstPass)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(
-		b, &v.RPC_TRANSACTION_FIELDS)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-type __premarshalQueryTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock struct {
-	Digest string `json:"digest"`
-
-	Bcs iotago.Base64Data `json:"bcs"`
-
-	Sender RPC_TRANSACTION_FIELDSSenderAddress `json:"sender"`
-
-	Signatures []iotago.Base64Data `json:"signatures"`
-
-	Effects RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects `json:"effects"`
-}
-
-func (v *QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock) MarshalJSON() ([]byte, error) {
-	premarshaled, err := v.__premarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(premarshaled)
-}
-
-func (v *QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock) __premarshalJSON() (*__premarshalQueryTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock, error) {
-	var retval __premarshalQueryTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock
-
-	retval.Digest = v.RPC_TRANSACTION_FIELDS.Digest
-	retval.Bcs = v.RPC_TRANSACTION_FIELDS.Bcs
-	retval.Sender = v.RPC_TRANSACTION_FIELDS.Sender
-	retval.Signatures = v.RPC_TRANSACTION_FIELDS.Signatures
-	retval.Effects = v.RPC_TRANSACTION_FIELDS.Effects
-	return &retval, nil
 }
 
 // QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
@@ -7115,95 +6088,6 @@ func (v *QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionPageIn
 // GetEndCursor returns QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
 func (v *QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionPageInfo) GetEndCursor() string {
 	return v.EndCursor
-}
-
-// RPC_EVENTS_FIELDS includes the GraphQL fields of Event requested by the fragment RPC_EVENTS_FIELDS.
-type RPC_EVENTS_FIELDS struct {
-	// The Move module containing some function that when called by
-	// a programmable transaction block (PTB) emitted this event.
-	// For example, if a PTB invokes A::m1::foo, which internally
-	// calls A::m2::emit_event to emit an event,
-	// the sending module would be A::m1.
-	SendingModule RPC_EVENTS_FIELDSSendingModuleMoveModule `json:"sendingModule"`
-	// Address of the sender of the event
-	Sender RPC_EVENTS_FIELDSSenderAddress `json:"sender"`
-	// Representation of a Move value in JSON, where:
-	//
-	// - Addresses, IDs, and UIDs are represented in canonical form, as JSON
-	// strings.
-	// - Bools are represented by JSON boolean literals.
-	// - u8, u16, and u32 are represented as JSON numbers.
-	// - u64, u128, and u256 are represented as JSON strings.
-	// - Vectors are represented by JSON arrays.
-	// - Structs are represented by JSON objects.
-	// - Empty optional values are represented by `null`.
-	//
-	// This form is offered as a less verbose convenience in cases where the
-	// layout of the type is known by the client.
-	Json json.RawMessage `json:"json"`
-	// UTC timestamp in milliseconds since epoch (1/1/1970)
-	Timestamp time.Time `json:"timestamp"`
-}
-
-// GetSendingModule returns RPC_EVENTS_FIELDS.SendingModule, and is useful for accessing the field via an interface.
-func (v *RPC_EVENTS_FIELDS) GetSendingModule() RPC_EVENTS_FIELDSSendingModuleMoveModule {
-	return v.SendingModule
-}
-
-// GetSender returns RPC_EVENTS_FIELDS.Sender, and is useful for accessing the field via an interface.
-func (v *RPC_EVENTS_FIELDS) GetSender() RPC_EVENTS_FIELDSSenderAddress { return v.Sender }
-
-// GetJson returns RPC_EVENTS_FIELDS.Json, and is useful for accessing the field via an interface.
-func (v *RPC_EVENTS_FIELDS) GetJson() json.RawMessage { return v.Json }
-
-// GetTimestamp returns RPC_EVENTS_FIELDS.Timestamp, and is useful for accessing the field via an interface.
-func (v *RPC_EVENTS_FIELDS) GetTimestamp() time.Time { return v.Timestamp }
-
-// RPC_EVENTS_FIELDSSenderAddress includes the requested fields of the GraphQL type Address.
-// The GraphQL type's documentation follows.
-//
-// The 32-byte address that is an account address (corresponding to a public
-// key).
-type RPC_EVENTS_FIELDSSenderAddress struct {
-	Address iotago.Address `json:"address"`
-}
-
-// GetAddress returns RPC_EVENTS_FIELDSSenderAddress.Address, and is useful for accessing the field via an interface.
-func (v *RPC_EVENTS_FIELDSSenderAddress) GetAddress() iotago.Address { return v.Address }
-
-// RPC_EVENTS_FIELDSSendingModuleMoveModule includes the requested fields of the GraphQL type MoveModule.
-// The GraphQL type's documentation follows.
-//
-// Represents a module in Move, a library that defines struct types
-// and functions that operate on these types.
-type RPC_EVENTS_FIELDSSendingModuleMoveModule struct {
-	// The package that this Move module was defined in
-	Package RPC_EVENTS_FIELDSSendingModuleMoveModulePackageMovePackage `json:"package"`
-	// The module's (unqualified) name.
-	Name string `json:"name"`
-}
-
-// GetPackage returns RPC_EVENTS_FIELDSSendingModuleMoveModule.Package, and is useful for accessing the field via an interface.
-func (v *RPC_EVENTS_FIELDSSendingModuleMoveModule) GetPackage() RPC_EVENTS_FIELDSSendingModuleMoveModulePackageMovePackage {
-	return v.Package
-}
-
-// GetName returns RPC_EVENTS_FIELDSSendingModuleMoveModule.Name, and is useful for accessing the field via an interface.
-func (v *RPC_EVENTS_FIELDSSendingModuleMoveModule) GetName() string { return v.Name }
-
-// RPC_EVENTS_FIELDSSendingModuleMoveModulePackageMovePackage includes the requested fields of the GraphQL type MovePackage.
-// The GraphQL type's documentation follows.
-//
-// A MovePackage is a kind of Move object that represents code that has been
-// published on chain. It exposes information about its modules, type
-// definitions, functions, and dependencies.
-type RPC_EVENTS_FIELDSSendingModuleMoveModulePackageMovePackage struct {
-	Address iotago.Address `json:"address"`
-}
-
-// GetAddress returns RPC_EVENTS_FIELDSSendingModuleMoveModulePackageMovePackage.Address, and is useful for accessing the field via an interface.
-func (v *RPC_EVENTS_FIELDSSendingModuleMoveModulePackageMovePackage) GetAddress() iotago.Address {
-	return v.Address
 }
 
 // RPC_MOVE_OBJECT_FIELDS includes the GraphQL fields of MoveObject requested by the fragment RPC_MOVE_OBJECT_FIELDS.
@@ -8990,705 +7874,6 @@ type RPC_STAKE_FIELDSRequestedEpoch struct {
 // GetEpochId returns RPC_STAKE_FIELDSRequestedEpoch.EpochId, and is useful for accessing the field via an interface.
 func (v *RPC_STAKE_FIELDSRequestedEpoch) GetEpochId() uint64 { return v.EpochId }
 
-// RPC_TRANSACTION_FIELDS includes the GraphQL fields of TransactionBlock requested by the fragment RPC_TRANSACTION_FIELDS.
-type RPC_TRANSACTION_FIELDS struct {
-	// A 32-byte hash that uniquely identifies the transaction block contents,
-	// encoded in Base58. This serves as a unique id for the block on
-	// chain.
-	Digest string `json:"digest"`
-	// Serialized form of this transaction's `SenderSignedData`, BCS serialized
-	// and Base64 encoded.
-	Bcs iotago.Base64Data `json:"bcs"`
-	// The address corresponding to the public key that signed this
-	// transaction. System transactions do not have senders.
-	Sender RPC_TRANSACTION_FIELDSSenderAddress `json:"sender"`
-	// A list of all signatures, Base64-encoded, from senders, and potentially
-	// the gas owner if this is a sponsored transaction.
-	Signatures []iotago.Base64Data `json:"signatures"`
-	// The effects field captures the results to the chain of executing this
-	// transaction.
-	Effects RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects `json:"effects"`
-}
-
-// GetDigest returns RPC_TRANSACTION_FIELDS.Digest, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDS) GetDigest() string { return v.Digest }
-
-// GetBcs returns RPC_TRANSACTION_FIELDS.Bcs, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDS) GetBcs() iotago.Base64Data { return v.Bcs }
-
-// GetSender returns RPC_TRANSACTION_FIELDS.Sender, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDS) GetSender() RPC_TRANSACTION_FIELDSSenderAddress { return v.Sender }
-
-// GetSignatures returns RPC_TRANSACTION_FIELDS.Signatures, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDS) GetSignatures() []iotago.Base64Data { return v.Signatures }
-
-// GetEffects returns RPC_TRANSACTION_FIELDS.Effects, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDS) GetEffects() RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects {
-	return v.Effects
-}
-
-// RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects includes the requested fields of the GraphQL type TransactionBlockEffects.
-// The GraphQL type's documentation follows.
-//
-// The effects representing the result of executing a transaction block.
-type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects struct {
-	// Base64 encoded bcs serialization of the on-chain transaction effects.
-	Bcs iotago.Base64Data `json:"bcs"`
-	// Events emitted by this transaction block.
-	Events RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnection `json:"events"`
-	// The checkpoint this transaction was finalized in.
-	Checkpoint RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsCheckpoint `json:"checkpoint"`
-	// Timestamp corresponding to the checkpoint this transaction was finalized
-	// in.
-	Timestamp time.Time `json:"timestamp"`
-	// Effects to the gas object.
-	GasEffects RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffects `json:"gasEffects"`
-	// The effect this transaction had on the balances (sum of coin values per
-	// coin type) of addresses and objects.
-	BalanceChanges RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnection `json:"balanceChanges"`
-	// The effect this transaction had on objects on-chain.
-	ObjectChanges RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnection `json:"objectChanges"`
-}
-
-// GetBcs returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects.Bcs, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects) GetBcs() iotago.Base64Data {
-	return v.Bcs
-}
-
-// GetEvents returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects.Events, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects) GetEvents() RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnection {
-	return v.Events
-}
-
-// GetCheckpoint returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects.Checkpoint, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects) GetCheckpoint() RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsCheckpoint {
-	return v.Checkpoint
-}
-
-// GetTimestamp returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects.Timestamp, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects) GetTimestamp() time.Time {
-	return v.Timestamp
-}
-
-// GetGasEffects returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects.GasEffects, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects) GetGasEffects() RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffects {
-	return v.GasEffects
-}
-
-// GetBalanceChanges returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects.BalanceChanges, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects) GetBalanceChanges() RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnection {
-	return v.BalanceChanges
-}
-
-// GetObjectChanges returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects.ObjectChanges, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects) GetObjectChanges() RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnection {
-	return v.ObjectChanges
-}
-
-// RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnection includes the requested fields of the GraphQL type BalanceChangeConnection.
-type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnection struct {
-	// Information to aid in pagination.
-	PageInfo RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionPageInfo `json:"pageInfo"`
-	// A list of nodes.
-	Nodes []RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange `json:"nodes"`
-}
-
-// GetPageInfo returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnection.PageInfo, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnection) GetPageInfo() RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionPageInfo {
-	return v.PageInfo
-}
-
-// GetNodes returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnection) GetNodes() []RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange {
-	return v.Nodes
-}
-
-// RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange includes the requested fields of the GraphQL type BalanceChange.
-// The GraphQL type's documentation follows.
-//
-// Effects to the balance (sum of coin values per coin type) owned by an
-// address or object.
-type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange struct {
-	// The inner type of the coin whose balance has changed (e.g.
-	// `0x2::iota::IOTA`).
-	CoinType RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeCoinTypeMoveType `json:"coinType"`
-	// The address or object whose balance has changed.
-	Owner RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner `json:"owner"`
-	// The signed balance change.
-	Amount BigInt `json:"amount"`
-}
-
-// GetCoinType returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange.CoinType, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange) GetCoinType() RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeCoinTypeMoveType {
-	return v.CoinType
-}
-
-// GetOwner returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange.Owner, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange) GetOwner() RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner {
-	return v.Owner
-}
-
-// GetAmount returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange.Amount, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange) GetAmount() BigInt {
-	return v.Amount
-}
-
-// RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeCoinTypeMoveType includes the requested fields of the GraphQL type MoveType.
-// The GraphQL type's documentation follows.
-//
-// Represents concrete types (no type parameters, no references).
-type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeCoinTypeMoveType struct {
-	// Flat representation of the type signature, as a displayable string.
-	Repr string `json:"repr"`
-}
-
-// GetRepr returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeCoinTypeMoveType.Repr, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeCoinTypeMoveType) GetRepr() string {
-	return v.Repr
-}
-
-// RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner includes the requested fields of the GraphQL type Owner.
-// The GraphQL type's documentation follows.
-//
-// An Owner is an entity that can own an object. Each Owner is identified by a
-// IotaAddress which represents either an Address (corresponding to a public
-// key of an account) or an Object, but never both (it is not known up-front
-// whether a given Owner is an Address or an Object).
-type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner struct {
-	AsObject  RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsObject  `json:"asObject"`
-	AsAddress RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsAddress `json:"asAddress"`
-}
-
-// GetAsObject returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner.AsObject, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner) GetAsObject() RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsObject {
-	return v.AsObject
-}
-
-// GetAsAddress returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner.AsAddress, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner) GetAsAddress() RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsAddress {
-	return v.AsAddress
-}
-
-// RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsAddress includes the requested fields of the GraphQL type Address.
-// The GraphQL type's documentation follows.
-//
-// The 32-byte address that is an account address (corresponding to a public
-// key).
-type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsAddress struct {
-	Address iotago.Address `json:"address"`
-}
-
-// GetAddress returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsAddress.Address, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsAddress) GetAddress() iotago.Address {
-	return v.Address
-}
-
-// RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsObject includes the requested fields of the GraphQL type Object.
-// The GraphQL type's documentation follows.
-//
-// An object in IOTA is a package (set of Move bytecode modules) or object
-// (typed data structure with fields) with additional metadata detailing its
-// id, version, transaction digest, owner field indicating how this object can
-// be accessed.
-type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsObject struct {
-	Address iotago.Address `json:"address"`
-}
-
-// GetAddress returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsObject.Address, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwnerAsObject) GetAddress() iotago.Address {
-	return v.Address
-}
-
-// RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
-// The GraphQL type's documentation follows.
-//
-// Information about pagination in a connection
-type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionPageInfo struct {
-	// When paginating forwards, are there more items?
-	HasNextPage bool `json:"hasNextPage"`
-	// When paginating forwards, the cursor to continue.
-	EndCursor string `json:"endCursor"`
-}
-
-// GetHasNextPage returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionPageInfo) GetHasNextPage() bool {
-	return v.HasNextPage
-}
-
-// GetEndCursor returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionPageInfo) GetEndCursor() string {
-	return v.EndCursor
-}
-
-// RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsCheckpoint includes the requested fields of the GraphQL type Checkpoint.
-// The GraphQL type's documentation follows.
-//
-// Checkpoints contain finalized transactions and are used for node
-// synchronization and global transaction ordering.
-type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsCheckpoint struct {
-	// This checkpoint's position in the total order of finalized checkpoints,
-	// agreed upon by consensus.
-	SequenceNumber uint64 `json:"sequenceNumber"`
-}
-
-// GetSequenceNumber returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsCheckpoint.SequenceNumber, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsCheckpoint) GetSequenceNumber() uint64 {
-	return v.SequenceNumber
-}
-
-// RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnection includes the requested fields of the GraphQL type EventConnection.
-type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnection struct {
-	// Information to aid in pagination.
-	PageInfo RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnectionPageInfo `json:"pageInfo"`
-	// A list of nodes.
-	Nodes []RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent `json:"nodes"`
-}
-
-// GetPageInfo returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnection.PageInfo, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnection) GetPageInfo() RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnectionPageInfo {
-	return v.PageInfo
-}
-
-// GetNodes returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnection) GetNodes() []RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent {
-	return v.Nodes
-}
-
-// RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent includes the requested fields of the GraphQL type Event.
-type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent struct {
-	RPC_EVENTS_FIELDS `json:"-"`
-}
-
-// GetSendingModule returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent.SendingModule, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent) GetSendingModule() RPC_EVENTS_FIELDSSendingModuleMoveModule {
-	return v.RPC_EVENTS_FIELDS.SendingModule
-}
-
-// GetSender returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent.Sender, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent) GetSender() RPC_EVENTS_FIELDSSenderAddress {
-	return v.RPC_EVENTS_FIELDS.Sender
-}
-
-// GetJson returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent.Json, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent) GetJson() json.RawMessage {
-	return v.RPC_EVENTS_FIELDS.Json
-}
-
-// GetTimestamp returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent.Timestamp, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent) GetTimestamp() time.Time {
-	return v.RPC_EVENTS_FIELDS.Timestamp
-}
-
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent) UnmarshalJSON(b []byte) error {
-
-	if string(b) == "null" {
-		return nil
-	}
-
-	var firstPass struct {
-		*RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent
-		graphql.NoUnmarshalJSON
-	}
-	firstPass.RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent = v
-
-	err := json.Unmarshal(b, &firstPass)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(
-		b, &v.RPC_EVENTS_FIELDS)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-type __premarshalRPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent struct {
-	SendingModule RPC_EVENTS_FIELDSSendingModuleMoveModule `json:"sendingModule"`
-
-	Sender RPC_EVENTS_FIELDSSenderAddress `json:"sender"`
-
-	Json json.RawMessage `json:"json"`
-
-	Timestamp time.Time `json:"timestamp"`
-}
-
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent) MarshalJSON() ([]byte, error) {
-	premarshaled, err := v.__premarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(premarshaled)
-}
-
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent) __premarshalJSON() (*__premarshalRPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent, error) {
-	var retval __premarshalRPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent
-
-	retval.SendingModule = v.RPC_EVENTS_FIELDS.SendingModule
-	retval.Sender = v.RPC_EVENTS_FIELDS.Sender
-	retval.Json = v.RPC_EVENTS_FIELDS.Json
-	retval.Timestamp = v.RPC_EVENTS_FIELDS.Timestamp
-	return &retval, nil
-}
-
-// RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
-// The GraphQL type's documentation follows.
-//
-// Information about pagination in a connection
-type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnectionPageInfo struct {
-	// When paginating forwards, are there more items?
-	HasNextPage bool `json:"hasNextPage"`
-	// When paginating forwards, the cursor to continue.
-	EndCursor string `json:"endCursor"`
-}
-
-// GetHasNextPage returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnectionPageInfo) GetHasNextPage() bool {
-	return v.HasNextPage
-}
-
-// GetEndCursor returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnectionPageInfo) GetEndCursor() string {
-	return v.EndCursor
-}
-
-// RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffects includes the requested fields of the GraphQL type GasEffects.
-// The GraphQL type's documentation follows.
-//
-// Effects related to gas (costs incurred and the identity of the smashed gas
-// object returned).
-type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffects struct {
-	GasSummary RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary `json:"gasSummary"`
-}
-
-// GetGasSummary returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffects.GasSummary, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffects) GetGasSummary() RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary {
-	return v.GasSummary
-}
-
-// RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary includes the requested fields of the GraphQL type GasCostSummary.
-// The GraphQL type's documentation follows.
-//
-// Breakdown of gas costs in effects.
-type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary struct {
-	// Gas paid for executing this transaction (in NANOS).
-	ComputationCost BigInt `json:"computationCost"`
-	// Gas burned for executing this transaction (in NANOS).
-	ComputationCostBurned BigInt `json:"computationCostBurned"`
-	// Gas paid for the data stored on-chain by this transaction (in NANOS).
-	StorageCost BigInt `json:"storageCost"`
-	// Part of storage cost that can be reclaimed by cleaning up data created
-	// by this transaction (when objects are deleted or an object is
-	// modified, which is treated as a deletion followed by a creation) (in
-	// NANOS).
-	StorageRebate BigInt `json:"storageRebate"`
-	// Part of storage cost that is not reclaimed when data created by this
-	// transaction is cleaned up (in NANOS).
-	NonRefundableStorageFee BigInt `json:"nonRefundableStorageFee"`
-}
-
-// GetComputationCost returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary.ComputationCost, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary) GetComputationCost() BigInt {
-	return v.ComputationCost
-}
-
-// GetComputationCostBurned returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary.ComputationCostBurned, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary) GetComputationCostBurned() BigInt {
-	return v.ComputationCostBurned
-}
-
-// GetStorageCost returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary.StorageCost, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary) GetStorageCost() BigInt {
-	return v.StorageCost
-}
-
-// GetStorageRebate returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary.StorageRebate, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary) GetStorageRebate() BigInt {
-	return v.StorageRebate
-}
-
-// GetNonRefundableStorageFee returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary.NonRefundableStorageFee, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsGasEffectsGasSummaryGasCostSummary) GetNonRefundableStorageFee() BigInt {
-	return v.NonRefundableStorageFee
-}
-
-// RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnection includes the requested fields of the GraphQL type ObjectChangeConnection.
-type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnection struct {
-	// Information to aid in pagination.
-	PageInfo RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionPageInfo `json:"pageInfo"`
-	// A list of nodes.
-	Nodes []RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange `json:"nodes"`
-}
-
-// GetPageInfo returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnection.PageInfo, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnection) GetPageInfo() RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionPageInfo {
-	return v.PageInfo
-}
-
-// GetNodes returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnection) GetNodes() []RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange {
-	return v.Nodes
-}
-
-// RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange includes the requested fields of the GraphQL type ObjectChange.
-// The GraphQL type's documentation follows.
-//
-// Effect on an individual Object (keyed by its ID).
-type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange struct {
-	// The address of the object that has changed.
-	Address iotago.Address `json:"address"`
-	// The contents of the object immediately before the transaction.
-	InputState RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject `json:"inputState"`
-	// The contents of the object immediately after the transaction.
-	OutputState RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject `json:"outputState"`
-}
-
-// GetAddress returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange.Address, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange) GetAddress() iotago.Address {
-	return v.Address
-}
-
-// GetInputState returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange.InputState, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange) GetInputState() RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject {
-	return v.InputState
-}
-
-// GetOutputState returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange.OutputState, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange) GetOutputState() RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject {
-	return v.OutputState
-}
-
-// RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject includes the requested fields of the GraphQL type Object.
-// The GraphQL type's documentation follows.
-//
-// An object in IOTA is a package (set of Move bytecode modules) or object
-// (typed data structure with fields) with additional metadata detailing its
-// id, version, transaction digest, owner field indicating how this object can
-// be accessed.
-type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject struct {
-	Version uint64 `json:"version"`
-	// 32-byte hash that identifies the object's current contents, encoded as a
-	// Base58 string.
-	Digest string `json:"digest"`
-	// Attempts to convert the object into a MoveObject
-	AsMoveObject RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObject `json:"asMoveObject"`
-}
-
-// GetVersion returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject.Version, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject) GetVersion() uint64 {
-	return v.Version
-}
-
-// GetDigest returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject.Digest, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject) GetDigest() string {
-	return v.Digest
-}
-
-// GetAsMoveObject returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject.AsMoveObject, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObject) GetAsMoveObject() RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObject {
-	return v.AsMoveObject
-}
-
-// RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObject includes the requested fields of the GraphQL type MoveObject.
-// The GraphQL type's documentation follows.
-//
-// The representation of an object as a Move Object, which exposes additional
-// information (content, module that governs it, version, is transferable,
-// etc.) about this object.
-type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObject struct {
-	// Displays the contents of the Move object in a JSON string and through
-	// GraphQL types. Also provides the flat representation of the type
-	// signature, and the BCS of the corresponding data.
-	Contents RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValue `json:"contents"`
-}
-
-// GetContents returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObject.Contents, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObject) GetContents() RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValue {
-	return v.Contents
-}
-
-// RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValue includes the requested fields of the GraphQL type MoveValue.
-type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValue struct {
-	// The value's Move type.
-	Type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValueTypeMoveType `json:"type"`
-}
-
-// GetType returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValue.Type, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValue) GetType() RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValueTypeMoveType {
-	return v.Type
-}
-
-// RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValueTypeMoveType includes the requested fields of the GraphQL type MoveType.
-// The GraphQL type's documentation follows.
-//
-// Represents concrete types (no type parameters, no references).
-type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValueTypeMoveType struct {
-	// Flat representation of the type signature, as a displayable string.
-	Repr string `json:"repr"`
-}
-
-// GetRepr returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValueTypeMoveType.Repr, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeInputStateObjectAsMoveObjectContentsMoveValueTypeMoveType) GetRepr() string {
-	return v.Repr
-}
-
-// RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject includes the requested fields of the GraphQL type Object.
-// The GraphQL type's documentation follows.
-//
-// An object in IOTA is a package (set of Move bytecode modules) or object
-// (typed data structure with fields) with additional metadata detailing its
-// id, version, transaction digest, owner field indicating how this object can
-// be accessed.
-type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject struct {
-	Version uint64 `json:"version"`
-	// 32-byte hash that identifies the object's current contents, encoded as a
-	// Base58 string.
-	Digest string `json:"digest"`
-	// Attempts to convert the object into a MoveObject
-	AsMoveObject RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObject `json:"asMoveObject"`
-	// Attempts to convert the object into a MovePackage
-	AsMovePackage RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackage `json:"asMovePackage"`
-}
-
-// GetVersion returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject.Version, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject) GetVersion() uint64 {
-	return v.Version
-}
-
-// GetDigest returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject.Digest, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject) GetDigest() string {
-	return v.Digest
-}
-
-// GetAsMoveObject returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject.AsMoveObject, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject) GetAsMoveObject() RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObject {
-	return v.AsMoveObject
-}
-
-// GetAsMovePackage returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject.AsMovePackage, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject) GetAsMovePackage() RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackage {
-	return v.AsMovePackage
-}
-
-// RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObject includes the requested fields of the GraphQL type MoveObject.
-// The GraphQL type's documentation follows.
-//
-// The representation of an object as a Move Object, which exposes additional
-// information (content, module that governs it, version, is transferable,
-// etc.) about this object.
-type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObject struct {
-	// Displays the contents of the Move object in a JSON string and through
-	// GraphQL types. Also provides the flat representation of the type
-	// signature, and the BCS of the corresponding data.
-	Contents RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValue `json:"contents"`
-}
-
-// GetContents returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObject.Contents, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObject) GetContents() RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValue {
-	return v.Contents
-}
-
-// RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValue includes the requested fields of the GraphQL type MoveValue.
-type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValue struct {
-	// The value's Move type.
-	Type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValueTypeMoveType `json:"type"`
-}
-
-// GetType returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValue.Type, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValue) GetType() RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValueTypeMoveType {
-	return v.Type
-}
-
-// RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValueTypeMoveType includes the requested fields of the GraphQL type MoveType.
-// The GraphQL type's documentation follows.
-//
-// Represents concrete types (no type parameters, no references).
-type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValueTypeMoveType struct {
-	// Flat representation of the type signature, as a displayable string.
-	Repr string `json:"repr"`
-}
-
-// GetRepr returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValueTypeMoveType.Repr, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMoveObjectContentsMoveValueTypeMoveType) GetRepr() string {
-	return v.Repr
-}
-
-// RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackage includes the requested fields of the GraphQL type MovePackage.
-// The GraphQL type's documentation follows.
-//
-// A MovePackage is a kind of Move object that represents code that has been
-// published on chain. It exposes information about its modules, type
-// definitions, functions, and dependencies.
-type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackage struct {
-	// Paginate through the MoveModules defined in this package.
-	Modules RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackageModulesMoveModuleConnection `json:"modules"`
-}
-
-// GetModules returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackage.Modules, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackage) GetModules() RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackageModulesMoveModuleConnection {
-	return v.Modules
-}
-
-// RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackageModulesMoveModuleConnection includes the requested fields of the GraphQL type MoveModuleConnection.
-type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackageModulesMoveModuleConnection struct {
-	// A list of nodes.
-	Nodes []RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule `json:"nodes"`
-}
-
-// GetNodes returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackageModulesMoveModuleConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackageModulesMoveModuleConnection) GetNodes() []RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule {
-	return v.Nodes
-}
-
-// RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule includes the requested fields of the GraphQL type MoveModule.
-// The GraphQL type's documentation follows.
-//
-// Represents a module in Move, a library that defines struct types
-// and functions that operate on these types.
-type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule struct {
-	// The module's (unqualified) name.
-	Name string `json:"name"`
-}
-
-// GetName returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule.Name, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObjectAsMovePackageModulesMoveModuleConnectionNodesMoveModule) GetName() string {
-	return v.Name
-}
-
-// RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
-// The GraphQL type's documentation follows.
-//
-// Information about pagination in a connection
-type RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionPageInfo struct {
-	// When paginating forwards, are there more items?
-	HasNextPage bool `json:"hasNextPage"`
-	// When paginating forwards, the cursor to continue.
-	EndCursor string `json:"endCursor"`
-}
-
-// GetHasNextPage returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionPageInfo) GetHasNextPage() bool {
-	return v.HasNextPage
-}
-
-// GetEndCursor returns RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionPageInfo) GetEndCursor() string {
-	return v.EndCursor
-}
-
-// RPC_TRANSACTION_FIELDSSenderAddress includes the requested fields of the GraphQL type Address.
-// The GraphQL type's documentation follows.
-//
-// The 32-byte address that is an account address (corresponding to a public
-// key).
-type RPC_TRANSACTION_FIELDSSenderAddress struct {
-	Address iotago.Address `json:"address"`
-}
-
-// GetAddress returns RPC_TRANSACTION_FIELDSSenderAddress.Address, and is useful for accessing the field via an interface.
-func (v *RPC_TRANSACTION_FIELDSSenderAddress) GetAddress() iotago.Address { return v.Address }
-
 // The stake's possible status: active, pending, or unstaked.
 type StakeStatus string
 
@@ -9706,6 +7891,309 @@ var AllStakeStatus = []StakeStatus{
 	StakeStatusActive,
 	StakeStatusPending,
 	StakeStatusUnstaked,
+}
+
+// Core transaction fields (no effects to avoid circular embedding)
+type TX_CORE struct {
+	// A 32-byte hash that uniquely identifies the transaction block contents,
+	// encoded in Base58. This serves as a unique id for the block on
+	// chain.
+	Digest string `json:"digest"`
+	// Serialized form of this transaction's `SenderSignedData`, BCS serialized
+	// and Base64 encoded.
+	Bcs iotago.Base64Data `json:"bcs"`
+	// The address corresponding to the public key that signed this
+	// transaction. System transactions do not have senders.
+	Sender TX_CORESenderAddress `json:"sender"`
+	// A list of all signatures, Base64-encoded, from senders, and potentially
+	// the gas owner if this is a sponsored transaction.
+	Signatures []iotago.Base64Data `json:"signatures"`
+}
+
+// GetDigest returns TX_CORE.Digest, and is useful for accessing the field via an interface.
+func (v *TX_CORE) GetDigest() string { return v.Digest }
+
+// GetBcs returns TX_CORE.Bcs, and is useful for accessing the field via an interface.
+func (v *TX_CORE) GetBcs() iotago.Base64Data { return v.Bcs }
+
+// GetSender returns TX_CORE.Sender, and is useful for accessing the field via an interface.
+func (v *TX_CORE) GetSender() TX_CORESenderAddress { return v.Sender }
+
+// GetSignatures returns TX_CORE.Signatures, and is useful for accessing the field via an interface.
+func (v *TX_CORE) GetSignatures() []iotago.Base64Data { return v.Signatures }
+
+// TX_CORESenderAddress includes the requested fields of the GraphQL type Address.
+// The GraphQL type's documentation follows.
+//
+// The 32-byte address that is an account address (corresponding to a public
+// key).
+type TX_CORESenderAddress struct {
+	Address iotago.Address `json:"address"`
+}
+
+// GetAddress returns TX_CORESenderAddress.Address, and is useful for accessing the field via an interface.
+func (v *TX_CORESenderAddress) GetAddress() iotago.Address { return v.Address }
+
+// Transaction effects fields
+type TX_EFFECTS struct {
+	// Whether the transaction executed successfully or not.
+	Status ExecutionStatus `json:"status"`
+	// The reason for a transaction failure, if it did fail.
+	// If the error is a Move abort, the error message will be resolved to a
+	// human-readable form if possible, otherwise it will fall back to
+	// displaying the abort code and location.
+	Errors string `json:"errors"`
+	// Base64 encoded bcs serialization of the on-chain transaction effects.
+	Bcs iotago.Base64Data `json:"bcs"`
+	// The checkpoint this transaction was finalized in.
+	Checkpoint TX_EFFECTSCheckpoint `json:"checkpoint"`
+	// Timestamp corresponding to the checkpoint this transaction was finalized
+	// in.
+	Timestamp time.Time `json:"timestamp"`
+	// Effects to the gas object.
+	GasEffects TX_EFFECTSGasEffects `json:"gasEffects"`
+	// Events emitted by this transaction block.
+	Events TX_EFFECTSEventsEventConnection `json:"events"`
+	// The effect this transaction had on the balances (sum of coin values per
+	// coin type) of addresses and objects.
+	BalanceChanges TX_EFFECTSBalanceChangesBalanceChangeConnection `json:"balanceChanges"`
+	// The effect this transaction had on objects on-chain.
+	ObjectChanges TX_EFFECTSObjectChangesObjectChangeConnection `json:"objectChanges"`
+	// The transaction that ran to produce these effects.
+	TransactionBlock TxBlockCore `json:"transactionBlock"`
+}
+
+// GetStatus returns TX_EFFECTS.Status, and is useful for accessing the field via an interface.
+func (v *TX_EFFECTS) GetStatus() ExecutionStatus { return v.Status }
+
+// GetErrors returns TX_EFFECTS.Errors, and is useful for accessing the field via an interface.
+func (v *TX_EFFECTS) GetErrors() string { return v.Errors }
+
+// GetBcs returns TX_EFFECTS.Bcs, and is useful for accessing the field via an interface.
+func (v *TX_EFFECTS) GetBcs() iotago.Base64Data { return v.Bcs }
+
+// GetCheckpoint returns TX_EFFECTS.Checkpoint, and is useful for accessing the field via an interface.
+func (v *TX_EFFECTS) GetCheckpoint() TX_EFFECTSCheckpoint { return v.Checkpoint }
+
+// GetTimestamp returns TX_EFFECTS.Timestamp, and is useful for accessing the field via an interface.
+func (v *TX_EFFECTS) GetTimestamp() time.Time { return v.Timestamp }
+
+// GetGasEffects returns TX_EFFECTS.GasEffects, and is useful for accessing the field via an interface.
+func (v *TX_EFFECTS) GetGasEffects() TX_EFFECTSGasEffects { return v.GasEffects }
+
+// GetEvents returns TX_EFFECTS.Events, and is useful for accessing the field via an interface.
+func (v *TX_EFFECTS) GetEvents() TX_EFFECTSEventsEventConnection { return v.Events }
+
+// GetBalanceChanges returns TX_EFFECTS.BalanceChanges, and is useful for accessing the field via an interface.
+func (v *TX_EFFECTS) GetBalanceChanges() TX_EFFECTSBalanceChangesBalanceChangeConnection {
+	return v.BalanceChanges
+}
+
+// GetObjectChanges returns TX_EFFECTS.ObjectChanges, and is useful for accessing the field via an interface.
+func (v *TX_EFFECTS) GetObjectChanges() TX_EFFECTSObjectChangesObjectChangeConnection {
+	return v.ObjectChanges
+}
+
+// GetTransactionBlock returns TX_EFFECTS.TransactionBlock, and is useful for accessing the field via an interface.
+func (v *TX_EFFECTS) GetTransactionBlock() TxBlockCore { return v.TransactionBlock }
+
+// TX_EFFECTSBalanceChangesBalanceChangeConnection includes the requested fields of the GraphQL type BalanceChangeConnection.
+type TX_EFFECTSBalanceChangesBalanceChangeConnection struct {
+	// Information to aid in pagination.
+	PageInfo TX_EFFECTSBalanceChangesBalanceChangeConnectionPageInfo `json:"pageInfo"`
+	// A list of nodes.
+	Nodes []BalanceChangeData `json:"nodes"`
+}
+
+// GetPageInfo returns TX_EFFECTSBalanceChangesBalanceChangeConnection.PageInfo, and is useful for accessing the field via an interface.
+func (v *TX_EFFECTSBalanceChangesBalanceChangeConnection) GetPageInfo() TX_EFFECTSBalanceChangesBalanceChangeConnectionPageInfo {
+	return v.PageInfo
+}
+
+// GetNodes returns TX_EFFECTSBalanceChangesBalanceChangeConnection.Nodes, and is useful for accessing the field via an interface.
+func (v *TX_EFFECTSBalanceChangesBalanceChangeConnection) GetNodes() []BalanceChangeData {
+	return v.Nodes
+}
+
+// TX_EFFECTSBalanceChangesBalanceChangeConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
+// The GraphQL type's documentation follows.
+//
+// Information about pagination in a connection
+type TX_EFFECTSBalanceChangesBalanceChangeConnectionPageInfo struct {
+	// When paginating forwards, are there more items?
+	HasNextPage bool `json:"hasNextPage"`
+	// When paginating forwards, the cursor to continue.
+	EndCursor string `json:"endCursor"`
+}
+
+// GetHasNextPage returns TX_EFFECTSBalanceChangesBalanceChangeConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
+func (v *TX_EFFECTSBalanceChangesBalanceChangeConnectionPageInfo) GetHasNextPage() bool {
+	return v.HasNextPage
+}
+
+// GetEndCursor returns TX_EFFECTSBalanceChangesBalanceChangeConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
+func (v *TX_EFFECTSBalanceChangesBalanceChangeConnectionPageInfo) GetEndCursor() string {
+	return v.EndCursor
+}
+
+// TX_EFFECTSCheckpoint includes the requested fields of the GraphQL type Checkpoint.
+// The GraphQL type's documentation follows.
+//
+// Checkpoints contain finalized transactions and are used for node
+// synchronization and global transaction ordering.
+type TX_EFFECTSCheckpoint struct {
+	// This checkpoint's position in the total order of finalized checkpoints,
+	// agreed upon by consensus.
+	SequenceNumber uint64 `json:"sequenceNumber"`
+}
+
+// GetSequenceNumber returns TX_EFFECTSCheckpoint.SequenceNumber, and is useful for accessing the field via an interface.
+func (v *TX_EFFECTSCheckpoint) GetSequenceNumber() uint64 { return v.SequenceNumber }
+
+// TX_EFFECTSEventsEventConnection includes the requested fields of the GraphQL type EventConnection.
+type TX_EFFECTSEventsEventConnection struct {
+	// Information to aid in pagination.
+	PageInfo TX_EFFECTSEventsEventConnectionPageInfo `json:"pageInfo"`
+	// A list of nodes.
+	Nodes []EventData `json:"nodes"`
+}
+
+// GetPageInfo returns TX_EFFECTSEventsEventConnection.PageInfo, and is useful for accessing the field via an interface.
+func (v *TX_EFFECTSEventsEventConnection) GetPageInfo() TX_EFFECTSEventsEventConnectionPageInfo {
+	return v.PageInfo
+}
+
+// GetNodes returns TX_EFFECTSEventsEventConnection.Nodes, and is useful for accessing the field via an interface.
+func (v *TX_EFFECTSEventsEventConnection) GetNodes() []EventData { return v.Nodes }
+
+// TX_EFFECTSEventsEventConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
+// The GraphQL type's documentation follows.
+//
+// Information about pagination in a connection
+type TX_EFFECTSEventsEventConnectionPageInfo struct {
+	// When paginating forwards, are there more items?
+	HasNextPage bool `json:"hasNextPage"`
+	// When paginating forwards, the cursor to continue.
+	EndCursor string `json:"endCursor"`
+}
+
+// GetHasNextPage returns TX_EFFECTSEventsEventConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
+func (v *TX_EFFECTSEventsEventConnectionPageInfo) GetHasNextPage() bool { return v.HasNextPage }
+
+// GetEndCursor returns TX_EFFECTSEventsEventConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
+func (v *TX_EFFECTSEventsEventConnectionPageInfo) GetEndCursor() string { return v.EndCursor }
+
+// TX_EFFECTSGasEffects includes the requested fields of the GraphQL type GasEffects.
+// The GraphQL type's documentation follows.
+//
+// Effects related to gas (costs incurred and the identity of the smashed gas
+// object returned).
+type TX_EFFECTSGasEffects struct {
+	GasObject  TX_EFFECTSGasEffectsGasObject                `json:"gasObject"`
+	GasSummary TX_EFFECTSGasEffectsGasSummaryGasCostSummary `json:"gasSummary"`
+}
+
+// GetGasObject returns TX_EFFECTSGasEffects.GasObject, and is useful for accessing the field via an interface.
+func (v *TX_EFFECTSGasEffects) GetGasObject() TX_EFFECTSGasEffectsGasObject { return v.GasObject }
+
+// GetGasSummary returns TX_EFFECTSGasEffects.GasSummary, and is useful for accessing the field via an interface.
+func (v *TX_EFFECTSGasEffects) GetGasSummary() TX_EFFECTSGasEffectsGasSummaryGasCostSummary {
+	return v.GasSummary
+}
+
+// TX_EFFECTSGasEffectsGasObject includes the requested fields of the GraphQL type Object.
+// The GraphQL type's documentation follows.
+//
+// An object in IOTA is a package (set of Move bytecode modules) or object
+// (typed data structure with fields) with additional metadata detailing its
+// id, version, transaction digest, owner field indicating how this object can
+// be accessed.
+type TX_EFFECTSGasEffectsGasObject struct {
+	Address iotago.Address `json:"address"`
+}
+
+// GetAddress returns TX_EFFECTSGasEffectsGasObject.Address, and is useful for accessing the field via an interface.
+func (v *TX_EFFECTSGasEffectsGasObject) GetAddress() iotago.Address { return v.Address }
+
+// TX_EFFECTSGasEffectsGasSummaryGasCostSummary includes the requested fields of the GraphQL type GasCostSummary.
+// The GraphQL type's documentation follows.
+//
+// Breakdown of gas costs in effects.
+type TX_EFFECTSGasEffectsGasSummaryGasCostSummary struct {
+	// Gas paid for executing this transaction (in NANOS).
+	ComputationCost BigInt `json:"computationCost"`
+	// Gas burned for executing this transaction (in NANOS).
+	ComputationCostBurned BigInt `json:"computationCostBurned"`
+	// Gas paid for the data stored on-chain by this transaction (in NANOS).
+	StorageCost BigInt `json:"storageCost"`
+	// Part of storage cost that can be reclaimed by cleaning up data created
+	// by this transaction (when objects are deleted or an object is
+	// modified, which is treated as a deletion followed by a creation) (in
+	// NANOS).
+	StorageRebate BigInt `json:"storageRebate"`
+	// Part of storage cost that is not reclaimed when data created by this
+	// transaction is cleaned up (in NANOS).
+	NonRefundableStorageFee BigInt `json:"nonRefundableStorageFee"`
+}
+
+// GetComputationCost returns TX_EFFECTSGasEffectsGasSummaryGasCostSummary.ComputationCost, and is useful for accessing the field via an interface.
+func (v *TX_EFFECTSGasEffectsGasSummaryGasCostSummary) GetComputationCost() BigInt {
+	return v.ComputationCost
+}
+
+// GetComputationCostBurned returns TX_EFFECTSGasEffectsGasSummaryGasCostSummary.ComputationCostBurned, and is useful for accessing the field via an interface.
+func (v *TX_EFFECTSGasEffectsGasSummaryGasCostSummary) GetComputationCostBurned() BigInt {
+	return v.ComputationCostBurned
+}
+
+// GetStorageCost returns TX_EFFECTSGasEffectsGasSummaryGasCostSummary.StorageCost, and is useful for accessing the field via an interface.
+func (v *TX_EFFECTSGasEffectsGasSummaryGasCostSummary) GetStorageCost() BigInt { return v.StorageCost }
+
+// GetStorageRebate returns TX_EFFECTSGasEffectsGasSummaryGasCostSummary.StorageRebate, and is useful for accessing the field via an interface.
+func (v *TX_EFFECTSGasEffectsGasSummaryGasCostSummary) GetStorageRebate() BigInt {
+	return v.StorageRebate
+}
+
+// GetNonRefundableStorageFee returns TX_EFFECTSGasEffectsGasSummaryGasCostSummary.NonRefundableStorageFee, and is useful for accessing the field via an interface.
+func (v *TX_EFFECTSGasEffectsGasSummaryGasCostSummary) GetNonRefundableStorageFee() BigInt {
+	return v.NonRefundableStorageFee
+}
+
+// TX_EFFECTSObjectChangesObjectChangeConnection includes the requested fields of the GraphQL type ObjectChangeConnection.
+type TX_EFFECTSObjectChangesObjectChangeConnection struct {
+	// Information to aid in pagination.
+	PageInfo TX_EFFECTSObjectChangesObjectChangeConnectionPageInfo `json:"pageInfo"`
+	// A list of nodes.
+	Nodes []ObjectChangeData `json:"nodes"`
+}
+
+// GetPageInfo returns TX_EFFECTSObjectChangesObjectChangeConnection.PageInfo, and is useful for accessing the field via an interface.
+func (v *TX_EFFECTSObjectChangesObjectChangeConnection) GetPageInfo() TX_EFFECTSObjectChangesObjectChangeConnectionPageInfo {
+	return v.PageInfo
+}
+
+// GetNodes returns TX_EFFECTSObjectChangesObjectChangeConnection.Nodes, and is useful for accessing the field via an interface.
+func (v *TX_EFFECTSObjectChangesObjectChangeConnection) GetNodes() []ObjectChangeData { return v.Nodes }
+
+// TX_EFFECTSObjectChangesObjectChangeConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
+// The GraphQL type's documentation follows.
+//
+// Information about pagination in a connection
+type TX_EFFECTSObjectChangesObjectChangeConnectionPageInfo struct {
+	// When paginating forwards, are there more items?
+	HasNextPage bool `json:"hasNextPage"`
+	// When paginating forwards, the cursor to continue.
+	EndCursor string `json:"endCursor"`
+}
+
+// GetHasNextPage returns TX_EFFECTSObjectChangesObjectChangeConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
+func (v *TX_EFFECTSObjectChangesObjectChangeConnectionPageInfo) GetHasNextPage() bool {
+	return v.HasNextPage
+}
+
+// GetEndCursor returns TX_EFFECTSObjectChangesObjectChangeConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
+func (v *TX_EFFECTSObjectChangesObjectChangeConnectionPageInfo) GetEndCursor() string {
+	return v.EndCursor
 }
 
 // Represents optional available filters for transaction blocks.
@@ -9803,34 +8291,6 @@ var AllTransactionBlockKindInput = []TransactionBlockKindInput{
 	TransactionBlockKindInputRandomnessStateUpdate,
 	TransactionBlockKindInputEndOfEpochTx,
 }
-
-// The optional extra data a user can provide to a transaction dry run.
-// `sender` defaults to `0x0`. If gasObjects` is not present, or is an empty
-// list, it is substituted with a mock Coin object, `gasPrice` defaults to the
-// reference gas price, `gasBudget` defaults to the max gas budget and
-// `gasSponsor` defaults to the sender.
-type TransactionMetadata struct {
-	Sender     iotago.Address `json:"sender"`
-	GasPrice   uint64         `json:"gasPrice"`
-	GasObjects []ObjectRef    `json:"gasObjects"`
-	GasBudget  uint64         `json:"gasBudget"`
-	GasSponsor iotago.Address `json:"gasSponsor"`
-}
-
-// GetSender returns TransactionMetadata.Sender, and is useful for accessing the field via an interface.
-func (v *TransactionMetadata) GetSender() iotago.Address { return v.Sender }
-
-// GetGasPrice returns TransactionMetadata.GasPrice, and is useful for accessing the field via an interface.
-func (v *TransactionMetadata) GetGasPrice() uint64 { return v.GasPrice }
-
-// GetGasObjects returns TransactionMetadata.GasObjects, and is useful for accessing the field via an interface.
-func (v *TransactionMetadata) GetGasObjects() []ObjectRef { return v.GasObjects }
-
-// GetGasBudget returns TransactionMetadata.GasBudget, and is useful for accessing the field via an interface.
-func (v *TransactionMetadata) GetGasBudget() uint64 { return v.GasBudget }
-
-// GetGasSponsor returns TransactionMetadata.GasSponsor, and is useful for accessing the field via an interface.
-func (v *TransactionMetadata) GetGasSponsor() iotago.Address { return v.GasSponsor }
 
 // TryGetPastObjectCurrentObject includes the requested fields of the GraphQL type Object.
 // The GraphQL type's documentation follows.
@@ -10007,95 +8467,280 @@ func (v *TryGetPastObjectResponse) GetCurrent() TryGetPastObjectCurrentObject { 
 // GetObject returns TryGetPastObjectResponse.Object, and is useful for accessing the field via an interface.
 func (v *TryGetPastObjectResponse) GetObject() TryGetPastObjectObject { return v.Object }
 
-// __DevInspectTransactionBlockInput is used internally by genqlient
-type __DevInspectTransactionBlockInput struct {
-	TxBytes            string              `json:"txBytes"`
-	TxMeta             TransactionMetadata `json:"txMeta"`
-	ShowBalanceChanges *bool               `json:"showBalanceChanges"`
-	ShowEffects        *bool               `json:"showEffects"`
-	ShowRawEffects     *bool               `json:"showRawEffects"`
-	ShowEvents         *bool               `json:"showEvents"`
-	ShowInput          *bool               `json:"showInput"`
-	ShowObjectChanges  *bool               `json:"showObjectChanges"`
-	ShowRawInput       *bool               `json:"showRawInput"`
+// TxBlockCore includes the requested fields of the GraphQL type TransactionBlock.
+type TxBlockCore struct {
+	TX_CORE `json:"-"`
 }
 
-// GetTxBytes returns __DevInspectTransactionBlockInput.TxBytes, and is useful for accessing the field via an interface.
-func (v *__DevInspectTransactionBlockInput) GetTxBytes() string { return v.TxBytes }
+// GetDigest returns TxBlockCore.Digest, and is useful for accessing the field via an interface.
+func (v *TxBlockCore) GetDigest() string { return v.TX_CORE.Digest }
 
-// GetTxMeta returns __DevInspectTransactionBlockInput.TxMeta, and is useful for accessing the field via an interface.
-func (v *__DevInspectTransactionBlockInput) GetTxMeta() TransactionMetadata { return v.TxMeta }
+// GetBcs returns TxBlockCore.Bcs, and is useful for accessing the field via an interface.
+func (v *TxBlockCore) GetBcs() iotago.Base64Data { return v.TX_CORE.Bcs }
 
-// GetShowBalanceChanges returns __DevInspectTransactionBlockInput.ShowBalanceChanges, and is useful for accessing the field via an interface.
-func (v *__DevInspectTransactionBlockInput) GetShowBalanceChanges() *bool {
-	return v.ShowBalanceChanges
+// GetSender returns TxBlockCore.Sender, and is useful for accessing the field via an interface.
+func (v *TxBlockCore) GetSender() TX_CORESenderAddress { return v.TX_CORE.Sender }
+
+// GetSignatures returns TxBlockCore.Signatures, and is useful for accessing the field via an interface.
+func (v *TxBlockCore) GetSignatures() []iotago.Base64Data { return v.TX_CORE.Signatures }
+
+func (v *TxBlockCore) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*TxBlockCore
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.TxBlockCore = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(
+		b, &v.TX_CORE)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-// GetShowEffects returns __DevInspectTransactionBlockInput.ShowEffects, and is useful for accessing the field via an interface.
-func (v *__DevInspectTransactionBlockInput) GetShowEffects() *bool { return v.ShowEffects }
+type __premarshalTxBlockCore struct {
+	Digest string `json:"digest"`
 
-// GetShowRawEffects returns __DevInspectTransactionBlockInput.ShowRawEffects, and is useful for accessing the field via an interface.
-func (v *__DevInspectTransactionBlockInput) GetShowRawEffects() *bool { return v.ShowRawEffects }
+	Bcs iotago.Base64Data `json:"bcs"`
 
-// GetShowEvents returns __DevInspectTransactionBlockInput.ShowEvents, and is useful for accessing the field via an interface.
-func (v *__DevInspectTransactionBlockInput) GetShowEvents() *bool { return v.ShowEvents }
+	Sender TX_CORESenderAddress `json:"sender"`
 
-// GetShowInput returns __DevInspectTransactionBlockInput.ShowInput, and is useful for accessing the field via an interface.
-func (v *__DevInspectTransactionBlockInput) GetShowInput() *bool { return v.ShowInput }
+	Signatures []iotago.Base64Data `json:"signatures"`
+}
 
-// GetShowObjectChanges returns __DevInspectTransactionBlockInput.ShowObjectChanges, and is useful for accessing the field via an interface.
-func (v *__DevInspectTransactionBlockInput) GetShowObjectChanges() *bool { return v.ShowObjectChanges }
+func (v *TxBlockCore) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
 
-// GetShowRawInput returns __DevInspectTransactionBlockInput.ShowRawInput, and is useful for accessing the field via an interface.
-func (v *__DevInspectTransactionBlockInput) GetShowRawInput() *bool { return v.ShowRawInput }
+func (v *TxBlockCore) __premarshalJSON() (*__premarshalTxBlockCore, error) {
+	var retval __premarshalTxBlockCore
+
+	retval.Digest = v.TX_CORE.Digest
+	retval.Bcs = v.TX_CORE.Bcs
+	retval.Sender = v.TX_CORE.Sender
+	retval.Signatures = v.TX_CORE.Signatures
+	return &retval, nil
+}
+
+// TxBlockData includes the requested fields of the GraphQL type TransactionBlock.
+type TxBlockData struct {
+	TX_CORE `json:"-"`
+	// The effects field captures the results to the chain of executing this
+	// transaction.
+	Effects TxEffects `json:"effects"`
+}
+
+// GetEffects returns TxBlockData.Effects, and is useful for accessing the field via an interface.
+func (v *TxBlockData) GetEffects() TxEffects { return v.Effects }
+
+// GetDigest returns TxBlockData.Digest, and is useful for accessing the field via an interface.
+func (v *TxBlockData) GetDigest() string { return v.TX_CORE.Digest }
+
+// GetBcs returns TxBlockData.Bcs, and is useful for accessing the field via an interface.
+func (v *TxBlockData) GetBcs() iotago.Base64Data { return v.TX_CORE.Bcs }
+
+// GetSender returns TxBlockData.Sender, and is useful for accessing the field via an interface.
+func (v *TxBlockData) GetSender() TX_CORESenderAddress { return v.TX_CORE.Sender }
+
+// GetSignatures returns TxBlockData.Signatures, and is useful for accessing the field via an interface.
+func (v *TxBlockData) GetSignatures() []iotago.Base64Data { return v.TX_CORE.Signatures }
+
+func (v *TxBlockData) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*TxBlockData
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.TxBlockData = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(
+		b, &v.TX_CORE)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type __premarshalTxBlockData struct {
+	Effects TxEffects `json:"effects"`
+
+	Digest string `json:"digest"`
+
+	Bcs iotago.Base64Data `json:"bcs"`
+
+	Sender TX_CORESenderAddress `json:"sender"`
+
+	Signatures []iotago.Base64Data `json:"signatures"`
+}
+
+func (v *TxBlockData) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *TxBlockData) __premarshalJSON() (*__premarshalTxBlockData, error) {
+	var retval __premarshalTxBlockData
+
+	retval.Effects = v.Effects
+	retval.Digest = v.TX_CORE.Digest
+	retval.Bcs = v.TX_CORE.Bcs
+	retval.Sender = v.TX_CORE.Sender
+	retval.Signatures = v.TX_CORE.Signatures
+	return &retval, nil
+}
+
+// TxEffects includes the requested fields of the GraphQL type TransactionBlockEffects.
+// The GraphQL type's documentation follows.
+//
+// The effects representing the result of executing a transaction block.
+type TxEffects struct {
+	TX_EFFECTS `json:"-"`
+}
+
+// GetStatus returns TxEffects.Status, and is useful for accessing the field via an interface.
+func (v *TxEffects) GetStatus() ExecutionStatus { return v.TX_EFFECTS.Status }
+
+// GetErrors returns TxEffects.Errors, and is useful for accessing the field via an interface.
+func (v *TxEffects) GetErrors() string { return v.TX_EFFECTS.Errors }
+
+// GetBcs returns TxEffects.Bcs, and is useful for accessing the field via an interface.
+func (v *TxEffects) GetBcs() iotago.Base64Data { return v.TX_EFFECTS.Bcs }
+
+// GetCheckpoint returns TxEffects.Checkpoint, and is useful for accessing the field via an interface.
+func (v *TxEffects) GetCheckpoint() TX_EFFECTSCheckpoint { return v.TX_EFFECTS.Checkpoint }
+
+// GetTimestamp returns TxEffects.Timestamp, and is useful for accessing the field via an interface.
+func (v *TxEffects) GetTimestamp() time.Time { return v.TX_EFFECTS.Timestamp }
+
+// GetGasEffects returns TxEffects.GasEffects, and is useful for accessing the field via an interface.
+func (v *TxEffects) GetGasEffects() TX_EFFECTSGasEffects { return v.TX_EFFECTS.GasEffects }
+
+// GetEvents returns TxEffects.Events, and is useful for accessing the field via an interface.
+func (v *TxEffects) GetEvents() TX_EFFECTSEventsEventConnection { return v.TX_EFFECTS.Events }
+
+// GetBalanceChanges returns TxEffects.BalanceChanges, and is useful for accessing the field via an interface.
+func (v *TxEffects) GetBalanceChanges() TX_EFFECTSBalanceChangesBalanceChangeConnection {
+	return v.TX_EFFECTS.BalanceChanges
+}
+
+// GetObjectChanges returns TxEffects.ObjectChanges, and is useful for accessing the field via an interface.
+func (v *TxEffects) GetObjectChanges() TX_EFFECTSObjectChangesObjectChangeConnection {
+	return v.TX_EFFECTS.ObjectChanges
+}
+
+// GetTransactionBlock returns TxEffects.TransactionBlock, and is useful for accessing the field via an interface.
+func (v *TxEffects) GetTransactionBlock() TxBlockCore { return v.TX_EFFECTS.TransactionBlock }
+
+func (v *TxEffects) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*TxEffects
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.TxEffects = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(
+		b, &v.TX_EFFECTS)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type __premarshalTxEffects struct {
+	Status ExecutionStatus `json:"status"`
+
+	Errors string `json:"errors"`
+
+	Bcs iotago.Base64Data `json:"bcs"`
+
+	Checkpoint TX_EFFECTSCheckpoint `json:"checkpoint"`
+
+	Timestamp time.Time `json:"timestamp"`
+
+	GasEffects TX_EFFECTSGasEffects `json:"gasEffects"`
+
+	Events TX_EFFECTSEventsEventConnection `json:"events"`
+
+	BalanceChanges TX_EFFECTSBalanceChangesBalanceChangeConnection `json:"balanceChanges"`
+
+	ObjectChanges TX_EFFECTSObjectChangesObjectChangeConnection `json:"objectChanges"`
+
+	TransactionBlock TxBlockCore `json:"transactionBlock"`
+}
+
+func (v *TxEffects) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *TxEffects) __premarshalJSON() (*__premarshalTxEffects, error) {
+	var retval __premarshalTxEffects
+
+	retval.Status = v.TX_EFFECTS.Status
+	retval.Errors = v.TX_EFFECTS.Errors
+	retval.Bcs = v.TX_EFFECTS.Bcs
+	retval.Checkpoint = v.TX_EFFECTS.Checkpoint
+	retval.Timestamp = v.TX_EFFECTS.Timestamp
+	retval.GasEffects = v.TX_EFFECTS.GasEffects
+	retval.Events = v.TX_EFFECTS.Events
+	retval.BalanceChanges = v.TX_EFFECTS.BalanceChanges
+	retval.ObjectChanges = v.TX_EFFECTS.ObjectChanges
+	retval.TransactionBlock = v.TX_EFFECTS.TransactionBlock
+	return &retval, nil
+}
 
 // __DryRunTransactionBlockInput is used internally by genqlient
 type __DryRunTransactionBlockInput struct {
-	TxBytes            string `json:"txBytes"`
-	ShowBalanceChanges *bool  `json:"showBalanceChanges"`
-	ShowEffects        *bool  `json:"showEffects"`
-	ShowRawEffects     *bool  `json:"showRawEffects"`
-	ShowEvents         *bool  `json:"showEvents"`
-	ShowInput          *bool  `json:"showInput"`
-	ShowObjectChanges  *bool  `json:"showObjectChanges"`
-	ShowRawInput       *bool  `json:"showRawInput"`
+	TxBytes string `json:"txBytes"`
 }
 
 // GetTxBytes returns __DryRunTransactionBlockInput.TxBytes, and is useful for accessing the field via an interface.
 func (v *__DryRunTransactionBlockInput) GetTxBytes() string { return v.TxBytes }
 
-// GetShowBalanceChanges returns __DryRunTransactionBlockInput.ShowBalanceChanges, and is useful for accessing the field via an interface.
-func (v *__DryRunTransactionBlockInput) GetShowBalanceChanges() *bool { return v.ShowBalanceChanges }
-
-// GetShowEffects returns __DryRunTransactionBlockInput.ShowEffects, and is useful for accessing the field via an interface.
-func (v *__DryRunTransactionBlockInput) GetShowEffects() *bool { return v.ShowEffects }
-
-// GetShowRawEffects returns __DryRunTransactionBlockInput.ShowRawEffects, and is useful for accessing the field via an interface.
-func (v *__DryRunTransactionBlockInput) GetShowRawEffects() *bool { return v.ShowRawEffects }
-
-// GetShowEvents returns __DryRunTransactionBlockInput.ShowEvents, and is useful for accessing the field via an interface.
-func (v *__DryRunTransactionBlockInput) GetShowEvents() *bool { return v.ShowEvents }
-
-// GetShowInput returns __DryRunTransactionBlockInput.ShowInput, and is useful for accessing the field via an interface.
-func (v *__DryRunTransactionBlockInput) GetShowInput() *bool { return v.ShowInput }
-
-// GetShowObjectChanges returns __DryRunTransactionBlockInput.ShowObjectChanges, and is useful for accessing the field via an interface.
-func (v *__DryRunTransactionBlockInput) GetShowObjectChanges() *bool { return v.ShowObjectChanges }
-
-// GetShowRawInput returns __DryRunTransactionBlockInput.ShowRawInput, and is useful for accessing the field via an interface.
-func (v *__DryRunTransactionBlockInput) GetShowRawInput() *bool { return v.ShowRawInput }
-
 // __ExecuteTransactionBlockInput is used internally by genqlient
 type __ExecuteTransactionBlockInput struct {
-	TxBytes            string   `json:"txBytes"`
-	Signatures         []string `json:"signatures"`
-	ShowBalanceChanges *bool    `json:"showBalanceChanges"`
-	ShowEffects        *bool    `json:"showEffects"`
-	ShowRawEffects     *bool    `json:"showRawEffects"`
-	ShowEvents         *bool    `json:"showEvents"`
-	ShowInput          *bool    `json:"showInput"`
-	ShowObjectChanges  *bool    `json:"showObjectChanges"`
-	ShowRawInput       *bool    `json:"showRawInput"`
+	TxBytes    string   `json:"txBytes"`
+	Signatures []string `json:"signatures"`
 }
 
 // GetTxBytes returns __ExecuteTransactionBlockInput.TxBytes, and is useful for accessing the field via an interface.
@@ -10103,27 +8748,6 @@ func (v *__ExecuteTransactionBlockInput) GetTxBytes() string { return v.TxBytes 
 
 // GetSignatures returns __ExecuteTransactionBlockInput.Signatures, and is useful for accessing the field via an interface.
 func (v *__ExecuteTransactionBlockInput) GetSignatures() []string { return v.Signatures }
-
-// GetShowBalanceChanges returns __ExecuteTransactionBlockInput.ShowBalanceChanges, and is useful for accessing the field via an interface.
-func (v *__ExecuteTransactionBlockInput) GetShowBalanceChanges() *bool { return v.ShowBalanceChanges }
-
-// GetShowEffects returns __ExecuteTransactionBlockInput.ShowEffects, and is useful for accessing the field via an interface.
-func (v *__ExecuteTransactionBlockInput) GetShowEffects() *bool { return v.ShowEffects }
-
-// GetShowRawEffects returns __ExecuteTransactionBlockInput.ShowRawEffects, and is useful for accessing the field via an interface.
-func (v *__ExecuteTransactionBlockInput) GetShowRawEffects() *bool { return v.ShowRawEffects }
-
-// GetShowEvents returns __ExecuteTransactionBlockInput.ShowEvents, and is useful for accessing the field via an interface.
-func (v *__ExecuteTransactionBlockInput) GetShowEvents() *bool { return v.ShowEvents }
-
-// GetShowInput returns __ExecuteTransactionBlockInput.ShowInput, and is useful for accessing the field via an interface.
-func (v *__ExecuteTransactionBlockInput) GetShowInput() *bool { return v.ShowInput }
-
-// GetShowObjectChanges returns __ExecuteTransactionBlockInput.ShowObjectChanges, and is useful for accessing the field via an interface.
-func (v *__ExecuteTransactionBlockInput) GetShowObjectChanges() *bool { return v.ShowObjectChanges }
-
-// GetShowRawInput returns __ExecuteTransactionBlockInput.ShowRawInput, and is useful for accessing the field via an interface.
-func (v *__ExecuteTransactionBlockInput) GetShowRawInput() *bool { return v.ShowRawInput }
 
 // __GetAllBalancesInput is used internally by genqlient
 type __GetAllBalancesInput struct {
@@ -10407,39 +9031,11 @@ func (v *__GetStakesInput) GetCursor() *string { return v.Cursor }
 
 // __GetTransactionBlockInput is used internally by genqlient
 type __GetTransactionBlockInput struct {
-	Digest             string `json:"digest"`
-	ShowBalanceChanges *bool  `json:"showBalanceChanges"`
-	ShowEffects        *bool  `json:"showEffects"`
-	ShowRawEffects     *bool  `json:"showRawEffects"`
-	ShowEvents         *bool  `json:"showEvents"`
-	ShowInput          *bool  `json:"showInput"`
-	ShowObjectChanges  *bool  `json:"showObjectChanges"`
-	ShowRawInput       *bool  `json:"showRawInput"`
+	Digest string `json:"digest"`
 }
 
 // GetDigest returns __GetTransactionBlockInput.Digest, and is useful for accessing the field via an interface.
 func (v *__GetTransactionBlockInput) GetDigest() string { return v.Digest }
-
-// GetShowBalanceChanges returns __GetTransactionBlockInput.ShowBalanceChanges, and is useful for accessing the field via an interface.
-func (v *__GetTransactionBlockInput) GetShowBalanceChanges() *bool { return v.ShowBalanceChanges }
-
-// GetShowEffects returns __GetTransactionBlockInput.ShowEffects, and is useful for accessing the field via an interface.
-func (v *__GetTransactionBlockInput) GetShowEffects() *bool { return v.ShowEffects }
-
-// GetShowRawEffects returns __GetTransactionBlockInput.ShowRawEffects, and is useful for accessing the field via an interface.
-func (v *__GetTransactionBlockInput) GetShowRawEffects() *bool { return v.ShowRawEffects }
-
-// GetShowEvents returns __GetTransactionBlockInput.ShowEvents, and is useful for accessing the field via an interface.
-func (v *__GetTransactionBlockInput) GetShowEvents() *bool { return v.ShowEvents }
-
-// GetShowInput returns __GetTransactionBlockInput.ShowInput, and is useful for accessing the field via an interface.
-func (v *__GetTransactionBlockInput) GetShowInput() *bool { return v.ShowInput }
-
-// GetShowObjectChanges returns __GetTransactionBlockInput.ShowObjectChanges, and is useful for accessing the field via an interface.
-func (v *__GetTransactionBlockInput) GetShowObjectChanges() *bool { return v.ShowObjectChanges }
-
-// GetShowRawInput returns __GetTransactionBlockInput.ShowRawInput, and is useful for accessing the field via an interface.
-func (v *__GetTransactionBlockInput) GetShowRawInput() *bool { return v.ShowRawInput }
 
 // __MultiGetObjectsInput is used internally by genqlient
 type __MultiGetObjectsInput struct {
@@ -10487,16 +9083,9 @@ func (v *__MultiGetObjectsInput) GetShowStorageRebate() *bool { return v.ShowSto
 
 // __MultiGetTransactionBlocksInput is used internally by genqlient
 type __MultiGetTransactionBlocksInput struct {
-	Digests            []string `json:"digests"`
-	Limit              *int     `json:"limit"`
-	Cursor             *string  `json:"cursor"`
-	ShowBalanceChanges *bool    `json:"showBalanceChanges"`
-	ShowEffects        *bool    `json:"showEffects"`
-	ShowRawEffects     *bool    `json:"showRawEffects"`
-	ShowEvents         *bool    `json:"showEvents"`
-	ShowInput          *bool    `json:"showInput"`
-	ShowObjectChanges  *bool    `json:"showObjectChanges"`
-	ShowRawInput       *bool    `json:"showRawInput"`
+	Digests []string `json:"digests"`
+	Limit   *int     `json:"limit"`
+	Cursor  *string  `json:"cursor"`
 }
 
 // GetDigests returns __MultiGetTransactionBlocksInput.Digests, and is useful for accessing the field via an interface.
@@ -10507,27 +9096,6 @@ func (v *__MultiGetTransactionBlocksInput) GetLimit() *int { return v.Limit }
 
 // GetCursor returns __MultiGetTransactionBlocksInput.Cursor, and is useful for accessing the field via an interface.
 func (v *__MultiGetTransactionBlocksInput) GetCursor() *string { return v.Cursor }
-
-// GetShowBalanceChanges returns __MultiGetTransactionBlocksInput.ShowBalanceChanges, and is useful for accessing the field via an interface.
-func (v *__MultiGetTransactionBlocksInput) GetShowBalanceChanges() *bool { return v.ShowBalanceChanges }
-
-// GetShowEffects returns __MultiGetTransactionBlocksInput.ShowEffects, and is useful for accessing the field via an interface.
-func (v *__MultiGetTransactionBlocksInput) GetShowEffects() *bool { return v.ShowEffects }
-
-// GetShowRawEffects returns __MultiGetTransactionBlocksInput.ShowRawEffects, and is useful for accessing the field via an interface.
-func (v *__MultiGetTransactionBlocksInput) GetShowRawEffects() *bool { return v.ShowRawEffects }
-
-// GetShowEvents returns __MultiGetTransactionBlocksInput.ShowEvents, and is useful for accessing the field via an interface.
-func (v *__MultiGetTransactionBlocksInput) GetShowEvents() *bool { return v.ShowEvents }
-
-// GetShowInput returns __MultiGetTransactionBlocksInput.ShowInput, and is useful for accessing the field via an interface.
-func (v *__MultiGetTransactionBlocksInput) GetShowInput() *bool { return v.ShowInput }
-
-// GetShowObjectChanges returns __MultiGetTransactionBlocksInput.ShowObjectChanges, and is useful for accessing the field via an interface.
-func (v *__MultiGetTransactionBlocksInput) GetShowObjectChanges() *bool { return v.ShowObjectChanges }
-
-// GetShowRawInput returns __MultiGetTransactionBlocksInput.ShowRawInput, and is useful for accessing the field via an interface.
-func (v *__MultiGetTransactionBlocksInput) GetShowRawInput() *bool { return v.ShowRawInput }
 
 // __PaginateTransactionBlockListsInput is used internally by genqlient
 type __PaginateTransactionBlockListsInput struct {
@@ -10569,44 +9137,13 @@ func (v *__PaginateTransactionBlockListsInput) GetAfterObjectChanges() string {
 	return v.AfterObjectChanges
 }
 
-// __QueryEventsInput is used internally by genqlient
-type __QueryEventsInput struct {
-	Filter EventFilter `json:"filter"`
-	Before *string     `json:"before"`
-	After  *string     `json:"after"`
-	First  *int        `json:"first"`
-	Last   *int        `json:"last"`
-}
-
-// GetFilter returns __QueryEventsInput.Filter, and is useful for accessing the field via an interface.
-func (v *__QueryEventsInput) GetFilter() EventFilter { return v.Filter }
-
-// GetBefore returns __QueryEventsInput.Before, and is useful for accessing the field via an interface.
-func (v *__QueryEventsInput) GetBefore() *string { return v.Before }
-
-// GetAfter returns __QueryEventsInput.After, and is useful for accessing the field via an interface.
-func (v *__QueryEventsInput) GetAfter() *string { return v.After }
-
-// GetFirst returns __QueryEventsInput.First, and is useful for accessing the field via an interface.
-func (v *__QueryEventsInput) GetFirst() *int { return v.First }
-
-// GetLast returns __QueryEventsInput.Last, and is useful for accessing the field via an interface.
-func (v *__QueryEventsInput) GetLast() *int { return v.Last }
-
 // __QueryTransactionBlocksInput is used internally by genqlient
 type __QueryTransactionBlocksInput struct {
-	First              *int                    `json:"first"`
-	Last               *int                    `json:"last"`
-	Before             *string                 `json:"before"`
-	After              *string                 `json:"after"`
-	ShowBalanceChanges *bool                   `json:"showBalanceChanges"`
-	ShowEffects        *bool                   `json:"showEffects"`
-	ShowRawEffects     *bool                   `json:"showRawEffects"`
-	ShowEvents         *bool                   `json:"showEvents"`
-	ShowInput          *bool                   `json:"showInput"`
-	ShowObjectChanges  *bool                   `json:"showObjectChanges"`
-	ShowRawInput       *bool                   `json:"showRawInput"`
-	Filter             *TransactionBlockFilter `json:"filter"`
+	First  *int                    `json:"first"`
+	Last   *int                    `json:"last"`
+	Before *string                 `json:"before"`
+	After  *string                 `json:"after"`
+	Filter *TransactionBlockFilter `json:"filter"`
 }
 
 // GetFirst returns __QueryTransactionBlocksInput.First, and is useful for accessing the field via an interface.
@@ -10620,27 +9157,6 @@ func (v *__QueryTransactionBlocksInput) GetBefore() *string { return v.Before }
 
 // GetAfter returns __QueryTransactionBlocksInput.After, and is useful for accessing the field via an interface.
 func (v *__QueryTransactionBlocksInput) GetAfter() *string { return v.After }
-
-// GetShowBalanceChanges returns __QueryTransactionBlocksInput.ShowBalanceChanges, and is useful for accessing the field via an interface.
-func (v *__QueryTransactionBlocksInput) GetShowBalanceChanges() *bool { return v.ShowBalanceChanges }
-
-// GetShowEffects returns __QueryTransactionBlocksInput.ShowEffects, and is useful for accessing the field via an interface.
-func (v *__QueryTransactionBlocksInput) GetShowEffects() *bool { return v.ShowEffects }
-
-// GetShowRawEffects returns __QueryTransactionBlocksInput.ShowRawEffects, and is useful for accessing the field via an interface.
-func (v *__QueryTransactionBlocksInput) GetShowRawEffects() *bool { return v.ShowRawEffects }
-
-// GetShowEvents returns __QueryTransactionBlocksInput.ShowEvents, and is useful for accessing the field via an interface.
-func (v *__QueryTransactionBlocksInput) GetShowEvents() *bool { return v.ShowEvents }
-
-// GetShowInput returns __QueryTransactionBlocksInput.ShowInput, and is useful for accessing the field via an interface.
-func (v *__QueryTransactionBlocksInput) GetShowInput() *bool { return v.ShowInput }
-
-// GetShowObjectChanges returns __QueryTransactionBlocksInput.ShowObjectChanges, and is useful for accessing the field via an interface.
-func (v *__QueryTransactionBlocksInput) GetShowObjectChanges() *bool { return v.ShowObjectChanges }
-
-// GetShowRawInput returns __QueryTransactionBlocksInput.ShowRawInput, and is useful for accessing the field via an interface.
-func (v *__QueryTransactionBlocksInput) GetShowRawInput() *bool { return v.ShowRawInput }
 
 // GetFilter returns __QueryTransactionBlocksInput.Filter, and is useful for accessing the field via an interface.
 func (v *__QueryTransactionBlocksInput) GetFilter() *TransactionBlockFilter { return v.Filter }
@@ -10687,295 +9203,79 @@ func (v *__TryGetPastObjectInput) GetShowType() *bool { return v.ShowType }
 // GetShowStorageRebate returns __TryGetPastObjectInput.ShowStorageRebate, and is useful for accessing the field via an interface.
 func (v *__TryGetPastObjectInput) GetShowStorageRebate() *bool { return v.ShowStorageRebate }
 
-// The query executed by DevInspectTransactionBlock.
-const DevInspectTransactionBlock_Operation = `
-query DevInspectTransactionBlock ($txBytes: String!, $txMeta: TransactionMetadata!, $showBalanceChanges: Boolean = false, $showEffects: Boolean = false, $showRawEffects: Boolean = false, $showEvents: Boolean = false, $showInput: Boolean = false, $showObjectChanges: Boolean = false, $showRawInput: Boolean = false) {
-	dryRunTransactionBlock(txBytes: $txBytes, txMeta: $txMeta) {
-		error
-		results {
-			mutatedReferences {
-				input {
-					__typename
-					... on Input {
-						inputIndex: ix
-					}
-					... on Result {
-						cmd
-						resultIndex: ix
-					}
-				}
-				type {
-					repr
-				}
-				bcs
-			}
-			returnValues {
-				type {
-					repr
-				}
-				bcs
-			}
-		}
-		transaction {
-			... RPC_TRANSACTION_FIELDS
-		}
-	}
-}
-fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
-	digest
-	bcs @include(if: $showInput)
-	bcs @include(if: $showRawInput)
-	sender {
-		address
-	}
-	signatures
-	effects {
-		bcs @include(if: $showEffects)
-		bcs @include(if: $showObjectChanges)
-		bcs @include(if: $showRawEffects)
-		events @include(if: $showEvents) {
-			pageInfo {
-				hasNextPage
-				endCursor
-			}
-			nodes {
-				... RPC_EVENTS_FIELDS
-			}
-		}
-		checkpoint {
-			sequenceNumber
-		}
-		timestamp
-		gasEffects {
-			gasSummary {
-				computationCost
-				computationCostBurned
-				storageCost
-				storageRebate
-				nonRefundableStorageFee
-			}
-		}
-		balanceChanges @include(if: $showBalanceChanges) {
-			pageInfo {
-				hasNextPage
-				endCursor
-			}
-			nodes {
-				coinType {
-					repr
-				}
-				owner {
-					asObject {
-						address
-					}
-					asAddress {
-						address
-					}
-				}
-				amount
-			}
-		}
-		objectChanges @include(if: $showObjectChanges) {
-			pageInfo {
-				hasNextPage
-				endCursor
-			}
-			nodes {
-				address
-				inputState {
-					version
-					digest
-					asMoveObject {
-						contents {
-							type {
-								repr
-							}
-						}
-					}
-				}
-				outputState {
-					version
-					digest
-					asMoveObject {
-						contents {
-							type {
-								repr
-							}
-						}
-					}
-					asMovePackage {
-						modules(first: 10) {
-							nodes {
-								name
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-}
-fragment RPC_EVENTS_FIELDS on Event {
-	sendingModule {
-		package {
-			address
-		}
-		name
-	}
-	sender {
-		address
-	}
-	json
-	timestamp
-}
-`
-
-func DevInspectTransactionBlock(
-	ctx_ context.Context,
-	client_ graphql.Client,
-	txBytes string,
-	txMeta TransactionMetadata,
-	showBalanceChanges *bool,
-	showEffects *bool,
-	showRawEffects *bool,
-	showEvents *bool,
-	showInput *bool,
-	showObjectChanges *bool,
-	showRawInput *bool,
-) (data_ *DevInspectTransactionBlockResponse, err_ error) {
-	req_ := &graphql.Request{
-		OpName: "DevInspectTransactionBlock",
-		Query:  DevInspectTransactionBlock_Operation,
-		Variables: &__DevInspectTransactionBlockInput{
-			TxBytes:            txBytes,
-			TxMeta:             txMeta,
-			ShowBalanceChanges: showBalanceChanges,
-			ShowEffects:        showEffects,
-			ShowRawEffects:     showRawEffects,
-			ShowEvents:         showEvents,
-			ShowInput:          showInput,
-			ShowObjectChanges:  showObjectChanges,
-			ShowRawInput:       showRawInput,
-		},
-	}
-
-	data_ = &DevInspectTransactionBlockResponse{}
-	resp_ := &graphql.Response{Data: data_}
-
-	err_ = client_.MakeRequest(
-		ctx_,
-		req_,
-		resp_,
-	)
-
-	return data_, err_
-}
-
 // The query executed by DryRunTransactionBlock.
 const DryRunTransactionBlock_Operation = `
-query DryRunTransactionBlock ($txBytes: String!, $showBalanceChanges: Boolean = false, $showEffects: Boolean = false, $showRawEffects: Boolean = false, $showEvents: Boolean = false, $showInput: Boolean = false, $showObjectChanges: Boolean = false, $showRawInput: Boolean = false) {
+query DryRunTransactionBlock ($txBytes: String!) {
 	dryRunTransactionBlock(txBytes: $txBytes) {
 		error
 		transaction {
-			... RPC_TRANSACTION_FIELDS
+			... TX_CORE
+			effects {
+				... TX_EFFECTS
+			}
 		}
 	}
 }
-fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
+fragment TX_CORE on TransactionBlock {
 	digest
-	bcs @include(if: $showInput)
-	bcs @include(if: $showRawInput)
+	bcs
 	sender {
 		address
 	}
 	signatures
-	effects {
-		bcs @include(if: $showEffects)
-		bcs @include(if: $showObjectChanges)
-		bcs @include(if: $showRawEffects)
-		events @include(if: $showEvents) {
-			pageInfo {
-				hasNextPage
-				endCursor
-			}
-			nodes {
-				... RPC_EVENTS_FIELDS
-			}
+}
+fragment TX_EFFECTS on TransactionBlockEffects {
+	status
+	errors
+	bcs
+	checkpoint {
+		sequenceNumber
+	}
+	timestamp
+	gasEffects {
+		gasObject {
+			address
 		}
-		checkpoint {
-			sequenceNumber
-		}
-		timestamp
-		gasEffects {
-			gasSummary {
-				computationCost
-				computationCostBurned
-				storageCost
-				storageRebate
-				nonRefundableStorageFee
-			}
-		}
-		balanceChanges @include(if: $showBalanceChanges) {
-			pageInfo {
-				hasNextPage
-				endCursor
-			}
-			nodes {
-				coinType {
-					repr
-				}
-				owner {
-					asObject {
-						address
-					}
-					asAddress {
-						address
-					}
-				}
-				amount
-			}
-		}
-		objectChanges @include(if: $showObjectChanges) {
-			pageInfo {
-				hasNextPage
-				endCursor
-			}
-			nodes {
-				address
-				inputState {
-					version
-					digest
-					asMoveObject {
-						contents {
-							type {
-								repr
-							}
-						}
-					}
-				}
-				outputState {
-					version
-					digest
-					asMoveObject {
-						contents {
-							type {
-								repr
-							}
-						}
-					}
-					asMovePackage {
-						modules(first: 10) {
-							nodes {
-								name
-							}
-						}
-					}
-				}
-			}
+		gasSummary {
+			computationCost
+			computationCostBurned
+			storageCost
+			storageRebate
+			nonRefundableStorageFee
 		}
 	}
+	events {
+		pageInfo {
+			hasNextPage
+			endCursor
+		}
+		nodes {
+			... EVENT_FIELDS
+		}
+	}
+	balanceChanges {
+		pageInfo {
+			hasNextPage
+			endCursor
+		}
+		nodes {
+			... BALANCE_CHANGE
+		}
+	}
+	objectChanges {
+		pageInfo {
+			hasNextPage
+			endCursor
+		}
+		nodes {
+			... OBJECT_CHANGE
+		}
+	}
+	transactionBlock {
+		... TX_CORE
+	}
 }
-fragment RPC_EVENTS_FIELDS on Event {
+fragment EVENT_FIELDS on Event {
 	sendingModule {
 		package {
 			address
@@ -10988,200 +9288,59 @@ fragment RPC_EVENTS_FIELDS on Event {
 	json
 	timestamp
 }
-`
-
-func DryRunTransactionBlock(
-	ctx_ context.Context,
-	client_ graphql.Client,
-	txBytes string,
-	showBalanceChanges *bool,
-	showEffects *bool,
-	showRawEffects *bool,
-	showEvents *bool,
-	showInput *bool,
-	showObjectChanges *bool,
-	showRawInput *bool,
-) (data_ *DryRunTransactionBlockResponse, err_ error) {
-	req_ := &graphql.Request{
-		OpName: "DryRunTransactionBlock",
-		Query:  DryRunTransactionBlock_Operation,
-		Variables: &__DryRunTransactionBlockInput{
-			TxBytes:            txBytes,
-			ShowBalanceChanges: showBalanceChanges,
-			ShowEffects:        showEffects,
-			ShowRawEffects:     showRawEffects,
-			ShowEvents:         showEvents,
-			ShowInput:          showInput,
-			ShowObjectChanges:  showObjectChanges,
-			ShowRawInput:       showRawInput,
-		},
-	}
-
-	data_ = &DryRunTransactionBlockResponse{}
-	resp_ := &graphql.Response{Data: data_}
-
-	err_ = client_.MakeRequest(
-		ctx_,
-		req_,
-		resp_,
-	)
-
-	return data_, err_
-}
-
-// The mutation executed by ExecuteTransactionBlock.
-const ExecuteTransactionBlock_Operation = `
-mutation ExecuteTransactionBlock ($txBytes: String!, $signatures: [String!]!, $showBalanceChanges: Boolean = false, $showEffects: Boolean = false, $showRawEffects: Boolean = false, $showEvents: Boolean = false, $showInput: Boolean = false, $showObjectChanges: Boolean = false, $showRawInput: Boolean = false) {
-	executeTransactionBlock(txBytes: $txBytes, signatures: $signatures) {
-		errors
-		effects {
-			transactionBlock {
-				... RPC_TRANSACTION_FIELDS
-			}
-			objectChanges {
-				nodes {
-					address
-					idCreated
-					idDeleted
-					inputState {
-						version
-						digest
-						asMoveObject {
-							contents {
-								type {
-									repr
-								}
-							}
-						}
-					}
-					outputState {
-						version
-						digest
-						owner {
-							__typename
-							... RPC_OBJECT_OWNER_FIELDS
-						}
-						asMoveObject {
-							contents {
-								type {
-									repr
-								}
-							}
-						}
-					}
-				}
-			}
-			balanceChanges {
-				nodes {
-					owner {
-						asAddress {
-							address
-						}
-					}
-					amount
-					coinType {
-						repr
-					}
-				}
-			}
+fragment BALANCE_CHANGE on BalanceChange {
+	owner {
+		asAddress {
+			address
 		}
+		asObject {
+			address
+		}
+	}
+	amount
+	coinType {
+		repr
 	}
 }
-fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
-	digest
-	bcs @include(if: $showInput)
-	bcs @include(if: $showRawInput)
-	sender {
-		address
-	}
-	signatures
-	effects {
-		bcs @include(if: $showEffects)
-		bcs @include(if: $showObjectChanges)
-		bcs @include(if: $showRawEffects)
-		events @include(if: $showEvents) {
-			pageInfo {
-				hasNextPage
-				endCursor
-			}
-			nodes {
-				... RPC_EVENTS_FIELDS
-			}
-		}
-		checkpoint {
-			sequenceNumber
-		}
-		timestamp
-		gasEffects {
-			gasSummary {
-				computationCost
-				computationCostBurned
-				storageCost
-				storageRebate
-				nonRefundableStorageFee
-			}
-		}
-		balanceChanges @include(if: $showBalanceChanges) {
-			pageInfo {
-				hasNextPage
-				endCursor
-			}
-			nodes {
-				coinType {
+fragment OBJECT_CHANGE on ObjectChange {
+	address
+	idCreated
+	idDeleted
+	inputState {
+		version
+		digest
+		asMoveObject {
+			contents {
+				type {
 					repr
 				}
-				owner {
-					asObject {
-						address
-					}
-					asAddress {
-						address
-					}
-				}
-				amount
 			}
 		}
-		objectChanges @include(if: $showObjectChanges) {
-			pageInfo {
-				hasNextPage
-				endCursor
-			}
-			nodes {
-				address
-				inputState {
-					version
-					digest
-					asMoveObject {
-						contents {
-							type {
-								repr
-							}
-						}
-					}
+	}
+	outputState {
+		version
+		digest
+		owner {
+			__typename
+			... OBJECT_OWNER
+		}
+		asMoveObject {
+			contents {
+				type {
+					repr
 				}
-				outputState {
-					version
-					digest
-					asMoveObject {
-						contents {
-							type {
-								repr
-							}
-						}
-					}
-					asMovePackage {
-						modules(first: 10) {
-							nodes {
-								name
-							}
-						}
-					}
+			}
+		}
+		asMovePackage {
+			modules(first: 10) {
+				nodes {
+					name
 				}
 			}
 		}
 	}
 }
-fragment RPC_OBJECT_OWNER_FIELDS on ObjectOwner {
+fragment OBJECT_OWNER on ObjectOwner {
 	__typename
 	... on AddressOwner {
 		owner {
@@ -11202,7 +9361,95 @@ fragment RPC_OBJECT_OWNER_FIELDS on ObjectOwner {
 		initialSharedVersion
 	}
 }
-fragment RPC_EVENTS_FIELDS on Event {
+`
+
+func DryRunTransactionBlock(
+	ctx_ context.Context,
+	client_ graphql.Client,
+	txBytes string,
+) (data_ *DryRunTransactionBlockResponse, err_ error) {
+	req_ := &graphql.Request{
+		OpName: "DryRunTransactionBlock",
+		Query:  DryRunTransactionBlock_Operation,
+		Variables: &__DryRunTransactionBlockInput{
+			TxBytes: txBytes,
+		},
+	}
+
+	data_ = &DryRunTransactionBlockResponse{}
+	resp_ := &graphql.Response{Data: data_}
+
+	err_ = client_.MakeRequest(
+		ctx_,
+		req_,
+		resp_,
+	)
+
+	return data_, err_
+}
+
+// The mutation executed by ExecuteTransactionBlock.
+const ExecuteTransactionBlock_Operation = `
+mutation ExecuteTransactionBlock ($txBytes: String!, $signatures: [String!]!) {
+	executeTransactionBlock(txBytes: $txBytes, signatures: $signatures) {
+		errors
+		effects {
+			... TX_EFFECTS
+		}
+	}
+}
+fragment TX_EFFECTS on TransactionBlockEffects {
+	status
+	errors
+	bcs
+	checkpoint {
+		sequenceNumber
+	}
+	timestamp
+	gasEffects {
+		gasObject {
+			address
+		}
+		gasSummary {
+			computationCost
+			computationCostBurned
+			storageCost
+			storageRebate
+			nonRefundableStorageFee
+		}
+	}
+	events {
+		pageInfo {
+			hasNextPage
+			endCursor
+		}
+		nodes {
+			... EVENT_FIELDS
+		}
+	}
+	balanceChanges {
+		pageInfo {
+			hasNextPage
+			endCursor
+		}
+		nodes {
+			... BALANCE_CHANGE
+		}
+	}
+	objectChanges {
+		pageInfo {
+			hasNextPage
+			endCursor
+		}
+		nodes {
+			... OBJECT_CHANGE
+		}
+	}
+	transactionBlock {
+		... TX_CORE
+	}
+}
+fragment EVENT_FIELDS on Event {
 	sendingModule {
 		package {
 			address
@@ -11215,6 +9462,87 @@ fragment RPC_EVENTS_FIELDS on Event {
 	json
 	timestamp
 }
+fragment BALANCE_CHANGE on BalanceChange {
+	owner {
+		asAddress {
+			address
+		}
+		asObject {
+			address
+		}
+	}
+	amount
+	coinType {
+		repr
+	}
+}
+fragment OBJECT_CHANGE on ObjectChange {
+	address
+	idCreated
+	idDeleted
+	inputState {
+		version
+		digest
+		asMoveObject {
+			contents {
+				type {
+					repr
+				}
+			}
+		}
+	}
+	outputState {
+		version
+		digest
+		owner {
+			__typename
+			... OBJECT_OWNER
+		}
+		asMoveObject {
+			contents {
+				type {
+					repr
+				}
+			}
+		}
+		asMovePackage {
+			modules(first: 10) {
+				nodes {
+					name
+				}
+			}
+		}
+	}
+}
+fragment TX_CORE on TransactionBlock {
+	digest
+	bcs
+	sender {
+		address
+	}
+	signatures
+}
+fragment OBJECT_OWNER on ObjectOwner {
+	__typename
+	... on AddressOwner {
+		owner {
+			asObject {
+				address
+			}
+			asAddress {
+				address
+			}
+		}
+	}
+	... on Parent {
+		parent {
+			address
+		}
+	}
+	... on Shared {
+		initialSharedVersion
+	}
+}
 `
 
 func ExecuteTransactionBlock(
@@ -11222,27 +9550,13 @@ func ExecuteTransactionBlock(
 	client_ graphql.Client,
 	txBytes string,
 	signatures []string,
-	showBalanceChanges *bool,
-	showEffects *bool,
-	showRawEffects *bool,
-	showEvents *bool,
-	showInput *bool,
-	showObjectChanges *bool,
-	showRawInput *bool,
 ) (data_ *ExecuteTransactionBlockResponse, err_ error) {
 	req_ := &graphql.Request{
 		OpName: "ExecuteTransactionBlock",
 		Query:  ExecuteTransactionBlock_Operation,
 		Variables: &__ExecuteTransactionBlockInput{
-			TxBytes:            txBytes,
-			Signatures:         signatures,
-			ShowBalanceChanges: showBalanceChanges,
-			ShowEffects:        showEffects,
-			ShowRawEffects:     showRawEffects,
-			ShowEvents:         showEvents,
-			ShowInput:          showInput,
-			ShowObjectChanges:  showObjectChanges,
-			ShowRawInput:       showRawInput,
+			TxBytes:    txBytes,
+			Signatures: signatures,
 		},
 	}
 
@@ -12318,106 +10632,74 @@ func GetStakesByIds(
 
 // The query executed by GetTransactionBlock.
 const GetTransactionBlock_Operation = `
-query GetTransactionBlock ($digest: String!, $showBalanceChanges: Boolean = false, $showEffects: Boolean = false, $showRawEffects: Boolean = false, $showEvents: Boolean = false, $showInput: Boolean = false, $showObjectChanges: Boolean = false, $showRawInput: Boolean = false) {
+query GetTransactionBlock ($digest: String!) {
 	transactionBlock(digest: $digest) {
-		... RPC_TRANSACTION_FIELDS
+		... TX_CORE
+		effects {
+			... TX_EFFECTS
+		}
 	}
 }
-fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
+fragment TX_CORE on TransactionBlock {
 	digest
-	bcs @include(if: $showInput)
-	bcs @include(if: $showRawInput)
+	bcs
 	sender {
 		address
 	}
 	signatures
-	effects {
-		bcs @include(if: $showEffects)
-		bcs @include(if: $showObjectChanges)
-		bcs @include(if: $showRawEffects)
-		events @include(if: $showEvents) {
-			pageInfo {
-				hasNextPage
-				endCursor
-			}
-			nodes {
-				... RPC_EVENTS_FIELDS
-			}
+}
+fragment TX_EFFECTS on TransactionBlockEffects {
+	status
+	errors
+	bcs
+	checkpoint {
+		sequenceNumber
+	}
+	timestamp
+	gasEffects {
+		gasObject {
+			address
 		}
-		checkpoint {
-			sequenceNumber
-		}
-		timestamp
-		gasEffects {
-			gasSummary {
-				computationCost
-				computationCostBurned
-				storageCost
-				storageRebate
-				nonRefundableStorageFee
-			}
-		}
-		balanceChanges @include(if: $showBalanceChanges) {
-			pageInfo {
-				hasNextPage
-				endCursor
-			}
-			nodes {
-				coinType {
-					repr
-				}
-				owner {
-					asObject {
-						address
-					}
-					asAddress {
-						address
-					}
-				}
-				amount
-			}
-		}
-		objectChanges @include(if: $showObjectChanges) {
-			pageInfo {
-				hasNextPage
-				endCursor
-			}
-			nodes {
-				address
-				inputState {
-					version
-					digest
-					asMoveObject {
-						contents {
-							type {
-								repr
-							}
-						}
-					}
-				}
-				outputState {
-					version
-					digest
-					asMoveObject {
-						contents {
-							type {
-								repr
-							}
-						}
-					}
-					asMovePackage {
-						modules(first: 10) {
-							nodes {
-								name
-							}
-						}
-					}
-				}
-			}
+		gasSummary {
+			computationCost
+			computationCostBurned
+			storageCost
+			storageRebate
+			nonRefundableStorageFee
 		}
 	}
+	events {
+		pageInfo {
+			hasNextPage
+			endCursor
+		}
+		nodes {
+			... EVENT_FIELDS
+		}
+	}
+	balanceChanges {
+		pageInfo {
+			hasNextPage
+			endCursor
+		}
+		nodes {
+			... BALANCE_CHANGE
+		}
+	}
+	objectChanges {
+		pageInfo {
+			hasNextPage
+			endCursor
+		}
+		nodes {
+			... OBJECT_CHANGE
+		}
+	}
+	transactionBlock {
+		... TX_CORE
+	}
 }
-fragment RPC_EVENTS_FIELDS on Event {
+fragment EVENT_FIELDS on Event {
 	sendingModule {
 		package {
 			address
@@ -12430,32 +10712,91 @@ fragment RPC_EVENTS_FIELDS on Event {
 	json
 	timestamp
 }
+fragment BALANCE_CHANGE on BalanceChange {
+	owner {
+		asAddress {
+			address
+		}
+		asObject {
+			address
+		}
+	}
+	amount
+	coinType {
+		repr
+	}
+}
+fragment OBJECT_CHANGE on ObjectChange {
+	address
+	idCreated
+	idDeleted
+	inputState {
+		version
+		digest
+		asMoveObject {
+			contents {
+				type {
+					repr
+				}
+			}
+		}
+	}
+	outputState {
+		version
+		digest
+		owner {
+			__typename
+			... OBJECT_OWNER
+		}
+		asMoveObject {
+			contents {
+				type {
+					repr
+				}
+			}
+		}
+		asMovePackage {
+			modules(first: 10) {
+				nodes {
+					name
+				}
+			}
+		}
+	}
+}
+fragment OBJECT_OWNER on ObjectOwner {
+	__typename
+	... on AddressOwner {
+		owner {
+			asObject {
+				address
+			}
+			asAddress {
+				address
+			}
+		}
+	}
+	... on Parent {
+		parent {
+			address
+		}
+	}
+	... on Shared {
+		initialSharedVersion
+	}
+}
 `
 
 func GetTransactionBlock(
 	ctx_ context.Context,
 	client_ graphql.Client,
 	digest string,
-	showBalanceChanges *bool,
-	showEffects *bool,
-	showRawEffects *bool,
-	showEvents *bool,
-	showInput *bool,
-	showObjectChanges *bool,
-	showRawInput *bool,
 ) (data_ *GetTransactionBlockResponse, err_ error) {
 	req_ := &graphql.Request{
 		OpName: "GetTransactionBlock",
 		Query:  GetTransactionBlock_Operation,
 		Variables: &__GetTransactionBlockInput{
-			Digest:             digest,
-			ShowBalanceChanges: showBalanceChanges,
-			ShowEffects:        showEffects,
-			ShowRawEffects:     showRawEffects,
-			ShowEvents:         showEvents,
-			ShowInput:          showInput,
-			ShowObjectChanges:  showObjectChanges,
-			ShowRawInput:       showRawInput,
+			Digest: digest,
 		},
 	}
 
@@ -12598,7 +10939,7 @@ func MultiGetObjects(
 
 // The query executed by MultiGetTransactionBlocks.
 const MultiGetTransactionBlocks_Operation = `
-query MultiGetTransactionBlocks ($digests: [String!]!, $limit: Int, $cursor: String, $showBalanceChanges: Boolean = false, $showEffects: Boolean = false, $showRawEffects: Boolean = false, $showEvents: Boolean = false, $showInput: Boolean = false, $showObjectChanges: Boolean = false, $showRawInput: Boolean = false) {
+query MultiGetTransactionBlocks ($digests: [String!]!, $limit: Int, $cursor: String) {
 	transactionBlocks(first: $limit, after: $cursor, filter: {transactionIds:$digests}) {
 		pageInfo {
 			hasNextPage
@@ -12607,105 +10948,73 @@ query MultiGetTransactionBlocks ($digests: [String!]!, $limit: Int, $cursor: Str
 			endCursor
 		}
 		nodes {
-			... RPC_TRANSACTION_FIELDS
+			... TX_CORE
+			effects {
+				... TX_EFFECTS
+			}
 		}
 	}
 }
-fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
+fragment TX_CORE on TransactionBlock {
 	digest
-	bcs @include(if: $showInput)
-	bcs @include(if: $showRawInput)
+	bcs
 	sender {
 		address
 	}
 	signatures
-	effects {
-		bcs @include(if: $showEffects)
-		bcs @include(if: $showObjectChanges)
-		bcs @include(if: $showRawEffects)
-		events @include(if: $showEvents) {
-			pageInfo {
-				hasNextPage
-				endCursor
-			}
-			nodes {
-				... RPC_EVENTS_FIELDS
-			}
+}
+fragment TX_EFFECTS on TransactionBlockEffects {
+	status
+	errors
+	bcs
+	checkpoint {
+		sequenceNumber
+	}
+	timestamp
+	gasEffects {
+		gasObject {
+			address
 		}
-		checkpoint {
-			sequenceNumber
-		}
-		timestamp
-		gasEffects {
-			gasSummary {
-				computationCost
-				computationCostBurned
-				storageCost
-				storageRebate
-				nonRefundableStorageFee
-			}
-		}
-		balanceChanges @include(if: $showBalanceChanges) {
-			pageInfo {
-				hasNextPage
-				endCursor
-			}
-			nodes {
-				coinType {
-					repr
-				}
-				owner {
-					asObject {
-						address
-					}
-					asAddress {
-						address
-					}
-				}
-				amount
-			}
-		}
-		objectChanges @include(if: $showObjectChanges) {
-			pageInfo {
-				hasNextPage
-				endCursor
-			}
-			nodes {
-				address
-				inputState {
-					version
-					digest
-					asMoveObject {
-						contents {
-							type {
-								repr
-							}
-						}
-					}
-				}
-				outputState {
-					version
-					digest
-					asMoveObject {
-						contents {
-							type {
-								repr
-							}
-						}
-					}
-					asMovePackage {
-						modules(first: 10) {
-							nodes {
-								name
-							}
-						}
-					}
-				}
-			}
+		gasSummary {
+			computationCost
+			computationCostBurned
+			storageCost
+			storageRebate
+			nonRefundableStorageFee
 		}
 	}
+	events {
+		pageInfo {
+			hasNextPage
+			endCursor
+		}
+		nodes {
+			... EVENT_FIELDS
+		}
+	}
+	balanceChanges {
+		pageInfo {
+			hasNextPage
+			endCursor
+		}
+		nodes {
+			... BALANCE_CHANGE
+		}
+	}
+	objectChanges {
+		pageInfo {
+			hasNextPage
+			endCursor
+		}
+		nodes {
+			... OBJECT_CHANGE
+		}
+	}
+	transactionBlock {
+		... TX_CORE
+	}
 }
-fragment RPC_EVENTS_FIELDS on Event {
+fragment EVENT_FIELDS on Event {
 	sendingModule {
 		package {
 			address
@@ -12718,6 +11027,79 @@ fragment RPC_EVENTS_FIELDS on Event {
 	json
 	timestamp
 }
+fragment BALANCE_CHANGE on BalanceChange {
+	owner {
+		asAddress {
+			address
+		}
+		asObject {
+			address
+		}
+	}
+	amount
+	coinType {
+		repr
+	}
+}
+fragment OBJECT_CHANGE on ObjectChange {
+	address
+	idCreated
+	idDeleted
+	inputState {
+		version
+		digest
+		asMoveObject {
+			contents {
+				type {
+					repr
+				}
+			}
+		}
+	}
+	outputState {
+		version
+		digest
+		owner {
+			__typename
+			... OBJECT_OWNER
+		}
+		asMoveObject {
+			contents {
+				type {
+					repr
+				}
+			}
+		}
+		asMovePackage {
+			modules(first: 10) {
+				nodes {
+					name
+				}
+			}
+		}
+	}
+}
+fragment OBJECT_OWNER on ObjectOwner {
+	__typename
+	... on AddressOwner {
+		owner {
+			asObject {
+				address
+			}
+			asAddress {
+				address
+			}
+		}
+	}
+	... on Parent {
+		parent {
+			address
+		}
+	}
+	... on Shared {
+		initialSharedVersion
+	}
+}
 `
 
 func MultiGetTransactionBlocks(
@@ -12726,28 +11108,14 @@ func MultiGetTransactionBlocks(
 	digests []string,
 	limit *int,
 	cursor *string,
-	showBalanceChanges *bool,
-	showEffects *bool,
-	showRawEffects *bool,
-	showEvents *bool,
-	showInput *bool,
-	showObjectChanges *bool,
-	showRawInput *bool,
 ) (data_ *MultiGetTransactionBlocksResponse, err_ error) {
 	req_ := &graphql.Request{
 		OpName: "MultiGetTransactionBlocks",
 		Query:  MultiGetTransactionBlocks_Operation,
 		Variables: &__MultiGetTransactionBlocksInput{
-			Digests:            digests,
-			Limit:              limit,
-			Cursor:             cursor,
-			ShowBalanceChanges: showBalanceChanges,
-			ShowEffects:        showEffects,
-			ShowRawEffects:     showRawEffects,
-			ShowEvents:         showEvents,
-			ShowInput:          showInput,
-			ShowObjectChanges:  showObjectChanges,
-			ShowRawInput:       showRawInput,
+			Digests: digests,
+			Limit:   limit,
+			Cursor:  cursor,
 		},
 	}
 
@@ -12767,81 +11135,38 @@ func MultiGetTransactionBlocks(
 const PaginateTransactionBlockLists_Operation = `
 query PaginateTransactionBlockLists ($digest: String!, $hasMoreEvents: Boolean!, $hasMoreBalanceChanges: Boolean!, $hasMoreObjectChanges: Boolean!, $afterEvents: String, $afterBalanceChanges: String, $afterObjectChanges: String) {
 	transactionBlock(digest: $digest) {
-		... PAGINATE_TRANSACTION_LISTS
-	}
-}
-fragment PAGINATE_TRANSACTION_LISTS on TransactionBlock {
-	effects {
-		events(after: $afterEvents) @include(if: $hasMoreEvents) {
-			pageInfo {
-				hasNextPage
-				endCursor
-			}
-			nodes {
-				... RPC_EVENTS_FIELDS
-			}
-		}
-		balanceChanges(after: $afterBalanceChanges) @include(if: $hasMoreBalanceChanges) {
-			pageInfo {
-				hasNextPage
-				endCursor
-			}
-			nodes {
-				coinType {
-					repr
+		effects {
+			events(after: $afterEvents) @include(if: $hasMoreEvents) {
+				pageInfo {
+					hasNextPage
+					endCursor
 				}
-				owner {
-					asObject {
-						address
-					}
-					asAddress {
-						address
-					}
+				nodes {
+					... EVENT_FIELDS
 				}
-				amount
 			}
-		}
-		objectChanges(after: $afterObjectChanges) @include(if: $hasMoreObjectChanges) {
-			pageInfo {
-				hasNextPage
-				endCursor
-			}
-			nodes {
-				address
-				inputState {
-					version
-					digest
-					asMoveObject {
-						contents {
-							type {
-								repr
-							}
-						}
-					}
+			balanceChanges(after: $afterBalanceChanges) @include(if: $hasMoreBalanceChanges) {
+				pageInfo {
+					hasNextPage
+					endCursor
 				}
-				outputState {
-					version
-					digest
-					asMoveObject {
-						contents {
-							type {
-								repr
-							}
-						}
-					}
-					asMovePackage {
-						modules(first: 10) {
-							nodes {
-								name
-							}
-						}
-					}
+				nodes {
+					... BALANCE_CHANGE
+				}
+			}
+			objectChanges(after: $afterObjectChanges) @include(if: $hasMoreObjectChanges) {
+				pageInfo {
+					hasNextPage
+					endCursor
+				}
+				nodes {
+					... OBJECT_CHANGE
 				}
 			}
 		}
 	}
 }
-fragment RPC_EVENTS_FIELDS on Event {
+fragment EVENT_FIELDS on Event {
 	sendingModule {
 		package {
 			address
@@ -12853,6 +11178,79 @@ fragment RPC_EVENTS_FIELDS on Event {
 	}
 	json
 	timestamp
+}
+fragment BALANCE_CHANGE on BalanceChange {
+	owner {
+		asAddress {
+			address
+		}
+		asObject {
+			address
+		}
+	}
+	amount
+	coinType {
+		repr
+	}
+}
+fragment OBJECT_CHANGE on ObjectChange {
+	address
+	idCreated
+	idDeleted
+	inputState {
+		version
+		digest
+		asMoveObject {
+			contents {
+				type {
+					repr
+				}
+			}
+		}
+	}
+	outputState {
+		version
+		digest
+		owner {
+			__typename
+			... OBJECT_OWNER
+		}
+		asMoveObject {
+			contents {
+				type {
+					repr
+				}
+			}
+		}
+		asMovePackage {
+			modules(first: 10) {
+				nodes {
+					name
+				}
+			}
+		}
+	}
+}
+fragment OBJECT_OWNER on ObjectOwner {
+	__typename
+	... on AddressOwner {
+		owner {
+			asObject {
+				address
+			}
+			asAddress {
+				address
+			}
+		}
+	}
+	... on Parent {
+		parent {
+			address
+		}
+	}
+	... on Shared {
+		initialSharedVersion
+	}
 }
 `
 
@@ -12893,72 +11291,9 @@ func PaginateTransactionBlockLists(
 	return data_, err_
 }
 
-// The query executed by QueryEvents.
-const QueryEvents_Operation = `
-query QueryEvents ($filter: EventFilter!, $before: String, $after: String, $first: Int, $last: Int) {
-	events(filter: $filter, first: $first, after: $after, last: $last, before: $before) {
-		pageInfo {
-			hasNextPage
-			hasPreviousPage
-			endCursor
-			startCursor
-		}
-		nodes {
-			... RPC_EVENTS_FIELDS
-		}
-	}
-}
-fragment RPC_EVENTS_FIELDS on Event {
-	sendingModule {
-		package {
-			address
-		}
-		name
-	}
-	sender {
-		address
-	}
-	json
-	timestamp
-}
-`
-
-func QueryEvents(
-	ctx_ context.Context,
-	client_ graphql.Client,
-	filter EventFilter,
-	before *string,
-	after *string,
-	first *int,
-	last *int,
-) (data_ *QueryEventsResponse, err_ error) {
-	req_ := &graphql.Request{
-		OpName: "QueryEvents",
-		Query:  QueryEvents_Operation,
-		Variables: &__QueryEventsInput{
-			Filter: filter,
-			Before: before,
-			After:  after,
-			First:  first,
-			Last:   last,
-		},
-	}
-
-	data_ = &QueryEventsResponse{}
-	resp_ := &graphql.Response{Data: data_}
-
-	err_ = client_.MakeRequest(
-		ctx_,
-		req_,
-		resp_,
-	)
-
-	return data_, err_
-}
-
 // The query executed by QueryTransactionBlocks.
 const QueryTransactionBlocks_Operation = `
-query QueryTransactionBlocks ($first: Int, $last: Int, $before: String, $after: String, $showBalanceChanges: Boolean = false, $showEffects: Boolean = false, $showRawEffects: Boolean = false, $showEvents: Boolean = false, $showInput: Boolean = false, $showObjectChanges: Boolean = false, $showRawInput: Boolean = false, $filter: TransactionBlockFilter) {
+query QueryTransactionBlocks ($first: Int, $last: Int, $before: String, $after: String, $filter: TransactionBlockFilter) {
 	transactionBlocks(first: $first, after: $after, last: $last, before: $before, filter: $filter) {
 		pageInfo {
 			hasNextPage
@@ -12967,105 +11302,73 @@ query QueryTransactionBlocks ($first: Int, $last: Int, $before: String, $after: 
 			endCursor
 		}
 		nodes {
-			... RPC_TRANSACTION_FIELDS
+			... TX_CORE
+			effects {
+				... TX_EFFECTS
+			}
 		}
 	}
 }
-fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
+fragment TX_CORE on TransactionBlock {
 	digest
-	bcs @include(if: $showInput)
-	bcs @include(if: $showRawInput)
+	bcs
 	sender {
 		address
 	}
 	signatures
-	effects {
-		bcs @include(if: $showEffects)
-		bcs @include(if: $showObjectChanges)
-		bcs @include(if: $showRawEffects)
-		events @include(if: $showEvents) {
-			pageInfo {
-				hasNextPage
-				endCursor
-			}
-			nodes {
-				... RPC_EVENTS_FIELDS
-			}
+}
+fragment TX_EFFECTS on TransactionBlockEffects {
+	status
+	errors
+	bcs
+	checkpoint {
+		sequenceNumber
+	}
+	timestamp
+	gasEffects {
+		gasObject {
+			address
 		}
-		checkpoint {
-			sequenceNumber
-		}
-		timestamp
-		gasEffects {
-			gasSummary {
-				computationCost
-				computationCostBurned
-				storageCost
-				storageRebate
-				nonRefundableStorageFee
-			}
-		}
-		balanceChanges @include(if: $showBalanceChanges) {
-			pageInfo {
-				hasNextPage
-				endCursor
-			}
-			nodes {
-				coinType {
-					repr
-				}
-				owner {
-					asObject {
-						address
-					}
-					asAddress {
-						address
-					}
-				}
-				amount
-			}
-		}
-		objectChanges @include(if: $showObjectChanges) {
-			pageInfo {
-				hasNextPage
-				endCursor
-			}
-			nodes {
-				address
-				inputState {
-					version
-					digest
-					asMoveObject {
-						contents {
-							type {
-								repr
-							}
-						}
-					}
-				}
-				outputState {
-					version
-					digest
-					asMoveObject {
-						contents {
-							type {
-								repr
-							}
-						}
-					}
-					asMovePackage {
-						modules(first: 10) {
-							nodes {
-								name
-							}
-						}
-					}
-				}
-			}
+		gasSummary {
+			computationCost
+			computationCostBurned
+			storageCost
+			storageRebate
+			nonRefundableStorageFee
 		}
 	}
+	events {
+		pageInfo {
+			hasNextPage
+			endCursor
+		}
+		nodes {
+			... EVENT_FIELDS
+		}
+	}
+	balanceChanges {
+		pageInfo {
+			hasNextPage
+			endCursor
+		}
+		nodes {
+			... BALANCE_CHANGE
+		}
+	}
+	objectChanges {
+		pageInfo {
+			hasNextPage
+			endCursor
+		}
+		nodes {
+			... OBJECT_CHANGE
+		}
+	}
+	transactionBlock {
+		... TX_CORE
+	}
 }
-fragment RPC_EVENTS_FIELDS on Event {
+fragment EVENT_FIELDS on Event {
 	sendingModule {
 		package {
 			address
@@ -13077,6 +11380,79 @@ fragment RPC_EVENTS_FIELDS on Event {
 	}
 	json
 	timestamp
+}
+fragment BALANCE_CHANGE on BalanceChange {
+	owner {
+		asAddress {
+			address
+		}
+		asObject {
+			address
+		}
+	}
+	amount
+	coinType {
+		repr
+	}
+}
+fragment OBJECT_CHANGE on ObjectChange {
+	address
+	idCreated
+	idDeleted
+	inputState {
+		version
+		digest
+		asMoveObject {
+			contents {
+				type {
+					repr
+				}
+			}
+		}
+	}
+	outputState {
+		version
+		digest
+		owner {
+			__typename
+			... OBJECT_OWNER
+		}
+		asMoveObject {
+			contents {
+				type {
+					repr
+				}
+			}
+		}
+		asMovePackage {
+			modules(first: 10) {
+				nodes {
+					name
+				}
+			}
+		}
+	}
+}
+fragment OBJECT_OWNER on ObjectOwner {
+	__typename
+	... on AddressOwner {
+		owner {
+			asObject {
+				address
+			}
+			asAddress {
+				address
+			}
+		}
+	}
+	... on Parent {
+		parent {
+			address
+		}
+	}
+	... on Shared {
+		initialSharedVersion
+	}
 }
 `
 
@@ -13087,31 +11463,17 @@ func QueryTransactionBlocks(
 	last *int,
 	before *string,
 	after *string,
-	showBalanceChanges *bool,
-	showEffects *bool,
-	showRawEffects *bool,
-	showEvents *bool,
-	showInput *bool,
-	showObjectChanges *bool,
-	showRawInput *bool,
 	filter *TransactionBlockFilter,
 ) (data_ *QueryTransactionBlocksResponse, err_ error) {
 	req_ := &graphql.Request{
 		OpName: "QueryTransactionBlocks",
 		Query:  QueryTransactionBlocks_Operation,
 		Variables: &__QueryTransactionBlocksInput{
-			First:              first,
-			Last:               last,
-			Before:             before,
-			After:              after,
-			ShowBalanceChanges: showBalanceChanges,
-			ShowEffects:        showEffects,
-			ShowRawEffects:     showRawEffects,
-			ShowEvents:         showEvents,
-			ShowInput:          showInput,
-			ShowObjectChanges:  showObjectChanges,
-			ShowRawInput:       showRawInput,
-			Filter:             filter,
+			First:  first,
+			Last:   last,
+			Before: before,
+			After:  after,
+			Filter: filter,
 		},
 	}
 

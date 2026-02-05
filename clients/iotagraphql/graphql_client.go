@@ -13,13 +13,14 @@ import (
 	"time"
 
 	"github.com/Khan/genqlient/graphql"
+	"github.com/samber/lo"
+
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/serialization"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql/graphqltypes"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
-	"github.com/samber/lo"
 )
 
 var defaultFalse = false
@@ -591,13 +592,6 @@ func (c *GraphQLClient) GetOwnedObjects(
 	}, nil
 }
 
-func (c *GraphQLClient) QueryEvents(
-	ctx context.Context,
-	req QueryEventsRequest,
-) (*EventPage, error) {
-	return nil, fmt.Errorf("not implemented: %s", "QueryEvents")
-}
-
 func (c *GraphQLClient) QueryTransactionBlocks(
 	ctx context.Context,
 	req QueryTransactionBlocksRequest,
@@ -627,14 +621,7 @@ func (c *GraphQLClient) QueryTransactionBlocks(
 		filter = convertTransactionFilterToGraphQL(req.Query.Filter)
 	}
 
-	var opts *IotaTransactionBlockResponseOptions
-	if req.Query != nil {
-		opts = req.Query.Options
-	}
-	txOpts := extractTransactionOptions(opts)
-
-	resp, err := QueryTransactionBlocks(ctx, c.client, first, last, before, after,
-		txOpts.ShowBalanceChanges, txOpts.ShowEffects, txOpts.ShowRawEffects, txOpts.ShowEvents, txOpts.ShowInput, txOpts.ShowObjectChanges, txOpts.ShowRawInput, filter)
+	resp, err := QueryTransactionBlocks(ctx, c.client, first, last, before, after, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -662,86 +649,24 @@ func (c *GraphQLClient) QueryTransactionBlocks(
 	}, nil
 }
 
-func (c *GraphQLClient) ResolveNameServiceAddress(ctx context.Context, iotaName string) (*iotago.Address, error) {
-	return nil, fmt.Errorf("not implemented: %s", "ResolveNameServiceAddress")
-}
-
-func (c *GraphQLClient) ResolveNameServiceNames(
-	ctx context.Context,
-	req ResolveNameServiceNamesRequest,
-) (*IotaNamePage, error) {
-	return nil, fmt.Errorf("not implemented: %s", "ResolveNameServiceNames")
-}
-
-func (c *GraphQLClient) DevInspectTransactionBlock(
-	ctx context.Context,
-	req DevInspectTransactionBlockRequest,
-) (*DevInspectResults, error) {
-	txBytes := req.TxKindBytes.String()
-
-	gasPrice := uint64(DefaultGasPrice)
-	if req.GasPrice != nil {
-		var err error
-		gasPrice, err = bigIntToUint64(req.GasPrice, "gasPrice")
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	txMeta := TransactionMetadata{
-		Sender:     *req.SenderAddress,
-		GasPrice:   gasPrice,
-		GasBudget:  DefaultGasBudget,
-		GasSponsor: *req.SenderAddress,
-	}
-
-	opts := convertToShowOptions(req.Options)
-
-	resp, err := DevInspectTransactionBlock(ctx, c.client, txBytes, txMeta,
-		opts.ShowBalanceChanges, opts.ShowEffects, opts.ShowRawEffects, opts.ShowEvents, opts.ShowInput, opts.ShowObjectChanges, opts.ShowRawInput)
-	if err != nil {
-		return nil, err
-	}
-
-	result, err := convertDevInspectResults(resp)
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert DevInspectResults: %w", err)
-	}
-
-	return result, nil
-}
-
 func (c *GraphQLClient) DryRunTransaction(
 	ctx context.Context,
 	req DryRunTransactionRequest,
-) (*DryRunResult, error) {
+) (*DryRunTransactionBlockResponse, error) {
 	txBytes := req.TxDataBytes.String()
-	opts := convertToShowOptions(req.Options)
 
-	// Always fetch effects, balance changes, and object changes for dry runs
-	// to provide complete transaction simulation results including gas fees
-	showEffects := true
-	showBalanceChanges := true
-	showObjectChanges := true
-
-	resp, err := DryRunTransactionBlock(ctx, c.client, txBytes,
-		&showBalanceChanges, &showEffects, opts.ShowRawEffects, opts.ShowEvents, opts.ShowInput, &showObjectChanges, opts.ShowRawInput)
+	resp, err := DryRunTransactionBlock(ctx, c.client, txBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	result, err := convertDryRunResults(resp)
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert DryRunResults: %w", err)
-	}
-
-	return result, nil
+	return resp, nil
 }
 
 func (c *GraphQLClient) ExecuteTransactionBlock(
 	ctx context.Context,
 	req ExecuteTransactionBlockRequest,
-) (*IotaTransactionBlockResponse, error) {
+) (*ExecuteTransactionBlockResponse, error) {
 	if len(req.Signatures) == 0 {
 		return nil, fmt.Errorf("at least one signature is required")
 	}
@@ -754,15 +679,13 @@ func (c *GraphQLClient) ExecuteTransactionBlock(
 		}
 		signatures[i] = iotago.Base64Data(sigBytes).String()
 	}
-	opts := convertToShowOptions(req.Options)
 
-	resp, err := ExecuteTransactionBlock(ctx, c.client, txBytes, signatures,
-		opts.ShowBalanceChanges, opts.ShowEffects, opts.ShowRawEffects, opts.ShowEvents, opts.ShowInput, opts.ShowObjectChanges, opts.ShowRawInput)
+	resp, err := ExecuteTransactionBlock(ctx, c.client, txBytes, signatures)
 	if err != nil {
 		return nil, err
 	}
 
-	return convertExecuteTransactionBlockResponse(resp, req.Options)
+	return resp, nil
 }
 
 func (c *GraphQLClient) GetLatestIotaSystemState(ctx context.Context) (*IotaSystemStateSummary, error) {
@@ -1368,7 +1291,7 @@ func (c *GraphQLClient) GetCoinObjsForTargetAmount(
 func (c *GraphQLClient) SignAndExecuteTransaction(
 	ctx context.Context,
 	req *SignAndExecuteTransactionRequest,
-) (*IotaTransactionBlockResponse, error) {
+) (*ExecuteTransactionBlockResponse, error) {
 	signature, err := req.Signer.SignTransactionBlock(req.TxDataBytes, iotasigner.DefaultIntent())
 	if err != nil {
 		return nil, fmt.Errorf("failed to sign transaction block: %w", err)
@@ -1418,7 +1341,7 @@ func (c *GraphQLClient) MintToken(
 	treasuryCap *iotago.ObjectRef,
 	mintAmount uint64,
 	options *IotaTransactionBlockResponseOptions,
-) (*IotaTransactionBlockResponse, error) {
+) (*ExecuteTransactionBlockResponse, error) {
 	ptb := iotago.NewProgrammableTransactionBuilder()
 	ptb.Command(
 		iotago.Command{
@@ -1762,20 +1685,17 @@ func (c *GraphQLClient) GetTotalTransactionBlocks(ctx context.Context) (string, 
 	return "", fmt.Errorf("not implemented: %s", "GetTotalTransactionBlocks")
 }
 
-func (c *GraphQLClient) GetTransactionBlock(ctx context.Context, req GetTransactionBlockRequest) (*IotaTransactionBlockResponse, error) {
+func (c *GraphQLClient) GetTransactionBlock(ctx context.Context, req GetTransactionBlockRequest) (*GetTransactionBlockResponse, error) {
 	if req.Digest == nil {
 		return nil, fmt.Errorf("transaction digest is required")
 	}
 
-	txOpts := extractTransactionOptions(req.Options)
-
-	resp, err := GetTransactionBlock(ctx, c.client, req.Digest.String(),
-		txOpts.ShowBalanceChanges, txOpts.ShowEffects, txOpts.ShowRawEffects, txOpts.ShowEvents, txOpts.ShowInput, txOpts.ShowObjectChanges, txOpts.ShowRawInput)
+	resp, err := GetTransactionBlock(ctx, c.client, req.Digest.String())
 	if err != nil {
 		return nil, err
 	}
 
-	return convertGraphQLTransactionBlockToResponse(&resp.TransactionBlock, req.Options)
+	return resp, nil
 }
 
 func (c *GraphQLClient) MultiGetObjects(ctx context.Context, req MultiGetObjectsRequest) ([]IotaObjectResponse, error) {
@@ -1891,10 +1811,10 @@ func (c *GraphQLClient) SignAndExecuteTxWithRetry(
 	gasBudget uint64,
 	gasPrice uint64,
 	options *IotaTransactionBlockResponseOptions,
-) (*IotaTransactionBlockResponse, error) {
+) (*ExecuteTransactionBlockResponse, error) {
 	var err error
 	var txnBytes []byte
-	var txnResponse *IotaTransactionBlockResponse
+	var txnResponse *ExecuteTransactionBlockResponse
 	var gasPayments []*iotago.ObjectRef
 	for i := 0; i < 5; i++ {
 		if gasCoin == nil {
@@ -2502,7 +2422,7 @@ func convertTransactionFilterToGraphQL(filter *TransactionFilter) *TransactionBl
 // convertQueryTransactionBlockNodeToResponse converts a GraphQL transaction node to JSON-RPC response
 func applyQueryNodeOptions(
 	result *IotaTransactionBlockResponse,
-	node *QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock,
+	node *TxBlockData,
 	digest *iotago.Digest,
 	options *IotaTransactionBlockResponseOptions,
 ) error {
@@ -2515,7 +2435,7 @@ func applyQueryNodeOptions(
 		if decodedEffects != nil {
 			return decodedEffects, nil
 		}
-		effects, err := convertGraphQLEffects(&node.Effects)
+		effects, err := convertGraphQLEffects(&node.Effects.TX_EFFECTS)
 		if err != nil {
 			return nil, err
 		}
@@ -2578,7 +2498,7 @@ func applyQueryNodeOptions(
 }
 
 func convertQueryTransactionBlockNodeToResponse(
-	node *QueryTransactionBlocksTransactionBlocksTransactionBlockConnectionNodesTransactionBlock,
+	node *TxBlockData,
 	query *IotaTransactionBlockResponseQuery,
 ) (*IotaTransactionBlockResponse, error) {
 	if node == nil {
@@ -2622,7 +2542,7 @@ func applyShowEffects(
 		result.Effects = &serialization.TagJson[IotaTransactionBlockEffects]{
 			Data: IotaTransactionBlockEffects{
 				V1: &IotaTransactionBlockEffectsV1{
-					Status:  ExecutionStatus{Status: graphqltypes.ExecutionStatusSuccess},
+					Status:  graphqltypes.ExecutionStatus{Status: graphqltypes.ExecutionStatusSuccess},
 					GasUsed: GasCostSummary{},
 				},
 			},
@@ -2635,7 +2555,7 @@ func applyShowEffects(
 func applyShowEvents(
 	result *IotaTransactionBlockResponse,
 	options *IotaTransactionBlockResponseOptions,
-	eventNodes []RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent,
+	eventNodes []EventData,
 	digest *iotago.TransactionDigest,
 ) error {
 	if options == nil || !options.ShowEvents {
@@ -2653,7 +2573,7 @@ func applyShowObjectChanges(
 	result *IotaTransactionBlockResponse,
 	options *IotaTransactionBlockResponseOptions,
 	decodeEffects func() (*serialization.TagJson[IotaTransactionBlockEffects], error),
-	objectChangeNodes []RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange,
+	objectChangeNodes []ObjectChangeData,
 	senderAddress iotago.Address,
 ) error {
 	if options == nil || !options.ShowObjectChanges {
@@ -2687,10 +2607,10 @@ func applyShowObjectChanges(
 // by checking GraphQL nodes for module information
 func mergePublishedPackages(
 	changes []serialization.TagJson[ObjectChange],
-	graphqlNodes []RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange,
+	graphqlNodes []ObjectChangeData,
 ) []serialization.TagJson[ObjectChange] {
 	// Build a map of object IDs to GraphQL nodes with published packages
-	publishedPackages := make(map[iotago.ObjectID]*RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange)
+	publishedPackages := make(map[iotago.ObjectID]*ObjectChangeData)
 	for i := range graphqlNodes {
 		node := &graphqlNodes[i]
 		// Check if this node represents a published package (has modules)
@@ -2744,7 +2664,7 @@ func mergePublishedPackages(
 func applyShowBalanceChanges(
 	result *IotaTransactionBlockResponse,
 	options *IotaTransactionBlockResponseOptions,
-	balanceChangeNodes []RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange,
+	balanceChangeNodes []BalanceChangeData,
 ) error {
 	if options == nil || !options.ShowBalanceChanges {
 		return nil
@@ -2757,88 +2677,8 @@ func applyShowBalanceChanges(
 	return nil
 }
 
-func convertGraphQLTransactionBlockToResponse(
-	tx *GetTransactionBlockTransactionBlock,
-	options *IotaTransactionBlockResponseOptions,
-) (*IotaTransactionBlockResponse, error) {
-	if tx == nil {
-		return nil, fmt.Errorf("transaction block is nil")
-	}
-
-	// Convert digest
-	digest, err := iotago.NewDigest(tx.Digest)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse transaction digest: %w", err)
-	}
-
-	result := &IotaTransactionBlockResponse{
-		Digest: *digest,
-	}
-
-	var decodedEffects *serialization.TagJson[IotaTransactionBlockEffects]
-	decodeEffects := func() (*serialization.TagJson[IotaTransactionBlockEffects], error) {
-		if decodedEffects != nil {
-			return decodedEffects, nil
-		}
-		effects, err := convertGraphQLEffects(&tx.Effects)
-		if err != nil {
-			return nil, err
-		}
-		decodedEffects = effects
-		return effects, nil
-	}
-
-	if options != nil && options.ShowRawInput {
-		result.RawTransaction = tx.Bcs
-	}
-
-	applyShowEffects(result, options, decodeEffects)
-
-	// Populate gas effects from GraphQL if they're missing from BCS
-	if options != nil && options.ShowEffects && result.Effects != nil {
-		effects := &result.Effects.Data
-		if effects.V1 != nil && (effects.V1.GasUsed.ComputationCost == nil || effects.V1.GasUsed.ComputationCost.String() == "0") {
-			gasEffects := tx.Effects.GasEffects
-			gasSummary := gasEffects.GasSummary
-			computationCost := gasSummary.ComputationCost
-			storageCost := gasSummary.StorageCost
-			storageRebate := gasSummary.StorageRebate
-			nonRefundableStorageFee := gasSummary.NonRefundableStorageFee
-			effects.V1.GasUsed = GasCostSummary{
-				ComputationCost:         &computationCost,
-				StorageCost:             &storageCost,
-				StorageRebate:           &storageRebate,
-				NonRefundableStorageFee: &nonRefundableStorageFee,
-			}
-		}
-	}
-
-	if err := applyShowEvents(result, options, tx.Effects.Events.Nodes, digest); err != nil {
-		return nil, err
-	}
-
-	timestampMs := tx.Effects.Timestamp.UnixMilli()
-	result.TimestampMs = NewBigInt(uint64(timestampMs)) // #nosec G115 -- timestamp is always positive
-
-	result.Checkpoint = NewBigInt(tx.Effects.Checkpoint.SequenceNumber)
-
-	if err := applyShowObjectChanges(result, options, decodeEffects, tx.Effects.ObjectChanges.Nodes, tx.Sender.Address); err != nil {
-		return nil, err
-	}
-
-	if err := applyShowBalanceChanges(result, options, tx.Effects.BalanceChanges.Nodes); err != nil {
-		return nil, err
-	}
-
-	if options != nil && options.ShowRawEffects {
-		result.RawEffects = tx.Effects.Bcs
-	}
-
-	return result, nil
-}
-
 func convertGraphQLEffects(
-	effects *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffects,
+	effects *TX_EFFECTS,
 ) (*serialization.TagJson[IotaTransactionBlockEffects], error) {
 	// The effects.Bcs field should already be base64-decoded by iotago.Base64Data.UnmarshalJSON,
 	// but if it's not (e.g., coming from GraphQL as raw bytes), we need to handle it.
@@ -2866,7 +2706,7 @@ func convertGraphQLEffects(
 
 //nolint:unparam // error return kept for API consistency
 func convertGraphQLEvents(
-	nodes []RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsEventsEventConnectionNodesEvent,
+	nodes []EventData,
 	txDigest *iotago.TransactionDigest,
 ) ([]*IotaEvent, error) {
 	events := make([]*IotaEvent, 0, len(nodes))
@@ -2910,7 +2750,7 @@ func convertGraphQLEvents(
 }
 
 func convertGraphQLObjectChanges(
-	nodes []RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange,
+	nodes []ObjectChangeData,
 ) ([]serialization.TagJson[ObjectChange], error) {
 	changes := make([]serialization.TagJson[ObjectChange], 0, len(nodes))
 
@@ -2944,7 +2784,7 @@ func versionWithFallback(primary uint64, fallback uint64) *BigInt {
 }
 
 func convertGraphQLObjectChange(
-	node *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange,
+	node *ObjectChangeData,
 ) (*serialization.TagJson[ObjectChange], error) {
 	objectID := node.Address
 	inputState := node.InputState
@@ -3233,7 +3073,7 @@ func convertOwnerFromTag(owner serialization.TagJson[iotago.Owner]) (*ObjectOwne
 }
 
 func convertGraphQLBalanceChanges(
-	nodes []RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange,
+	nodes []BalanceChangeData,
 ) ([]BalanceChange, error) {
 	changes := make([]BalanceChange, 0, len(nodes))
 
@@ -3258,7 +3098,7 @@ func convertGraphQLBalanceChanges(
 }
 
 func convertGraphQLBalanceChangeOwner(
-	owner RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChangeOwner,
+	owner BALANCE_CHANGEOwner,
 ) (*ObjectOwner, error) {
 	if owner.AsAddress.Address != (iotago.Address{}) {
 		addr := &owner.AsAddress.Address
@@ -3281,196 +3121,6 @@ func convertGraphQLBalanceChangeOwner(
 	return nil, fmt.Errorf("balance change owner has neither address nor object")
 }
 
-func convertDevInspectResults(resp *DevInspectTransactionBlockResponse) (*DevInspectResults, error) {
-	dryRunResult := resp.DryRunTransactionBlock
-
-	if dryRunResult.Error != "" {
-		return &DevInspectResults{
-			Error: dryRunResult.Error,
-		}, nil
-	}
-
-	var effects *serialization.TagJson[IotaTransactionBlockEffects]
-	if len(dryRunResult.Transaction.Effects.Bcs) > 0 {
-		var err error
-		effects, err = convertGraphQLEffects(&dryRunResult.Transaction.Effects)
-		if err != nil {
-			// BCS decoding failed (possibly incomplete for dev inspect), use minimal effects
-			effects = &serialization.TagJson[IotaTransactionBlockEffects]{
-				Data: IotaTransactionBlockEffects{
-					V1: &IotaTransactionBlockEffectsV1{
-						Status: ExecutionStatus{
-							Status: graphqltypes.ExecutionStatusSuccess,
-						},
-						GasUsed: GasCostSummary{},
-					},
-				},
-			}
-		}
-	} else {
-		// BCS effects not available for dev inspect, return empty effects with success status
-		effects = &serialization.TagJson[IotaTransactionBlockEffects]{
-			Data: IotaTransactionBlockEffects{
-				V1: &IotaTransactionBlockEffectsV1{
-					Status: ExecutionStatus{
-						Status: graphqltypes.ExecutionStatusSuccess,
-					},
-					GasUsed: GasCostSummary{},
-				},
-			},
-		}
-	}
-
-	var events []IotaEvent
-	if len(dryRunResult.Transaction.Effects.Events.Nodes) > 0 {
-		convertedEvents, err := convertGraphQLEvents(dryRunResult.Transaction.Effects.Events.Nodes, nil)
-		if err != nil {
-			return nil, fmt.Errorf("failed to convert events: %w", err)
-		}
-		for _, e := range convertedEvents {
-			events = append(events, *e)
-		}
-	}
-
-	var results []ExecutionResultType
-	for _, dryRunEffect := range dryRunResult.Results {
-		executionResult := ExecutionResultType{
-			MutableReferenceOutputs: []MutableReferenceOutputType{},
-			ReturnValues:            []ReturnValueType{},
-		}
-
-		for _, mutRef := range dryRunEffect.MutatedReferences {
-			executionResult.MutableReferenceOutputs = append(executionResult.MutableReferenceOutputs, map[string]interface{}{
-				"type": mutRef.Type.Repr,
-				"bcs":  mutRef.Bcs,
-			})
-		}
-
-		for _, retVal := range dryRunEffect.ReturnValues {
-			executionResult.ReturnValues = append(executionResult.ReturnValues, map[string]interface{}{
-				"type": retVal.Type.Repr,
-				"bcs":  retVal.Bcs,
-			})
-		}
-
-		results = append(results, executionResult)
-	}
-
-	return &DevInspectResults{
-		Effects: *effects,
-		Events:  events,
-		Results: results,
-	}, nil
-}
-
-func convertDryRunResults(resp *DryRunTransactionBlockResponse) (*DryRunResult, error) {
-	dryRunResult := resp.DryRunTransactionBlock
-
-	var effects *serialization.TagJson[IotaTransactionBlockEffects]
-	if len(dryRunResult.Transaction.Effects.Bcs) > 0 {
-		var err error
-		effects, err = convertGraphQLEffects(&dryRunResult.Transaction.Effects)
-		if err != nil {
-			// BCS decoding failed (possibly incomplete for dry run), use minimal effects
-			effects = &serialization.TagJson[IotaTransactionBlockEffects]{
-				Data: IotaTransactionBlockEffects{
-					V1: &IotaTransactionBlockEffectsV1{
-						Status: ExecutionStatus{
-							Status: graphqltypes.ExecutionStatusSuccess,
-						},
-						GasUsed: GasCostSummary{},
-					},
-				},
-			}
-		}
-	} else {
-		// BCS effects not available, return empty effects with success status
-		effects = &serialization.TagJson[IotaTransactionBlockEffects]{
-			Data: IotaTransactionBlockEffects{
-				V1: &IotaTransactionBlockEffectsV1{
-					Status: ExecutionStatus{
-						Status: graphqltypes.ExecutionStatusSuccess,
-					},
-					GasUsed: GasCostSummary{},
-				},
-			},
-		}
-	}
-
-	// Convert events if present
-	var events []IotaEvent
-	if len(dryRunResult.Transaction.Effects.Events.Nodes) > 0 {
-		convertedEvents, err := convertGraphQLEvents(dryRunResult.Transaction.Effects.Events.Nodes, nil)
-		if err != nil {
-			return nil, fmt.Errorf("failed to convert events: %w", err)
-		}
-		for _, e := range convertedEvents {
-			events = append(events, *e)
-		}
-	}
-
-	var input serialization.TagJson[IotaTransactionBlockData]
-	if len(dryRunResult.Transaction.Bcs) > 0 {
-		var txData IotaTransactionBlockData
-		if err := UnmarshalBCS(dryRunResult.Transaction.Bcs, &txData); err != nil {
-			return nil, fmt.Errorf("failed to decode input transaction: %w", err)
-		}
-		input = serialization.TagJson[IotaTransactionBlockData]{
-			Data: txData,
-		}
-	}
-
-	// If gas cost is not available from BCS decoding (dry run limitation),
-	// use the gasEffects from GraphQL
-	if effects.Data.V1 != nil && (effects.Data.V1.GasUsed.ComputationCost == nil || effects.Data.V1.GasUsed.ComputationCost.String() == "0") {
-		gasEffects := dryRunResult.Transaction.Effects.GasEffects
-		gasSummary := gasEffects.GasSummary
-		computationCost := gasSummary.ComputationCost
-		storageCost := gasSummary.StorageCost
-		storageRebate := gasSummary.StorageRebate
-		nonRefundableStorageFee := gasSummary.NonRefundableStorageFee
-		effects.Data.V1.GasUsed = GasCostSummary{
-			ComputationCost:         &computationCost,
-			StorageCost:             &storageCost,
-			StorageRebate:           &storageRebate,
-			NonRefundableStorageFee: &nonRefundableStorageFee,
-		}
-	}
-
-	var balanceChanges []BalanceChange
-	if len(dryRunResult.Transaction.Effects.BalanceChanges.Nodes) > 0 {
-		convertedBalanceChanges, err := convertGraphQLBalanceChanges(dryRunResult.Transaction.Effects.BalanceChanges.Nodes)
-		if err != nil {
-			return nil, fmt.Errorf("failed to convert balance changes: %w", err)
-		}
-		balanceChanges = convertedBalanceChanges
-	}
-
-	var objectChanges []serialization.TagJson[ObjectChange]
-	derivedChanges, err := deriveObjectChangesFromEffects(effects, dryRunResult.Transaction.Sender.Address)
-	if err != nil {
-		return nil, fmt.Errorf("failed to derive object changes: %w", err)
-	}
-
-	if len(derivedChanges) > 0 {
-		objectChanges = derivedChanges
-	} else if len(dryRunResult.Transaction.Effects.ObjectChanges.Nodes) > 0 {
-		convertedObjectChanges, err := convertGraphQLObjectChanges(dryRunResult.Transaction.Effects.ObjectChanges.Nodes)
-		if err != nil {
-			return nil, fmt.Errorf("failed to convert object changes: %w", err)
-		}
-		objectChanges = convertedObjectChanges
-	}
-
-	return &DryRunResult{
-		Effects:        *effects,
-		Events:         events,
-		ObjectChanges:  objectChanges,
-		BalanceChanges: balanceChanges,
-		Input:          input,
-	}, nil
-}
-
 func applyExecuteShowEffects(
 	result *IotaTransactionBlockResponse,
 	options *IotaTransactionBlockResponseOptions,
@@ -3488,7 +3138,7 @@ func applyExecuteShowEffects(
 		result.Effects = &serialization.TagJson[IotaTransactionBlockEffects]{
 			Data: IotaTransactionBlockEffects{
 				V1: &IotaTransactionBlockEffectsV1{
-					Status:  ExecutionStatus{Status: graphqltypes.ExecutionStatusSuccess},
+					Status:  graphqltypes.ExecutionStatus{Status: graphqltypes.ExecutionStatusSuccess},
 					GasUsed: GasCostSummary{},
 				},
 			},
@@ -3514,7 +3164,8 @@ func applyExecuteShowRawEffects(
 
 func applyExecuteTransactionOptions(
 	result *IotaTransactionBlockResponse,
-	txBlock *RPC_TRANSACTION_FIELDS,
+	effects *TX_EFFECTS,
+	txCore *TX_CORE,
 	digest *iotago.Digest,
 	options *IotaTransactionBlockResponseOptions,
 ) error {
@@ -3523,31 +3174,31 @@ func applyExecuteTransactionOptions(
 		if decodedEffects != nil {
 			return decodedEffects, nil
 		}
-		effects, err := convertGraphQLEffects(&txBlock.Effects)
+		eff, err := convertGraphQLEffects(effects)
 		if err != nil {
 			return nil, err
 		}
-		decodedEffects = effects
-		return effects, nil
+		decodedEffects = eff
+		return eff, nil
 	}
 
 	if options != nil && options.ShowRawInput {
-		result.RawTransaction = txBlock.Bcs
+		result.RawTransaction = txCore.Bcs
 	}
 
 	applyExecuteShowEffects(result, options, decodeEffects)
 
 	// Populate gas effects from GraphQL if they're missing from BCS
 	if options != nil && options.ShowEffects && result.Effects != nil {
-		effects := &result.Effects.Data
-		if effects.V1 != nil && (effects.V1.GasUsed.ComputationCost == nil || effects.V1.GasUsed.ComputationCost.String() == "0") {
-			gasEffects := txBlock.Effects.GasEffects
+		eff := &result.Effects.Data
+		if eff.V1 != nil && (eff.V1.GasUsed.ComputationCost == nil || eff.V1.GasUsed.ComputationCost.String() == "0") {
+			gasEffects := effects.GasEffects
 			gasSummary := gasEffects.GasSummary
 			computationCost := gasSummary.ComputationCost
 			storageCost := gasSummary.StorageCost
 			storageRebate := gasSummary.StorageRebate
 			nonRefundableStorageFee := gasSummary.NonRefundableStorageFee
-			effects.V1.GasUsed = GasCostSummary{
+			eff.V1.GasUsed = GasCostSummary{
 				ComputationCost:         &computationCost,
 				StorageCost:             &storageCost,
 				StorageRebate:           &storageRebate,
@@ -3556,19 +3207,19 @@ func applyExecuteTransactionOptions(
 		}
 	}
 
-	if err := applyShowEvents(result, options, txBlock.Effects.Events.Nodes, digest); err != nil {
+	if err := applyShowEvents(result, options, effects.Events.Nodes, digest); err != nil {
 		return err
 	}
 
-	if err := applyShowObjectChanges(result, options, decodeEffects, txBlock.Effects.ObjectChanges.Nodes, txBlock.Sender.Address); err != nil {
+	if err := applyShowObjectChanges(result, options, decodeEffects, effects.ObjectChanges.Nodes, txCore.Sender.Address); err != nil {
 		return err
 	}
 
-	if err := applyShowBalanceChanges(result, options, txBlock.Effects.BalanceChanges.Nodes); err != nil {
+	if err := applyShowBalanceChanges(result, options, effects.BalanceChanges.Nodes); err != nil {
 		return err
 	}
 
-	applyExecuteShowRawEffects(result, options, txBlock.Effects.Bcs)
+	applyExecuteShowRawEffects(result, options, effects.Bcs)
 
 	return nil
 }
@@ -3585,9 +3236,10 @@ func convertExecuteTransactionBlockResponse(
 		return nil, fmt.Errorf("execution failed: %v", resp.ExecuteTransactionBlock.Errors)
 	}
 
-	txBlock := &resp.ExecuteTransactionBlock.Effects.TransactionBlock.RPC_TRANSACTION_FIELDS
+	effects := &resp.ExecuteTransactionBlock.Effects.TX_EFFECTS
+	txCore := &resp.ExecuteTransactionBlock.Effects.TransactionBlock.TX_CORE
 
-	digest, err := iotago.NewDigest(txBlock.Digest)
+	digest, err := iotago.NewDigest(txCore.Digest)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse transaction digest: %w", err)
 	}
@@ -3595,10 +3247,10 @@ func convertExecuteTransactionBlockResponse(
 	result := &IotaTransactionBlockResponse{Digest: *digest}
 
 	// #nosec G115 -- timestamps from blockchain are always positive
-	result.TimestampMs = NewBigInt(uint64(txBlock.Effects.Timestamp.UnixMilli()))
-	result.Checkpoint = NewBigInt(txBlock.Effects.Checkpoint.SequenceNumber)
+	result.TimestampMs = NewBigInt(uint64(effects.Timestamp.UnixMilli()))
+	result.Checkpoint = NewBigInt(effects.Checkpoint.SequenceNumber)
 
-	if err := applyExecuteTransactionOptions(result, txBlock, digest, options); err != nil {
+	if err := applyExecuteTransactionOptions(result, effects, txCore, digest, options); err != nil {
 		return nil, err
 	}
 

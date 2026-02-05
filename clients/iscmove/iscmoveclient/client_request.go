@@ -32,7 +32,7 @@ type CreateAndSendRequestRequest struct {
 func (c *Client) CreateAndSendRequest(
 	ctx context.Context,
 	req *CreateAndSendRequestRequest,
-) (*iotagraphql.IotaTransactionBlockResponse, error) {
+) (*iotagraphql.ExecuteTransactionBlockResponse, error) {
 	anchorRes, err := c.GetObject(ctx, iotagraphql.GetObjectRequest{ObjectID: req.AnchorAddress})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor ref: %w", err)
@@ -95,7 +95,7 @@ func (c *Client) selectProperGasCoinAndBalance(ctx context.Context, req *CreateA
 func (c *Client) CreateAndSendRequestWithAssets(
 	ctx context.Context,
 	req *CreateAndSendRequestWithAssetsRequest,
-) (*iotagraphql.IotaTransactionBlockResponse, error) {
+) (*iotagraphql.ExecuteTransactionBlockResponse, error) {
 	anchorRes, err := c.GetObject(ctx, iotagraphql.GetObjectRequest{ObjectID: req.AnchorAddress})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor ref: %w", err)

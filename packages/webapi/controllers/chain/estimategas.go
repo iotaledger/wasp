@@ -68,14 +68,14 @@ func (c *Controller) estimateGasOnLedger(e echo.Context) error {
 	if err != nil {
 		return apierrors.NewHTTPError(http.StatusBadRequest, "DryRun error", err)
 	}
-	if dryRunResponse.Effects.Data.V1.Status.Error != "" {
+	if dryRunResponse.DryRunTransactionBlock.Transaction.Effects.Errors != "" {
 		return apierrors.NewHTTPError(http.StatusBadRequest, "DryRun status error", fmt.Errorf("%s: %s",
-			dryRunResponse.Effects.Data.V1.Status.Status,
-			dryRunResponse.Effects.Data.V1.Status.Error,
+			dryRunResponse.DryRunTransactionBlock.Transaction.Effects.Status,
+			dryRunResponse.DryRunTransactionBlock.Transaction.Effects.Errors,
 		))
 	}
 
-	req, err := isc.ReconstructOnLedgerRequest(dryRunResponse)
+	req, err := isc.ReconstructOnLedgerRequest(&dryRunResponse.DryRunTransactionBlock)
 	if err != nil {
 		return fmt.Errorf("cant generate fake request: %s", err)
 	}
@@ -89,8 +89,14 @@ func (c *Controller) estimateGasOnLedger(e echo.Context) error {
 	fmt.Printf("RequestBytes: %s\n", hexutil.Encode(rec.Request))
 	fmt.Printf("Request data: %v %v", res, res.Message())
 
+	gasSummary := dryRunResponse.DryRunTransactionBlock.Transaction.Effects.GasEffects.GasSummary
 	return e.JSON(http.StatusOK, models.OnLedgerEstimationResponse{
-		L1: models.MapL1EstimationResult(&dryRunResponse.Effects.Data.V1.GasUsed),
+		L1: models.MapL1EstimationResult(&iotagraphql.GasCostSummary{
+			ComputationCost:         &gasSummary.ComputationCost,
+			StorageCost:             &gasSummary.StorageCost,
+			StorageRebate:           &gasSummary.StorageRebate,
+			NonRefundableStorageFee: &gasSummary.NonRefundableStorageFee,
+		}),
 		L2: models.MapReceiptResponse(rec),
 	})
 }

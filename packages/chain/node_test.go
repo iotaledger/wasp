@@ -352,8 +352,8 @@ func (tnc *testNodeConn) PublishTX(
 
 	time.Sleep(1 * time.Second)
 
-	res, err = tnc.l1Client.GetTransactionBlock(ctx, iotagraphql.GetTransactionBlockRequest{
-		Digest: &res.Digest,
+	resTxBlock, err := tnc.l1Client.GetTransactionBlock(ctx, iotagraphql.GetTransactionBlockRequest{
+		Digest: iotago.MustNewDigest(res.ExecuteTransactionBlock.Effects.TransactionBlock.Digest),
 
 		Options: &iotagraphql.IotaTransactionBlockResponseOptions{
 			ShowInput:          true,
@@ -370,9 +370,9 @@ func (tnc *testNodeConn) PublishTX(
 		return err
 	}
 
-	tnc.t.Logf("PublishTX, GetTransactionBlock, result=%+v", res)
+	tnc.t.Logf("PublishTX, GetTransactionBlock, result=%+v", resTxBlock)
 
-	anchorInfo, err := res.GetMutatedObjectByID(chainID.AsObjectID())
+	anchorInfo, err := resTxBlock.GetMutatedObjectByID(chainID.AsObjectID())
 	if err != nil {
 		return err
 	}

@@ -38,8 +38,8 @@ func (c *Client) UpdateAnchorStateMetadata(ctx context.Context, req *UpdateAncho
 		return false, fmt.Errorf("updating ptb state metadata failed: %w", err)
 	}
 
-	if len(res.Errors) > 0 {
-		return false, fmt.Errorf("updating ptb state metadata failed: %v", res.Errors)
+	if len(res.ExecuteTransactionBlock.Errors) > 0 {
+		return false, fmt.Errorf("updating ptb state metadata failed: %v", res.ExecuteTransactionBlock.Errors)
 	}
 
 	return true, nil
@@ -107,7 +107,7 @@ type ReceiveRequestsAndTransitionRequest struct {
 func (c *Client) ReceiveRequestsAndTransition(
 	ctx context.Context,
 	req *ReceiveRequestsAndTransitionRequest,
-) (*iotagraphql.IotaTransactionBlockResponse, error) {
+) (*iotagraphql.ExecuteTransactionBlockResponse, error) {
 	consumed := make([]ConsumedRequest, 0, len(req.ConsumedRequests))
 	for _, reqRef := range req.ConsumedRequests {
 		reqWithObj, err := c.GetRequestFromObjectID(ctx, reqRef.ObjectID)

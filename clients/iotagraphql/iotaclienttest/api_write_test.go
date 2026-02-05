@@ -7,52 +7,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotatest"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/testutil/l1starter"
 )
-
-func TestDevInspectTransactionBlock(t *testing.T) {
-	client := l1starter.Instance().L1Client()
-	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
-
-	limit := int(3)
-	coinPages, err := client.GetCoins(
-		context.Background(), iotagraphql.GetCoinsRequest{
-			Owner: sender.Address(),
-			Limit: limit,
-		},
-	)
-	require.NoError(t, err)
-	coins := iotagraphql.Coins(coinPages.Data)
-
-	ptb := iotago.NewProgrammableTransactionBuilder()
-	ptb.PayAllIota(sender.Address())
-	pt := ptb.Finish()
-	tx := iotago.NewProgrammable(
-		sender.Address(),
-		pt,
-		coins.CoinRefs(),
-		iotagraphql.DefaultGasBudget,
-		iotagraphql.DefaultGasPrice,
-	)
-	txBytes, err := bcs.Marshal(&tx.V1.Kind)
-	require.NoError(t, err)
-
-	resp, err := client.DevInspectTransactionBlock(
-		context.Background(),
-		iotagraphql.DevInspectTransactionBlockRequest{
-			SenderAddress: sender.Address(),
-			TxKindBytes:   txBytes,
-			GasPrice:      iotagraphql.NewBigInt(iotagraphql.DefaultGasPrice),
-		},
-	)
-	require.NoError(t, err)
-	require.True(t, resp.Effects.Data.IsSuccess())
-}
 
 func TestDryRunTransaction(t *testing.T) {
 	client := l1starter.Instance().L1Client()
@@ -82,8 +40,8 @@ func TestDryRunTransaction(t *testing.T) {
 		TxDataBytes: tx.TxBytes,
 	})
 	require.NoError(t, err)
-	require.True(t, resp.Effects.Data.IsSuccess())
-	require.Empty(t, resp.Effects.Data.V1.Status.Error)
+	require.Empty(t, resp.DryRunTransactionBlock.Error)
+	require.True(t, resp.DryRunTransactionBlock.Transaction.Effects.IsSuccess())
 }
 
 func TestExecuteTransactionBlock(t *testing.T) {
@@ -120,8 +78,8 @@ func TestExecuteTransactionBlock(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
-	require.True(t, resp.Effects.Data.IsSuccess())
-	require.Empty(t, resp.Effects.Data.V1.Status.Error)
+	require.True(t, resp.IsSuccess())
+	require.Empty(t, resp.ExecuteTransactionBlock.Errors)
 }
 
 func TestSignAndExecuteTransaction(t *testing.T) {
@@ -160,8 +118,8 @@ func TestSignAndExecuteTransaction(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.NotNil(t, resp)
-	require.NotNil(t, resp.Effects, "Effects should be present when ShowEffects is true")
-	require.NotNil(t, resp.ObjectChanges, "ObjectChanges should be present when ShowObjectChanges is true")
-	require.True(t, resp.Effects.Data.IsSuccess())
-	require.Empty(t, resp.Effects.Data.V1.Status.Error)
+	require.NotNil(t, resp.ExecuteTransactionBlock.Effects, "Effects should be present when ShowEffects is true")
+	require.NotNil(t, resp.ExecuteTransactionBlock.Effects.ObjectChanges, "ObjectChanges should be present when ShowObjectChanges is true")
+	require.True(t, resp.IsSuccess())
+	require.Empty(t, resp.ExecuteTransactionBlock.Errors)
 }

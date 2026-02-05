@@ -1,0 +1,164 @@
+# Shared fragments for transaction-related queries.
+# These fragments are designed to generate unified Go types across
+# GetTransactionBlock, DryRunTransactionBlock, and ExecuteTransactionBlock.
+
+# Core transaction fields (no effects to avoid circular embedding)
+fragment TX_CORE on TransactionBlock {
+	digest
+	bcs
+	sender {
+		address
+	}
+	signatures
+}
+
+# Object owner fields (union type)
+fragment OBJECT_OWNER on ObjectOwner {
+	__typename
+	... on AddressOwner {
+		owner {
+			asObject {
+				address
+			}
+			asAddress {
+				address
+			}
+		}
+	}
+	... on Parent {
+		parent {
+			address
+		}
+	}
+	... on Shared {
+		initialSharedVersion
+	}
+}
+
+# Event fields
+fragment EVENT_FIELDS on Event {
+	sendingModule {
+		package {
+			address
+		}
+		name
+	}
+	sender {
+		address
+	}
+	json
+	timestamp
+}
+
+# Balance change fields
+fragment BALANCE_CHANGE on BalanceChange {
+	owner {
+		asAddress {
+			address
+		}
+		asObject {
+			address
+		}
+	}
+	amount
+	coinType {
+		repr
+	}
+}
+
+# Object change fields
+fragment OBJECT_CHANGE on ObjectChange {
+	address
+	idCreated
+	idDeleted
+	inputState {
+		version
+		digest
+		asMoveObject {
+			contents {
+				type {
+					repr
+				}
+			}
+		}
+	}
+	outputState {
+		version
+		digest
+		owner {
+			...OBJECT_OWNER
+		}
+		asMoveObject {
+			contents {
+				type {
+					repr
+				}
+			}
+		}
+		asMovePackage {
+			modules(first: 10) {
+				nodes {
+					name
+				}
+			}
+		}
+	}
+}
+
+# Transaction effects fields
+fragment TX_EFFECTS on TransactionBlockEffects {
+	status
+	errors
+	bcs
+	checkpoint {
+		sequenceNumber
+	}
+	timestamp
+	gasEffects {
+		gasObject {
+			address
+		}
+		gasSummary {
+			computationCost
+			computationCostBurned
+			storageCost
+			storageRebate
+			nonRefundableStorageFee
+		}
+	}
+	events {
+		pageInfo {
+			hasNextPage
+			endCursor
+		}
+		# @genqlient(typename: "EventData")
+		nodes {
+			...EVENT_FIELDS
+		}
+	}
+	balanceChanges {
+		pageInfo {
+			hasNextPage
+			endCursor
+		}
+		# @genqlient(typename: "BalanceChangeData")
+		nodes {
+			...BALANCE_CHANGE
+		}
+	}
+	objectChanges {
+		pageInfo {
+			hasNextPage
+			endCursor
+		}
+		# @genqlient(typename: "ObjectChangeData")
+		nodes {
+			...OBJECT_CHANGE
+		}
+	}
+	# Include transactionBlock so all queries share the same TxEffects type
+	# @genqlient(typename: "TxBlockCore")
+	transactionBlock {
+		...TX_CORE
+	}
+}

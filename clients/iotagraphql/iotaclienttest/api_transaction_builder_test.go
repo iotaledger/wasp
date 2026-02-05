@@ -2,7 +2,6 @@ package iotaclienttest
 
 import (
 	"context"
-	"strconv"
 	"testing"
 	"time"
 
@@ -233,22 +232,11 @@ func TestPayAllIota(t *testing.T) {
 		TxDataBytes: txn.TxBytes,
 	})
 	require.NoError(t, err)
-	require.Empty(t, simulate.Effects.Data.V1.Status.Error)
-	require.True(t, simulate.Effects.Data.IsSuccess())
+	require.Empty(t, simulate.DryRunTransactionBlock.Transaction.Effects.Errors)
+	require.True(t, simulate.DryRunTransactionBlock.Transaction.Effects.IsSuccess())
 
-	// require.Len(t, simulate.ObjectChanges, limit)
-	// delObjNum := uint(0)
-	// for _, change := range simulate.ObjectChanges {
-	// 	if change.Data.Mutated != nil {
-	// 		require.Equal(t, *signer.Address(), change.Data.Mutated.Sender)
-	// 		require.Contains(t, coins.ObjectIDVals(), change.Data.Mutated.ObjectID)
-	// 	} else if change.Data.Deleted != nil {
-	// 		delObjNum += 1
-	// 	}
-	// }
-	// all the input objects are merged into the first input object
-	// except the first input object, all the other input objects are deleted
-	// require.Equal(t, limit-1, delObjNum)
+	// TODO: ObjectChanges assertions need migration to GraphQL response types
+	// require.Len(t, simulate.DryRunTransactionBlock.Transaction.Effects.ObjectChanges.Nodes, limit)
 }
 
 func TestPayIota(t *testing.T) {
@@ -293,23 +281,26 @@ func TestPayIota(t *testing.T) {
 		TxDataBytes: txn.TxBytes,
 	})
 	require.NoError(t, err)
-	require.Empty(t, simulate.Effects.Data.V1.Status.Error)
-	require.True(t, simulate.Effects.Data.IsSuccess())
+	require.Empty(t, simulate.DryRunTransactionBlock.Transaction.Effects.Errors)
+	require.True(t, simulate.DryRunTransactionBlock.Transaction.Effects.IsSuccess())
 
-	// 3 stands for the three amounts (3 crated IOTA objects) in unsafe_payIota API
+	// Verify the sender at the transaction level
+	require.Equal(t, *signer.Address(), simulate.DryRunTransactionBlock.Transaction.Sender.Address)
+
+	// 3 stands for the three amounts (3 created IOTA objects) in unsafe_payIota API
 	amountNum := uint(3)
-	require.Len(t, simulate.ObjectChanges, limit+int(amountNum))
+	objectChanges := simulate.DryRunTransactionBlock.Transaction.Effects.ObjectChanges.Nodes
+	require.Len(t, objectChanges, limit+int(amountNum))
 	delObjNum := uint(0)
 	createdObjNum := uint(0)
-	for _, change := range simulate.ObjectChanges {
-		if change.Data.Mutated != nil {
-			require.Equal(t, *signer.Address(), change.Data.Mutated.Sender)
-			require.Contains(t, coins.ObjectIDVals(), change.Data.Mutated.ObjectID)
-		} else if change.Data.Created != nil {
-			createdObjNum += 1
-			require.Equal(t, *signer.Address(), change.Data.Created.Sender)
-		} else if change.Data.Deleted != nil {
-			delObjNum += 1
+	for _, change := range objectChanges {
+		if change.IdDeleted {
+			delObjNum++
+		} else if change.IdCreated {
+			createdObjNum++
+		} else {
+			// mutated object - verify it's one of the input coins
+			require.Contains(t, coins.ObjectIDVals(), change.Address)
 		}
 	}
 
@@ -351,7 +342,7 @@ func TestPublish(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
-	require.True(t, txnResponse.Effects.Data.IsSuccess())
+	require.True(t, txnResponse.IsSuccess())
 
 	// Verify that published package is returned correctly
 	packageID, err := txnResponse.GetPublishedPackageID()
@@ -394,14 +385,14 @@ func TestSplitCoin(t *testing.T) {
 		TxDataBytes: txn.TxBytes,
 	})
 	require.NoError(t, err)
-	require.Empty(t, simulate.Effects.Data.V1.Status.Error)
-	require.True(t, simulate.Effects.Data.IsSuccess())
+	effects := simulate.DryRunTransactionBlock.Transaction.Effects
+	require.Empty(t, effects.Errors)
+	require.True(t, effects.IsSuccess())
 
 	// 2 mutated and 2 created (split coins)
-	require.Len(t, simulate.ObjectChanges, 4)
-	require.Len(t, simulate.BalanceChanges, 1)
-	amt, _ := strconv.ParseInt(simulate.BalanceChanges[0].Amount, 10, 64)
-	require.Equal(t, amt, -simulate.Effects.Data.GasFee())
+	require.Len(t, effects.ObjectChanges.Nodes, 4)
+	require.Len(t, effects.BalanceChanges.Nodes, 1)
+	require.Equal(t, effects.BalanceChanges.Nodes[0].Amount.Int64(), -effects.GasFee())
 }
 
 func TestTransferObject(t *testing.T) {
@@ -435,11 +426,12 @@ func TestTransferObject(t *testing.T) {
 		TxDataBytes: txn.TxBytes,
 	})
 	require.NoError(t, err)
-	require.Empty(t, simulate.Effects.Data.V1.Status.Error)
-	require.True(t, simulate.Effects.Data.IsSuccess())
+	effects := simulate.DryRunTransactionBlock.Transaction.Effects
+	require.Empty(t, effects.Errors)
+	require.True(t, effects.IsSuccess())
 
 	// one is transferred object, one is the gas object
-	require.Len(t, simulate.ObjectChanges, 2)
+	require.Len(t, effects.ObjectChanges.Nodes, 2)
 
-	require.Len(t, simulate.BalanceChanges, 2)
+	require.Len(t, effects.BalanceChanges.Nodes, 2)
 }

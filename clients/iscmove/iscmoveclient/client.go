@@ -67,7 +67,7 @@ func (c *Client) SignAndExecutePTB(
 	gasPayments []*iotago.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
-) (*iotagraphql.IotaTransactionBlockResponse, error) {
+) (*iotagraphql.ExecuteTransactionBlockResponse, error) {
 	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
 	if len(gasPayments) == 0 {
 		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasPrice, gasBudget)
@@ -115,64 +115,8 @@ func (c *Client) SignAndExecutePTB(
 	if err != nil {
 		return nil, fmt.Errorf("can't execute the transaction: %w", err)
 	}
-	if !txnResponse.Effects.Data.IsSuccess() {
-		return nil, fmt.Errorf("failed to execute the transaction: %s", txnResponse.Effects.Data.V1.Status.Error)
-	}
-	return txnResponse, nil
-}
-
-func (c *Client) DevInspectPTB(
-	ctx context.Context,
-	cryptolibSigner cryptolib.Signer,
-	pt iotago.ProgrammableTransaction,
-	gasPayments []*iotago.ObjectRef, // optional
-	gasPrice uint64,
-	gasBudget uint64,
-) (*iotagraphql.DevInspectResults, error) {
-	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
-	if len(gasPayments) == 0 {
-		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasPrice, gasBudget)
-		if err != nil {
-			return nil, fmt.Errorf("failed to find gas payment: %w", err)
-		}
-		coins, err = iotagraphql.PickupCoinsWithFilter(
-			coins,
-			gasBudget,
-			func(c *iotagraphql.Coin) bool { return !pt.IsInInputObjects(c.CoinObjectID) },
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to find gas payment: %w", err)
-		}
-		gasPayments = coins.CoinRefs()
-	}
-
-	tx := iotago.NewProgrammable(
-		signer.Address(),
-		pt,
-		gasPayments,
-		gasBudget,
-		gasPrice,
-	)
-
-	txnBytes, err := bcs.Marshal(&tx.V1.Kind)
-	if err != nil {
-		return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
-	}
-	txnResponse, err := c.DevInspectTransactionBlock(
-		ctx,
-		iotagraphql.DevInspectTransactionBlockRequest{
-			SenderAddress: signer.Address(),
-			TxKindBytes:   txnBytes,
-		},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("can't execute the transaction: %w", err)
-	}
-	if txnResponse.Error != "" {
-		return nil, fmt.Errorf("execute error: %s", txnResponse.Error)
-	}
-	if !txnResponse.Effects.Data.IsSuccess() {
-		return nil, fmt.Errorf("failed to execute the transaction: %s", txnResponse.Effects.Data.V1.Status.Error)
+	if !txnResponse.IsSuccess() {
+		return nil, fmt.Errorf("failed to execute the transaction: %s", txnResponse.ExecuteTransactionBlock.Effects.GetErrors())
 	}
 	return txnResponse, nil
 }
@@ -244,9 +188,10 @@ func (c *Client) DeployISCContracts(ctx context.Context, signer iotasigner.Signe
 		return iotago.PackageID{}, err
 	}
 
-	if !txnResponse.Effects.Data.IsSuccess() {
+	if !txnResponse.IsSuccess() {
 		return iotago.PackageID{}, errors.New("publish ISC contracts failed")
 	}
+
 	packageID := lo.Must(txnResponse.GetPublishedPackageID())
 	return *packageID, nil
 }

@@ -111,13 +111,11 @@ func (ncc *ncChain) postTxLoop(ctx context.Context, packageID iotago.PackageID) 
 			return nil, fmt.Errorf("failed to dry-run Anchor transaction: response == nil")
 		}
 
-		if dryRes.Effects.Data.IsFailed() {
-			return nil, fmt.Errorf("failed to dry-run Anchor transaction: response.Effects.Failed")
+		if dryRes.DryRunTransactionBlock.Transaction.Effects.Status != iotagraphql.ExecutionStatusSuccess {
+			return nil, fmt.Errorf("failed to dry-run Anchor transaction: %s", dryRes.DryRunTransactionBlock.Transaction.Effects.Errors)
 		}
 
-		if dryRes.Effects.Data.IsSuccess() {
-			ncc.LogDebug("successfully dry-run Anchor transaction")
-		}
+		ncc.LogDebug("successfully dry-run Anchor transaction")
 
 		res, err := ncc.nodeConn.httpClient.ExecuteTransactionBlock(task.ctx, iotagraphql.ExecuteTransactionBlockRequest{
 			TxDataBytes: txBytes,

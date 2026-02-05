@@ -53,13 +53,8 @@ func OnLedgerFromMoveRequest(request *iscmove.RefWithObject[iscmove.Request], an
 	}, nil
 }
 
-func ReconstructOnLedgerRequest(dryRunRes *iotagraphql.DryRunResult) (OnLedgerRequest, error) {
+func ReconstructOnLedgerRequest(dryRunRes *iotagraphql.DryRunTransactionBlockDryRunTransactionBlockDryRunResult) (OnLedgerRequest, error) {
 	assets, request, sender, err := DecodeDryRunTransaction(dryRunRes)
-	if err != nil {
-		return nil, err
-	}
-
-	gasBudget, err := request.GasBudget.Int64()
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +82,7 @@ func ReconstructOnLedgerRequest(dryRunRes *iotagraphql.DryRunResult) (OnLedgerRe
 				Params: request.Message.Args,
 			},
 			AllowanceBCS: request.AllowanceBCS,
-			GasBudget:    uint64(gasBudget), //nolint:gosec
+			GasBudget:    request.GasBudget,
 		},
 	}
 	return r, nil

@@ -66,7 +66,7 @@ func (ch *Chain) EstimateGas(req isc.Request) (result *vm.RequestResult) {
 
 // EstimateOnLedgerRequest estimates total Gas Fee, which is composed of L1 gas fee (user spent on creating onledger request)
 // and L2 gas fee (wasp gas fee for proccesing request on L2)
-func (ch *Chain) EstimateOnLedgerRequest(dryRunRes *iotagraphql.DryRunResult) (result *vm.RequestResult, err error) {
+func (ch *Chain) EstimateOnLedgerRequest(dryRunRes *iotagraphql.DryRunTransactionBlockDryRunTransactionBlockDryRunResult) (result *vm.RequestResult, err error) {
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
