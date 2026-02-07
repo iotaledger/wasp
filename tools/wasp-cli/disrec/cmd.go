@@ -80,7 +80,7 @@ func runSignAndPost(cmd *cobra.Command, args []string) error {
 	// Sign and Post the TX to the L1.
 	iotaL1ClientURL := args[3]
 	ctx := context.Background()
-	httpClient := iscmoveclient.NewHTTPClient(iotaL1ClientURL, "", iotagraphql.WaitForEffectsEnabled)
+	httpClient := iscmoveclient.NewClient(iotagraphql.NewGraphQLClientWithWaitParams(iotaL1ClientURL, "", iotagraphql.WaitForEffectsEnabled))
 	res, execErr := httpClient.SignAndExecuteTransaction(ctx, &iotagraphql.SignAndExecuteTransactionRequest{
 		TxDataBytes: txBytes,
 		Signer:      cryptolib.SignerToIotaSigner(signer),

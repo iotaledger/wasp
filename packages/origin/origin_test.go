@@ -46,7 +46,7 @@ func TestOrigin(t *testing.T) {
 }
 
 func TestCreateOrigin(t *testing.T) {
-	client := iscmoveclienttest.NewHTTPClient()
+	client := iscmoveclienttest.NewClient()
 	sentSigner := iscmoveclienttest.NewRandomSignerWithFunds(t, 0)
 	stateSigner := iscmoveclienttest.NewRandomSignerWithFunds(t, 1)
 	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()

@@ -23,7 +23,7 @@ import (
 )
 
 func TestStartNewChain(t *testing.T) {
-	client := iscmoveclienttest.NewHTTPClient()
+	client := iscmoveclienttest.NewClient()
 	signer := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
 
 	iotatest.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(signer), l1starter.Instance().L1Client(), isc.GasCoinTargetValue)
@@ -59,7 +59,7 @@ func TestStartNewChain(t *testing.T) {
 }
 
 func TestReceiveRequestAndTransition(t *testing.T) {
-	client := iscmoveclienttest.NewHTTPClient()
+	client := iscmoveclienttest.NewClient()
 	l1Client := l1starter.Instance().L1Client()
 	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
 	chainSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 1)

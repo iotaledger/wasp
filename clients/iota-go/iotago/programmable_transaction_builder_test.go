@@ -20,7 +20,7 @@ func TestPTBMoveCall(t *testing.T) {
 	t.Run(
 		"access_multiple_return_values_from_move_func", func(t *testing.T) {
 			client := l1starter.Instance().L1Client()
-			sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
+			sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
 
 			txnBytes, err := client.Publish(
 				context.Background(),
@@ -111,8 +111,8 @@ func TestPTBMoveCall(t *testing.T) {
 func TestPTBTransferObject(t *testing.T) {
 	t.Skip("Migrate to graphql")
 	client := l1starter.Instance().L1Client()
-	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
-	recipient := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL())
+	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
+	recipient := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
 
 	coinPages, err := client.GetCoins(
 		context.Background(), iotagraphql.GetCoinsRequest{
@@ -158,8 +158,8 @@ func TestPTBTransferObject(t *testing.T) {
 func TestPTBTransferIota(t *testing.T) {
 	t.Skip("Migrate to graphql")
 	client := l1starter.Instance().L1Client()
-	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
-	recipient := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL())
+	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
+	recipient := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
 
 	coinPages, err := client.GetCoins(
 		context.Background(), iotagraphql.GetCoinsRequest{
@@ -205,8 +205,8 @@ func TestPTBTransferIota(t *testing.T) {
 func TestPTBPayAllIota(t *testing.T) {
 	t.Skip("Migrate to graphql")
 	client := l1starter.Instance().L1Client()
-	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
-	recipient := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL())
+	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
+	recipient := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
 
 	coinPages, err := client.GetCoins(
 		context.Background(), iotagraphql.GetCoinsRequest{
@@ -250,9 +250,9 @@ func TestPTBPayAllIota(t *testing.T) {
 func TestPTBPayIota(t *testing.T) {
 	t.Skip("Migrate to graphql")
 	client := l1starter.Instance().L1Client()
-	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
-	recipient1 := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL())
-	recipient2 := iotatest.MakeSignerWithFunds(2, l1starter.Instance().FaucetURL())
+	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
+	recipient1 := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
+	recipient2 := iotatest.MakeSignerWithFunds(2, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
 
 	coinPages, err := client.GetCoins(
 		context.Background(), iotagraphql.GetCoinsRequest{

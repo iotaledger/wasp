@@ -1,3 +1,4 @@
+// Package iscmoveclient provides a client for interacting with ISC Move contracts.
 package iscmoveclient
 
 import (
@@ -19,39 +20,23 @@ import (
 // Client provides convenient methods to interact with the `isc` Move contracts.
 type Client struct {
 	iotagraphql.IotaClient
-	faucetURL string
 }
 
-func NewClient(iotaClient iotagraphql.IotaClient, faucetURL string) *Client {
+func NewClient(iotaClient iotagraphql.IotaClient) *Client {
 	return &Client{
 		IotaClient: iotaClient,
-		faucetURL:  faucetURL,
 	}
 }
 
-func NewHTTPClient(apiURL, faucetURL string, waitUntilEffectsVisible *iotagraphql.WaitParams) *Client {
-	return NewClient(
-		iotagraphql.NewGraphQLClientWithWaitParams(apiURL, waitUntilEffectsVisible),
-		faucetURL,
-	)
-}
-
 // NewWebsocketClient creates a new client. Note: websocket subscriptions are not
-// currently supported, so this just creates an HTTP-based GraphQL client.
+// currently supported, so this just creates a GraphQL client.
 func NewWebsocketClient(
 	ctx context.Context,
 	wsURL, faucetURL string,
 	waitUntilEffectsVisible *iotagraphql.WaitParams,
 ) (*Client, error) {
 	_ = ctx
-	return NewHTTPClient(wsURL, faucetURL, waitUntilEffectsVisible), nil
-}
-
-func (c *Client) RequestFunds(ctx context.Context, address cryptolib.Address) error {
-	if c.faucetURL == "" {
-		panic("missing faucetURL")
-	}
-	return iotagraphql.RequestFundsFromFaucet(ctx, address.AsIotaAddress(), c.faucetURL)
+	return NewClient(iotagraphql.NewGraphQLClientWithWaitParams(wsURL, faucetURL, waitUntilEffectsVisible)), nil
 }
 
 func (c *Client) Health(ctx context.Context) error {

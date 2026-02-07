@@ -34,7 +34,7 @@ func NewChainFeed(
 		return nil, err
 	}
 
-	httpClient := NewHTTPClient(httpURL, "", iotagraphql.WaitForEffectsEnabled)
+	httpClient := NewClient(iotagraphql.NewGraphQLClientWithWaitParams(httpURL, "", iotagraphql.WaitForEffectsEnabled))
 
 	return &ChainFeed{
 		wsClient:      wsClient,

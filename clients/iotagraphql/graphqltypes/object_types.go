@@ -152,19 +152,25 @@ type IotaObjectDataOptions struct {
 	ShowDisplay bool `json:"showDisplay,omitempty"`
 }
 
+type ObjectResponseNotExists struct {
+	ObjectID iotago.ObjectID `json:"object_id"`
+}
+
+type ObjectResponseDeleted struct {
+	ObjectID iotago.ObjectID       `json:"object_id"`
+	Version  iotago.SequenceNumber `json:"version"`
+	Digest   iotago.ObjectDigest   `json:"digest"`
+}
+
+type ObjectResponseDisplayError struct {
+	Error string `json:"error"`
+}
+
 type IotaObjectResponseError struct {
-	NotExists *struct {
-		ObjectID iotago.ObjectID `json:"object_id"`
-	} `json:"notExists,omitempty"`
-	Deleted *struct {
-		ObjectID iotago.ObjectID       `json:"object_id"`
-		Version  iotago.SequenceNumber `json:"version"`
-		Digest   iotago.ObjectDigest   `json:"digest"`
-	} `json:"deleted,omitempty"`
-	UnKnown      *struct{} `json:"unKnown"`
-	DisplayError *struct {
-		Error string `json:"error"`
-	} `json:"displayError"`
+	NotExists    *ObjectResponseNotExists    `json:"notExists,omitempty"`
+	Deleted      *ObjectResponseDeleted      `json:"deleted,omitempty"`
+	UnKnown      *struct{}                   `json:"unKnown"`
+	DisplayError *ObjectResponseDisplayError `json:"displayError"`
 }
 
 func (e IotaObjectResponseError) String() string {

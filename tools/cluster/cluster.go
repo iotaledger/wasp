@@ -124,7 +124,7 @@ func (clu *Cluster) NewKeyPairWithFunds() (*cryptolib.KeyPair, *cryptolib.Addres
 }
 
 func (clu *Cluster) RequestFunds(addr *cryptolib.Address) error {
-	return clu.l1.RequestFunds(context.Background(), *addr)
+	return clu.l1.RequestFundsFromFaucet(context.Background(), addr.AsIotaAddress())
 }
 
 func (clu *Cluster) L1Client() clients.L1Client {

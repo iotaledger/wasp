@@ -271,7 +271,7 @@ func createIscmoveReq(
 	iscPackage iotago.Address,
 	anchor *iscmove.AnchorWithRef,
 ) isc.OnLedgerRequest {
-	err := iotagraphql.RequestFundsFromFaucet(context.Background(), signer.Address().AsIotaAddress(), l1starter.Instance().FaucetURL())
+	err := l1starter.Instance().L1Client().RequestFundsFromFaucet(context.Background(), signer.Address().AsIotaAddress())
 	require.NoError(t, err)
 
 	createAndSendRequestRes, err := client.L2().CreateAndSendRequestWithAssets(
@@ -307,7 +307,7 @@ func createIscmoveReqWithAssets(
 	anchor *iscmove.AnchorWithRef,
 	assets *iscmove.Assets,
 ) isc.OnLedgerRequest {
-	err := iotagraphql.RequestFundsFromFaucet(context.Background(), signer.Address().AsIotaAddress(), l1starter.Instance().FaucetURL())
+	err := l1starter.Instance().L1Client().RequestFundsFromFaucet(context.Background(), signer.Address().AsIotaAddress())
 	require.NoError(t, err)
 
 	createAndSendRequestRes, err := client.L2().CreateAndSendRequestWithAssets(

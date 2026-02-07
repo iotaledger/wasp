@@ -9,7 +9,6 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	testcommon "github.com/iotaledger/wasp/v2/clients/iota-go/test_common"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
@@ -77,7 +76,9 @@ func TestQueryTransactionBlocks(t *testing.T) {
 func TestTryGetPastObject(t *testing.T) {
 	t.Skip("May fail")
 	ctx := context.Background()
-	client := iotagraphql.NewGraphQLClientWithTimeout(iotaconn.LocalnetGraphQLEndpointURL, 120*time.Second, nil)
+	graphqlURL := l1starter.Instance().APIURL()
+	faucetURL := l1starter.Instance().FaucetURL()
+	client := iotagraphql.NewGraphQLClientWithTimeout(graphqlURL, faucetURL, 120*time.Second, nil)
 	owner := iotago.MustAddressFromHex(testcommon.TestAddress)
 
 	limit := int(1)

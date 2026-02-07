@@ -1220,9 +1220,8 @@ func TestSendEntireBalance(t *testing.T) {
 	require.EqualValues(t, vm.ErrNotEnoughTokensLeftForGas.Error(), rec.ResolvedError)
 	env.Chain.AssertL2BaseTokens(someEthereumAgentID, 0)
 
-	// now try sending all balance, minus the funds needed for gas (using a fresh account)
-	ethKey2, ethAddr2 := env.Chain.NewEthereumAccountWithL2Funds()
-	currentBalance := env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr2))
+	// now try sending all balance, minus the funds needed for gas
+	currentBalance := env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr))
 
 	currentBalanceInEthDecimals := util.BaseTokensDecimalsToEthereumDecimals(
 		currentBalance,
@@ -1230,7 +1229,7 @@ func TestSendEntireBalance(t *testing.T) {
 	)
 
 	estimatedGas, err := env.evmChain.EstimateGas(ethereum.CallMsg{
-		From:  ethAddr2,
+		From:  ethAddr,
 		To:    &someEthereumAddr,
 		Value: currentBalanceInEthDecimals,
 		Data:  []byte{},
@@ -1247,12 +1246,12 @@ func TestSendEntireBalance(t *testing.T) {
 		currentBalance-tokensForGasBudget,
 		parameters.BaseTokenDecimals,
 	)
-	unsignedTx = types.NewTransaction(0, someEthereumAddr, valueToSendInEthDecimals, gasLimit, env.evmChain.GasPrice(), []byte{})
-	tx, err = types.SignTx(unsignedTx, evmutil.Signer(big.NewInt(int64(env.evmChainID))), ethKey2)
+	unsignedTx = types.NewTransaction(1, someEthereumAddr, valueToSendInEthDecimals, gasLimit, env.evmChain.GasPrice(), []byte{})
+	tx, err = types.SignTx(unsignedTx, evmutil.Signer(big.NewInt(int64(env.evmChainID))), ethKey)
 	require.NoError(t, err)
 	err = env.evmChain.SendTransaction(tx)
 	require.NoError(t, err)
-	env.Chain.AssertL2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr2), 0)
+	env.Chain.AssertL2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr), 0)
 	env.Chain.AssertL2BaseTokens(someEthereumAgentID, currentBalance-tokensForGasBudget)
 }
 
@@ -1333,9 +1332,9 @@ func TestSelfDestruct(t *testing.T) {
 	// send some tokens to the ISCTest contract
 	{
 		k, _ := env.solo.NewKeyPairWithFunds(env.solo.NewSeedFromTestNameAndTimestamp(t.Name()))
-		err := env.Chain.SendFromL1ToL2AccountBaseTokens(2*solo.BaseTokensForL2Gas, solo.BaseTokensForL2Gas, iscTestAgentID, k)
+		err := env.Chain.SendFromL1ToL2AccountBaseTokens(solo.BaseTokensForL2Gas, solo.BaseTokensForL2Gas, iscTestAgentID, k)
 		require.NoError(t, err)
-		require.EqualValues(t, 2*solo.BaseTokensForL2Gas, env.Chain.L2BaseTokens(iscTestAgentID))
+		require.EqualValues(t, solo.BaseTokensForL2Gas, env.Chain.L2BaseTokens(iscTestAgentID))
 	}
 
 	_, beneficiary := solo.EthereumAccountByIndex(1)
@@ -1349,7 +1348,7 @@ func TestSelfDestruct(t *testing.T) {
 	// except when called in the same transaction as creation
 	require.NotEmpty(t, env.getCode(iscTest.address))
 	require.Zero(t, env.Chain.L2BaseTokens(iscTestAgentID))
-	require.EqualValues(t, 2*solo.BaseTokensForL2Gas, env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(beneficiary)))
+	require.EqualValues(t, solo.BaseTokensForL2Gas, env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(beneficiary)))
 
 	testdbhash.VerifyContractStateHash(env.solo, evm.Contract, "", t.Name())
 }
@@ -1687,7 +1686,7 @@ func TestPreEIP155Transaction(t *testing.T) {
 	signer := types.HomesteadSigner{}
 
 	tx, err := types.SignTx(
-		types.NewContractCreation(0, big.NewInt(1_000_000), 1_000_000, env.evmChain.GasPrice(), nil),
+		types.NewContractCreation(0, big.NewInt(1_000_000_000), 1_000_000_000, env.evmChain.GasPrice(), nil),
 		signer,
 		ethKey,
 	)

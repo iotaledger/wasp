@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
-	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 )
 
 type L1Config struct {
@@ -21,7 +20,6 @@ type L1Config struct {
 type L1Client interface {
 	iotagraphql.IotaClient
 
-	RequestFunds(ctx context.Context, address cryptolib.Address) error
 	Health(ctx context.Context) error
 	L2() L2Client
 	GetIotaClient() iotagraphql.IotaClient
@@ -36,28 +34,24 @@ type l1Client struct {
 	Config L1Config
 }
 
-func (c *l1Client) RequestFunds(ctx context.Context, address cryptolib.Address) error {
-	faucetURL := c.Config.FaucetURL
-	if faucetURL == "" {
-		faucetURL = iotaconn.FaucetURL(c.Config.APIURL)
-	}
-	return iotagraphql.RequestFundsFromFaucet(ctx, address.AsIotaAddress(), faucetURL)
-}
-
 func (c *l1Client) Health(ctx context.Context) error {
 	_, err := c.GetLatestIotaSystemState(ctx)
 	return err
 }
 
 func (c *l1Client) L2() L2Client {
-	return iscmoveclient.NewClient(c.GetIotaClient(), c.Config.FaucetURL)
+	return iscmoveclient.NewClient(c.GetIotaClient())
 }
 
 func (c *l1Client) GetIotaClient() iotagraphql.IotaClient {
 	return c
 }
 
+// WaitForNextVersionForTesting waits for an object to change its version.
+// This tries to make sure that an object meant to be used multiple times, does not get referenced twice with the same ref.
+// Handle with care. Only use it on objects that are expected to be used again, like a GasCoin/Generic coin/Requests
 func (c *l1Client) WaitForNextVersionForTesting(ctx context.Context, timeout time.Duration, logger log.Logger, currentRef *iotago.ObjectRef, cb func()) (*iotago.ObjectRef, error) {
+	// Some 'sugar' to make dynamic refs handling easier (where refs can be nil or set depending on state)
 	if currentRef == nil {
 		cb()
 		return currentRef, nil
@@ -76,6 +70,7 @@ func (c *l1Client) WaitForNextVersionForTesting(ctx context.Context, timeout tim
 		case <-ctx.Done():
 			return nil, fmt.Errorf("WaitForNextVersionForTesting: context deadline exceeded while waiting for object version change: %v", currentRef)
 		case <-ticker.C:
+			// Poll for object update
 			newRef, err := c.GetObject(ctx, iotagraphql.GetObjectRequest{ObjectID: currentRef.ObjectID})
 			if err != nil {
 				if logger != nil {
@@ -114,7 +109,7 @@ func (c *l1Client) WaitForNextVersionForTesting(ctx context.Context, timeout tim
 
 func NewL1Client(l1Config L1Config, waitUntilEffectsVisible *iotagraphql.WaitParams) L1Client {
 	return &l1Client{
-		IotaClient: iotagraphql.NewGraphQLClientWithWaitParams(l1Config.APIURL, waitUntilEffectsVisible),
+		IotaClient: iotagraphql.NewGraphQLClientWithWaitParams(l1Config.APIURL, l1Config.FaucetURL, waitUntilEffectsVisible),
 		Config:     l1Config,
 	}
 }

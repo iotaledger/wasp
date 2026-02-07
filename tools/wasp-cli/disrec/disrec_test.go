@@ -49,8 +49,8 @@ func TestDepositFundsToGasCoin(t *testing.T) {
 
 	kp := cryptolib.NewKeyPair()
 	wallet := providers.NewUnsafeInMemoryTestingSeed(kp, 0)
-	require.NoError(t, client.RequestFunds(context.Background(), *kp.Address()))
-	require.NoError(t, client.RequestFunds(context.Background(), *kp.Address()))
+	require.NoError(t, client.RequestFundsFromFaucet(context.Background(), kp.Address().AsIotaAddress()))
+	require.NoError(t, client.RequestFundsFromFaucet(context.Background(), kp.Address().AsIotaAddress()))
 
 	baseCoin := coin.BaseTokenType.String()
 	coins, err := client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{
@@ -138,7 +138,7 @@ func TestCreateTX(t *testing.T) {
 	client := cliclients.L1Client()
 	kp := cryptolib.NewKeyPair()
 	wallet := providers.NewUnsafeInMemoryTestingSeed(kp, 0)
-	require.NoError(t, client.RequestFunds(context.Background(), *kp.Address()))
+	require.NoError(t, client.RequestFundsFromFaucet(context.Background(), kp.Address().AsIotaAddress()))
 	packageID := lo.Must(client.L2().DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(kp)))
 
 	ptb := iotago.NewProgrammableTransactionBuilder()

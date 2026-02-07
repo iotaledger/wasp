@@ -20,7 +20,7 @@ import (
 
 func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
 	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
-	client := iscmoveclienttest.NewHTTPClient()
+	client := iscmoveclienttest.NewClient()
 
 	txnResponse, err := PTBTestWrapper(
 		&PTBTestWrapperRequest{
@@ -58,7 +58,7 @@ func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
 
 func TestAssetsBagPlaceCoin(t *testing.T) {
 	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
-	client := iscmoveclienttest.NewHTTPClient()
+	client := iscmoveclienttest.NewClient()
 	txnResponse, err := newAssetsBag(client, cryptolibSigner)
 	require.NoError(t, err)
 	assetsBagMainRef, err := txnResponse.GetCreatedObjectByName(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
@@ -103,7 +103,7 @@ func TestAssetsBagPlaceCoin(t *testing.T) {
 
 func TestAssetsBagPlaceCoinAmount(t *testing.T) {
 	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
-	client := iscmoveclienttest.NewHTTPClient()
+	client := iscmoveclienttest.NewClient()
 
 	txnResponse, err := newAssetsBag(client, cryptolibSigner)
 	require.NoError(t, err)
@@ -151,7 +151,7 @@ func TestAssetsBagPlaceCoinAmount(t *testing.T) {
 
 func TestAssetsBagTakeCoinBalanceMergeTo(t *testing.T) {
 	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
-	client := iscmoveclienttest.NewHTTPClient()
+	client := iscmoveclienttest.NewClient()
 	const topUpAmount = 123
 	txnResponse, err := newAssetsBag(client, cryptolibSigner)
 	require.NoError(t, err)
@@ -210,7 +210,7 @@ func TestAssetsBagTakeCoinBalanceMergeTo(t *testing.T) {
 
 func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
 	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
-	client := iscmoveclienttest.NewHTTPClient()
+	client := iscmoveclienttest.NewClient()
 
 	txnResponse, err := PTBTestWrapper(
 		&PTBTestWrapperRequest{
@@ -272,7 +272,7 @@ func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
 
 func TestGetAssetsBagFromAnchorID(t *testing.T) {
 	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
-	client := iscmoveclienttest.NewHTTPClient()
+	client := iscmoveclienttest.NewClient()
 
 	anchor := startNewChain(t, client, cryptolibSigner)
 
@@ -397,7 +397,7 @@ func borrowAnchorAssetsAndPlaceCoin(
 
 func TestGetAssetsBagFromRequestID(t *testing.T) {
 	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
-	client := iscmoveclienttest.NewHTTPClient()
+	client := iscmoveclienttest.NewClient()
 
 	anchor := startNewChain(t, client, cryptolibSigner)
 

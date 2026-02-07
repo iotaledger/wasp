@@ -1,3 +1,4 @@
+// Package iotagraphql provides a GraphQL client for interacting with IOTA nodes.
 package iotagraphql
 
 import (
@@ -18,7 +19,6 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/serialization"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql/graphqltypes"
-	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/samber/lo"
 )
 
@@ -31,26 +31,29 @@ const (
 
 type GraphQLClient struct {
 	url                     string
+	faucetURL               string
 	client                  graphql.Client
 	httpClient              *http.Client
 	WaitUntilEffectsVisible *WaitParams
+	FaucetRetryParams       *WaitParams
 	tickingTime             time.Duration
 }
 
-func NewGraphQLClient(url string) *GraphQLClient {
-	return NewGraphQLClientWithTimeout(url, 30*time.Second, nil)
+func NewGraphQLClient(url, faucetURL string) *GraphQLClient {
+	return NewGraphQLClientWithTimeout(url, faucetURL, 30*time.Second, nil)
 }
 
-func NewGraphQLClientWithWaitParams(url string, waitParams *WaitParams) *GraphQLClient {
-	return NewGraphQLClientWithTimeout(url, 30*time.Second, waitParams)
+func NewGraphQLClientWithWaitParams(url string, faucetURL string, waitParams *WaitParams) *GraphQLClient {
+	return NewGraphQLClientWithTimeout(url, faucetURL, 30*time.Second, waitParams)
 }
 
-func NewGraphQLClientWithTimeout(url string, timeout time.Duration, waitParams *WaitParams) *GraphQLClient {
+func NewGraphQLClientWithTimeout(url, faucetURL string, timeout time.Duration, waitParams *WaitParams) *GraphQLClient {
 	httpClient := &http.Client{
 		Timeout: timeout,
 	}
 	return &GraphQLClient{
 		url:                     strings.TrimRight(url, "/"),
+		faucetURL:               faucetURL,
 		client:                  graphql.NewClient(url, httpClient),
 		httpClient:              httpClient,
 		WaitUntilEffectsVisible: waitParams,
@@ -59,46 +62,90 @@ func NewGraphQLClientWithTimeout(url string, timeout time.Duration, waitParams *
 }
 
 // RequestFundsFromFaucet requests test funds for the provided address from the faucet endpoint.
-// This is a non-blocking version that returns immediately after the faucet request succeeds.
-// Use RequestFundsFromFaucetAndWait if you need to wait for the coins to be visible.
-func RequestFundsFromFaucet(ctx context.Context, address *iotago.Address, faucetURL string) error {
-	return requestFundsFromFaucetInternal(ctx, address, faucetURL)
-}
+// If FaucetRetryParams is configured, it waits for the coins to be visible on the ledger.
+func (c *GraphQLClient) RequestFundsFromFaucet(ctx context.Context, address *iotago.Address) error {
+	params := c.FaucetRetryParams
+	if params == nil {
+		params = c.WaitUntilEffectsVisible
+	}
+	if params == nil {
+		params = &WaitParams{
+			Attempts:             20,
+			DelayBetweenAttempts: 500 * time.Millisecond,
+		}
+	}
 
-// RequestFundsFromFaucetAndWait requests test funds and waits for the coins to be visible on the ledger.
-func RequestFundsFromFaucetAndWait(ctx context.Context, address *iotago.Address, faucetURL string, apiURL string) error {
-	client := NewGraphQLClient(apiURL)
+	initial, err := c.getIotaBalanceSnapshot(ctx, address)
+	for i := 0; err != nil && i < params.Attempts; i++ {
+		if waitErr := waitWithContext(ctx, 1, params.DelayBetweenAttempts); waitErr != nil {
+			return waitErr
+		}
+		initial, err = c.getIotaBalanceSnapshot(ctx, address)
+	}
+	if err != nil {
+		return fmt.Errorf("failed to get initial balance before faucet request: %w", err)
+	}
 
-	initialBalance := getBalance(ctx, client, address)
-
-	if err := requestFundsFromFaucetInternal(ctx, address, faucetURL); err != nil {
+	if err := requestFundsFromFaucetRaw(ctx, address, c.faucetURL); err != nil {
 		return err
 	}
 
-	// Wait for balance to increase
-	const maxRetries = 30
-	const retryInterval = 100 * time.Millisecond
-
-	for i := 0; i < maxRetries; i++ {
-		currentBalance := getBalance(ctx, client, address)
-		if currentBalance.Cmp(initialBalance) > 0 {
+	for i := 0; i < params.Attempts; i++ {
+		current, err := c.getIotaBalanceSnapshot(ctx, address)
+		if err == nil && (current.Total.Cmp(initial.Total) > 0 || current.CoinObjectCount > initial.CoinObjectCount) {
 			return nil
 		}
-		time.Sleep(retryInterval)
+		if i < params.Attempts-1 {
+			if waitErr := waitWithContext(ctx, 1, params.DelayBetweenAttempts); waitErr != nil {
+				return waitErr
+			}
+		}
 	}
 
 	return fmt.Errorf("timeout waiting for faucet coins to be visible")
 }
 
-func getBalance(ctx context.Context, client *GraphQLClient, address *iotago.Address) *big.Int {
-	balance, err := client.GetBalance(ctx, GetBalanceRequest{Owner: address})
-	if err != nil || balance.TotalBalance == nil {
-		panic(fmt.Sprintf("failed to get balance for address %s: %v", address, err))
-	}
-	return balance.TotalBalance.Int
+type iotaBalanceSnapshot struct {
+	Total           *big.Int
+	CoinObjectCount uint64
 }
 
-func requestFundsFromFaucetInternal(ctx context.Context, address *iotago.Address, faucetURL string) error {
+func (c *GraphQLClient) getIotaBalanceSnapshot(ctx context.Context, address *iotago.Address) (iotaBalanceSnapshot, error) {
+	balance, err := c.GetBalance(ctx, GetBalanceRequest{Owner: address})
+	if err != nil {
+		return iotaBalanceSnapshot{}, err
+	}
+	if balance == nil || balance.TotalBalance == nil || balance.TotalBalance.Int == nil {
+		return iotaBalanceSnapshot{}, fmt.Errorf("balance is nil")
+	}
+
+	total := new(big.Int).Set(balance.TotalBalance.Int)
+	coinObjectCount := uint64(0)
+	if balance.CoinObjectCount != nil {
+		coinObjectCount = balance.CoinObjectCount.Uint64()
+	}
+
+	return iotaBalanceSnapshot{
+		Total:           total,
+		CoinObjectCount: coinObjectCount,
+	}, nil
+}
+
+func waitWithContext(ctx context.Context, attempts int, delay time.Duration) error {
+	for i := 0; i < attempts; i++ {
+		if delay <= 0 {
+			continue
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(delay):
+		}
+	}
+	return nil
+}
+
+func requestFundsFromFaucetRaw(ctx context.Context, address *iotago.Address, faucetURL string) error {
 	payload := map[string]any{
 		"FixedAmountRequest": map[string]string{
 			"recipient": address.String(),
@@ -1430,7 +1477,6 @@ func (c *GraphQLClient) SignAndExecuteTransaction(
 	if err != nil {
 		return nil, fmt.Errorf("failed to sign transaction block: %w", err)
 	}
-
 	resp, err := c.ExecuteTransactionBlock(
 		ctx,
 		ExecuteTransactionBlockRequest{
@@ -1876,9 +1922,7 @@ func (c *GraphQLClient) GetObject(ctx context.Context, req GetObjectRequest) (*I
 			if resp.Object.ObjectId.String() == "0x0000000000000000000000000000000000000000000000000000000000000000" {
 				notExistsResp := &IotaObjectResponse{
 					Error: &IotaObjectResponseError{
-						NotExists: &struct {
-							ObjectID iotago.ObjectID `json:"object_id"`
-						}{
+						NotExists: &ObjectResponseNotExists{
 							ObjectID: objAddr,
 						},
 					},
@@ -1983,10 +2027,6 @@ func (c *GraphQLClient) TryMultiGetPastObjects(
 	req TryMultiGetPastObjectsRequest,
 ) ([]*IotaPastObjectResponse, error) {
 	return nil, fmt.Errorf("not implemented: %s", "TryMultiGetPastObjects")
-}
-
-func (c *GraphQLClient) RequestFunds(ctx context.Context, address cryptolib.Address) error {
-	return fmt.Errorf("not implemented: %s", "RequestFunds")
 }
 
 func (c *GraphQLClient) Health(ctx context.Context) error {
@@ -2366,11 +2406,7 @@ func newDeletedIotaObjectResponse(objectID iotago.Address, version uint64, diges
 			Status:   string(ObjectKindWrappedOrDeleted),
 		},
 		Error: &IotaObjectResponseError{
-			Deleted: &struct {
-				ObjectID iotago.ObjectID       `json:"object_id"`
-				Version  iotago.SequenceNumber `json:"version"`
-				Digest   iotago.ObjectDigest   `json:"digest"`
-			}{
+			Deleted: &ObjectResponseDeleted{
 				ObjectID: objectID,
 				Version:  version,
 				Digest:   *digest,
@@ -3849,6 +3885,3 @@ func convertGraphQLObjectOwner(owner RPC_OBJECT_OWNER_FIELDS) (*ObjectOwner, err
 		return nil, fmt.Errorf("unknown owner type: %T", owner)
 	}
 }
-
-
-
