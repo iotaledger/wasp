@@ -44,7 +44,6 @@ type (
 	ObjectOwner                           = graphqltypes.ObjectOwner
 	ObjectOwnerInternal                   = graphqltypes.ObjectOwnerInternal
 	IotaTransactionBlockEffectsV1         = graphqltypes.IotaTransactionBlockEffectsV1
-	ExecutionStatus                       = graphqltypes.ExecutionStatus
 	ExecutionResultType                   = graphqltypes.ExecutionResultType
 	MutableReferenceOutputType            = graphqltypes.MutableReferenceOutputType
 	ReturnValueType                       = graphqltypes.ReturnValueType

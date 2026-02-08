@@ -190,6 +190,8 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 	signatures
 
 	effects {
+		status
+		errors
 		bcs @include(if: $showEffects)
 		bcs @include(if: $showObjectChanges)
 		bcs @include(if: $showRawEffects)

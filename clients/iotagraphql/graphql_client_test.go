@@ -7,10 +7,13 @@ import (
 	"testing"
 
 	"github.com/Khan/genqlient/graphql"
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
-	"github.com/stretchr/testify/require"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/testutil/l1starter"
 )
 
 func TestGraphQL(t *testing.T) {
@@ -56,4 +59,45 @@ query GetAllBalances($owner: SuiAddress!, $limit: Int, $cursor: String) {
 		require.NoError(t, err)
 		fmt.Println("unmarshalled:", resp)
 	})
+}
+
+func TestMain(m *testing.M) {
+	l1starter.TestMain(m)
+}
+
+func TestFaucetReturns5CoinsWithCorrectAmount(t *testing.T) {
+	ctx := context.Background()
+	client := l1starter.Instance().L1Client()
+
+	keyPair := cryptolib.NewKeyPair()
+	addr := keyPair.Address().AsIotaAddress()
+
+	err := iotagraphql.RequestFundsFromFaucetAndWait(ctx, addr, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
+	require.NoError(t, err)
+
+	coinsResp, err := client.GetCoins(ctx, iotagraphql.GetCoinsRequest{
+		Owner: addr,
+		Limit: 10,
+	})
+	require.NoError(t, err)
+
+	require.Len(t, coinsResp.Data, 5, "faucet should return exactly 5 coins per request")
+
+	for i, coin := range coinsResp.Data {
+		require.Equal(t,
+			iotagraphql.SingleCoinFundsFromFaucetAmount,
+			coin.Balance.Uint64(),
+			"coin %d should have SingleCoinFundsFromFaucetAmount (%d), got %d",
+			i, iotagraphql.SingleCoinFundsFromFaucetAmount, coin.Balance.Uint64(),
+		)
+	}
+
+	balance, err := client.GetBalance(ctx, iotagraphql.GetBalanceRequest{Owner: addr})
+	require.NoError(t, err)
+	require.Equal(t,
+		iotagraphql.FundsFromFaucetAmount,
+		balance.TotalBalance.Uint64(),
+		"total balance should equal FundsFromFaucetAmount (%d), got %d",
+		iotagraphql.FundsFromFaucetAmount, balance.TotalBalance.Uint64(),
+	)
 }

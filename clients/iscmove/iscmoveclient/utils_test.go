@@ -3,7 +3,6 @@ package iscmoveclient_test
 import (
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/samber/lo"
 
@@ -34,7 +33,6 @@ func buildDeployMintTestcoin(
 		contracts.Testcoin(),
 	)
 	mintAmount := uint64(1000000)
-	time.Sleep(1 * time.Second) // FIXME tmp for graphql
 	coinRef := iotaclienttest.MintCoins(
 		t,
 		client,
@@ -45,7 +43,6 @@ func buildDeployMintTestcoin(
 		treasuryCap,
 		mintAmount,
 	)
-	time.Sleep(1 * time.Second) // FIXME tmp for graphql
 	coinType := lo.Must(iotago.NewResourceType(fmt.Sprintf(
 		"%s::%s::%s",
 		tokenPackageID.String(),

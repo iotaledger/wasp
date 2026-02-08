@@ -3,7 +3,6 @@ package iotago_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -46,7 +45,6 @@ func TestPTBMoveCall(t *testing.T) {
 			)
 			require.NoError(t, err)
 			require.True(t, txnResponse.Effects.Data.IsSuccess())
-			time.Sleep(1 * time.Second) // FIXME tmp for graphql
 
 			packageID, err := txnResponse.GetPublishedPackageID()
 			require.NoError(t, err)

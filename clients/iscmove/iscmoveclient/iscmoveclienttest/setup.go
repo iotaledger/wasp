@@ -15,7 +15,7 @@ import (
 )
 
 func NewSignerWithFunds(t *testing.T, seed []byte, index int) cryptolib.Signer {
-	return newSignerWithFunds(t, seed, index, l1starter.Instance().FaucetURL())
+	return newSignerWithFunds(t, seed, index, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
 }
 
 func NewRandomSignerWithFunds(t *testing.T, index int) cryptolib.Signer {
@@ -53,13 +53,13 @@ func NewAlphanetHTTPClient() *iscmoveclient.Client {
 }
 
 func NewAlphanetSignerWithFunds(t *testing.T, seed []byte, index int) cryptolib.Signer {
-	return newSignerWithFunds(t, seed, index, iotaconn.AlphanetFaucetURL)
+	return newSignerWithFunds(t, seed, index, iotaconn.AlphanetFaucetURL, iotaconn.AlphanetEndpointURL)
 }
 
-func newSignerWithFunds(t *testing.T, seed []byte, index int, faucetURL string) cryptolib.Signer {
+func newSignerWithFunds(t *testing.T, seed []byte, index int, faucetURL, apiURL string) cryptolib.Signer {
 	seed[0] += byte(index)
 	kp := cryptolib.KeyPairFromSeed(cryptolib.Seed(seed))
-	err := iotagraphql.RequestFundsFromFaucet(context.Background(), kp.Address().AsIotaAddress(), faucetURL)
+	err := iotagraphql.RequestFundsFromFaucetAndWait(context.Background(), kp.Address().AsIotaAddress(), faucetURL, apiURL)
 	require.NoError(t, err)
 	return kp
 }

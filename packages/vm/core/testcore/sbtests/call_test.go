@@ -16,7 +16,7 @@ func TestGetSet(t *testing.T) {
 	setupTestSandboxSC(t, chain, nil)
 
 	req := solo.NewCallParams(sbtestsc.FuncSetInt.Message("ppp", 314), ScName)
-	_, err := chain.PostRequestSync(req.AddBaseTokens(1), nil)
+	_, err := chain.PostRequestSync(req.AddBaseTokens(1*isc.Million), nil)
 	require.NoError(t, err)
 
 	ret, err := sbtestsc.FuncGetInt.Call("ppp", func(msg isc.Message) (isc.CallArguments, error) {
@@ -93,7 +93,7 @@ func TestIndirectCallFibonacci(t *testing.T) { //nolint:dupl
 		codec.Encode(sbtestsc.FuncGetFibonacci.Hname()),
 	)).
 		WithGasBudget(5_000_000)
-	ret, err := chain.PostRequestSync(req.AddBaseTokens(1), nil)
+	ret, err := chain.PostRequestSync(req.AddBaseTokens(1*isc.Million), nil)
 	require.NoError(t, err)
 	r, err := isc.ResAt[uint64](ret, 0)
 	require.NoError(t, err)
@@ -117,7 +117,7 @@ func TestIndirectCallFibonacciIndirect(t *testing.T) { //nolint:dupl
 		codec.Encode(sbtestsc.FuncGetFibonacciIndirect.Hname()),
 	)).
 		WithGasBudget(5_000_000)
-	ret, err := chain.PostRequestSync(req.AddBaseTokens(1), nil)
+	ret, err := chain.PostRequestSync(req.AddBaseTokens(1*isc.Million), nil)
 	require.NoError(t, err)
 	r, err := isc.ResAt[uint64](ret, 0)
 	require.NoError(t, err)
