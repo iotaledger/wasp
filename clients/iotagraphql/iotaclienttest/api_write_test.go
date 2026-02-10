@@ -17,7 +17,7 @@ import (
 
 func TestDevInspectTransactionBlock(t *testing.T) {
 	client := l1starter.Instance().L1Client()
-	sender := iotatest.MakeSignerWithFundsAndWait(0, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
+	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
 
 	limit := int(3)
 	coinPages, err := client.GetCoins(
@@ -51,7 +51,7 @@ func TestDevInspectTransactionBlock(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
-	require.True(t, resp.Effects.Data.IsSuccess())
+	require.True(t, resp.Effects.IsSuccess())
 }
 
 func TestDryRunTransaction(t *testing.T) {
@@ -82,8 +82,8 @@ func TestDryRunTransaction(t *testing.T) {
 		TxDataBytes: tx.TxBytes,
 	})
 	require.NoError(t, err)
-	require.True(t, resp.Effects.Data.IsSuccess())
-	require.Empty(t, resp.Effects.Data.V1.Status.Error)
+	require.True(t, resp.Effects.IsSuccess())
+	require.Empty(t, resp.Effects.V1.Status.Error)
 }
 
 func TestExecuteTransactionBlock(t *testing.T) {
@@ -120,8 +120,8 @@ func TestExecuteTransactionBlock(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
-	require.True(t, resp.Effects.Data.IsSuccess())
-	require.Empty(t, resp.Effects.Data.V1.Status.Error)
+	require.True(t, resp.Effects.IsSuccess())
+	require.Empty(t, resp.Effects.V1.Status.Error)
 }
 
 func TestSignAndExecuteTransaction(t *testing.T) {
@@ -162,6 +162,6 @@ func TestSignAndExecuteTransaction(t *testing.T) {
 	require.NotNil(t, resp)
 	require.NotNil(t, resp.Effects, "Effects should be present when ShowEffects is true")
 	require.NotNil(t, resp.ObjectChanges, "ObjectChanges should be present when ShowObjectChanges is true")
-	require.True(t, resp.Effects.Data.IsSuccess())
-	require.Empty(t, resp.Effects.Data.V1.Status.Error)
+	require.True(t, resp.Effects.IsSuccess())
+	require.Empty(t, resp.Effects.V1.Status.Error)
 }

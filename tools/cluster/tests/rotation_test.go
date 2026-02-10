@@ -97,7 +97,7 @@ func TestRotationOverlappingCommitteesWithConcurrentRequests(t *testing.T) {
 	require.NoError(t, err)
 
 	var fieldMap map[string]interface{}
-	err = json.Unmarshal(object.Data.Content.Data.MoveObject.Fields, &fieldMap)
+	err = json.Unmarshal(object.Data.Content.MoveObject.Fields, &fieldMap)
 	require.NoError(t, err)
 
 	require.Equal(t, int(fieldMap["state_index"].(float64)), int(newBlock.BlockIndex), "state index in anchor should equal to state index in storage")

@@ -111,7 +111,7 @@ func DecodeAsset(assets *Assets, cmd *iotago.ProgrammableMoveCall, inputs []iota
 // The downside is that any time we change create_and_send_request in the move contract, we need to update this logic.
 // I don't expect it to change often if ever, so that seems to be a straight forward way.
 func DecodeDryRunTransaction(dryRunRes *iotagraphql.DryRunResult) (*Assets, *EstimationRequest, *cryptolib.Address, error) {
-	tx := dryRunRes.Input.Data.V1.Transaction.Data.ProgrammableTransaction
+	tx := dryRunRes.Input.V1.Transaction.ProgrammableTransaction
 
 	var cmds []struct {
 		MoveCall *iotago.ProgrammableMoveCall `json:"MoveCall,omitempty"`
@@ -163,5 +163,5 @@ func DecodeDryRunTransaction(dryRunRes *iotagraphql.DryRunResult) (*Assets, *Est
 		}
 	}
 
-	return assets, request, cryptolib.NewAddressFromIota(&dryRunRes.Input.Data.V1.Sender), nil
+	return assets, request, cryptolib.NewAddressFromIota(&dryRunRes.Input.V1.Sender), nil
 }

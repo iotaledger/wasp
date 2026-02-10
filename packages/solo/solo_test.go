@@ -105,7 +105,7 @@ func TestDryRunForRequest(t *testing.T) {
 		TxDataBytes: txBytes,
 	})
 	require.NoError(t, err)
-	require.True(t, dryRunRes1.Effects.Data.IsSuccess())
+	require.True(t, dryRunRes1.Effects.IsSuccess())
 
 	var dryRunRes2 iotagraphql.DryRunResult
 	b, err := bcs.Marshal(dryRunRes1)

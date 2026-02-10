@@ -54,7 +54,7 @@ func initRequestsCmd() *cobra.Command {
 				return fmt.Errorf("failed to get Anchors PackageID")
 			}
 
-			iscMoveClient := iscmoveclient.NewClient(cliclients.L1Client().GetIotaClient(), "")
+			iscMoveClient := iscmoveclient.NewClient(cliclients.L1Client().GetIotaClient())
 
 			requests := make([]*iscmove.RefWithObject[iscmove.Request], 0)
 			err = iscMoveClient.GetRequestsSorted(ctx, *packageID, objectID, 9999, func(err error, request *iscmove.RefWithObject[iscmove.Request]) {

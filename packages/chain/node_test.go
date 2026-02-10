@@ -108,7 +108,7 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 
 	// Create SC L1Client account with some deposit
 	scClient := cryptolib.NewKeyPair()
-	err := te.l1Client.RequestFunds(context.Background(), *scClient.Address())
+	err := te.l1Client.RequestFundsFromFaucet(context.Background(), scClient.Address().AsIotaAddress())
 	require.NoError(t, err)
 
 	//
@@ -343,7 +343,6 @@ func (tnc *testNodeConn) PublishTX(
 			ShowBalanceChanges: true,
 			ShowRawEffects:     true,
 		},
-		RequestType: iotagraphql.TxnRequestTypeWaitForLocalExecution,
 	})
 	if err != nil {
 		tnc.t.Logf("ExecuteTransactionBlock, err=%v", err)
@@ -445,7 +444,7 @@ func (tnc *testNodeConn) ConsensusL1InfoProposal(
 		}
 
 		var moveBalance iscmoveclient.MoveCoin
-		err = iotagraphql.UnmarshalBCS(gasCoin.Data.Bcs.Data.MoveObject.BcsBytes, &moveBalance)
+		err = iotagraphql.UnmarshalBCS(gasCoin.Data.Bcs.MoveObject.BcsBytes, &moveBalance)
 		if err != nil {
 			panic("failed to decode gas coin object: " + err.Error())
 		}
@@ -543,7 +542,7 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 	te.committeeAddress, dkShareProviders = testpeers.SetupDistributedKeyGenerationTrivial(t, n, f, te.peerIdentities, nil)
 	te.committeeSigner = testpeers.NewTestDistributedSignatureSigner(te.committeeAddress, dkShareProviders, gpa.MakeTestNodeIDs(n), te.peerIdentities, te.log)
 
-	require.NoError(t, node.L1Client().RequestFunds(context.Background(), *te.committeeSigner.Address()))
+	require.NoError(t, node.L1Client().RequestFundsFromFaucet(context.Background(), te.committeeSigner.Address().AsIotaAddress()))
 	iotatest.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(te.committeeSigner), node.L1Client(), isc.GasCoinTargetValue*10)
 
 	iscPackageID := node.ISCPackageID()

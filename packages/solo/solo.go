@@ -428,20 +428,6 @@ func (env *Solo) IotaFaucetURL() string {
 	return env.l1Config.IotaFaucetURL
 }
 
-func (ch *Chain) GetAnchor(stateIndex uint32) (*isc.StateAnchor, error) {
-	anchor, err := ch.Env.ISCMoveClient().GetPastAnchorFromObjectID(
-		ch.Env.ctx,
-		ch.ChainID.AsAddress().AsIotaAddress(),
-		uint64(stateIndex),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	stateAnchor := isc.NewStateAnchor(anchor, ch.Env.ISCPackageID())
-	return &stateAnchor, nil
-}
-
 func (ch *Chain) GetLatestAnchor() *isc.StateAnchor {
 	anchor, err := ch.Env.ISCMoveClient().GetAnchorFromObjectID(
 		ch.Env.ctx,
@@ -464,7 +450,7 @@ func (env *Solo) GetCoin(id *iotago.ObjectID) *coin.CoinWithRef {
 	require.NoError(env.T, err)
 	require.Nil(env.T, getObjRes.Error)
 	var moveGasCoin iscmoveclient.MoveCoin
-	err = iotagraphql.UnmarshalBCS(getObjRes.Data.Bcs.Data.MoveObject.BcsBytes, &moveGasCoin)
+	err = iotagraphql.UnmarshalBCS(getObjRes.Data.Bcs.MoveObject.BcsBytes, &moveGasCoin)
 	require.NoError(env.T, err)
 	gasCoinRef := getObjRes.Data.Ref()
 	return &coin.CoinWithRef{
@@ -649,8 +635,8 @@ func (env *Solo) executePTB(
 		},
 	)
 	require.NoError(env.T, err)
-	if !execRes.Effects.Data.IsSuccess() {
-		env.T.Fatalf("PTB failed: %s", execRes.Effects.Data.V1.Status.Error)
+	if !execRes.Effects.IsSuccess() {
+		env.T.Fatalf("PTB failed: %s", execRes.Effects.V1.Status.Error)
 	}
 	return execRes
 }

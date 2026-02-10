@@ -68,10 +68,10 @@ func (c *Controller) estimateGasOnLedger(e echo.Context) error {
 	if err != nil {
 		return apierrors.NewHTTPError(http.StatusBadRequest, "DryRun error", err)
 	}
-	if dryRunResponse.Effects.Data.V1.Status.Error != "" {
+	if dryRunResponse.Effects.V1.Status.Error != "" {
 		return apierrors.NewHTTPError(http.StatusBadRequest, "DryRun status error", fmt.Errorf("%s: %s",
-			dryRunResponse.Effects.Data.V1.Status.Status,
-			dryRunResponse.Effects.Data.V1.Status.Error,
+			dryRunResponse.Effects.V1.Status.Status,
+			dryRunResponse.Effects.V1.Status.Error,
 		))
 	}
 
@@ -90,7 +90,7 @@ func (c *Controller) estimateGasOnLedger(e echo.Context) error {
 	fmt.Printf("Request data: %v %v", res, res.Message())
 
 	return e.JSON(http.StatusOK, models.OnLedgerEstimationResponse{
-		L1: models.MapL1EstimationResult(&dryRunResponse.Effects.Data.V1.GasUsed),
+		L1: models.MapL1EstimationResult(&dryRunResponse.Effects.V1.GasUsed),
 		L2: models.MapReceiptResponse(rec),
 	})
 }

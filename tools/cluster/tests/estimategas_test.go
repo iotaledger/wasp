@@ -222,15 +222,15 @@ func (e *ChainEnv) testEstimateGasOnLedger(t *testing.T) {
 	res, err := executeTx(txBytes)
 	require.NoError(t, err)
 	require.Empty(t, res.Errors)
-	require.Empty(t, res.Effects.Data.V1.Status.Error, res.Effects.Data.V1.Status.Status)
+	require.Empty(t, res.Effects.V1.Status.Error, res.Effects.V1.Status.Status)
 
 	// Checked that actual used gas was not greater than estimated fee or budget.
 	estimatedGasFee := lo.Must(strconv.ParseUint(estimatedReceipt.L1.GasFeeCharged, 10, 64))
 	require.LessOrEqual(t, estimatedGasFee, l1GasBudget)
 	var totalL1GasUsed big.Int
-	totalL1GasUsed.Add(&totalL1GasUsed, res.Effects.Data.V1.GasUsed.ComputationCost.Int)
-	totalL1GasUsed.Add(&totalL1GasUsed, res.Effects.Data.V1.GasUsed.StorageCost.Int)
-	totalL1GasUsed.Sub(&totalL1GasUsed, res.Effects.Data.V1.GasUsed.StorageRebate.Int)
+	totalL1GasUsed.Add(&totalL1GasUsed, res.Effects.V1.GasUsed.ComputationCost.Int)
+	totalL1GasUsed.Add(&totalL1GasUsed, res.Effects.V1.GasUsed.StorageCost.Int)
+	totalL1GasUsed.Sub(&totalL1GasUsed, res.Effects.V1.GasUsed.StorageRebate.Int)
 	require.LessOrEqual(t, totalL1GasUsed.Uint64(), estimatedGasFee)
 	require.LessOrEqual(t, totalL1GasUsed.Uint64(), l1GasBudget)
 
@@ -240,9 +240,9 @@ func (e *ChainEnv) testEstimateGasOnLedger(t *testing.T) {
 	estimatedComputationFee := lo.Must(strconv.ParseUint(estimatedReceipt.L1.ComputationFee, 10, 64))
 	estimatedStorageFee := lo.Must(strconv.ParseUint(estimatedReceipt.L1.StorageFee, 10, 64))
 	estimatedStorageRebate := lo.Must(strconv.ParseUint(estimatedReceipt.L1.StorageRebate, 10, 64))
-	require.Equal(t, estimatedComputationFee, res.Effects.Data.V1.GasUsed.ComputationCost.Int.Uint64())
-	require.Equal(t, estimatedStorageFee, res.Effects.Data.V1.GasUsed.StorageCost.Int.Uint64())
-	require.LessOrEqual(t, estimatedStorageRebate, res.Effects.Data.V1.GasUsed.StorageRebate.Int.Uint64())
+	require.Equal(t, estimatedComputationFee, res.Effects.V1.GasUsed.ComputationCost.Int.Uint64())
+	require.Equal(t, estimatedStorageFee, res.Effects.V1.GasUsed.StorageCost.Int.Uint64())
+	require.LessOrEqual(t, estimatedStorageRebate, res.Effects.V1.GasUsed.StorageRebate.Int.Uint64())
 
 	recs, err := e.Clu.MultiClient().WaitUntilAllRequestsProcessed(context.Background(), e.Chain.ChainID, res, false, 10*time.Second)
 	require.NoError(t, err, recs)
@@ -256,14 +256,14 @@ func (e *ChainEnv) testEstimateGasOnLedger(t *testing.T) {
 	//       For L1 estimated budget is not strictly equal to actual needed value, it is greater or equal. So such test is hard to write.
 	txBytesWithWrongL1GasBudget := createTx(l1GasBudget-1200000, l2GasBudget)
 	res, _ = executeTx(txBytesWithWrongL1GasBudget)
-	require.Equal(t, "InsufficientGas", res.Effects.Data.V1.Status.Error, res.Effects.Data.V1.Status.Status)
+	require.Equal(t, "InsufficientGas", res.Effects.V1.Status.Error, res.Effects.V1.Status.Status)
 
 	// Checking that transaction execution fails with wrong L2 gas budget
 	txBytesWithWrongL2GasBudget := createTx(l1GasBudget, l2GasBudget-1)
 	res, err = executeTx(txBytesWithWrongL2GasBudget)
 	require.NoError(t, err)
 	require.Empty(t, res.Errors)
-	require.Empty(t, res.Effects.Data.V1.Status.Error, res.Effects.Data.V1.Status.Status)
+	require.Empty(t, res.Effects.V1.Status.Error, res.Effects.V1.Status.Status)
 	recs, _ = e.Clu.MultiClient().WaitUntilAllRequestsProcessed(context.Background(), e.Chain.ChainID, res, false, 10*time.Second)
 	require.Equal(t, "gas budget exceeded", lo.FromPtr(recs[0].ErrorMessage))
 }

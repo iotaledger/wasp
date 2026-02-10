@@ -94,7 +94,7 @@ func TestManyRequests2(t *testing.T) {
 			_, l1Res, err2 := chain.SendRequest(req, users[r])
 			require.NoError(t, err2)
 			sum++
-			l1Gas[r] += coin.Value(l1Res.Effects.Data.GasFee())
+			l1Gas[r] += coin.Value(l1Res.Effects.GasFee())
 		}
 	}
 

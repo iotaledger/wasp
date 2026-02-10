@@ -124,4 +124,9 @@ type IotaClient interface {
 		gasPrice uint64,
 		options *IotaTransactionBlockResponseOptions,
 	) (*IotaTransactionBlockResponse, error)
+
+	// Faucet
+	RequestFundsFromFaucet(ctx context.Context, address *iotago.Address) error
 }
+
+var _ IotaClient = (*GraphQLClient)(nil)

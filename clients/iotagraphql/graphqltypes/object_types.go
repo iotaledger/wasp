@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/serialization"
 )
 
 type IotaObjectRef struct {
@@ -99,11 +98,11 @@ type IotaObjectData struct {
 	/**
 	 * Move object content or package content, default to be undefined unless IotaObjectDataOptions.showContent is set to true
 	 */
-	Content *serialization.TagJson[IotaParsedData] `json:"content,omitempty"`
+	Content *IotaParsedData `json:"content,omitempty"`
 	/**
 	 * Move object content or package content in BCS bytes, default to be undefined unless IotaObjectDataOptions.showBcs is set to true
 	 */
-	Bcs *serialization.TagJson[IotaRawData] `json:"bcs,omitempty"`
+	Bcs *IotaRawData `json:"bcs,omitempty"`
 	/**
 	 * The owner of this object. Default to be undefined unless IotaObjectDataOptions.showOwner is set to true
 	 */
@@ -153,19 +152,25 @@ type IotaObjectDataOptions struct {
 	ShowDisplay bool `json:"showDisplay,omitempty"`
 }
 
+type ObjectResponseNotExists struct {
+	ObjectID iotago.ObjectID `json:"object_id"`
+}
+
+type ObjectResponseDeleted struct {
+	ObjectID iotago.ObjectID       `json:"object_id"`
+	Version  iotago.SequenceNumber `json:"version"`
+	Digest   iotago.ObjectDigest   `json:"digest"`
+}
+
+type ObjectResponseDisplayError struct {
+	Error string `json:"error"`
+}
+
 type IotaObjectResponseError struct {
-	NotExists *struct {
-		ObjectID iotago.ObjectID `json:"object_id"`
-	} `json:"notExists,omitempty"`
-	Deleted *struct {
-		ObjectID iotago.ObjectID       `json:"object_id"`
-		Version  iotago.SequenceNumber `json:"version"`
-		Digest   iotago.ObjectDigest   `json:"digest"`
-	} `json:"deleted,omitempty"`
-	UnKnown      *struct{} `json:"unKnown"`
-	DisplayError *struct {
-		Error string `json:"error"`
-	} `json:"displayError"`
+	NotExists    *ObjectResponseNotExists    `json:"notExists,omitempty"`
+	Deleted      *ObjectResponseDeleted      `json:"deleted,omitempty"`
+	UnKnown      *struct{}                   `json:"unKnown"`
+	DisplayError *ObjectResponseDisplayError `json:"displayError"`
 }
 
 func (e IotaObjectResponseError) String() string {
@@ -193,13 +198,13 @@ func (e IotaObjectResponseError) Content() string {
 }
 
 type IotaObjectResponse struct {
-	Data  *IotaObjectData                                 `json:"data,omitempty"`
-	Error *serialization.TagJson[IotaObjectResponseError] `json:"error,omitempty"`
+	Data  *IotaObjectData          `json:"data,omitempty"`
+	Error *IotaObjectResponseError `json:"error,omitempty"`
 }
 
 func (r IotaObjectResponse) ResponseError() error {
 	if r.Error != nil {
-		return fmt.Errorf("%s", r.Error.Data.String())
+		return fmt.Errorf("%s", r.Error.String())
 	}
 	return nil
 }
@@ -231,7 +236,7 @@ type IotaObjectResponseQuery struct {
 	Options *IotaObjectDataOptions `json:"options,omitempty"`
 }
 
-type IotaPastObjectResponse = serialization.TagJson[IotaPastObject]
+type IotaPastObjectResponse = IotaPastObject
 
 type IotaPastObject struct {
 	// The object exists and is found with this version

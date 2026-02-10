@@ -20,7 +20,7 @@ import (
 
 func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
 	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
-	client := iscmoveclienttest.NewHTTPClient()
+	client := iscmoveclienttest.NewClient()
 
 	txnResponse, err := PTBTestWrapper(
 		&PTBTestWrapperRequest{
@@ -58,7 +58,7 @@ func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
 
 func TestAssetsBagPlaceCoin(t *testing.T) {
 	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
-	client := iscmoveclienttest.NewHTTPClient()
+	client := iscmoveclienttest.NewClient()
 	txnResponse, err := newAssetsBag(client, cryptolibSigner)
 	require.NoError(t, err)
 	assetsBagMainRef, err := txnResponse.GetCreatedObjectByName(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
@@ -103,7 +103,7 @@ func TestAssetsBagPlaceCoin(t *testing.T) {
 
 func TestAssetsBagPlaceCoinAmount(t *testing.T) {
 	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
-	client := iscmoveclienttest.NewHTTPClient()
+	client := iscmoveclienttest.NewClient()
 
 	txnResponse, err := newAssetsBag(client, cryptolibSigner)
 	require.NoError(t, err)
@@ -151,7 +151,7 @@ func TestAssetsBagPlaceCoinAmount(t *testing.T) {
 
 func TestAssetsBagTakeCoinBalanceMergeTo(t *testing.T) {
 	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
-	client := iscmoveclienttest.NewHTTPClient()
+	client := iscmoveclienttest.NewClient()
 	const topUpAmount = 123
 	txnResponse, err := newAssetsBag(client, cryptolibSigner)
 	require.NoError(t, err)
@@ -203,14 +203,14 @@ func TestAssetsBagTakeCoinBalanceMergeTo(t *testing.T) {
 	})
 	require.NoError(t, err)
 	var mergeToCoin2 iscmoveclient.MoveCoin
-	err = iotagraphql.UnmarshalBCS(getObjRes.Data.Bcs.Data.MoveObject.BcsBytes, &mergeToCoin2)
+	err = iotagraphql.UnmarshalBCS(getObjRes.Data.Bcs.MoveObject.BcsBytes, &mergeToCoin2)
 	require.NoError(t, err)
-	require.Equal(t, mergeToCoin1.Balance.Int64()-txnResponse.Effects.Data.GasFee()+topUpAmount, int64(mergeToCoin2.Balance))
+	require.Equal(t, mergeToCoin1.Balance.Int64()-txnResponse.Effects.GasFee()+topUpAmount, int64(mergeToCoin2.Balance))
 }
 
 func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
 	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
-	client := iscmoveclienttest.NewHTTPClient()
+	client := iscmoveclienttest.NewClient()
 
 	txnResponse, err := PTBTestWrapper(
 		&PTBTestWrapperRequest{
@@ -272,7 +272,7 @@ func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
 
 func TestGetAssetsBagFromAnchorID(t *testing.T) {
 	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
-	client := iscmoveclienttest.NewHTTPClient()
+	client := iscmoveclienttest.NewClient()
 
 	anchor := startNewChain(t, client, cryptolibSigner)
 
@@ -392,12 +392,12 @@ func borrowAnchorAssetsAndPlaceCoin(
 		},
 	)
 	require.NoError(t, err)
-	require.True(t, execRes.Effects.Data.IsSuccess())
+	require.True(t, execRes.Effects.IsSuccess())
 }
 
 func TestGetAssetsBagFromRequestID(t *testing.T) {
 	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
-	client := iscmoveclienttest.NewHTTPClient()
+	client := iscmoveclienttest.NewClient()
 
 	anchor := startNewChain(t, client, cryptolibSigner)
 

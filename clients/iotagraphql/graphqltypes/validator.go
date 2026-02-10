@@ -2,10 +2,9 @@ package graphqltypes
 
 import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/serialization"
 )
 
-type StakeStatus = serialization.TagJson[Status]
+type StakeStatus = Status
 
 type Status struct {
 	Pending *struct{} `json:"Pending,omitempty"`
@@ -38,7 +37,7 @@ type Stake struct {
 }
 
 func (s *Stake) IsActive() bool {
-	return s.StakeStatus.Data.Active != nil
+	return s.StakeStatus.Active != nil
 }
 
 type DelegatedStake struct {

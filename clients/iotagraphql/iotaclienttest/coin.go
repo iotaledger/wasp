@@ -50,7 +50,7 @@ func DeployCoinPackage(
 	require.NoError(t, err)
 	require.NotNil(t, txnResponse)
 	require.NotNil(t, txnResponse.Effects)
-	require.True(t, txnResponse.Effects.Data.IsSuccess(), txnResponse.Effects.Data.V1.Status.Error)
+	require.True(t, txnResponse.Effects.IsSuccess(), txnResponse.Effects.V1.Status.Error)
 
 	packageID, err = txnResponse.GetPublishedPackageID()
 	require.NoError(t, err)
@@ -93,7 +93,7 @@ func MintCoins(
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 	require.NotNil(t, resp.Effects)
-	require.True(t, resp.Effects.Data.IsSuccess(), resp.Effects.Data.V1.Status.Error)
+	require.True(t, resp.Effects.IsSuccess(), resp.Effects.V1.Status.Error)
 
 	coinRef, err = resp.GetCreatedCoinByType(moduleName, typeTag)
 	require.NoError(t, err)

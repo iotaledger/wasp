@@ -17,7 +17,7 @@ import (
 )
 
 func TestGraphQL(t *testing.T) {
-	client := iotagraphql.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL)
+	client := iotagraphql.NewGraphQLClient(iotaconn.TestnetGraphQLEndpointURL, iotaconn.TestnetFaucetURL)
 
 	t.Run("Standard API Call", func(t *testing.T) {
 		addr, err := iotago.AddressFromHex("0x7a89979774c55814f41fc1e3354e2ba38d3d62096d469d86b3132e947de1e8da")
@@ -72,7 +72,7 @@ func TestFaucetReturns5CoinsWithCorrectAmount(t *testing.T) {
 	keyPair := cryptolib.NewKeyPair()
 	addr := keyPair.Address().AsIotaAddress()
 
-	err := iotagraphql.RequestFundsFromFaucetAndWait(ctx, addr, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
+	err := client.RequestFundsFromFaucet(ctx, addr)
 	require.NoError(t, err)
 
 	coinsResp, err := client.GetCoins(ctx, iotagraphql.GetCoinsRequest{
