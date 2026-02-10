@@ -108,7 +108,6 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 		<-awaitTrackHeadChannels[i]
 	}
 
-	time.Sleep(600 * time.Millisecond) // FIXME tmp for graphql
 	te.anchor, err = te.tcl.UpdateAnchor(te.anchor)
 	require.NoError(t, err)
 
@@ -119,7 +118,6 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 	}
 	te.anchor = blockFn(te, []isc.Request{onLedgerReq}, te.anchor, tangleTime)
 
-	time.Sleep(600 * time.Millisecond) // FIXME tmp for graphql
 	te.anchor, err = te.tcl.UpdateAnchor(te.anchor)
 	require.NoError(t, err)
 
@@ -152,7 +150,6 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 		require.Len(t, nodeDecidedReqs, 1)
 	}
 
-	time.Sleep(600 * time.Millisecond) // FIXME tmp for graphql
 	te.anchor, err = te.tcl.UpdateAnchor(te.anchor)
 	require.NoError(t, err)
 
@@ -302,7 +299,6 @@ func TestMempoolsNonceGaps(t *testing.T) {
 		}
 	}
 
-	time.Sleep(600 * time.Millisecond) // FIXME tmp for graphql
 	te.anchor, err = te.tcl.UpdateAnchor(te.anchor)
 	require.NoError(t, err)
 	// ask for proposal, assert 0,1 are proposed

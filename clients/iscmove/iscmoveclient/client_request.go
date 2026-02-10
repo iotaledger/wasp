@@ -11,6 +11,7 @@ import (
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql/graphqltypes"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 )
@@ -91,6 +92,56 @@ func (c *Client) selectProperGasCoinAndBalance(ctx context.Context, req *CreateA
 	return coin, iotaBalance.Uint64(), nil
 }
 
+func (c *Client) collectPlacedCoins(
+	ctx context.Context,
+	req *CreateAndSendRequestWithAssetsRequest,
+) ([]lo.Tuple2[*iotagraphql.Coin, uint64], error) {
+	var placedCoins []lo.Tuple2[*iotagraphql.Coin, uint64]
+	// Query for each specific coin type needed
+	for cointype, bal := range req.Assets.Coins.Iterate() {
+		if lo.Must(iotago.IsSameResource(cointype.String(), iotagraphql.IotaCoinType.String())) {
+			continue
+		}
+
+		// Query for this specific coin type
+		coinTypeStr := cointype.String()
+		coinsOfType, err := c.GetCoins(ctx, iotagraphql.GetCoinsRequest{
+			Owner:    req.Signer.Address().AsIotaAddress(),
+			CoinType: &coinTypeStr,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to get coins of type %s: %w", cointype, err)
+		}
+
+		coin, ok := lo.Find(coinsOfType.Data, func(coin *iotagraphql.Coin) bool {
+			if lo.ContainsBy(req.GasPayments, func(ref *iotago.ObjectRef) bool {
+				return ref.ObjectID.Equals(*coin.CoinObjectID)
+			}) {
+				return false
+			}
+			return coin.Balance.Uint64() >= bal.Uint64()
+		})
+		if !ok {
+			return nil, fmt.Errorf("cannot find coin for type %s", cointype)
+		}
+
+		// Update the coin ref to get the latest version
+		coinRef := coin.Ref()
+		updatedRef, err := c.UpdateObjectRef(ctx, coinRef)
+		if err != nil {
+			return nil, fmt.Errorf("failed to update coin ref for type %s: %w", cointype, err)
+		}
+		coin.Version = graphqltypes.NewBigInt(updatedRef.Version)
+		coin.Digest = updatedRef.Digest
+		// Use the unwrapped coin type from the Assets iterator (e.g. "0x...::testcoin::TESTCOIN")
+		// instead of the GraphQL response type which includes the Coin<> wrapper
+		coin.CoinType = cointype
+
+		placedCoins = append(placedCoins, lo.Tuple2[*iotagraphql.Coin, uint64]{A: coin, B: bal.Uint64()})
+	}
+	return placedCoins, nil
+}
+
 //nolint:funlen
 func (c *Client) CreateAndSendRequestWithAssets(
 	ctx context.Context,
@@ -102,32 +153,9 @@ func (c *Client) CreateAndSendRequestWithAssets(
 	}
 	anchorRef := anchorRes.Data.Ref()
 
-	allCoins, err := c.GetAllCoins(ctx, iotagraphql.GetAllCoinsRequest{Owner: req.Signer.Address().AsIotaAddress()})
+	placedCoins, err := c.collectPlacedCoins(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get anchor ref: %w", err)
-	}
-	var placedCoins []lo.Tuple2[*iotagraphql.Coin, uint64]
-	// assume we can find it in the first page
-	for cointype, bal := range req.Assets.Coins.Iterate() {
-		if lo.Must(iotago.IsSameResource(cointype.String(), iotagraphql.IotaCoinType.String())) {
-			continue
-		}
-
-		coin, ok := lo.Find(allCoins.Data, func(coin *iotagraphql.Coin) bool {
-			if !lo.Must(iotago.IsSameResource(cointype.String(), string(coin.CoinType))) {
-				return false
-			}
-			if lo.ContainsBy(req.GasPayments, func(ref *iotago.ObjectRef) bool {
-				return ref.ObjectID.Equals(*coin.CoinObjectID)
-			}) {
-				return false
-			}
-			return coin.Balance.Uint64() >= bal.Uint64()
-		})
-		if !ok {
-			return nil, fmt.Errorf("cannot find coin for type %s", cointype)
-		}
-		placedCoins = append(placedCoins, lo.Tuple2[*iotagraphql.Coin, uint64]{A: coin, B: bal.Uint64()})
+		return nil, err
 	}
 
 	ptb := iotago.NewProgrammableTransactionBuilder()
@@ -140,7 +168,37 @@ func (c *Client) CreateAndSendRequestWithAssets(
 		return nil, fmt.Errorf("failed to find an IOTA coin with proper balance ref: %w", err)
 	}
 
+	if len(gasCoins) > 1 {
+		primaryIdx := 0
+		primaryBal := gasCoins[0].Balance.Uint64()
+		for i := 1; i < len(gasCoins); i++ {
+			bal := gasCoins[i].Balance.Uint64()
+			if bal > primaryBal {
+				primaryIdx = i
+				primaryBal = bal
+			}
+		}
+		if primaryIdx != 0 {
+			gasCoins[0], gasCoins[primaryIdx] = gasCoins[primaryIdx], gasCoins[0]
+		}
+	}
+
 	if balance > 0 {
+		if gasCoins[0].Balance.Uint64() < balance {
+			if len(gasCoins) == 1 {
+				return nil, fmt.Errorf("insufficient balance in gas coin: need %d, have %d", balance, gasCoins[0].Balance.Uint64())
+			}
+			coinsToMerge := make([]iotago.Argument, 0, len(gasCoins)-1)
+			for i := 1; i < len(gasCoins); i++ {
+				coinsToMerge = append(coinsToMerge, ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: gasCoins[i].Ref()}))
+			}
+			ptb.Command(iotago.Command{
+				MergeCoins: &iotago.ProgrammableMergeCoins{
+					Destination: iotago.GetArgumentGasCoin(),
+					Sources:     coinsToMerge,
+				},
+			})
+		}
 		ptb = PTBAssetsBagPlaceCoinWithAmount(
 			ptb,
 			req.PackageID,

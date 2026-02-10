@@ -108,6 +108,7 @@ type IotaClient interface {
 		tokenName string,
 		treasuryCap *iotago.ObjectRef,
 		mintAmount uint64,
+		maxRetries int,
 		options *IotaTransactionBlockResponseOptions,
 	) (*ExecuteTransactionBlockResponse, error)
 	SignAndExecuteTxWithRetry(

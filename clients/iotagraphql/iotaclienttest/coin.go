@@ -84,6 +84,7 @@ func MintCoins(
 		moduleName,
 		treasuryCapObject,
 		mintAmount,
+		5,
 		&iotagraphql.IotaTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,

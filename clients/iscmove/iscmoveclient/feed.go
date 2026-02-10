@@ -120,7 +120,6 @@ func (f *ChainFeed) subscribeToNewRequests(
 		} else {
 			f.consumeRequestEvents(ctx, events, requests)
 		}
-		time.Sleep(1 * time.Second)
 		if ctx.Err() != nil {
 			f.log.LogErrorf("subscribeToNewRequests: ctx.Err(): %s", ctx.Err())
 			return
@@ -183,7 +182,6 @@ func (f *ChainFeed) subscribeToAnchorUpdates(
 		} else {
 			f.consumeAnchorUpdates(ctx, changes, anchorCh)
 		}
-		time.Sleep(1 * time.Second)
 		if ctx.Err() != nil {
 			f.log.LogErrorf("subscribeToAnchorUpdates: ctx.Err(): %s", ctx.Err())
 			return

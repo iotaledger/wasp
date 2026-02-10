@@ -26,8 +26,8 @@ import (
 var defaultFalse = false
 
 const (
-	SingleCoinFundsFromFaucetAmount = uint64(1_000_000_000)
-	FundsFromFaucetAmount           = SingleCoinFundsFromFaucetAmount * 2
+	SingleCoinFundsFromFaucetAmount = uint64(2_000_000_000)
+	FundsFromFaucetAmount           = SingleCoinFundsFromFaucetAmount * 5
 )
 
 type GraphQLClient struct {
@@ -35,6 +35,7 @@ type GraphQLClient struct {
 	client                  graphql.Client
 	httpClient              *http.Client
 	WaitUntilEffectsVisible *WaitParams
+	tickingTime             time.Duration
 }
 
 func NewGraphQLClient(url string) *GraphQLClient {
@@ -54,11 +55,51 @@ func NewGraphQLClientWithTimeout(url string, timeout time.Duration, waitParams *
 		client:                  graphql.NewClient(url, httpClient),
 		httpClient:              httpClient,
 		WaitUntilEffectsVisible: waitParams,
+		tickingTime:             250 * time.Millisecond,
 	}
 }
 
 // RequestFundsFromFaucet requests test funds for the provided address from the faucet endpoint.
+// This is a non-blocking version that returns immediately after the faucet request succeeds.
+// Use RequestFundsFromFaucetAndWait if you need to wait for the coins to be visible.
 func RequestFundsFromFaucet(ctx context.Context, address *iotago.Address, faucetURL string) error {
+	return requestFundsFromFaucetInternal(ctx, address, faucetURL)
+}
+
+// RequestFundsFromFaucetAndWait requests test funds and waits for the coins to be visible on the ledger.
+func RequestFundsFromFaucetAndWait(ctx context.Context, address *iotago.Address, faucetURL string, apiURL string) error {
+	client := NewGraphQLClient(apiURL)
+
+	initialBalance := getBalance(ctx, client, address)
+
+	if err := requestFundsFromFaucetInternal(ctx, address, faucetURL); err != nil {
+		return err
+	}
+
+	// Wait for balance to increase
+	const maxRetries = 30
+	const retryInterval = 100 * time.Millisecond
+
+	for i := 0; i < maxRetries; i++ {
+		currentBalance := getBalance(ctx, client, address)
+		if currentBalance.Cmp(initialBalance) > 0 {
+			return nil
+		}
+		time.Sleep(retryInterval)
+	}
+
+	return fmt.Errorf("timeout waiting for faucet coins to be visible")
+}
+
+func getBalance(ctx context.Context, client *GraphQLClient, address *iotago.Address) *big.Int {
+	balance, err := client.GetBalance(ctx, GetBalanceRequest{Owner: address})
+	if err != nil || balance.TotalBalance == nil {
+		panic(fmt.Sprintf("failed to get balance for address %s: %v", address, err))
+	}
+	return balance.TotalBalance.Int
+}
+
+func requestFundsFromFaucetInternal(ctx context.Context, address *iotago.Address, faucetURL string) error {
 	payload := map[string]any{
 		"FixedAmountRequest": map[string]string{
 			"recipient": address.String(),
@@ -1299,7 +1340,7 @@ func (c *GraphQLClient) SignAndExecuteTransaction(
 	resp, err := c.ExecuteTransactionBlock(
 		ctx,
 		ExecuteTransactionBlockRequest{
-			TxDataBytes: req.TxDataBytes,
+			TxDataBytes: txBytes,
 			Signatures:  []*iotasigner.Signature{signature},
 			Options:     req.Options,
 			RequestType: TxnRequestTypeWaitForLocalExecution,
@@ -1309,7 +1350,55 @@ func (c *GraphQLClient) SignAndExecuteTransaction(
 		return nil, fmt.Errorf("failed to execute transaction: %w", err)
 	}
 
-	return resp, err
+	if _, waitErr := c.waitForUpdatedGasPayments(ctx, txData.V1.GasData.Payment); waitErr != nil {
+		return nil, fmt.Errorf("failed to update gas payment: %w", waitErr)
+	}
+
+	return resp, nil
+}
+
+func (c *GraphQLClient) waitForUpdatedGasPayments(
+	ctx context.Context,
+	gasPayments []*iotago.ObjectRef,
+) ([]*iotago.ObjectRef, error) {
+	updated := make([]*iotago.ObjectRef, len(gasPayments))
+	for i, payment := range gasPayments {
+		if payment == nil {
+			updated[i] = payment
+			continue
+		}
+		timeoutCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		fresh, err := c.waitForNewerObjectRef(timeoutCtx, payment)
+		cancel()
+		if err != nil {
+			return nil, err
+		}
+		updated[i] = fresh
+	}
+	return updated, nil
+}
+
+func (c *GraphQLClient) waitForNewerObjectRef(
+	ctx context.Context,
+	current *iotago.ObjectRef,
+) (*iotago.ObjectRef, error) {
+	ticker := time.NewTicker(c.tickingTime)
+	defer ticker.Stop()
+
+	for {
+		updated, err := c.UpdateObjectRef(ctx, current)
+		if err == nil && updated != nil {
+			if updated.Version > current.Version {
+				return updated, nil
+			}
+		}
+
+		select {
+		case <-ctx.Done():
+			return nil, fmt.Errorf("waiting for updated object ref: %w", ctx.Err())
+		case <-ticker.C:
+		}
+	}
 }
 
 func (c *GraphQLClient) UpdateObjectRef(
@@ -1340,27 +1429,75 @@ func (c *GraphQLClient) MintToken(
 	tokenName string,
 	treasuryCap *iotago.ObjectRef,
 	mintAmount uint64,
+	maxRetries int,
 	options *IotaTransactionBlockResponseOptions,
 ) (*ExecuteTransactionBlockResponse, error) {
-	ptb := iotago.NewProgrammableTransactionBuilder()
-	ptb.Command(
-		iotago.Command{
-			MoveCall: &iotago.ProgrammableMoveCall{
-				Package:       packageID,
-				Module:        tokenName,
-				Function:      "mint",
-				TypeArguments: []iotago.TypeTag{},
-				Arguments: []iotago.Argument{
-					ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: treasuryCap}),
-					ptb.MustForceSeparatePure(mintAmount),
-					ptb.MustForceSeparatePure(signer.Address()),
+	var err error
+	var txnBytes []byte
+	var txnResponse *IotaTransactionBlockResponse
+	var gasPayments []*iotago.ObjectRef
+
+	for i := 0; i < maxRetries; i++ {
+		// Update treasuryCap ref to get the latest version
+		updatedTreasuryCap, updateErr := c.UpdateObjectRef(ctx, treasuryCap)
+		if updateErr != nil {
+			return nil, fmt.Errorf("failed to update treasuryCap: %w", updateErr)
+		}
+		// Only update if the fetched version is higher
+		if updatedTreasuryCap.Version > treasuryCap.Version {
+			treasuryCap = updatedTreasuryCap
+		}
+
+		// Rebuild PTB with potentially updated treasuryCap
+		ptb := iotago.NewProgrammableTransactionBuilder()
+		ptb.Command(
+			iotago.Command{
+				MoveCall: &iotago.ProgrammableMoveCall{
+					Package:       packageID,
+					Module:        tokenName,
+					Function:      "mint",
+					TypeArguments: []iotago.TypeTag{},
+					Arguments: []iotago.Argument{
+						ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: treasuryCap}),
+						ptb.MustForceSeparatePure(mintAmount),
+						ptb.MustForceSeparatePure(signer.Address()),
+					},
 				},
 			},
-		},
-	)
-	pt := ptb.Finish()
+		)
+		pt := ptb.Finish()
 
-	return c.SignAndExecuteTxWithRetry(ctx, signer, pt, nil, DefaultGasBudget, DefaultGasPrice, options)
+		// Find gas coins
+		gasPayments, err = c.FindCoinsForGasPayment(ctx, signer.Address(), pt, DefaultGasPrice, DefaultGasBudget)
+		if err != nil {
+			return nil, fmt.Errorf("failed to find gas payment: %w", err)
+		}
+
+		tx := iotago.NewProgrammable(
+			signer.Address(),
+			pt,
+			gasPayments,
+			DefaultGasBudget,
+			DefaultGasPrice,
+		)
+		txnBytes, err = bcs.Marshal(&tx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal tx: %w", err)
+		}
+
+		txnResponse, err = c.SignAndExecuteTransaction(
+			ctx, &SignAndExecuteTransactionRequest{
+				TxDataBytes: txnBytes,
+				Signer:      signer,
+				Options:     options,
+			},
+		)
+		if err == nil {
+			return txnResponse, nil
+		}
+		time.Sleep(c.tickingTime)
+	}
+	return nil, fmt.Errorf("can't execute MintToken in time: %w", err)
 }
 
 func (c *GraphQLClient) GetIotaCoinsOwnedByAddress(ctx context.Context, address *iotago.Address) (Coins, error) {
@@ -1816,6 +1953,7 @@ func (c *GraphQLClient) SignAndExecuteTxWithRetry(
 	var txnBytes []byte
 	var txnResponse *ExecuteTransactionBlockResponse
 	var gasPayments []*iotago.ObjectRef
+	var updatedGasCoin *iotago.ObjectRef
 	for i := 0; i < 5; i++ {
 		if gasCoin == nil {
 			gasPayments, err = c.FindCoinsForGasPayment(ctx, signer.Address(), pt, gasPrice, gasBudget)
@@ -1823,9 +1961,13 @@ func (c *GraphQLClient) SignAndExecuteTxWithRetry(
 				return nil, fmt.Errorf("failed to find gas payment: %w", err)
 			}
 		} else {
-			gasCoin, err = c.UpdateObjectRef(ctx, gasCoin)
+			updatedGasCoin, err = c.UpdateObjectRef(ctx, gasCoin)
 			if err != nil {
 				return nil, fmt.Errorf("failed to update gas payment: %w", err)
+			}
+			// Only update if the fetched version is higher (avoid overwriting with stale indexer data)
+			if updatedGasCoin.Version > gasCoin.Version {
+				gasCoin = updatedGasCoin
 			}
 			gasPayments = []*iotago.ObjectRef{gasCoin}
 		}
@@ -1852,7 +1994,7 @@ func (c *GraphQLClient) SignAndExecuteTxWithRetry(
 		if err == nil {
 			return txnResponse, nil
 		}
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(c.tickingTime)
 	}
 	return nil, fmt.Errorf("can't execute the transaction in time: %w", err)
 }
@@ -2699,6 +2841,15 @@ func convertGraphQLEffects(
 		return nil, fmt.Errorf("failed to decode BCS effects: %w", err)
 	}
 
+	// Propagate status and errors from GraphQL response to ensure they are properly set
+	// Convert GraphQL status (uppercase: "SUCCESS"/"FAILURE") to graphqltypes format (lowercase: "success"/"failure")
+	if decodedEffects.V1 != nil {
+		decodedEffects.V1.Status = graphqltypes.ExecutionStatus{
+			Status: strings.ToLower(string(effects.Status)),
+			Error:  effects.Errors,
+		}
+	}
+
 	return &serialization.TagJson[IotaTransactionBlockEffects]{
 		Data: decodedEffects,
 	}, nil
@@ -3236,8 +3387,8 @@ func convertExecuteTransactionBlockResponse(
 		return nil, fmt.Errorf("execution failed: %v", resp.ExecuteTransactionBlock.Errors)
 	}
 
-	effects := &resp.ExecuteTransactionBlock.Effects.TX_EFFECTS
-	txCore := &resp.ExecuteTransactionBlock.Effects.TransactionBlock.TX_CORE
+	execResult := &resp.ExecuteTransactionBlock
+	txBlock := &execResult.Effects.TransactionBlock.RPC_TRANSACTION_FIELDS
 
 	digest, err := iotago.NewDigest(txCore.Digest)
 	if err != nil {
@@ -3246,12 +3397,26 @@ func convertExecuteTransactionBlockResponse(
 
 	result := &IotaTransactionBlockResponse{Digest: *digest}
 
+	// Populate errors from the outer level (authoritative for ExecuteTransactionBlock)
+	if execResult.Effects.Errors != "" {
+		result.Errors = []string{execResult.Effects.Errors}
+	}
+
 	// #nosec G115 -- timestamps from blockchain are always positive
 	result.TimestampMs = NewBigInt(uint64(effects.Timestamp.UnixMilli()))
 	result.Checkpoint = NewBigInt(effects.Checkpoint.SequenceNumber)
 
 	if err := applyExecuteTransactionOptions(result, effects, txCore, digest, options); err != nil {
 		return nil, err
+	}
+
+	// Override status with outer level (authoritative for ExecuteTransactionBlock)
+	// Convert GraphQL status (uppercase) to graphqltypes format (lowercase)
+	if result.Effects != nil && result.Effects.Data.V1 != nil {
+		result.Effects.Data.V1.Status = graphqltypes.ExecutionStatus{
+			Status: strings.ToLower(string(execResult.Effects.Status)),
+			Error:  execResult.Effects.Errors,
+		}
 	}
 
 	return result, nil
@@ -3295,7 +3460,7 @@ func applyRPCMoveObjectFieldsOptions(
 					Type:              *structTag,
 					HasPublicTransfer: true,
 					Version:           fields.Version,
-					BcsBytes:          fields.Bcs,
+					BcsBytes:          fields.Contents.Bcs,
 				},
 			},
 		}
@@ -3419,6 +3584,17 @@ func convertGraphQLObjectOwner(owner RPC_OBJECT_OWNER_FIELDS) (*ObjectOwner, err
 				ObjectOwner: &parentAddr,
 			},
 		}, nil
+
+	// RPC_MOVE_OBJECT_FIELDS variants embed the RPC_OBJECT_OWNER_FIELDS types;
+	// unwrap and recurse so the base cases above handle them.
+	case *RPC_MOVE_OBJECT_FIELDSOwnerAddressOwner:
+		return convertGraphQLObjectOwner(&o.RPC_OBJECT_OWNER_FIELDSAddressOwner)
+	case *RPC_MOVE_OBJECT_FIELDSOwnerShared:
+		return convertGraphQLObjectOwner(&o.RPC_OBJECT_OWNER_FIELDSShared)
+	case *RPC_MOVE_OBJECT_FIELDSOwnerImmutable:
+		return convertGraphQLObjectOwner(&o.RPC_OBJECT_OWNER_FIELDSImmutable)
+	case *RPC_MOVE_OBJECT_FIELDSOwnerParent:
+		return convertGraphQLObjectOwner(&o.RPC_OBJECT_OWNER_FIELDSParent)
 
 	default:
 		return nil, fmt.Errorf("unknown owner type: %T", owner)

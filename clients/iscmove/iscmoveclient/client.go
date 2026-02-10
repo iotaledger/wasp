@@ -69,6 +69,25 @@ func (c *Client) SignAndExecutePTB(
 	gasBudget uint64,
 ) (*iotagraphql.ExecuteTransactionBlockResponse, error) {
 	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
+	if len(gasPayments) > 0 {
+		// Drop gas coins that already appear in PTB inputs or are duplicated.
+		seen := map[iotago.ObjectID]struct{}{}
+		filtered := make([]*iotago.ObjectRef, 0, len(gasPayments))
+		for _, ref := range gasPayments {
+			if ref == nil || ref.ObjectID == nil {
+				continue
+			}
+			if pt.IsInInputObjects(ref.ObjectID) {
+				continue
+			}
+			if _, ok := seen[*ref.ObjectID]; ok {
+				continue
+			}
+			seen[*ref.ObjectID] = struct{}{}
+			filtered = append(filtered, ref)
+		}
+		gasPayments = filtered
+	}
 	if len(gasPayments) == 0 {
 		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasPrice, gasBudget)
 		if err != nil {

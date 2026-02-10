@@ -3,7 +3,6 @@ package iotaclienttest
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -314,8 +313,8 @@ func TestPayIota(t *testing.T) {
 func TestPublish(t *testing.T) {
 	client := l1starter.Instance().L1Client()
 	// Use the faucet URL from the running node (LoadConfig() leaves it empty when using the local testnode).
-	signer := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
-	time.Sleep(1 * time.Second) // FIXME tmp for graphql
+	// Use the waiting version to ensure coins are visible before proceeding.
+	signer := iotatest.MakeSignerWithFundsAndWait(0, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
 
 	testcoinBytecode := contracts.Testcoin()
 

@@ -3,7 +3,9 @@ package l1starter
 import (
 	"context"
 	"fmt"
+	"os/exec"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/testcontainers/testcontainers-go"
@@ -77,10 +79,32 @@ func (in *LocalIotaNode) setupNetwork(ctx context.Context) string {
 		"com.wasp.test": "l1starter",
 	}))
 	if err != nil {
-		panic(fmt.Errorf("failed to create network: %w", err))
+		// If network creation fails due to a stale reaper container conflict
+		// (e.g. from a previous CI run), clean up and retry once.
+		if strings.Contains(err.Error(), "reaper") {
+			in.logf("Network creation failed due to stale reaper, cleaning up and retrying: %s", err)
+			in.removeStaleReaperContainers(ctx)
+			network, err = tcnetwork.New(ctx, tcnetwork.WithLabels(map[string]string{
+				"com.wasp.test": "l1starter",
+			}))
+		}
+		if err != nil {
+			panic(fmt.Errorf("failed to create network: %w", err))
+		}
 	}
 	in.network = network
 	return network.Name
+}
+
+func (in *LocalIotaNode) removeStaleReaperContainers(ctx context.Context) {
+	out, err := exec.CommandContext(ctx, "docker", "ps", "-aq", "--filter", "name=reaper_").Output()
+	if err != nil || strings.TrimSpace(string(out)) == "" {
+		return
+	}
+	for _, id := range strings.Fields(strings.TrimSpace(string(out))) {
+		in.logf("Removing stale reaper container: %s", id)
+		_ = exec.CommandContext(ctx, "docker", "rm", "-f", id).Run()
+	}
 }
 
 func (in *LocalIotaNode) startPostgresContainer(ctx context.Context, networkName string) {

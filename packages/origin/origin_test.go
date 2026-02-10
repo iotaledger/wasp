@@ -3,7 +3,6 @@ package origin_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 	"pgregory.net/rapid"
@@ -50,7 +49,6 @@ func TestCreateOrigin(t *testing.T) {
 	client := iscmoveclienttest.NewHTTPClient()
 	sentSigner := iscmoveclienttest.NewRandomSignerWithFunds(t, 0)
 	stateSigner := iscmoveclienttest.NewRandomSignerWithFunds(t, 1)
-	time.Sleep(1 * time.Second) // FIXME tmp for graphql
 	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
 	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(sentSigner.Address())).Encode()
 

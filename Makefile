@@ -8,6 +8,7 @@ DOCKER_BUILD_ARGS = # E.g. make docker-build "DOCKER_BUILD_ARGS=--tag wasp:devel
 #
 TEST_PKG=./...
 TEST_ARG=
+TEST_SHORT_PKGS ?= $(shell go list ./... | tr '\n' ' ')
 
 BUILD_PKGS ?= ./
 BUILD_CMD=go build -o . -ldflags $(BUILD_LD_FLAGS)
@@ -48,7 +49,7 @@ test: install
 	go test -race -ldflags $(BUILD_LD_FLAGS) $(TEST_PKG) --timeout 90m --count 1 -failfast  $(TEST_ARG)
 
 test-short:
-	go test -race -ldflags $(BUILD_LD_FLAGS) --short --count 1 -timeout 25m -failfast $(shell go list ./...)
+	go test -race -ldflags $(BUILD_LD_FLAGS) --short --count 1 -timeout 25m -failfast $(strip $(TEST_SHORT_PKGS))
 
 test-cluster: install
 	go test -race -ldflags $(BUILD_LD_FLAGS) --count 1 -timeout 25m -failfast $(shell go list ./tools/cluster/tests/...)

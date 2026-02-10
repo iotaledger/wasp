@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -42,7 +41,6 @@ func TestDryRunForRequest(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{Debug: true, PrintStackTrace: true})
 	ch := env.NewChain(false)
 	sender := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
-	time.Sleep(1 * time.Second)
 	coinPackageID, treasuryCap := ch.Env.L1DeployCoinPackage(sender)
 	testcoinType := coin.MustTypeFromString(fmt.Sprintf(
 		"%s::%s::%s",
@@ -50,7 +48,6 @@ func TestDryRunForRequest(t *testing.T) {
 		contracts.TestcoinModuleName,
 		contracts.TestcoinTypeTag,
 	))
-	time.Sleep(1 * time.Second)
 	testcoinRef := ch.Env.L1MintCoin(
 		sender,
 		coinPackageID,
