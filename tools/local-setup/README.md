@@ -7,31 +7,25 @@ setup.
 
 ### Starting
 
-Run `docker-compose pull` to fetch the dependencies.
+Run `docker compose pull` to fetch the dependencies.
 
-Create dedicated volumes:
-```
-docker volume create --name hornet-nest-db
-docker volume create --name wasp-db
-```
-
-Run `docker-compose up -d` to start the setup.
+Run `docker compose up -d` to start the setup.
 
 After startup, you should be able to see the wasp dashboard on:
 http://localhost/wasp/dashboard/
 
 ### Stopping/Resuming
 
-You can stop execution with `docker-compose down`.
+You can stop execution with `docker compose down`.
 
 ### Removing data
 
-After `docker compose down`:
+Run:
 ```
-docker volume rm wasp-db hornet-nest-db
+docker compose down -v
 ```
 
-You'll need to re-create the volumes to spin the setup up again.
+This removes the setup's volumes. You'll need to spin the setup up again to re-create them.
 
 ## Ports
 
@@ -41,10 +35,10 @@ The nodes will then be reachable under these ports:
   - API: <http://localhost:9090>
   - DASHBOARD: <http://localhost/wasp/dashboard>
 
-- Hornet:
-  - API: <http://localhost/api/routes>
-  - Faucet: <http://localhost/faucet>
-  - Dashboard: <http://localhost/dashboard> (username: admin, password: admin)
+- IOTA:
+  - Node RPC: <http://localhost:9000>
+  - Faucet: <http://localhost:9123/gas>
+  - GraphQL: <http://localhost:9125>
 
 ## Wasp-cli setup
 
@@ -54,8 +48,8 @@ To configure a new wasp-cli you can use the following commands:
 
 ```shell
 wasp-cli init
-wasp-cli set l1.apiaddress http://localhost:14265
-wasp-cli set l1.faucetaddress http://localhost:8091
+wasp-cli set l1.apiaddress http://localhost:9125
+wasp-cli set l1.faucetaddress http://localhost:9123/gas
 wasp-cli wasp add 0 http://localhost:9090
 ```
 
