@@ -42,7 +42,7 @@ func PTBTestWrapper(
 
 func TestKeys(t *testing.T) {
 	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
-	client := iscmoveclienttest.NewHTTPClient()
+	client := iscmoveclienttest.NewClient()
 	iscBytecode := contracts.ISC()
 
 	txnBytes, err := client.Publish(context.Background(), iotagraphql.PublishRequest{

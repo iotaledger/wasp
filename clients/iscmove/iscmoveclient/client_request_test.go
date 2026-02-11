@@ -89,7 +89,7 @@ func ensureSingleCoin(t *testing.T, cryptolibSigner cryptolib.Signer, client cli
 func TestProperCoinUse(t *testing.T) {
 	t.Skip("TODO")
 	l1 := l1starter.Instance().L1Client()
-	client := iscmoveclienttest.NewHTTPClient()
+	client := iscmoveclienttest.NewClient()
 	anchorOwner := iscmoveclienttest.NewRandomSignerWithFunds(t, 0)
 	anchor := startNewChain(t, client, anchorOwner)
 
@@ -117,7 +117,7 @@ func TestProperCoinUse(t *testing.T) {
 
 func TestCreateAndSendRequest(t *testing.T) {
 	t.Skip("TODO")
-	client := iscmoveclienttest.NewHTTPClient()
+	client := iscmoveclienttest.NewClient()
 	anchorSigner := iscmoveclienttest.NewRandomSignerWithFunds(t, 0)
 	anchor := startNewChain(t, client, anchorSigner)
 
@@ -287,7 +287,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 }
 
 func TestCreateAndSendRequestWithAssets(t *testing.T) {
-	client := iscmoveclienttest.NewHTTPClient()
+	client := iscmoveclienttest.NewClient()
 	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
 
 	anchor := startNewChain(t, client, cryptolibSigner)
@@ -314,7 +314,7 @@ func TestCreateAndSendRequestWithAssets(t *testing.T) {
 }
 
 func TestGetRequestFromObjectID(t *testing.T) {
-	client := iscmoveclienttest.NewHTTPClient()
+	client := iscmoveclienttest.NewClient()
 	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
 
 	anchor := startNewChain(t, client, cryptolibSigner)

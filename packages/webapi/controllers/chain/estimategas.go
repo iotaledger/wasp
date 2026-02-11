@@ -68,10 +68,10 @@ func (c *Controller) estimateGasOnLedger(e echo.Context) error {
 	if err != nil {
 		return apierrors.NewHTTPError(http.StatusBadRequest, "DryRun error", err)
 	}
-	if dryRunResponse.DryRunTransactionBlock.Transaction.Effects.Errors != "" {
+	if dryRunResponse.Effects.V1.Status.Error != "" {
 		return apierrors.NewHTTPError(http.StatusBadRequest, "DryRun status error", fmt.Errorf("%s: %s",
-			dryRunResponse.DryRunTransactionBlock.Transaction.Effects.Status,
-			dryRunResponse.DryRunTransactionBlock.Transaction.Effects.Errors,
+			dryRunResponse.Effects.V1.Status.Status,
+			dryRunResponse.Effects.V1.Status.Error,
 		))
 	}
 
@@ -91,12 +91,7 @@ func (c *Controller) estimateGasOnLedger(e echo.Context) error {
 
 	gasSummary := dryRunResponse.DryRunTransactionBlock.Transaction.Effects.GasEffects.GasSummary
 	return e.JSON(http.StatusOK, models.OnLedgerEstimationResponse{
-		L1: models.MapL1EstimationResult(&iotagraphql.GasCostSummary{
-			ComputationCost:         &gasSummary.ComputationCost,
-			StorageCost:             &gasSummary.StorageCost,
-			StorageRebate:           &gasSummary.StorageRebate,
-			NonRefundableStorageFee: &gasSummary.NonRefundableStorageFee,
-		}),
+		L1: models.MapL1EstimationResult(&dryRunResponse.Effects.V1.GasUsed),
 		L2: models.MapReceiptResponse(rec),
 	})
 }

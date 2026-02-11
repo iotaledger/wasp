@@ -156,44 +156,12 @@ func (c *Client) GetAnchorFromObjectID(
 		return nil, fmt.Errorf("failed to get anchor content: %w", err)
 	}
 	if getObjectResponse.Error != nil {
-		return nil, fmt.Errorf("failed to get anchor content: %s", getObjectResponse.Error.Data.String())
+		return nil, fmt.Errorf("failed to get anchor content: %s", getObjectResponse.Error.String())
 	}
 	return decodeAnchorBCS(
-		getObjectResponse.Data.Bcs.Data.MoveObject.BcsBytes,
+		getObjectResponse.Data.Bcs.MoveObject.BcsBytes,
 		getObjectResponse.Data.Ref(),
 		getObjectResponse.Data.Owner.AddressOwner,
-	)
-}
-
-func (c *Client) GetPastAnchorFromObjectID(
-	ctx context.Context,
-	anchorObjectID *iotago.ObjectID,
-	version uint64,
-) (*iscmove.AnchorWithRef, error) {
-	getObjectResponse, err := c.TryGetPastObject(ctx, iotagraphql.TryGetPastObjectRequest{
-		ObjectID: anchorObjectID,
-		Version:  version,
-		Options:  &iotagraphql.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get anchor content: %w", err)
-	}
-	if getObjectResponse.Data.ObjectDeleted != nil {
-		return nil, fmt.Errorf("failed to get anchor content: deleted")
-	}
-	if getObjectResponse.Data.ObjectNotExists != nil {
-		return nil, fmt.Errorf("failed to get anchor content: object does not exist")
-	}
-	if getObjectResponse.Data.VersionNotFound != nil {
-		return nil, fmt.Errorf("failed to get anchor content: version not found")
-	}
-	if getObjectResponse.Data.VersionTooHigh != nil {
-		return nil, fmt.Errorf("failed to get anchor content: version too high")
-	}
-	return decodeAnchorBCS(
-		getObjectResponse.Data.VersionFound.Bcs.Data.MoveObject.BcsBytes,
-		getObjectResponse.Data.VersionFound.Ref(),
-		getObjectResponse.Data.VersionFound.Owner.AddressOwner,
 	)
 }
 

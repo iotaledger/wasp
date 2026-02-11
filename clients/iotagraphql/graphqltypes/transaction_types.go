@@ -11,11 +11,11 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/serialization"
 )
 
-type ExecuteTransactionRequestType string
+type ExecutionWaitMode string
 
 const (
-	TxnRequestTypeWaitForEffectsCert    ExecuteTransactionRequestType = "WaitForEffectsCert"
-	TxnRequestTypeWaitForLocalExecution ExecuteTransactionRequestType = "WaitForLocalExecution"
+	ExecutionWaitModeNonBlocking ExecutionWaitMode = "WaitForEffectsCert"
+	ExecutionWaitModeBlocking    ExecutionWaitMode = "WaitForLocalExecution"
 )
 
 type EpochID = uint64
@@ -38,8 +38,8 @@ type ExecutionStatus struct {
 }
 
 type OwnedObjectRef struct {
-	Owner     serialization.TagJson[iotago.Owner] `json:"owner"`
-	Reference IotaObjectRef                       `json:"reference"`
+	Owner     iotago.Owner  `json:"owner"`
+	Reference IotaObjectRef `json:"reference"`
 }
 
 type IotaTransactionBlockEffectsModifiedAtVersions struct {
@@ -126,7 +126,7 @@ const (
 	IotaTransactionBlockKindProgrammableTransaction     = "ProgrammableTransaction"
 )
 
-type IotaTransactionBlockKind = serialization.TagJson[TransactionBlockKind]
+type IotaTransactionBlockKind = TransactionBlockKind
 
 type TransactionBlockKind struct {
 	// A system transaction that will update epoch information on-chain.
@@ -200,8 +200,8 @@ func (t IotaTransactionBlockData) Content() string {
 }
 
 type IotaTransactionBlock struct {
-	Data         serialization.TagJson[IotaTransactionBlockData] `json:"data"`
-	TxSignatures []string                                        `json:"txSignatures"`
+	Data         IotaTransactionBlockData `json:"data"`
+	TxSignatures []string                 `json:"txSignatures"`
 }
 
 type JSONRPCObjectChange struct {
@@ -296,18 +296,18 @@ type BalanceChange struct {
 }
 
 type IotaTransactionBlockResponse struct {
-	Digest                  iotago.TransactionDigest                            `json:"digest"`
-	Transaction             *IotaTransactionBlock                               `json:"transaction,omitempty"`
-	RawTransaction          iotago.Base64Data                                   `json:"rawTransaction,omitempty"` // enable by show_raw_input
-	Effects                 *serialization.TagJson[IotaTransactionBlockEffects] `json:"effects,omitempty"`
-	Events                  []*IotaEvent                                        `json:"events,omitempty"`
-	TimestampMs             *BigInt                                             `json:"timestampMs,omitempty"`
-	Checkpoint              *BigInt                                             `json:"checkpoint,omitempty"`
-	ConfirmedLocalExecution *bool                                               `json:"confirmedLocalExecution,omitempty"`
-	ObjectChanges           []serialization.TagJson[JSONRPCObjectChange]        `json:"objectChanges,omitempty"`
-	BalanceChanges          []BalanceChange                                     `json:"balanceChanges,omitempty"`
-	Errors                  []string                                            `json:"errors,omitempty"`     // Errors that occurred in fetching/serializing the transaction.
-	RawEffects              []byte                                              `json:"rawEffects,omitempty"` // enable by show_raw_effects
+	Digest                  iotago.TransactionDigest     `json:"digest"`
+	Transaction             *IotaTransactionBlock        `json:"transaction,omitempty"`
+	RawTransaction          iotago.Base64Data            `json:"rawTransaction,omitempty"` // enable by show_raw_input
+	Effects                 *IotaTransactionBlockEffects `json:"effects,omitempty"`
+	Events                  []*IotaEvent                 `json:"events,omitempty"`
+	TimestampMs             *BigInt                      `json:"timestampMs,omitempty"`
+	Checkpoint              *BigInt                      `json:"checkpoint,omitempty"`
+	ConfirmedLocalExecution *bool                        `json:"confirmedLocalExecution,omitempty"`
+	ObjectChanges           []JSONRPCObjectChange        `json:"objectChanges,omitempty"`
+	BalanceChanges          []BalanceChange              `json:"balanceChanges,omitempty"`
+	Errors                  []string                     `json:"errors,omitempty"`     // Errors that occurred in fetching/serializing the transaction.
+	RawEffects              []byte                       `json:"rawEffects,omitempty"` // enable by show_raw_effects
 }
 
 // GetPublishedPackageID returns the published package ID.
@@ -318,8 +318,8 @@ func (r *IotaTransactionBlockResponse) GetPublishedPackageID() (*iotago.PackageI
 	}
 	var packageID iotago.PackageID
 	for _, change := range r.ObjectChanges {
-		if change.Data.Published != nil {
-			packageID = change.Data.Published.PackageID
+		if change.Published != nil {
+			packageID = change.Published.PackageID
 			return &packageID, nil
 		}
 	}
@@ -349,7 +349,7 @@ func (r *IotaTransactionBlockResponse) getObjectByName(
 	var prevObj any
 
 	for _, change := range r.ObjectChanges {
-		data := getChangeData(&change.Data)
+		data := getChangeData(&change)
 		if data != nil {
 			// some possible examples
 			// * 0x2::coin::TreasuryCap<0x14c12b454ac6996024342312769e00bb98c70ad2f3546a40f62516c83aa0f0d4::testcoin::TESTCOIN>
@@ -427,22 +427,22 @@ func (r *IotaTransactionBlockResponse) GetMutatedObjectByID(objectID iotago.Obje
 	var prevMutatedObj any
 
 	for _, change := range r.ObjectChanges {
-		if change.Data.Mutated != nil {
-			if change.Data.Mutated.ObjectID == objectID {
+		if change.Mutated != nil {
+			if change.Mutated.ObjectID == objectID {
 				if ref != nil {
 					return nil, fmt.Errorf("multiple mutated objects found for %v: first = %v, second = %v",
 						objectID.String(),
 						string(lo.Must(json.Marshal(prevMutatedObj))),
-						string(lo.Must(json.Marshal(change.Data.Mutated))),
+						string(lo.Must(json.Marshal(change.Mutated))),
 					)
 				}
 
 				ref = &iotago.ObjectRef{
-					ObjectID: &change.Data.Mutated.ObjectID,
-					Version:  change.Data.Mutated.Version.Uint64(),
-					Digest:   &change.Data.Mutated.Digest,
+					ObjectID: &change.Mutated.ObjectID,
+					Version:  change.Mutated.Version.Uint64(),
+					Digest:   &change.Mutated.Digest,
 				}
-				prevMutatedObj = change.Data.Mutated
+				prevMutatedObj = change.Mutated
 			}
 		}
 	}
@@ -468,7 +468,7 @@ func (r *IotaTransactionBlockResponse) getCoinByType(
 	var prevObj any
 
 	for _, change := range r.ObjectChanges {
-		data := getChangeData(&change.Data)
+		data := getChangeData(&change)
 		if data != nil {
 			resource, err := iotago.NewResourceType(data.ObjectType)
 			if err != nil {
@@ -543,10 +543,10 @@ type (
 )
 
 type DevInspectResults struct {
-	Effects serialization.TagJson[IotaTransactionBlockEffects] `json:"effects"`
-	Events  []IotaEvent                                        `json:"events"`
-	Results []ExecutionResultType                              `json:"results,omitempty"`
-	Error   string                                             `json:"error,omitempty"`
+	Effects IotaTransactionBlockEffects `json:"effects"`
+	Events  []IotaEvent                 `json:"events"`
+	Results []ExecutionResultType       `json:"results,omitempty"`
+	Error   string                      `json:"error,omitempty"`
 }
 
 type TransactionFilter struct {
@@ -608,9 +608,9 @@ type IotaTransactionBlockResponseQuery struct {
 type TransactionBlocksPage = Page[IotaTransactionBlockResponse, iotago.TransactionDigest]
 
 type DryRunTransactionBlockResponse struct {
-	Effects        serialization.TagJson[IotaTransactionBlockEffects] `json:"effects"`
-	Events         []IotaEvent                                        `json:"events"`
-	ObjectChanges  []serialization.TagJson[JSONRPCObjectChange]       `json:"objectChanges" bcs:"optional"`
-	BalanceChanges []BalanceChange                                    `json:"balanceChanges" bcs:"optional"`
-	Input          serialization.TagJson[IotaTransactionBlockData]    `json:"input"`
+	Effects        IotaTransactionBlockEffects `json:"effects"`
+	Events         []IotaEvent                 `json:"events"`
+	ObjectChanges  []JSONRPCObjectChange       `json:"objectChanges" bcs:"optional"`
+	BalanceChanges []BalanceChange             `json:"balanceChanges" bcs:"optional"`
+	Input          IotaTransactionBlockData    `json:"input"`
 }

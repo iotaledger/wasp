@@ -161,11 +161,12 @@ func DecodeAsset(assets *Assets, cmd *iotago.ProgrammableMoveCall) error {
 // The upside is that a user can pass an unsigned transaction to estimate.
 // The downside is that any time we change create_and_send_request in the move contract, we need to update this logic.
 // I don't expect it to change often if ever, so that seems to be a straight forward way.
-func DecodeDryRunTransaction(dryRunRes *iotagraphql.DryRunTransactionBlockDryRunTransactionBlockDryRunResult) (*Assets, *EstimationRequest, *cryptolib.Address, error) {
-	// BCS-decode the transaction from the response's bcs field
-	txData, err := bcs.Unmarshal[iotago.TransactionData](dryRunRes.Transaction.Bcs)
-	if err != nil {
-		return nil, nil, cryptolib.NewEmptyAddress(), fmt.Errorf("can't decode dry run transaction BCS: %w", err)
+// TODO: FIX TYPE
+func DecodeDryRunTransaction(dryRunRes *iotagraphql.DryRunResult) (*Assets, *EstimationRequest, *cryptolib.Address, error) {
+	tx := dryRunRes.Input.V1.Transaction.ProgrammableTransaction
+   
+	var cmds []struct {
+		MoveCall *iotago.ProgrammableMoveCall `json:"MoveCall,omitempty"`
 	}
 	if txData.V1 == nil {
 		return nil, nil, cryptolib.NewEmptyAddress(), fmt.Errorf("only TransactionData V1 is supported")
@@ -202,5 +203,5 @@ func DecodeDryRunTransaction(dryRunRes *iotagraphql.DryRunTransactionBlockDryRun
 		}
 	}
 
-	return assets, request, cryptolib.NewAddressFromIota(&txData.V1.Sender), nil
+	return assets, request, cryptolib.NewAddressFromIota(&dryRunRes.Input.V1.Sender), nil
 }

@@ -34,7 +34,8 @@ func TestGetAllCoins(t *testing.T) {
 	owner := l1starter.ISCPackageOwner.Address()
 	// Use longer timeout for slow network
 	graphqlURL := l1starter.Instance().APIURL()
-	client := iotagraphql.NewGraphQLClientWithTimeout(graphqlURL, 90*time.Second, nil)
+	faucetURL := l1starter.Instance().FaucetURL()
+	client := iotagraphql.NewGraphQLClientWithTimeout(graphqlURL, faucetURL, 90*time.Second, nil)
 
 	limit := int(3)
 	respWithLimit, err := client.GetAllCoins(context.Background(), iotagraphql.GetAllCoinsRequest{

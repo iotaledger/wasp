@@ -294,7 +294,7 @@ func (c *Client) parseRequestAndFetchAssetsBag(ctx context.Context, obj *iotagra
 	}
 
 	var intermediateRequest intermediateMoveRequest
-	err := iotagraphql.UnmarshalBCS(obj.Bcs.Data.MoveObject.BcsBytes, &intermediateRequest)
+	err := iotagraphql.UnmarshalBCS(obj.Bcs.MoveObject.BcsBytes, &intermediateRequest)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
 	}

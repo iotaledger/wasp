@@ -124,7 +124,7 @@ func (clu *Cluster) NewKeyPairWithFunds() (*cryptolib.KeyPair, *cryptolib.Addres
 }
 
 func (clu *Cluster) RequestFunds(addr *cryptolib.Address) error {
-	return clu.l1.RequestFunds(context.Background(), *addr)
+	return clu.l1.RequestFundsFromFaucet(context.Background(), addr.AsIotaAddress())
 }
 
 func (clu *Cluster) L1Client() clients.L1Client {
@@ -345,7 +345,7 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 	if err != nil {
 		return nil, fmt.Errorf("can't transfer GasCoin: %w", err)
 	}
-	if !resTransferGasCoin.ExecuteTransactionBlock.Effects.TransactionBlock.Effects.IsSuccess() {
+	if !resTransferGasCoin.Effects.IsSuccess() {
 		return nil, errors.New("transfer gas coin failed")
 	}
 	fmt.Printf("chosen GasCoin %s", gascoin.String())

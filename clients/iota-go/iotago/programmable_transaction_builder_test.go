@@ -20,7 +20,7 @@ func TestPTBMoveCall(t *testing.T) {
 	t.Run(
 		"access_multiple_return_values_from_move_func", func(t *testing.T) {
 			client := l1starter.Instance().L1Client()
-			sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
+			sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
 
 			txnBytes, err := client.Publish(
 				context.Background(),
@@ -103,12 +103,9 @@ func TestPTBMoveCall(t *testing.T) {
 			)
 			require.NoError(t, err)
 
-			require.Empty(t, simulate.DryRunTransactionBlock.Transaction.Effects.Errors)
-			require.Equal(
-				t,
-				iotagraphql.ExecutionStatusSuccess,
-				simulate.DryRunTransactionBlock.Transaction.Effects.Status,
-			)
+			require.Empty(t, simulate.Effects.V1.Status.Error)
+			require.True(t, simulate.Effects.IsSuccess())
+			require.Equal(t, coins[0].CoinObjectID, simulate.Effects.V1.GasObject.Reference.ObjectID)
 		},
 	)
 }
@@ -116,8 +113,8 @@ func TestPTBMoveCall(t *testing.T) {
 func TestPTBTransferObject(t *testing.T) {
 	t.Skip("Migrate to graphql")
 	client := l1starter.Instance().L1Client()
-	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
-	recipient := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL())
+	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
+	recipient := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
 
 	coinPages, err := client.GetCoins(
 		context.Background(), iotagraphql.GetCoinsRequest{
@@ -163,8 +160,8 @@ func TestPTBTransferObject(t *testing.T) {
 func TestPTBTransferIota(t *testing.T) {
 	t.Skip("Migrate to graphql")
 	client := l1starter.Instance().L1Client()
-	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
-	recipient := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL())
+	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
+	recipient := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
 
 	coinPages, err := client.GetCoins(
 		context.Background(), iotagraphql.GetCoinsRequest{
@@ -210,8 +207,8 @@ func TestPTBTransferIota(t *testing.T) {
 func TestPTBPayAllIota(t *testing.T) {
 	t.Skip("Migrate to graphql")
 	client := l1starter.Instance().L1Client()
-	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
-	recipient := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL())
+	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
+	recipient := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
 
 	coinPages, err := client.GetCoins(
 		context.Background(), iotagraphql.GetCoinsRequest{
@@ -255,9 +252,9 @@ func TestPTBPayAllIota(t *testing.T) {
 func TestPTBPayIota(t *testing.T) {
 	l1starter.TestLocal()
 	client := l1starter.Instance().L1Client()
-	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
-	recipient1 := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL())
-	recipient2 := iotatest.MakeSignerWithFunds(2, l1starter.Instance().FaucetURL())
+	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
+	recipient1 := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
+	recipient2 := iotatest.MakeSignerWithFunds(2, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
 
 	coinPages, err := client.GetCoins(
 		context.Background(), iotagraphql.GetCoinsRequest{
@@ -294,19 +291,21 @@ func TestPTBPayIota(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
-	effects := simulate.DryRunTransactionBlock.Transaction.Effects
-	require.Empty(t, effects.Errors)
-	require.Equal(t, iotagraphql.ExecutionStatusSuccess, effects.Status)
+	require.Empty(t, simulate.Effects.V1.Status.Error)
+	require.True(t, simulate.Effects.IsSuccess())
+	require.Equal(t, coin.CoinObjectID.String(), simulate.Effects.V1.GasObject.Reference.ObjectID.String())
 
-	// 1 for Mutated, 2 created (the 2 transfer in pay_iota pt).
-	// Note: GasObject and OutputState Object references are not resolved by the
-	// GraphQL server for dry run transactions (only scalar fields are available).
-	changes := effects.ObjectChanges.Nodes
-	require.Len(t, changes, 3)
-	for _, change := range changes {
-		if !change.IdCreated && !change.IdDeleted {
-			// Mutated - this is the gas coin
-			require.Equal(t, *coin.CoinObjectID, change.Address)
+	// 1 for Mutated, 2 created (the 2 transfer in pay_iota pt),
+	require.Len(t, simulate.ObjectChanges, 3)
+	for _, change := range simulate.ObjectChanges {
+		if change.Mutated != nil {
+			require.Equal(t, coin.CoinObjectID, &change.Mutated.ObjectID)
+		} else if change.Created != nil {
+			require.Contains(
+				t,
+				[]*iotago.Address{recipient1.Address(), recipient2.Address()},
+				change.Created.Owner.AddressOwner,
+			)
 		}
 	}
 

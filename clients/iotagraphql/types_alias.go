@@ -48,7 +48,6 @@ type (
 	MutableReferenceOutputType            = graphqltypes.MutableReferenceOutputType
 	ReturnValueType                       = graphqltypes.ReturnValueType
 	EventID                               = graphqltypes.EventID
-	ExecuteTransactionRequestType         = graphqltypes.ExecuteTransactionRequestType
 	CoinValue                             = graphqltypes.CoinValue
 	ProgrammableTransactionBlockPureInput = graphqltypes.ProgrammableTransactionBlockPureInput
 	IotaTransactionBlockData              = graphqltypes.IotaTransactionBlockData
@@ -65,15 +64,21 @@ type (
 	IotaEventFilter               = graphqltypes.EventFilter
 	IotaAndOrEventFilter          = graphqltypes.AndOrEventFilter
 	IotaEventFilterMoveEventField = graphqltypes.EventFilterMoveEventField
-	GasCostSummary                = graphqltypes.GasCostSummary
-	PickedCoins                   = graphqltypes.PickedCoins
-	DynamicFieldInfo              = graphqltypes.DynamicFieldInfo
-	IotaObjectResponseError       = graphqltypes.IotaObjectResponseError
-	IotaPastObject                = graphqltypes.IotaPastObject
-	VersionTooHigh                = graphqltypes.VersionTooHigh
-	VersionNotFoundData           = graphqltypes.VersionNotFoundData
-	OwnedObjectRef                = graphqltypes.OwnedObjectRef
-	IotaObjectRef                 = graphqltypes.IotaObjectRef
+	// DryRunResult is an alias for graphqltypes.DryRunTransactionBlockResponse.
+	// Note: DryRunTransactionBlockResponse from generated.go is different from iotajsonrpc.
+	DryRunResult               = graphqltypes.DryRunTransactionBlockResponse
+	GasCostSummary             = graphqltypes.GasCostSummary
+	PickedCoins                = graphqltypes.PickedCoins
+	DynamicFieldInfo           = graphqltypes.DynamicFieldInfo
+	IotaObjectResponseError    = graphqltypes.IotaObjectResponseError
+	ObjectResponseNotExists    = graphqltypes.ObjectResponseNotExists
+	ObjectResponseDeleted      = graphqltypes.ObjectResponseDeleted
+	ObjectResponseDisplayError = graphqltypes.ObjectResponseDisplayError
+	IotaPastObject             = graphqltypes.IotaPastObject
+	VersionTooHigh             = graphqltypes.VersionTooHigh
+	VersionNotFoundData        = graphqltypes.VersionNotFoundData
+	OwnedObjectRef             = graphqltypes.OwnedObjectRef
+	IotaObjectRef              = graphqltypes.IotaObjectRef
 )
 
 // Re-export iotajsonrpc coin picking method constants
@@ -85,8 +90,7 @@ const (
 
 // Re-export iotajsonrpc constants
 var (
-	IotaCoinType                        = graphqltypes.IotaCoinType
-	TxnRequestTypeWaitForLocalExecution = graphqltypes.TxnRequestTypeWaitForLocalExecution
+	IotaCoinType = graphqltypes.IotaCoinType
 )
 
 // Re-export iotajsonrpc functions

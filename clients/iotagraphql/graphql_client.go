@@ -1,3 +1,4 @@
+// Package iotagraphql provides a GraphQL client for interacting with IOTA nodes.
 package iotagraphql
 
 import (
@@ -32,26 +33,29 @@ const (
 
 type GraphQLClient struct {
 	url                     string
+	faucetURL               string
 	client                  graphql.Client
 	httpClient              *http.Client
 	WaitUntilEffectsVisible *WaitParams
+	FaucetRetryParams       *WaitParams
 	tickingTime             time.Duration
 }
 
-func NewGraphQLClient(url string) *GraphQLClient {
-	return NewGraphQLClientWithTimeout(url, 30*time.Second, nil)
+func NewGraphQLClient(url, faucetURL string) *GraphQLClient {
+	return NewGraphQLClientWithTimeout(url, faucetURL, 30*time.Second, nil)
 }
 
-func NewGraphQLClientWithWaitParams(url string, waitParams *WaitParams) *GraphQLClient {
-	return NewGraphQLClientWithTimeout(url, 30*time.Second, waitParams)
+func NewGraphQLClientWithWaitParams(url string, faucetURL string, waitParams *WaitParams) *GraphQLClient {
+	return NewGraphQLClientWithTimeout(url, faucetURL, 30*time.Second, waitParams)
 }
 
-func NewGraphQLClientWithTimeout(url string, timeout time.Duration, waitParams *WaitParams) *GraphQLClient {
+func NewGraphQLClientWithTimeout(url, faucetURL string, timeout time.Duration, waitParams *WaitParams) *GraphQLClient {
 	httpClient := &http.Client{
 		Timeout: timeout,
 	}
 	return &GraphQLClient{
 		url:                     strings.TrimRight(url, "/"),
+		faucetURL:               faucetURL,
 		client:                  graphql.NewClient(url, httpClient),
 		httpClient:              httpClient,
 		WaitUntilEffectsVisible: waitParams,
@@ -60,46 +64,90 @@ func NewGraphQLClientWithTimeout(url string, timeout time.Duration, waitParams *
 }
 
 // RequestFundsFromFaucet requests test funds for the provided address from the faucet endpoint.
-// This is a non-blocking version that returns immediately after the faucet request succeeds.
-// Use RequestFundsFromFaucetAndWait if you need to wait for the coins to be visible.
-func RequestFundsFromFaucet(ctx context.Context, address *iotago.Address, faucetURL string) error {
-	return requestFundsFromFaucetInternal(ctx, address, faucetURL)
-}
+// If FaucetRetryParams is configured, it waits for the coins to be visible on the ledger.
+func (c *GraphQLClient) RequestFundsFromFaucet(ctx context.Context, address *iotago.Address) error {
+	params := c.FaucetRetryParams
+	if params == nil {
+		params = c.WaitUntilEffectsVisible
+	}
+	if params == nil {
+		params = &WaitParams{
+			Attempts:             20,
+			DelayBetweenAttempts: 500 * time.Millisecond,
+		}
+	}
 
-// RequestFundsFromFaucetAndWait requests test funds and waits for the coins to be visible on the ledger.
-func RequestFundsFromFaucetAndWait(ctx context.Context, address *iotago.Address, faucetURL string, apiURL string) error {
-	client := NewGraphQLClient(apiURL)
+	initial, err := c.getIotaBalanceSnapshot(ctx, address)
+	for i := 0; err != nil && i < params.Attempts; i++ {
+		if waitErr := waitWithContext(ctx, 1, params.DelayBetweenAttempts); waitErr != nil {
+			return waitErr
+		}
+		initial, err = c.getIotaBalanceSnapshot(ctx, address)
+	}
+	if err != nil {
+		return fmt.Errorf("failed to get initial balance before faucet request: %w", err)
+	}
 
-	initialBalance := getBalance(ctx, client, address)
-
-	if err := requestFundsFromFaucetInternal(ctx, address, faucetURL); err != nil {
+	if err := requestFundsFromFaucetRaw(ctx, address, c.faucetURL); err != nil {
 		return err
 	}
 
-	// Wait for balance to increase
-	const maxRetries = 30
-	const retryInterval = 100 * time.Millisecond
-
-	for i := 0; i < maxRetries; i++ {
-		currentBalance := getBalance(ctx, client, address)
-		if currentBalance.Cmp(initialBalance) > 0 {
+	for i := 0; i < params.Attempts; i++ {
+		current, err := c.getIotaBalanceSnapshot(ctx, address)
+		if err == nil && (current.Total.Cmp(initial.Total) > 0 || current.CoinObjectCount > initial.CoinObjectCount) {
 			return nil
 		}
-		time.Sleep(retryInterval)
+		if i < params.Attempts-1 {
+			if waitErr := waitWithContext(ctx, 1, params.DelayBetweenAttempts); waitErr != nil {
+				return waitErr
+			}
+		}
 	}
 
 	return fmt.Errorf("timeout waiting for faucet coins to be visible")
 }
 
-func getBalance(ctx context.Context, client *GraphQLClient, address *iotago.Address) *big.Int {
-	balance, err := client.GetBalance(ctx, GetBalanceRequest{Owner: address})
-	if err != nil || balance.TotalBalance == nil {
-		panic(fmt.Sprintf("failed to get balance for address %s: %v", address, err))
-	}
-	return balance.TotalBalance.Int
+type iotaBalanceSnapshot struct {
+	Total           *big.Int
+	CoinObjectCount uint64
 }
 
-func requestFundsFromFaucetInternal(ctx context.Context, address *iotago.Address, faucetURL string) error {
+func (c *GraphQLClient) getIotaBalanceSnapshot(ctx context.Context, address *iotago.Address) (iotaBalanceSnapshot, error) {
+	balance, err := c.GetBalance(ctx, GetBalanceRequest{Owner: address})
+	if err != nil {
+		return iotaBalanceSnapshot{}, err
+	}
+	if balance == nil || balance.TotalBalance == nil || balance.TotalBalance.Int == nil {
+		return iotaBalanceSnapshot{}, fmt.Errorf("balance is nil")
+	}
+
+	total := new(big.Int).Set(balance.TotalBalance.Int)
+	coinObjectCount := uint64(0)
+	if balance.CoinObjectCount != nil {
+		coinObjectCount = balance.CoinObjectCount.Uint64()
+	}
+
+	return iotaBalanceSnapshot{
+		Total:           total,
+		CoinObjectCount: coinObjectCount,
+	}, nil
+}
+
+func waitWithContext(ctx context.Context, attempts int, delay time.Duration) error {
+	for i := 0; i < attempts; i++ {
+		if delay <= 0 {
+			continue
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(delay):
+		}
+	}
+	return nil
+}
+
+func requestFundsFromFaucetRaw(ctx context.Context, address *iotago.Address, faucetURL string) error {
 	payload := map[string]any{
 		"FixedAmountRequest": map[string]string{
 			"recipient": address.String(),
@@ -591,19 +639,19 @@ func (c *GraphQLClient) GetOwnedObjects(
 		opts = convertToObjectDataShowOptions(nil)
 	}
 
-	var filter ObjectFilter
+	var filter *ObjectFilter
 	if req.Query != nil && req.Query.Filter != nil {
+		filter = &ObjectFilter{}
 		if req.Query.Filter.StructType != nil {
-			filter.Type = req.Query.Filter.StructType.String()
+			filter.Type = lo.ToPtr(req.Query.Filter.StructType.String())
 		}
-
 		if req.Query.Filter.Package != nil {
-			filter.Type = req.Query.Filter.Package.String()
+			filter.Type = lo.ToPtr(req.Query.Filter.Package.String())
 		}
 	}
 
 	resp, err := GetOwnedObjects(ctx, c.client, *req.Address, req.Limit, cursorPtr,
-		opts.ShowBcs, opts.ShowContent, opts.ShowDisplay, opts.ShowType, opts.ShowOwner, opts.ShowPreviousTransaction, opts.ShowStorageRebate, &filter)
+		opts.ShowBcs, opts.ShowContent, opts.ShowDisplay, opts.ShowType, opts.ShowOwner, opts.ShowPreviousTransaction, opts.ShowStorageRebate, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -611,7 +659,7 @@ func (c *GraphQLClient) GetOwnedObjects(
 	nodes := resp.Address.Objects.Nodes
 	objects := make([]IotaObjectResponse, 0, len(nodes))
 	for _, node := range nodes {
-		obj, err := convertRPCMoveObjectFieldsToIotaObjectResponse(&node.RPC_MOVE_OBJECT_FIELDS, req.Query.Options)
+		obj, err := convertRPCMoveObjectFieldsToIotaObjectResponse(&node.RPC_MOVE_OBJECT_FIELDS)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert object: %w", err)
 		}
@@ -671,7 +719,7 @@ func (c *GraphQLClient) QueryTransactionBlocks(
 	data := make([]IotaTransactionBlockResponse, 0, len(nodes))
 
 	for _, node := range nodes {
-		txResp, err := convertQueryTransactionBlockNodeToResponse(&node, req.Query)
+		txResp, err := convertQueryTransactionBlockNodeToResponse(&node)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert transaction block: %w", err)
 		}
@@ -1343,15 +1391,16 @@ func (c *GraphQLClient) SignAndExecuteTransaction(
 			TxDataBytes: txBytes,
 			Signatures:  []*iotasigner.Signature{signature},
 			Options:     req.Options,
-			RequestType: TxnRequestTypeWaitForLocalExecution,
 		},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute transaction: %w", err)
 	}
 
-	if _, waitErr := c.waitForUpdatedGasPayments(ctx, txData.V1.GasData.Payment); waitErr != nil {
-		return nil, fmt.Errorf("failed to update gas payment: %w", waitErr)
+	if req.ExecutionWaitMode != graphqltypes.ExecutionWaitModeNonBlocking {
+		if _, waitErr := c.waitForUpdatedGasPayments(ctx, txData.V1.GasData.Payment); waitErr != nil {
+			return nil, fmt.Errorf("failed to update gas payment: %w", waitErr)
+		}
 	}
 
 	return resp, nil
@@ -1780,20 +1829,16 @@ func (c *GraphQLClient) GetObject(ctx context.Context, req GetObjectRequest) (*I
 			// Check if object is valid (not null/empty from GraphQL)
 			if resp.Object.ObjectId.String() == "0x0000000000000000000000000000000000000000000000000000000000000000" {
 				notExistsResp := &IotaObjectResponse{
-					Error: &serialization.TagJson[IotaObjectResponseError]{
-						Data: IotaObjectResponseError{
-							NotExists: &struct {
-								ObjectID iotago.ObjectID `json:"object_id"`
-							}{
-								ObjectID: objAddr,
-							},
+					Error: &IotaObjectResponseError{
+						NotExists: &ObjectResponseNotExists{
+							ObjectID: objAddr,
 						},
 					},
 				}
 				return notExistsResp, notExistsResp.ResponseError()
 			}
 
-			graphQLResp, err := convertGraphQLObjectToIotaObjectResponse(&resp.Object, req.Options)
+			graphQLResp, err := convertGraphQLObjectToIotaObjectResponse(&resp.Object)
 			if err != nil {
 				return nil, err
 			}
@@ -1805,7 +1850,7 @@ func (c *GraphQLClient) GetObject(ctx context.Context, req GetObjectRequest) (*I
 			return graphQLResp, nil
 		},
 		func(resp *IotaObjectResponse, err error) bool {
-			return resp != nil && resp.Error != nil && resp.Error.Data.NotExists != nil
+			return resp != nil && resp.Error != nil && resp.Error.NotExists != nil
 		},
 		c.WaitUntilEffectsVisible,
 	)
@@ -1875,7 +1920,7 @@ func (c *GraphQLClient) TryGetPastObject(
 		return nil, err
 	}
 
-	pastObjectResp, err := convertGraphQLTryGetPastObjectResponse(resp, version, req.Options)
+	pastObjectResp, err := convertGraphQLTryGetPastObjectResponse(resp, version)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert GraphQL response: %w", err)
 	}
@@ -1887,10 +1932,6 @@ func (c *GraphQLClient) TryMultiGetPastObjects(
 	req TryMultiGetPastObjectsRequest,
 ) ([]*IotaPastObjectResponse, error) {
 	return nil, fmt.Errorf("not implemented: %s", "TryMultiGetPastObjects")
-}
-
-func (c *GraphQLClient) RequestFunds(ctx context.Context, address cryptolib.Address) error {
-	return fmt.Errorf("not implemented: %s", "RequestFunds")
 }
 
 func (c *GraphQLClient) Health(ctx context.Context) error {
@@ -2036,7 +2077,7 @@ func convertDynamicFieldToInfo(nameInfo dynamicFieldNameInfo, moveObject *dynami
 		Value: nameValue,
 	}
 
-	var fieldType serialization.TagJson[iotago.DynamicFieldType]
+	var fieldType iotago.DynamicFieldType
 	var objectType string
 	var objectID iotago.ObjectID
 	var version iotago.SequenceNumber
@@ -2045,10 +2086,8 @@ func convertDynamicFieldToInfo(nameInfo dynamicFieldNameInfo, moveObject *dynami
 
 	if moveObject != nil {
 		// This is a DynamicObject
-		fieldType = serialization.TagJson[iotago.DynamicFieldType]{
-			Data: iotago.DynamicFieldType{
-				DynamicObject: &serialization.EmptyEnum{},
-			},
+		fieldType = iotago.DynamicFieldType{
+			DynamicObject: &serialization.EmptyEnum{},
 		}
 		objectType = moveObject.TypeRepr
 		objectID = moveObject.Address
@@ -2060,10 +2099,8 @@ func convertDynamicFieldToInfo(nameInfo dynamicFieldNameInfo, moveObject *dynami
 		digest = *digestPtr
 	} else if moveValue != nil {
 		// This is a DynamicField
-		fieldType = serialization.TagJson[iotago.DynamicFieldType]{
-			Data: iotago.DynamicFieldType{
-				DynamicField: &serialization.EmptyEnum{},
-			},
+		fieldType = iotago.DynamicFieldType{
+			DynamicField: &serialization.EmptyEnum{},
 		}
 		objectType = moveValue.TypeRepr
 		// For DynamicField, store the JSON value so it can be extracted later
@@ -2152,66 +2189,54 @@ func convertObjectDynamicFieldToInfo(
 func applyGraphQLObjectOptions(
 	data *IotaObjectData,
 	obj *GetObjectObject,
-	options *IotaObjectDataOptions,
 ) error {
-	if options == nil {
-		return nil
+	typeStr := ""
+
+	// Try to get type from asMoveObjectContent first (most reliable when ShowContent is enabled)
+	if obj.AsMoveObjectContent.Contents.Type.Repr != "" {
+		typeStr = obj.AsMoveObjectContent.Contents.Type.Repr
+	} else if obj.AsMoveObjectType.Contents.Type.Repr != "" {
+		// Fallback to asMoveObjectType
+		typeStr = obj.AsMoveObjectType.Contents.Type.Repr
+	} else if obj.AsMoveObject.Contents.Type.Repr != "" {
+		// Last resort: asMoveObject (for ShowBcs)
+		typeStr = obj.AsMoveObject.Contents.Type.Repr
 	}
 
-	if options.ShowType {
-		typeStr := ""
-
-		// Try to get type from asMoveObjectContent first (most reliable when ShowContent is enabled)
-		if obj.AsMoveObjectContent.Contents.Type.Repr != "" {
-			typeStr = obj.AsMoveObjectContent.Contents.Type.Repr
-		} else if obj.AsMoveObjectType.Contents.Type.Repr != "" {
-			// Fallback to asMoveObjectType
-			typeStr = obj.AsMoveObjectType.Contents.Type.Repr
-		} else if obj.AsMoveObject.Contents.Type.Repr != "" {
-			// Last resort: asMoveObject (for ShowBcs)
-			typeStr = obj.AsMoveObject.Contents.Type.Repr
-		}
-
-		if typeStr == "" {
-			return fmt.Errorf("ShowType requested but type data is empty (object may not be a MoveObject, or GraphQL did not return type data)")
-		}
+	if typeStr != "" {
 		data.Type = &typeStr
 	}
 
-	if options.ShowContent {
+	if obj.AsMoveObjectContent.Contents.Data != nil {
 		contentData := obj.AsMoveObjectContent.Contents.Data
 		typeRepr := obj.AsMoveObjectContent.Contents.Type.Repr
-		parsedContent := serialization.TagJson[IotaParsedData]{
-			Data: IotaParsedData{
-				MoveObject: &IotaParsedMoveObject{
-					Type:              typeRepr,
-					HasPublicTransfer: true,
-					Fields:            contentData,
-				},
+		parsedContent := IotaParsedData{
+			MoveObject: &IotaParsedMoveObject{
+				Type:              typeRepr,
+				HasPublicTransfer: true,
+				Fields:            contentData,
 			},
 		}
 		data.Content = &parsedContent
 	}
 
-	if options.ShowBcs {
+	if len(obj.AsMoveObject.Contents.Bcs) > 0 {
 		structTag, err := iotago.StructTagFromString(obj.AsMoveObject.Contents.Type.Repr)
 		if err != nil {
 			return fmt.Errorf("failed to parse struct tag: %w", err)
 		}
-		rawData := serialization.TagJson[IotaRawData]{
-			Data: IotaRawData{
-				MoveObject: &IotaRawMoveObject{
-					Type:              *structTag,
-					HasPublicTransfer: true,
-					Version:           obj.Version,
-					BcsBytes:          obj.AsMoveObject.Contents.Bcs,
-				},
+		rawData := IotaRawData{
+			MoveObject: &IotaRawMoveObject{
+				Type:              *structTag,
+				HasPublicTransfer: true,
+				Version:           obj.Version,
+				BcsBytes:          obj.AsMoveObject.Contents.Bcs,
 			},
 		}
 		data.Bcs = &rawData
 	}
 
-	if options.ShowOwner {
+	if obj.Owner != nil {
 		owner, err := convertGraphQLOwner(obj.Owner)
 		if err != nil {
 			return fmt.Errorf("failed to convert owner: %w", err)
@@ -2219,7 +2244,7 @@ func applyGraphQLObjectOptions(
 		data.Owner = owner
 	}
 
-	if options.ShowPreviousTransaction {
+	if obj.PreviousTransactionBlock.Digest != "" {
 		txDigest, err := iotago.NewDigest(obj.PreviousTransactionBlock.Digest)
 		if err != nil {
 			return fmt.Errorf("failed to parse transaction digest: %w", err)
@@ -2227,11 +2252,11 @@ func applyGraphQLObjectOptions(
 		data.PreviousTransaction = txDigest
 	}
 
-	if options.ShowStorageRebate {
+	if obj.StorageRebate.Int != nil {
 		data.StorageRebate = obj.StorageRebate.Clone()
 	}
 
-	if options.ShowDisplay && len(obj.Display) > 0 {
+	if len(obj.Display) > 0 {
 		display := make(map[string]string)
 		for _, entry := range obj.Display {
 			display[entry.Key] = entry.Value
@@ -2244,7 +2269,6 @@ func applyGraphQLObjectOptions(
 
 func convertGraphQLObjectToIotaObjectResponse(
 	obj *GetObjectObject,
-	options *IotaObjectDataOptions,
 ) (*IotaObjectResponse, error) {
 	if obj == nil {
 		return nil, fmt.Errorf("object is nil")
@@ -2266,7 +2290,7 @@ func convertGraphQLObjectToIotaObjectResponse(
 		Status:   string(obj.Status),
 	}
 
-	if err := applyGraphQLObjectOptions(data, obj, options); err != nil {
+	if err := applyGraphQLObjectOptions(data, obj); err != nil {
 		return nil, err
 	}
 
@@ -2286,17 +2310,11 @@ func newDeletedIotaObjectResponse(objectID iotago.Address, version uint64, diges
 			Digest:   digest,
 			Status:   string(ObjectKindWrappedOrDeleted),
 		},
-		Error: &serialization.TagJson[IotaObjectResponseError]{
-			Data: IotaObjectResponseError{
-				Deleted: &struct {
-					ObjectID iotago.ObjectID       `json:"object_id"`
-					Version  iotago.SequenceNumber `json:"version"`
-					Digest   iotago.ObjectDigest   `json:"digest"`
-				}{
-					ObjectID: objectID,
-					Version:  version,
-					Digest:   *digest,
-				},
+		Error: &IotaObjectResponseError{
+			Deleted: &ObjectResponseDeleted{
+				ObjectID: objectID,
+				Version:  version,
+				Digest:   *digest,
 			},
 		},
 	}, nil
@@ -2305,49 +2323,39 @@ func newDeletedIotaObjectResponse(objectID iotago.Address, version uint64, diges
 func applyRPCObjectFieldsOptions(
 	data *IotaObjectData,
 	fields *RPC_OBJECT_FIELDS,
-	options *IotaObjectDataOptions,
 ) error {
-	if options == nil {
-		return nil
-	}
-
-	if options.ShowType {
-		typeStr := fields.AsMoveObjectType.Contents.Type.Repr
+	if typeStr := fields.AsMoveObjectType.Contents.Type.Repr; typeStr != "" {
 		data.Type = &typeStr
 	}
 
-	if options.ShowContent {
-		parsedContent := serialization.TagJson[IotaParsedData]{
-			Data: IotaParsedData{
-				MoveObject: &IotaParsedMoveObject{
-					Type:              fields.AsMoveObjectContent.Contents.Type.Repr,
-					HasPublicTransfer: true,
-					Fields:            fields.AsMoveObjectContent.Contents.Data,
-				},
+	if fields.AsMoveObjectContent.Contents.Data != nil {
+		parsedContent := IotaParsedData{
+			MoveObject: &IotaParsedMoveObject{
+				Type:              fields.AsMoveObjectContent.Contents.Type.Repr,
+				HasPublicTransfer: true,
+				Fields:            fields.AsMoveObjectContent.Contents.Data,
 			},
 		}
 		data.Content = &parsedContent
 	}
 
-	if options.ShowBcs {
+	if len(fields.AsMoveObject.Contents.Bcs) > 0 {
 		structTag, err := iotago.StructTagFromString(fields.AsMoveObject.Contents.Type.Repr)
 		if err != nil {
 			return fmt.Errorf("failed to parse struct tag: %w", err)
 		}
-		rawData := serialization.TagJson[IotaRawData]{
-			Data: IotaRawData{
-				MoveObject: &IotaRawMoveObject{
-					Type:              *structTag,
-					HasPublicTransfer: true,
-					Version:           fields.Version,
-					BcsBytes:          fields.AsMoveObject.Contents.Bcs,
-				},
+		rawData := IotaRawData{
+			MoveObject: &IotaRawMoveObject{
+				Type:              *structTag,
+				HasPublicTransfer: true,
+				Version:           fields.Version,
+				BcsBytes:          fields.AsMoveObject.Contents.Bcs,
 			},
 		}
 		data.Bcs = &rawData
 	}
 
-	if options.ShowOwner {
+	if fields.Owner != nil {
 		owner, err := convertGraphQLOwner(fields.Owner)
 		if err != nil {
 			return fmt.Errorf("failed to convert owner: %w", err)
@@ -2355,7 +2363,7 @@ func applyRPCObjectFieldsOptions(
 		data.Owner = owner
 	}
 
-	if options.ShowPreviousTransaction {
+	if fields.PreviousTransactionBlock.Digest != "" {
 		txDigest, err := iotago.NewDigest(fields.PreviousTransactionBlock.Digest)
 		if err != nil {
 			return fmt.Errorf("failed to parse transaction digest: %w", err)
@@ -2363,11 +2371,11 @@ func applyRPCObjectFieldsOptions(
 		data.PreviousTransaction = txDigest
 	}
 
-	if options.ShowStorageRebate {
+	if fields.StorageRebate.Int != nil {
 		data.StorageRebate = fields.StorageRebate.Clone()
 	}
 
-	if options.ShowDisplay && len(fields.Display) > 0 {
+	if len(fields.Display) > 0 {
 		display := make(map[string]string)
 		for _, entry := range fields.Display {
 			display[entry.Key] = entry.Value
@@ -2380,7 +2388,6 @@ func applyRPCObjectFieldsOptions(
 
 func convertRPCObjectFieldsToIotaObjectData(
 	fields *RPC_OBJECT_FIELDS,
-	options *IotaObjectDataOptions,
 ) (*IotaObjectData, error) {
 	if fields == nil {
 		return nil, fmt.Errorf("fields is nil")
@@ -2398,7 +2405,7 @@ func convertRPCObjectFieldsToIotaObjectData(
 		Status:   string(fields.Status),
 	}
 
-	if err := applyRPCObjectFieldsOptions(data, fields, options); err != nil {
+	if err := applyRPCObjectFieldsOptions(data, fields); err != nil {
 		return nil, err
 	}
 
@@ -2408,7 +2415,6 @@ func convertRPCObjectFieldsToIotaObjectData(
 func convertGraphQLTryGetPastObjectResponse(
 	resp *TryGetPastObjectResponse,
 	requestedVersion uint64,
-	options *IotaObjectDataOptions,
 ) (*IotaPastObjectResponse, error) {
 	if resp == nil {
 		return nil, fmt.Errorf("response is nil")
@@ -2431,7 +2437,7 @@ func convertGraphQLTryGetPastObjectResponse(
 		// Version found - convert the object data
 		// We need to convert TryGetPastObjectObject to IotaObjectData
 		// TryGetPastObjectObject embeds RPC_OBJECT_FIELDS, similar to GetObjectObject
-		data, err := convertRPCObjectFieldsToIotaObjectData(&resp.Object.RPC_OBJECT_FIELDS, options)
+		data, err := convertRPCObjectFieldsToIotaObjectData(&resp.Object.RPC_OBJECT_FIELDS)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert object data: %w", err)
 		}
@@ -2458,9 +2464,7 @@ func convertGraphQLTryGetPastObjectResponse(
 		}
 	}
 
-	return &IotaPastObjectResponse{
-		Data: *pastObject,
-	}, nil
+	return pastObject, nil
 }
 
 func convertGraphQLOwner(owner RPC_OBJECT_FIELDSOwnerObjectOwner) (*ObjectOwner, error) {
@@ -2566,14 +2570,9 @@ func applyQueryNodeOptions(
 	result *IotaTransactionBlockResponse,
 	node *TxBlockData,
 	digest *iotago.Digest,
-	options *IotaTransactionBlockResponseOptions,
 ) error {
-	if options == nil {
-		return nil
-	}
-
-	var decodedEffects *serialization.TagJson[IotaTransactionBlockEffects]
-	decodeEffects := func() (*serialization.TagJson[IotaTransactionBlockEffects], error) {
+	var decodedEffects *IotaTransactionBlockEffects
+	decodeEffects := func() (*IotaTransactionBlockEffects, error) {
 		if decodedEffects != nil {
 			return decodedEffects, nil
 		}
@@ -2585,11 +2584,11 @@ func applyQueryNodeOptions(
 		return effects, nil
 	}
 
-	if options.ShowRawInput {
+	if len(node.Bcs) > 0 {
 		result.RawTransaction = node.Bcs
 	}
 
-	if options.ShowEffects {
+	if len(node.Effects.Bcs) > 0 {
 		effects, err := decodeEffects()
 		if err != nil {
 			return fmt.Errorf("failed to convert effects: %w", err)
@@ -2597,7 +2596,7 @@ func applyQueryNodeOptions(
 		result.Effects = effects
 	}
 
-	if options.ShowEvents {
+	if len(node.Effects.Events.Nodes) > 0 {
 		events, err := convertGraphQLEvents(node.Effects.Events.Nodes, digest)
 		if err != nil {
 			return fmt.Errorf("failed to convert events: %w", err)
@@ -2605,7 +2604,7 @@ func applyQueryNodeOptions(
 		result.Events = events
 	}
 
-	if options.ShowObjectChanges {
+	if len(node.Effects.ObjectChanges.Nodes) > 0 || len(node.Effects.Bcs) > 0 {
 		effects, err := decodeEffects()
 		if err != nil {
 			// Fall back to GraphQL nodes if BCS effects are unavailable
@@ -2624,7 +2623,7 @@ func applyQueryNodeOptions(
 		result.ObjectChanges = objectChanges
 	}
 
-	if options.ShowBalanceChanges {
+	if len(node.Effects.BalanceChanges.Nodes) > 0 {
 		balanceChanges, err := convertGraphQLBalanceChanges(node.Effects.BalanceChanges.Nodes)
 		if err != nil {
 			return fmt.Errorf("failed to convert balance changes: %w", err)
@@ -2632,7 +2631,7 @@ func applyQueryNodeOptions(
 		result.BalanceChanges = balanceChanges
 	}
 
-	if options.ShowRawEffects {
+	if len(node.Effects.Bcs) > 0 {
 		result.RawEffects = node.Effects.Bcs
 	}
 
@@ -2657,12 +2656,7 @@ func convertQueryTransactionBlockNodeToResponse(
 	result.TimestampMs = NewBigInt(uint64(node.Effects.Timestamp.UnixMilli()))
 	result.Checkpoint = NewBigInt(node.Effects.Checkpoint.SequenceNumber)
 
-	var options *IotaTransactionBlockResponseOptions
-	if query != nil {
-		options = query.Options
-	}
-
-	if err := applyQueryNodeOptions(result, node, digest, options); err != nil {
+	if err := applyQueryNodeOptions(result, node, digest); err != nil {
 		return nil, err
 	}
 
@@ -2671,22 +2665,20 @@ func convertQueryTransactionBlockNodeToResponse(
 
 func applyShowEffects(
 	result *IotaTransactionBlockResponse,
-	options *IotaTransactionBlockResponseOptions,
-	decodeEffects func() (*serialization.TagJson[IotaTransactionBlockEffects], error),
+	decodeEffects func() (*IotaTransactionBlockEffects, error),
+	bcsData iotago.Base64Data,
 ) {
-	if options == nil || !options.ShowEffects {
+	if len(bcsData) == 0 {
 		return
 	}
 	effects, err := decodeEffects()
 	if err != nil {
 		// BCS decoding can fail due to incomplete data, especially for complex transactions
 		// Provide a minimal Effects structure with success status as fallback
-		result.Effects = &serialization.TagJson[IotaTransactionBlockEffects]{
-			Data: IotaTransactionBlockEffects{
-				V1: &IotaTransactionBlockEffectsV1{
-					Status:  graphqltypes.ExecutionStatus{Status: graphqltypes.ExecutionStatusSuccess},
-					GasUsed: GasCostSummary{},
-				},
+		result.Effects = &IotaTransactionBlockEffects{
+			V1: &IotaTransactionBlockEffectsV1{
+				Status:  graphqltypes.ExecutionStatus{Status: graphqltypes.ExecutionStatusSuccess},
+				GasUsed: GasCostSummary{},
 			},
 		}
 		return
@@ -2700,7 +2692,7 @@ func applyShowEvents(
 	eventNodes []EventData,
 	digest *iotago.TransactionDigest,
 ) error {
-	if options == nil || !options.ShowEvents {
+	if len(eventNodes) == 0 {
 		return nil
 	}
 	events, err := convertGraphQLEvents(eventNodes, digest)
@@ -2713,12 +2705,12 @@ func applyShowEvents(
 
 func applyShowObjectChanges(
 	result *IotaTransactionBlockResponse,
-	options *IotaTransactionBlockResponseOptions,
-	decodeEffects func() (*serialization.TagJson[IotaTransactionBlockEffects], error),
-	objectChangeNodes []ObjectChangeData,
+	decodeEffects func() (*IotaTransactionBlockEffects, error),
+	objectChangeNodes []RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange,
 	senderAddress iotago.Address,
+	bcsData iotago.Base64Data,
 ) error {
-	if options == nil || !options.ShowObjectChanges {
+	if len(objectChangeNodes) == 0 && len(bcsData) == 0 {
 		return nil
 	}
 	effects, err := decodeEffects()
@@ -2748,9 +2740,9 @@ func applyShowObjectChanges(
 // mergePublishedPackages replaces "Created" changes with "Published" changes for packages
 // by checking GraphQL nodes for module information
 func mergePublishedPackages(
-	changes []serialization.TagJson[ObjectChange],
-	graphqlNodes []ObjectChangeData,
-) []serialization.TagJson[ObjectChange] {
+	changes []ObjectChange,
+	graphqlNodes []RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange,
+) []ObjectChange {
 	// Build a map of object IDs to GraphQL nodes with published packages
 	publishedPackages := make(map[iotago.ObjectID]*ObjectChangeData)
 	for i := range graphqlNodes {
@@ -2767,11 +2759,11 @@ func mergePublishedPackages(
 	}
 
 	// Replace "Created" changes with "Published" changes for packages
-	result := make([]serialization.TagJson[ObjectChange], 0, len(changes))
+	result := make([]ObjectChange, 0, len(changes))
 	for _, change := range changes {
 		// Check if this is a Created change that matches a published package
-		if change.Data.Created != nil {
-			if packageNode, isPublished := publishedPackages[change.Data.Created.ObjectID]; isPublished {
+		if change.Created != nil {
+			if packageNode, isPublished := publishedPackages[change.Created.ObjectID]; isPublished {
 				// Extract module names
 				modules := make([]string, 0, len(packageNode.OutputState.AsMovePackage.Modules.Nodes))
 				for _, module := range packageNode.OutputState.AsMovePackage.Modules.Nodes {
@@ -2786,13 +2778,13 @@ func mergePublishedPackages(
 						Digest    iotago.ObjectDigest `json:"digest"`
 						Nodules   []string            `json:"nodules"`
 					}{
-						PackageID: change.Data.Created.ObjectID,
-						Version:   change.Data.Created.Version,
-						Digest:    change.Data.Created.Digest,
+						PackageID: change.Created.ObjectID,
+						Version:   change.Created.Version,
+						Digest:    change.Created.Digest,
 						Nodules:   modules,
 					},
 				}
-				result = append(result, serialization.TagJson[ObjectChange]{Data: publishedChange})
+				result = append(result, publishedChange)
 				continue
 			}
 		}
@@ -2805,10 +2797,9 @@ func mergePublishedPackages(
 
 func applyShowBalanceChanges(
 	result *IotaTransactionBlockResponse,
-	options *IotaTransactionBlockResponseOptions,
-	balanceChangeNodes []BalanceChangeData,
+	balanceChangeNodes []RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsBalanceChangesBalanceChangeConnectionNodesBalanceChange,
 ) error {
-	if options == nil || !options.ShowBalanceChanges {
+	if len(balanceChangeNodes) == 0 {
 		return nil
 	}
 	balanceChanges, err := convertGraphQLBalanceChanges(balanceChangeNodes)
@@ -2850,9 +2841,7 @@ func convertGraphQLEffects(
 		}
 	}
 
-	return &serialization.TagJson[IotaTransactionBlockEffects]{
-		Data: decodedEffects,
-	}, nil
+	return &decodedEffects, nil
 }
 
 //nolint:unparam // error return kept for API consistency
@@ -2901,9 +2890,9 @@ func convertGraphQLEvents(
 }
 
 func convertGraphQLObjectChanges(
-	nodes []ObjectChangeData,
-) ([]serialization.TagJson[ObjectChange], error) {
-	changes := make([]serialization.TagJson[ObjectChange], 0, len(nodes))
+	nodes []RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange,
+) ([]ObjectChange, error) {
+	changes := make([]ObjectChange, 0, len(nodes))
 
 	for _, node := range nodes {
 		change, err := convertGraphQLObjectChange(&node)
@@ -2935,8 +2924,8 @@ func versionWithFallback(primary uint64, fallback uint64) *BigInt {
 }
 
 func convertGraphQLObjectChange(
-	node *ObjectChangeData,
-) (*serialization.TagJson[ObjectChange], error) {
+	node *RPC_TRANSACTION_FIELDSEffectsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange,
+) (*ObjectChange, error) {
 	objectID := node.Address
 	inputState := node.InputState
 	outputState := node.OutputState
@@ -3022,15 +3011,15 @@ func convertGraphQLObjectChange(
 		}
 	}
 
-	return &serialization.TagJson[ObjectChange]{Data: change}, nil
+	return &change, nil
 }
 
 func createMutatedChange(
 	sender iotago.Address,
 	ref OwnedObjectRef,
 	prevVersion *BigInt,
-) (*serialization.TagJson[ObjectChange], error) {
-	owner, err := convertOwnerFromTag(ref.Owner)
+) (*ObjectChange, error) {
+	owner, err := convertOwner(ref.Owner)
 	if err != nil {
 		return nil, err
 	}
@@ -3053,11 +3042,11 @@ func createMutatedChange(
 			Digest:          ref.Reference.Digest,
 		},
 	}
-	return &serialization.TagJson[ObjectChange]{Data: change}, nil
+	return &change, nil
 }
 
-func createCreatedChange(sender iotago.Address, ref OwnedObjectRef) (*serialization.TagJson[ObjectChange], error) {
-	owner, err := convertOwnerFromTag(ref.Owner)
+func createCreatedChange(sender iotago.Address, ref OwnedObjectRef) (*ObjectChange, error) {
+	owner, err := convertOwner(ref.Owner)
 	if err != nil {
 		return nil, err
 	}
@@ -3078,10 +3067,10 @@ func createCreatedChange(sender iotago.Address, ref OwnedObjectRef) (*serializat
 			Digest:     ref.Reference.Digest,
 		},
 	}
-	return &serialization.TagJson[ObjectChange]{Data: change}, nil
+	return &change, nil
 }
 
-func createDeletedChange(sender iotago.Address, ref IotaObjectRef) serialization.TagJson[ObjectChange] {
+func createDeletedChange(sender iotago.Address, ref IotaObjectRef) ObjectChange {
 	change := ObjectChange{
 		Deleted: &struct {
 			Sender     iotago.Address  `json:"sender"`
@@ -3095,10 +3084,10 @@ func createDeletedChange(sender iotago.Address, ref IotaObjectRef) serialization
 			Version:    NewBigInt(ref.Version),
 		},
 	}
-	return serialization.TagJson[ObjectChange]{Data: change}
+	return change
 }
 
-func createWrappedChange(sender iotago.Address, ref IotaObjectRef) serialization.TagJson[ObjectChange] {
+func createWrappedChange(sender iotago.Address, ref IotaObjectRef) ObjectChange {
 	change := ObjectChange{
 		Wrapped: &struct {
 			Sender     iotago.Address  `json:"sender"`
@@ -3112,24 +3101,24 @@ func createWrappedChange(sender iotago.Address, ref IotaObjectRef) serialization
 			Version:    NewBigInt(ref.Version),
 		},
 	}
-	return serialization.TagJson[ObjectChange]{Data: change}
+	return change
 }
 
 func deriveObjectChangesFromEffects(
-	effects *serialization.TagJson[IotaTransactionBlockEffects],
+	effects *IotaTransactionBlockEffects,
 	sender iotago.Address,
-) ([]serialization.TagJson[ObjectChange], error) {
-	if effects == nil || effects.Data.V1 == nil {
+) ([]ObjectChange, error) {
+	if effects == nil || effects.V1 == nil {
 		return nil, nil
 	}
 
-	v1 := effects.Data.V1
+	v1 := effects.V1
 	prevVersions := make(map[iotago.ObjectID]*BigInt, len(v1.ModifiedAtVersions))
 	for _, entry := range v1.ModifiedAtVersions {
 		prevVersions[entry.ObjectID] = entry.SequenceNumber
 	}
 
-	changes := make([]serialization.TagJson[ObjectChange], 0, len(v1.Mutated)+len(v1.Created)+len(v1.Deleted))
+	changes := make([]ObjectChange, 0, len(v1.Mutated)+len(v1.Created)+len(v1.Deleted))
 	seen := make(map[iotago.ObjectID]struct{})
 
 	addMutated := func(ref OwnedObjectRef) error {
@@ -3188,23 +3177,22 @@ func deriveObjectChangesFromEffects(
 	return changes, nil
 }
 
-func convertOwnerFromTag(owner serialization.TagJson[iotago.Owner]) (*ObjectOwner, error) {
-	data := owner.Data
+func convertOwner(owner iotago.Owner) (*ObjectOwner, error) {
 	switch {
-	case data.AddressOwner != nil:
+	case owner.AddressOwner != nil:
 		return &ObjectOwner{
 			ObjectOwnerInternal: &ObjectOwnerInternal{
-				AddressOwner: data.AddressOwner,
+				AddressOwner: owner.AddressOwner,
 			},
 		}, nil
-	case data.ObjectOwner != nil:
+	case owner.ObjectOwner != nil:
 		return &ObjectOwner{
 			ObjectOwnerInternal: &ObjectOwnerInternal{
-				ObjectOwner: data.ObjectOwner,
+				ObjectOwner: owner.ObjectOwner,
 			},
 		}, nil
-	case data.Shared != nil:
-		version := data.Shared.InitialSharedVersion
+	case owner.Shared != nil:
+		version := owner.Shared.InitialSharedVersion
 		return &ObjectOwner{
 			ObjectOwnerInternal: &ObjectOwnerInternal{
 				Shared: &struct {
@@ -3214,7 +3202,7 @@ func convertOwnerFromTag(owner serialization.TagJson[iotago.Owner]) (*ObjectOwne
 				},
 			},
 		}, nil
-	case data.Immutable != nil:
+	case owner.Immutable != nil:
 		return &ObjectOwner{
 			ObjectOwnerInternal: &ObjectOwnerInternal{},
 		}, nil
@@ -3318,10 +3306,9 @@ func applyExecuteTransactionOptions(
 	effects *TX_EFFECTS,
 	txCore *TX_CORE,
 	digest *iotago.Digest,
-	options *IotaTransactionBlockResponseOptions,
 ) error {
-	var decodedEffects *serialization.TagJson[IotaTransactionBlockEffects]
-	decodeEffects := func() (*serialization.TagJson[IotaTransactionBlockEffects], error) {
+	var decodedEffects *IotaTransactionBlockEffects
+	decodeEffects := func() (*IotaTransactionBlockEffects, error) {
 		if decodedEffects != nil {
 			return decodedEffects, nil
 		}
@@ -3337,7 +3324,7 @@ func applyExecuteTransactionOptions(
 		result.RawTransaction = txCore.Bcs
 	}
 
-	applyExecuteShowEffects(result, options, decodeEffects)
+	applyShowEffects(result, decodeEffects, txBlock.Effects.Bcs)
 
 	// Populate gas effects from GraphQL if they're missing from BCS
 	if options != nil && options.ShowEffects && result.Effects != nil {
@@ -3377,7 +3364,6 @@ func applyExecuteTransactionOptions(
 
 func convertExecuteTransactionBlockResponse(
 	resp *ExecuteTransactionBlockResponse,
-	options *IotaTransactionBlockResponseOptions,
 ) (*IotaTransactionBlockResponse, error) {
 	if resp == nil {
 		return nil, fmt.Errorf("response is nil")
@@ -3406,14 +3392,14 @@ func convertExecuteTransactionBlockResponse(
 	result.TimestampMs = NewBigInt(uint64(effects.Timestamp.UnixMilli()))
 	result.Checkpoint = NewBigInt(effects.Checkpoint.SequenceNumber)
 
-	if err := applyExecuteTransactionOptions(result, effects, txCore, digest, options); err != nil {
+	if err := applyExecuteTransactionOptions(result, txBlock, digest); err != nil {
 		return nil, err
 	}
 
 	// Override status with outer level (authoritative for ExecuteTransactionBlock)
 	// Convert GraphQL status (uppercase) to graphqltypes format (lowercase)
-	if result.Effects != nil && result.Effects.Data.V1 != nil {
-		result.Effects.Data.V1.Status = graphqltypes.ExecutionStatus{
+	if result.Effects != nil && result.Effects.V1 != nil {
+		result.Effects.V1.Status = graphqltypes.ExecutionStatus{
 			Status: strings.ToLower(string(execResult.Effects.Status)),
 			Error:  execResult.Effects.Errors,
 		}
@@ -3425,49 +3411,39 @@ func convertExecuteTransactionBlockResponse(
 func applyRPCMoveObjectFieldsOptions(
 	data *IotaObjectData,
 	fields *RPC_MOVE_OBJECT_FIELDS,
-	options *IotaObjectDataOptions,
 ) error {
-	if options == nil {
-		return nil
-	}
-
-	if options.ShowType {
-		typeStr := fields.Contents_type.Type.Repr
+	if typeStr := fields.Contents_type.Type.Repr; typeStr != "" {
 		data.Type = &typeStr
 	}
 
-	if options.ShowContent {
-		parsedContent := serialization.TagJson[IotaParsedData]{
-			Data: IotaParsedData{
-				MoveObject: &IotaParsedMoveObject{
-					Type:              fields.Contents_content.Type.Repr,
-					HasPublicTransfer: true,
-					Fields:            fields.Contents_content.Data,
-				},
+	if fields.Contents_content.Data != nil {
+		parsedContent := IotaParsedData{
+			MoveObject: &IotaParsedMoveObject{
+				Type:              fields.Contents_content.Type.Repr,
+				HasPublicTransfer: true,
+				Fields:            fields.Contents_content.Data,
 			},
 		}
 		data.Content = &parsedContent
 	}
 
-	if options.ShowBcs {
+	if len(fields.Contents.Bcs) > 0 {
 		structTag, err := iotago.StructTagFromString(fields.Contents.Type.Repr)
 		if err != nil {
 			return fmt.Errorf("failed to parse struct tag: %w", err)
 		}
-		rawData := serialization.TagJson[IotaRawData]{
-			Data: IotaRawData{
-				MoveObject: &IotaRawMoveObject{
-					Type:              *structTag,
-					HasPublicTransfer: true,
-					Version:           fields.Version,
-					BcsBytes:          fields.Contents.Bcs,
-				},
+		rawData := IotaRawData{
+			MoveObject: &IotaRawMoveObject{
+				Type:              *structTag,
+				HasPublicTransfer: true,
+				Version:           fields.Version,
+				BcsBytes:          fields.Contents.Bcs,
 			},
 		}
 		data.Bcs = &rawData
 	}
 
-	if options.ShowOwner {
+	if fields.Owner != nil {
 		owner, err := convertGraphQLObjectOwner(fields.Owner)
 		if err != nil {
 			return fmt.Errorf("failed to convert owner: %w", err)
@@ -3475,7 +3451,7 @@ func applyRPCMoveObjectFieldsOptions(
 		data.Owner = owner
 	}
 
-	if options.ShowPreviousTransaction {
+	if fields.PreviousTransactionBlock.Digest != "" {
 		txDigest, err := iotago.NewDigest(fields.PreviousTransactionBlock.Digest)
 		if err != nil {
 			return fmt.Errorf("failed to parse transaction digest: %w", err)
@@ -3483,11 +3459,11 @@ func applyRPCMoveObjectFieldsOptions(
 		data.PreviousTransaction = txDigest
 	}
 
-	if options.ShowStorageRebate {
+	if fields.StorageRebate.Int != nil {
 		data.StorageRebate = fields.StorageRebate.Clone()
 	}
 
-	if options.ShowDisplay && len(fields.Display) > 0 {
+	if len(fields.Display) > 0 {
 		display := make(map[string]string)
 		for _, entry := range fields.Display {
 			display[entry.Key] = entry.Value
@@ -3500,7 +3476,6 @@ func applyRPCMoveObjectFieldsOptions(
 
 func convertRPCMoveObjectFieldsToIotaObjectResponse(
 	fields *RPC_MOVE_OBJECT_FIELDS,
-	options *IotaObjectDataOptions,
 ) (*IotaObjectResponse, error) {
 	if fields == nil {
 		return nil, fmt.Errorf("fields is nil")
@@ -3522,7 +3497,7 @@ func convertRPCMoveObjectFieldsToIotaObjectResponse(
 		Status:   string(fields.Status),
 	}
 
-	if err := applyRPCMoveObjectFieldsOptions(data, fields, options); err != nil {
+	if err := applyRPCMoveObjectFieldsOptions(data, fields); err != nil {
 		return nil, err
 	}
 

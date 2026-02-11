@@ -345,7 +345,7 @@ func (in *LocalIotaNode) waitAllHealthy(ctx context.Context) {
 	})
 
 	tryLoop(func() bool {
-		err := iotagraphql.RequestFundsFromFaucet(ctx, ISCPackageOwner.Address(), in.FaucetURL())
+		err := in.L1Client().RequestFundsFromFaucet(ctx, ISCPackageOwner.Address())
 		if err != nil {
 			in.logf("FaucetLoop: err: %s", err)
 		}

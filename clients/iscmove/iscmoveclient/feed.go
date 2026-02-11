@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/serialization"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/packages/transaction"
@@ -35,7 +34,7 @@ func NewChainFeed(
 		return nil, err
 	}
 
-	httpClient := NewHTTPClient(httpURL, "", iotagraphql.WaitForEffectsEnabled)
+	httpClient := NewClient(iotagraphql.NewGraphQLClientWithWaitParams(httpURL, "", iotagraphql.WaitForEffectsEnabled))
 
 	return &ChainFeed{
 		wsClient:      wsClient,
@@ -165,7 +164,7 @@ func (f *ChainFeed) subscribeToAnchorUpdates(
 	anchorCh chan<- *iscmove.AnchorWithRef,
 ) {
 	for {
-		changes := make(chan *serialization.TagJson[iotagraphql.IotaTransactionBlockEffects])
+		changes := make(chan *iotagraphql.IotaTransactionBlockEffects)
 		err := f.wsClient.SubscribeTransaction(
 			ctx,
 			&iotagraphql.TransactionFilter{
@@ -191,7 +190,7 @@ func (f *ChainFeed) subscribeToAnchorUpdates(
 
 func (f *ChainFeed) consumeAnchorUpdates(
 	ctx context.Context,
-	changes <-chan *serialization.TagJson[iotagraphql.IotaTransactionBlockEffects],
+	changes <-chan *iotagraphql.IotaTransactionBlockEffects,
 	anchorCh chan<- *iscmove.AnchorWithRef,
 ) {
 	for {
@@ -202,7 +201,7 @@ func (f *ChainFeed) consumeAnchorUpdates(
 			if !ok {
 				return
 			}
-			for _, obj := range change.Data.V1.Mutated {
+			for _, obj := range change.V1.Mutated {
 				if *obj.Reference.ObjectID != f.anchorAddress {
 					continue
 				}
@@ -218,13 +217,13 @@ func (f *ChainFeed) consumeAnchorUpdates(
 					f.log.LogErrorf("consumeAnchorUpdates: cannot fetch Anchor: %s", err)
 					continue
 				}
-				if r.Data.VersionFound == nil {
+				if r.VersionFound == nil {
 					f.log.LogErrorf("consumeAnchorUpdates: cannot fetch Anchor: version %d not found", obj.Reference.Version)
 					continue
 				}
 
 				var anchor *iscmove.Anchor
-				err = iotagraphql.UnmarshalBCS(r.Data.VersionFound.Bcs.Data.MoveObject.BcsBytes, &anchor)
+				err = iotagraphql.UnmarshalBCS(r.VersionFound.Bcs.MoveObject.BcsBytes, &anchor)
 				if err != nil {
 					f.log.LogErrorf("ID: %s\nAssetBagID: %s\n", anchor.ID, anchor.Assets.Value.ID)
 					f.log.LogErrorf("consumeAnchorUpdates: failed to unmarshal BCS: %s", err)
@@ -232,9 +231,9 @@ func (f *ChainFeed) consumeAnchorUpdates(
 				}
 
 				anchorCh <- &iscmove.AnchorWithRef{
-					ObjectRef: r.Data.VersionFound.Ref(),
+					ObjectRef: r.VersionFound.Ref(),
 					Object:    anchor,
-					Owner:     r.Data.VersionFound.Owner.AddressOwner,
+					Owner:     r.VersionFound.Owner.AddressOwner,
 				}
 				f.log.LogDebugf("ANCHOR[%s] SENT TO CHANNEL %s\n", anchor.ID.String(), time.Now().String())
 			}
@@ -263,7 +262,7 @@ func (f *ChainFeed) GetChainGasCoin(ctx context.Context) (*iotago.ObjectRef, uin
 		return nil, 0, fmt.Errorf("failed to fetch gas coin object: %w", err)
 	}
 	var moveGasCoin MoveCoin
-	err = iotagraphql.UnmarshalBCS(getObjRes.Data.Bcs.Data.MoveObject.BcsBytes, &moveGasCoin)
+	err = iotagraphql.UnmarshalBCS(getObjRes.Data.Bcs.MoveObject.BcsBytes, &moveGasCoin)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to decode gas coin object: %w", err)
 	}

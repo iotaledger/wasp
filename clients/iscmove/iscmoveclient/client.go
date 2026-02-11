@@ -1,3 +1,4 @@
+// Package iscmoveclient provides a client for interacting with ISC Move contracts.
 package iscmoveclient
 
 import (
@@ -11,7 +12,6 @@ import (
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/contracts"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/serialization"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
@@ -20,39 +20,23 @@ import (
 // Client provides convenient methods to interact with the `isc` Move contracts.
 type Client struct {
 	iotagraphql.IotaClient
-	faucetURL string
 }
 
-func NewClient(iotaClient iotagraphql.IotaClient, faucetURL string) *Client {
+func NewClient(iotaClient iotagraphql.IotaClient) *Client {
 	return &Client{
 		IotaClient: iotaClient,
-		faucetURL:  faucetURL,
 	}
 }
 
-func NewHTTPClient(apiURL, faucetURL string, waitUntilEffectsVisible *iotagraphql.WaitParams) *Client {
-	return NewClient(
-		iotagraphql.NewGraphQLClientWithWaitParams(apiURL, waitUntilEffectsVisible),
-		faucetURL,
-	)
-}
-
 // NewWebsocketClient creates a new client. Note: websocket subscriptions are not
-// currently supported, so this just creates an HTTP-based GraphQL client.
+// currently supported, so this just creates a GraphQL client.
 func NewWebsocketClient(
 	ctx context.Context,
 	wsURL, faucetURL string,
 	waitUntilEffectsVisible *iotagraphql.WaitParams,
 ) (*Client, error) {
 	_ = ctx
-	return NewHTTPClient(wsURL, faucetURL, waitUntilEffectsVisible), nil
-}
-
-func (c *Client) RequestFunds(ctx context.Context, address cryptolib.Address) error {
-	if c.faucetURL == "" {
-		panic("missing faucetURL")
-	}
-	return iotagraphql.RequestFundsFromFaucet(ctx, address.AsIotaAddress(), c.faucetURL)
+	return NewClient(iotagraphql.NewGraphQLClientWithWaitParams(wsURL, faucetURL, waitUntilEffectsVisible)), nil
 }
 
 func (c *Client) Health(ctx context.Context) error {
@@ -134,7 +118,7 @@ func (c *Client) SignAndExecutePTB(
 	if err != nil {
 		return nil, fmt.Errorf("can't execute the transaction: %w", err)
 	}
-	if !txnResponse.IsSuccess() {
+	if !txnResponse.Effects.IsSuccess() {
 		return nil, fmt.Errorf("failed to execute the transaction: %s", txnResponse.ExecuteTransactionBlock.Effects.GetErrors())
 	}
 	return txnResponse, nil
@@ -156,7 +140,7 @@ func (c *Client) SubscribeEvent(
 func (c *Client) SubscribeTransaction(
 	ctx context.Context,
 	filter *iotagraphql.TransactionFilter,
-	resultCh chan<- *serialization.TagJson[iotagraphql.IotaTransactionBlockEffects],
+	resultCh chan<- *iotagraphql.IotaTransactionBlockEffects,
 ) error {
 	return fmt.Errorf("SubscribeTransaction is not supported: websocket subscriptions not implemented")
 }
@@ -207,7 +191,7 @@ func (c *Client) DeployISCContracts(ctx context.Context, signer iotasigner.Signe
 		return iotago.PackageID{}, err
 	}
 
-	if !txnResponse.IsSuccess() {
+	if !txnResponse.Effects.IsSuccess() {
 		return iotago.PackageID{}, errors.New("publish ISC contracts failed")
 	}
 

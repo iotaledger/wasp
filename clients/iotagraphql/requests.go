@@ -56,10 +56,10 @@ type DryRunTransactionRequest struct {
 }
 
 type ExecuteTransactionBlockRequest struct {
-	TxDataBytes iotago.Base64Data
-	Signatures  []*iotasigner.Signature
-	Options     *graphqltypes.IotaTransactionBlockResponseOptions // optional
-	RequestType graphqltypes.ExecuteTransactionRequestType        // optional
+	TxDataBytes       iotago.Base64Data
+	Signatures        []*iotasigner.Signature
+	Options           *graphqltypes.IotaTransactionBlockResponseOptions // optional
+	ExecutionWaitMode graphqltypes.ExecutionWaitMode                    // optional
 }
 
 type BatchTransactionRequest struct {
@@ -224,7 +224,8 @@ type TryMultiGetPastObjectsRequest struct {
 }
 
 type SignAndExecuteTransactionRequest struct {
-	TxDataBytes iotago.Base64Data
-	Signer      iotasigner.Signer
-	Options     *graphqltypes.IotaTransactionBlockResponseOptions // optional
+	TxDataBytes       iotago.Base64Data
+	Signer            iotasigner.Signer
+	Options           *graphqltypes.IotaTransactionBlockResponseOptions // optional
+	ExecutionWaitMode graphqltypes.ExecutionWaitMode                    // optional, defaults to WaitForLocalExecution
 }

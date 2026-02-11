@@ -16,17 +16,6 @@ This will regenerate `generated.go` based on:
 - `queries/*.graphql` - The GraphQL queries
 - `genqlient.yaml` - The genqlient configuration
 
-## Custom Code
+## ObjectFilter
 
-### objectfilter_custom.go
-
-This file contains a custom `MarshalJSON` method for the `ObjectFilter` type. This is necessary because:
-
-1. genqlient generates non-pointer fields for optional GraphQL input fields
-2. Non-pointer fields always have a value (even if it's the zero value)
-3. The zero-value for `iotago.Address` (all zeros: `0x00...00`) was being sent to the GraphQL API
-4. This zero-value address was incorrectly filtering out all results when using type filters
-
-The custom marshaler ensures that zero-value fields are omitted from the JSON payload, allowing filters to work correctly.
-
-**Important**: This file should NOT be deleted or modified when regenerating code with genqlient. It's a permanent workaround for a genqlient limitation.
+The `ObjectFilter` input type uses `@genqlient(for: "ObjectFilter.*", pointer: true)` directives in `queries/objects.graphql` to generate pointer fields. This ensures that unset fields serialize as `null` (treated as "not specified" by the GraphQL API) rather than zero values like `0x000...000`.

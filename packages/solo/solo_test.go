@@ -105,7 +105,7 @@ func TestDryRunForRequest(t *testing.T) {
 		TxDataBytes: txBytes,
 	})
 	require.NoError(t, err)
-	require.Empty(t, dryRunRes.DryRunTransactionBlock.Error)
+	require.True(t, dryRunRes1.Effects.IsSuccess())
 
 	estimateGasL1, err := ch.EstimateOnLedgerRequest(&dryRunRes.DryRunTransactionBlock)
 	require.NoError(t, err)

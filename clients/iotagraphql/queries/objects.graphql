@@ -1,3 +1,7 @@
+# @genqlient(for: "ObjectFilter.type", pointer: true)
+# @genqlient(for: "ObjectFilter.owner", pointer: true)
+# @genqlient(for: "ObjectFilter.objectIds", pointer: true)
+# @genqlient(for: "ObjectFilter.objectKeys", pointer: true)
 query GetOwnedObjects(
 	$owner: IotaAddress!
 	# @genqlient(pointer: true)

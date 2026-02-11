@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
-	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 )
 
 type L1Config struct {
@@ -21,7 +20,6 @@ type L1Config struct {
 type L1Client interface {
 	iotagraphql.IotaClient
 
-	RequestFunds(ctx context.Context, address cryptolib.Address) error
 	Health(ctx context.Context) error
 	L2() L2Client
 	GetIotaClient() iotagraphql.IotaClient
@@ -36,21 +34,13 @@ type l1Client struct {
 	Config L1Config
 }
 
-func (c *l1Client) RequestFunds(ctx context.Context, address cryptolib.Address) error {
-	faucetURL := c.Config.FaucetURL
-	if faucetURL == "" {
-		faucetURL = iotaconn.FaucetURL(c.Config.APIURL)
-	}
-	return iotagraphql.RequestFundsFromFaucet(ctx, address.AsIotaAddress(), faucetURL)
-}
-
 func (c *l1Client) Health(ctx context.Context) error {
 	_, err := c.GetLatestIotaSystemState(ctx)
 	return err
 }
 
 func (c *l1Client) L2() L2Client {
-	return iscmoveclient.NewClient(c.GetIotaClient(), c.Config.FaucetURL)
+	return iscmoveclient.NewClient(c.GetIotaClient())
 }
 
 func (c *l1Client) GetIotaClient() iotagraphql.IotaClient {
@@ -69,11 +59,9 @@ func (c *l1Client) WaitForNextVersionForTesting(ctx context.Context, timeout tim
 
 	cb()
 
-	// Create a ticker for polling
 	ticker := time.NewTicker(250 * time.Millisecond)
 	defer ticker.Stop()
 
-	// Add timeout to context if not already set
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
@@ -93,7 +81,7 @@ func (c *l1Client) WaitForNextVersionForTesting(ctx context.Context, timeout tim
 
 			if newRef.Error != nil {
 				// The provided object got consumed and is gone. We can return.
-				if newRef.Error.Data.Deleted != nil || newRef.Error.Data.NotExists != nil {
+				if newRef.Error.Deleted != nil || newRef.Error.NotExists != nil {
 					return currentRef, nil
 				}
 
@@ -121,7 +109,7 @@ func (c *l1Client) WaitForNextVersionForTesting(ctx context.Context, timeout tim
 
 func NewL1Client(l1Config L1Config, waitUntilEffectsVisible *iotagraphql.WaitParams) L1Client {
 	return &l1Client{
-		IotaClient: iotagraphql.NewGraphQLClientWithWaitParams(l1Config.APIURL, waitUntilEffectsVisible),
+		IotaClient: iotagraphql.NewGraphQLClientWithWaitParams(l1Config.APIURL, l1Config.FaucetURL, waitUntilEffectsVisible),
 		Config:     l1Config,
 	}
 }

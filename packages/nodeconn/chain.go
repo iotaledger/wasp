@@ -111,11 +111,13 @@ func (ncc *ncChain) postTxLoop(ctx context.Context, packageID iotago.PackageID) 
 			return nil, fmt.Errorf("failed to dry-run Anchor transaction: response == nil")
 		}
 
-		if dryRes.DryRunTransactionBlock.Transaction.Effects.Status != iotagraphql.ExecutionStatusSuccess {
-			return nil, fmt.Errorf("failed to dry-run Anchor transaction: %s", dryRes.DryRunTransactionBlock.Transaction.Effects.Errors)
+		if dryRes.Effects.IsFailed() {
+			return nil, fmt.Errorf("failed to dry-run Anchor transaction: response.Effects.Failed")
 		}
 
-		ncc.LogDebug("successfully dry-run Anchor transaction")
+		if dryRes.Effects.IsSuccess() {
+			ncc.LogDebug("successfully dry-run Anchor transaction")
+		}
 
 		res, err := ncc.nodeConn.httpClient.ExecuteTransactionBlock(task.ctx, iotagraphql.ExecuteTransactionBlockRequest{
 			TxDataBytes: txBytes,
@@ -124,7 +126,6 @@ func (ncc *ncChain) postTxLoop(ctx context.Context, packageID iotago.PackageID) 
 				ShowObjectChanges: true,
 				ShowEffects:       true,
 			},
-			RequestType: iotagraphql.TxnRequestTypeWaitForLocalExecution,
 		})
 
 		if err != nil {
@@ -137,8 +138,8 @@ func (ncc *ncChain) postTxLoop(ctx context.Context, packageID iotago.PackageID) 
 			return nil, err
 		}
 
-		if !res.Effects.Data.IsSuccess() {
-			return nil, fmt.Errorf("error executing tx: %s Digest: %s", res.Effects.Data.V1.Status.Error, res.Digest)
+		if !res.Effects.IsSuccess() {
+			return nil, fmt.Errorf("error executing tx: %s Digest: %s", res.Effects.V1.Status.Error, res.Digest)
 		}
 
 		anchorInfo, err := res.GetMutatedObjectByID(ncc.chainID.AsObjectID())

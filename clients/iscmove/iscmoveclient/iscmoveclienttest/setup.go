@@ -15,7 +15,7 @@ import (
 )
 
 func NewSignerWithFunds(t *testing.T, seed []byte, index int) cryptolib.Signer {
-	return newSignerWithFunds(t, seed, index, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
+	return newSignerWithFunds(t, seed, index, l1starter.Instance().APIURL(), l1starter.Instance().FaucetURL())
 }
 
 func NewRandomSignerWithFunds(t *testing.T, index int) cryptolib.Signer {
@@ -36,30 +36,37 @@ func NewWebSocketClient(ctx context.Context) (*iscmoveclient.Client, error) {
 	)
 }
 
-func NewHTTPClient() *iscmoveclient.Client {
-	return iscmoveclient.NewHTTPClient(
-		l1starter.Instance().APIURL(),
-		l1starter.Instance().FaucetURL(),
-		l1starter.WaitUntilEffectsVisible,
+func NewClient() *iscmoveclient.Client {
+	return iscmoveclient.NewClient(
+		iotagraphql.NewGraphQLClientWithWaitParams(
+			l1starter.Instance().APIURL(),
+			l1starter.Instance().FaucetURL(),
+			l1starter.WaitUntilEffectsVisible,
+		),
 	)
 }
 
-func NewAlphanetHTTPClient() *iscmoveclient.Client {
-	return iscmoveclient.NewHTTPClient(
-		iotaconn.AlphanetEndpointURL,
-		iotaconn.AlphanetFaucetURL,
-		l1starter.WaitUntilEffectsVisible,
+func NewAlphanetClient() *iscmoveclient.Client {
+	return iscmoveclient.NewClient(
+		iotagraphql.NewGraphQLClientWithWaitParams(
+			iotaconn.AlphanetEndpointURL,
+			iotaconn.AlphanetFaucetURL,
+			l1starter.WaitUntilEffectsVisible,
+		),
 	)
 }
 
 func NewAlphanetSignerWithFunds(t *testing.T, seed []byte, index int) cryptolib.Signer {
-	return newSignerWithFunds(t, seed, index, iotaconn.AlphanetFaucetURL, iotaconn.AlphanetEndpointURL)
+	return newSignerWithFunds(t, seed, index, iotaconn.AlphanetEndpointURL, iotaconn.AlphanetFaucetURL)
 }
 
-func newSignerWithFunds(t *testing.T, seed []byte, index int, faucetURL, apiURL string) cryptolib.Signer {
-	seed[0] += byte(index)
-	kp := cryptolib.KeyPairFromSeed(cryptolib.Seed(seed))
-	err := iotagraphql.RequestFundsFromFaucetAndWait(context.Background(), kp.Address().AsIotaAddress(), faucetURL, apiURL)
+func newSignerWithFunds(t *testing.T, seed []byte, index int, apiURL, faucetURL string) cryptolib.Signer {
+	seedCopy := make([]byte, len(seed))
+	copy(seedCopy, seed)
+	seedCopy[0] += byte(index)
+	kp := cryptolib.KeyPairFromSeed(cryptolib.Seed(seedCopy))
+	client := iotagraphql.NewGraphQLClient(apiURL, faucetURL)
+	err := client.RequestFundsFromFaucet(context.Background(), kp.Address().AsIotaAddress())
 	require.NoError(t, err)
 	return kp
 }
