@@ -139,7 +139,7 @@ services:
       - wasp-db:/app/waspdb
     command:
       - "--webapi.auth.scheme=none"
-      - "--l1.httpURL=http://iota-graphql-rpc:9125"
+      - "--l1.apiURL=http://iota-graphql-rpc:9125"
       - "--l1.websocketURL=ws://iota-node:9000"
       - "--logger.level=debug"
       - "--db.chainState.path=/app/waspdb/chains/data"

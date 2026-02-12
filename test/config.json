@@ -30,7 +30,7 @@
   },
   "l1": {
     "websocketURL": "wss://api.alphanet.iota.cafe",
-    "httpURL": "https://api.alphanet.iota.cafe",
+    "apiURL": "https://api.alphanet.iota.cafe",
     "maxConnectionAttempts": 30,
     "targetNetworkName": "IOTA"
   },

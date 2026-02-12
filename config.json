@@ -24,7 +24,7 @@
     "disableEvents": true
   },  
   "l1": {
-    "httpURL": "https://api.alphanet.iota.cafe",
+    "apiURL": "https://api.alphanet.iota.cafe",
     "websocketURL": "wss://api.alphanet.iota.cafe",
     "packageID": "0xa25cb7d5b6462009a471be13a241a2b604e66294e79a3a54d162d19e784c03b4",
     "maxConnectionAttempts": 30,

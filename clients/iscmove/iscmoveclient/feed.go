@@ -15,7 +15,7 @@ import (
 
 type ChainFeed struct {
 	wsClient      *Client // FIXME this should be removed after we migrate to GqraphQL subscriptions
-	httpClient    *Client
+	apiClient     *Client
 	iscPackageID  iotago.PackageID
 	anchorAddress iotago.ObjectID
 	log           log.Logger
@@ -27,18 +27,18 @@ func NewChainFeed(
 	anchorAddress iotago.ObjectID,
 	log log.Logger,
 	wsURL string,
-	httpURL string,
+	apiURL string,
 ) (*ChainFeed, error) {
 	wsClient, err := NewWebsocketClient(ctx, wsURL, "", iotagraphql.WaitForEffectsEnabled)
 	if err != nil {
 		return nil, err
 	}
 
-	httpClient := NewClient(iotagraphql.NewGraphQLClientWithWaitParams(httpURL, "", iotagraphql.WaitForEffectsEnabled))
+	apiClient := NewClient(iotagraphql.NewGraphQLClientWithWaitParams(apiURL, "", iotagraphql.WaitForEffectsEnabled))
 
 	return &ChainFeed{
 		wsClient:      wsClient,
-		httpClient:    httpClient,
+		apiClient:     apiClient,
 		iscPackageID:  iscPackageID,
 		anchorAddress: anchorAddress,
 		log:           log.NewChildLogger("iscmove-chainfeed"),
@@ -50,7 +50,7 @@ func (f *ChainFeed) WaitUntilStopped() {
 }
 
 func (f *ChainFeed) GetCurrentAnchor(ctx context.Context) (*iscmove.AnchorWithRef, error) {
-	anchor, err := f.httpClient.GetAnchorFromObjectID(ctx, &f.anchorAddress)
+	anchor, err := f.apiClient.GetAnchorFromObjectID(ctx, &f.anchorAddress)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch anchor: %w", err)
 	}
@@ -70,7 +70,7 @@ func (f *ChainFeed) FetchCurrentState(ctx context.Context, maxAmountOfRequests i
 	// This gives us the option to run this call in a separate goroutine.
 	// During my testing I found, that just adding `go` in front of it, isn't enough, and it requires further synchronization from the caller.
 	// I kept it as a callback based function for now, as pulling the requests needs improvement and it seems to be the way to go.
-	err = f.httpClient.GetRequestsSorted(ctx, f.iscPackageID, &f.anchorAddress, maxAmountOfRequests, requestCb)
+	err = f.apiClient.GetRequestsSorted(ctx, f.iscPackageID, &f.anchorAddress, maxAmountOfRequests, requestCb)
 
 	return anchor, err
 }
@@ -146,7 +146,7 @@ func (f *ChainFeed) consumeRequestEvents(
 				continue
 			}
 
-			reqWithObj, err := f.httpClient.GetRequestFromObjectID(ctx, &reqEvent.RequestID)
+			reqWithObj, err := f.apiClient.GetRequestFromObjectID(ctx, &reqEvent.RequestID)
 			if err != nil {
 				f.log.LogErrorf("consumeRequestEvents: cannot fetch Request: %s", err)
 				continue
@@ -208,7 +208,7 @@ func (f *ChainFeed) consumeAnchorUpdates(
 
 				f.log.LogDebugf("POLLING ANCHOR %s, %s", f.anchorAddress, time.Now().String())
 
-				r, err := f.httpClient.TryGetPastObject(ctx, iotagraphql.TryGetPastObjectRequest{
+				r, err := f.apiClient.TryGetPastObject(ctx, iotagraphql.TryGetPastObjectRequest{
 					ObjectID: &f.anchorAddress,
 					Version:  obj.Reference.Version,
 					Options:  &iotagraphql.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true, ShowContent: true},
@@ -246,7 +246,7 @@ func (f *ChainFeed) GetISCPackageID() iotago.PackageID {
 }
 
 func (f *ChainFeed) GetChainGasCoin(ctx context.Context) (*iotago.ObjectRef, uint64, error) {
-	anchor, err := f.httpClient.GetAnchorFromObjectID(ctx, &f.anchorAddress)
+	anchor, err := f.apiClient.GetAnchorFromObjectID(ctx, &f.anchorAddress)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to fetch anchor: %w", err)
 	}
@@ -254,7 +254,7 @@ func (f *ChainFeed) GetChainGasCoin(ctx context.Context) (*iotago.ObjectRef, uin
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to fetch anchor: %w", err)
 	}
-	getObjRes, err := f.httpClient.GetObject(ctx, iotagraphql.GetObjectRequest{
+	getObjRes, err := f.apiClient.GetObject(ctx, iotagraphql.GetObjectRequest{
 		ObjectID: metadata.GasCoinObjectID,
 		Options:  &iotagraphql.IotaObjectDataOptions{ShowBcs: true},
 	})

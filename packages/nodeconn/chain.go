@@ -48,9 +48,9 @@ func newNCChain(
 	requestHandler chain.RequestHandler,
 	anchorHandler chain.AnchorHandler,
 	wsURL string,
-	httpURL string,
+	apiURL string,
 ) (*ncChain, error) {
-	packageID, err := nodeConn.httpClient.L2().GetISCPackageIDForAnchor(ctx, chainID.AsObjectID())
+	packageID, err := nodeConn.apiClient.L2().GetISCPackageIDForAnchor(ctx, chainID.AsObjectID())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ISC package ID: %w", err)
 	}
@@ -63,7 +63,7 @@ func newNCChain(
 		*anchorAddress,
 		nodeConn.Logger,
 		wsURL,
-		httpURL,
+		apiURL,
 	)
 	if err != nil {
 		return nil, err
@@ -100,7 +100,7 @@ func (ncc *ncChain) postTxLoop(ctx context.Context, packageID iotago.PackageID) 
 
 		// Executing the transaction via DryRun before posting to make sure the transaction is valid, as failed transactions cost gas!
 		// Repeatedly failing transactions == sad gas coin
-		dryRes, err := ncc.nodeConn.httpClient.DryRunTransaction(task.ctx, iotagraphql.DryRunTransactionRequest{
+		dryRes, err := ncc.nodeConn.apiClient.DryRunTransaction(task.ctx, iotagraphql.DryRunTransactionRequest{
 			TxDataBytes: txBytes,
 		})
 		if err != nil {
@@ -119,7 +119,7 @@ func (ncc *ncChain) postTxLoop(ctx context.Context, packageID iotago.PackageID) 
 			ncc.LogDebug("successfully dry-run Anchor transaction")
 		}
 
-		res, err := ncc.nodeConn.httpClient.ExecuteTransactionBlock(task.ctx, iotagraphql.ExecuteTransactionBlockRequest{
+		res, err := ncc.nodeConn.apiClient.ExecuteTransactionBlock(task.ctx, iotagraphql.ExecuteTransactionBlockRequest{
 			TxDataBytes: txBytes,
 			Signatures:  task.tx.Signatures,
 			Options: &iotagraphql.IotaTransactionBlockResponseOptions{
@@ -147,7 +147,7 @@ func (ncc *ncChain) postTxLoop(ctx context.Context, packageID iotago.PackageID) 
 			return nil, err
 		}
 
-		anchor, err := ncc.nodeConn.httpClient.L2().GetAnchorFromObjectID(ctx, anchorInfo.ObjectID)
+		anchor, err := ncc.nodeConn.apiClient.L2().GetAnchorFromObjectID(ctx, anchorInfo.ObjectID)
 		if err != nil {
 			return nil, err
 		}

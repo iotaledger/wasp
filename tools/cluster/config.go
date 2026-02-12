@@ -70,7 +70,7 @@ func NewConfig(waspConfig WaspConfig, l1Config l1starter.IotaNodeEndpoint, modif
 			panic(fmt.Errorf("invalid API URL: %s", apiURL))
 		}
 		// FIXME we need to handle non-SSL URLs too
-		nodesConfigs[i].L1HttpHost = "https://" + base.Host + base.Path
+		nodesConfigs[i].L1ApiHost = "https://" + base.Host + base.Path
 		nodesConfigs[i].L1WsHost = "wss://" + base.Host + base.Path
 	}
 

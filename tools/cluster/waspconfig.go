@@ -19,7 +19,7 @@ type WaspConfigParams struct {
 	ValidatorAddress       string // bech32 encoded address of ValidatorKeyPair
 	PruningMinStatesToKeep int
 	PackageID              *iotago.PackageID
-	L1HttpHost             string
+	L1ApiHost              string
 	L1WsHost               string
 	AuthScheme             string
 }
@@ -52,7 +52,7 @@ var waspConfigTemplate = `
     "disableEvents": true
   },
   "l1": {
-    "httpURL": "{{.L1HttpHost}}",
+    "apiURL": "{{.L1ApiHost}}",
     "websocketURL": "{{.L1WsHost}}",
     "packageID": "{{.PackageID}}",
     "maxConnectionAttempts": 30,
