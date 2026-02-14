@@ -830,6 +830,111 @@ func TestRPCTraceEVMDeposit(t *testing.T) {
 	})
 }
 
+// TestSystemLegacyTxChainIDOmittedStillTraceable guards backwards compatibility for system-generated
+// legacy transactions. These txs are unsigned (v=r=s=0), so eth_getTransactionByHash should omit chainId,
+// but tracing those historical txs must continue to work.
+func TestSystemLegacyTxChainIDOmittedStillTraceable(t *testing.T) {
+	env := newSoloTestEnv(t)
+	wallet, _ := env.solo.NewKeyPairWithFunds()
+	_, evmAddr := env.soloChain.NewEthereumAccountWithL2Funds()
+
+	err := env.soloChain.TransferAllowanceTo(
+		isc.NewAssets(1000),
+		isc.NewEthereumAddressAgentID(evmAddr),
+		wallet,
+	)
+	require.NoError(t, err)
+
+	block := env.BlockByNumber(nil)
+	require.NotEmpty(t, block.Transactions())
+	tx := block.Transactions()[0]
+
+	// Verify the RPC shape for system legacy tx: chainId must be omitted, not serialized as zero.
+	var rpcTx map[string]any
+	err = env.RawClient.Call(&rpcTx, "eth_getTransactionByHash", tx.Hash())
+	require.NoError(t, err)
+	_, hasChainID := rpcTx["chainId"]
+	require.False(t, hasChainID)
+
+	// Tracing must still work for the same historical transaction.
+	trace, err := env.traceTransactionWithCallTracer(tx.Hash())
+	require.NoError(t, err)
+	require.Equal(t, evmAddr.String(), trace.To.String())
+	require.Equal(t, hexutil.EncodeUint64(isc.NewAssets(1000).BaseTokens().Uint64()*nativeToEthDigitsConversionRate), trace.Value.String())
+}
+
+// TestTraceLegacyTxInMixedLegacyAndTypedBlock ensures old-style legacy transaction tracing stays stable
+// after typed-transaction support. The block intentionally contains one legacy tx and one dynamic-fee tx.
+func TestTraceLegacyTxInMixedLegacyAndTypedBlock(t *testing.T) {
+	env := newSoloTestEnv(t)
+	legacySender, legacySenderAddr := env.NewAccountWithL2Funds()
+	dynamicSender, dynamicSenderAddr := env.NewAccountWithL2Funds()
+	contractABI, err := abi.JSON(strings.NewReader(evmtest.ISCTestContractABI))
+	require.NoError(t, err)
+	_, _, contractAddress := env.DeployEVMContract(legacySender, contractABI, evmtest.ISCTestContractBytecode)
+
+	legacyTx := types.MustSignNewTx(legacySender, env.Signer(),
+		&types.LegacyTx{
+			Nonce:    env.NonceAt(legacySenderAddr),
+			To:       &contractAddress,
+			Value:    big.NewInt(111),
+			Gas:      100000,
+			GasPrice: big.NewInt(10000000000),
+			Data:     lo.Must(contractABI.Pack("sendTo", common.Address{0x1}, big.NewInt(3))),
+		})
+	maxFeePerGas := new(big.Int).Mul(env.MustGetGasPrice(), big.NewInt(2))
+	maxPriorityFeePerGas := big.NewInt(10000000000)
+	dynamicTx := types.MustSignNewTx(dynamicSender, env.Signer(),
+		&types.DynamicFeeTx{
+			ChainID:   big.NewInt(int64(env.ChainID)),
+			Nonce:     env.NonceAt(dynamicSenderAddr),
+			GasTipCap: maxPriorityFeePerGas,
+			GasFeeCap: maxFeePerGas,
+			Gas:       100000,
+			To:        &contractAddress,
+			Value:     big.NewInt(222),
+			Data:      lo.Must(contractABI.Pack("sendTo", common.Address{0x2}, big.NewInt(4))),
+		})
+
+	// Put both txs in the same block to ensure trace indexing and hash mapping stay correct.
+	reqLegacy := lo.Must(isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, legacyTx))
+	reqDynamic := lo.Must(isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, dynamicTx))
+	env.soloChain.RunRequestsSync([]isc.Request{reqLegacy, reqDynamic})
+
+	bi := env.soloChain.GetLatestBlockInfo()
+	require.EqualValues(t, 2, bi.NumSuccessfulRequests)
+
+	// Legacy tx still reports type 0x0 via RPC even when mixed with typed txs.
+	var legacyRPC map[string]any
+	err = env.RawClient.Call(&legacyRPC, "eth_getTransactionByHash", legacyTx.Hash())
+	require.NoError(t, err)
+	require.Equal(t, "0x0", legacyRPC["type"])
+
+	legacyTrace, err := env.traceTransactionWithCallTracer(legacyTx.Hash())
+	require.NoError(t, err)
+	require.Equal(t, legacySenderAddr, legacyTrace.From)
+	require.Equal(t, contractAddress, *legacyTrace.To)
+
+	// Block-level tracing should include both tx hashes and keep legacy tx trace discoverable.
+	callTracer := "callTracer"
+	var raw json.RawMessage
+	err = env.RawClient.CallContext(
+		context.Background(),
+		&raw,
+		"debug_traceBlockByNumber",
+		hexutil.Uint64(env.BlockNumber()).String(),
+		tracers.TraceConfig{Tracer: &callTracer},
+	)
+	require.NoError(t, err)
+
+	var traces []jsonrpc.TxTraceResult
+	err = json.Unmarshal(raw, &traces)
+	require.NoError(t, err)
+	require.Len(t, traces, 2)
+	require.NotEqual(t, -1, slices.IndexFunc(traces, func(v jsonrpc.TxTraceResult) bool { return v.TxHash == legacyTx.Hash() }))
+	require.NotEqual(t, -1, slices.IndexFunc(traces, func(v jsonrpc.TxTraceResult) bool { return v.TxHash == dynamicTx.Hash() }))
+}
+
 func addNRequests(n int, env *soloTestEnv, creator *ecdsa.PrivateKey, creatorAddress common.Address, contractABI abi.ABI, contractAddress common.Address) {
 	rqs := make([]isc.Request, 0, n)
 	for i := range n {
