@@ -31,7 +31,7 @@ services:
       - "-c"
       - "max_connections=200"
     volumes:
-      - iota-postgres-data:/var/lib/postgresql/data
+      - iota-postgres-data:/var/lib/postgresql
 
   iota-node:
     container_name: iota-node
