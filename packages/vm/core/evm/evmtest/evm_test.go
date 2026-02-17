@@ -1483,6 +1483,7 @@ func TestGasPriceIgnoredInEstimateGas(t *testing.T) {
 		big.NewInt(100),
 	} {
 		t.Run(fmt.Sprintf("%v", gasPrice), func(t *testing.T) { //nolint:gocritic // false positive
+			t.Parallel()
 			ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 			storage := env.deployStorageContract(ethKey)
 
