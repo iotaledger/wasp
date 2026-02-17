@@ -55,7 +55,6 @@ jobs:
           TEST_SHORT_PKGS="$(go list ./... \
             | grep -v '/packages/vm/core/testcore' \
             | grep -v '/tools/cluster' \
-            | grep -v '/packages/vm/core/evm/evmtest' \
             | grep -v '/packages/evm/jsonrpc/jsonrpctest' \
           )" make test-short
 
