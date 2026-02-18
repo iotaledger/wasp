@@ -52,7 +52,7 @@ func ensureSingleCoin(t *testing.T, cryptolibSigner cryptolib.Signer, client cli
 	)
 
 	txData := iotago.NewProgrammable(
-		cryptolibSigner.Address().AsIotaAddress(),
+		lo.ToPtr(cryptolibSigner.Address().AsIotaAddress()),
 		txb.Finish(),
 		[]*iotago.ObjectRef{lo.Must(primaryCoin.ObjectRef())},
 		iotagraphql.DefaultGasBudget,

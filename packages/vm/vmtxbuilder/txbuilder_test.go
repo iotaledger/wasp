@@ -63,7 +63,7 @@ func TestTxBuilderBasic(t *testing.T) {
 	pt := txb.BuildTransactionEssence(stateMetadata, 123)
 
 	tx := iotago.NewProgrammable(
-		chainSigner.Address().AsIotaAddress(),
+		lo.ToPtr(chainSigner.Address().AsIotaAddress()),
 		pt,
 		[]*iotago.ObjectRef{selectedGasCoin},
 		iotagraphql.DefaultGasBudget,
@@ -126,7 +126,7 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 	ptb1 := txb1.BuildTransactionEssence(stateMetadata1, 123)
 
 	tx1 := iotago.NewProgrammable(
-		chainSigner.Address().AsIotaAddress(),
+		lo.ToPtr(chainSigner.Address().AsIotaAddress()),
 		ptb1,
 		[]*iotago.ObjectRef{selectedGasCoin},
 		iotagraphql.DefaultGasBudget,
@@ -153,7 +153,7 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 	anchor.ObjectRef = *tmp
 	txb2 := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage, &stateAnchor, chainSigner.Address())
 
-	txb2.SendAssets(recipientSigner.Address().AsIotaAddress(), isc.NewAssets(1))
+	txb2.SendAssets(lo.ToPtr(recipientSigner.Address().AsIotaAddress()), isc.NewAssets(1))
 
 	req2 := createIscmoveReq(t, client, senderSigner, iscPackage, anchor)
 	txb2.ConsumeRequest(req2)
@@ -168,7 +168,7 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 	require.NoError(t, err)
 
 	tx2 := iotago.NewProgrammable(
-		chainSigner.Address().AsIotaAddress(),
+		lo.ToPtr(chainSigner.Address().AsIotaAddress()),
 		pt2,
 		[]*iotago.ObjectRef{lo.Must(getCoinsRes.Address.Coins.Nodes[0].ObjectRef())},
 		iotagraphql.DefaultGasBudget,
@@ -218,12 +218,12 @@ func TestRotateAndBuildTx(t *testing.T) {
 	stateAnchor := isc.NewStateAnchor(anchor, iscPackage)
 	txb := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage, &stateAnchor, chainSigner.Address())
 
-	txb.RotationTransaction(rotateRecipientSigner.Address().AsIotaAddress())
+	txb.RotationTransaction(lo.ToPtr(rotateRecipientSigner.Address().AsIotaAddress()))
 	stateMetadata := []byte("dummy stateMetadata")
 	pt := txb.BuildTransactionEssence(stateMetadata, 123)
 
 	tx := iotago.NewProgrammable(
-		chainSigner.Address().AsIotaAddress(),
+		lo.ToPtr(chainSigner.Address().AsIotaAddress()),
 		pt,
 		[]*iotago.ObjectRef{selectedGasCoin},
 		iotagraphql.DefaultGasBudget,
@@ -241,11 +241,11 @@ func TestRotateAndBuildTx(t *testing.T) {
 	require.True(t, txnResponse.ExecuteTransactionBlock.Effects.IsSuccess())
 	getObjRes, err := client.GetObject(context.Background(), *anchor.ObjectID)
 	require.NoError(t, err)
-	require.Equal(t, rotateRecipientSigner.Address().AsIotaAddress(), getObjRes.Object.OwnerAddress())
+	require.Equal(t, lo.ToPtr(rotateRecipientSigner.Address().AsIotaAddress()), getObjRes.Object.OwnerAddress())
 
 	gasCoinGetObjRes, err := client.GetObject(context.Background(), *selectedGasCoin.ObjectID)
 	require.NoError(t, err)
-	require.Equal(t, rotateRecipientSigner.Address().AsIotaAddress(), gasCoinGetObjRes.Object.OwnerAddress())
+	require.Equal(t, lo.ToPtr(rotateRecipientSigner.Address().AsIotaAddress()), gasCoinGetObjRes.Object.OwnerAddress())
 }
 
 func createIscmoveReq(
@@ -255,7 +255,7 @@ func createIscmoveReq(
 	iscPackage iotago.Address,
 	anchor *iscmove.AnchorWithRef,
 ) isc.OnLedgerRequest {
-	err := l1starter.Instance().L1Client().RequestFundsFromFaucet(context.Background(), *signer.Address().AsIotaAddress())
+	err := l1starter.Instance().L1Client().RequestFundsFromFaucet(context.Background(), signer.Address().AsIotaAddress())
 	require.NoError(t, err)
 
 	createAndSendRequestRes, err := client.L2().CreateAndSendRequestWithAssets(
@@ -291,7 +291,7 @@ func createIscmoveReqWithAssets(
 	anchor *iscmove.AnchorWithRef,
 	assets *iscmove.Assets,
 ) isc.OnLedgerRequest {
-	err := l1starter.Instance().L1Client().RequestFundsFromFaucet(context.Background(), *signer.Address().AsIotaAddress())
+	err := l1starter.Instance().L1Client().RequestFundsFromFaucet(context.Background(), signer.Address().AsIotaAddress())
 	require.NoError(t, err)
 
 	createAndSendRequestRes, err := client.L2().CreateAndSendRequestWithAssets(

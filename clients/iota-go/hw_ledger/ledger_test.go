@@ -74,7 +74,7 @@ func TestDeployChain(t *testing.T) {
 	require.NoError(t, err)
 
 	addr := cryptolib.Address(pubKey.Address)
-	err = l1.RequestFundsFromFaucet(context.Background(), *addr.AsIotaAddress())
+	err = l1.RequestFundsFromFaucet(context.Background(), addr.AsIotaAddress())
 	require.NoError(t, err)
 
 	signer := NewLedgerSigner(dev, "44'/4218'/123'/0'/0'", false)

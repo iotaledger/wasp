@@ -21,7 +21,7 @@ type SimulatorNode struct {
 func NewSimulatorNode(iscPackageOwner iotasigner.Signer) *SimulatorNode {
 	handler := move.NewCompositeHandler(iotago.PackageID{}) // placeholder, updated after deploy
 	fakeClient := l1.NewFakeL1Client(l1.MoveCallHandler(handler),
-		l1.WithPresetBalance(*iscPackageOwner.Address(), 100_000_000_000), // 100 IOTA
+		l1.WithPresetBalance(iscPackageOwner.Address(), 100_000_000_000), // 100 IOTA
 	)
 	return &SimulatorNode{
 		iscPackageOwner: iscPackageOwner,
@@ -31,7 +31,7 @@ func NewSimulatorNode(iscPackageOwner iotasigner.Signer) *SimulatorNode {
 
 func (s *SimulatorNode) Start(ctx context.Context) {
 	// Fund the package owner
-	err := s.l1Client.RequestFundsFromFaucet(ctx, *s.iscPackageOwner.Address())
+	err := s.l1Client.RequestFundsFromFaucet(ctx, s.iscPackageOwner.Address())
 	if err != nil {
 		panic(fmt.Errorf("simulator faucet failed: %w", err))
 	}

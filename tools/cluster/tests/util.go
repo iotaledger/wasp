@@ -76,7 +76,7 @@ func (e *ChainEnv) checkRootsOutside() {
 
 func (e *ChainEnv) GetL1Balance(addr *iotago.Address, coinType coin.Type) coin.Value {
 	l1client := e.Chain.Cluster.L1Client()
-	getBalance, err := l1client.GetBalance(context.TODO(), iotagraphql.GetBalanceRequest{Owner: addr})
+	getBalance, err := l1client.GetBalance(context.TODO(), iotagraphql.GetBalanceRequest{Owner: *addr})
 	require.NoError(e.t, err)
 	return coin.Value(getBalance.TotalBalance.Uint64())
 }

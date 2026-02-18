@@ -16,7 +16,7 @@ func TestGetAllBalances(t *testing.T) {
 	client := l1starter.Instance().L1Client()
 	owner := l1starter.ISCPackageOwner.Address()
 
-	balances, err := client.GetAllBalances(context.Background(), *owner)
+	balances, err := client.GetAllBalances(context.Background(), owner)
 	require.NoError(t, err)
 	require.NotEmpty(t, balances)
 

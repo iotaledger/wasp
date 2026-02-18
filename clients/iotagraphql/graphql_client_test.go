@@ -72,7 +72,7 @@ func TestFaucetReturnsCoins(t *testing.T) {
 	keyPair := cryptolib.NewKeyPair()
 	addr := keyPair.Address().AsIotaAddress()
 
-	err := client.RequestFundsFromFaucet(ctx, *addr)
+	err := client.RequestFundsFromFaucet(ctx, addr)
 	require.NoError(t, err)
 
 	coinsResp, err := client.GetCoins(ctx, iotagraphql.GetCoinsRequest{

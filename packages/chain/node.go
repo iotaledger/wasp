@@ -1319,7 +1319,7 @@ func initializeReadOnlyChain(
 
 	// Create a minimal state anchor (PackageID is unnecessary for readonly mode)
 	anchor := isc.NewStateAnchor(&iscmove.AnchorWithRef{
-		ObjectRef: iotago.ObjectRef{ObjectID: chainID.AsAddress().AsIotaAddress()},
+		ObjectRef: iotago.ObjectRef{ObjectID: lo.ToPtr(chainID.AsAddress().AsIotaAddress())},
 	}, *iotago.MustAddressFromHex("0x123"))
 
 	// Set the chain state

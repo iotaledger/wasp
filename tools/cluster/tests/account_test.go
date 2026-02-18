@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/v2/clients/chainclient"
@@ -24,7 +25,7 @@ func (e *ChainEnv) testOffLedgerDepositWithdrawTransfer(t *testing.T) {
 	userClient1 := e.NewChainClient(keyPairUser1)
 	userClient1.DepositFunds(10 * isc.Million)
 	time.Sleep(3 * time.Second)
-	balance1 := e.GetL1Balance(addressUser1.AsIotaAddress(), coin.BaseTokenType)
+	balance1 := e.GetL1Balance(lo.ToPtr(addressUser1.AsIotaAddress()), coin.BaseTokenType)
 
 	_, err = userClient1.PostOffLedgerRequest(context.Background(),
 		accounts.FuncWithdraw.Message(),
@@ -35,7 +36,7 @@ func (e *ChainEnv) testOffLedgerDepositWithdrawTransfer(t *testing.T) {
 	require.NoError(t, err)
 	time.Sleep(3 * time.Second)
 
-	balance3 := e.GetL1Balance(addressUser1.AsIotaAddress(), coin.BaseTokenType)
+	balance3 := e.GetL1Balance(lo.ToPtr(addressUser1.AsIotaAddress()), coin.BaseTokenType)
 	require.Equal(t, balance1+10, balance3)
 
 	user1L2Bal1 := e.GetL2Balance(isc.NewAddressAgentID(addressUser1), coin.BaseTokenType)

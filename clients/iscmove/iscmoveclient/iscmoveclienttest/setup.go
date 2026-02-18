@@ -24,7 +24,7 @@ func NewSignerWithFunds(t *testing.T, seed []byte, index int) cryptolib.Signer {
 	seedCopy[0] += byte(index)
 	kp := cryptolib.KeyPairFromSeed(cryptolib.Seed(seedCopy))
 	client := l1starter.Instance().L1Client()
-	addr := *kp.Address().AsIotaAddress()
+	addr := kp.Address().AsIotaAddress()
 
 	err := client.RequestFundsFromFaucet(context.Background(), addr)
 	require.NoError(t, err)
@@ -83,7 +83,7 @@ func newSignerWithFunds(t *testing.T, seed []byte, index int, apiURL, faucetURL 
 	copy(seedCopy, seed)
 	seedCopy[0] += byte(index)
 	kp := cryptolib.KeyPairFromSeed(cryptolib.Seed(seedCopy))
-	addr := *kp.Address().AsIotaAddress()
+	addr := kp.Address().AsIotaAddress()
 	l1Client := clients.NewL1ClientFromIotaClient(iotagraphql.NewGraphQLClient(apiURL, faucetURL))
 	err := l1Client.RequestFundsFromFaucet(context.Background(), addr)
 	require.NoError(t, err)

@@ -69,7 +69,7 @@ func TestAddressToKey(t *testing.T) {
 func TestAddressToIota(t *testing.T) {
 	addr1 := NewRandomAddress()
 	addrIota := addr1.AsIotaAddress()
-	addr2 := NewAddressFromIota(addrIota)
+	addr2 := NewAddressFromIota(&addrIota)
 	require.True(t, addr1.Equals(addr2))
 }
 
@@ -80,7 +80,7 @@ func TestAddressFromIota(t *testing.T) {
 	addr := NewAddressFromIota(&addrIota1)
 	addrIota2 := addr.AsIotaAddress()
 
-	require.True(t, addrIota1.Equals(*addrIota2))
+	require.True(t, addrIota1.Equals(addrIota2))
 }
 
 func TestAddressBCSCodec(t *testing.T) {

@@ -592,8 +592,8 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 
 	// Create ledger accounts. Requesting funds twice to get two coin objects (so we don't need to split one later)
 	te.chainOwner = cryptolib.NewKeyPair()
-	require.NoError(t, l1starter.Instance().L1Client().RequestFundsFromFaucet(context.Background(), *te.chainOwner.Address().AsIotaAddress()))
-	require.NoError(t, l1starter.Instance().L1Client().RequestFundsFromFaucet(context.Background(), *te.chainOwner.Address().AsIotaAddress()))
+	require.NoError(t, l1starter.Instance().L1Client().RequestFundsFromFaucet(context.Background(), te.chainOwner.Address().AsIotaAddress()))
+	require.NoError(t, l1starter.Instance().L1Client().RequestFundsFromFaucet(context.Background(), te.chainOwner.Address().AsIotaAddress()))
 
 	// Create a fake network and keys for the tests.
 	te.peeringURLs, te.peerIdentities = testpeers.SetupKeys(uint16(n))

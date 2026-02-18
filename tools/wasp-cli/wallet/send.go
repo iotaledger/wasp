@@ -7,6 +7,7 @@ import (
 
 	"fortio.org/safecast"
 
+	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/bcs-go"
@@ -45,7 +46,7 @@ func initSendFundsCmd() *cobra.Command { //nolint:funlen
 
 			client := cliclients.L1Client()
 
-			balances, err := client.GetAllBalances(context.Background(), *senderAddress.AsIotaAddress())
+			balances, err := client.GetAllBalances(context.Background(), senderAddress.AsIotaAddress())
 			if err != nil {
 				return err
 			}
@@ -87,7 +88,7 @@ func initSendFundsCmd() *cobra.Command { //nolint:funlen
 					return refErr
 				}
 
-				err = ptb.Pay(coinRefs, []*iotago.Address{targetAddress.AsIotaAddress()}, []uint64{balance.Uint64()})
+				err = ptb.Pay(coinRefs, []*iotago.Address{lo.ToPtr(targetAddress.AsIotaAddress())}, []uint64{balance.Uint64()})
 				if err != nil {
 					return err
 				}
@@ -95,7 +96,7 @@ func initSendFundsCmd() *cobra.Command { //nolint:funlen
 
 			pt := ptb.Finish()
 
-			gasCoins, err := client.GetCoinObjsForTargetAmount(context.Background(), *senderAddress.AsIotaAddress(), iotagraphql.DefaultGasPrice, iotagraphql.DefaultGasBudget)
+			gasCoins, err := client.GetCoinObjsForTargetAmount(context.Background(), senderAddress.AsIotaAddress(), iotagraphql.DefaultGasPrice, iotagraphql.DefaultGasBudget)
 			if err != nil {
 				return fmt.Errorf("failed to find gas payment: %w", err)
 			}
@@ -117,8 +118,9 @@ func initSendFundsCmd() *cobra.Command { //nolint:funlen
 			if err != nil {
 				return err
 			}
+			senderIotaAddr := senderAddress.AsIotaAddress()
 			tx := iotago.NewProgrammable(
-				senderAddress.AsIotaAddress(),
+				&senderIotaAddr,
 				pt,
 				gasCoinRefs,
 				iotagraphql.DefaultGasBudget,

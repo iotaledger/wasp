@@ -83,9 +83,9 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 	//
 	// Create ledger accounts. Requesting funds twice to get two coin objects (so we don't need to split one later)
 	originator := cryptolib.NewKeyPair()
-	err := l1starter.Instance().L1Client().RequestFundsFromFaucet(ctx, *originator.Address().AsIotaAddress())
+	err := l1starter.Instance().L1Client().RequestFundsFromFaucet(ctx, originator.Address().AsIotaAddress())
 	require.NoError(t, err)
-	err = l1starter.Instance().L1Client().RequestFundsFromFaucet(ctx, *originator.Address().AsIotaAddress())
+	err = l1starter.Instance().L1Client().RequestFundsFromFaucet(ctx, originator.Address().AsIotaAddress())
 	require.NoError(t, err)
 
 	//

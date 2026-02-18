@@ -59,7 +59,7 @@ func newNCChain(
 	feed, err := iscmoveclient.NewChainFeed(
 		ctx,
 		packageID,
-		*anchorAddress,
+		anchorAddress,
 		nodeConn.Logger,
 		wsURL,
 		httpURL,

@@ -33,10 +33,7 @@ type IotaClient interface {
 	GetLatestIotaSystemState(ctx context.Context) (*GetLatestIotaSystemStateResponse, error)
 	GetReferenceGasPrice(ctx context.Context) (*BigInt, error)
 
-	MergeCoins(
-		ctx context.Context,
-		req MergeCoinsRequest,
-	) (*TransactionBytes, error)
+	// Transaction Builder API
 	PayAllIota(
 		ctx context.Context,
 		req PayAllIotaRequest,
@@ -48,10 +45,6 @@ type IotaClient interface {
 	Publish(
 		ctx context.Context,
 		req PublishRequest,
-	) (*TransactionBytes, error)
-	TransferIota(
-		ctx context.Context,
-		req TransferIotaRequest,
 	) (*TransactionBytes, error)
 	TransferObject(
 		ctx context.Context,

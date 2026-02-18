@@ -29,7 +29,7 @@ func TestStartNewChain(t *testing.T) {
 
 	iotatest.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(signer), l1starter.Instance().L1Client(), isc.GasCoinTargetValue)
 
-	coinObjects, err := client.GetCoinObjsForTargetAmount(context.Background(), *signer.Address().AsIotaAddress(), isc.GasCoinTargetValue, iotagraphql.DefaultGasBudget)
+	coinObjects, err := client.GetCoinObjsForTargetAmount(context.Background(), signer.Address().AsIotaAddress(), isc.GasCoinTargetValue, iotagraphql.DefaultGasBudget)
 	require.NoError(t, err)
 
 	chainGasCoins, gasCoin, err := coinObjects.PickIOTACoinsWithGas(iotagraphql.NewBigInt(isc.GasCoinTargetValue).Int, iotagraphql.DefaultGasBudget, iotagraphql.PickMethodSmaller)
@@ -160,7 +160,7 @@ func startNewChain(t *testing.T, client *iscmoveclient.Client, signer cryptolib.
 func StartNewChainWithPackageIDAndL1Client(t *testing.T, client *iscmoveclient.Client, signer cryptolib.Signer, packageID iotago.PackageID, l1Client clients.L1Client) *iscmove.AnchorWithRef {
 	iotatest.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(signer), l1Client, isc.GasCoinTargetValue)
 
-	coinObjects, err := client.GetCoinObjsForTargetAmount(context.Background(), *signer.Address().AsIotaAddress(), isc.GasCoinTargetValue, iotagraphql.DefaultGasBudget)
+	coinObjects, err := client.GetCoinObjsForTargetAmount(context.Background(), signer.Address().AsIotaAddress(), isc.GasCoinTargetValue, iotagraphql.DefaultGasBudget)
 	require.NoError(t, err)
 
 	chainGasCoins, gasCoin, err := coinObjects.PickIOTACoinsWithGas(iotagraphql.NewBigInt(isc.GasCoinTargetValue).Int, iotagraphql.DefaultGasBudget, iotagraphql.PickMethodSmaller)

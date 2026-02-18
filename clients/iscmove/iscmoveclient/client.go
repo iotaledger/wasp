@@ -74,7 +74,7 @@ func (c *Client) SignAndExecutePTB(
 		gasPayments = filtered
 	}
 	if len(gasPayments) == 0 {
-		coins, err := c.GetCoinObjsForTargetAmount(ctx, *signer.Address(), gasPrice, gasBudget)
+		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasPrice, gasBudget)
 		if err != nil {
 			return nil, fmt.Errorf("failed to find gas payment: %w", err)
 		}
@@ -95,8 +95,9 @@ func (c *Client) SignAndExecutePTB(
 	if os.Getenv("DEBUG") != "" {
 		pt.Print("-- SignAndExecutePTB -- ")
 	}
+	signerAddr := signer.Address()
 	tx := iotago.NewProgrammable(
-		signer.Address(),
+		&signerAddr,
 		pt,
 		gasPayments,
 		gasBudget,

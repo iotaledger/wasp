@@ -354,12 +354,13 @@ func borrowAnchorAssetsAndPlaceCoin(
 		},
 	)
 	pt := ptb.Finish()
-	coins, err := client.GetCoinObjsForTargetAmount(ctx, *signer.Address(), iotagraphql.DefaultGasBudget, iotagraphql.DefaultGasBudget)
+	signerAddr := signer.Address()
+	coins, err := client.GetCoinObjsForTargetAmount(ctx, signerAddr, iotagraphql.DefaultGasBudget, iotagraphql.DefaultGasBudget)
 	require.NoError(t, err)
 	gasPayments := lo.Must(coins.CoinRefs())
 
 	tx := iotago.NewProgrammable(
-		signer.Address(),
+		&signerAddr,
 		pt,
 		gasPayments,
 		iotagraphql.DefaultGasBudget,

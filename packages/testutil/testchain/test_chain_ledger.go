@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
@@ -119,7 +120,7 @@ func (tcl *TestChainLedger) MakeTxAccountsDeposit(account *cryptolib.KeyPair) (i
 		&iscmoveclient.CreateAndSendRequestWithAssetsRequest{
 			Signer:        account,
 			PackageID:     *tcl.iscPackage,
-			AnchorAddress: tcl.chainID.AsAddress().AsIotaAddress(),
+			AnchorAddress: lo.ToPtr(tcl.chainID.AsAddress().AsIotaAddress()),
 			Assets:        iscmove.NewAssets(100_000_00),
 			Message: &iscmove.Message{
 				Contract: uint32(isc.Hn("accounts")),
@@ -165,8 +166,9 @@ func (tcl *TestChainLedger) RunOnChainStateTransition(anchor *isc.StateAnchor, p
 			break
 		}
 	}
+	signerAddr := signer.Address()
 	tx := iotago.NewProgrammable(
-		signer.Address(),
+		&signerAddr,
 		pt,
 		gasPayments,
 		iotagraphql.DefaultGasBudget,
