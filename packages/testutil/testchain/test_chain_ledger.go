@@ -61,7 +61,7 @@ func (tcl *TestChainLedger) ChainID() isc.ChainID {
 
 func (tcl *TestChainLedger) MakeTxChainOrigin() (*isc.StateAnchor, coin.Value) {
 	coinType := iotagraphql.IotaCoinType
-	resGetCoins, err := tcl.l1client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{Owner: tcl.chainOwner.Address().AsIotaAddress(), CoinType: &coinType})
+	resGetCoins, err := tcl.l1client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{Owner: *tcl.chainOwner.Address().AsIotaAddress(), CoinType: &coinType})
 	require.NoError(tcl.t, err)
 	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
 	initParamsData := origin.DefaultInitParams(isc.NewAddressAgentID(tcl.chainOwner.Address()))
@@ -151,7 +151,7 @@ func (tcl *TestChainLedger) MakeTxAccountsDeposit(account *cryptolib.KeyPair) (i
 func (tcl *TestChainLedger) RunOnChainStateTransition(anchor *isc.StateAnchor, pt iotago.ProgrammableTransaction) (*isc.StateAnchor, error) {
 	signer := cryptolib.SignerToIotaSigner(tcl.chainOwner)
 
-	coinPage, err := tcl.l1client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{Owner: signer.Address()})
+	coinPage, err := tcl.l1client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{Owner: *signer.Address()})
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch GasPayment object: %w", err)
 	}

@@ -23,7 +23,7 @@ func TryMergeAllCoins(ctx context.Context) error {
 	w := wallet.Load()
 
 	coins, err := client.GetAllCoins(ctx, iotagraphql.GetAllCoinsRequest{
-		Owner: w.Address().AsIotaAddress(),
+		Owner: *w.Address().AsIotaAddress(),
 	})
 	if err != nil {
 		return err
@@ -67,7 +67,7 @@ func TryManageCoinsAmount(ctx context.Context) {
 	w := wallet.Load()
 
 	coinPage, err := client.GetCoins(ctx, iotagraphql.GetCoinsRequest{
-		Owner: w.Address().AsIotaAddress(),
+		Owner: *w.Address().AsIotaAddress(),
 	})
 	log.Check(err)
 

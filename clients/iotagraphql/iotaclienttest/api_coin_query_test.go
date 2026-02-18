@@ -39,7 +39,7 @@ func TestGetAllCoins(t *testing.T) {
 
 	limit := int(3)
 	respWithLimit, err := client.GetAllCoins(context.Background(), iotagraphql.GetAllCoinsRequest{
-		Owner: owner,
+		Owner: *owner,
 		Limit: limit,
 	})
 	require.NoError(t, err)
@@ -48,7 +48,7 @@ func TestGetAllCoins(t *testing.T) {
 	require.NotEmpty(t, respWithLimit.Address.Coins.PageInfo.EndCursor)
 
 	respNoLimit, err := client.GetAllCoins(context.Background(), iotagraphql.GetAllCoinsRequest{
-		Owner: owner,
+		Owner: *owner,
 	})
 	require.NoError(t, err)
 	require.GreaterOrEqual(t, len(respNoLimit.Address.Coins.Nodes), len(respWithLimit.Address.Coins.Nodes))
@@ -60,7 +60,7 @@ func TestGetBalance(t *testing.T) {
 
 	client := l1starter.Instance().L1Client()
 
-	balance, err := client.GetBalance(ctx, iotagraphql.GetBalanceRequest{Owner: owner})
+	balance, err := client.GetBalance(ctx, iotagraphql.GetBalanceRequest{Owner: *owner})
 	require.NoError(t, err)
 	require.True(t, balance.TotalBalance.Clone().Sign() > 0)
 }
@@ -82,7 +82,7 @@ func TestGetCoins(t *testing.T) {
 	limit := int(5)
 
 	resp, err := client.GetCoins(ctx, iotagraphql.GetCoinsRequest{
-		Owner:    owner,
+		Owner:    *owner,
 		Limit:    limit,
 		CoinType: &fetchCoinType,
 	})

@@ -21,7 +21,7 @@ func TestGetObject(t *testing.T) {
 
 	limit := int(1)
 	coinsResp, err := client.GetCoins(ctx, iotagraphql.GetCoinsRequest{
-		Owner: owner,
+		Owner: *owner,
 		Limit: limit,
 	})
 	require.NoError(t, err)
@@ -40,7 +40,7 @@ func TestGetTransactionBlock(t *testing.T) {
 
 	limit := int(1)
 	coinsResp, err := client.GetCoins(ctx, iotagraphql.GetCoinsRequest{
-		Owner: owner,
+		Owner: *owner,
 		Limit: limit,
 	})
 	require.NoError(t, err)
@@ -70,7 +70,7 @@ func TestTryGetPastObject(t *testing.T) {
 
 	limit := int(1)
 	coinsResp, err := client.GetCoins(ctx, iotagraphql.GetCoinsRequest{
-		Owner: owner,
+		Owner: *owner,
 		Limit: limit,
 	})
 	require.NoError(t, err)

@@ -619,7 +619,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	l1client := l1starter.Instance().L1Client()
 
 	objs, err := l1client.GetAllCoins(context.Background(), iotagraphql.GetAllCoinsRequest{
-		Owner: te.chainOwner.Address().AsIotaAddress(),
+		Owner: *te.chainOwner.Address().AsIotaAddress(),
 	})
 	require.NoError(t, err)
 

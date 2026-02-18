@@ -18,7 +18,7 @@ func TestDryRunTransaction(t *testing.T) {
 
 	coins, err := client.GetCoins(
 		context.Background(), iotagraphql.GetCoinsRequest{
-			Owner: signer,
+			Owner: *signer,
 			Limit: 10,
 		},
 	)
@@ -28,8 +28,8 @@ func TestDryRunTransaction(t *testing.T) {
 	tx, err := client.PayAllIota(
 		context.Background(),
 		iotagraphql.PayAllIotaRequest{
-			Signer:     signer,
-			Recipient:  signer,
+			Signer:     *signer,
+			Recipient:  *signer,
 			InputCoins: pickedCoins.CoinIds(),
 			GasBudget:  iotagraphql.NewBigInt(iotagraphql.DefaultGasBudget),
 		},
@@ -46,7 +46,7 @@ func TestExecuteTransactionBlock(t *testing.T) {
 	signer := l1starter.ISCPackageOwner
 	coins, err := client.GetCoins(
 		context.Background(), iotagraphql.GetCoinsRequest{
-			Owner: signer.Address(),
+			Owner: *signer.Address(),
 			Limit: 10,
 		},
 	)
@@ -56,8 +56,8 @@ func TestExecuteTransactionBlock(t *testing.T) {
 	tx, err := client.PayAllIota(
 		context.Background(),
 		iotagraphql.PayAllIotaRequest{
-			Signer:     signer.Address(),
-			Recipient:  signer.Address(),
+			Signer:     *signer.Address(),
+			Recipient:  *signer.Address(),
 			InputCoins: pickedCoins.CoinIds(),
 			GasBudget:  iotagraphql.NewBigInt(iotagraphql.DefaultGasBudget),
 		},
@@ -79,7 +79,7 @@ func TestSignAndExecuteTransaction(t *testing.T) {
 
 	coins, err := client.GetCoins(
 		context.Background(), iotagraphql.GetCoinsRequest{
-			Owner: signer.Address(),
+			Owner: *signer.Address(),
 			Limit: 10,
 		},
 	)
@@ -89,8 +89,8 @@ func TestSignAndExecuteTransaction(t *testing.T) {
 	tx, err := client.PayAllIota(
 		context.Background(),
 		iotagraphql.PayAllIotaRequest{
-			Signer:     signer.Address(),
-			Recipient:  signer.Address(),
+			Signer:     *signer.Address(),
+			Recipient:  *signer.Address(),
 			InputCoins: pickedCoins.CoinIds(),
 			GasBudget:  iotagraphql.NewBigInt(iotagraphql.DefaultGasBudget),
 		},

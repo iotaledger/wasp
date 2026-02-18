@@ -154,7 +154,7 @@ func TestAssetsBagTakeCoinBalanceMergeTo(t *testing.T) {
 	assetsBagMainRef, err := txnResponse.ExecuteTransactionBlock.Effects.GetCreatedObjectByName(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
-	getCoinsRes, err := client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{Owner: cryptolibSigner.Address().AsIotaAddress()})
+	getCoinsRes, err := client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{Owner: *cryptolibSigner.Address().AsIotaAddress()})
 	require.NoError(t, err)
 	coins := iotagraphql.Coins(getCoinsRes.Address.Coins.Nodes)
 	mergeToCoin1 := coins[2]

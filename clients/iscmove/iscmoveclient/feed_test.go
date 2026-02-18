@@ -95,7 +95,7 @@ func TestRequestsFeed(t *testing.T) {
 	require.Len(t, ownedReqs, 1)
 	require.Equal(t, *requestRef.ObjectID, ownedReqs[0].Object.ID)
 
-	getCoinsRes, err := client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{Owner: anchorOwner.Address().AsIotaAddress()})
+	getCoinsRes, err := client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{Owner: *anchorOwner.Address().AsIotaAddress()})
 	require.NoError(t, err)
 	feedCoins := iotagraphql.Coins(getCoinsRes.Address.Coins.Nodes)
 	maxCoin := lo.MaxBy(feedCoins, func(a, b iotagraphql.Coin) bool {

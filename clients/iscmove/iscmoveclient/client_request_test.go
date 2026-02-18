@@ -26,7 +26,7 @@ func ensureSingleCoin(t *testing.T, cryptolibSigner cryptolib.Signer, client cli
 	coinType := iotagraphql.IotaCoinType
 	coinObjects, err := client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{
 		CoinType: &coinType,
-		Owner:    cryptolibSigner.Address().AsIotaAddress(),
+		Owner:    *cryptolibSigner.Address().AsIotaAddress(),
 	})
 	require.NoError(t, err)
 
@@ -72,7 +72,7 @@ func ensureSingleCoin(t *testing.T, cryptolibSigner cryptolib.Signer, client cli
 
 	coinObjects, err = client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{
 		CoinType: &coinType,
-		Owner:    cryptolibSigner.Address().AsIotaAddress(),
+		Owner:    *cryptolibSigner.Address().AsIotaAddress(),
 	})
 	require.NoError(t, err)
 	t.Logf("SignAndExecuteTransaction, contObjects: %+v", coinObjects)

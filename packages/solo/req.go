@@ -253,7 +253,7 @@ func (env *Solo) makeBaseTokenCoin(
 	tx := lo.Must(env.L1Client().PayIota(
 		env.ctx,
 		iotagraphql.PayIotaRequest{
-			Signer:     keyPair.Address().AsIotaAddress(),
+			Signer:     *keyPair.Address().AsIotaAddress(),
 			InputCoins: []iotago.ObjectID{pickedCoinID},
 			Amount:     []*iotagraphql.BigInt{iotagraphql.NewBigInt(uint64(value))},
 			Recipients: []*iotago.Address{keyPair.Address().AsIotaAddress()},

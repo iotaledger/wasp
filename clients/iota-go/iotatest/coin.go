@@ -22,7 +22,7 @@ func EnsureCoinSplitWithBalance(
 ) {
 	getCoinsRes, err := client.GetCoins(
 		context.Background(),
-		iotagraphql.GetCoinsRequest{Owner: cryptolibSigner.Address()},
+		iotagraphql.GetCoinsRequest{Owner: *cryptolibSigner.Address()},
 	)
 	require.NoError(t, err)
 

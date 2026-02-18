@@ -562,7 +562,7 @@ func (env *Solo) L1BaseTokenCoins(addr *cryptolib.Address) iotagraphql.Coins {
 
 func (env *Solo) L1AllCoins(addr *cryptolib.Address) iotagraphql.Coins {
 	r, err := env.L1Client().GetCoins(env.ctx, iotagraphql.GetCoinsRequest{
-		Owner: addr.AsIotaAddress(),
+		Owner: *addr.AsIotaAddress(),
 		Limit: math.MaxInt,
 	})
 	require.NoError(env.T, err)
@@ -572,7 +572,7 @@ func (env *Solo) L1AllCoins(addr *cryptolib.Address) iotagraphql.Coins {
 func (env *Solo) L1Coins(addr *cryptolib.Address, coinType coin.Type) iotagraphql.Coins {
 	ct := iotagraphql.CoinType(coinType.String())
 	r, err := env.L1Client().GetCoins(env.ctx, iotagraphql.GetCoinsRequest{
-		Owner:    addr.AsIotaAddress(),
+		Owner:    *addr.AsIotaAddress(),
 		CoinType: &ct,
 		Limit:    50,
 	})
@@ -586,7 +586,7 @@ func (env *Solo) L1BaseTokens(addr *cryptolib.Address) coin.Value {
 
 func (env *Solo) L1CoinBalance(addr *cryptolib.Address, coinType coin.Type) coin.Value {
 	r, err := env.L1Client().GetBalance(env.ctx, iotagraphql.GetBalanceRequest{
-		Owner:    addr.AsIotaAddress(),
+		Owner:    *addr.AsIotaAddress(),
 		CoinType: iotagraphql.CoinType(coinType.String()),
 	})
 	require.NoError(env.T, err)
@@ -693,7 +693,7 @@ func (env *Solo) WaitForCoinToBeIndexed(owner *iotago.Address, coinID *iotago.Ob
 		case <-ticker.C:
 			// Query for this specific coin type using GetCoins
 			coins, err := env.ISCMoveClient().GetCoins(ctx, iotagraphql.GetCoinsRequest{
-				Owner:    owner,
+				Owner:    *owner,
 				CoinType: &coinType,
 			})
 			if err != nil {

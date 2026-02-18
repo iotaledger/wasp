@@ -28,7 +28,7 @@ func DeployCoinPackage(
 	txnBytes, err := iotaClient.Publish(
 		context.Background(),
 		iotagraphql.PublishRequest{
-			Sender:          signer.Address(),
+			Sender:          *signer.Address(),
 			CompiledModules: packageBytecode.Modules,
 			Dependencies:    packageBytecode.Dependencies,
 			GasBudget:       iotagraphql.NewBigInt(iotagraphql.DefaultGasBudget * 5),

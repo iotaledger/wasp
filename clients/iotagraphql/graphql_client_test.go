@@ -76,7 +76,7 @@ func TestFaucetReturns5CoinsWithCorrectAmount(t *testing.T) {
 	require.NoError(t, err)
 
 	coinsResp, err := client.GetCoins(ctx, iotagraphql.GetCoinsRequest{
-		Owner: addr,
+		Owner: *addr,
 		Limit: 10,
 	})
 	require.NoError(t, err)
@@ -93,7 +93,7 @@ func TestFaucetReturns5CoinsWithCorrectAmount(t *testing.T) {
 		)
 	}
 
-	balance, err := client.GetBalance(ctx, iotagraphql.GetBalanceRequest{Owner: addr})
+	balance, err := client.GetBalance(ctx, iotagraphql.GetBalanceRequest{Owner: *addr})
 	require.NoError(t, err)
 	require.Equal(t,
 		iotagraphql.FundsFromFaucetAmount,

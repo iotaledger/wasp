@@ -46,7 +46,7 @@ func TestKeys(t *testing.T) {
 	iscBytecode := contracts.ISC()
 
 	txnBytes, err := client.Publish(context.Background(), iotagraphql.PublishRequest{
-		Sender:          cryptolibSigner.Address().AsIotaAddress(),
+		Sender:          *cryptolibSigner.Address().AsIotaAddress(),
 		CompiledModules: iscBytecode.Modules,
 		Dependencies:    iscBytecode.Dependencies,
 		GasBudget:       iotagraphql.NewBigInt(iotagraphql.DefaultGasBudget * 10),

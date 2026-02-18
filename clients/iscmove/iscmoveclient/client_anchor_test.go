@@ -87,7 +87,7 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 	require.NoError(t, err)
 
 	// Fetch fresh coin references after assetsBagPlaceCoinAmountWithGasCoin modified the gas coin
-	getCoinsRes, err := client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{Owner: cryptolibSigner.Address().AsIotaAddress()})
+	getCoinsRes, err := client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{Owner: *cryptolibSigner.Address().AsIotaAddress()})
 	require.NoError(t, err)
 	coins := iotagraphql.Coins(getCoinsRes.Address.Coins.Nodes)
 
@@ -117,7 +117,7 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 	requestRef, err := createAndSendRequestRes.ExecuteTransactionBlock.Effects.GetCreatedObjectByName(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)
 
-	getCoinsRes, err = client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{Owner: chainSigner.Address().AsIotaAddress()})
+	getCoinsRes, err = client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{Owner: *chainSigner.Address().AsIotaAddress()})
 	require.NoError(t, err)
 	chainCoins := iotagraphql.Coins(getCoinsRes.Address.Coins.Nodes)
 	gasCoin1 := chainCoins[1]

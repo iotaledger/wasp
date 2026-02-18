@@ -205,7 +205,7 @@ func TestPayAllIota(t *testing.T) {
 	limit := int(3)
 	coinPages, err := client.GetCoins(
 		context.Background(), iotagraphql.GetCoinsRequest{
-			Owner: signer.Address(),
+			Owner: *signer.Address(),
 			Limit: limit,
 		},
 	)
@@ -217,8 +217,8 @@ func TestPayAllIota(t *testing.T) {
 	txn, err := client.PayAllIota(
 		context.Background(),
 		iotagraphql.PayAllIotaRequest{
-			Signer:     signer.Address(),
-			Recipient:  recipient.Address(),
+			Signer:     *signer.Address(),
+			Recipient:  *recipient.Address(),
 			InputCoins: coins.ObjectIDs(),
 			GasBudget:  iotagraphql.NewBigInt(iotagraphql.DefaultGasBudget),
 		},
@@ -249,7 +249,7 @@ func TestPublish(t *testing.T) {
 	txnBytes, err := client.Publish(
 		context.Background(),
 		iotagraphql.PublishRequest{
-			Sender:          signer.Address(),
+			Sender:          *signer.Address(),
 			CompiledModules: testcoinBytecode.Modules,
 			Dependencies:    testcoinBytecode.Dependencies,
 			GasBudget:       iotagraphql.NewBigInt(iotagraphql.DefaultGasBudget * 5),

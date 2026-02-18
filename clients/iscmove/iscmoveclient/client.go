@@ -161,7 +161,7 @@ func (c *Client) GetISCPackageIDForAnchor(ctx context.Context, anchor iotago.Obj
 func (c *Client) DeployISCContracts(ctx context.Context, signer iotasigner.Signer) (iotago.PackageID, error) {
 	iscBytecode := contracts.ISC()
 	txnBytes, err := c.Publish(ctx, iotagraphql.PublishRequest{
-		Sender:          signer.Address(),
+		Sender:          *signer.Address(),
 		CompiledModules: iscBytecode.Modules,
 		Dependencies:    iscBytecode.Dependencies,
 		GasBudget:       iotagraphql.NewBigInt(iotagraphql.DefaultGasBudget * 10),

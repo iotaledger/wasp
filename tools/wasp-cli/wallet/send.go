@@ -65,7 +65,7 @@ func initSendFundsCmd() *cobra.Command { //nolint:funlen
 
 			coinPage, err := client.GetAllCoins(
 				context.Background(), iotagraphql.GetAllCoinsRequest{
-					Owner: senderAddress.AsIotaAddress(),
+					Owner: *senderAddress.AsIotaAddress(),
 				},
 			)
 			if err != nil {

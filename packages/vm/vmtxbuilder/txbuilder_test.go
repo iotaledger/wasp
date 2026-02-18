@@ -47,7 +47,7 @@ func TestTxBuilderBasic(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	getCoinsRes, err := client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{Owner: chainSigner.Address().AsIotaAddress()})
+	getCoinsRes, err := client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{Owner: *chainSigner.Address().AsIotaAddress()})
 	require.NoError(t, err)
 	selectedGasCoin, err := getCoinsRes.Address.Coins.Nodes[0].ObjectRef()
 	require.NoError(t, err)
@@ -96,7 +96,7 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 	iscPackage, err := client.L2().DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(chainSigner))
 	require.NoError(t, err)
 
-	getCoinsRes, err := client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{Owner: chainSigner.Address().AsIotaAddress()})
+	getCoinsRes, err := client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{Owner: *chainSigner.Address().AsIotaAddress()})
 	require.NoError(t, err)
 
 	anchor, err := client.L2().StartNewChain(
@@ -164,7 +164,7 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 	stateMetadata2 := []byte("dummy stateMetadata2")
 	pt2 := txb2.BuildTransactionEssence(stateMetadata2, 123)
 
-	getCoinsRes, err = client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{Owner: chainSigner.Address().AsIotaAddress()})
+	getCoinsRes, err = client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{Owner: *chainSigner.Address().AsIotaAddress()})
 	require.NoError(t, err)
 
 	tx2 := iotago.NewProgrammable(
@@ -210,7 +210,7 @@ func TestRotateAndBuildTx(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	getCoinsRes, err := client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{Owner: chainSigner.Address().AsIotaAddress()})
+	getCoinsRes, err := client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{Owner: *chainSigner.Address().AsIotaAddress()})
 	require.NoError(t, err)
 
 	selectedGasCoin := lo.Must(getCoinsRes.Address.Coins.Nodes[0].ObjectRef())

@@ -85,7 +85,7 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 	coinType := iotagraphql.IotaCoinType
 	balance, err := accountsClient.L1Client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{
 		CoinType: &coinType,
-		Owner:    accountsClient.KeyPair.Address().AsIotaAddress(),
+		Owner:    *accountsClient.KeyPair.Address().AsIotaAddress(),
 	})
 
 	require.NoError(t, err)

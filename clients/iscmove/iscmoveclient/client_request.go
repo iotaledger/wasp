@@ -115,7 +115,7 @@ func (c *Client) collectPlacedCoins(
 		// Query for this specific coin type
 		ct := iotagraphql.CoinType(cointype.String())
 		coinsOfType, err := c.GetCoins(ctx, iotagraphql.GetCoinsRequest{
-			Owner:    req.Signer.Address().AsIotaAddress(),
+			Owner:    *req.Signer.Address().AsIotaAddress(),
 			CoinType: &ct,
 		})
 		if err != nil {
@@ -378,7 +378,7 @@ func (c *Client) pullRequests(ctx context.Context, packageID iotago.Address, anc
 
 	limit := maxAmountOfRequests
 	objs, err := c.GetOwnedObjects(ctx, iotagraphql.GetOwnedObjectsRequest{
-		Address: anchorAddress,
+		Address: *anchorAddress,
 		Filter:  filter,
 		Limit:   &limit,
 	})
