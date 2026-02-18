@@ -1,6 +1,7 @@
 mutation ExecuteTransactionBlock($txBytes: String!, $signatures: [String!]!) {
 	executeTransactionBlock(txBytes: $txBytes, signatures: $signatures) {
 		errors
+
 		# @genqlient(typename: "TxEffects")
 		effects {
 			...TX_EFFECTS

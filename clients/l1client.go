@@ -71,7 +71,7 @@ func (c *l1Client) WaitForNextVersionForTesting(ctx context.Context, timeout tim
 			return nil, fmt.Errorf("WaitForNextVersionForTesting: context deadline exceeded while waiting for object version change: %v", currentRef)
 		case <-ticker.C:
 			// Poll for object update
-			newRef, err := c.GetObject(ctx, iotagraphql.GetObjectRequest{ObjectID: currentRef.ObjectID})
+			resp, err := c.GetObject(ctx, *currentRef.ObjectID)
 			if err != nil {
 				if logger != nil {
 					logger.LogInfof("WaitForNextVersionForTesting: error getting object: %v, retrying...", err)
@@ -79,25 +79,24 @@ func (c *l1Client) WaitForNextVersionForTesting(ctx context.Context, timeout tim
 				continue
 			}
 
-			if newRef.Error != nil {
+			if resp.Object.IsNotFound() || resp.Object.IsDeleted() {
 				// The provided object got consumed and is gone. We can return.
-				if newRef.Error.Deleted != nil || newRef.Error.NotExists != nil {
-					return currentRef, nil
-				}
+				return currentRef, nil
+			}
 
+			ref, err := resp.Object.ObjectRef()
+			if err != nil {
 				if logger != nil {
-					logger.LogInfof("WaitForNextVersionForTesting: object error: %v, retrying...", newRef.Error)
+					logger.LogInfof("WaitForNextVersionForTesting: error parsing object ref: %v, retrying...", err)
 				}
 				continue
 			}
 
-			if newRef.Data.Ref().Version > currentRef.Version {
+			if ref.Version > currentRef.Version {
 				if logger != nil {
-					logger.LogInfof("WaitForNextVersionForTesting: Found the updated version of %v, which is: %v", currentRef, newRef.Data.Ref())
+					logger.LogInfof("WaitForNextVersionForTesting: Found the updated version of %v, which is: %v", currentRef, ref)
 				}
-
-				ref := newRef.Data.Ref()
-				return &ref, nil
+				return ref, nil
 			}
 
 			if logger != nil {
@@ -111,6 +110,13 @@ func NewL1Client(l1Config L1Config, waitUntilEffectsVisible *iotagraphql.WaitPar
 	return &l1Client{
 		IotaClient: iotagraphql.NewGraphQLClientWithWaitParams(l1Config.APIURL, l1Config.FaucetURL, waitUntilEffectsVisible),
 		Config:     l1Config,
+	}
+}
+
+// NewL1ClientFromIotaClient wraps an existing IotaClient as an L1Client.
+func NewL1ClientFromIotaClient(iotaClient iotagraphql.IotaClient) L1Client {
+	return &l1Client{
+		IotaClient: iotaClient,
 	}
 }
 

@@ -1,6 +1,5 @@
 query DryRunTransactionBlock($txBytes: String!) {
 	dryRunTransactionBlock(txBytes: $txBytes) {
-		error
 		# @genqlient(typename: "TxBlockData")
 		transaction {
 			...TX_CORE

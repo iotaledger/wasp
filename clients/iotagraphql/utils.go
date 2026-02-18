@@ -54,7 +54,7 @@ func Retry[T any](
 
 		result, err = f()
 		if !shouldRetry(result, err) {
-			return result, nil
+			return result, err
 		}
 		// no need to wait after last attempt
 		if i < params.Attempts-1 {

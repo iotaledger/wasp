@@ -124,7 +124,7 @@ func (clu *Cluster) NewKeyPairWithFunds() (*cryptolib.KeyPair, *cryptolib.Addres
 }
 
 func (clu *Cluster) RequestFunds(addr *cryptolib.Address) error {
-	return clu.l1.RequestFundsFromFaucet(context.Background(), addr.AsIotaAddress())
+	return clu.l1.RequestFundsFromFaucet(context.Background(), *addr.AsIotaAddress())
 }
 
 func (clu *Cluster) L1Client() clients.L1Client {
@@ -247,7 +247,6 @@ func (clu *Cluster) RunDistributedKeyGeneration(committeeNodes []int, threshold 
 		addr, err = apilib.RunDistributedKeyGeneration(context.Background(), client, peerPubKeys, threshold, timeout...)
 		return err
 	}, 5)
-
 	if err != nil {
 		return nil, err
 	}
@@ -315,16 +314,21 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 	}
 
 	var gascoin *iotagraphql.Coin
-	for _, coin := range getCoinsRes.Data {
+	for i := range getCoinsRes.Address.Coins.Nodes {
+		c := &getCoinsRes.Address.Coins.Nodes[i]
 		// dont pick a too big coin object
-		if coin.Balance.Uint64() < 3*iotagraphql.FundsFromFaucetAmount &&
-			iotagraphql.FundsFromFaucetAmount <= coin.Balance.Uint64() {
-			gascoin = coin
+		if c.Balance() < 3*iotagraphql.FundsFromFaucetAmount &&
+			iotagraphql.FundsFromFaucetAmount <= c.Balance() {
+			gascoin = c
 		}
 	}
 
 	ptb := iotago.NewProgrammableTransactionBuilder()
-	err = ptb.TransferObject(stateAddr.AsIotaAddress(), gascoin.Ref())
+	gascoinRef, err := gascoin.ObjectRef()
+	if err != nil {
+		return nil, fmt.Errorf("cant get gas coin ref: %w", err)
+	}
+	err = ptb.TransferObject(stateAddr.AsIotaAddress(), gascoinRef)
 	if err != nil {
 		return nil, fmt.Errorf("cant transfer gas coin: %w", err)
 	}
@@ -337,18 +341,15 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 		nil,
 		iotagraphql.DefaultGasBudget,
 		iotagraphql.DefaultGasPrice,
-		&iotagraphql.IotaTransactionBlockResponseOptions{
-			ShowInput:   true,
-			ShowEffects: true,
-		},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("can't transfer GasCoin: %w", err)
 	}
-	if !resTransferGasCoin.Effects.IsSuccess() {
+	if !resTransferGasCoin.ExecuteTransactionBlock.Effects.IsSuccess() {
 		return nil, errors.New("transfer gas coin failed")
 	}
-	fmt.Printf("chosen GasCoin %s", gascoin.String())
+	gascoinObjID := gascoin.ObjectID()
+	fmt.Printf("chosen GasCoin %s", gascoinObjID.String())
 
 	l1Params, err := clu.l1ParamsFetcher.GetOrFetchLatest(context.Background())
 	if err != nil {
@@ -360,11 +361,11 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 		origin.L1Commitment(
 			allmigrations.DefaultScheme.LatestSchemaVersion(),
 			encodedInitParams,
-			*gascoin.CoinObjectID,
+			gascoinObjID,
 			0,
 			l1Params,
 		),
-		gascoin.CoinObjectID,
+		&gascoinObjID,
 		gas.DefaultFeePolicy(),
 		encodedInitParams,
 		0,
@@ -431,7 +432,7 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 	//
 	// Register all nodes as access nodes.
-	addAccessNodesTxs := make([]*iotagraphql.IotaTransactionBlockResponse, len(accessNodes))
+	addAccessNodesTxs := make([]*iotagraphql.ExecuteTransactionBlockResponse, len(accessNodes))
 	for i, a := range accessNodes {
 		tx, err := clu.addAccessNode(a, chain)
 		if err != nil {
@@ -490,7 +491,7 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 // addAccessNode introduces node at accessNodeIndex as an access node to the chain.
 // This is done by activating the chain on the node and asking the governance contract
 // to consider it as an access node.
-func (clu *Cluster) addAccessNode(accessNodeIndex int, chain *Chain) (*iotagraphql.IotaTransactionBlockResponse, error) {
+func (clu *Cluster) addAccessNode(accessNodeIndex int, chain *Chain) (*iotagraphql.ExecuteTransactionBlockResponse, error) {
 	waspClient := clu.WaspClient(accessNodeIndex)
 	if err := apilib.ActivateChainOnNodes(clu.WaspClientFromHostName, clu.Config.APIHosts([]int{accessNodeIndex}), chain.ChainID); err != nil {
 		return nil, err
@@ -541,7 +542,7 @@ func (clu *Cluster) addAccessNode(accessNodeIndex int, chain *Chain) (*iotagraph
 	}
 
 	fmt.Printf("[cluster] Governance::AddCandidateNode, Posted TX, digest=%v, NodePubKey=%v, Certificate=%x, accessAPI=%v, forCommittee=%v\n",
-		tx.Digest, accessNodePubKey, decodedCert, accessAPI, forCommittee)
+		tx.ExecuteTransactionBlock.Effects.TransactionBlock.Digest, accessNodePubKey, decodedCert, accessAPI, forCommittee)
 	return tx, nil
 }
 
@@ -935,7 +936,7 @@ func (clu *Cluster) ActiveNodes() []int {
 func (clu *Cluster) AddressBalances(addr *cryptolib.Address) *isc.Assets {
 	// get funds controlled by addr
 
-	balances, err := clu.l1.GetAllBalances(context.Background(), addr.AsIotaAddress())
+	balances, err := clu.l1.GetAllBalances(context.Background(), *addr.AsIotaAddress())
 	if err != nil {
 		clu.log.LogPanicf("[cluster] failed to GetAllBalances for address[%v]", addr.String())
 		return nil

@@ -97,6 +97,10 @@ func TestRequestsFeed(t *testing.T) {
 
 	getCoinsRes, err := client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{Owner: anchorOwner.Address().AsIotaAddress()})
 	require.NoError(t, err)
+	feedCoins := iotagraphql.Coins(getCoinsRes.Address.Coins.Nodes)
+	maxCoin := lo.MaxBy(feedCoins, func(a, b iotagraphql.Coin) bool {
+		return a.CoinBalance.Int.Cmp(b.CoinBalance.Int) >= 0
+	})
 
 	_, err = client.ReceiveRequestsAndTransition(
 		context.Background(),
@@ -108,9 +112,7 @@ func TestRequestsFeed(t *testing.T) {
 			SentAssets:       []iscmoveclient.SentAssets{},
 			StateMetadata:    []byte{1, 2, 3},
 			TopUpAmount:      100,
-			GasPayment: lo.MaxBy(getCoinsRes.Data, func(a, b *iotagraphql.Coin) bool {
-				return a.Balance.Int.Cmp(b.Balance.Int) >= 0
-			}).Ref(),
+			GasPayment:       lo.Must(maxCoin.ObjectRef()),
 			GasPrice:  iotagraphql.DefaultGasPrice,
 			GasBudget: iotagraphql.DefaultGasBudget,
 		},

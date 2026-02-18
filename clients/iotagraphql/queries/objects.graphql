@@ -28,8 +28,7 @@ query GetOwnedObjects(
 	address(address: $owner) {
 		objects(first: $limit, after: $cursor, filter: $filter) {
 			pageInfo {
-				hasNextPage
-				endCursor
+				...PAGE_INFO
 			}
 			nodes {
 				...RPC_MOVE_OBJECT_FIELDS
@@ -111,8 +110,7 @@ query MultiGetObjects(
 ) {
 	objects(first: $limit, after: $cursor, filter: { objectIds: $ids }) {
 		pageInfo {
-			hasNextPage
-			endCursor
+			...PAGE_INFO
 		}
 		nodes {
 			...RPC_OBJECT_FIELDS

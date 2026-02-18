@@ -7,7 +7,7 @@ import (
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/iotatest"
-	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql/graphqltypes"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
@@ -156,17 +156,14 @@ func DecodeAsset(assets *Assets, cmd *iotago.ProgrammableMoveCall) error {
 	return err
 }
 
-// DecodeDryRunTransaction The intention of this parser is to make the use of the gas estimation easier.
-// We only accept the transactionBytes and select all needed inputs.
-// The upside is that a user can pass an unsigned transaction to estimate.
-// The downside is that any time we change create_and_send_request in the move contract, we need to update this logic.
-// I don't expect it to change often if ever, so that seems to be a straight forward way.
-// TODO: FIX TYPE
-func DecodeDryRunTransaction(dryRunRes *iotagraphql.DryRunResult) (*Assets, *EstimationRequest, *cryptolib.Address, error) {
-	tx := dryRunRes.Input.V1.Transaction.ProgrammableTransaction
-   
-	var cmds []struct {
-		MoveCall *iotago.ProgrammableMoveCall `json:"MoveCall,omitempty"`
+// DecodeDryRunTransaction decodes the transaction from a dry run result to extract
+// assets, request info, and sender address.
+// TODO: This needs proper implementation - currently decodes the BCS transaction from the dry run response.
+func DecodeDryRunTransaction(dryRunRes *graphqltypes.DryRunTransactionBlockDryRunTransactionBlockDryRunResult) (*Assets, *EstimationRequest, *cryptolib.Address, error) {
+	txBcs := dryRunRes.Transaction.Bcs
+	txData, err := bcs.Unmarshal[iotago.TransactionData](txBcs)
+	if err != nil {
+		return nil, nil, cryptolib.NewEmptyAddress(), fmt.Errorf("failed to unmarshal transaction BCS: %w", err)
 	}
 	if txData.V1 == nil {
 		return nil, nil, cryptolib.NewEmptyAddress(), fmt.Errorf("only TransactionData V1 is supported")
@@ -203,5 +200,5 @@ func DecodeDryRunTransaction(dryRunRes *iotagraphql.DryRunResult) (*Assets, *Est
 		}
 	}
 
-	return assets, request, cryptolib.NewAddressFromIota(&dryRunRes.Input.V1.Sender), nil
+	return assets, request, cryptolib.NewAddressFromIota(&txData.V1.Sender), nil
 }

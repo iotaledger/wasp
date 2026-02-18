@@ -16,7 +16,7 @@ func TestGetAllBalances(t *testing.T) {
 	client := l1starter.Instance().L1Client()
 	owner := l1starter.ISCPackageOwner.Address()
 
-	balances, err := client.GetAllBalances(context.Background(), owner)
+	balances, err := client.GetAllBalances(context.Background(), *owner)
 	require.NoError(t, err)
 	require.NotEmpty(t, balances)
 
@@ -43,15 +43,15 @@ func TestGetAllCoins(t *testing.T) {
 		Limit: limit,
 	})
 	require.NoError(t, err)
-	require.NotEmpty(t, respWithLimit.Data)
-	require.LessOrEqual(t, len(respWithLimit.Data), limit)
-	require.NotNil(t, respWithLimit.NextCursor)
+	require.NotEmpty(t, respWithLimit.Address.Coins.Nodes)
+	require.LessOrEqual(t, len(respWithLimit.Address.Coins.Nodes), limit)
+	require.NotEmpty(t, respWithLimit.Address.Coins.PageInfo.EndCursor)
 
 	respNoLimit, err := client.GetAllCoins(context.Background(), iotagraphql.GetAllCoinsRequest{
 		Owner: owner,
 	})
 	require.NoError(t, err)
-	require.GreaterOrEqual(t, len(respNoLimit.Data), len(respWithLimit.Data))
+	require.GreaterOrEqual(t, len(respNoLimit.Address.Coins.Nodes), len(respWithLimit.Address.Coins.Nodes))
 }
 
 func TestGetBalance(t *testing.T) {
@@ -67,7 +67,7 @@ func TestGetBalance(t *testing.T) {
 
 func TestGetCoinMetadata(t *testing.T) {
 	client := l1starter.Instance().L1Client()
-	metadata, err := client.GetCoinMetadata(context.Background(), iotagraphql.IotaCoinType.String())
+	metadata, err := client.GetCoinMetadata(context.Background(), iotagraphql.IotaCoinType)
 	require.NoError(t, err)
 	require.Equal(t, "IOTA", metadata.Name)
 }
@@ -78,7 +78,7 @@ func TestGetCoins(t *testing.T) {
 
 	client := l1starter.Instance().L1Client()
 
-	fetchCoinType := iotagraphql.IotaCoinType.String()
+	fetchCoinType := iotagraphql.IotaCoinType
 	limit := int(5)
 
 	resp, err := client.GetCoins(ctx, iotagraphql.GetCoinsRequest{
@@ -88,12 +88,12 @@ func TestGetCoins(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	coins := resp.Data
+	coins := iotagraphql.Coins(resp.Address.Coins.Nodes)
 	require.NotEmpty(t, coins)
 
 	for _, coin := range coins {
 		wrappedCoinType := fmt.Sprintf("0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin<%s>", fetchCoinType)
-		require.Equal(t, wrappedCoinType, coin.CoinType.String())
-		require.True(t, coin.Balance.Clone().Sign() > 0)
+		require.Equal(t, wrappedCoinType, coin.Contents.Type.Repr)
+		require.True(t, coin.Balance() > 0)
 	}
 }

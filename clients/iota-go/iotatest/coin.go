@@ -26,13 +26,13 @@ func EnsureCoinSplitWithBalance(
 	)
 	require.NoError(t, err)
 
-	if len(getCoinsRes.Data) > 1 {
+	if len(getCoinsRes.Address.Coins.Nodes) > 1 {
 		return
 	}
 
 	coins, err := client.GetCoinObjsForTargetAmount(
 		context.Background(),
-		cryptolibSigner.Address(),
+		*cryptolibSigner.Address(),
 		splitBalance,
 		iotagraphql.DefaultGasBudget,
 	)
@@ -50,10 +50,13 @@ func EnsureCoinSplitWithBalance(
 	)
 	txb.TransferArg(cryptolibSigner.Address(), splitCmd)
 
+	coinRef, err := coins[0].ObjectRef()
+	require.NoError(t, err)
+
 	txData := iotago.NewProgrammable(
 		cryptolibSigner.Address(),
 		txb.Finish(),
-		[]*iotago.ObjectRef{coins[0].Ref()},
+		[]*iotago.ObjectRef{coinRef},
 		iotagraphql.DefaultGasBudget,
 		parameterstest.L1Mock.Protocol.ReferenceGasPrice.Uint64(),
 	)
@@ -63,14 +66,8 @@ func EnsureCoinSplitWithBalance(
 
 	result, err := client.SignAndExecuteTransaction(
 		context.Background(),
-		&iotagraphql.SignAndExecuteTransactionRequest{
-			Signer:      cryptolibSigner,
-			TxDataBytes: txnBytes,
-			Options: &iotagraphql.IotaTransactionBlockResponseOptions{
-				ShowEffects:       true,
-				ShowObjectChanges: true,
-			},
-		},
+		txnBytes,
+		cryptolibSigner,
 	)
 	require.NoError(t, err)
 	require.NotNil(t, result)

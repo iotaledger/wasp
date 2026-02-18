@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
@@ -35,7 +36,7 @@ func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
-	assetsBagRef, err := txnResponse.GetCreatedObjectByName(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
+	assetsBagRef, err := txnResponse.ExecuteTransactionBlock.Effects.GetCreatedObjectByName(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
 	assetsDestroyEmptyRes, err := PTBTestWrapper(
@@ -52,7 +53,7 @@ func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	_, err = assetsDestroyEmptyRes.GetCreatedObjectByName(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
+	_, err = assetsDestroyEmptyRes.ExecuteTransactionBlock.Effects.GetCreatedObjectByName(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.Error(t, err, "not found")
 }
 
@@ -61,20 +62,17 @@ func TestAssetsBagPlaceCoin(t *testing.T) {
 	client := iscmoveclienttest.NewClient()
 	txnResponse, err := newAssetsBag(client, cryptolibSigner)
 	require.NoError(t, err)
-	assetsBagMainRef, err := txnResponse.GetCreatedObjectByName(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
+	assetsBagMainRef, err := txnResponse.ExecuteTransactionBlock.Effects.GetCreatedObjectByName(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
 	coinRef, _ := buildDeployMintTestcoin(t, client, cryptolibSigner)
 	getCoinRef, err := client.GetObject(
 		context.Background(),
-		iotagraphql.GetObjectRequest{
-			ObjectID: coinRef.ObjectID,
-			Options:  &iotagraphql.IotaObjectDataOptions{ShowType: true},
-		},
+		*coinRef.ObjectID,
 	)
 	require.NoError(t, err)
 
-	coinResource, err := iotago.NewResourceType(*getCoinRef.Data.Type)
+	coinResource, err := iotago.NewResourceType(getCoinRef.Object.TypeRepr())
 	require.NoError(t, err)
 
 	testCointype, err := iotagraphql.CoinTypeFromString(coinResource.SubType1.String())
@@ -108,20 +106,17 @@ func TestAssetsBagPlaceCoinAmount(t *testing.T) {
 	txnResponse, err := newAssetsBag(client, cryptolibSigner)
 	require.NoError(t, err)
 
-	assetsBagMainRef, err := txnResponse.GetCreatedObjectByName(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
+	assetsBagMainRef, err := txnResponse.ExecuteTransactionBlock.Effects.GetCreatedObjectByName(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
 	coinRef, _ := buildDeployMintTestcoin(t, client, cryptolibSigner)
 	getCoinRef, err := client.GetObject(
 		context.Background(),
-		iotagraphql.GetObjectRequest{
-			ObjectID: coinRef.ObjectID,
-			Options:  &iotagraphql.IotaObjectDataOptions{ShowType: true},
-		},
+		*coinRef.ObjectID,
 	)
 	require.NoError(t, err)
 
-	coinResource, err := iotago.NewResourceType(*getCoinRef.Data.Type)
+	coinResource, err := iotago.NewResourceType(getCoinRef.Object.TypeRepr())
 	require.NoError(t, err)
 
 	testCointype, err := iotagraphql.CoinTypeFromString(coinResource.SubType1.String())
@@ -156,18 +151,19 @@ func TestAssetsBagTakeCoinBalanceMergeTo(t *testing.T) {
 	txnResponse, err := newAssetsBag(client, cryptolibSigner)
 	require.NoError(t, err)
 
-	assetsBagMainRef, err := txnResponse.GetCreatedObjectByName(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
+	assetsBagMainRef, err := txnResponse.ExecuteTransactionBlock.Effects.GetCreatedObjectByName(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
 	getCoinsRes, err := client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{Owner: cryptolibSigner.Address().AsIotaAddress()})
 	require.NoError(t, err)
-	mergeToCoin1 := getCoinsRes.Data[2]
+	coins := iotagraphql.Coins(getCoinsRes.Address.Coins.Nodes)
+	mergeToCoin1 := coins[2]
 
 	_, err = assetsBagPlaceCoinAmount(
 		client,
 		cryptolibSigner,
 		assetsBagMainRef,
-		getCoinsRes.Data[1].Ref(),
+		lo.Must(coins[1].ObjectRef()),
 		iotagraphql.IotaCoinType,
 		1000,
 	)
@@ -181,7 +177,7 @@ func TestAssetsBagTakeCoinBalanceMergeTo(t *testing.T) {
 			Client:      client,
 			Signer:      cryptolibSigner,
 			PackageID:   l1starter.ISCPackageID(),
-			GasPayments: []*iotago.ObjectRef{mergeToCoin1.Ref()},
+			GasPayments: []*iotago.ObjectRef{lo.Must(mergeToCoin1.ObjectRef())},
 			GasPrice:    iotagraphql.DefaultGasPrice,
 			GasBudget:   iotagraphql.DefaultGasBudget,
 		},
@@ -197,15 +193,12 @@ func TestAssetsBagTakeCoinBalanceMergeTo(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	getObjRes, err := client.GetObject(context.Background(), iotagraphql.GetObjectRequest{
-		ObjectID: mergeToCoin1.CoinObjectID,
-		Options:  &iotagraphql.IotaObjectDataOptions{ShowBcs: true},
-	})
+	getObjRes, err := client.GetObject(context.Background(), mergeToCoin1.ObjectID())
 	require.NoError(t, err)
 	var mergeToCoin2 iscmoveclient.MoveCoin
-	err = iotagraphql.UnmarshalBCS(getObjRes.Data.Bcs.MoveObject.BcsBytes, &mergeToCoin2)
+	err = iotagraphql.UnmarshalBCS(getObjRes.Object.BcsBytes(), &mergeToCoin2)
 	require.NoError(t, err)
-	require.Equal(t, mergeToCoin1.Balance.Int64()-txnResponse.Effects.GasFee()+topUpAmount, int64(mergeToCoin2.Balance))
+	require.Equal(t, mergeToCoin1.CoinBalance.Int64()-txnResponse.ExecuteTransactionBlock.Effects.GasFee()+topUpAmount, int64(mergeToCoin2.Balance))
 }
 
 func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
@@ -225,19 +218,16 @@ func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
-	assetsBagMainRef, err := txnResponse.GetCreatedObjectByName("assets_bag", "AssetsBag")
+	assetsBagMainRef, err := txnResponse.ExecuteTransactionBlock.Effects.GetCreatedObjectByName("assets_bag", "AssetsBag")
 	require.NoError(t, err)
 	coinRef, _ := buildDeployMintTestcoin(t, client, cryptolibSigner)
 	getCoinRef, err := client.GetObject(
 		context.Background(),
-		iotagraphql.GetObjectRequest{
-			ObjectID: coinRef.ObjectID,
-			Options:  &iotagraphql.IotaObjectDataOptions{ShowType: true},
-		},
+		*coinRef.ObjectID,
 	)
 	require.NoError(t, err)
 
-	coinResource, err := iotago.NewResourceType(*getCoinRef.Data.Type)
+	coinResource, err := iotago.NewResourceType(getCoinRef.Object.TypeRepr())
 	require.NoError(t, err)
 	testCointype, err := iotagraphql.CoinTypeFromString(coinResource.SubType1.String())
 	require.NoError(t, err)
@@ -279,14 +269,11 @@ func TestGetAssetsBagFromAnchorID(t *testing.T) {
 	coinRef, coinType := buildDeployMintTestcoin(t, client, cryptolibSigner)
 	getCoinRef, err := client.GetObject(
 		context.Background(),
-		iotagraphql.GetObjectRequest{
-			ObjectID: coinRef.ObjectID,
-			Options:  &iotagraphql.IotaObjectDataOptions{ShowType: true},
-		},
+		*coinRef.ObjectID,
 	)
 	require.NoError(t, err)
 
-	coinResource, err := iotago.NewResourceType(*getCoinRef.Data.Type)
+	coinResource, err := iotago.NewResourceType(getCoinRef.Object.TypeRepr())
 	require.NoError(t, err)
 	testCointype, err := iotagraphql.CoinTypeFromString(coinResource.SubType1.String())
 	require.NoError(t, err)
@@ -367,9 +354,9 @@ func borrowAnchorAssetsAndPlaceCoin(
 		},
 	)
 	pt := ptb.Finish()
-	coins, err := client.GetCoinObjsForTargetAmount(ctx, signer.Address(), iotagraphql.DefaultGasBudget, iotagraphql.DefaultGasBudget)
+	coins, err := client.GetCoinObjsForTargetAmount(ctx, *signer.Address(), iotagraphql.DefaultGasBudget, iotagraphql.DefaultGasBudget)
 	require.NoError(t, err)
-	gasPayments := coins.CoinRefs()
+	gasPayments := lo.Must(coins.CoinRefs())
 
 	tx := iotago.NewProgrammable(
 		signer.Address(),
@@ -383,16 +370,11 @@ func borrowAnchorAssetsAndPlaceCoin(
 
 	execRes, err := client.SignAndExecuteTransaction(
 		ctx,
-		&iotagraphql.SignAndExecuteTransactionRequest{
-			TxDataBytes: txnBytes,
-			Signer:      signer,
-			Options: &iotagraphql.IotaTransactionBlockResponseOptions{
-				ShowEffects: true,
-			},
-		},
+		txnBytes,
+		signer,
 	)
 	require.NoError(t, err)
-	require.True(t, execRes.Effects.IsSuccess())
+	require.True(t, execRes.ExecuteTransactionBlock.Effects.IsSuccess())
 }
 
 func TestGetAssetsBagFromRequestID(t *testing.T) {
@@ -404,21 +386,18 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 	coinRef, _ := buildDeployMintTestcoin(t, client, cryptolibSigner)
 	getCoinRef, err := client.GetObject(
 		context.Background(),
-		iotagraphql.GetObjectRequest{
-			ObjectID: coinRef.ObjectID,
-			Options:  &iotagraphql.IotaObjectDataOptions{ShowType: true},
-		},
+		*coinRef.ObjectID,
 	)
 	require.NoError(t, err)
 
-	coinResource, err := iotago.NewResourceType(*getCoinRef.Data.Type)
+	coinResource, err := iotago.NewResourceType(getCoinRef.Object.TypeRepr())
 	require.NoError(t, err)
 	testCointype, err := iotagraphql.CoinTypeFromString(coinResource.SubType1.String())
 	require.NoError(t, err)
 
 	txnResponse, err := newAssetsBag(client, cryptolibSigner)
 	require.NoError(t, err)
-	assetsBagRef, err := txnResponse.GetCreatedObjectByName(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
+	assetsBagRef, err := txnResponse.ExecuteTransactionBlock.Effects.GetCreatedObjectByName(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
 	_, err = PTBTestWrapper(
@@ -441,9 +420,11 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	assetsBagGetObjectRes, err := client.GetObject(context.Background(), iotagraphql.GetObjectRequest{ObjectID: assetsBagRef.ObjectID})
+	assetsBagGetObjectRes, err := client.GetObject(context.Background(), *assetsBagRef.ObjectID)
 	require.NoError(t, err)
-	tmpAssetsBagRef := assetsBagGetObjectRes.Data.Ref()
+	tmpAssetsBagObjRef, err := assetsBagGetObjectRes.Object.ObjectRef()
+	require.NoError(t, err)
+	tmpAssetsBagRef := *tmpAssetsBagObjRef
 	allowance := iscmove.NewAssets(0).
 		SetCoin(iotagraphql.MustCoinTypeFromString("0x1::iota::IOTA"), 11).
 		SetCoin(iotagraphql.MustCoinTypeFromString("0xa::testa::TEST_A"), 12)
@@ -463,7 +444,7 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	reqRef, err := createAndSendRequestRes.GetCreatedObjectByName(iscmove.RequestModuleName, iscmove.RequestObjectName)
+	reqRef, err := createAndSendRequestRes.ExecuteTransactionBlock.Effects.GetCreatedObjectByName(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)
 
 	reqWithObj, err := client.GetRequestFromObjectID(context.Background(), reqRef.ObjectID)
@@ -483,7 +464,7 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 func newAssetsBag(
 	client *iscmoveclient.Client,
 	signer cryptolib.Signer,
-) (*iotagraphql.IotaTransactionBlockResponse, error) {
+) (*iotagraphql.ExecuteTransactionBlockResponse, error) {
 	return NewAssetsBagWithPackageID(client, signer, l1starter.ISCPackageID())
 }
 
@@ -491,7 +472,7 @@ func NewAssetsBagWithPackageID(
 	client *iscmoveclient.Client,
 	signer cryptolib.Signer,
 	packageID iotago.PackageID,
-) (*iotagraphql.IotaTransactionBlockResponse, error) {
+) (*iotagraphql.ExecuteTransactionBlockResponse, error) {
 	return PTBTestWrapper(
 		&PTBTestWrapperRequest{
 			Client:    client,
@@ -512,7 +493,7 @@ func assetsBagPlaceCoinAmountWithGasCoin(
 	assetsBagRef *iotago.ObjectRef,
 	coinType iotagraphql.CoinType,
 	amount uint64,
-) (*iotagraphql.IotaTransactionBlockResponse, error) {
+) (*iotagraphql.ExecuteTransactionBlockResponse, error) {
 	return PTBTestWrapper(
 		&PTBTestWrapperRequest{
 			Client:    client,
@@ -541,7 +522,7 @@ func assetsBagPlaceCoinAmount(
 	coinRef *iotago.ObjectRef,
 	coinType iotagraphql.CoinType,
 	amount uint64,
-) (*iotagraphql.IotaTransactionBlockResponse, error) {
+) (*iotagraphql.ExecuteTransactionBlockResponse, error) {
 	return PTBTestWrapper(
 		&PTBTestWrapperRequest{
 			Client:    client,

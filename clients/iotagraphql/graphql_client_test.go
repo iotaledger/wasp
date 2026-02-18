@@ -22,7 +22,7 @@ func TestGraphQL(t *testing.T) {
 	t.Run("Standard API Call", func(t *testing.T) {
 		addr, err := iotago.AddressFromHex("0x7a89979774c55814f41fc1e3354e2ba38d3d62096d469d86b3132e947de1e8da")
 		require.NoError(t, err)
-		resp, err := client.GetAllBalances(context.TODO(), addr)
+		resp, err := client.GetAllBalances(context.TODO(), *addr)
 		require.NoError(t, err)
 		require.NotNil(t, resp)
 
@@ -72,7 +72,7 @@ func TestFaucetReturns5CoinsWithCorrectAmount(t *testing.T) {
 	keyPair := cryptolib.NewKeyPair()
 	addr := keyPair.Address().AsIotaAddress()
 
-	err := client.RequestFundsFromFaucet(ctx, addr)
+	err := client.RequestFundsFromFaucet(ctx, *addr)
 	require.NoError(t, err)
 
 	coinsResp, err := client.GetCoins(ctx, iotagraphql.GetCoinsRequest{
@@ -81,14 +81,15 @@ func TestFaucetReturns5CoinsWithCorrectAmount(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	require.Len(t, coinsResp.Data, 5, "faucet should return exactly 5 coins per request")
+	coins := coinsResp.Address.Coins.Nodes
+	require.Len(t, coins, 5, "faucet should return exactly 5 coins per request")
 
-	for i, coin := range coinsResp.Data {
+	for i, coin := range coins {
 		require.Equal(t,
 			iotagraphql.SingleCoinFundsFromFaucetAmount,
-			coin.Balance.Uint64(),
+			coin.Balance(),
 			"coin %d should have SingleCoinFundsFromFaucetAmount (%d), got %d",
-			i, iotagraphql.SingleCoinFundsFromFaucetAmount, coin.Balance.Uint64(),
+			i, iotagraphql.SingleCoinFundsFromFaucetAmount, coin.Balance(),
 		)
 	}
 

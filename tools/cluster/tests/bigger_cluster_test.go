@@ -82,7 +82,7 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 
 	accountsClient, _ := e.NewRandomChainClient()
 
-	coinType := iotagraphql.IotaCoinType.String()
+	coinType := iotagraphql.IotaCoinType
 	balance, err := accountsClient.L1Client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{
 		CoinType: &coinType,
 		Owner:    accountsClient.KeyPair.Address().AsIotaAddress(),
@@ -91,7 +91,7 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 	require.NoError(t, err)
 
 	tx, err := accountsClient.PostRequest(context.Background(), accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
-		Transfer:  isc.NewAssets(coin.Value(balance.Data[0].Balance.Uint64()) - iotagraphql.DefaultGasBudget),
+		Transfer:  isc.NewAssets(coin.Value(balance.Address.Coins.Nodes[0].CoinBalance.Uint64()) - iotagraphql.DefaultGasBudget),
 		GasBudget: iotagraphql.DefaultGasBudget,
 	})
 	require.NoError(t, err)

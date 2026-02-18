@@ -84,7 +84,7 @@ func (e *ChainEnv) DepositFunds(amount coin.Value, keyPair *cryptolib.KeyPair) {
 	tx, err := client.PostRequest(context.Background(), accounts.FuncDeposit.Message(), params)
 	require.NoError(e.t, err)
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, tx, true, 30*time.Second)
-	require.NoError(e.t, err, "Error while WaitUntilAllRequestsProcessedSuccessfully for tx.ID=%v", tx.Digest)
+	require.NoError(e.t, err, "Error while WaitUntilAllRequestsProcessedSuccessfully")
 }
 
 func (e *ChainEnv) TransferFundsTo(assets *isc.Assets, keyPair *cryptolib.KeyPair, targetAccount isc.AgentID) {
@@ -99,7 +99,7 @@ func (e *ChainEnv) TransferFundsTo(assets *isc.Assets, keyPair *cryptolib.KeyPai
 	})
 	require.NoError(e.t, err)
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, tx, false, 30*time.Second)
-	require.NoError(e.t, err, "Error while WaitUntilAllRequestsProcessedSuccessfully for tx.ID=%v", tx.Digest)
+	require.NoError(e.t, err, "Error while WaitUntilAllRequestsProcessedSuccessfully")
 }
 
 // DeploySolidityContract deploys a given solidity contract with a given private key, returns the create contract address

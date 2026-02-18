@@ -2,6 +2,15 @@
 # These fragments are designed to generate unified Go types across
 # GetTransactionBlock, DryRunTransactionBlock, and ExecuteTransactionBlock.
 
+# Unified pagination info across all paginated queries
+# @genqlient(typename: "PageInfo")
+fragment PAGE_INFO on PageInfo {
+	hasNextPage
+	hasPreviousPage
+	startCursor
+	endCursor
+}
+
 # Core transaction fields (no effects to avoid circular embedding)
 fragment TX_CORE on TransactionBlock {
 	digest
@@ -10,6 +19,26 @@ fragment TX_CORE on TransactionBlock {
 		address
 	}
 	signatures
+}
+
+# Minimal object reference fields (address + version + digest)
+fragment OBJECT_REF on Object {
+	address
+	version
+	digest
+}
+
+# Coin fields for unified type across GetCoins/GetAllCoins
+fragment COIN_DATA on Coin {
+	address
+	version
+	digest
+	coinBalance
+	contents {
+		type {
+			repr
+		}
+	}
 }
 
 # Object owner fields (union type)
@@ -72,8 +101,7 @@ fragment OBJECT_CHANGE on ObjectChange {
 	idCreated
 	idDeleted
 	inputState {
-		version
-		digest
+		...OBJECT_REF
 		asMoveObject {
 			contents {
 				type {
@@ -83,8 +111,7 @@ fragment OBJECT_CHANGE on ObjectChange {
 		}
 	}
 	outputState {
-		version
-		digest
+		...OBJECT_REF
 		owner {
 			...OBJECT_OWNER
 		}
@@ -116,7 +143,7 @@ fragment TX_EFFECTS on TransactionBlockEffects {
 	timestamp
 	gasEffects {
 		gasObject {
-			address
+			...OBJECT_REF
 		}
 		gasSummary {
 			computationCost
@@ -128,8 +155,7 @@ fragment TX_EFFECTS on TransactionBlockEffects {
 	}
 	events {
 		pageInfo {
-			hasNextPage
-			endCursor
+			...PAGE_INFO
 		}
 		# @genqlient(typename: "EventData")
 		nodes {
@@ -138,8 +164,7 @@ fragment TX_EFFECTS on TransactionBlockEffects {
 	}
 	balanceChanges {
 		pageInfo {
-			hasNextPage
-			endCursor
+			...PAGE_INFO
 		}
 		# @genqlient(typename: "BalanceChangeData")
 		nodes {
@@ -148,8 +173,7 @@ fragment TX_EFFECTS on TransactionBlockEffects {
 	}
 	objectChanges {
 		pageInfo {
-			hasNextPage
-			endCursor
+			...PAGE_INFO
 		}
 		# @genqlient(typename: "ObjectChangeData")
 		nodes {

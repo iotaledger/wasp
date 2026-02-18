@@ -30,7 +30,7 @@ func postRequest(ctx context.Context, client *apiclient.APIClient, chain string,
 	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
 
-	util.WithSCTransaction(ctx, client, func() (*iotagraphql.IotaTransactionBlockResponse, error) {
+	util.WithSCTransaction(ctx, client, func() (*iotagraphql.ExecuteTransactionBlockResponse, error) {
 		return chainClient.PostRequest(ctx, msg, params)
 	})
 }

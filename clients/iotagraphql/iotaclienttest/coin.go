@@ -38,14 +38,8 @@ func DeployCoinPackage(
 
 	txnResponse, err := iotaClient.SignAndExecuteTransaction(
 		context.Background(),
-		&iotagraphql.SignAndExecuteTransactionRequest{
-			TxDataBytes: txnBytes.TxBytes,
-			Signer:      signer,
-			Options: &iotagraphql.IotaTransactionBlockResponseOptions{
-				ShowEffects:       true,
-				ShowObjectChanges: true,
-			},
-		},
+		txnBytes.TxBytes,
+		signer,
 	)
 	require.NoError(t, err)
 	require.NotNil(t, txnResponse)
@@ -80,15 +74,11 @@ func MintCoins(
 	resp, err := iotaClient.MintToken(
 		context.Background(),
 		signer,
-		packageID,
+		*packageID,
 		moduleName,
 		treasuryCapObject,
 		mintAmount,
 		5,
-		&iotagraphql.IotaTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
-		},
 	)
 	require.NoError(t, err)
 	require.NotNil(t, resp)

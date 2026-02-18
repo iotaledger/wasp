@@ -12,10 +12,7 @@ query QueryTransactionBlocks(
 ) {
 	transactionBlocks(first: $first, after: $after, last: $last, before: $before, filter: $filter) {
 		pageInfo {
-			hasNextPage
-			hasPreviousPage
-			startCursor
-			endCursor
+			...PAGE_INFO
 		}
 		# @genqlient(typename: "TxBlockData")
 		nodes {
@@ -48,10 +45,7 @@ query MultiGetTransactionBlocks(
 ) {
 	transactionBlocks(first: $limit, after: $cursor, filter: { transactionIds: $digests }) {
 		pageInfo {
-			hasNextPage
-			hasPreviousPage
-			startCursor
-			endCursor
+			...PAGE_INFO
 		}
 		# @genqlient(typename: "TxBlockData")
 		nodes {
@@ -77,8 +71,7 @@ query PaginateTransactionBlockLists(
 		effects {
 			events(after: $afterEvents) @include(if: $hasMoreEvents) {
 				pageInfo {
-					hasNextPage
-					endCursor
+					...PAGE_INFO
 				}
 				# @genqlient(typename: "EventData")
 				nodes {
@@ -87,8 +80,7 @@ query PaginateTransactionBlockLists(
 			}
 			balanceChanges(after: $afterBalanceChanges) @include(if: $hasMoreBalanceChanges) {
 				pageInfo {
-					hasNextPage
-					endCursor
+					...PAGE_INFO
 				}
 				# @genqlient(typename: "BalanceChangeData")
 				nodes {
@@ -97,8 +89,7 @@ query PaginateTransactionBlockLists(
 			}
 			objectChanges(after: $afterObjectChanges) @include(if: $hasMoreObjectChanges) {
 				pageInfo {
-					hasNextPage
-					endCursor
+					...PAGE_INFO
 				}
 				# @genqlient(typename: "ObjectChangeData")
 				nodes {

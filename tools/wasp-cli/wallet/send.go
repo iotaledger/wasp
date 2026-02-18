@@ -45,7 +45,7 @@ func initSendFundsCmd() *cobra.Command { //nolint:funlen
 
 			client := cliclients.L1Client()
 
-			balances, err := client.GetAllBalances(context.Background(), senderAddress.AsIotaAddress())
+			balances, err := client.GetAllBalances(context.Background(), *senderAddress.AsIotaAddress())
 			if err != nil {
 				return err
 			}
@@ -71,18 +71,23 @@ func initSendFundsCmd() *cobra.Command { //nolint:funlen
 			if err != nil {
 				return err
 			}
+			allCoins := iotagraphql.Coins(coinPage.Address.Coins.Nodes)
 			for cointype, balance := range tokens.Coins.Iterate() {
-				var pickedCoin *iotagraphql.PickedCoins
-				pickedCoin, err = iotagraphql.PickupCoinsWithCointype(
-					coinPage,
+				pickedCoin, pickErr := iotagraphql.PickupCoinsWithCointype(
+					allCoins,
 					balance.BigInt(),
 					iotagraphql.MustCoinTypeFromString(cointype.String()),
 				)
-				if err != nil {
-					return err
+				if pickErr != nil {
+					return pickErr
 				}
 
-				err = ptb.Pay(pickedCoin.CoinRefs(), []*iotago.Address{targetAddress.AsIotaAddress()}, []uint64{balance.Uint64()})
+				coinRefs, refErr := pickedCoin.CoinRefs()
+				if refErr != nil {
+					return refErr
+				}
+
+				err = ptb.Pay(coinRefs, []*iotago.Address{targetAddress.AsIotaAddress()}, []uint64{balance.Uint64()})
 				if err != nil {
 					return err
 				}
@@ -90,25 +95,32 @@ func initSendFundsCmd() *cobra.Command { //nolint:funlen
 
 			pt := ptb.Finish()
 
-			coins, err := client.GetCoinObjsForTargetAmount(context.Background(), senderAddress.AsIotaAddress(), iotagraphql.DefaultGasPrice, iotagraphql.DefaultGasBudget)
+			gasCoins, err := client.GetCoinObjsForTargetAmount(context.Background(), *senderAddress.AsIotaAddress(), iotagraphql.DefaultGasPrice, iotagraphql.DefaultGasBudget)
 			if err != nil {
 				return fmt.Errorf("failed to find gas payment: %w", err)
 			}
-			coins, err = iotagraphql.PickupCoinsWithFilter(
-				coins,
+			gasCoins, err = iotagraphql.PickupCoinsWithFilter(
+				gasCoins,
 				iotagraphql.DefaultGasBudget,
-				func(c *iotagraphql.Coin) bool { return !pt.IsInInputObjects(c.CoinObjectID) },
+				func(c iotagraphql.Coin) bool {
+					addr := c.ObjectID()
+					return !pt.IsInInputObjects(&addr)
+				},
 			)
 			if err != nil {
 				return fmt.Errorf("failed to find gas payment: %w", err)
 			}
-			if len(coins) == 0 {
+			if len(gasCoins) == 0 {
 				return fmt.Errorf("no coin found as gas payment")
+			}
+			gasCoinRefs, err := gasCoins.CoinRefs()
+			if err != nil {
+				return err
 			}
 			tx := iotago.NewProgrammable(
 				senderAddress.AsIotaAddress(),
 				pt,
-				coins.CoinRefs(),
+				gasCoinRefs,
 				iotagraphql.DefaultGasBudget,
 				iotagraphql.DefaultGasPrice,
 			)
@@ -119,14 +131,8 @@ func initSendFundsCmd() *cobra.Command { //nolint:funlen
 
 			res, err := client.SignAndExecuteTransaction(
 				context.Background(),
-				&iotagraphql.SignAndExecuteTransactionRequest{
-					Signer:      cryptolib.SignerToIotaSigner(myWallet),
-					TxDataBytes: txBytes,
-					Options: &iotagraphql.IotaTransactionBlockResponseOptions{
-						ShowEffects:       true,
-						ShowObjectChanges: true,
-					},
-				},
+				txBytes,
+				cryptolib.SignerToIotaSigner(myWallet),
 			)
 			if err != nil {
 				return err
