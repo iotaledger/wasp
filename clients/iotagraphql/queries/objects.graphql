@@ -87,37 +87,6 @@ query TryGetPastObject(
 	}
 }
 
-query MultiGetObjects(
-	$ids: [IotaAddress!]!
-	# @genqlient(pointer: true)
-	$limit: Int
-	# @genqlient(pointer: true)
-	$cursor: String
-	# @genqlient(pointer: true)
-	$showBcs: Boolean = false
-	# @genqlient(pointer: true)
-	$showContent: Boolean = false
-	# @genqlient(pointer: true)
-	$showDisplay: Boolean = false
-	# @genqlient(pointer: true)
-	$showType: Boolean = false
-	# @genqlient(pointer: true)
-	$showOwner: Boolean = false
-	# @genqlient(pointer: true)
-	$showPreviousTransaction: Boolean = false
-	# @genqlient(pointer: true)
-	$showStorageRebate: Boolean = false
-) {
-	objects(first: $limit, after: $cursor, filter: { objectIds: $ids }) {
-		pageInfo {
-			...PAGE_INFO
-		}
-		nodes {
-			...RPC_OBJECT_FIELDS
-		}
-	}
-}
-
 fragment RPC_OBJECT_FIELDS on Object {
 	objectId: address
 	version

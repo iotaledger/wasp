@@ -2,6 +2,7 @@ package disrec
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -10,9 +11,11 @@ import (
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/parameters/l1paramsfetcher"
+	"github.com/iotaledger/wasp/v2/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/chain"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/wallet/providers"
@@ -34,83 +37,83 @@ import (
 func TestDepositFundsToGasCoin(t *testing.T) {
 	t.Skip("you only want to call this test manually")
 
-	// client := cliclients.L1Client()
-	// committeeAddress := lo.Must(cryptolib.AddressFromHex("0x6e6d126fc61cbf50672f1738580c7b275e7c4727912842d71ee33e195f9879fe"))
-	// gasCoinID := lo.Must(iotago.ObjectIDFromHex("0x9e274660552ed50402c8015c5388478415cde8a06d114af48fd2e3ec365c562d"))
+	client := cliclients.L1Client()
+	committeeAddress := lo.Must(cryptolib.AddressFromHex("0x6e6d126fc61cbf50672f1738580c7b275e7c4727912842d71ee33e195f9879fe"))
+	gasCoinID := lo.Must(iotago.ObjectIDFromHex("0x9e274660552ed50402c8015c5388478415cde8a06d114af48fd2e3ec365c562d"))
 
-	// gasCoinResp, err := client.GetObject(context.Background(), *gasCoinID)
-	// require.NoError(t, err)
+	gasCoinResp, err := client.GetObject(context.Background(), *gasCoinID)
+	require.NoError(t, err)
 
-	// gasCoinRef, err := gasCoinResp.Object.ObjectRef()
-	// require.NoError(t, err)
+	gasCoinRef, err := gasCoinResp.Object.ObjectRef()
+	require.NoError(t, err)
 
-	// kp := cryptolib.NewKeyPair()
-	// wallet := providers.NewUnsafeInMemoryTestingSeed(kp, 0)
-	// require.NoError(t, client.RequestFundsFromFaucet(context.Background(), *kp.Address().AsIotaAddress()))
-	// require.NoError(t, client.RequestFundsFromFaucet(context.Background(), *kp.Address().AsIotaAddress()))
+	kp := cryptolib.NewKeyPair()
+	wallet := providers.NewUnsafeInMemoryTestingSeed(kp, 0)
+	require.NoError(t, client.RequestFundsFromFaucet(context.Background(), kp.Address().AsIotaAddress()))
+	require.NoError(t, client.RequestFundsFromFaucet(context.Background(), kp.Address().AsIotaAddress()))
 
-	// baseCoin := iotagraphql.CoinType(coin.BaseTokenType.String())
-	// coins, err := client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{
-	// 	CoinType: &baseCoin,
-	// 	Owner:    kp.Address().AsIotaAddress(),
-	// })
-	// require.NoError(t, err)
+	baseCoin := iotagraphql.IotaCoinType
+	coins, err := client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{
+		CoinType: &baseCoin,
+		Owner:    kp.Address().AsIotaAddress(),
+	})
+	require.NoError(t, err)
 
-	// coinID1 := coins.Address.Coins.Nodes[1].ObjectID()
-	// res, err := client.TransferIota(context.Background(), iotagraphql.TransferIotaRequest{
-	// 	Signer:    kp.Address().AsIotaAddress(),
-	// 	GasBudget: iotagraphql.NewBigIntInt64(iotagraphql.DefaultGasBudget),
-	// 	Recipient: committeeAddress.AsIotaAddress(),
-	// 	ObjectID:  &coinID1,
-	// })
-	// require.NoError(t, err)
+	coinID1 := coins.Address.Coins.Nodes[1].ObjectID()
+	res, err := client.PayAllIota(context.Background(), iotagraphql.PayAllIotaRequest{
+		Signer:     kp.Address().AsIotaAddress(),
+		GasBudget:  iotagraphql.NewBigIntInt64(iotagraphql.DefaultGasBudget),
+		Recipient:  committeeAddress.AsIotaAddress(),
+		InputCoins: []iotago.ObjectID{coinID1},
+	})
+	require.NoError(t, err)
 
-	// response, err := client.SignAndExecuteTransaction(context.Background(), res.TxBytes, cryptolib.SignerToIotaSigner(wallet))
-	// require.NoError(t, err)
+	response, err := client.SignAndExecuteTransaction(context.Background(), res.TxBytes, cryptolib.SignerToIotaSigner(wallet))
+	require.NoError(t, err)
 
-	// coinID0 := coins.Address.Coins.Nodes[0].ObjectID()
-	// res2, err := client.TransferIota(context.Background(), iotagraphql.TransferIotaRequest{
-	// 	Signer:    kp.Address().AsIotaAddress(),
-	// 	GasBudget: iotagraphql.NewBigIntInt64(iotagraphql.DefaultGasBudget),
-	// 	Recipient: committeeAddress.AsIotaAddress(),
-	// 	ObjectID:  &coinID0,
-	// })
-	// require.NoError(t, err)
+	coinID0 := coins.Address.Coins.Nodes[0].ObjectID()
+	res2, err := client.PayAllIota(context.Background(), iotagraphql.PayAllIotaRequest{
+		Signer:     kp.Address().AsIotaAddress(),
+		GasBudget:  iotagraphql.NewBigIntInt64(iotagraphql.DefaultGasBudget),
+		Recipient:  committeeAddress.AsIotaAddress(),
+		InputCoins: []iotago.ObjectID{coinID0},
+	})
+	require.NoError(t, err)
 
-	// response2, err := client.SignAndExecuteTransaction(context.Background(), res2.TxBytes, cryptolib.SignerToIotaSigner(wallet))
-	// require.NoError(t, err)
+	response2, err := client.SignAndExecuteTransaction(context.Background(), res2.TxBytes, cryptolib.SignerToIotaSigner(wallet))
+	require.NoError(t, err)
 
-	// fmt.Println(response)
+	fmt.Println(response)
 
-	// selectedCoinToFillUpGasCoin, err := response.ExecuteTransactionBlock.Effects.GetMutatedCoinByType("iota", "IOTA")
-	// require.NoError(t, err)
+	selectedCoinToFillUpGasCoin, err := response.ExecuteTransactionBlock.Effects.GetMutatedCoinByType("iota", "IOTA")
+	require.NoError(t, err)
 
-	// selectedCoinToPayForGas, err := response2.ExecuteTransactionBlock.Effects.GetMutatedCoinByType("iota", "IOTA")
-	// require.NoError(t, err)
+	selectedCoinToPayForGas, err := response2.ExecuteTransactionBlock.Effects.GetMutatedCoinByType("iota", "IOTA")
+	require.NoError(t, err)
 
-	// ptb := iotago.NewProgrammableTransactionBuilder()
+	ptb := iotago.NewProgrammableTransactionBuilder()
 
-	// _ = ptb.Command(
-	// 	iotago.Command{
-	// 		MergeCoins: &iotago.ProgrammableMergeCoins{
-	// 			Destination: ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: gasCoinRef}),
-	// 			Sources:     []iotago.Argument{ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: selectedCoinToFillUpGasCoin})},
-	// 		},
-	// 	},
-	// )
+	_ = ptb.Command(
+		iotago.Command{
+			MergeCoins: &iotago.ProgrammableMergeCoins{
+				Destination: ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: gasCoinRef}),
+				Sources:     []iotago.Argument{ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: selectedCoinToFillUpGasCoin})},
+			},
+		},
+	)
 
-	// txData := iotago.NewProgrammable(
-	// 	committeeAddress.AsIotaAddress(),
-	// 	ptb.Finish(),
-	// 	[]*iotago.ObjectRef{selectedCoinToPayForGas},
-	// 	iotagraphql.DefaultGasBudget,
-	// 	parameterstest.L1Mock.Protocol.ReferenceGasPrice.Uint64(),
-	// )
+	txData := iotago.NewProgrammable(
+		lo.ToPtr(committeeAddress.AsIotaAddress()),
+		ptb.Finish(),
+		[]*iotago.ObjectRef{selectedCoinToPayForGas},
+		iotagraphql.DefaultGasBudget,
+		parameterstest.L1Mock.Protocol.ReferenceGasPrice.Uint64(),
+	)
 
-	// txnBytes, err := bcs.Marshal(&txData)
-	// require.NoError(t, err)
+	txnBytes, err := bcs.Marshal(&txData)
+	require.NoError(t, err)
 
-	// fmt.Println(hexutil.Encode(txnBytes))
+	fmt.Println(hexutil.Encode(txnBytes))
 }
 
 func TestCreateTX(t *testing.T) {

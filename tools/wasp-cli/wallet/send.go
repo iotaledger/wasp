@@ -64,8 +64,8 @@ func initSendFundsCmd() *cobra.Command { //nolint:funlen
 
 			ptb := iotago.NewProgrammableTransactionBuilder()
 
-			coinPage, err := client.GetAllCoins(
-				context.Background(), iotagraphql.GetAllCoinsRequest{
+			coinPage, err := client.GetCoins(
+				context.Background(), iotagraphql.GetCoinsRequest{
 					Owner: senderAddress.AsIotaAddress(),
 				},
 			)

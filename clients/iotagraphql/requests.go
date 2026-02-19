@@ -54,12 +54,6 @@ type TransferObjectRequest struct {
 	Recipient iotago.Address
 }
 
-type GetAllCoinsRequest struct {
-	Owner  iotago.Address
-	Cursor *string // optional, opaque GraphQL cursor
-	Limit  int     // optional
-}
-
 type GetBalanceRequest struct {
 	Owner    iotago.Address
 	CoinType graphqltypes.CoinType // optional

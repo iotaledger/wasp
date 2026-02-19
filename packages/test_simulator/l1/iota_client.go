@@ -326,40 +326,29 @@ func (c *FakeIotaClient) GetOwnedObjects(
 }
 
 func (c *FakeIotaClient) GetCoins(_ context.Context, req iotagraphql.GetCoinsRequest) (*iotagraphql.GetCoinsResponse, error) {
-	coinType := IotaCoinTypeStr
-	if req.CoinType != nil {
-		coinType = string(*req.CoinType)
+	var coins []*SimObject
+	if req.CoinType == nil {
+		allObjs := c.Store.GetByOwner(req.Owner)
+		for _, obj := range allObjs {
+			if _, ok := extractCoinType(obj.Type); ok {
+				coins = append(coins, obj)
+			}
+		}
+	} else {
+		coinType := string(*req.CoinType)
+		coins = c.Store.GetCoinsByOwner(req.Owner, coinType)
 	}
 
-	coins := c.Store.GetCoinsByOwner(req.Owner, coinType)
 	coinNodes := make([]graphqltypes.CoinData, 0, len(coins))
-	for _, coin := range coins {
-		coinNodes = append(coinNodes, buildCoinData(coin, coinType))
+	for _, obj := range coins {
+		ct, _ := extractCoinType(obj.Type)
+		coinNodes = append(coinNodes, buildCoinData(obj, ct))
 	}
 
 	return &graphqltypes.GetCoinsResponse{
 		Address: graphqltypes.GetCoinsAddress{
 			Address: req.Owner,
 			Coins: graphqltypes.GetCoinsAddressCoinsCoinConnection{
-				Nodes: coinNodes,
-			},
-		},
-	}, nil
-}
-
-func (c *FakeIotaClient) GetAllCoins(_ context.Context, req iotagraphql.GetAllCoinsRequest) (*iotagraphql.GetAllCoinsResponse, error) {
-	allObjs := c.Store.GetByOwner(req.Owner)
-	coinNodes := make([]graphqltypes.CoinData, 0)
-	for _, obj := range allObjs {
-		if ct, ok := extractCoinType(obj.Type); ok {
-			coinNodes = append(coinNodes, buildCoinData(obj, ct))
-		}
-	}
-
-	return &graphqltypes.GetAllCoinsResponse{
-		Address: graphqltypes.GetAllCoinsAddress{
-			Address: req.Owner,
-			Coins: graphqltypes.GetAllCoinsAddressCoinsCoinConnection{
 				Nodes: coinNodes,
 			},
 		},
@@ -560,43 +549,20 @@ func (c *FakeIotaClient) GetReferenceGasPrice(_ context.Context) (*iotagraphql.B
 func (c *FakeIotaClient) GetLatestIotaSystemState(_ context.Context) (*iotagraphql.GetLatestIotaSystemStateResponse, error) {
 	now := time.Now()
 	epochStart := now.Add(-1 * time.Hour)
-	epochEnd := now.Add(23 * time.Hour)
 
 	return &graphqltypes.GetLatestIotaSystemStateResponse{
 		Epoch: graphqltypes.GetLatestIotaSystemStateEpoch{
-			EpochId:            0,
-			StartTimestamp:     epochStart,
-			EndTimestamp:       epochEnd,
-			ReferenceGasPrice:  *graphqltypes.NewBigInt(defaultGasPrice),
-			IotaTotalSupply:    *graphqltypes.NewBigInt(10_000_000_000_000_000_000), // 10B IOTA
-			SystemStateVersion: 1,
+			EpochId:           0,
+			StartTimestamp:    epochStart,
+			ReferenceGasPrice: *graphqltypes.NewBigInt(defaultGasPrice),
+			IotaTotalSupply:   *graphqltypes.NewBigInt(10_000_000_000_000_000_000), // 10B IOTA
 			ProtocolConfigs: graphqltypes.GetLatestIotaSystemStateEpochProtocolConfigs{
 				ProtocolVersion: 1,
 			},
-			SafeMode: graphqltypes.GetLatestIotaSystemStateEpochSafeMode{
-				GasSummary: graphqltypes.GetLatestIotaSystemStateEpochSafeModeGasSummaryGasCostSummary{
-					ComputationCost:         *graphqltypes.NewBigInt(0),
-					NonRefundableStorageFee: *graphqltypes.NewBigInt(0),
-					StorageCost:             *graphqltypes.NewBigInt(0),
-					StorageRebate:           *graphqltypes.NewBigInt(0),
-				},
-			},
-			StorageFund: graphqltypes.GetLatestIotaSystemStateEpochStorageFund{
-				NonRefundableBalance:      *graphqltypes.NewBigInt(0),
-				TotalObjectStorageRebates: *graphqltypes.NewBigInt(0),
-			},
 			SystemParameters: graphqltypes.GetLatestIotaSystemStateEpochSystemParameters{
-				MinValidatorCount:              4,
-				MaxValidatorCount:              150,
-				MinValidatorJoiningStake:       *graphqltypes.NewBigInt(30_000_000_000_000),
-				DurationMs:                     *graphqltypes.NewBigInt(86_400_000),
-				ValidatorLowStakeThreshold:     *graphqltypes.NewBigInt(20_000_000_000_000),
-				ValidatorLowStakeGracePeriod:   *graphqltypes.NewBigInt(7),
-				ValidatorVeryLowStakeThreshold: *graphqltypes.NewBigInt(15_000_000_000_000),
+				DurationMs: *graphqltypes.NewBigInt(86_400_000),
 			},
-			ValidatorSet: graphqltypes.GetLatestIotaSystemStateEpochValidatorSet{
-				TotalStake: *graphqltypes.NewBigInt(1_000_000_000_000_000),
-			},
+			ValidatorSet: graphqltypes.GetLatestIotaSystemStateEpochValidatorSet{},
 		},
 	}, nil
 }

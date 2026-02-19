@@ -246,7 +246,6 @@ func (c *GraphQLClient) GetDynamicFieldObject(
 	ctx context.Context,
 	req GetDynamicFieldObjectRequest,
 ) (*GetDynamicFieldObjectResponse, error) {
-
 	valueJSON, err := json.Marshal(req.Name.Value)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal value to JSON: %w", err)
@@ -840,16 +839,6 @@ func (c *GraphQLClient) GetAllBalances(ctx context.Context, owner iotago.Address
 		balances = append(balances, bal)
 	}
 	return balances, nil
-}
-
-func (c *GraphQLClient) GetAllCoins(ctx context.Context, req GetAllCoinsRequest) (*GetAllCoinsResponse, error) {
-	var limitPtr *int
-	if req.Limit > 0 {
-		limitPtr = &req.Limit
-	}
-
-	resp, err := graphqltypes.GetAllCoins(ctx, c.client, req.Owner, limitPtr, req.Cursor)
-	return resp, err
 }
 
 func (c *GraphQLClient) GetBalance(ctx context.Context, req GetBalanceRequest) (*Balance, error) {

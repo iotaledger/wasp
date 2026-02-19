@@ -22,7 +22,7 @@ func TryMergeAllCoins(ctx context.Context) error {
 	client := cliclients.L1Client()
 	w := wallet.Load()
 
-	coins, err := client.GetAllCoins(ctx, iotagraphql.GetAllCoinsRequest{
+	coins, err := client.GetCoins(ctx, iotagraphql.GetCoinsRequest{
 		Owner: w.Address().AsIotaAddress(),
 	})
 	if err != nil {

@@ -52,7 +52,6 @@ type IotaClient interface {
 	) (*TransactionBytes, error)
 
 	GetAllBalances(ctx context.Context, owner iotago.Address) ([]*Balance, error)
-	GetAllCoins(ctx context.Context, req GetAllCoinsRequest) (*GetAllCoinsResponse, error)
 	GetBalance(ctx context.Context, req GetBalanceRequest) (*Balance, error)
 	GetCoinMetadata(ctx context.Context, coinType CoinType) (*IotaCoinMetadata, error)
 	GetCoins(ctx context.Context, req GetCoinsRequest) (*GetCoinsResponse, error)
