@@ -127,6 +127,10 @@ type IotaClient interface {
 
 	// Faucet
 	RequestFundsFromFaucet(ctx context.Context, address *iotago.Address) error
+
+	// Subscriptions
+	SubscribeEvent(ctx context.Context, filter *IotaEventFilter, resultCh chan<- *IotaEvent) error
+	SubscribeTransaction(ctx context.Context, filter *TransactionFilter, resultCh chan<- *IotaTransactionBlockEffects) error
 }
 
 var _ IotaClient = (*GraphQLClient)(nil)

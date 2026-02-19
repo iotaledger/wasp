@@ -1,6 +1,7 @@
 """
 iota tag v1.13.1
 """
+
 type ActiveJwk {
 	"""
 	The string (Issuing Authority) that identifies the OIDC provider.
