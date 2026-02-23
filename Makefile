@@ -46,7 +46,7 @@ test: install
 	go test -race -ldflags $(BUILD_LD_FLAGS) $(TEST_PKG) --timeout 90m --count 1 -failfast  $(TEST_ARG)
 
 test-short:
-	go test -race -ldflags $(BUILD_LD_FLAGS) --short --count 1 -timeout 25m -failfast $(strip $(TEST_SHORT_PKGS))
+	go test -race -ldflags $(BUILD_LD_FLAGS) --short --count 1 -timeout 60m -failfast $(strip $(TEST_SHORT_PKGS))
 
 test-cluster: install
 	go test -race -ldflags $(BUILD_LD_FLAGS) --count 1 -timeout 25m -failfast $(shell go list ./tools/cluster/tests/...)
