@@ -5,7 +5,6 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql/graphqltypes"
 )
 
-// Re-export generated types as part of the public API.
 type (
 	ExecuteTransactionBlockResponse  = graphqltypes.ExecuteTransactionBlockResponse
 	TryGetPastObjectResponse         = graphqltypes.TryGetPastObjectResponse
@@ -21,9 +20,6 @@ type (
 	GetDynamicFieldObjectResponse    = graphqltypes.GetDynamicFieldObjectResponse
 	GetLatestIotaSystemStateResponse = graphqltypes.GetLatestIotaSystemStateResponse
 )
-
-// Stub event/subscription types - websocket subscriptions are not yet implemented.
-// These will be replaced with proper GraphQL subscription types when implemented.
 
 type IotaEvent struct {
 	PackageID         *iotago.ObjectID

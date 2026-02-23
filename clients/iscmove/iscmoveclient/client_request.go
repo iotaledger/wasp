@@ -399,7 +399,7 @@ func (c *Client) pullRequests(ctx context.Context, packageID iotago.Address, anc
 		objID := objectID // local copy for pointer
 		pulledRequests[objectID] = &pulledRequestData{
 			ObjectID: objectID,
-			Bcs:      node.Bcs,
+			Bcs:      node.Contents.Bcs,
 			Ref: iotago.ObjectRef{
 				ObjectID: &objID,
 				Version:  node.Version,

@@ -780,30 +780,79 @@ func (c *GraphQLClient) SignAndExecuteTransaction(
 		return nil, fmt.Errorf("failed to execute transaction: %w", err)
 	}
 
+	txDigest := resp.ExecuteTransactionBlock.Effects.TransactionBlock.Digest
+	if err := c.waitForEffectsIndexed(ctx, txDigest); err != nil {
+		return resp, fmt.Errorf("transaction succeeded but effects not yet indexed: %w", err)
+	}
+
 	return resp, nil
 }
 
-func (c *GraphQLClient) waitForNewerObjectRef(
-	ctx context.Context,
-	current *iotago.ObjectRef,
-) (*iotago.ObjectRef, error) {
-	ticker := time.NewTicker(c.tickingTime)
-	defer ticker.Stop()
+func (c *GraphQLClient) waitForEffectsIndexed(ctx context.Context, txDigest string) error {
+	params := c.WaitUntilEffectsVisible
+	if params == nil {
+		params = WaitForEffectsEnabled
+	}
 
-	for {
-		updated, err := c.UpdateObjectRef(ctx, current)
-		if err == nil && updated != nil {
-			if updated.Version > current.Version {
-				return updated, nil
-			}
+	var objectChanges []graphqltypes.ObjectChangeData
+	for i := range params.Attempts {
+		res, err := graphqltypes.GetTransactionBlock(ctx, c.client, txDigest)
+		if err == nil && res.TransactionBlock.Effects.GasEffects.GasObject.Digest != "" {
+			objectChanges = res.TransactionBlock.Effects.ObjectChanges.Nodes
+			break
 		}
 
+		if i == params.Attempts-1 {
+			return fmt.Errorf("transaction %s not indexed after %d attempts", txDigest, params.Attempts)
+		}
 		select {
 		case <-ctx.Done():
-			return nil, fmt.Errorf("waiting for updated object ref: %w", ctx.Err())
-		case <-ticker.C:
+			return ctx.Err()
+		case <-time.After(params.DelayBetweenAttempts):
 		}
 	}
+
+	for _, change := range objectChanges {
+		if change.IdDeleted || change.OutputState.Digest == "" {
+			continue
+		}
+
+		objectID := change.Address
+		targetVersion := change.OutputState.Version
+
+		if err := c.waitForObjectAtVersion(ctx, objectID, targetVersion, params); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c *GraphQLClient) waitForObjectAtVersion(
+	ctx context.Context,
+	objectID iotago.ObjectID,
+	minVersion uint64,
+	params *WaitParams,
+) error {
+	for i := range params.Attempts {
+		showNone := false
+		res, err := graphqltypes.GetObject(ctx, c.client, objectID,
+			&showNone, &showNone, &showNone, &showNone, &showNone, &showNone, &showNone)
+		if err == nil && !res.Object.IsNotFound() && res.Object.Version >= minVersion {
+			return nil
+		}
+
+		if i == params.Attempts-1 {
+			return fmt.Errorf("object %s did not reach version %d after %d attempts",
+				objectID, minVersion, params.Attempts)
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(params.DelayBetweenAttempts):
+		}
+	}
+	return nil // unreachable
 }
 
 func (c *GraphQLClient) UpdateObjectRef(
