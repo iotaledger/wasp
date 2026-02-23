@@ -1470,7 +1470,7 @@ func TestChangeGasPerToken(t *testing.T) {
 	require.Greater(t, fee2, fee)
 }
 
-func TestGasPriceIgnoredInEstimateGas(t *testing.T) {
+func TestGasPriceIgnoredInEstimateGas(t *testing.T) { //nolint:tparallel
 	t.Parallel()
 	env := InitEVM(t)
 
@@ -1482,8 +1482,7 @@ func TestGasPriceIgnoredInEstimateGas(t *testing.T) {
 		big.NewInt(10),
 		big.NewInt(100),
 	} {
-		t.Run(fmt.Sprintf("%v", gasPrice), func(t *testing.T) { //nolint:gocritic // false positive
-			t.Parallel()
+		t.Run(fmt.Sprintf("%v", gasPrice), func(t *testing.T) { //nolint:gocritic// false positive
 			ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 			storage := env.deployStorageContract(ethKey)
 
