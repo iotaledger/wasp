@@ -54,7 +54,6 @@ jobs:
         run: |
           TEST_SHORT_PKGS="$(go list ./... \
             | grep -v '/tools/cluster' \
-            | grep -v '/packages/evm/jsonrpc/jsonrpctest' \
           )" make test-short
 
   golangci:
