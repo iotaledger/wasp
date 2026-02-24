@@ -54,10 +54,10 @@ func (g *SingleL1Info) GetL1Params() *parameters.L1Params {
 type nodeConnection struct {
 	log.Logger
 
-	httpClient          clients.L1Client
+	apiClient           clients.L1Client
 	l1ParamsFetcher     l1paramsfetcher.L1ParamsFetcher
 	wsURL               string
-	httpURL             string
+	apiURL              string
 	maxNumberOfRequests int
 	chainsLock          sync.RWMutex
 	chainsMap           *shrinkingmap.ShrinkingMap[isc.ChainID, *ncChain]
@@ -71,21 +71,21 @@ func New(
 	ctx context.Context,
 	maxNumberOfRequests int,
 	wsURL string,
-	httpURL string,
+	apiURL string,
 	log log.Logger,
 	shutdownHandler *shutdown.ShutdownHandler,
 ) (chain.NodeConnection, error) {
-	httpClient := clients.NewL1Client(clients.L1Config{
-		APIURL:    httpURL,
+	apiClient := clients.NewL1Client(clients.L1Config{
+		APIURL:    apiURL,
 		FaucetURL: "",
 	}, iotagraphql.WaitForEffectsEnabled)
 
 	return &nodeConnection{
 		Logger:              log,
 		wsURL:               wsURL,
-		httpURL:             httpURL,
-		httpClient:          httpClient,
-		l1ParamsFetcher:     l1paramsfetcher.NewL1ParamsFetcher(httpClient.GetIotaClient(), log),
+		apiURL:              apiURL,
+		apiClient:           apiClient,
+		l1ParamsFetcher:     l1paramsfetcher.NewL1ParamsFetcher(apiClient.GetIotaClient(), log),
 		maxNumberOfRequests: maxNumberOfRequests,
 		chainsMap: shrinkingmap.New[isc.ChainID, *ncChain](
 			shrinkingmap.WithShrinkingThresholdRatio(chainsCleanupThresholdRatio),
@@ -158,7 +158,7 @@ func (nc *nodeConnection) ConsensusL1InfoProposal(
 			panic(err)
 		}
 
-		gasCoinGetObjectRes, err := nc.httpClient.GetObject(ctx, iotagraphql.GetObjectRequest{
+		gasCoinGetObjectRes, err := nc.apiClient.GetObject(ctx, iotagraphql.GetObjectRequest{
 			ObjectID: stateMetadata.GasCoinObjectID,
 			Options:  &iotagraphql.IotaObjectDataOptions{ShowBcs: true},
 		})
@@ -217,7 +217,7 @@ func (nc *nodeConnection) WaitUntilInitiallySynced(ctx context.Context) error {
 			return ctx.Err()
 
 		case <-ticker.C:
-			_, err := nc.httpClient.GetLatestIotaSystemState(ctx)
+			_, err := nc.apiClient.GetLatestIotaSystemState(ctx)
 			if err != nil {
 				nc.LogWarnf("WaitUntilInitiallySynced: %s", err)
 				continue
@@ -228,7 +228,7 @@ func (nc *nodeConnection) WaitUntilInitiallySynced(ctx context.Context) error {
 }
 
 func (nc *nodeConnection) L1Client() clients.L1Client {
-	return nc.httpClient
+	return nc.apiClient
 }
 
 func (nc *nodeConnection) L1ParamsFetcher() l1paramsfetcher.L1ParamsFetcher {
@@ -284,7 +284,7 @@ func (nc *nodeConnection) createChain(
 	if readOnly {
 		ncc = nc.createReadOnlyChain(chainID)
 	} else {
-		ncc, err = newNCChain(ctx, nc, chainID, recvRequest, recvAnchor, nc.wsURL, nc.httpURL)
+		ncc, err = newNCChain(ctx, nc, chainID, recvRequest, recvAnchor, nc.wsURL, nc.apiURL)
 		if err != nil {
 			return nil, err
 		}

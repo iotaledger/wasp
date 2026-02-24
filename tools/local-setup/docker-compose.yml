@@ -1,4 +1,3 @@
-version: "3.9"
 services:
   #####################################################
   # Reverse Proxy (needed to rewrite dashboard route) #
@@ -16,54 +15,79 @@ services:
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
 
-  ###############
-  # HORNET nest #
-  ###############
+  #####################
+  # IOTA Local Network #
+  #####################
 
-  hornet-nest:
-    container_name: hornet-nest
-    image: iotaledger/hornet-nest:2.0-rc
-    ulimits:
-      nofile:
-        soft: 16384
-        hard: 16384
-    restart: on-failure:10
-    stop_grace_period: 5m
+  postgres:
+    container_name: postgres
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespw
+      POSTGRES_DB: iota_indexer
+    command:
+      - "-c"
+      - "max_connections=200"
+    volumes:
+      - iota-postgres-data:/var/lib/postgresql
+
+  iota-node:
+    container_name: iota-node
+    image: iotaledger/iota-tools:devnet
+    restart: unless-stopped
     depends_on:
-      traefik:
+      postgres:
         condition: service_started
     ports:
-      - "14265:14265/tcp" # API
-      - "8091:8091/tcp" # Faucet
-      - "9029:9029/tcp" # INX
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.hornet.service=hornet"
-      - "traefik.http.routers.hornet.rule=Host(`localhost`)"
-      - "traefik.http.routers.hornet.entrypoints=web"
-      - "traefik.http.services.hornet.loadbalancer.server.port=14265"
-      - "traefik.http.routers.hornet.middlewares=redirect-dashboard"
-      - "traefik.http.middlewares.redirect-dashboard.redirectregex.regex=^(https?://[^/]+)/?$$"
-      - "traefik.http.middlewares.redirect-dashboard.redirectregex.replacement=$$1/dashboard/"
-      - "traefik.http.middlewares.redirect-dashboard.redirectregex.permanent=true"
-      - "traefik.http.routers.hornet-dashboard.service=hornet-dashboard"
-      - "traefik.http.routers.hornet-dashboard.rule=Host(`localhost`) && (Path(`/dashboard`) || PathPrefix(`/dashboard/`))"
-      - "traefik.http.routers.hornet-dashboard.entrypoints=web"
-      - "traefik.http.services.hornet-dashboard.loadbalancer.server.port=8081"
-      - "traefik.http.routers.hornet-faucet.service=hornet-faucet"
-      - "traefik.http.routers.hornet-faucet.rule=Path(`/faucet`) || PathPrefix(`/faucet/`)"
-      - "traefik.http.routers.hornet-faucet.entrypoints=web"
-      - "traefik.http.services.hornet-faucet.loadbalancer.server.port=8091"
-      - "traefik.http.routers.hornet-faucet.middlewares=rewrite-faucet"
-      - "traefik.http.middlewares.rewrite-faucet.chain.middlewares=rewrite-faucet-1,rewrite-faucet-2"
-      - "traefik.http.middlewares.rewrite-faucet-1.redirectregex.regex=^(https?://[^/]+/[a-z0-9_]+)$$"
-      - "traefik.http.middlewares.rewrite-faucet-1.redirectregex.replacement=$${1}/"
-      - "traefik.http.middlewares.rewrite-faucet-1.redirectregex.permanent=true"
-      - "traefik.http.middlewares.rewrite-faucet-2.stripprefixregex.regex=/[a-z0-9_]+"
-    cap_drop:
-      - ALL
-    volumes:
-      - hornet-nest-db:/app
+      - "${IOTA_RPC_PORT:-9000}:9000/tcp" # Node RPC
+      - "${IOTA_FAUCET_PORT:-9123}:9123/tcp" # Faucet
+    command:
+      - "iota"
+      - "start"
+      - "--force-regenesis"
+      - "--with-faucet=0.0.0.0:9123"
+      - "--faucet-amount=2000000000"
+
+  iota-indexer:
+    container_name: iota-indexer
+    image: iotaledger/iota-indexer:devnet
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_started
+      iota-node:
+        condition: service_started
+    entrypoint:
+      - "iota-indexer"
+    command:
+      - "--db-url=postgres://postgres:postgrespw@postgres:5432/iota_indexer"
+      - "--rpc-client-url=http://iota-node:9000"
+      - "--fullnode-sync-worker"
+      - "--reset-db"
+
+  iota-graphql-rpc:
+    container_name: iota-graphql-rpc
+    image: iotaledger/iota-graphql-rpc:devnet
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_started
+      iota-indexer:
+        condition: service_started
+      iota-node:
+        condition: service_started
+    ports:
+      - "${IOTA_GRAPHQL_PORT:-9125}:9125/tcp" # GraphQL
+    entrypoint:
+      - "iota-graphql-rpc"
+    command:
+      - "start-server"
+      - "--host=0.0.0.0"
+      - "--port=9125"
+      - "--db-url=postgres://postgres:postgrespw@postgres:5432/iota_indexer"
+      - "--node-rpc-url=http://iota-node:9000"
 
   ########
   # WASP #
@@ -88,7 +112,7 @@ services:
     depends_on:
       traefik:
         condition: service_started
-      hornet-nest:
+      iota-graphql-rpc:
         condition: service_started
     ports:
       - "2112:2112/tcp" # Prometheus
@@ -115,7 +139,8 @@ services:
       - wasp-db:/app/waspdb
     command:
       - "--webapi.auth.scheme=none"
-      - "--inx.address=hornet-nest:9029"
+      - "--l1.apiURL=http://iota-graphql-rpc:9125"
+      - "--l1.websocketURL=ws://iota-node:9000"
       - "--logger.level=debug"
       - "--db.chainState.path=/app/waspdb/chains/data"
       - "--p2p.identity.filePath=/app/waspdb/identity/identity.key"
@@ -154,12 +179,8 @@ services:
       - "traefik.http.middlewares.rewrite-wasp-dashboard.stripprefix.prefixes=/wasp/dashboard"
     environment:
       - WASP_API_URL=http://localhost/wasp/api
-      - L1_API_URL=http://localhost
+      - L1_API_URL=http://localhost:${IOTA_GRAPHQL_PORT:-9125}
 
 volumes:
   wasp-db:
-    external: true
-    name: wasp-db
-  hornet-nest-db:
-    external: true
-    name: hornet-nest-db
+  iota-postgres-data:
