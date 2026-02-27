@@ -9,7 +9,7 @@ on:
 jobs:
   test-short:
     name: Test (short, simulator)
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, wasp]
     steps:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v4

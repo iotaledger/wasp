@@ -53,11 +53,11 @@ func TestInternalServerErrors(t *testing.T) {
 		err := e.Start(":9999")
 		require.ErrorIs(t, http.ErrServerClosed, err)
 	}()
-	defer e.Shutdown(context.Background()) //nolint:errcheck
+	defer e.Shutdown(context.Background())
 
 	// wait for the server to start accepting connections
 	require.Eventually(t, func() bool {
-		resp, err := http.Get("http://localhost:9999/") //nolint:gosec
+		resp, err := http.Get("http://localhost:9999/")
 		if err != nil {
 			return false
 		}

@@ -9,7 +9,7 @@ on:
 jobs:
   deps:
     name: Download dependencies
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, wasp]
     steps:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v4
@@ -28,7 +28,7 @@ jobs:
   build:
     name: Build only
     needs: [deps]
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, wasp]
     steps:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v4
@@ -52,7 +52,7 @@ jobs:
   test-short:
     name: Test (short)
     needs: [deps]
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, wasp]
     steps:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v4
@@ -80,7 +80,7 @@ jobs:
   golangci:
     name: Lint
     needs: [deps]
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, wasp]
     steps:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v4
