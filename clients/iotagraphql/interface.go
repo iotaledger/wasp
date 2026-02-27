@@ -9,7 +9,6 @@ import (
 )
 
 type IotaClient interface {
-	// Read API
 	GetDynamicFieldObject(
 		ctx context.Context,
 		req GetDynamicFieldObjectRequest,
@@ -34,7 +33,6 @@ type IotaClient interface {
 	GetLatestIotaSystemState(ctx context.Context) (*GetLatestIotaSystemStateResponse, error)
 	GetReferenceGasPrice(ctx context.Context) (*BigInt, error)
 
-	// Transaction Builder API
 	MergeCoins(
 		ctx context.Context,
 		req MergeCoinsRequest,
@@ -60,15 +58,12 @@ type IotaClient interface {
 		req TransferObjectRequest,
 	) (*TransactionBytes, error)
 
-	// Coin Query API
 	GetAllBalances(ctx context.Context, owner iotago.Address) ([]*Balance, error)
 	GetAllCoins(ctx context.Context, req GetAllCoinsRequest) (*GetAllCoinsResponse, error)
 	GetBalance(ctx context.Context, req GetBalanceRequest) (*Balance, error)
 	GetCoinMetadata(ctx context.Context, coinType CoinType) (*IotaCoinMetadata, error)
 	GetCoins(ctx context.Context, req GetCoinsRequest) (*GetCoinsResponse, error)
 	GetTotalSupply(ctx context.Context, coinType CoinType) (*Supply, error)
-
-	// Extended API
 	GetObject(ctx context.Context, objectID iotago.ObjectID) (*graphqltypes.GetObjectResponse, error)
 	GetTransactionBlock(ctx context.Context, digest iotago.TransactionDigest) (*graphqltypes.GetTransactionBlockResponse, error)
 	TryGetPastObject(
@@ -76,14 +71,13 @@ type IotaClient interface {
 		objectID iotago.ObjectID,
 		version uint64,
 	) (*TryGetPastObjectResponse, error)
-
-	// Utility methods
 	GetCoinObjsForTargetAmount(
 		ctx context.Context,
 		address iotago.Address,
 		targetAmount uint64,
 		gasAmount uint64,
 	) (Coins, error)
+
 	SignAndExecuteTransaction(
 		ctx context.Context,
 		txnBytes []byte,
@@ -110,8 +104,6 @@ type IotaClient interface {
 		gasBudget uint64,
 		gasPrice uint64,
 	) (*ExecuteTransactionBlockResponse, error)
-
-	// Faucet
 	RequestFundsFromFaucet(ctx context.Context, address iotago.Address) error
 }
 

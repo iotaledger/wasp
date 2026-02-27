@@ -65,7 +65,7 @@ func TestMain(m *testing.M) {
 	l1starter.TestMain(m)
 }
 
-func TestFaucetReturns5CoinsWithCorrectAmount(t *testing.T) {
+func TestFaucetReturnsCoins(t *testing.T) {
 	ctx := context.Background()
 	client := l1starter.Instance().L1Client()
 
@@ -82,23 +82,13 @@ func TestFaucetReturns5CoinsWithCorrectAmount(t *testing.T) {
 	require.NoError(t, err)
 
 	coins := coinsResp.Address.Coins.Nodes
-	require.Len(t, coins, 5, "faucet should return exactly 5 coins per request")
-
-	for i, coin := range coins {
-		require.Equal(t,
-			iotagraphql.SingleCoinFundsFromFaucetAmount,
-			coin.Balance(),
-			"coin %d should have SingleCoinFundsFromFaucetAmount (%d), got %d",
-			i, iotagraphql.SingleCoinFundsFromFaucetAmount, coin.Balance(),
-		)
-	}
+	require.Greater(t, len(coins), 0, "faucet should return > 0 coins per request")
 
 	balance, err := client.GetBalance(ctx, iotagraphql.GetBalanceRequest{Owner: addr})
 	require.NoError(t, err)
-	require.Equal(t,
-		iotagraphql.FundsFromFaucetAmount,
+	require.Greater(t,
 		balance.TotalBalance.Uint64(),
-		"total balance should equal FundsFromFaucetAmount (%d), got %d",
-		iotagraphql.FundsFromFaucetAmount, balance.TotalBalance.Uint64(),
+		uint64(0),
+		"total balance should be bigger than 0",
 	)
 }

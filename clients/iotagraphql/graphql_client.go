@@ -797,7 +797,9 @@ func (c *GraphQLClient) waitForEffectsIndexed(ctx context.Context, txDigest stri
 	var objectChanges []graphqltypes.ObjectChangeData
 	for i := range params.Attempts {
 		res, err := graphqltypes.GetTransactionBlock(ctx, c.client, txDigest)
-		if err == nil && res.TransactionBlock.Effects.GasEffects.GasObject.Digest != "" {
+		if err == nil &&
+			res.TransactionBlock.Effects.Checkpoint.SequenceNumber > 0 &&
+			res.TransactionBlock.Effects.GasEffects.GasObject.Digest != "" {
 			objectChanges = res.TransactionBlock.Effects.ObjectChanges.Nodes
 			break
 		}
