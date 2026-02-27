@@ -85,10 +85,11 @@ func (e *Executor) Execute(tx *iotago.TransactionData, validated *ValidatedInput
 		es.cmdResults[cmdIdx] = results
 	}
 
-	// No L1 gas charge, the ISC VM accounts for gas internally via L2 fees.
-	// Charging from the gas coin here would double-count, since the gas coin
-	// is part of the chain's on-chain assets.
-	// This may need tuning regardless.
+	// L1 gas: the simulator does not model gas costs. Real IOTA charges
+	// computation_cost (from Move VM instruction metering) + storage_cost
+	// (per-byte for new/mutated objects) - storage_rebate. Reproducing this
+	// requires executing Move bytecode, which the simulator doesn't do.
+	// TODO: Marker for adding Gas cost calculation, but this technically requires actual execution of contracts.
 	gasCost := uint64(0)
 
 	if gasCoinID != nil {
@@ -369,6 +370,34 @@ func (e *Executor) executePublish(es *execState, publish *iotago.ProgrammablePub
 		PreviousTx: es.ctx.TxDigest,
 	}
 	e.Store.Put(capObj)
+
+	// Fake init: coin-publishing tests expect TreasuryCap and CoinMetadata in the
+	// transaction effects. The real Move runtime creates these via the module's init
+	// function calling coin::create_currency. The type parameter in the generic is
+	// a placeholder — GetCreatedObjectByName only matches on module and object name.
+	treasuryCapID := FreshID(es.ctx.TxDigest, es.ctx.IDCounter)
+	treasuryCapType := fmt.Sprintf("%s::coin::TreasuryCap<%s::unknown::T>", iotago.IotaPackageIDIotaFramework, pkgID)
+	e.Store.Put(&SimObject{
+		ID:         treasuryCapID,
+		Version:    0,
+		Digest:     ComputeDigest([]byte("treasury_cap")),
+		Owner:      SimOwner{AddressOwner: &es.ctx.Sender},
+		Type:       treasuryCapType,
+		Data:       nil,
+		PreviousTx: es.ctx.TxDigest,
+	})
+
+	coinMetadataID := FreshID(es.ctx.TxDigest, es.ctx.IDCounter)
+	coinMetadataType := fmt.Sprintf("%s::coin::CoinMetadata<%s::unknown::T>", iotago.IotaPackageIDIotaFramework, pkgID)
+	e.Store.Put(&SimObject{
+		ID:         coinMetadataID,
+		Version:    0,
+		Digest:     ComputeDigest([]byte("coin_metadata")),
+		Owner:      SimOwner{Immutable: true},
+		Type:       coinMetadataType,
+		Data:       nil,
+		PreviousTx: es.ctx.TxDigest,
+	})
 
 	_ = publish
 	return []Value{{ObjectID: &capID, Type: "UpgradeCap"}}, nil

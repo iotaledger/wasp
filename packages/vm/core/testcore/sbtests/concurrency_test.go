@@ -58,7 +58,6 @@ func TestManyRequests(t *testing.T) {
 	counterResult, err := sbtestsc.FuncGetCounter.DecodeOutput(ret)
 	require.NoError(t, err)
 	require.EqualValues(t, N, counterResult)
-
 	gasCoinValueAfter := chain.GetLatestGasCoin().Value
 	require.Greater(t, gasCoinValueAfter, gasCoinValueBefore)
 

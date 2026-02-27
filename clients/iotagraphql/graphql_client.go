@@ -190,43 +190,34 @@ func requestFundsFromFaucetRaw(ctx context.Context, address iotago.Address, fauc
 	}
 }
 
-// Query executes a custom GraphQL query with the given variables and returns the raw response bytes.
 func (c *GraphQLClient) Query(ctx context.Context, query string, variables map[string]interface{}) ([]byte, error) {
-	// Create the GraphQL request body
 	requestBody := map[string]interface{}{
 		"query":     query,
 		"variables": variables,
 	}
 
-	// Marshal the request body to JSON
 	jsonData, err := json.Marshal(requestBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	// Create the HTTP request
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
-
-	// Set headers
 	req.Header.Set("Content-Type", "application/json")
 
-	// Execute the request
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute request: %w", err)
 	}
 	defer resp.Body.Close()
 
-	// Read the response body
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response: %w", err)
 	}
 
-	// Check for HTTP errors
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("GraphQL request failed with status %d: %s", resp.StatusCode, string(body))
 	}
@@ -234,7 +225,6 @@ func (c *GraphQLClient) Query(ctx context.Context, query string, variables map[s
 	return body, nil
 }
 
-// bigIntToUint64 safely converts a BigInt to uint64, returning an error if it doesn't fit.
 func bigIntToUint64(b *BigInt, fieldName string) (uint64, error) {
 	if b == nil {
 		return 0, fmt.Errorf("%s is nil", fieldName)
@@ -245,7 +235,6 @@ func bigIntToUint64(b *BigInt, fieldName string) (uint64, error) {
 	return b.Uint64(), nil
 }
 
-// validateRequired validates that a required parameter is not nil.
 func validateRequired(val interface{}, paramName string) error {
 	if val == nil {
 		return fmt.Errorf("%s is required", paramName)
@@ -264,8 +253,6 @@ func (c *GraphQLClient) GetDynamicFieldObject(
 		return nil, fmt.Errorf("dynamic field name is required")
 	}
 
-	// Convert iotago.DynamicFieldName to GraphQL DynamicFieldName input
-	// For BCS encoding, we marshal the value to JSON and then to BCS
 	valueJSON, err := json.Marshal(req.Name.Value)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal value to JSON: %w", err)
@@ -286,7 +273,6 @@ func (c *GraphQLClient) GetDynamicFieldObject(
 	showDisplay := true
 	showStorageRebate := true
 
-	// Try querying as an object first
 	objResp, objErr := graphqltypes.GetDynamicFieldObject(ctx, c.client, *req.ParentObjectID, nameInput,
 		&showBcs, &showPreviousTransaction, &showDisplay, &showStorageRebate)
 
@@ -309,10 +295,10 @@ func (c *GraphQLClient) GetOwnedObjects(
 	}
 
 	filter := req.Filter
-	showBcs, showOwner, showPreviousTransaction, showContent, showDisplay, showType, showStorageRebate := showAllObjectOptions()
+	opts := showAllObjectOptions()
 
 	resp, err := graphqltypes.GetOwnedObjects(ctx, c.client, *req.Address, req.Limit, req.Cursor,
-		showBcs, showContent, showDisplay, showType, showOwner, showPreviousTransaction, showStorageRebate, filter)
+		opts.Bcs, opts.Content, opts.Display, opts.Type, opts.Owner, opts.PreviousTransaction, opts.StorageRebate, filter)
 
 	return resp, err
 }
@@ -485,7 +471,8 @@ func (c *GraphQLClient) PayAllIota(
 	gasPayment := make([]*iotago.ObjectRef, 0, len(req.InputCoins))
 
 	for _, coinID := range req.InputCoins {
-		objResp, err := c.GetObject(ctx, coinID)
+		var objResp *graphqltypes.GetObjectResponse
+		objResp, err = c.GetObject(ctx, coinID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get object %s: %w", coinID.String(), err)
 		}
@@ -493,7 +480,8 @@ func (c *GraphQLClient) PayAllIota(
 			return nil, fmt.Errorf("object %s not found", coinID.String())
 		}
 
-		objRef, err := objResp.Object.ObjectRef()
+		var objRef *iotago.ObjectRef
+		objRef, err = objResp.Object.ObjectRef()
 		if err != nil {
 			return nil, fmt.Errorf("failed to get ref for %s: %w", coinID.String(), err)
 		}
@@ -667,7 +655,7 @@ func (c *GraphQLClient) resolveGasObject(
 			return nil, fmt.Errorf("failed to fetch coins for gas selection: %w", err)
 		}
 		for _, coin := range coins.Address.Coins.Nodes {
-			if transferObjectID != nil && coin.COIN_DATA.Address == *transferObjectID {
+			if transferObjectID != nil && coin.Address == *transferObjectID {
 				continue
 			}
 			return coin.ObjectRef()
@@ -1032,19 +1020,23 @@ func (c *GraphQLClient) GetTotalSupply(ctx context.Context, coinType CoinType) (
 	return &Supply{Value: resp.Epoch.IotaTotalSupply.Clone()}, err
 }
 
-func showAllObjectOptions() (showBcs, showOwner, showPreviousTransaction, showContent, showDisplay, showType, showStorageRebate *bool) {
+type objectShowOptions struct {
+	Bcs, Owner, PreviousTransaction, Content, Display, Type, StorageRebate *bool
+}
+
+func showAllObjectOptions() objectShowOptions {
 	t := true
-	return &t, &t, &t, &t, &t, &t, &t
+	return objectShowOptions{&t, &t, &t, &t, &t, &t, &t}
 }
 
 func (c *GraphQLClient) GetObject(ctx context.Context, objectID iotago.ObjectID) (*graphqltypes.GetObjectResponse, error) {
-	showBcs, showOwner, showPreviousTransaction, showContent, showDisplay, showType, showStorageRebate := showAllObjectOptions()
+	opts := showAllObjectOptions()
 
 	return Retry(
 		ctx,
 		func() (*graphqltypes.GetObjectResponse, error) {
 			return graphqltypes.GetObject(ctx, c.client, objectID,
-				showBcs, showOwner, showPreviousTransaction, showContent, showDisplay, showType, showStorageRebate)
+				opts.Bcs, opts.Owner, opts.PreviousTransaction, opts.Content, opts.Display, opts.Type, opts.StorageRebate)
 		},
 		func(resp *graphqltypes.GetObjectResponse, err error) bool {
 			return resp != nil && resp.Object.IsNotFound()
@@ -1062,10 +1054,10 @@ func (c *GraphQLClient) TryGetPastObject(
 	objectID iotago.ObjectID,
 	version uint64,
 ) (*TryGetPastObjectResponse, error) {
-	showBcs, showOwner, showPreviousTransaction, showContent, showDisplay, showType, showStorageRebate := showAllObjectOptions()
+	opts := showAllObjectOptions()
 
 	return graphqltypes.TryGetPastObject(ctx, c.client, objectID, &version,
-		showBcs, showOwner, showPreviousTransaction, showContent, showDisplay, showType, showStorageRebate)
+		opts.Bcs, opts.Owner, opts.PreviousTransaction, opts.Content, opts.Display, opts.Type, opts.StorageRebate)
 }
 
 func (c *GraphQLClient) Health(ctx context.Context) error {

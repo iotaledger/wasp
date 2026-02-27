@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 
+	"fortio.org/safecast"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 
@@ -105,7 +106,7 @@ func doDistributedKeyGeneration(ctx context.Context, node string, peers []string
 		return nil, fmt.Errorf("quorum needs to be at least (2/3)+1 of committee size")
 	}
 
-	committeeAddr, err := apilib.RunDistributedKeyGeneration(ctx, client, committeePubKeys, uint16(quorum)) //nolint:gosec
+	committeeAddr, err := apilib.RunDistributedKeyGeneration(ctx, client, committeePubKeys, safecast.MustConvert[uint16](quorum))
 	if err != nil {
 		return nil, err
 	}

@@ -7,22 +7,40 @@ on:
       - "**/README.md"
 
 jobs:
-  build:
-    name: Build only
+  deps:
+    name: Download dependencies
     runs-on: ubuntu-latest
     steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v4
+
       - name: Set up Go 1.x
         uses: actions/setup-go@v5
         with:
           go-version: "1.24"
-        id: go
+          cache-dependency-path: |
+            go.sum
+            tools/wasp-cli/go.sum
 
+      - name: Download modules
+        run: go mod download
+
+  build:
+    name: Build only
+    needs: [deps]
+    runs-on: ubuntu-latest
+    steps:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v4
 
-      - name: Get dependencies
-        run: |
-          go get -v -t -d ./...
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+          cache-dependency-path: |
+            go.sum
+            tools/wasp-cli/go.sum
+        id: go
 
       - name: Build
         run: make build
@@ -33,20 +51,20 @@ jobs:
 
   test-short:
     name: Test (short)
+    needs: [deps]
     runs-on: ubuntu-latest
     steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v4
+
       - name: Set up Go 1.x
         uses: actions/setup-go@v5
         with:
           go-version: "1.24"
+          cache-dependency-path: |
+            go.sum
+            tools/wasp-cli/go.sum
         id: go
-
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v4
-
-      - name: Get dependencies
-        run: |
-          go get -v -t -d ./...
 
       # Here used to be a make build step, but we separated it into another job
 
@@ -61,15 +79,20 @@ jobs:
 
   golangci:
     name: Lint
+    needs: [deps]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-go@v5
-        with:
-          go-version: "1.24"
-        id: go
-
       - name: Check out code into the Go module directory
         uses: actions/checkout@v4
+
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+          cache-dependency-path: |
+            go.sum
+            tools/wasp-cli/go.sum
+        id: go
 
       - name: Run global scope golangci-lint
         uses: golangci/golangci-lint-action@v8

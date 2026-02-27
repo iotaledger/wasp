@@ -78,7 +78,7 @@ func (c *Client) GetAssetsBagWithBalances(
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse ObjectType: %w", err)
 			}
-			objectID := iotago.ObjectID(moveObj.Address)
+			objectID := moveObj.Address
 			bag.AddObject(objectID, typ)
 		}
 	}

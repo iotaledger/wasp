@@ -106,13 +106,11 @@ func (c *Client) collectPlacedCoins(
 	req *CreateAndSendRequestWithAssetsRequest,
 ) ([]placedCoinInfo, error) {
 	var placedCoins []placedCoinInfo
-	// Query for each specific coin type needed
 	for cointype, bal := range req.Assets.Coins.Iterate() {
 		if lo.Must(iotago.IsSameResource(cointype.String(), iotagraphql.IotaCoinType.String())) {
 			continue
 		}
 
-		// Query for this specific coin type
 		ct := iotagraphql.CoinType(cointype.String())
 		coinsOfType, err := c.GetCoins(ctx, iotagraphql.GetCoinsRequest{
 			Owner:    req.Signer.Address().AsIotaAddress(),
@@ -135,7 +133,6 @@ func (c *Client) collectPlacedCoins(
 			return nil, fmt.Errorf("cannot find coin for type %s", cointype)
 		}
 
-		// Get the latest object ref for this coin
 		coinRef, err := coin.ObjectRef()
 		if err != nil {
 			return nil, fmt.Errorf("failed to get coin ref for type %s: %w", cointype, err)
@@ -207,7 +204,8 @@ func (c *Client) CreateAndSendRequestWithAssets(
 			}
 			coinsToMerge := make([]iotago.Argument, 0, len(gasCoins)-1)
 			for i := 1; i < len(gasCoins); i++ {
-				ref, err := gasCoins[i].ObjectRef()
+				var ref *iotago.ObjectRef
+				ref, err = gasCoins[i].ObjectRef()
 				if err != nil {
 					return nil, fmt.Errorf("failed to get gas coin ref: %w", err)
 				}
@@ -242,13 +240,14 @@ func (c *Client) CreateAndSendRequestWithAssets(
 		)
 	}
 
-	// Place the non-coin objects
 	for id, t := range req.Assets.Objects.Iterate() {
-		objRes, err := c.GetObject(ctx, id)
+		var objRes *graphqltypes.GetObjectResponse
+		objRes, err = c.GetObject(ctx, id)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get object %s: %w", id, err)
 		}
-		ref, err := objRes.Object.ObjectRef()
+		var ref *iotago.ObjectRef
+		ref, err = objRes.Object.ObjectRef()
 		if err != nil {
 			return nil, fmt.Errorf("failed to get ref for object %s: %w", id, err)
 		}
@@ -391,12 +390,12 @@ func (c *Client) pullRequests(ctx context.Context, packageID iotago.Address, anc
 	}
 
 	for _, node := range objs.Address.Objects.Nodes {
-		objectID := iotago.ObjectID(node.ObjectId)
+		objectID := node.ObjectId
 		digest, err := iotago.NewDigest(node.Digest)
 		if err != nil {
 			continue
 		}
-		objID := objectID // local copy for pointer
+		objID := objectID
 		pulledRequests[objectID] = &pulledRequestData{
 			ObjectID: objectID,
 			Bcs:      node.Contents.Bcs,

@@ -8,13 +8,12 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 )
 
-// Coin is the GraphQL coin type with helper methods.
 type Coin = CoinData
 
 type Coins []Coin
 
 func (c *CoinData) ObjectID() iotago.ObjectID {
-	return iotago.ObjectID(c.Address)
+	return c.Address
 }
 
 func (c *CoinData) ObjectRef() (*iotago.ObjectRef, error) {

@@ -6,7 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"sync"
 	"time"
+
+	"fortio.org/safecast"
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
@@ -23,6 +26,7 @@ const (
 type FakeIotaClient struct {
 	Store         *ObjectStore
 	Executor      *Executor
+	faucetMu      sync.Mutex
 	faucetCounter uint64 // monotonic counter for unique faucet coin IDs
 }
 
@@ -276,7 +280,7 @@ func (c *FakeIotaClient) GetDynamicFields(
 
 		node := graphqltypes.GetDynamicFieldsOwnerDynamicFieldsDynamicFieldConnectionNodesDynamicField{
 			Name: graphqltypes.GetDynamicFieldsOwnerDynamicFieldsDynamicFieldConnectionNodesDynamicFieldNameMoveValue{
-				Json: df.Name.Json,
+				Json: df.Name.JSON,
 				Type: graphqltypes.GetDynamicFieldsOwnerDynamicFieldsDynamicFieldConnectionNodesDynamicFieldNameMoveValueTypeMoveType{
 					Repr: df.Name.TypeRepr,
 				},
@@ -424,7 +428,7 @@ func (c *FakeIotaClient) GetAllBalances(_ context.Context, owner iotago.Address)
 	for ct, total := range balances {
 		result = append(result, &graphqltypes.Balance{
 			CoinType:        graphqltypes.CoinType(ct),
-			CoinObjectCount: graphqltypes.NewBigInt(uint64(coinCounts[ct])),
+			CoinObjectCount: graphqltypes.NewBigInt(safecast.MustConvert[uint64](coinCounts[ct])),
 			TotalBalance:    graphqltypes.NewBigInt(total),
 		})
 	}
@@ -500,7 +504,7 @@ func (c *FakeIotaClient) PayIota(_ context.Context, req iotagraphql.PayIotaReque
 		if recipient == nil {
 			continue
 		}
-		idx := uint16(i)
+		idx := safecast.MustConvert[uint16](i)
 		ptb.Command(iotago.Command{
 			TransferObjects: &iotago.ProgrammableTransferObjects{
 				Objects: []iotago.Argument{{NestedResult: &iotago.NestedResult{Cmd: *splitResults.Result, Result: idx}}},
@@ -649,20 +653,49 @@ func (c *FakeIotaClient) UpdateObjectRef(_ context.Context, ref *iotago.ObjectRe
 }
 
 func (c *FakeIotaClient) MintToken(
-	_ context.Context,
-	_ iotasigner.Signer,
-	_ iotago.PackageID,
-	_ string,
-	_ *iotago.ObjectRef,
-	_ uint64,
+	ctx context.Context,
+	signer iotasigner.Signer,
+	packageID iotago.PackageID,
+	tokenName string,
+	treasuryCap *iotago.ObjectRef,
+	mintAmount uint64,
 	_ int,
 ) (*graphqltypes.ExecuteTransactionBlockResponse, error) {
-	return nil, fmt.Errorf("FakeIotaClient: MintToken not implemented")
+	ptb := iotago.NewProgrammableTransactionBuilder()
+	ptb.Command(iotago.Command{
+		MoveCall: &iotago.ProgrammableMoveCall{
+			Package:       &packageID,
+			Module:        tokenName,
+			Function:      "mint",
+			TypeArguments: []iotago.TypeTag{},
+			Arguments: []iotago.Argument{
+				ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: treasuryCap}),
+				ptb.MustForceSeparatePure(mintAmount),
+				ptb.MustForceSeparatePure(signer.Address()),
+			},
+		},
+	})
+	pt := ptb.Finish()
+
+	coins := c.Store.GetCoinsByOwner(*signer.Address(), IotaCoinTypeStr)
+	if len(coins) == 0 {
+		return nil, fmt.Errorf("FakeIotaClient: MintToken: no gas coins")
+	}
+	gasPayments := []*iotago.ObjectRef{coins[0].Ref()}
+
+	tx := iotago.NewProgrammable(signer.Address(), pt, gasPayments, iotagraphql.DefaultGasBudget, defaultGasPrice)
+	txBytes, err := bcs.Marshal(&tx)
+	if err != nil {
+		return nil, fmt.Errorf("FakeIotaClient: MintToken: %w", err)
+	}
+
+	return c.SignAndExecuteTransaction(ctx, txBytes, signer)
 }
 
 func (c *FakeIotaClient) RequestFundsFromFaucet(_ context.Context, receiverAddress iotago.Address) error {
-	// Use the persistent faucet counter to ensure each call creates a unique coin.
-	// The digest incorporates the receiverAddress + counter to avoid collisions.
+	c.faucetMu.Lock()
+	defer c.faucetMu.Unlock()
+
 	const FaucetCoinsAmount = 5
 
 	for i := 0; i < FaucetCoinsAmount; i++ {
@@ -670,7 +703,7 @@ func (c *FakeIotaClient) RequestFundsFromFaucet(_ context.Context, receiverAddre
 		copy(buf, receiverAddress[:])
 		binary.LittleEndian.PutUint64(buf[32:], c.faucetCounter)
 		c.faucetCounter++
-		txDigest := iotago.TransactionDigest(ComputeDigest(buf))
+		txDigest := ComputeDigest(buf)
 		coinID := FreshID(txDigest, &c.faucetCounter)
 		c.Store.PresetCoinObject(coinID, receiverAddress, IotaCoinTypeStr, faucetAmount, txDigest)
 	}
@@ -725,7 +758,6 @@ func buildRPCMoveObjectFields(obj *SimObject) graphqltypes.RPC_MOVE_OBJECT_FIELD
 	}
 }
 
-// buildBalanceJSON creates JSON for a balance dynamic field value.
 func buildBalanceJSON(obj *SimObject) json.RawMessage {
 	balance := DecodeBalanceValue(obj.Data)
 	return json.RawMessage(fmt.Sprintf(`{"value":"%d"}`, balance))

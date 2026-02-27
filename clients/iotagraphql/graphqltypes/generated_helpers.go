@@ -6,14 +6,12 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 )
 
-// Extension methods for generated GraphQL types.
-
 func (v *OBJECT_REF) ObjectRef() (*iotago.ObjectRef, error) {
 	digest, err := iotago.NewDigest(v.Digest)
 	if err != nil {
 		return nil, fmt.Errorf("invalid object digest %q: %w", v.Digest, err)
 	}
-	objectID := iotago.ObjectID(v.Address)
+	objectID := v.Address
 	return &iotago.ObjectRef{
 		ObjectID: &objectID,
 		Version:  v.Version,
@@ -42,7 +40,7 @@ func (v *TxEffects) GetPublishedPackageID() (*iotago.PackageID, error) {
 		// Check if this is a package (has modules)
 		modules := change.GetOutputState().AsMovePackage.Modules.Nodes
 		if len(modules) > 0 {
-			packageID := iotago.PackageID(change.GetAddress())
+			packageID := change.GetAddress()
 			return &packageID, nil
 		}
 	}
@@ -64,7 +62,7 @@ func (v *TxEffects) GetCreatedObjectByName(module string, objectName string) (*i
 			return nil, fmt.Errorf("invalid resource string %q: %w", typeRepr, err)
 		}
 		if resource.Contains(nil, module, objectName) {
-			return nodes[i].OutputState.OBJECT_REF.ObjectRef()
+			return nodes[i].OutputState.ObjectRef()
 		}
 	}
 	return nil, fmt.Errorf("created object %s::%s not found", module, objectName)
@@ -86,7 +84,7 @@ func (v *TxEffects) GetCreatedCoinByType(module string, coinType string) (*iotag
 		}
 		if resource.Module == "coin" && resource.SubType1 != nil &&
 			resource.SubType1.Module == module && resource.SubType1.ObjectName == coinType {
-			return nodes[i].OutputState.OBJECT_REF.ObjectRef()
+			return nodes[i].OutputState.ObjectRef()
 		}
 	}
 	return nil, fmt.Errorf("created coin %s::%s not found", module, coinType)
@@ -98,8 +96,8 @@ func (v *TxEffects) GetMutatedObjectByID(objectID iotago.ObjectID) (*iotago.Obje
 		if nodes[i].IdCreated || nodes[i].IdDeleted {
 			continue
 		}
-		if iotago.ObjectID(nodes[i].Address) == objectID {
-			return nodes[i].OutputState.OBJECT_REF.ObjectRef()
+		if nodes[i].Address == objectID {
+			return nodes[i].OutputState.ObjectRef()
 		}
 	}
 	return nil, fmt.Errorf("mutated object %s not found", objectID)
@@ -121,7 +119,7 @@ func (v *TxEffects) GetMutatedCoinByType(module string, coinType string) (*iotag
 		}
 		if resource.Module == "coin" && resource.SubType1 != nil &&
 			resource.SubType1.Module == module && resource.SubType1.ObjectName == coinType {
-			return nodes[i].OutputState.OBJECT_REF.ObjectRef()
+			return nodes[i].OutputState.ObjectRef()
 		}
 	}
 	return nil, fmt.Errorf("mutated coin %s::%s not found", module, coinType)

@@ -9,7 +9,7 @@ func (v *RPC_OBJECT_FIELDS) ObjectRef() (*iotago.ObjectRef, error) {
 	if err != nil {
 		return nil, err
 	}
-	objectID := iotago.ObjectID(v.ObjectId)
+	objectID := v.ObjectId
 	return &iotago.ObjectRef{
 		ObjectID: &objectID,
 		Version:  v.Version,
@@ -18,7 +18,7 @@ func (v *RPC_OBJECT_FIELDS) ObjectRef() (*iotago.ObjectRef, error) {
 }
 
 func (v *RPC_OBJECT_FIELDS) ObjectID() iotago.ObjectID {
-	return iotago.ObjectID(v.ObjectId)
+	return v.ObjectId
 }
 
 func (v *RPC_OBJECT_FIELDS) BcsBytes() iotago.Base64Data {

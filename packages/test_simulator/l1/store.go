@@ -1,3 +1,4 @@
+// Package l1 provides an in-memory L1 simulator for ISC integration testing.
 package l1
 
 import (
@@ -14,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/hashing"
 )
 
-// StoredTx holds a committed transaction and its effects.
 type StoredTx struct {
 	TxData     []byte
 	Effects    *graphqltypes.ExecuteTransactionBlockResponse
@@ -272,7 +272,7 @@ func (s *ObjectStore) GetDynamicField(parentID iotago.ObjectID, nameTypeRepr str
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	for _, f := range s.dynFields[parentID] {
-		if f.Name.TypeRepr == nameTypeRepr && string(f.Name.Json) == nameJSON {
+		if f.Name.TypeRepr == nameTypeRepr && string(f.Name.JSON) == nameJSON {
 			return &f, true
 		}
 	}
@@ -284,7 +284,7 @@ func (s *ObjectStore) RemoveDynamicField(parentID iotago.ObjectID, nameTypeRepr 
 	defer s.mu.Unlock()
 	fields := s.dynFields[parentID]
 	for i, f := range fields {
-		if f.Name.TypeRepr == nameTypeRepr && string(f.Name.Json) == nameJSON {
+		if f.Name.TypeRepr == nameTypeRepr && string(f.Name.JSON) == nameJSON {
 			removed := f
 			s.dynFields[parentID] = append(fields[:i], fields[i+1:]...)
 			return &removed, true
@@ -297,7 +297,7 @@ func (s *ObjectStore) UpdateDynamicFieldValue(parentID iotago.ObjectID, nameType
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	for i, f := range s.dynFields[parentID] {
-		if f.Name.TypeRepr == nameTypeRepr && string(f.Name.Json) == nameJSON {
+		if f.Name.TypeRepr == nameTypeRepr && string(f.Name.JSON) == nameJSON {
 			s.dynFields[parentID][i].ValueObjID = newValueObjID
 			return true
 		}
@@ -309,10 +309,10 @@ func (s *ObjectStore) UpdateDynamicFieldValue(parentID iotago.ObjectID, nameType
 // matching the Rust derive_id() function.
 func FreshID(txDigest iotago.TransactionDigest, counter *uint64) iotago.ObjectID {
 	h := sha3.New256()
-	h.Write(txDigest[:])
+	_, _ = h.Write(txDigest[:])
 	buf := make([]byte, 8)
 	binary.LittleEndian.PutUint64(buf, *counter)
-	h.Write(buf)
+	_, _ = h.Write(buf)
 	*counter++
 	var id iotago.ObjectID
 	copy(id[:], h.Sum(nil))
@@ -324,18 +324,16 @@ func ComputeDigest(data []byte) iotago.Digest {
 	return iotago.Digest(h)
 }
 
-// NextLamportVersion computes max(versions) + 1.
 func NextLamportVersion(versions ...uint64) uint64 {
-	var max uint64
+	var maxVersion uint64
 	for _, v := range versions {
-		if v > max {
-			max = v
+		if v > maxVersion {
+			maxVersion = v
 		}
 	}
-	return max + 1
+	return maxVersion + 1
 }
 
-// PutBatch stores multiple objects atomically.
 func (s *ObjectStore) PutBatch(objs []*SimObject) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -344,7 +342,6 @@ func (s *ObjectStore) PutBatch(objs []*SimObject) {
 	}
 }
 
-// DeleteBatch deletes multiple objects atomically.
 func (s *ObjectStore) DeleteBatch(ids []iotago.ObjectID) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -353,7 +350,6 @@ func (s *ObjectStore) DeleteBatch(ids []iotago.ObjectID) {
 	}
 }
 
-// PresetCoinObject creates a coin object owned by addr and stores it.
 func (s *ObjectStore) PresetCoinObject(id iotago.ObjectID, owner iotago.Address, coinType string, balance uint64, txDigest iotago.TransactionDigest) {
 	data := encodeCoinObject(id, balance)
 	fullType := CoinTypeString(coinType)
@@ -397,13 +393,12 @@ func extractCoinType(objType string) (string, bool) {
 		return "", false
 	}
 	inner := objType[idx+len(marker):]
-	if len(inner) > 0 && inner[len(inner)-1] == '>' {
+	if inner != "" && inner[len(inner)-1] == '>' {
 		inner = inner[:len(inner)-1]
 	}
 	return inner, true
 }
 
-// encodeCoinObject BCS-marshals a full Coin object using iscmoveclient.MoveCoin.
 func encodeCoinObject(id iotago.ObjectID, balance uint64) []byte {
 	data, err := bcs.Marshal(&iscmoveclient.MoveCoin{ID: id, Balance: balance})
 	if err != nil {
@@ -412,7 +407,6 @@ func encodeCoinObject(id iotago.ObjectID, balance uint64) []byte {
 	return data
 }
 
-// DecodeCoinObjectBalance extracts the balance from a BCS-encoded Coin object (MoveCoin: ID + Balance).
 func DecodeCoinObjectBalance(data []byte) uint64 {
 	coin, err := bcs.Unmarshal[iscmoveclient.MoveCoin](data)
 	if err != nil {
@@ -421,7 +415,6 @@ func DecodeCoinObjectBalance(data []byte) uint64 {
 	return coin.Balance
 }
 
-// DecodeBalanceValue extracts the balance from a BCS-encoded Balance<T> value (u64).
 func DecodeBalanceValue(data []byte) uint64 {
 	bal, err := bcs.Unmarshal[uint64](data)
 	if err != nil {

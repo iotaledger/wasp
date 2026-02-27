@@ -3,6 +3,8 @@ package move
 import (
 	"fmt"
 
+	"fortio.org/safecast"
+
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
@@ -11,6 +13,20 @@ import (
 )
 
 const reqAssetsBagSizeLimit = 25
+
+// moveRequest mirrors the Move Request struct for BCS serialization.
+// It uses Referent[AssetsBag] (not AssetsBagWithBalances) because the BCS-encoded
+// Request from L1 does not include balance amounts — those are stored as dynamic
+// fields on the bag object and must be fetched separately. This matches the
+// intermediateMoveRequest pattern used in iscmoveclient/client_request.go.
+type moveRequest struct {
+	ID        iotago.ObjectID
+	Sender    *cryptolib.Address
+	AssetsBag iscmove.Referent[iscmove.AssetsBag]
+	Message   iscmove.Message
+	Allowance []byte
+	GasBudget uint64
+}
 
 var RequestHandlers = map[string]l1.MoveCallFunc{
 	"create_and_send_request": requestCreateAndSend,
@@ -66,18 +82,8 @@ func requestCreateAndSend(ctx *l1.CallContext, _ *iotago.ProgrammableMoveCall, a
 	requestID := ctx.FreshID()
 	assetsBagReferentID := ctx.FreshID()
 
-	// The BCS-encoded request uses the intermediate type (with Referent[AssetsBag], not AssetsBagWithBalances)
-	type intermediateRequest struct {
-		ID        iotago.ObjectID
-		Sender    *cryptolib.Address
-		AssetsBag iscmove.Referent[iscmove.AssetsBag]
-		Message   iscmove.Message
-		Allowance []byte
-		GasBudget uint64
-	}
-
 	senderCrypto := cryptolib.NewAddressFromIota(&ctx.Sender)
-	reqData := intermediateRequest{
+	reqData := moveRequest{
 		ID:     requestID,
 		Sender: senderCrypto,
 		AssetsBag: iscmove.Referent[iscmove.AssetsBag]{
@@ -131,15 +137,7 @@ func requestDestroy(ctx *l1.CallContext, _ *iotago.ProgrammableMoveCall, args []
 		return nil, fmt.Errorf("request::destroy: request %s not found", reqID.String())
 	}
 
-	type intermediateRequest struct {
-		ID        iotago.ObjectID
-		Sender    *cryptolib.Address
-		AssetsBag iscmove.Referent[iscmove.AssetsBag]
-		Message   iscmove.Message
-		Allowance []byte
-		GasBudget uint64
-	}
-	req, err := bcs.Unmarshal[intermediateRequest](reqObj.Data)
+	req, err := bcs.Unmarshal[moveRequest](reqObj.Data)
 	if err != nil {
 		return nil, fmt.Errorf("request::destroy: BCS unmarshal failed: %w", err)
 	}
@@ -186,9 +184,9 @@ func extractUint32(v l1.Value) (uint32, error) {
 	case uint32:
 		return val, nil
 	case uint64:
-		return uint32(val), nil
+		return safecast.Convert[uint32](val)
 	case int:
-		return uint32(val), nil
+		return safecast.Convert[uint32](val)
 	case []byte:
 		result, err := bcs.Unmarshal[uint32](val)
 		if err != nil {
@@ -203,8 +201,6 @@ func extractUint32(v l1.Value) (uint32, error) {
 func extractBytes(v l1.Value) ([]byte, error) {
 	switch val := v.Raw.(type) {
 	case []byte:
-		// Pure values from PTB are BCS-encoded vector<u8>.
-		// Try BCS-decoding to strip the length prefix; if it fails, return raw.
 		if decoded, err := bcs.Unmarshal[[]byte](val); err == nil {
 			return decoded, nil
 		}
@@ -234,7 +230,6 @@ func extractByteVectors(v l1.Value) ([][]byte, error) {
 		}
 		return result, nil
 	case []byte:
-		// Raw BCS-encoded vector<vector<u8>>: try to decode
 		result, err := bcs.Unmarshal[[][]byte](val)
 		if err != nil {
 			return nil, fmt.Errorf("BCS decode vector<vector<u8>> failed: %w", err)

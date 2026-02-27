@@ -7,7 +7,6 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql/graphqltypes"
 )
 
-// BuildExecuteResponse constructs a graphqltypes.ExecuteTransactionBlockResponse from execution results.
 func BuildExecuteResponse(
 	result *ExecutionResult,
 	txData []byte,
@@ -44,7 +43,6 @@ func BuildExecuteResponse(
 	}
 }
 
-// BuildGetObjectResponse constructs a GetObjectResponse for a SimObject.
 func BuildGetObjectResponse(obj *SimObject) *graphqltypes.GetObjectResponse {
 	digestStr := obj.Digest.String()
 	return &graphqltypes.GetObjectResponse{
@@ -79,7 +77,6 @@ func BuildGetObjectResponse(obj *SimObject) *graphqltypes.GetObjectResponse {
 	}
 }
 
-// BuildNotFoundResponse returns a GetObjectResponse for a not-found object.
 func BuildNotFoundResponse() *graphqltypes.GetObjectResponse {
 	return &graphqltypes.GetObjectResponse{
 		Object: graphqltypes.GetObjectObject{
@@ -91,7 +88,6 @@ func BuildNotFoundResponse() *graphqltypes.GetObjectResponse {
 	}
 }
 
-// BuildGetTransactionBlockResponse constructs a response for GetTransactionBlock.
 func BuildGetTransactionBlockResponse(tx *StoredTx) *graphqltypes.GetTransactionBlockResponse {
 	if tx.Effects == nil {
 		return nil

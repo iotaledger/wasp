@@ -1,3 +1,4 @@
+// Package graphqltypes contains generated GraphQL types and helper utilities.
 package graphqltypes
 
 import (

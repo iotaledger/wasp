@@ -20,7 +20,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
 )
 
-// TestRequestsFeed relies of the alphanet, so can't use global l1starter
+// TestRequestsFeed relies on the alphanet, so can't use global l1starter
 func TestRequestsFeed(t *testing.T) {
 	t.Skip("TODO")
 	client := iscmoveclienttest.NewAlphanetClient()
@@ -99,7 +99,7 @@ func TestRequestsFeed(t *testing.T) {
 	require.NoError(t, err)
 	feedCoins := iotagraphql.Coins(getCoinsRes.Address.Coins.Nodes)
 	maxCoin := lo.MaxBy(feedCoins, func(a, b iotagraphql.Coin) bool {
-		return a.CoinBalance.Int.Cmp(b.CoinBalance.Int) >= 0
+		return a.Balance() >= b.Balance()
 	})
 
 	_, err = client.ReceiveRequestsAndTransition(
@@ -113,8 +113,8 @@ func TestRequestsFeed(t *testing.T) {
 			StateMetadata:    []byte{1, 2, 3},
 			TopUpAmount:      100,
 			GasPayment:       lo.Must(maxCoin.ObjectRef()),
-			GasPrice:  iotagraphql.DefaultGasPrice,
-			GasBudget: iotagraphql.DefaultGasBudget,
+			GasPrice:         iotagraphql.DefaultGasPrice,
+			GasBudget:        iotagraphql.DefaultGasBudget,
 		},
 	)
 	require.NoError(t, err)

@@ -4,8 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"fortio.org/safecast"
+
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/packages/test_simulator/l1"
 )
 
@@ -26,11 +29,21 @@ type AssetsBagValue struct {
 	Size uint64
 }
 
-// new(ctx) -> AssetsBag
 func assetsBagNew(ctx *l1.CallContext, _ *iotago.ProgrammableMoveCall, _ []l1.Value) ([]l1.Value, error) {
 	id := ctx.FreshID()
 	bag := &AssetsBagValue{ID: id, Size: 0}
-	return []l1.Value{{ObjectID: &id, Raw: bag, Type: "AssetsBag"}}, nil
+	typeName := l1.ISCTypeString(ctx.PackageID, "assets_bag", "AssetsBag")
+	data := bcs.MustMarshal(bag)
+	ctx.Store.Put(&l1.SimObject{
+		ID:         id,
+		Version:    0,
+		Digest:     l1.ComputeDigest(data),
+		Owner:      l1.SimOwner{AddressOwner: &ctx.Sender},
+		Type:       typeName,
+		Data:       data,
+		PreviousTx: ctx.TxDigest,
+	})
+	return []l1.Value{{ObjectID: &id, Raw: bag, Type: typeName}}, nil
 }
 
 // destroy_empty(bag)
@@ -70,7 +83,7 @@ func assetsBagPlaceCoin(ctx *l1.CallContext, call *iotago.ProgrammableMoveCall, 
 		return nil, fmt.Errorf("assets_bag::place_coin: %w", err)
 	}
 
-	coinType := typeArgString(call, 0)
+	coinType := firstTypeArg(call)
 
 	var balance uint64
 	if args[1].ObjectID != nil {
@@ -100,7 +113,7 @@ func assetsBagPlaceCoinBalance(ctx *l1.CallContext, call *iotago.ProgrammableMov
 		return nil, fmt.Errorf("assets_bag::place_coin_balance: %w", err)
 	}
 
-	coinType := typeArgString(call, 0)
+	coinType := firstTypeArg(call)
 
 	bal, ok := args[1].Raw.(*l1.BalanceValue)
 	if !ok {
@@ -129,10 +142,11 @@ func assetsBagPlaceAsset(ctx *l1.CallContext, _ *iotago.ProgrammableMoveCall, ar
 	nameJSON, _ := json.Marshal(assetID.String())
 	ctx.Store.AddDynamicField(l1.DynamicField{
 		ParentID:   bag.ID,
-		Name:       l1.DynFieldName{TypeRepr: l1.ObjectIDTypeString(), Json: nameJSON},
+		Name:       l1.DynFieldName{TypeRepr: l1.ObjectIDTypeString(), JSON: nameJSON},
 		ValueObjID: *assetID,
 	})
 	bag.Size++
+	persistBag(ctx, bag)
 	return nil, nil
 }
 
@@ -146,7 +160,7 @@ func assetsBagTakeCoinBalance(ctx *l1.CallContext, call *iotago.ProgrammableMove
 		return nil, fmt.Errorf("assets_bag::take_coin_balance: %w", err)
 	}
 
-	coinType := typeArgString(call, 0)
+	coinType := firstTypeArg(call)
 	amount, err := extractUint64(args[1])
 	if err != nil {
 		return nil, fmt.Errorf("assets_bag::take_coin_balance: %w", err)
@@ -170,10 +184,10 @@ func assetsBagTakeAllCoinBalance(ctx *l1.CallContext, call *iotago.ProgrammableM
 		return nil, fmt.Errorf("assets_bag::take_all_coin_balance: %w", err)
 	}
 
-	coinType := typeArgString(call, 0)
+	coinType := firstTypeArg(call)
 	nameJSON := coinTypeToNameJSON(coinType)
 
-	df, ok := ctx.Store.GetDynamicField(bag.ID, l1.AsciiStringTypeString(), string(nameJSON))
+	df, ok := ctx.Store.GetDynamicField(bag.ID, l1.ASCIIStringTypeString(), string(nameJSON))
 	if !ok {
 		return nil, fmt.Errorf("assets_bag::take_all_coin_balance: no balance for coin type %s", coinType)
 	}
@@ -184,9 +198,10 @@ func assetsBagTakeAllCoinBalance(ctx *l1.CallContext, call *iotago.ProgrammableM
 	}
 	amount := l1.DecodeBalanceValue(balObj.Data)
 
-	ctx.Store.RemoveDynamicField(bag.ID, l1.AsciiStringTypeString(), string(nameJSON))
+	ctx.Store.RemoveDynamicField(bag.ID, l1.ASCIIStringTypeString(), string(nameJSON))
 	ctx.Store.Delete(df.ValueObjID)
 	bag.Size--
+	persistBag(ctx, bag)
 
 	return []l1.Value{{Raw: &l1.BalanceValue{CoinType: coinType, Amount: amount}, Type: l1.BalanceTypeString(coinType)}}, nil
 }
@@ -213,13 +228,14 @@ func assetsBagTakeAsset(ctx *l1.CallContext, _ *iotago.ProgrammableMoveCall, arg
 	}
 
 	bag.Size--
+	persistBag(ctx, bag)
 	return []l1.Value{{ObjectID: &df.ValueObjID, Type: ""}}, nil
 }
 
 func placeCoinBalanceInternal(ctx *l1.CallContext, bag *AssetsBagValue, coinType string, amount uint64) {
 	nameJSON := coinTypeToNameJSON(coinType)
 
-	df, exists := ctx.Store.GetDynamicField(bag.ID, l1.AsciiStringTypeString(), string(nameJSON))
+	df, exists := ctx.Store.GetDynamicField(bag.ID, l1.ASCIIStringTypeString(), string(nameJSON))
 	if exists {
 		balObj, ok := ctx.Store.Get(df.ValueObjID)
 		if ok {
@@ -244,17 +260,18 @@ func placeCoinBalanceInternal(ctx *l1.CallContext, bag *AssetsBagValue, coinType
 		ctx.Store.Put(balObj)
 		ctx.Store.AddDynamicField(l1.DynamicField{
 			ParentID:   bag.ID,
-			Name:       l1.DynFieldName{TypeRepr: l1.AsciiStringTypeString(), Json: nameJSON},
+			Name:       l1.DynFieldName{TypeRepr: l1.ASCIIStringTypeString(), JSON: nameJSON},
 			ValueObjID: balID,
 		})
 		bag.Size++
 	}
+	persistBag(ctx, bag)
 }
 
 func takeCoinBalanceInternal(ctx *l1.CallContext, bag *AssetsBagValue, coinType string, amount uint64) (*l1.BalanceValue, error) {
 	nameJSON := coinTypeToNameJSON(coinType)
 
-	df, ok := ctx.Store.GetDynamicField(bag.ID, l1.AsciiStringTypeString(), string(nameJSON))
+	df, ok := ctx.Store.GetDynamicField(bag.ID, l1.ASCIIStringTypeString(), string(nameJSON))
 	if !ok {
 		return nil, fmt.Errorf("no balance for coin type %s", coinType)
 	}
@@ -271,9 +288,10 @@ func takeCoinBalanceInternal(ctx *l1.CallContext, bag *AssetsBagValue, coinType 
 
 	remaining := existing - amount
 	if remaining == 0 {
-		ctx.Store.RemoveDynamicField(bag.ID, l1.AsciiStringTypeString(), string(nameJSON))
+		ctx.Store.RemoveDynamicField(bag.ID, l1.ASCIIStringTypeString(), string(nameJSON))
 		ctx.Store.Delete(df.ValueObjID)
 		bag.Size--
+		persistBag(ctx, bag)
 	} else {
 		balObj.Data = bcs.MustMarshal(&remaining)
 		balObj.Digest = l1.ComputeDigest(balObj.Data)
@@ -293,9 +311,26 @@ func coinTypeToNameJSON(coinType string) json.RawMessage {
 	return b
 }
 
+func persistBag(ctx *l1.CallContext, bag *AssetsBagValue) {
+	ab := iscmove.AssetsBag{ID: bag.ID, Size: bag.Size}
+	data := bcs.MustMarshal(&ab)
+	if obj, ok := ctx.Store.Get(bag.ID); ok {
+		obj.Data = data
+		obj.Digest = l1.ComputeDigest(data)
+		ctx.Store.Put(obj)
+	}
+}
+
 func extractBag(v l1.Value) (*AssetsBagValue, error) {
 	if bag, ok := v.Raw.(*AssetsBagValue); ok {
 		return bag, nil
+	}
+	if obj, ok := v.Raw.(*l1.SimObject); ok {
+		ab, err := bcs.Unmarshal[iscmove.AssetsBag](obj.Data)
+		if err != nil {
+			return nil, fmt.Errorf("BCS unmarshal AssetsBag failed: %w", err)
+		}
+		return &AssetsBagValue{ID: ab.ID, Size: ab.Size}, nil
 	}
 	return nil, fmt.Errorf("expected AssetsBagValue, got %T", v.Raw)
 }
@@ -307,9 +342,9 @@ func extractUint64(v l1.Value) (uint64, error) {
 	case *uint64:
 		return *val, nil
 	case int64:
-		return uint64(val), nil
+		return safecast.Convert[uint64](val)
 	case int:
-		return uint64(val), nil
+		return safecast.Convert[uint64](val)
 	case []byte:
 		result, err := bcs.Unmarshal[uint64](val)
 		if err != nil {
@@ -325,7 +360,6 @@ func extractObjectID(v l1.Value) (*iotago.ObjectID, error) {
 	if v.ObjectID != nil {
 		return v.ObjectID, nil
 	}
-	// Pure value: raw 32-byte ObjectID
 	if raw, ok := v.Raw.([]byte); ok && len(raw) == 32 {
 		var id iotago.ObjectID
 		copy(id[:], raw)
@@ -334,9 +368,9 @@ func extractObjectID(v l1.Value) (*iotago.ObjectID, error) {
 	return nil, fmt.Errorf("expected ObjectID, got %T (ObjectID field is nil)", v.Raw)
 }
 
-func typeArgString(call *iotago.ProgrammableMoveCall, idx int) string {
-	if idx < len(call.TypeArguments) {
-		return call.TypeArguments[idx].String()
+func firstTypeArg(call *iotago.ProgrammableMoveCall) string {
+	if len(call.TypeArguments) > 0 {
+		return call.TypeArguments[0].String()
 	}
 	return ""
 }

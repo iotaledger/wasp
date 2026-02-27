@@ -44,7 +44,8 @@ func TryMergeAllCoins(ctx context.Context) error {
 	coinsToMerge := make([]*iotago.ObjectRef, len(baseCoins)-2)
 
 	for i := 2; i < len(baseCoins); i++ {
-		ref, err := baseCoins[i].ObjectRef()
+		var ref *iotago.ObjectRef
+		ref, err = baseCoins[i].ObjectRef()
 		if err != nil {
 			return err
 		}
@@ -81,7 +82,8 @@ func TryManageCoinsAmount(ctx context.Context) {
 		if i == 0 {
 			continue
 		}
-		ref, err := coins[i].ObjectRef()
+		var ref *iotago.ObjectRef
+		ref, err = coins[i].ObjectRef()
 		log.Check(err)
 		mergeCoins = append(mergeCoins, ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: ref}))
 	}

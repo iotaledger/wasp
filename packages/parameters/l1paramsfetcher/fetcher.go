@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"fortio.org/safecast"
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/coin"
@@ -88,8 +89,7 @@ func FetchLatest(ctx context.Context, iotaClient iotagraphql.IotaClient) (*param
 					SystemStateVersion:    iotagraphql.NewBigInt(0), // not available in GraphQL
 					ReferenceGasPrice:     &epoch.ReferenceGasPrice,
 					EpochStartTimestampMs: iotagraphql.NewBigIntInt64(epochStartMs),
-					// TODO: Validate this.
-					EpochDurationMs: iotagraphql.NewBigIntInt64(int64(system.Epoch.SystemParameters.DurationMs.Uint64())),
+					EpochDurationMs:       iotagraphql.NewBigIntInt64(safecast.MustConvert[int64](system.Epoch.SystemParameters.DurationMs.Uint64())),
 				},
 				BaseToken: parameters.IotaCoinInfoFromL1Metadata(
 					coin.BaseTokenType,

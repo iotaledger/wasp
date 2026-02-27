@@ -25,7 +25,7 @@ func ObjectIDTypeString() string {
 	return fmt.Sprintf("%s::object::ID", iotago.IotaPackageIDIotaFramework.String())
 }
 
-func AsciiStringTypeString() string {
+func ASCIIStringTypeString() string {
 	return fmt.Sprintf("%s::ascii::String", iotago.IotaPackageIDMoveStdlib.String())
 }
 

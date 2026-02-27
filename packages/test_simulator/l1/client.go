@@ -52,7 +52,7 @@ func (c *FakeL1Client) GetIotaClient() iotagraphql.IotaClient {
 
 // WaitForNextVersionForTesting is synchronous in the simulator
 func (c *FakeL1Client) WaitForNextVersionForTesting(
-	_ context.Context,
+	ctx context.Context,
 	_ time.Duration,
 	_ log.Logger,
 	currentRef *iotago.ObjectRef,
@@ -65,7 +65,7 @@ func (c *FakeL1Client) WaitForNextVersionForTesting(
 
 	cb()
 
-	return c.iotaClient.UpdateObjectRef(context.Background(), currentRef)
+	return c.iotaClient.UpdateObjectRef(ctx, currentRef)
 }
 
 func (c *FakeL1Client) Store() *ObjectStore {
@@ -76,12 +76,11 @@ func (c *FakeL1Client) UpdateMoveHandler(handler MoveCallHandler) {
 	c.iotaClient.Executor.MoveHandler = handler
 }
 
-// WithPresetBalance creates a coin object for the given address.
 func WithPresetBalance(addr iotago.Address, amount uint64) Option {
 	return func(c *FakeL1Client) {
 		var counter uint64
 		txDigest := ComputeDigest(addr[:])
-		coinID := FreshID(iotago.TransactionDigest(txDigest), &counter)
-		c.iotaClient.Store.PresetCoinObject(coinID, addr, IotaCoinTypeStr, amount, iotago.TransactionDigest(txDigest))
+		coinID := FreshID(txDigest, &counter)
+		c.iotaClient.Store.PresetCoinObject(coinID, addr, IotaCoinTypeStr, amount, txDigest)
 	}
 }

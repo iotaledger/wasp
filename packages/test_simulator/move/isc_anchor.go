@@ -290,7 +290,7 @@ func anchorPlaceCoinForMigration(ctx *l1.CallContext, call *iotago.ProgrammableM
 		return nil, err
 	}
 
-	coinType := typeArgString(call, 0)
+	coinType := firstTypeArg(call)
 	var balance uint64
 	if args[1].ObjectID != nil {
 		obj, ok := ctx.Store.Get(*args[1].ObjectID)
@@ -329,7 +329,7 @@ func anchorPlaceCoinBalanceForMigration(ctx *l1.CallContext, call *iotago.Progra
 		return nil, err
 	}
 
-	coinType := typeArgString(call, 0)
+	coinType := firstTypeArg(call)
 	bal, ok := args[1].Raw.(*l1.BalanceValue)
 	if !ok {
 		return nil, fmt.Errorf("expected BalanceValue")
@@ -446,7 +446,7 @@ func anchorToSimObject(ctx *l1.CallContext, anchor *AnchorValue) *l1.SimObject {
 	sender := ctx.Sender
 	return &l1.SimObject{
 		ID:         anchor.ID,
-		Version:    0, // set by executor
+		Version:    0,
 		Digest:     l1.ComputeDigest(data),
 		Owner:      l1.SimOwner{AddressOwner: &sender},
 		Type:       l1.ISCTypeString(ctx.PackageID, iscmove.AnchorModuleName, iscmove.AnchorObjectName),

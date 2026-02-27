@@ -34,7 +34,6 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/parameters"
 	"github.com/iotaledger/wasp/v2/packages/parameters/l1paramsfetcher"
 	"github.com/iotaledger/wasp/v2/packages/publisher"
-	"github.com/iotaledger/wasp/v2/packages/state"
 	"github.com/iotaledger/wasp/v2/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/v2/packages/state/statetest"
 	"github.com/iotaledger/wasp/v2/packages/testutil/l1starter"
@@ -269,11 +268,31 @@ func (env *Solo) WithWaitForNextVersion(currentRef *iotago.ObjectRef, cb func())
 	return env.L1Client().WaitForNextVersionForTesting(context.Background(), 30*time.Second, env.logger, currentRef, cb)
 }
 
+func (env *Solo) pickGasPaymentRefs(owner *cryptolib.KeyPair, excludeIDs ...*iotago.ObjectID) []*iotago.ObjectRef {
+	gasPayment, err := iotagraphql.PickupCoinsWithFilter(
+		env.L1BaseTokenCoins(owner.Address()),
+		uint64(iotagraphql.DefaultGasBudget),
+		func(c iotagraphql.Coin) bool {
+			id := c.ObjectID()
+			for _, excl := range excludeIDs {
+				if excl != nil && id.Equals(*excl) {
+					return false
+				}
+			}
+			return true
+		},
+	)
+	require.NoError(env.T, err)
+	refs, err := gasPayment.CoinRefs()
+	require.NoError(env.T, err)
+	return refs
+}
+
 func (env *Solo) deployChain(chainAdmin *cryptolib.KeyPair, initCommonAccountBaseTokens coin.Value, name string, evmChainID uint16, blockKeepAmount int32) chainData {
 	env.logger.LogDebugf("deploying new chain '%s'", name)
 
 	if chainAdmin == nil {
-		chainAdmin = env.NewKeyPairFromIndex(-1000 + len(env.chains)) // making new originator for each new chain
+		chainAdmin = env.NewKeyPairFromIndex(-1000 + len(env.chains))
 		env.GetFundsFromFaucet(chainAdmin.Address())
 	}
 
@@ -295,10 +314,7 @@ func (env *Solo) deployChain(chainAdmin *cryptolib.KeyPair, initCommonAccountBas
 	env.logger.LogInfof("Chain Originator address: %v\n", anchorOwner)
 	env.logger.LogInfof("GAS COIN BEFORE PULL: %v\n", gasCoinRef)
 
-	var block state.Block
-	var stateMetadata *transaction.StateMetadata
-
-	block, stateMetadata = origin.InitChain(
+	block, stateMetadata := origin.InitChain(
 		schemaVersion,
 		store,
 		initParams.Encode(),
@@ -308,7 +324,6 @@ func (env *Solo) deployChain(chainAdmin *cryptolib.KeyPair, initCommonAccountBas
 	)
 
 	var initCoin *iotago.ObjectRef
-
 	if initCommonAccountBaseTokens > 0 {
 		initCoin = env.makeBaseTokenCoin(
 			anchorOwner,
@@ -320,21 +335,14 @@ func (env *Solo) deployChain(chainAdmin *cryptolib.KeyPair, initCommonAccountBas
 		)
 	}
 
-	gasPayment, err := iotagraphql.PickupCoinsWithFilter(
-		env.L1BaseTokenCoins(anchorOwner.Address()),
-		uint64(iotagraphql.DefaultGasBudget),
-		func(c iotagraphql.Coin) bool {
-			id := c.ObjectID()
-			return !id.Equals(*gasCoinRef.ObjectID) &&
-				(initCoin == nil || !id.Equals(*initCoin.ObjectID))
-		},
-	)
-	require.NoError(env.T, err)
-
-	gasPaymentRefs, err := gasPayment.CoinRefs()
-	require.NoError(env.T, err)
+	var initCoinID *iotago.ObjectID
+	if initCoin != nil {
+		initCoinID = initCoin.ObjectID
+	}
+	gasPaymentRefs := env.pickGasPaymentRefs(anchorOwner, gasCoinRef.ObjectID, initCoinID)
 
 	var anchorRef *iscmove.AnchorWithRef
+	var err error
 	env.MustWithWaitForNextVersion(gasPaymentRefs[0], func() {
 		env.MustWithWaitForNextVersion(initCoin, func() {
 			anchorRef, err = env.ISCMoveClient().StartNewChain(

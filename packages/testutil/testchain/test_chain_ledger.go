@@ -27,9 +27,6 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/vm/gas"
 )
 
-////////////////////////////////////////////////////////////////////////////////
-// TestChainLedger
-
 type TestChainLedger struct {
 	t           *testing.T
 	l1client    clients.L1Client
@@ -159,7 +156,8 @@ func (tcl *TestChainLedger) RunOnChainStateTransition(anchor *isc.StateAnchor, p
 	for _, c := range coinPage.Address.Coins.Nodes {
 		objID := c.ObjectID()
 		if !pt.IsInInputObjects(&objID) {
-			ref, err := c.ObjectRef()
+			var ref *iotago.ObjectRef
+			ref, err = c.ObjectRef()
 			if err != nil {
 				return nil, fmt.Errorf("failed to get coin object ref: %w", err)
 			}

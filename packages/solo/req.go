@@ -277,7 +277,7 @@ func (env *Solo) makeBaseTokenCoin(
 		changes := txnResponse.ExecuteTransactionBlock.Effects.GetObjectChanges().Nodes
 		for i := range changes {
 			if changes[i].GetIdCreated() {
-				ref, refErr := changes[i].OutputState.OBJECT_REF.ObjectRef()
+				ref, refErr := changes[i].OutputState.ObjectRef()
 				require.NoError(env.T, refErr)
 				baseTokenCoin = ref
 			}
