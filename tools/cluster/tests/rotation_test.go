@@ -10,7 +10,6 @@ import (
 
 	"github.com/iotaledger/wasp/v2/clients/apiclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/tools/cluster"
@@ -88,16 +87,11 @@ func TestRotationOverlappingCommitteesWithConcurrentRequests(t *testing.T) {
 	chainObjId, err := iotago.ObjectIDFromHex(chain.ChainID.String())
 	require.NoError(t, err)
 
-	object, err := clu.L1Client().GetObject(context.Background(), iotagraphql.GetObjectRequest{
-		ObjectID: chainObjId,
-		Options: &iotagraphql.IotaObjectDataOptions{
-			ShowContent: true,
-		},
-	})
+	object, err := clu.L1Client().GetObject(context.Background(), *chainObjId)
 	require.NoError(t, err)
 
 	var fieldMap map[string]interface{}
-	err = json.Unmarshal(object.Data.Content.MoveObject.Fields, &fieldMap)
+	err = json.Unmarshal(object.Object.AsMoveObjectContent.Contents.Data, &fieldMap)
 	require.NoError(t, err)
 
 	require.Equal(t, int(fieldMap["state_index"].(float64)), int(newBlock.BlockIndex), "state index in anchor should equal to state index in storage")

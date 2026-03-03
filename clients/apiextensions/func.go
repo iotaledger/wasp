@@ -49,8 +49,8 @@ func APIResultToCallArgs(res []string) (isc.CallResults, error) {
 	return APIArgsToCallArgs(res)
 }
 
-func APIWaitUntilAllRequestsProcessed(ctx context.Context, client *apiclient.APIClient, tx *iotagraphql.IotaTransactionBlockResponse, waitForL1Confirmation bool, timeout time.Duration) ([]*apiclient.ReceiptResponse, error) {
-	req, err := tx.GetCreatedObjectByName(iscmove.RequestModuleName, iscmove.RequestObjectName)
+func APIWaitUntilAllRequestsProcessed(ctx context.Context, client *apiclient.APIClient, tx *iotagraphql.ExecuteTransactionBlockResponse, waitForL1Confirmation bool, timeout time.Duration) ([]*apiclient.ReceiptResponse, error) {
+	req, err := tx.ExecuteTransactionBlock.Effects.GetCreatedObjectByName(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	if err != nil {
 		return nil, err
 	}

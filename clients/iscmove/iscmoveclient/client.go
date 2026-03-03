@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql/graphqltypes"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 )
 
@@ -51,7 +52,7 @@ func (c *Client) SignAndExecutePTB(
 	gasPayments []*iotago.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
-) (*iotagraphql.IotaTransactionBlockResponse, error) {
+) (*graphqltypes.ExecuteTransactionBlockResponse, error) {
 	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
 	if len(gasPayments) > 0 {
 		// Drop gas coins that already appear in PTB inputs or are duplicated.
@@ -73,19 +74,22 @@ func (c *Client) SignAndExecutePTB(
 		gasPayments = filtered
 	}
 	if len(gasPayments) == 0 {
-		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasPrice, gasBudget)
+		coins, err := c.GetCoinObjsForTargetAmount(ctx, *signer.Address(), gasPrice, gasBudget)
 		if err != nil {
 			return nil, fmt.Errorf("failed to find gas payment: %w", err)
 		}
 		coins, err = iotagraphql.PickupCoinsWithFilter(
 			coins,
 			gasBudget,
-			func(c *iotagraphql.Coin) bool { return !pt.IsInInputObjects(c.CoinObjectID) },
+			func(c iotagraphql.Coin) bool { id := c.ObjectID(); return !pt.IsInInputObjects(&id) },
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to find gas payment: %w", err)
 		}
-		gasPayments = coins.CoinRefs()
+		gasPayments, err = coins.CoinRefs()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get gas coin refs: %w", err)
+		}
 	}
 
 	if os.Getenv("DEBUG") != "" {
@@ -105,77 +109,14 @@ func (c *Client) SignAndExecutePTB(
 	}
 	txnResponse, err := c.SignAndExecuteTransaction(
 		ctx,
-		&iotagraphql.SignAndExecuteTransactionRequest{
-			TxDataBytes: txnBytes,
-			Signer:      signer,
-			Options: &iotagraphql.IotaTransactionBlockResponseOptions{
-				ShowEffects:        true,
-				ShowObjectChanges:  true,
-				ShowBalanceChanges: true,
-			},
-		},
+		txnBytes,
+		signer,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("can't execute the transaction: %w", err)
 	}
-	if !txnResponse.Effects.IsSuccess() {
-		return nil, fmt.Errorf("failed to execute the transaction: %s", txnResponse.Effects.V1.Status.Error)
-	}
-	return txnResponse, nil
-}
-
-func (c *Client) DevInspectPTB(
-	ctx context.Context,
-	cryptolibSigner cryptolib.Signer,
-	pt iotago.ProgrammableTransaction,
-	gasPayments []*iotago.ObjectRef, // optional
-	gasPrice uint64,
-	gasBudget uint64,
-) (*iotagraphql.DevInspectResults, error) {
-	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
-	if len(gasPayments) == 0 {
-		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasPrice, gasBudget)
-		if err != nil {
-			return nil, fmt.Errorf("failed to find gas payment: %w", err)
-		}
-		coins, err = iotagraphql.PickupCoinsWithFilter(
-			coins,
-			gasBudget,
-			func(c *iotagraphql.Coin) bool { return !pt.IsInInputObjects(c.CoinObjectID) },
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to find gas payment: %w", err)
-		}
-		gasPayments = coins.CoinRefs()
-	}
-
-	tx := iotago.NewProgrammable(
-		signer.Address(),
-		pt,
-		gasPayments,
-		gasBudget,
-		gasPrice,
-	)
-
-	txnBytes, err := bcs.Marshal(&tx.V1.Kind)
-	if err != nil {
-		return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
-	}
-	txnResponse, err := c.DevInspectTransactionBlock(
-		ctx,
-		iotagraphql.DevInspectTransactionBlockRequest{
-			SenderAddress: signer.Address(),
-			TxKindBytes:   txnBytes,
-		},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("can't execute the transaction: %w", err)
-	}
-	if txnResponse.Error != "" {
-		return nil, fmt.Errorf("execute error: %s", txnResponse.Error)
-	}
-	if !txnResponse.Effects.IsSuccess() {
-		return nil, fmt.Errorf("failed to execute the transaction: %s", txnResponse.Effects.V1.Status.Error)
+	if !txnResponse.ExecuteTransactionBlock.Effects.IsSuccess() {
+		return nil, fmt.Errorf("failed to execute the transaction: %s", txnResponse.ExecuteTransactionBlock.Effects.GetErrors())
 	}
 	return txnResponse, nil
 }
@@ -202,15 +143,12 @@ func (c *Client) SubscribeTransaction(
 }
 
 func (c *Client) GetISCPackageIDForAnchor(ctx context.Context, anchor iotago.ObjectID) (iotago.PackageID, error) {
-	obj, err := c.GetObject(ctx, iotagraphql.GetObjectRequest{ObjectID: &anchor, Options: &iotagraphql.IotaObjectDataOptions{
-		ShowDisplay: true,
-		ShowType:    true,
-	}})
+	obj, err := c.GetObject(ctx, anchor)
 	if err != nil {
 		return iotago.PackageID{}, fmt.Errorf("retrieving anchor object: %w", err)
 	}
 
-	objectType, err := iotago.ObjectTypeFromString(*obj.Data.Type)
+	objectType, err := iotago.ObjectTypeFromString(obj.Object.TypeRepr())
 	if err != nil {
 		return iotago.PackageID{}, fmt.Errorf("parsing anchor object type: %w", err)
 	}
@@ -234,22 +172,17 @@ func (c *Client) DeployISCContracts(ctx context.Context, signer iotasigner.Signe
 
 	txnResponse, err := c.SignAndExecuteTransaction(
 		ctx,
-		&iotagraphql.SignAndExecuteTransactionRequest{
-			TxDataBytes: txnBytes.TxBytes,
-			Signer:      signer,
-			Options: &iotagraphql.IotaTransactionBlockResponseOptions{
-				ShowEffects:       true,
-				ShowObjectChanges: true,
-			},
-		},
+		txnBytes.TxBytes,
+		signer,
 	)
 	if err != nil {
 		return iotago.PackageID{}, err
 	}
 
-	if !txnResponse.Effects.IsSuccess() {
+	if !txnResponse.ExecuteTransactionBlock.Effects.IsSuccess() {
 		return iotago.PackageID{}, errors.New("publish ISC contracts failed")
 	}
-	packageID := lo.Must(txnResponse.GetPublishedPackageID())
+
+	packageID := lo.Must(txnResponse.ExecuteTransactionBlock.Effects.GetPublishedPackageID())
 	return *packageID, nil
 }

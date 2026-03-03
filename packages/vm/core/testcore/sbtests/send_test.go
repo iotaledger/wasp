@@ -203,14 +203,9 @@ func TestSendObjectsBack(t *testing.T) {
 	_, err := ch.PostRequestSync(req, wallet)
 	require.NoError(t, err)
 
-	objRes, err := ch.Env.L1Client().GetObject(ch.Env.Ctx(), iotagraphql.GetObjectRequest{
-		ObjectID: &obj.ID,
-		Options: &iotagraphql.IotaObjectDataOptions{
-			ShowOwner: true,
-		},
-	})
+	objRes, err := ch.Env.L1Client().GetObject(ch.Env.Ctx(), obj.ID)
 	require.NoError(t, err)
-	require.EqualValues(ch.Env.T, *objRes.Data.Owner.AddressOwner, *wallet.Address().AsIotaAddress())
+	require.EqualValues(ch.Env.T, objRes.Object.OwnerAddress(), wallet.Address().AsIotaAddress())
 }
 
 func TestNFTOffledgerWithdraw(t *testing.T) {
@@ -231,12 +226,7 @@ func TestNFTOffledgerWithdraw(t *testing.T) {
 	_, err = ch.PostRequestOffLedger(wdReq, wallet)
 	require.NoError(t, err)
 
-	objRes, err := ch.Env.L1Client().GetObject(ch.Env.Ctx(), iotagraphql.GetObjectRequest{
-		ObjectID: &obj.ID,
-		Options: &iotagraphql.IotaObjectDataOptions{
-			ShowOwner: true,
-		},
-	})
+	objRes, err := ch.Env.L1Client().GetObject(ch.Env.Ctx(), obj.ID)
 	require.NoError(t, err)
-	require.EqualValues(ch.Env.T, *objRes.Data.Owner.AddressOwner, *wallet.Address().AsIotaAddress())
+	require.EqualValues(ch.Env.T, objRes.Object.OwnerAddress(), wallet.Address().AsIotaAddress())
 }

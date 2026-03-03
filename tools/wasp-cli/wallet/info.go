@@ -34,7 +34,7 @@ func initBalanceCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			myWallet := wallet.Load()
 			address := myWallet.Address()
-			balances, err := cliclients.L1Client().GetAllBalances(context.Background(), address.AsIotaAddress())
+			balances, err := cliclients.L1Client().GetAllBalances(context.Background(), *address.AsIotaAddress())
 			if err != nil {
 				// Return the error so it can be formatted by the top-level handler
 				return fmt.Errorf("fetching balance for address %s (index %d): %w", address.String(), myWallet.AddressIndex(), err)

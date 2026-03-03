@@ -22,7 +22,7 @@ func (e *ChainEnv) testOnLedgerDeposit(t *testing.T) {
 	userClient := e.Chain.Client(userWallet)
 	balance1 := e.GetL2Balance(isc.NewAddressAgentID(userAddr), coin.BaseTokenType)
 
-	tx := [5]*iotagraphql.IotaTransactionBlockResponse{}
+	tx := [5]*iotagraphql.ExecuteTransactionBlockResponse{}
 	gasFeeChargedSum := coin.Value(0)
 	baseTokesSent := coin.Value(10 + iotagraphql.DefaultGasBudget)
 	for i := 0; i < 5; i++ {

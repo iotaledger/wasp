@@ -58,7 +58,6 @@ func TestManyRequests(t *testing.T) {
 	counterResult, err := sbtestsc.FuncGetCounter.DecodeOutput(ret)
 	require.NoError(t, err)
 	require.EqualValues(t, N, counterResult)
-
 	gasCoinValueAfter := chain.GetLatestGasCoin().Value
 	require.Greater(t, gasCoinValueAfter, gasCoinValueBefore)
 
@@ -94,7 +93,7 @@ func TestManyRequests2(t *testing.T) {
 			_, l1Res, err2 := chain.SendRequest(req, users[r])
 			require.NoError(t, err2)
 			sum++
-			l1Gas[r] += coin.Value(l1Res.Effects.GasFee())
+			l1Gas[r] += coin.Value(l1Res.ExecuteTransactionBlock.Effects.GasFee())
 		}
 	}
 

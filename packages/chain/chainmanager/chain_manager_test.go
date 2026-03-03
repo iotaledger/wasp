@@ -225,8 +225,8 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 
 func newTestChainLedger(t *testing.T, originator cryptolib.Signer) *testchain.TestChainLedger {
 	l1client := l1starter.Instance().L1Client()
-	l1client.RequestFundsFromFaucet(context.Background(), originator.Address().AsIotaAddress())
-	l1client.RequestFundsFromFaucet(context.Background(), originator.Address().AsIotaAddress())
+	l1client.RequestFundsFromFaucet(context.Background(), *originator.Address().AsIotaAddress())
+	l1client.RequestFundsFromFaucet(context.Background(), *originator.Address().AsIotaAddress())
 
 	iscPackage, err := l1client.L2().DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(originator))
 	require.NoError(t, err)

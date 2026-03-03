@@ -7,52 +7,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotatest"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/testutil/l1starter"
 )
-
-func TestDevInspectTransactionBlock(t *testing.T) {
-	client := l1starter.Instance().L1Client()
-	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
-
-	limit := int(3)
-	coinPages, err := client.GetCoins(
-		context.Background(), iotagraphql.GetCoinsRequest{
-			Owner: sender.Address(),
-			Limit: limit,
-		},
-	)
-	require.NoError(t, err)
-	coins := iotagraphql.Coins(coinPages.Data)
-
-	ptb := iotago.NewProgrammableTransactionBuilder()
-	ptb.PayAllIota(sender.Address())
-	pt := ptb.Finish()
-	tx := iotago.NewProgrammable(
-		sender.Address(),
-		pt,
-		coins.CoinRefs(),
-		iotagraphql.DefaultGasBudget,
-		iotagraphql.DefaultGasPrice,
-	)
-	txBytes, err := bcs.Marshal(&tx.V1.Kind)
-	require.NoError(t, err)
-
-	resp, err := client.DevInspectTransactionBlock(
-		context.Background(),
-		iotagraphql.DevInspectTransactionBlockRequest{
-			SenderAddress: sender.Address(),
-			TxKindBytes:   txBytes,
-			GasPrice:      iotagraphql.NewBigInt(iotagraphql.DefaultGasPrice),
-		},
-	)
-	require.NoError(t, err)
-	require.True(t, resp.Effects.IsSuccess())
-}
 
 func TestDryRunTransaction(t *testing.T) {
 	client := l1starter.Instance().L1Client()
@@ -65,7 +23,7 @@ func TestDryRunTransaction(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
-	pickedCoins, err := iotagraphql.PickupCoins(coins, big.NewInt(100), iotagraphql.DefaultGasBudget, 0, 0)
+	pickedCoins, err := iotagraphql.PickupCoins(iotagraphql.Coins(coins.Address.Coins.Nodes), big.NewInt(100), iotagraphql.DefaultGasBudget, 0, 0)
 	require.NoError(t, err)
 	tx, err := client.PayAllIota(
 		context.Background(),
@@ -78,12 +36,9 @@ func TestDryRunTransaction(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	resp, err := client.DryRunTransaction(context.Background(), iotagraphql.DryRunTransactionRequest{
-		TxDataBytes: tx.TxBytes,
-	})
+	resp, err := client.DryRunTransaction(context.Background(), tx.TxBytes)
 	require.NoError(t, err)
-	require.True(t, resp.Effects.IsSuccess())
-	require.Empty(t, resp.Effects.V1.Status.Error)
+	require.True(t, resp.DryRunTransactionBlock.Transaction.Effects.IsSuccess())
 }
 
 func TestExecuteTransactionBlock(t *testing.T) {
@@ -96,7 +51,7 @@ func TestExecuteTransactionBlock(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
-	pickedCoins, err := iotagraphql.PickupCoins(coins, big.NewInt(100), iotagraphql.DefaultGasBudget, 0, 0)
+	pickedCoins, err := iotagraphql.PickupCoins(iotagraphql.Coins(coins.Address.Coins.Nodes), big.NewInt(100), iotagraphql.DefaultGasBudget, 0, 0)
 	require.NoError(t, err)
 	tx, err := client.PayAllIota(
 		context.Background(),
@@ -112,16 +67,10 @@ func TestExecuteTransactionBlock(t *testing.T) {
 	signature, err := signer.SignTransactionBlock(tx.TxBytes, iotasigner.DefaultIntent())
 	require.NoError(t, err)
 
-	resp, err := client.ExecuteTransactionBlock(context.Background(), iotagraphql.ExecuteTransactionBlockRequest{
-		Signatures:  []*iotasigner.Signature{signature},
-		TxDataBytes: tx.TxBytes,
-		Options: &iotagraphql.IotaTransactionBlockResponseOptions{
-			ShowEffects: true,
-		},
-	})
+	resp, err := client.ExecuteTransactionBlock(context.Background(), tx.TxBytes, []*iotasigner.Signature{signature})
 	require.NoError(t, err)
-	require.True(t, resp.Effects.IsSuccess())
-	require.Empty(t, resp.Effects.V1.Status.Error)
+	require.True(t, resp.IsSuccess())
+	require.Empty(t, resp.ExecuteTransactionBlock.Errors)
 }
 
 func TestSignAndExecuteTransaction(t *testing.T) {
@@ -135,7 +84,7 @@ func TestSignAndExecuteTransaction(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
-	pickedCoins, err := iotagraphql.PickupCoins(coins, big.NewInt(100), iotagraphql.DefaultGasBudget, 0, 0)
+	pickedCoins, err := iotagraphql.PickupCoins(iotagraphql.Coins(coins.Address.Coins.Nodes), big.NewInt(100), iotagraphql.DefaultGasBudget, 0, 0)
 	require.NoError(t, err)
 	tx, err := client.PayAllIota(
 		context.Background(),
@@ -148,20 +97,11 @@ func TestSignAndExecuteTransaction(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	// Test SignAndExecuteTransaction with options requesting effects and object changes
-	// This also tests the isResponseComplete logic to ensure proper handling of incomplete responses
-	resp, err := client.SignAndExecuteTransaction(context.Background(), &iotagraphql.SignAndExecuteTransactionRequest{
-		TxDataBytes: tx.TxBytes,
-		Signer:      signer,
-		Options: &iotagraphql.IotaTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
-		},
-	})
+	resp, err := client.SignAndExecuteTransaction(context.Background(), tx.TxBytes, signer)
 	require.NoError(t, err)
 	require.NotNil(t, resp)
-	require.NotNil(t, resp.Effects, "Effects should be present when ShowEffects is true")
-	require.NotNil(t, resp.ObjectChanges, "ObjectChanges should be present when ShowObjectChanges is true")
-	require.True(t, resp.Effects.IsSuccess())
-	require.Empty(t, resp.Effects.V1.Status.Error)
+	require.NotNil(t, resp.ExecuteTransactionBlock.Effects, "Effects should be present")
+	require.NotNil(t, resp.ExecuteTransactionBlock.Effects.ObjectChanges, "ObjectChanges should be present")
+	require.True(t, resp.IsSuccess())
+	require.Empty(t, resp.ExecuteTransactionBlock.Errors)
 }

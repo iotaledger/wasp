@@ -9,22 +9,11 @@ query GetAllCoins(
 		address
 		coins(first: $first, after: $cursor) {
 			pageInfo {
-				hasNextPage
-				endCursor
+				...PAGE_INFO
 			}
+			# @genqlient(typename: "CoinData")
 			nodes {
-				coinBalance
-				contents {
-					type {
-						repr
-					}
-				}
-				address
-				version
-				digest
-				previousTransactionBlock {
-					digest
-				}
+				...COIN_DATA
 			}
 		}
 	}

@@ -108,7 +108,7 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 
 	// Create SC L1Client account with some deposit
 	scClient := cryptolib.NewKeyPair()
-	err := te.l1Client.RequestFundsFromFaucet(context.Background(), scClient.Address().AsIotaAddress())
+	err := te.l1Client.RequestFundsFromFaucet(context.Background(), *scClient.Address().AsIotaAddress())
 	require.NoError(t, err)
 
 	//
@@ -331,19 +331,7 @@ func (tnc *testNodeConn) PublishTX(
 		return err
 	}
 
-	res, err := tnc.l1Client.ExecuteTransactionBlock(ctx, iotagraphql.ExecuteTransactionBlockRequest{
-		TxDataBytes: txBytes,
-		Signatures:  tx.Signatures,
-		Options: &iotagraphql.IotaTransactionBlockResponseOptions{
-			ShowInput:          true,
-			ShowRawInput:       true,
-			ShowEffects:        true,
-			ShowEvents:         true,
-			ShowObjectChanges:  true,
-			ShowBalanceChanges: true,
-			ShowRawEffects:     true,
-		},
-	})
+	res, err := tnc.l1Client.ExecuteTransactionBlock(ctx, txBytes, tx.Signatures)
 	if err != nil {
 		tnc.t.Logf("ExecuteTransactionBlock, err=%v", err)
 		return err
@@ -351,27 +339,15 @@ func (tnc *testNodeConn) PublishTX(
 
 	time.Sleep(1 * time.Second)
 
-	res, err = tnc.l1Client.GetTransactionBlock(ctx, iotagraphql.GetTransactionBlockRequest{
-		Digest: &res.Digest,
-
-		Options: &iotagraphql.IotaTransactionBlockResponseOptions{
-			ShowInput:          true,
-			ShowRawInput:       true,
-			ShowEffects:        true,
-			ShowEvents:         true,
-			ShowObjectChanges:  true,
-			ShowBalanceChanges: true,
-			ShowRawEffects:     true,
-		},
-	})
+	resTxBlock, err := tnc.l1Client.GetTransactionBlock(ctx, *iotago.MustNewDigest(res.ExecuteTransactionBlock.Effects.TransactionBlock.Digest))
 	if err != nil {
 		tnc.t.Logf("GetTransactionBlock, err=%v", err)
 		return err
 	}
 
-	tnc.t.Logf("PublishTX, GetTransactionBlock, result=%+v", res)
+	tnc.t.Logf("PublishTX, GetTransactionBlock, result=%+v", resTxBlock)
 
-	anchorInfo, err := res.GetMutatedObjectByID(chainID.AsObjectID())
+	anchorInfo, err := resTxBlock.TransactionBlock.Effects.GetMutatedObjectByID(chainID.AsObjectID())
 	if err != nil {
 		return err
 	}
@@ -435,16 +411,13 @@ func (tnc *testNodeConn) ConsensusL1InfoProposal(
 			panic(err)
 		}
 
-		gasCoin, err := tnc.l1Client.GetObject(ctx, iotagraphql.GetObjectRequest{
-			ObjectID: stateMetadata.GasCoinObjectID,
-			Options:  &iotagraphql.IotaObjectDataOptions{ShowBcs: true},
-		})
+		gasCoin, err := tnc.l1Client.GetObject(ctx, *stateMetadata.GasCoinObjectID)
 		if err != nil {
 			panic(err)
 		}
 
 		var moveBalance iscmoveclient.MoveCoin
-		err = iotagraphql.UnmarshalBCS(gasCoin.Data.Bcs.MoveObject.BcsBytes, &moveBalance)
+		err = iotagraphql.UnmarshalBCS(gasCoin.Object.BcsBytes(), &moveBalance)
 		if err != nil {
 			panic("failed to decode gas coin object: " + err.Error())
 		}
@@ -454,12 +427,15 @@ func (tnc *testNodeConn) ConsensusL1InfoProposal(
 			panic(err)
 		}
 
-		ref := gasCoin.Data.Ref()
+		ref, err := gasCoin.Object.ObjectRef()
+		if err != nil {
+			panic(err)
+		}
 		var l1Info consensusrunner.NodeConnL1Info = &testNodeConnL1Info{
 			gasCoins: []*coin.CoinWithRef{{
 				Type:  coin.BaseTokenType,
 				Value: coin.Value(moveBalance.Balance),
-				Ref:   &ref,
+				Ref:   ref,
 			}},
 			l1params: l1Params,
 		}
@@ -542,7 +518,7 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 	te.committeeAddress, dkShareProviders = testpeers.SetupDistributedKeyGenerationTrivial(t, n, f, te.peerIdentities, nil)
 	te.committeeSigner = testpeers.NewTestDistributedSignatureSigner(te.committeeAddress, dkShareProviders, gpa.MakeTestNodeIDs(n), te.peerIdentities, te.log)
 
-	require.NoError(t, node.L1Client().RequestFundsFromFaucet(context.Background(), te.committeeSigner.Address().AsIotaAddress()))
+	require.NoError(t, node.L1Client().RequestFundsFromFaucet(context.Background(), *te.committeeSigner.Address().AsIotaAddress()))
 	iotatest.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(te.committeeSigner), node.L1Client(), isc.GasCoinTargetValue*10)
 
 	iscPackageID := node.ISCPackageID()

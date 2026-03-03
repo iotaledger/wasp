@@ -28,7 +28,7 @@ type PTBTestWrapperRequest struct {
 func PTBTestWrapper(
 	req *PTBTestWrapperRequest,
 	f func(ptb *iotago.ProgrammableTransactionBuilder) *iotago.ProgrammableTransactionBuilder,
-) (*iotagraphql.IotaTransactionBlockResponse, error) {
+) (*iotagraphql.ExecuteTransactionBlockResponse, error) {
 	ptb := iotago.NewProgrammableTransactionBuilder()
 	return req.Client.SignAndExecutePTB(
 		context.Background(),
@@ -55,14 +55,8 @@ func TestKeys(t *testing.T) {
 
 	txnResponse, err := client.SignAndExecuteTransaction(
 		context.Background(),
-		&iotagraphql.SignAndExecuteTransactionRequest{
-			TxDataBytes: txnBytes.TxBytes,
-			Signer:      cryptolib.SignerToIotaSigner(cryptolibSigner),
-			Options: &iotagraphql.IotaTransactionBlockResponseOptions{
-				ShowEffects:       true,
-				ShowObjectChanges: true,
-			},
-		},
+		txnBytes.TxBytes,
+		cryptolib.SignerToIotaSigner(cryptolibSigner),
 	)
 	require.NoError(t, err)
 	fmt.Println(txnResponse)

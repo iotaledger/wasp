@@ -180,7 +180,7 @@ func initDepositCmd() *cobra.Command {
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
 			util.TryManageCoinsAmount(ctx)
-			var res *iotagraphql.IotaTransactionBlockResponse
+			var res *iotagraphql.ExecuteTransactionBlockResponse
 			if strings.Contains(args[0], "|") {
 				// deposit to own agentID
 				var tokens *isc.Assets
@@ -191,7 +191,7 @@ func initDepositCmd() *cobra.Command {
 				allowance := tokens.Clone()
 				allowance.SetBaseTokens(allowance.BaseTokens())
 
-				res = util.WithSCTransaction(ctx, client, func() (*iotagraphql.IotaTransactionBlockResponse, error) {
+				res = util.WithSCTransaction(ctx, client, func() (*iotagraphql.ExecuteTransactionBlockResponse, error) {
 					return cliclients.ChainClient(client, chainID).PostRequest(ctx,
 						accounts.FuncDeposit.Message(),
 						chainclient.PostRequestParams{
@@ -216,7 +216,7 @@ func initDepositCmd() *cobra.Command {
 				allowance := tokens.Clone()
 				allowance.SetBaseTokens(allowance.BaseTokens())
 
-				res = util.WithSCTransaction(ctx, client, func() (*iotagraphql.IotaTransactionBlockResponse, error) {
+				res = util.WithSCTransaction(ctx, client, func() (*iotagraphql.ExecuteTransactionBlockResponse, error) {
 					return cliclients.ChainClient(client, chainID).PostRequest(
 						ctx,
 						accounts.FuncTransferAllowanceTo.Message(agentID),
@@ -232,11 +232,11 @@ func initDepositCmd() *cobra.Command {
 
 			if printReceipt {
 				if err := format.FormatSuccess("l1_gas_fee", map[string]interface{}{
-					"amount": res.Effects.GasFee(),
+					"amount": res.ExecuteTransactionBlock.Effects.GasFee(),
 				}); err != nil {
 					return err
 				}
-				ref, err := res.GetCreatedObjectByName("request", "Request")
+				ref, err := res.ExecuteTransactionBlock.Effects.GetCreatedObjectByName("request", "Request")
 				if err != nil {
 					return err
 				}

@@ -35,8 +35,7 @@ query GetLatestIotaSystemState {
 		validatorSet {
 			activeValidators {
 				pageInfo {
-					hasNextPage
-					endCursor
+					...PAGE_INFO
 				}
 			}
 

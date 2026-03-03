@@ -11,6 +11,7 @@ import (
 
 type L1EndpointConfig struct {
 	IsLocal       bool
+	IsSimulator   bool
 	RandomizeSeed bool
 	APIURL        string
 	FaucetURL     string
@@ -44,6 +45,12 @@ func LoadConfig() *L1EndpointConfig {
 		return &L1EndpointConfig{
 			IsLocal:       true,
 			RandomizeSeed: true,
+		}
+	}
+
+	if c.Bool("IS_SIMULATOR") {
+		return &L1EndpointConfig{
+			IsSimulator: true,
 		}
 	}
 

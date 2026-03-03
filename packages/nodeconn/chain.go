@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
-	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/v2/packages/chain"
@@ -100,9 +99,7 @@ func (ncc *ncChain) postTxLoop(ctx context.Context, packageID iotago.PackageID) 
 
 		// Executing the transaction via DryRun before posting to make sure the transaction is valid, as failed transactions cost gas!
 		// Repeatedly failing transactions == sad gas coin
-		dryRes, err := ncc.nodeConn.httpClient.DryRunTransaction(task.ctx, iotagraphql.DryRunTransactionRequest{
-			TxDataBytes: txBytes,
-		})
+		dryRes, err := ncc.nodeConn.httpClient.DryRunTransaction(task.ctx, txBytes)
 		if err != nil {
 			return nil, fmt.Errorf("failed to dry-run Anchor transaction: %w", err)
 		}
@@ -111,22 +108,15 @@ func (ncc *ncChain) postTxLoop(ctx context.Context, packageID iotago.PackageID) 
 			return nil, fmt.Errorf("failed to dry-run Anchor transaction: response == nil")
 		}
 
-		if dryRes.Effects.IsFailed() {
+		if dryRes.DryRunTransactionBlock.Transaction.Effects.IsFailed() {
 			return nil, fmt.Errorf("failed to dry-run Anchor transaction: response.Effects.Failed")
 		}
 
-		if dryRes.Effects.IsSuccess() {
+		if dryRes.DryRunTransactionBlock.Transaction.Effects.IsSuccess() {
 			ncc.LogDebug("successfully dry-run Anchor transaction")
 		}
 
-		res, err := ncc.nodeConn.httpClient.ExecuteTransactionBlock(task.ctx, iotagraphql.ExecuteTransactionBlockRequest{
-			TxDataBytes: txBytes,
-			Signatures:  task.tx.Signatures,
-			Options: &iotagraphql.IotaTransactionBlockResponseOptions{
-				ShowObjectChanges: true,
-				ShowEffects:       true,
-			},
-		})
+		res, err := ncc.nodeConn.httpClient.ExecuteTransactionBlock(task.ctx, txBytes, task.tx.Signatures)
 
 		if err != nil {
 			ncc.LogErrorf("POSTING TX error: %v\n", err)
@@ -138,11 +128,11 @@ func (ncc *ncChain) postTxLoop(ctx context.Context, packageID iotago.PackageID) 
 			return nil, err
 		}
 
-		if !res.Effects.IsSuccess() {
-			return nil, fmt.Errorf("error executing tx: %s Digest: %s", res.Effects.V1.Status.Error, res.Digest)
+		if !res.ExecuteTransactionBlock.Effects.IsSuccess() {
+			return nil, fmt.Errorf("error executing tx: %s Digest: %s", res.ExecuteTransactionBlock.Effects.GetErrors(), res.ExecuteTransactionBlock.Effects.TransactionBlock.Digest)
 		}
 
-		anchorInfo, err := res.GetMutatedObjectByID(ncc.chainID.AsObjectID())
+		anchorInfo, err := res.ExecuteTransactionBlock.Effects.GetMutatedObjectByID(ncc.chainID.AsObjectID())
 		if err != nil {
 			return nil, err
 		}

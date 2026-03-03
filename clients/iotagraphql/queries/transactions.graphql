@@ -8,54 +8,31 @@ query QueryTransactionBlocks(
 	# @genqlient(pointer: true)
 	$after: String
 	# @genqlient(pointer: true)
-	$showBalanceChanges: Boolean = false
-	# @genqlient(pointer: true)
-	$showEffects: Boolean = false
-	# @genqlient(pointer: true)
-	$showRawEffects: Boolean = false
-	# @genqlient(pointer: true)
-	$showEvents: Boolean = false
-	# @genqlient(pointer: true)
-	$showInput: Boolean = false
-	# @genqlient(pointer: true)
-	$showObjectChanges: Boolean = false
-	# @genqlient(pointer: true)
-	$showRawInput: Boolean = false
-	# @genqlient(pointer: true)
 	$filter: TransactionBlockFilter
 ) {
 	transactionBlocks(first: $first, after: $after, last: $last, before: $before, filter: $filter) {
 		pageInfo {
-			hasNextPage
-			hasPreviousPage
-			startCursor
-			endCursor
+			...PAGE_INFO
 		}
+		# @genqlient(typename: "TxBlockData")
 		nodes {
-			...RPC_TRANSACTION_FIELDS
+			...TX_CORE
+			# @genqlient(typename: "TxEffects")
+			effects {
+				...TX_EFFECTS
+			}
 		}
 	}
 }
 
-query GetTransactionBlock(
-	$digest: String!
-	# @genqlient(pointer: true)
-	$showBalanceChanges: Boolean = false
-	# @genqlient(pointer: true)
-	$showEffects: Boolean = false
-	# @genqlient(pointer: true)
-	$showRawEffects: Boolean = false
-	# @genqlient(pointer: true)
-	$showEvents: Boolean = false
-	# @genqlient(pointer: true)
-	$showInput: Boolean = false
-	# @genqlient(pointer: true)
-	$showObjectChanges: Boolean = false
-	# @genqlient(pointer: true)
-	$showRawInput: Boolean = false
-) {
+query GetTransactionBlock($digest: String!) {
+	# @genqlient(typename: "TxBlockData")
 	transactionBlock(digest: $digest) {
-		...RPC_TRANSACTION_FIELDS
+		...TX_CORE
+		# @genqlient(typename: "TxEffects")
+		effects {
+			...TX_EFFECTS
+		}
 	}
 }
 
@@ -65,30 +42,18 @@ query MultiGetTransactionBlocks(
 	$limit: Int
 	# @genqlient(pointer: true)
 	$cursor: String
-	# @genqlient(pointer: true)
-	$showBalanceChanges: Boolean = false
-	# @genqlient(pointer: true)
-	$showEffects: Boolean = false
-	# @genqlient(pointer: true)
-	$showRawEffects: Boolean = false
-	# @genqlient(pointer: true)
-	$showEvents: Boolean = false
-	# @genqlient(pointer: true)
-	$showInput: Boolean = false
-	# @genqlient(pointer: true)
-	$showObjectChanges: Boolean = false
-	# @genqlient(pointer: true)
-	$showRawInput: Boolean = false
 ) {
 	transactionBlocks(first: $limit, after: $cursor, filter: { transactionIds: $digests }) {
 		pageInfo {
-			hasNextPage
-			hasPreviousPage
-			startCursor
-			endCursor
+			...PAGE_INFO
 		}
+		# @genqlient(typename: "TxBlockData")
 		nodes {
-			...RPC_TRANSACTION_FIELDS
+			...TX_CORE
+			# @genqlient(typename: "TxEffects")
+			effects {
+				...TX_EFFECTS
+			}
 		}
 	}
 }
@@ -103,176 +68,32 @@ query PaginateTransactionBlockLists(
 	$afterObjectChanges: String
 ) {
 	transactionBlock(digest: $digest) {
-		...PAGINATE_TRANSACTION_LISTS
-	}
-}
-
-fragment PAGINATE_TRANSACTION_LISTS on TransactionBlock {
-	effects {
-		events(after: $afterEvents) @include(if: $hasMoreEvents) {
-			pageInfo {
-				hasNextPage
-				endCursor
-			}
-			nodes {
-				...RPC_EVENTS_FIELDS
-			}
-		}
-		balanceChanges(after: $afterBalanceChanges) @include(if: $hasMoreBalanceChanges) {
-			pageInfo {
-				hasNextPage
-				endCursor
-			}
-			nodes {
-				coinType {
-					repr
+		effects {
+			events(after: $afterEvents) @include(if: $hasMoreEvents) {
+				pageInfo {
+					...PAGE_INFO
 				}
-				owner {
-					asObject {
-						address
-					}
-					asAddress {
-						address
-					}
-				}
-				amount
-			}
-		}
-		objectChanges(after: $afterObjectChanges) @include(if: $hasMoreObjectChanges) {
-			pageInfo {
-				hasNextPage
-				endCursor
-			}
-			nodes {
-				address
-				inputState {
-					version
-					digest
-					asMoveObject {
-						contents {
-							type {
-								repr
-							}
-						}
-					}
-				}
-				outputState {
-					version
-					digest
-					asMoveObject {
-						contents {
-							type {
-								repr
-							}
-						}
-					}
-					asMovePackage {
-						modules(first: 10) {
-							nodes {
-								name
-							}
-						}
-					}
+				# @genqlient(typename: "EventData")
+				nodes {
+					...EVENT_FIELDS
 				}
 			}
-		}
-	}
-}
-
-fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
-	digest
-	bcs @include(if: $showInput)
-	bcs @include(if: $showRawInput)
-	sender {
-		address
-	}
-
-	signatures
-
-	effects {
-		status
-		errors
-		bcs @include(if: $showEffects)
-		bcs @include(if: $showObjectChanges)
-		bcs @include(if: $showRawEffects)
-		events @include(if: $showEvents) {
-			pageInfo {
-				hasNextPage
-				endCursor
-			}
-			nodes {
-				...RPC_EVENTS_FIELDS
-			}
-		}
-		checkpoint {
-			sequenceNumber
-		}
-		timestamp
-		gasEffects {
-			gasSummary {
-				computationCost
-				computationCostBurned
-				storageCost
-				storageRebate
-				nonRefundableStorageFee
-			}
-		}
-		balanceChanges @include(if: $showBalanceChanges) {
-			pageInfo {
-				hasNextPage
-				endCursor
-			}
-			nodes {
-				coinType {
-					repr
+			balanceChanges(after: $afterBalanceChanges) @include(if: $hasMoreBalanceChanges) {
+				pageInfo {
+					...PAGE_INFO
 				}
-				owner {
-					asObject {
-						address
-					}
-					asAddress {
-						address
-					}
+				# @genqlient(typename: "BalanceChangeData")
+				nodes {
+					...BALANCE_CHANGE
 				}
-				amount
 			}
-		}
-
-		objectChanges @include(if: $showObjectChanges) {
-			pageInfo {
-				hasNextPage
-				endCursor
-			}
-			nodes {
-				address
-				inputState {
-					version
-					digest
-					asMoveObject {
-						contents {
-							type {
-								repr
-							}
-						}
-					}
+			objectChanges(after: $afterObjectChanges) @include(if: $hasMoreObjectChanges) {
+				pageInfo {
+					...PAGE_INFO
 				}
-				outputState {
-					version
-					digest
-					asMoveObject {
-						contents {
-							type {
-								repr
-							}
-						}
-					}
-					asMovePackage {
-						modules(first: 10) {
-							nodes {
-								name
-							}
-						}
-					}
+				# @genqlient(typename: "ObjectChangeData")
+				nodes {
+					...OBJECT_CHANGE
 				}
 			}
 		}

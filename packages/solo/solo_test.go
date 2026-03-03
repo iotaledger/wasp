@@ -101,18 +101,11 @@ func TestDryRunForRequest(t *testing.T) {
 	txBytes, err := bcs.Marshal(&txData)
 	require.NoError(t, err)
 
-	dryRunRes1, err := ch.Env.L1Client().DryRunTransaction(context.Background(), iotagraphql.DryRunTransactionRequest{
-		TxDataBytes: txBytes,
-	})
+	dryRunRes, err := ch.Env.L1Client().DryRunTransaction(context.Background(), txBytes)
 	require.NoError(t, err)
-	require.True(t, dryRunRes1.Effects.IsSuccess())
+	require.True(t, dryRunRes.DryRunTransactionBlock.Transaction.Effects.IsSuccess())
 
-	var dryRunRes2 iotagraphql.DryRunResult
-	b, err := bcs.Marshal(dryRunRes1)
-	require.NoError(t, err)
-	dryRunRes2, err = bcs.Unmarshal[iotagraphql.DryRunResult](b)
-	require.NoError(t, err)
-	estimateGasL1, err := ch.EstimateOnLedgerRequest(&dryRunRes2)
+	estimateGasL1, err := ch.EstimateOnLedgerRequest(&dryRunRes.DryRunTransactionBlock)
 	require.NoError(t, err)
 	require.Nil(t, estimateGasL1.Receipt.Error)
 	require.Greater(t, estimateGasL1.Receipt.GasBurned, uint64(0))

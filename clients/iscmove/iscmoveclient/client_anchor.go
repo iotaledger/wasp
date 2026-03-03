@@ -6,6 +6,7 @@ import (
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql/graphqltypes"
 
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
@@ -38,8 +39,8 @@ func (c *Client) UpdateAnchorStateMetadata(ctx context.Context, req *UpdateAncho
 		return false, fmt.Errorf("updating ptb state metadata failed: %w", err)
 	}
 
-	if len(res.Errors) > 0 {
-		return false, fmt.Errorf("updating ptb state metadata failed: %v", res.Errors)
+	if len(res.ExecuteTransactionBlock.Errors) > 0 {
+		return false, fmt.Errorf("updating ptb state metadata failed: %v", res.ExecuteTransactionBlock.Errors)
 	}
 
 	return true, nil
@@ -107,7 +108,7 @@ type ReceiveRequestsAndTransitionRequest struct {
 func (c *Client) ReceiveRequestsAndTransition(
 	ctx context.Context,
 	req *ReceiveRequestsAndTransitionRequest,
-) (*iotagraphql.IotaTransactionBlockResponse, error) {
+) (*graphqltypes.ExecuteTransactionBlockResponse, error) {
 	consumed := make([]ConsumedRequest, 0, len(req.ConsumedRequests))
 	for _, reqRef := range req.ConsumedRequests {
 		reqWithObj, err := c.GetRequestFromObjectID(ctx, reqRef.ObjectID)
@@ -148,20 +149,21 @@ func (c *Client) GetAnchorFromObjectID(
 	ctx context.Context,
 	anchorObjectID *iotago.ObjectID,
 ) (*iscmove.AnchorWithRef, error) {
-	getObjectResponse, err := c.GetObject(ctx, iotagraphql.GetObjectRequest{
-		ObjectID: anchorObjectID,
-		Options:  &iotagraphql.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true},
-	})
+	getObjectResponse, err := c.GetObject(ctx, *anchorObjectID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor content: %w", err)
 	}
-	if getObjectResponse.Error != nil {
-		return nil, fmt.Errorf("failed to get anchor content: %s", getObjectResponse.Error.String())
+	if getObjectResponse.Object.IsNotFound() || getObjectResponse.Object.IsDeleted() {
+		return nil, fmt.Errorf("anchor object %s not found or deleted", anchorObjectID)
+	}
+	ref, err := getObjectResponse.Object.ObjectRef()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get anchor ref: %w", err)
 	}
 	return decodeAnchorBCS(
-		getObjectResponse.Data.Bcs.MoveObject.BcsBytes,
-		getObjectResponse.Data.Ref(),
-		getObjectResponse.Data.Owner.AddressOwner,
+		getObjectResponse.Object.BcsBytes(),
+		*ref,
+		getObjectResponse.Object.OwnerAddress(),
 	)
 }
 

@@ -11,18 +11,17 @@ jobs:
     name: Build only
     runs-on: ubuntu-latest
     steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v4
+
       - name: Set up Go 1.x
         uses: actions/setup-go@v5
         with:
           go-version: "1.24"
+          cache-dependency-path: |
+            go.work.sum
+            **/go.sum
         id: go
-
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v4
-
-      - name: Get dependencies
-        run: |
-          go get -v -t -d ./...
 
       - name: Build
         run: make build
@@ -33,20 +32,19 @@ jobs:
 
   test-short:
     name: Test (short)
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, wasp]
     steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v4
+
       - name: Set up Go 1.x
         uses: actions/setup-go@v5
         with:
           go-version: "1.24"
+          cache-dependency-path: |
+            go.work.sum
+            **/go.sum
         id: go
-
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v4
-
-      - name: Get dependencies
-        run: |
-          go get -v -t -d ./...
 
       # Here used to be a make build step, but we separated it into another job
 
@@ -63,13 +61,17 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-go@v5
-        with:
-          go-version: "1.24"
-        id: go
-
       - name: Check out code into the Go module directory
         uses: actions/checkout@v4
+
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+          cache-dependency-path: |
+            go.work.sum
+            **/go.sum
+        id: go
 
       - name: Run global scope golangci-lint
         uses: golangci/golangci-lint-action@v8

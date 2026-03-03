@@ -158,16 +158,13 @@ func (nc *nodeConnection) ConsensusL1InfoProposal(
 			panic(err)
 		}
 
-		gasCoinGetObjectRes, err := nc.httpClient.GetObject(ctx, iotagraphql.GetObjectRequest{
-			ObjectID: stateMetadata.GasCoinObjectID,
-			Options:  &iotagraphql.IotaObjectDataOptions{ShowBcs: true},
-		})
+		gasCoinGetObjectRes, err := nc.httpClient.GetObject(ctx, *stateMetadata.GasCoinObjectID)
 		if err != nil {
 			panic(err)
 		}
 
 		var gasCoin iscmoveclient.MoveCoin
-		err = iotagraphql.UnmarshalBCS(gasCoinGetObjectRes.Data.Bcs.MoveObject.BcsBytes, &gasCoin)
+		err = iotagraphql.UnmarshalBCS(gasCoinGetObjectRes.Object.BcsBytes(), &gasCoin)
 		if err != nil {
 			panic(err)
 		}
@@ -177,12 +174,15 @@ func (nc *nodeConnection) ConsensusL1InfoProposal(
 			panic(err)
 		}
 
-		gasCoinRef := gasCoinGetObjectRes.Data.Ref()
+		gasCoinRef, err := gasCoinGetObjectRes.Object.ObjectRef()
+		if err != nil {
+			panic(err)
+		}
 		var coinInfo consensusrunner.NodeConnL1Info = &SingleL1Info{
 			coin.CoinWithRef{
 				Type:  coin.BaseTokenType,
 				Value: coin.Value(gasCoin.Balance),
-				Ref:   &gasCoinRef,
+				Ref:   gasCoinRef,
 			},
 			l1Params,
 		}
