@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"math/big"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/ethereum/go-ethereum"
@@ -45,7 +46,11 @@ type ethCallOptions struct {
 	gasPrice *big.Int
 }
 
+var initEVMMutex sync.Mutex
+
 func InitEVM(t testing.TB) *SoloChainEnv {
+	initEVMMutex.Lock()
+	defer initEVMMutex.Unlock()
 	env := solo.New(t, &solo.InitOptions{
 		Debug:             true,
 		PrintStackTrace:   true,
