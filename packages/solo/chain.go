@@ -320,24 +320,8 @@ func (ch *Chain) GetL2FundsFromFaucetWithDepositor(agentID isc.AgentID, deposito
 }
 
 func (ch *Chain) GetL2FundsFromFaucet(agentID isc.AgentID, baseTokens ...coin.Value) {
-	seed := cryptolib.SeedFromBytes([]byte("GetL2FundsFromFaucet" + ch.Env.T.Name()))
-	walletKey, walletAddr := ch.Env.NewKeyPair(&seed)
-	if ch.Env.L1BaseTokens(walletAddr) == 0 {
-		ch.Env.GetFundsFromFaucet(walletAddr)
-	}
-
-	var amount coin.Value
-	if len(baseTokens) > 0 {
-		amount = baseTokens[0]
-	} else {
-		amount = ch.Env.L1BaseTokens(walletAddr) / 10
-	}
-	err := ch.TransferAllowanceTo(
-		isc.NewAssets(amount),
-		agentID,
-		walletKey,
-	)
-	require.NoError(ch.Env.T, err)
+	seed := []byte(fmt.Sprintf("GetL2FundsFromFaucet-%s-%d", ch.Env.T.Name(), rand.Uint64()))
+	ch.GetL2FundsFromFaucetWithDepositor(agentID, seed, baseTokens...)
 }
 
 func (ch *Chain) Store() indexedstore.IndexedStore {
