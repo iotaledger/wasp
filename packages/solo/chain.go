@@ -9,13 +9,13 @@ import (
 	"math/big"
 	"math/rand/v2"
 	"strings"
-	"time"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
@@ -285,32 +285,26 @@ func (ch *Chain) L1L2Funds(addr *cryptolib.Address) *L1L2CoinBalances {
 	}
 }
 
-// GetL2FundsFromFaucetWithDepositor is for multiple concurrent calls scenarios.
-// This function uses given depositorSeed to generate the depositor to call TransferAllowanceTo()
+// GetL2FundsFromFaucetWithDepositor is for scenarios where a specific or random depositor is required.
+// This function uses the given depositorSeed to generate a wallet and then transfers funds to the target agentID on L2.
 func (ch *Chain) GetL2FundsFromFaucetWithDepositor(agentID isc.AgentID, depositorSeed []byte, baseTokens ...coin.Value) {
 	seed := cryptolib.SeedFromBytes(depositorSeed)
 	walletKey, walletAddr := ch.Env.NewKeyPair(&seed)
-	if ch.Env.L1BaseTokens(walletAddr) == 0 {
-		ch.Env.GetFundsFromFaucet(walletAddr)
-	}
 
 	var amount coin.Value
 	if len(baseTokens) > 0 {
 		amount = baseTokens[0]
 	} else {
-		amount = ch.Env.L1BaseTokens(walletAddr) / 10
+		// Default to 1/10th of a faucet deposit if not specified
+		amount = coin.Value(iotagraphql.FundsFromFaucetAmount / 10)
 	}
 
-	// each time, the faucet provides 2000000000 * 5 balance
-	iterTimes := amount / (2000000000 * 5)
-	// call faucet for each account at least once
-	for i := uint64(0); i < uint64(iterTimes)+1; i++ {
+	// Ensure the wallet has enough funds on L1 to cover the 'amount' plus the gas budget for the request
+	requiredOnL1 := amount + TransferAllowanceToGasBudgetBaseTokens
+	for ch.Env.L1BaseTokens(walletAddr) < requiredOnL1 {
 		ch.Env.GetFundsFromFaucet(walletAddr)
 	}
 
-	// make collosion less likely
-	rint := rand.IntN(100)
-	time.Sleep((time.Duration(rint)*50 + 100) * time.Millisecond)
 	err := ch.TransferAllowanceTo(
 		isc.NewAssets(amount),
 		agentID,
