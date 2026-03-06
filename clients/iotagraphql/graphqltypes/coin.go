@@ -1,7 +1,6 @@
 package graphqltypes
 
 import (
-	"encoding/json"
 	"errors"
 	"math/big"
 	"sort"
@@ -9,83 +8,68 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 )
 
-type Coin struct {
-	CoinType     CoinType             `json:"coinType"`
-	CoinObjectID *iotago.ObjectID     `json:"coinObjectID"`
-	Version      *BigInt              `json:"version"`
-	Digest       *iotago.ObjectDigest `json:"digest"`
-	Balance      *BigInt              `json:"balance"`
+type Coin = CoinData
 
-	LockedUntilEpoch    *BigInt                  `json:"lockedUntilEpoch,omitempty"`
-	PreviousTransaction iotago.TransactionDigest `json:"previousTransaction"`
+type Coins []Coin
+
+func (c *CoinData) ObjectID() iotago.ObjectID {
+	return c.Address
 }
 
-type CoinPage = Page[*Coin, string]
-
-func (c *Coin) Ref() *iotago.ObjectRef {
-	return &iotago.ObjectRef{
-		Digest:   c.Digest,
-		Version:  c.Version.Uint64(),
-		ObjectID: c.CoinObjectID,
-	}
-}
-
-func (c *Coin) String() string {
-	if c == nil {
-		panic("coin is nil")
-	}
-	b, err := json.Marshal(c)
+func (c *CoinData) ObjectRef() (*iotago.ObjectRef, error) {
+	digest, err := iotago.NewDigest(c.Digest)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	return string(b)
+	objectID := c.ObjectID()
+	return &iotago.ObjectRef{
+		ObjectID: &objectID,
+		Version:  c.Version,
+		Digest:   digest,
+	}, nil
 }
 
-func (c *Coin) IsIOTA() bool {
-	return MustCoinTypeFromString(c.CoinType.String()) == IotaCoinType
+func (c *CoinData) CoinType() CoinType {
+	return MustCoinTypeFromString(c.Contents.Type.Repr)
 }
 
-type CoinFields struct {
-	Balance *BigInt
-	ID      struct {
-		ID *iotago.ObjectID
-	}
+func (c *CoinData) IsIOTA() bool {
+	return c.CoinType() == IotaCoinType
 }
 
-type Coins []*Coin
+func (c *CoinData) Balance() uint64 {
+	return c.CoinBalance.Uint64()
+}
 
 func (cs Coins) TotalBalance() *big.Int {
 	total := new(big.Int)
 	for _, coin := range cs {
-		total = total.Add(total, new(big.Int).SetUint64(coin.Balance.Uint64()))
+		total = total.Add(total, new(big.Int).SetUint64(coin.Balance()))
 	}
 	return total
 }
 
-func (cs Coins) PickCoinNoLess(amount uint64) (*Coin, error) {
+func (cs Coins) PickCoinNoLess(amount uint64) (Coin, bool) {
 	for _, coin := range cs {
-		if coin.Balance.Uint64() >= amount {
-			return coin, nil
+		if coin.Balance() >= amount {
+			return coin, true
 		}
 	}
-	if len(cs) <= 3 {
-		return nil, errors.New("insufficient balance")
-	}
-	return nil, errors.New("no coin is enough to cover the gas")
+	return Coin{}, false
 }
 
-func (cs Coins) PickMultipleCoinsNoLess(amount uint64) ([]*Coin, error) {
+func (cs Coins) PickMultipleCoinsNoLess(amount uint64) (Coins, error) {
 	if amount == 0 {
 		return nil, nil
 	}
 
 	sum := uint64(0)
-	var coins []*Coin
+	var coins Coins
 	for _, c := range cs {
 		if sum >= amount {
 			return coins, nil
 		}
-		bal := c.Balance.Uint64()
+		bal := c.Balance()
 
 		need := amount - sum
 		coins = append(coins, c)
@@ -97,26 +81,22 @@ func (cs Coins) PickMultipleCoinsNoLess(amount uint64) ([]*Coin, error) {
 	return nil, errors.New("insufficient balance")
 }
 
-func (cs Coins) CoinRefs() []*iotago.ObjectRef {
+func (cs Coins) CoinRefs() ([]*iotago.ObjectRef, error) {
 	coinRefs := make([]*iotago.ObjectRef, len(cs))
-	for idx, coin := range cs {
-		coinRefs[idx] = coin.Ref()
+	for idx := range cs {
+		ref, err := cs[idx].ObjectRef()
+		if err != nil {
+			return nil, err
+		}
+		coinRefs[idx] = ref
 	}
-	return coinRefs
+	return coinRefs, nil
 }
 
-func (cs Coins) ObjectIDs() []*iotago.ObjectID {
-	coinIDs := make([]*iotago.ObjectID, len(cs))
-	for idx, coin := range cs {
-		coinIDs[idx] = coin.CoinObjectID
-	}
-	return coinIDs
-}
-
-func (cs Coins) ObjectIDVals() []iotago.ObjectID {
+func (cs Coins) ObjectIDs() []iotago.ObjectID {
 	coinIDs := make([]iotago.ObjectID, len(cs))
-	for idx, coin := range cs {
-		coinIDs[idx] = *coin.CoinObjectID
+	for idx := range cs {
+		coinIDs[idx] = cs[idx].ObjectID()
 	}
 	return coinIDs
 }
@@ -147,12 +127,12 @@ func (cs Coins) PickIOTACoinsWithGas(amount *big.Int, gasAmount uint64, pickMeth
 	var gasCoin *Coin
 	var selectIndex int
 	for i := range cs {
-		if cs[i].Balance.Uint64() < gasAmount {
+		if cs[i].Balance() < gasAmount {
 			continue
 		}
 
-		if gasCoin == nil || gasCoin.Balance.Uint64() > cs[i].Balance.Uint64() {
-			gasCoin = cs[i]
+		if gasCoin == nil || gasCoin.Balance() > cs[i].Balance() {
+			gasCoin = &cs[i]
 			selectIndex = i
 		}
 	}
@@ -180,9 +160,9 @@ func (cs Coins) PickCoins(amount *big.Int, pickMethod int) (Coins, error) {
 		sort.Slice(
 			sortedCoins, func(i, j int) bool {
 				if pickMethod == PickMethodSmaller {
-					return sortedCoins[i].Balance.Uint64() < sortedCoins[j].Balance.Uint64()
+					return sortedCoins[i].Balance() < sortedCoins[j].Balance()
 				} else {
-					return sortedCoins[i].Balance.Uint64() >= sortedCoins[j].Balance.Uint64()
+					return sortedCoins[i].Balance() >= sortedCoins[j].Balance()
 				}
 			},
 		)
@@ -192,7 +172,7 @@ func (cs Coins) PickCoins(amount *big.Int, pickMethod int) (Coins, error) {
 	total := new(big.Int)
 	for _, coin := range sortedCoins {
 		result = append(result, coin)
-		total = new(big.Int).Add(total, new(big.Int).SetUint64(coin.Balance.Uint64()))
+		total = new(big.Int).Add(total, new(big.Int).SetUint64(coin.Balance()))
 		if total.Cmp(amount) >= 0 {
 			return result, nil
 		}

@@ -99,7 +99,7 @@ func TestLedgerBaseConsistencyWithRequiredTopUpFee(t *testing.T) {
 			WithGasBudget(math.MaxUint64),
 		someUserWallet,
 	)
-	t.Logf("PTB gas fee: %d", ptbRes.Effects.GasFee())
+	t.Logf("PTB gas fee: %d", ptbRes.ExecuteTransactionBlock.Effects.GasFee())
 	require.NoError(t, err)
 	ch.CheckChain()
 
@@ -139,7 +139,7 @@ func TestLedgerBaseConsistencyWithRequiredTopUpFee(t *testing.T) {
 	// the gas coin is topped up to GasCoinTargetValue, and then it is used
 	// to pay for L1 gas fee
 	require.EqualValues(t,
-		gasCoinValueBefore+deductedForGasCoin-coin.Value(ptbRes.Effects.GasFee()),
+		gasCoinValueBefore+deductedForGasCoin-coin.Value(ptbRes.ExecuteTransactionBlock.Effects.GasFee()),
 		gasCoinValueAfter,
 	)
 
@@ -227,7 +227,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 			t.Logf("commonAccountBaseTokensBefore: %d, commonAccountBaseTokensAfter: %d", commonAccountBaseTokensBefore, commonAccountBaseTokensAfter)
 			originatorL2BaseTokensAfter := ch.L2BaseTokens(ch.AdminAgentID())
 			t.Logf("originatorL2BaseTokensBefore: %d, originatorL2BaseTokensAfter: %d", originatorL2BaseTokensBefore, originatorL2BaseTokensAfter)
-			l1GasFee := coin.Value(l1Res.Effects.GasFee())
+			l1GasFee := coin.Value(l1Res.ExecuteTransactionBlock.Effects.GasFee())
 			l2GasFee := ch.LastReceipt().GasFeeCharged
 			t.Logf("l1GasFee: %d, l2GasFee: %d", l1GasFee, l2GasFee)
 

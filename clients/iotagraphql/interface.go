@@ -5,49 +5,37 @@ import (
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql/graphqltypes"
 )
 
 type IotaClient interface {
-	// Read API
 	GetDynamicFieldObject(
 		ctx context.Context,
 		req GetDynamicFieldObjectRequest,
-	) (*IotaObjectResponse, error)
+	) (*GetDynamicFieldObjectResponse, error)
 	GetDynamicFields(
 		ctx context.Context,
 		req GetDynamicFieldsRequest,
-	) (*DynamicFieldPage, error)
+	) (*graphqltypes.GetDynamicFieldsResponse, error)
 	GetOwnedObjects(
 		ctx context.Context,
 		req GetOwnedObjectsRequest,
-	) (*ObjectsPage, error)
-	QueryTransactionBlocks(
-		ctx context.Context,
-		req QueryTransactionBlocksRequest,
-	) (*TransactionBlocksPage, error)
-	DevInspectTransactionBlock(
-		ctx context.Context,
-		req DevInspectTransactionBlockRequest,
-	) (*DevInspectResults, error)
+	) (*graphqltypes.GetOwnedObjectsResponse, error)
 	DryRunTransaction(
 		ctx context.Context,
-		req DryRunTransactionRequest,
-	) (*DryRunResult, error)
+		txDataBytes iotago.Base64Data,
+	) (*graphqltypes.DryRunTransactionBlockResponse, error)
 	ExecuteTransactionBlock(
 		ctx context.Context,
-		req ExecuteTransactionBlockRequest,
-	) (*IotaTransactionBlockResponse, error)
-	GetLatestIotaSystemState(ctx context.Context) (*IotaSystemStateSummary, error)
+		txDataBytes iotago.Base64Data,
+		signatures []*iotasigner.Signature,
+	) (*graphqltypes.ExecuteTransactionBlockResponse, error)
+	GetLatestIotaSystemState(ctx context.Context) (*GetLatestIotaSystemStateResponse, error)
 	GetReferenceGasPrice(ctx context.Context) (*BigInt, error)
 
-	// Transaction Builder API
 	MergeCoins(
 		ctx context.Context,
 		req MergeCoinsRequest,
-	) (*TransactionBytes, error)
-	MoveCall(
-		ctx context.Context,
-		req MoveCallRequest,
 	) (*TransactionBytes, error)
 	PayAllIota(
 		ctx context.Context,
@@ -61,46 +49,40 @@ type IotaClient interface {
 		ctx context.Context,
 		req PublishRequest,
 	) (*TransactionBytes, error)
-	SplitCoin(
+	TransferIota(
 		ctx context.Context,
-		req SplitCoinRequest,
+		req TransferIotaRequest,
 	) (*TransactionBytes, error)
 	TransferObject(
 		ctx context.Context,
 		req TransferObjectRequest,
 	) (*TransactionBytes, error)
-	TransferIota(
-		ctx context.Context,
-		req TransferIotaRequest,
-	) (*TransactionBytes, error)
 
-	// Coin Query API
-	GetAllBalances(ctx context.Context, owner *iotago.Address) ([]*Balance, error)
-	GetAllCoins(ctx context.Context, req GetAllCoinsRequest) (*CoinPage, error)
+	GetAllBalances(ctx context.Context, owner iotago.Address) ([]*Balance, error)
+	GetAllCoins(ctx context.Context, req GetAllCoinsRequest) (*GetAllCoinsResponse, error)
 	GetBalance(ctx context.Context, req GetBalanceRequest) (*Balance, error)
-	GetCoinMetadata(ctx context.Context, coinType string) (*IotaCoinMetadata, error)
-	GetCoins(ctx context.Context, req GetCoinsRequest) (*CoinPage, error)
-	GetTotalSupply(ctx context.Context, coinType string) (*Supply, error)
-
-	// Extended API
-	GetObject(ctx context.Context, req GetObjectRequest) (*IotaObjectResponse, error)
-	GetTransactionBlock(ctx context.Context, req GetTransactionBlockRequest) (*IotaTransactionBlockResponse, error)
+	GetCoinMetadata(ctx context.Context, coinType CoinType) (*IotaCoinMetadata, error)
+	GetCoins(ctx context.Context, req GetCoinsRequest) (*GetCoinsResponse, error)
+	GetTotalSupply(ctx context.Context, coinType CoinType) (*Supply, error)
+	GetObject(ctx context.Context, objectID iotago.ObjectID) (*graphqltypes.GetObjectResponse, error)
+	GetTransactionBlock(ctx context.Context, digest iotago.TransactionDigest) (*graphqltypes.GetTransactionBlockResponse, error)
 	TryGetPastObject(
 		ctx context.Context,
-		req TryGetPastObjectRequest,
-	) (*IotaPastObjectResponse, error)
-
-	// Utility methods
+		objectID iotago.ObjectID,
+		version uint64,
+	) (*TryGetPastObjectResponse, error)
 	GetCoinObjsForTargetAmount(
 		ctx context.Context,
-		address *iotago.Address,
+		address iotago.Address,
 		targetAmount uint64,
 		gasAmount uint64,
 	) (Coins, error)
+
 	SignAndExecuteTransaction(
 		ctx context.Context,
-		req *SignAndExecuteTransactionRequest,
-	) (*IotaTransactionBlockResponse, error)
+		txnBytes []byte,
+		signer iotasigner.Signer,
+	) (*graphqltypes.ExecuteTransactionBlockResponse, error)
 	UpdateObjectRef(
 		ctx context.Context,
 		ref *iotago.ObjectRef,
@@ -108,13 +90,12 @@ type IotaClient interface {
 	MintToken(
 		ctx context.Context,
 		signer iotasigner.Signer,
-		packageID *iotago.PackageID,
+		packageID iotago.PackageID,
 		tokenName string,
 		treasuryCap *iotago.ObjectRef,
 		mintAmount uint64,
 		maxRetries int,
-		options *IotaTransactionBlockResponseOptions,
-	) (*IotaTransactionBlockResponse, error)
+	) (*graphqltypes.ExecuteTransactionBlockResponse, error)
 	SignAndExecuteTxWithRetry(
 		ctx context.Context,
 		signer iotasigner.Signer,
@@ -122,11 +103,8 @@ type IotaClient interface {
 		gasCoin *iotago.ObjectRef,
 		gasBudget uint64,
 		gasPrice uint64,
-		options *IotaTransactionBlockResponseOptions,
-	) (*IotaTransactionBlockResponse, error)
-
-	// Faucet
-	RequestFundsFromFaucet(ctx context.Context, address *iotago.Address) error
+	) (*ExecuteTransactionBlockResponse, error)
+	RequestFundsFromFaucet(ctx context.Context, address iotago.Address) error
 }
 
 var _ IotaClient = (*GraphQLClient)(nil)

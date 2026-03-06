@@ -8,8 +8,7 @@ query GetStakes(
 	address(address: $owner) {
 		stakedIotas(first: $limit, after: $cursor) {
 			pageInfo {
-				hasNextPage
-				endCursor
+				...PAGE_INFO
 			}
 			nodes {
 				...RPC_STAKE_FIELDS
@@ -27,8 +26,7 @@ query GetStakesByIds(
 ) {
 	objects(first: $limit, after: $cursor, filter: { objectIds: $ids }) {
 		pageInfo {
-			hasNextPage
-			endCursor
+			...PAGE_INFO
 		}
 		nodes {
 			asMoveObject {

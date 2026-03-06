@@ -17,7 +17,6 @@ import (
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/clients"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/apilib"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/isc"
@@ -72,7 +71,7 @@ func initializeNewChainState(chainAdmin *cryptolib.Address, gasCoinObject iotago
 }
 
 func CreateAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet wallets.Wallet, committeeAddress *iotago.Address, l1Params *parameters.L1Params) (iotago.ObjectID, error) {
-	coins, err := client.GetCoinObjsForTargetAmount(ctx, wallet.Address().AsIotaAddress(), isc.GasCoinTargetValue, isc.GasCoinTargetValue)
+	coins, err := client.GetCoinObjsForTargetAmount(ctx, *wallet.Address().AsIotaAddress(), isc.GasCoinTargetValue, isc.GasCoinTargetValue)
 	if err != nil {
 		return iotago.ObjectID{}, fmt.Errorf("GasCoin with targeting blanace not found: %w", err)
 	}
@@ -89,10 +88,14 @@ func CreateAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet w
 
 	txb.TransferArg(committeeAddress, splitCoinCmd)
 
+	coinRef, err := coins[0].ObjectRef()
+	if err != nil {
+		return iotago.ObjectID{}, err
+	}
 	txData := iotago.NewProgrammable(
 		wallet.Address().AsIotaAddress(),
 		txb.Finish(),
-		[]*iotago.ObjectRef{coins[0].Ref()},
+		[]*iotago.ObjectRef{coinRef},
 		uint64(isc.GasCoinTargetValue),
 		l1Params.Protocol.ReferenceGasPrice.Uint64(),
 	)
@@ -104,20 +107,14 @@ func CreateAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet w
 
 	result, err := client.SignAndExecuteTransaction(
 		ctx,
-		&iotagraphql.SignAndExecuteTransactionRequest{
-			Signer:      cryptolib.SignerToIotaSigner(wallet),
-			TxDataBytes: txnBytes,
-			Options: &iotagraphql.IotaTransactionBlockResponseOptions{
-				ShowEffects:       true,
-				ShowObjectChanges: true,
-			},
-		},
+		txnBytes,
+		cryptolib.SignerToIotaSigner(wallet),
 	)
 	if err != nil {
 		return iotago.ObjectID{}, fmt.Errorf("failed to create GasCoin: %w", err)
 	}
 
-	gasCoin, err := result.GetCreatedCoinByType("iota", "IOTA")
+	gasCoin, err := result.ExecuteTransactionBlock.Effects.GetCreatedCoinByType("iota", "IOTA")
 	if err != nil {
 		return iotago.ObjectID{}, err
 	}

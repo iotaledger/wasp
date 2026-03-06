@@ -20,6 +20,9 @@ import (
 )
 
 func (env *Solo) L1Client() clients.L1Client {
+	if l1starter.IsSimulatorConfigured() {
+		return l1starter.Instance().L1Client()
+	}
 	return clients.NewL1Client(clients.L1Config{
 		APIURL:    env.l1Config.IotaRPCURL,
 		FaucetURL: env.l1Config.IotaFaucetURL,
@@ -27,6 +30,9 @@ func (env *Solo) L1Client() clients.L1Client {
 }
 
 func (env *Solo) ISCMoveClient() *iscmoveclient.Client {
+	if l1starter.IsSimulatorConfigured() {
+		return iscmoveclient.NewClient(l1starter.Instance().L1Client().GetIotaClient())
+	}
 	return iscmoveclient.NewClient(
 		iotagraphql.NewGraphQLClientWithWaitParams(
 			env.l1Config.IotaRPCURL,
@@ -104,7 +110,7 @@ func (env *Solo) NewKeyPairWithFunds(seed ...*cryptolib.Seed) (*cryptolib.KeyPai
 
 func (env *Solo) GetFundsFromFaucet(target *cryptolib.Address) {
 	currentBalance := env.L1BaseTokens(target)
-	err := env.L1Client().RequestFundsFromFaucet(env.ctx, target.AsIotaAddress())
+	err := env.L1Client().RequestFundsFromFaucet(env.ctx, *target.AsIotaAddress())
 	env.WaitForNewBalance(target, currentBalance)
 	require.NoError(env.T, err)
 	env.WaitForNewBalance(target, currentBalance)

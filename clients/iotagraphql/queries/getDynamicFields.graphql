@@ -8,8 +8,7 @@ query GetDynamicFields(
 	owner(address: $parentId) {
 		dynamicFields(first: $first, after: $cursor) {
 			pageInfo {
-				hasNextPage
-				endCursor
+				...PAGE_INFO
 			}
 			nodes {
 				name {
@@ -55,8 +54,7 @@ query GetObjectDynamicFields(
 	object(address: $objectId) {
 		dynamicFields(first: $first, after: $cursor) {
 			pageInfo {
-				hasNextPage
-				endCursor
+				...PAGE_INFO
 			}
 			nodes {
 				name {

@@ -1,0 +1,188 @@
+# Shared fragments for transaction-related queries.
+# These fragments are designed to generate unified Go types across
+# GetTransactionBlock, DryRunTransactionBlock, and ExecuteTransactionBlock.
+
+# Unified pagination info across all paginated queries
+# @genqlient(typename: "PageInfo")
+fragment PAGE_INFO on PageInfo {
+	hasNextPage
+	hasPreviousPage
+	startCursor
+	endCursor
+}
+
+# Core transaction fields (no effects to avoid circular embedding)
+fragment TX_CORE on TransactionBlock {
+	digest
+	bcs
+	sender {
+		address
+	}
+	signatures
+}
+
+# Minimal object reference fields (address + version + digest)
+fragment OBJECT_REF on Object {
+	address
+	version
+	digest
+}
+
+# Coin fields for unified type across GetCoins/GetAllCoins
+fragment COIN_DATA on Coin {
+	address
+	version
+	digest
+	coinBalance
+	contents {
+		type {
+			repr
+		}
+	}
+}
+
+# Object owner fields (union type)
+fragment OBJECT_OWNER on ObjectOwner {
+	__typename
+	... on AddressOwner {
+		owner {
+			asObject {
+				address
+			}
+			asAddress {
+				address
+			}
+		}
+	}
+	... on Parent {
+		parent {
+			address
+		}
+	}
+	... on Shared {
+		initialSharedVersion
+	}
+}
+
+# Event fields
+fragment EVENT_FIELDS on Event {
+	sendingModule {
+		package {
+			address
+		}
+		name
+	}
+	sender {
+		address
+	}
+	json
+	timestamp
+}
+
+# Balance change fields
+fragment BALANCE_CHANGE on BalanceChange {
+	owner {
+		asAddress {
+			address
+		}
+		asObject {
+			address
+		}
+	}
+	amount
+	coinType {
+		repr
+	}
+}
+
+# Object change fields
+fragment OBJECT_CHANGE on ObjectChange {
+	address
+	idCreated
+	idDeleted
+	inputState {
+		...OBJECT_REF
+		asMoveObject {
+			contents {
+				type {
+					repr
+				}
+			}
+		}
+	}
+	outputState {
+		...OBJECT_REF
+		owner {
+			...OBJECT_OWNER
+		}
+		asMoveObject {
+			contents {
+				type {
+					repr
+				}
+			}
+		}
+		asMovePackage {
+			modules(first: 10) {
+				nodes {
+					name
+				}
+			}
+		}
+	}
+}
+
+# Transaction effects fields
+fragment TX_EFFECTS on TransactionBlockEffects {
+	status
+	errors
+	bcs
+	checkpoint {
+		sequenceNumber
+	}
+	timestamp
+	gasEffects {
+		gasObject {
+			...OBJECT_REF
+		}
+		gasSummary {
+			computationCost
+			computationCostBurned
+			storageCost
+			storageRebate
+			nonRefundableStorageFee
+		}
+	}
+	events {
+		pageInfo {
+			...PAGE_INFO
+		}
+		# @genqlient(typename: "EventData")
+		nodes {
+			...EVENT_FIELDS
+		}
+	}
+	balanceChanges {
+		pageInfo {
+			...PAGE_INFO
+		}
+		# @genqlient(typename: "BalanceChangeData")
+		nodes {
+			...BALANCE_CHANGE
+		}
+	}
+	objectChanges {
+		pageInfo {
+			...PAGE_INFO
+		}
+		# @genqlient(typename: "ObjectChangeData")
+		nodes {
+			...OBJECT_CHANGE
+		}
+	}
+	# Include transactionBlock so all queries share the same TxEffects type
+	# @genqlient(typename: "TxBlockCore")
+	transactionBlock {
+		...TX_CORE
+	}
+}

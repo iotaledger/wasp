@@ -76,10 +76,9 @@ func (t CoinValue) Uint64() uint64 {
 }
 
 type Balance struct {
-	CoinType        CoinType            `json:"coinType"`
-	CoinObjectCount *BigInt             `json:"coinObjectCount"`
-	TotalBalance    *BigInt             `json:"totalBalance"`
-	LockedBalance   map[EpochID]Uint128 `json:"lockedBalance"`
+	CoinType        CoinType `json:"coinType"`
+	CoinObjectCount *BigInt  `json:"coinObjectCount"`
+	TotalBalance    *BigInt  `json:"totalBalance"`
 }
 
 func (balance *Balance) String() string {

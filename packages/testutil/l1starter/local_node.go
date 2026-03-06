@@ -338,14 +338,14 @@ func (in *LocalIotaNode) waitAllHealthy(ctx context.Context) {
 		if err != nil || res == nil {
 			return false
 		}
-		if res.PendingActiveValidatorsSize.Uint64() != 0 {
+		if res.Epoch.ValidatorSet.PendingActiveValidatorsSize != 0 {
 			return false
 		}
 		return true
 	})
 
 	tryLoop(func() bool {
-		err := in.L1Client().RequestFundsFromFaucet(ctx, ISCPackageOwner.Address())
+		err := in.L1Client().RequestFundsFromFaucet(ctx, *ISCPackageOwner.Address())
 		if err != nil {
 			in.logf("FaucetLoop: err: %s", err)
 		}
@@ -354,7 +354,7 @@ func (in *LocalIotaNode) waitAllHealthy(ctx context.Context) {
 
 	in.logf("Waiting for faucet funds to arrive...")
 	tryLoop(func() bool {
-		balances, err := in.L1Client().GetAllBalances(ctx, ISCPackageOwner.Address())
+		balances, err := in.L1Client().GetAllBalances(ctx, *ISCPackageOwner.Address())
 		if err != nil {
 			in.logf("CheckBalanceLoop: err: %s", err)
 			return false

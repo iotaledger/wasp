@@ -159,15 +159,18 @@ func (e *ChainEnv) testEstimateGasOnLedger(t *testing.T) {
 
 		// Find proper coin objects to pay for gas
 		// coinsForGas, err := e.Clu.L1Client().GetCoinObjsForTargetAmount(context.Background(), sender.Address().AsIotaAddress(), pt, iotagraphql.DefaultGasPrice, l1GasBudget)
-		coins, err := e.Clu.L1Client().GetCoinObjsForTargetAmount(context.Background(), sender.Address().AsIotaAddress(), iotagraphql.DefaultGasPrice, l1GasBudget)
+		coins, err := e.Clu.L1Client().GetCoinObjsForTargetAmount(context.Background(), *sender.Address().AsIotaAddress(), iotagraphql.DefaultGasPrice, l1GasBudget)
 		require.NoError(t, err)
 		coins, err = iotagraphql.PickupCoinsWithFilter(
 			coins,
 			l1GasBudget,
-			func(c *iotagraphql.Coin) bool { return !pt.IsInInputObjects(c.CoinObjectID) },
+			func(c iotagraphql.Coin) bool {
+				addr := c.ObjectID()
+				return !pt.IsInInputObjects(&addr)
+			},
 		)
 		require.NoError(t, err)
-		coinsForGas := coins.CoinRefs()
+		coinsForGas, err := coins.CoinRefs()
 		require.NoError(t, err)
 
 		txData := iotago.NewProgrammable(
@@ -204,16 +207,8 @@ func (e *ChainEnv) testEstimateGasOnLedger(t *testing.T) {
 	l1GasBudget := lo.Must(strconv.ParseUint(estimatedReceipt.L1.GasBudget, 10, 64))
 	l2GasBudget := lo.Must(strconv.ParseUint(estimatedReceipt.L2.GasBurned, 10, 64))
 
-	executeTx := func(txBytes []byte) (*iotagraphql.IotaTransactionBlockResponse, error) {
-		execRes, err := e.Clu.L1Client().SignAndExecuteTransaction(context.Background(), &iotagraphql.SignAndExecuteTransactionRequest{
-			TxDataBytes: txBytes,
-			Signer:      cryptolib.SignerToIotaSigner(sender),
-			Options: &iotagraphql.IotaTransactionBlockResponseOptions{
-				ShowEffects:        true,
-				ShowObjectChanges:  true,
-				ShowBalanceChanges: true,
-			},
-		})
+	executeTx := func(txBytes []byte) (*iotagraphql.ExecuteTransactionBlockResponse, error) {
+		execRes, err := e.Clu.L1Client().SignAndExecuteTransaction(context.Background(), txBytes, cryptolib.SignerToIotaSigner(sender))
 		return execRes, err
 	}
 
@@ -221,16 +216,18 @@ func (e *ChainEnv) testEstimateGasOnLedger(t *testing.T) {
 	txBytes := createTx(l1GasBudget, l2GasBudget)
 	res, err := executeTx(txBytes)
 	require.NoError(t, err)
-	require.Empty(t, res.Errors)
-	require.Empty(t, res.Effects.V1.Status.Error, res.Effects.V1.Status.Status)
+	effects := &res.ExecuteTransactionBlock.Effects
+	require.Empty(t, res.ExecuteTransactionBlock.Errors)
+	require.True(t, effects.IsSuccess())
 
 	// Checked that actual used gas was not greater than estimated fee or budget.
 	estimatedGasFee := lo.Must(strconv.ParseUint(estimatedReceipt.L1.GasFeeCharged, 10, 64))
 	require.LessOrEqual(t, estimatedGasFee, l1GasBudget)
+	gasSummary := effects.GetGasEffects().GasSummary
 	var totalL1GasUsed big.Int
-	totalL1GasUsed.Add(&totalL1GasUsed, res.Effects.V1.GasUsed.ComputationCost.Int)
-	totalL1GasUsed.Add(&totalL1GasUsed, res.Effects.V1.GasUsed.StorageCost.Int)
-	totalL1GasUsed.Sub(&totalL1GasUsed, res.Effects.V1.GasUsed.StorageRebate.Int)
+	totalL1GasUsed.Add(&totalL1GasUsed, gasSummary.ComputationCost.Int)
+	totalL1GasUsed.Add(&totalL1GasUsed, gasSummary.StorageCost.Int)
+	totalL1GasUsed.Sub(&totalL1GasUsed, gasSummary.StorageRebate.Int)
 	require.LessOrEqual(t, totalL1GasUsed.Uint64(), estimatedGasFee)
 	require.LessOrEqual(t, totalL1GasUsed.Uint64(), l1GasBudget)
 
@@ -240,9 +237,9 @@ func (e *ChainEnv) testEstimateGasOnLedger(t *testing.T) {
 	estimatedComputationFee := lo.Must(strconv.ParseUint(estimatedReceipt.L1.ComputationFee, 10, 64))
 	estimatedStorageFee := lo.Must(strconv.ParseUint(estimatedReceipt.L1.StorageFee, 10, 64))
 	estimatedStorageRebate := lo.Must(strconv.ParseUint(estimatedReceipt.L1.StorageRebate, 10, 64))
-	require.Equal(t, estimatedComputationFee, res.Effects.V1.GasUsed.ComputationCost.Int.Uint64())
-	require.Equal(t, estimatedStorageFee, res.Effects.V1.GasUsed.StorageCost.Int.Uint64())
-	require.LessOrEqual(t, estimatedStorageRebate, res.Effects.V1.GasUsed.StorageRebate.Int.Uint64())
+	require.Equal(t, estimatedComputationFee, gasSummary.ComputationCost.Int.Uint64())
+	require.Equal(t, estimatedStorageFee, gasSummary.StorageCost.Int.Uint64())
+	require.LessOrEqual(t, estimatedStorageRebate, gasSummary.StorageRebate.Int.Uint64())
 
 	recs, err := e.Clu.MultiClient().WaitUntilAllRequestsProcessed(context.Background(), e.Chain.ChainID, res, false, 10*time.Second)
 	require.NoError(t, err, recs)
@@ -256,14 +253,14 @@ func (e *ChainEnv) testEstimateGasOnLedger(t *testing.T) {
 	//       For L1 estimated budget is not strictly equal to actual needed value, it is greater or equal. So such test is hard to write.
 	txBytesWithWrongL1GasBudget := createTx(l1GasBudget-1200000, l2GasBudget)
 	res, _ = executeTx(txBytesWithWrongL1GasBudget)
-	require.Equal(t, "InsufficientGas", res.Effects.V1.Status.Error, res.Effects.V1.Status.Status)
+	require.True(t, res.ExecuteTransactionBlock.Effects.IsFailed())
 
 	// Checking that transaction execution fails with wrong L2 gas budget
 	txBytesWithWrongL2GasBudget := createTx(l1GasBudget, l2GasBudget-1)
 	res, err = executeTx(txBytesWithWrongL2GasBudget)
 	require.NoError(t, err)
-	require.Empty(t, res.Errors)
-	require.Empty(t, res.Effects.V1.Status.Error, res.Effects.V1.Status.Status)
+	require.Empty(t, res.ExecuteTransactionBlock.Errors)
+	require.True(t, res.ExecuteTransactionBlock.Effects.IsSuccess())
 	recs, _ = e.Clu.MultiClient().WaitUntilAllRequestsProcessed(context.Background(), e.Chain.ChainID, res, false, 10*time.Second)
 	require.Equal(t, "gas budget exceeded", lo.FromPtr(recs[0].ErrorMessage))
 }

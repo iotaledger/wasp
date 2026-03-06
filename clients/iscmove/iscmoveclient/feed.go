@@ -208,32 +208,33 @@ func (f *ChainFeed) consumeAnchorUpdates(
 
 				f.log.LogDebugf("POLLING ANCHOR %s, %s", f.anchorAddress, time.Now().String())
 
-				r, err := f.httpClient.TryGetPastObject(ctx, iotagraphql.TryGetPastObjectRequest{
-					ObjectID: &f.anchorAddress,
-					Version:  obj.Reference.Version,
-					Options:  &iotagraphql.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true, ShowContent: true},
-				})
+				r, err := f.httpClient.TryGetPastObject(ctx, f.anchorAddress, obj.Reference.Version)
 				if err != nil {
 					f.log.LogErrorf("consumeAnchorUpdates: cannot fetch Anchor: %s", err)
 					continue
 				}
-				if r.VersionFound == nil {
+				if r.Object.IsNotFound() {
 					f.log.LogErrorf("consumeAnchorUpdates: cannot fetch Anchor: version %d not found", obj.Reference.Version)
 					continue
 				}
 
 				var anchor *iscmove.Anchor
-				err = iotagraphql.UnmarshalBCS(r.VersionFound.Bcs.MoveObject.BcsBytes, &anchor)
+				err = iotagraphql.UnmarshalBCS(r.Object.BcsBytes(), &anchor)
 				if err != nil {
 					f.log.LogErrorf("ID: %s\nAssetBagID: %s\n", anchor.ID, anchor.Assets.Value.ID)
 					f.log.LogErrorf("consumeAnchorUpdates: failed to unmarshal BCS: %s", err)
 					continue
 				}
 
+				objRef, err := r.Object.ObjectRef()
+				if err != nil {
+					f.log.LogErrorf("consumeAnchorUpdates: failed to get object ref: %s", err)
+					continue
+				}
 				anchorCh <- &iscmove.AnchorWithRef{
-					ObjectRef: r.VersionFound.Ref(),
+					ObjectRef: *objRef,
 					Object:    anchor,
-					Owner:     r.VersionFound.Owner.AddressOwner,
+					Owner:     r.Object.OwnerAddress(),
 				}
 				f.log.LogDebugf("ANCHOR[%s] SENT TO CHANNEL %s\n", anchor.ID.String(), time.Now().String())
 			}
@@ -254,18 +255,18 @@ func (f *ChainFeed) GetChainGasCoin(ctx context.Context) (*iotago.ObjectRef, uin
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to fetch anchor: %w", err)
 	}
-	getObjRes, err := f.httpClient.GetObject(ctx, iotagraphql.GetObjectRequest{
-		ObjectID: metadata.GasCoinObjectID,
-		Options:  &iotagraphql.IotaObjectDataOptions{ShowBcs: true},
-	})
+	getObjRes, err := f.httpClient.GetObject(ctx, *metadata.GasCoinObjectID)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to fetch gas coin object: %w", err)
 	}
 	var moveGasCoin MoveCoin
-	err = iotagraphql.UnmarshalBCS(getObjRes.Data.Bcs.MoveObject.BcsBytes, &moveGasCoin)
+	err = iotagraphql.UnmarshalBCS(getObjRes.Object.BcsBytes(), &moveGasCoin)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to decode gas coin object: %w", err)
 	}
-	gasCoinRef := getObjRes.Data.Ref()
-	return &gasCoinRef, moveGasCoin.Balance, nil
+	gasCoinRef, err := getObjRes.Object.ObjectRef()
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to get gas coin ref: %w", err)
+	}
+	return gasCoinRef, moveGasCoin.Balance, nil
 }

@@ -17,7 +17,7 @@ func initRequestFundsCmd() *cobra.Command {
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			address := wallet.Load().Address()
-			if err := cliclients.L1Client().RequestFundsFromFaucet(cmd.Context(), address.AsIotaAddress()); err != nil {
+			if err := cliclients.L1Client().RequestFundsFromFaucet(cmd.Context(), *address.AsIotaAddress()); err != nil {
 				return err
 			}
 

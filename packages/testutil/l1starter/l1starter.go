@@ -78,6 +78,20 @@ func IsLocalConfigured() bool {
 	return testConfig.IsLocal
 }
 
+func IsSimulatorConfigured() bool {
+	testConfig := LoadConfig()
+	return testConfig.IsSimulator
+}
+
+// TestSimulator starts the in-memory L1 simulator.
+func TestSimulator() func() {
+	simNode := NewSimulatorNode(ISCPackageOwner)
+	simNode.Start(context.Background())
+	var node IotaNodeEndpoint = simNode
+	instance.Store(&node)
+	return func() {}
+}
+
 func TestLocal() func() {
 	node, cancel := StartNode(context.Background())
 	instance.Store(&node)
@@ -100,7 +114,13 @@ func TestMain(m *testing.M) {
 	testConfig := LoadConfig()
 	var node IotaNodeEndpoint
 
-	if !testConfig.IsLocal {
+	if testConfig.IsSimulator {
+		simNode := NewSimulatorNode(ISCPackageOwner)
+		simNode.Start(context.Background())
+
+		node = simNode
+		instance.Store(&node)
+	} else if !testConfig.IsLocal {
 		iotaNode := NewRemoteIotaNode(testConfig.APIURL, testConfig.FaucetURL, ISCPackageOwner)
 		iotaNode.Start(context.Background())
 

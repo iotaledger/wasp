@@ -7,6 +7,7 @@ import (
 	"reflect"
 
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql/graphqltypes"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/vm/gas"
 )
@@ -55,7 +56,7 @@ type OnLedgerEstimationResponse struct {
 	L2 *ReceiptResponse    `json:"l2" swagger:"required"`
 }
 
-func MapL1EstimationResult(gasSummary *iotagraphql.GasCostSummary) *L1EstimationResult {
+func MapL1EstimationResult(gasSummary *graphqltypes.TX_EFFECTSGasEffectsGasSummaryGasCostSummary) *L1EstimationResult {
 	// Total L1 gas = computation cost + storage cost - storage rebate
 	var totalGas big.Int
 	totalGas.Add(&totalGas, gasSummary.ComputationCost.Int)

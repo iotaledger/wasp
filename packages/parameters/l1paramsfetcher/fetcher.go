@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"fortio.org/safecast"
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/coin"
@@ -72,26 +73,28 @@ func FetchLatest(ctx context.Context, iotaClient iotagraphql.IotaClient) (*param
 			if err != nil {
 				return nil, fmt.Errorf("can't get latest system state: %w", err)
 			}
-			meta, err := iotaClient.GetCoinMetadata(ctx, iotagraphql.IotaCoinType.String())
+			meta, err := iotaClient.GetCoinMetadata(ctx, iotagraphql.IotaCoinType)
 			if err != nil {
 				return nil, fmt.Errorf("can't get coin metadata: %w", err)
 			}
 			if meta.Decimals != parameters.BaseTokenDecimals {
 				return nil, fmt.Errorf("unsupported decimals: %d", meta.Decimals)
 			}
+			epoch := system.Epoch
+			epochStartMs := epoch.StartTimestamp.UnixMilli()
 			return &parameters.L1Params{
 				Protocol: &parameters.Protocol{
-					Epoch:                 system.Epoch,
-					ProtocolVersion:       system.ProtocolVersion,
-					SystemStateVersion:    system.SystemStateVersion,
-					ReferenceGasPrice:     system.ReferenceGasPrice,
-					EpochStartTimestampMs: system.EpochStartTimestampMs,
-					EpochDurationMs:       system.EpochDurationMs,
+					Epoch:                 iotagraphql.NewBigInt(epoch.EpochId),
+					ProtocolVersion:       iotagraphql.NewBigInt(epoch.ProtocolConfigs.ProtocolVersion),
+					SystemStateVersion:    iotagraphql.NewBigInt(0), // not available in GraphQL
+					ReferenceGasPrice:     &epoch.ReferenceGasPrice,
+					EpochStartTimestampMs: iotagraphql.NewBigIntInt64(epochStartMs),
+					EpochDurationMs:       iotagraphql.NewBigIntInt64(safecast.MustConvert[int64](system.Epoch.SystemParameters.DurationMs.Uint64())),
 				},
 				BaseToken: parameters.IotaCoinInfoFromL1Metadata(
 					coin.BaseTokenType,
 					meta,
-					coin.Value(system.IotaTotalSupply.Uint64()),
+					coin.Value(epoch.IotaTotalSupply.Uint64()),
 				),
 			}, nil
 		},

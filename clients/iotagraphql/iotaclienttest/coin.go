@@ -38,19 +38,13 @@ func DeployCoinPackage(
 
 	txnResponse, err := iotaClient.SignAndExecuteTransaction(
 		context.Background(),
-		&iotagraphql.SignAndExecuteTransactionRequest{
-			TxDataBytes: txnBytes.TxBytes,
-			Signer:      signer,
-			Options: &iotagraphql.IotaTransactionBlockResponseOptions{
-				ShowEffects:       true,
-				ShowObjectChanges: true,
-			},
-		},
+		txnBytes.TxBytes,
+		signer,
 	)
 	require.NoError(t, err)
 	require.NotNil(t, txnResponse)
-	require.NotNil(t, txnResponse.Effects)
-	require.True(t, txnResponse.Effects.IsSuccess(), txnResponse.Effects.V1.Status.Error)
+	require.NotNil(t, txnResponse.ExecuteTransactionBlock.Effects)
+	require.True(t, txnResponse.IsSuccess(), txnResponse.ExecuteTransactionBlock.Errors)
 
 	packageID, err = txnResponse.GetPublishedPackageID()
 	require.NoError(t, err)
@@ -80,20 +74,16 @@ func MintCoins(
 	resp, err := iotaClient.MintToken(
 		context.Background(),
 		signer,
-		packageID,
+		*packageID,
 		moduleName,
 		treasuryCapObject,
 		mintAmount,
 		5,
-		&iotagraphql.IotaTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
-		},
 	)
 	require.NoError(t, err)
 	require.NotNil(t, resp)
-	require.NotNil(t, resp.Effects)
-	require.True(t, resp.Effects.IsSuccess(), resp.Effects.V1.Status.Error)
+	require.NotNil(t, resp.ExecuteTransactionBlock.Effects)
+	require.True(t, resp.IsSuccess(), resp.ExecuteTransactionBlock.Errors)
 
 	coinRef, err = resp.GetCreatedCoinByType(moduleName, typeTag)
 	require.NoError(t, err)

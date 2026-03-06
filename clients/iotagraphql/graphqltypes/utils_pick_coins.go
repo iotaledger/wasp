@@ -18,27 +18,20 @@ func (p *PickedCoins) Count() int {
 	return len(p.Coins)
 }
 
-func (p *PickedCoins) CoinIds() []*iotago.ObjectID {
-	coinIDs := make([]*iotago.ObjectID, len(p.Coins))
-	for idx, coin := range p.Coins {
-		coinIDs[idx] = coin.CoinObjectID
-	}
-	return coinIDs
+func (p *PickedCoins) CoinIds() []iotago.ObjectID {
+	return p.Coins.ObjectIDs()
 }
 
-func (p *PickedCoins) CoinRefs() []*iotago.ObjectRef {
-	coinRefs := make([]*iotago.ObjectRef, len(p.Coins))
-	for idx, coin := range p.Coins {
-		coinRefs[idx] = coin.Ref()
-	}
-	return coinRefs
+func (p *PickedCoins) CoinRefs() ([]*iotago.ObjectRef, error) {
+	return p.Coins.CoinRefs()
 }
 
 // PickupCoins selects coins whose sum >= (targetAmount + gasBudget).
 // The return coin number will be maxCoinNum <= coin_obj_num <= minCoinNum.
 // Parameters:
-//   - inputCoins: queried page coin data
-//   - targetAmount: total amount of coins to be selected from inputCoins
+//   - coins: coin data to select from
+//   - hasNextPage: whether more coins are available beyond this set
+//   - targetAmount: total amount of coins to be selected
 //   - gasBudget: the transaction gas budget
 //   - maxCoinNum: the max number of returned coins. Default (maxCoinNum <= 0) is MaxInputCountMerge
 //   - minCoinNum: the min number of returned coins. Default (minCoinNum <= 0) is 3
@@ -47,15 +40,13 @@ func (p *PickedCoins) CoinRefs() []*iotago.ObjectRef {
 // Returns ErrInsufficientBalance if the input coins are all that is left and the total amount is less than the target amount.
 // Returns ErrNeedMergeCoin if there are many coins, but the total amount of coins limited is less than the target amount.
 func PickupCoins(
-	inputCoins *CoinPage,
+	coins Coins,
 	targetAmount *big.Int,
 	gasBudget uint64,
 	maxCoinNum int,
 	minCoinNum int,
 ) (*PickedCoins, error) {
-	coins := inputCoins.Data
-	inputCount := len(coins)
-	if inputCount <= 0 {
+	if len(coins) == 0 {
 		return nil, ErrNoCoinsFound
 	}
 	if maxCoinNum <= 0 {
@@ -70,9 +61,9 @@ func PickupCoins(
 	totalTarget := new(big.Int).Add(targetAmount, new(big.Int).SetUint64(gasBudget))
 
 	total := big.NewInt(0)
-	pickedCoins := []*Coin{}
+	pickedCoins := Coins{}
 	for i, coin := range coins {
-		total = total.Add(total, new(big.Int).SetUint64(coin.Balance.Uint64()))
+		total = total.Add(total, new(big.Int).SetUint64(coin.Balance()))
 		pickedCoins = append(pickedCoins, coin)
 		if i+1 > maxCoinNum {
 			return nil, ErrNeedMergeCoin
@@ -85,13 +76,7 @@ func PickupCoins(
 		}
 	}
 	if total.Cmp(totalTarget) < 0 {
-		if inputCoins.HasNextPage {
-			return nil, ErrNeedMergeCoin
-		}
-		sub := new(big.Int).Sub(totalTarget, total)
-		if sub.Uint64() > gasBudget {
-			return nil, ErrInsufficientBalance
-		}
+		return nil, ErrInsufficientBalance
 	}
 	return &PickedCoins{
 		Coins:        pickedCoins,
@@ -101,23 +86,21 @@ func PickupCoins(
 }
 
 func PickupCoinsWithCointype(
-	inputCoins *CoinPage,
+	coins Coins,
 	targetAmount *big.Int,
 	cointype CoinType,
 ) (*PickedCoins, error) {
-	coins := inputCoins.Data
-	inputCount := len(coins)
-	if inputCount <= 0 {
+	if len(coins) == 0 {
 		return nil, ErrNoCoinsFound
 	}
 
 	total := big.NewInt(0)
-	pickedCoins := []*Coin{}
+	pickedCoins := Coins{}
 	for _, coin := range coins {
-		if coin.CoinType != cointype {
+		if coin.CoinType() != cointype {
 			continue
 		}
-		total = total.Add(total, new(big.Int).SetUint64(coin.Balance.Uint64()))
+		total = total.Add(total, new(big.Int).SetUint64(coin.Balance()))
 		pickedCoins = append(pickedCoins, coin)
 
 		if total.Cmp(targetAmount) >= 0 {
@@ -125,9 +108,7 @@ func PickupCoinsWithCointype(
 		}
 	}
 	if total.Cmp(targetAmount) < 0 {
-		if inputCoins.HasNextPage {
-			return nil, ErrNeedMergeCoin
-		}
+		return nil, ErrInsufficientBalance
 	}
 	return &PickedCoins{
 		Coins:        pickedCoins,
@@ -143,7 +124,7 @@ func PickupCoinsSimple(coins Coins, targetAmount uint64) (Coins, error) {
 func PickupCoinsWithFilter(
 	coins Coins,
 	targetAmount uint64,
-	filter func(*Coin) bool,
+	filter func(Coin) bool,
 ) (Coins, error) {
 	if len(coins) == 0 {
 		return nil, ErrNoCoinsFound
@@ -154,7 +135,7 @@ func PickupCoinsWithFilter(
 		if filter != nil && !filter(coin) {
 			continue
 		}
-		total += coin.Balance.Uint64()
+		total += coin.Balance()
 		pickedCoins = append(pickedCoins, coin)
 		if total >= targetAmount {
 			break
@@ -166,11 +147,11 @@ func PickupCoinsWithFilter(
 	return pickedCoins, nil
 }
 
-func PickupCoinWithFilter(coins Coins, targetAmount uint64, filter func(*Coin) bool) (*Coin, error) {
+func PickupCoinWithFilter(coins Coins, targetAmount uint64, filter func(Coin) bool) (Coin, bool, error) {
 	coins, err := PickupCoinsWithFilter(coins, targetAmount, filter)
 	if err != nil {
-		return nil, err
+		return Coin{}, false, err
 	}
-
-	return coins.PickCoinNoLess(targetAmount)
+	coin, ok := coins.PickCoinNoLess(targetAmount)
+	return coin, ok, nil
 }

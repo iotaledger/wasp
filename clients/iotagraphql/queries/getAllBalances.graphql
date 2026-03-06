@@ -8,8 +8,7 @@ query GetAllBalances(
 	address(address: $owner) {
 		balances(first: $limit, after: $cursor) {
 			pageInfo {
-				hasNextPage
-				endCursor
+				...PAGE_INFO
 			}
 			nodes {
 				coinType {

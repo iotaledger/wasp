@@ -62,20 +62,19 @@ func (c *Controller) estimateGasOnLedger(e echo.Context) error {
 	callContext, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	dryRunResponse, err := c.l1Client.DryRunTransaction(callContext, iotagraphql.DryRunTransactionRequest{
-		TxDataBytes: txBytes,
-	})
+	dryRunResponse, err := c.l1Client.DryRunTransaction(callContext, txBytes)
 	if err != nil {
 		return apierrors.NewHTTPError(http.StatusBadRequest, "DryRun error", err)
 	}
-	if dryRunResponse.Effects.V1.Status.Error != "" {
+	effects := &dryRunResponse.DryRunTransactionBlock.Transaction.Effects
+	if !effects.IsSuccess() {
 		return apierrors.NewHTTPError(http.StatusBadRequest, "DryRun status error", fmt.Errorf("%s: %s",
-			dryRunResponse.Effects.V1.Status.Status,
-			dryRunResponse.Effects.V1.Status.Error,
+			effects.GetStatus(),
+			effects.GetErrors(),
 		))
 	}
 
-	req, err := isc.ReconstructOnLedgerRequest(dryRunResponse)
+	req, err := isc.ReconstructOnLedgerRequest(&dryRunResponse.DryRunTransactionBlock)
 	if err != nil {
 		return fmt.Errorf("cant generate fake request: %s", err)
 	}
@@ -89,8 +88,9 @@ func (c *Controller) estimateGasOnLedger(e echo.Context) error {
 	fmt.Printf("RequestBytes: %s\n", hexutil.Encode(rec.Request))
 	fmt.Printf("Request data: %v %v", res, res.Message())
 
+	gasSummary := effects.GetGasEffects().GasSummary
 	return e.JSON(http.StatusOK, models.OnLedgerEstimationResponse{
-		L1: models.MapL1EstimationResult(&dryRunResponse.Effects.V1.GasUsed),
+		L1: models.MapL1EstimationResult(&gasSummary),
 		L2: models.MapReceiptResponse(rec),
 	})
 }
