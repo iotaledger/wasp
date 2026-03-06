@@ -2,7 +2,7 @@ name: Test
 
 on:
   pull_request:
-    branches: [develop, ql-dev, fix_graphql_legacy_types]
+    branches: [develop, ql-dev]
     paths-ignore:
       - "**/README.md"
 
