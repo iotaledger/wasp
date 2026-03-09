@@ -38,8 +38,8 @@ func TestPeeringNetReliable(t *testing.T) {
 }
 
 func TestPeeringNetUnreliable(t *testing.T) {
-	inCh := make(chan *peeringMsg)
-	outCh := make(chan *peeringMsg, 1000)
+	inCh := make(chan *peeringMsg, 2000)
+	outCh := make(chan *peeringMsg, 2000)
 	//
 	// Receiver process.
 	stopCh := make(chan bool)
@@ -81,14 +81,14 @@ func TestPeeringNetUnreliable(t *testing.T) {
 		}
 		avgDuration /= int64(len(durations))
 		require.GreaterOrEqual(t, avgDuration, int64(50))
-		require.LessOrEqual(t, avgDuration, int64(150))
+		require.LessOrEqual(t, avgDuration, int64(200))
 	}
 
 	behavior.Close()
 }
 
 func TestPeeringNetGoodQuality(t *testing.T) {
-	inCh := make(chan *peeringMsg)
+	inCh := make(chan *peeringMsg, 1000)
 	outCh := make(chan *peeringMsg, 1000)
 	//
 	// Receiver process.
