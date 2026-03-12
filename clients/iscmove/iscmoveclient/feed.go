@@ -29,12 +29,12 @@ func NewChainFeed(
 	wsURL string,
 	httpURL string,
 ) (*ChainFeed, error) {
-	wsClient, err := NewWebsocketClient(ctx, wsURL, "", iotagraphql.WaitForEffectsEnabled)
-	if err != nil {
-		return nil, err
-	}
+	graphqlLog := log.NewChildLogger("graphql")
+	wsGQL := iotagraphql.NewGraphQLClientWithWaitParams(wsURL, "", iotagraphql.WaitForEffectsEnabled).WithLogger(graphqlLog)
+	wsClient := NewClient(wsGQL)
 
-	httpClient := NewClient(iotagraphql.NewGraphQLClientWithWaitParams(httpURL, "", iotagraphql.WaitForEffectsEnabled))
+	httpGQL := iotagraphql.NewGraphQLClientWithWaitParams(httpURL, "", iotagraphql.WaitForEffectsEnabled).WithLogger(graphqlLog)
+	httpClient := NewClient(httpGQL)
 
 	return &ChainFeed{
 		wsClient:      wsClient,
@@ -140,7 +140,7 @@ func (f *ChainFeed) consumeRequestEvents(
 			if !ok {
 				return
 			}
-			fmt.Printf("feed: consumeRequestEvents: received request event: %+v\n", ev)
+			f.log.LogDebugf("consumeRequestEvents: received request event: %+v", ev)
 			var reqEvent iscmove.RequestEvent
 			err := iotagraphql.UnmarshalBCS(ev.Bcs, &reqEvent)
 			if err != nil {
@@ -149,13 +149,13 @@ func (f *ChainFeed) consumeRequestEvents(
 			}
 
 			// skip if event is not from current anchor
-			fmt.Printf("feed: consumeRequestEvents: anchorID: %s, reqEvent.Anchor: %s\n", anchorID.String(), reqEvent.Anchor.String())
+			f.log.LogDebugf("consumeRequestEvents: anchorID: %s, reqEvent.Anchor: %s", anchorID.String(), reqEvent.Anchor.String())
 			if reqEvent.Anchor != anchorID {
-				fmt.Printf("feed: consumeRequestEvents: skipping request event: %+v\n", reqEvent)
+				f.log.LogDebugf("consumeRequestEvents: skipping request event for different anchor: %s", reqEvent.Anchor.String())
 				continue
 			}
 
-			fmt.Printf("feed: consumeRequestEvents: fetching request: %s\n", reqEvent.RequestID.String())
+			f.log.LogDebugf("consumeRequestEvents: fetching request: %s", reqEvent.RequestID.String())
 
 			reqWithObj, err := f.httpClient.GetRequestFromObjectID(ctx, &reqEvent.RequestID)
 			if err != nil {
@@ -163,7 +163,7 @@ func (f *ChainFeed) consumeRequestEvents(
 				continue
 			}
 
-			fmt.Printf("feed: consumeRequestEvents: sending request to channel: %+v\n", reqWithObj)
+			f.log.LogDebugf("consumeRequestEvents: sending request to channel: %+v", reqWithObj)
 			requests <- reqWithObj
 
 			f.log.LogDebugf("REQUEST[%s] SENT TO CHANNEL %s\n", reqEvent.RequestID.String(), time.Now().String())
@@ -215,7 +215,7 @@ func (f *ChainFeed) consumeAnchorUpdates(
 			if !ok {
 				return
 			}
-			fmt.Printf("feed: consumeAnchorUpdates: received anchor update: %+v\n", change)
+			f.log.LogDebugf("consumeAnchorUpdates: received anchor update: %+v", change)
 			for _, obj := range change.V1.Mutated {
 				if *obj.Reference.ObjectID != f.anchorAddress {
 					continue

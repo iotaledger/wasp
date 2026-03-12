@@ -26,7 +26,7 @@ func (c *GraphQLClient) SubscribeTransaction(
 		return fmt.Errorf("failed to start WebSocket connection: %w", err)
 	}
 
-	fmt.Printf("subscribing to transactions from address: %s\n", filter.FromAddress.String())
+	c.log.LogDebugf("subscribing to transactions from address: %s", filter.FromAddress.String())
 	dataChan, _, err := graphqltypes.TransactionsBySigner(ctx, wsClient, *filter.FromAddress)
 	if err != nil {
 		wsClient.Close()
@@ -47,21 +47,20 @@ func (c *GraphQLClient) forwardTransactionResponses(
 	for {
 		select {
 		case <-ctx.Done():
-			fmt.Printf("context done: %v", ctx.Err())
+			c.log.LogDebugf("forwardTransactionResponses: context done: %v", ctx.Err())
 			return
 		case resp, ok := <-dataChan:
-			fmt.Printf("received transaction response: %+v\n", resp)
 			if !ok {
-				fmt.Printf("data channel closed: %v", dataChan)
+				c.log.LogWarnf("forwardTransactionResponses: data channel closed")
 				return
 			}
 			if len(resp.Errors) > 0 {
-				fmt.Printf("error forwarding transaction responses: %v", resp.Errors)
+				c.log.LogErrorf("forwardTransactionResponses: %v", resp.Errors)
 				continue
 			}
 			txBlock := resp.GetTxBySignerTransactionBlock()
 			if txBlock == nil {
-				fmt.Printf("can't get transaction block from response: %v", resp)
+				c.log.LogWarnf("forwardTransactionResponses: can't get transaction block from response")
 				continue
 			}
 
@@ -71,11 +70,11 @@ func (c *GraphQLClient) forwardTransactionResponses(
 
 			effects := convertGraphQLTxToEffects(txBlock)
 
-			fmt.Printf("forwarding transaction effects: %+v", effects)
+			c.log.LogDebugf("forwarding transaction effects: %+v", effects)
 			select {
 			case resultCh <- effects:
 			case <-ctx.Done():
-				fmt.Printf("context done: %v", ctx.Err())
+				c.log.LogDebugf("forwardTransactionResponses: context done: %v", ctx.Err())
 				return
 			}
 		}
@@ -141,7 +140,7 @@ func (c *GraphQLClient) SubscribeEvent(
 		emittingModule = fmt.Sprintf("%s::%s", filter.MoveEventType.Address, filter.MoveEventType.Module)
 	}
 
-	fmt.Printf("subscribing to events from module: %s\n", emittingModule)
+	c.log.LogDebugf("subscribing to events from module: %s", emittingModule)
 	dataChan, _, err := graphqltypes.EventsByModule(ctx, wsClient, emittingModule)
 	if err != nil {
 		wsClient.Close()
@@ -161,31 +160,30 @@ func (c *GraphQLClient) forwardEventResponses(
 	for {
 		select {
 		case <-ctx.Done():
-			fmt.Printf("context done: %v", ctx.Err())
+			c.log.LogDebugf("forwardEventResponses: context done: %v", ctx.Err())
 			return
 		case resp, ok := <-dataChan:
-			fmt.Printf("received event response: %+v\n", resp)
 			if !ok {
-				fmt.Printf("data channel closed: %v", dataChan)
+				c.log.LogWarnf("forwardEventResponses: data channel closed")
 				return
 			}
 			if len(resp.Errors) > 0 {
-				fmt.Printf("error forwarding event responses: %v", resp.Errors)
+				c.log.LogErrorf("forwardEventResponses: %v", resp.Errors)
 				continue
 			}
 			event := resp.GetEvent()
 			if event == nil {
-				fmt.Printf("can't get event from response: %v", resp)
+				c.log.LogWarnf("forwardEventResponses: can't get event from response")
 				continue
 			}
 
 			iotaEvent := convertGraphQLEventToIotaEvent(event)
 
-			fmt.Printf("forwarding event: %+v", iotaEvent)
+			c.log.LogDebugf("forwarding event: %+v", iotaEvent)
 			select {
 			case resultCh <- iotaEvent:
 			case <-ctx.Done():
-				fmt.Printf("context done: %v", ctx.Err())
+				c.log.LogDebugf("forwardEventResponses: context done: %v", ctx.Err())
 				return
 			}
 		}
