@@ -98,16 +98,14 @@ func (f *ChainFeed) subscribeToNewRequests(
 		err := f.httpClient.SubscribeEvent(
 			ctx,
 			&iotagraphql.IotaEventFilter{
-				And: &iotagraphql.IotaAndOrEventFilter{
-					Filter1: &iotagraphql.IotaEventFilter{MoveEventType: &iotago.StructTag{
-						Address: &f.iscPackageID,
-						Module:  iscmove.RequestModuleName,
-						Name:    iscmove.RequestEventObjectName,
-					}},
-					Filter2: &iotagraphql.IotaEventFilter{MoveEventField: &iotagraphql.IotaEventFilterMoveEventField{
-						Path:  iscmove.RequestEventAnchorFieldName,
-						Value: anchorID.String(),
-					}},
+				MoveModule: &iotagraphql.IotaEventFilterMoveModule{
+					Package: &f.iscPackageID,
+					Module:  string(iscmove.RequestModuleName),
+				},
+				MoveEventType: &iotago.StructTag{
+					Address: &f.iscPackageID,
+					Module:  iscmove.RequestModuleName,
+					Name:    iscmove.RequestEventObjectName,
 				},
 			},
 			events,
