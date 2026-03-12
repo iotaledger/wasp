@@ -198,7 +198,7 @@ func (nc *nodeConnection) RefreshOnLedgerRequests(ctx context.Context, chainID i
 	if !ok {
 		panic("unexpected chainID")
 	}
-	if err := ncChain.syncChainState(ctx); err != nil {
+	if _, err := ncChain.syncChainState(ctx); err != nil {
 		nc.LogErrorf("error refreshing outputs: %s", err.Error())
 	}
 }
@@ -309,11 +309,13 @@ func (nc *nodeConnection) createReadOnlyChain(chainID isc.ChainID) *ncChain {
 
 // initializeOperationalChain performs initialization steps for operational (non-readonly) chains
 func (nc *nodeConnection) initializeOperationalChain(ctx context.Context, ncc *ncChain, chainID isc.ChainID) {
-	if err := ncc.syncChainState(ctx); err != nil {
+	signerAddress, err := ncc.syncChainState(ctx)
+	if err != nil {
 		nc.LogErrorf("synchronizing chain state %s failed: %s", chainID, err.Error())
 		nc.shutdownHandler.SelfShutdown(
 			fmt.Sprintf("Cannot sync chain %s with L1, %s", ncc.chainID, err.Error()),
 			true)
+		return
 	}
-	ncc.subscribeToUpdates(ctx, chainID.AsObjectID())
+	ncc.subscribeToUpdates(ctx, chainID.AsObjectID(), signerAddress)
 }

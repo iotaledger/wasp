@@ -76,13 +76,15 @@ func (f *ChainFeed) FetchCurrentState(ctx context.Context, maxAmountOfRequests i
 }
 
 // SubscribeToUpdates starts fetching updated versions of the Anchor and newly received requests in background.
+// signerAddress is the committee address that signs transactions updating the anchor.
 func (f *ChainFeed) SubscribeToUpdates(
 	ctx context.Context,
 	anchorID iotago.ObjectID,
+	signerAddress iotago.Address,
 	anchorCh chan<- *iscmove.AnchorWithRef,
 	requestsCh chan<- *iscmove.RefWithObject[iscmove.Request],
 ) {
-	go f.subscribeToAnchorUpdates(ctx, anchorCh)
+	go f.subscribeToAnchorUpdates(ctx, signerAddress, anchorCh)
 	go f.subscribeToNewRequests(ctx, anchorID, requestsCh)
 }
 
@@ -93,7 +95,7 @@ func (f *ChainFeed) subscribeToNewRequests(
 ) {
 	for {
 		events := make(chan *iotagraphql.IotaEvent)
-		err := f.wsClient.SubscribeEvent(
+		err := f.httpClient.SubscribeEvent(
 			ctx,
 			&iotagraphql.IotaEventFilter{
 				And: &iotagraphql.IotaAndOrEventFilter{
@@ -117,7 +119,7 @@ func (f *ChainFeed) subscribeToNewRequests(
 		if err != nil {
 			f.log.LogErrorf("subscribeToNewRequests: failed to call SubscribeEvent(): %s", err)
 		} else {
-			f.consumeRequestEvents(ctx, events, requests)
+			f.consumeRequestEvents(ctx, events, requests, anchorID)
 		}
 		if ctx.Err() != nil {
 			f.log.LogErrorf("subscribeToNewRequests: ctx.Err(): %s", ctx.Err())
@@ -130,6 +132,7 @@ func (f *ChainFeed) consumeRequestEvents(
 	ctx context.Context,
 	events <-chan *iotagraphql.IotaEvent,
 	requests chan<- *iscmove.RefWithObject[iscmove.Request],
+	anchorID iotago.ObjectID,
 ) {
 	for {
 		select {
@@ -143,6 +146,11 @@ func (f *ChainFeed) consumeRequestEvents(
 			err := iotagraphql.UnmarshalBCS(ev.Bcs, &reqEvent)
 			if err != nil {
 				f.log.LogErrorf("consumeRequestEvents: cannot decode RequestEvent BCS: %s", err)
+				continue
+			}
+
+			// skip if event is not from current anchor
+			if reqEvent.Anchor != anchorID {
 				continue
 			}
 
@@ -161,13 +169,15 @@ func (f *ChainFeed) consumeRequestEvents(
 
 func (f *ChainFeed) subscribeToAnchorUpdates(
 	ctx context.Context,
+	signerAddress iotago.Address,
 	anchorCh chan<- *iscmove.AnchorWithRef,
 ) {
 	for {
 		changes := make(chan *iotagraphql.IotaTransactionBlockEffects)
-		err := f.wsClient.SubscribeTransaction(
+		err := f.httpClient.SubscribeTransaction(
 			ctx,
 			&iotagraphql.TransactionFilter{
+				FromAddress:   &signerAddress,
 				ChangedObject: &f.anchorAddress,
 			},
 			changes,

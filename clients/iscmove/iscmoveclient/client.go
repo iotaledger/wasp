@@ -124,22 +124,20 @@ func (c *Client) SignAndExecutePTB(
 // WaitUntilStopped is a no-op placeholder. Websocket subscriptions are not currently supported.
 func (c *Client) WaitUntilStopped() {}
 
-// SubscribeEvent is not currently supported (websocket subscriptions not implemented).
 func (c *Client) SubscribeEvent(
 	ctx context.Context,
 	filter *iotagraphql.IotaEventFilter,
 	resultCh chan<- *iotagraphql.IotaEvent,
 ) error {
-	return fmt.Errorf("SubscribeEvent is not supported: websocket subscriptions not implemented")
+	return c.IotaClient.SubscribeEvent(ctx, filter, resultCh)
 }
 
-// SubscribeTransaction is not currently supported (websocket subscriptions not implemented).
 func (c *Client) SubscribeTransaction(
 	ctx context.Context,
 	filter *iotagraphql.TransactionFilter,
 	resultCh chan<- *iotagraphql.IotaTransactionBlockEffects,
 ) error {
-	return fmt.Errorf("SubscribeTransaction is not supported: websocket subscriptions not implemented")
+	return c.IotaClient.SubscribeTransaction(ctx, filter, resultCh)
 }
 
 func (c *Client) GetISCPackageIDForAnchor(ctx context.Context, anchor iotago.ObjectID) (iotago.PackageID, error) {

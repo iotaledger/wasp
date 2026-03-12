@@ -5,6 +5,7 @@ package graphqltypes
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -497,6 +498,292 @@ func (v *EventData) __premarshalJSON() (*__premarshalEventData, error) {
 	retval.Sender = v.EVENT_FIELDS.Sender
 	retval.Json = v.EVENT_FIELDS.Json
 	retval.Timestamp = v.EVENT_FIELDS.Timestamp
+	return &retval, nil
+}
+
+// EventsByModuleEventsEvent includes the requested fields of the GraphQL type Event.
+type EventsByModuleEventsEvent struct {
+	Typename string `json:"__typename"`
+	// The Move module containing some function that when called by
+	// a programmable transaction block (PTB) emitted this event.
+	// For example, if a PTB invokes A::m1::foo, which internally
+	// calls A::m2::emit_event to emit an event,
+	// the sending module would be A::m1.
+	SendingModule EventsByModuleEventsEventSendingModuleMoveModule `json:"sendingModule"`
+	// Address of the sender of the event
+	Sender EventsByModuleEventsEventSenderAddress `json:"sender"`
+	// The value's Move type.
+	Type EventsByModuleEventsEventTypeMoveType `json:"type"`
+	// UTC timestamp in milliseconds since epoch (1/1/1970)
+	Timestamp time.Time `json:"timestamp"`
+	// Representation of a Move value in JSON, where:
+	//
+	// - Addresses, IDs, and UIDs are represented in canonical form, as JSON
+	// strings.
+	// - Bools are represented by JSON boolean literals.
+	// - u8, u16, and u32 are represented as JSON numbers.
+	// - u64, u128, and u256 are represented as JSON strings.
+	// - Vectors are represented by JSON arrays.
+	// - Structs are represented by JSON objects.
+	// - Empty optional values are represented by `null`.
+	//
+	// This form is offered as a less verbose convenience in cases where the
+	// layout of the type is known by the client.
+	Json json.RawMessage `json:"json"`
+}
+
+// GetTypename returns EventsByModuleEventsEvent.Typename, and is useful for accessing the field via an interface.
+func (v *EventsByModuleEventsEvent) GetTypename() string { return v.Typename }
+
+// GetSendingModule returns EventsByModuleEventsEvent.SendingModule, and is useful for accessing the field via an interface.
+func (v *EventsByModuleEventsEvent) GetSendingModule() EventsByModuleEventsEventSendingModuleMoveModule {
+	return v.SendingModule
+}
+
+// GetSender returns EventsByModuleEventsEvent.Sender, and is useful for accessing the field via an interface.
+func (v *EventsByModuleEventsEvent) GetSender() EventsByModuleEventsEventSenderAddress {
+	return v.Sender
+}
+
+// GetType returns EventsByModuleEventsEvent.Type, and is useful for accessing the field via an interface.
+func (v *EventsByModuleEventsEvent) GetType() EventsByModuleEventsEventTypeMoveType { return v.Type }
+
+// GetTimestamp returns EventsByModuleEventsEvent.Timestamp, and is useful for accessing the field via an interface.
+func (v *EventsByModuleEventsEvent) GetTimestamp() time.Time { return v.Timestamp }
+
+// GetJson returns EventsByModuleEventsEvent.Json, and is useful for accessing the field via an interface.
+func (v *EventsByModuleEventsEvent) GetJson() json.RawMessage { return v.Json }
+
+// EventsByModuleEventsEventSenderAddress includes the requested fields of the GraphQL type Address.
+// The GraphQL type's documentation follows.
+//
+// The 32-byte address that is an account address (corresponding to a public
+// key).
+type EventsByModuleEventsEventSenderAddress struct {
+	Address iotago.Address `json:"address"`
+}
+
+// GetAddress returns EventsByModuleEventsEventSenderAddress.Address, and is useful for accessing the field via an interface.
+func (v *EventsByModuleEventsEventSenderAddress) GetAddress() iotago.Address { return v.Address }
+
+// EventsByModuleEventsEventSendingModuleMoveModule includes the requested fields of the GraphQL type MoveModule.
+// The GraphQL type's documentation follows.
+//
+// Represents a module in Move, a library that defines struct types
+// and functions that operate on these types.
+type EventsByModuleEventsEventSendingModuleMoveModule struct {
+	// The package that this Move module was defined in
+	Package EventsByModuleEventsEventSendingModuleMoveModulePackageMovePackage `json:"package"`
+	// The module's (unqualified) name.
+	Name string `json:"name"`
+}
+
+// GetPackage returns EventsByModuleEventsEventSendingModuleMoveModule.Package, and is useful for accessing the field via an interface.
+func (v *EventsByModuleEventsEventSendingModuleMoveModule) GetPackage() EventsByModuleEventsEventSendingModuleMoveModulePackageMovePackage {
+	return v.Package
+}
+
+// GetName returns EventsByModuleEventsEventSendingModuleMoveModule.Name, and is useful for accessing the field via an interface.
+func (v *EventsByModuleEventsEventSendingModuleMoveModule) GetName() string { return v.Name }
+
+// EventsByModuleEventsEventSendingModuleMoveModulePackageMovePackage includes the requested fields of the GraphQL type MovePackage.
+// The GraphQL type's documentation follows.
+//
+// A MovePackage is a kind of Move object that represents code that has been
+// published on chain. It exposes information about its modules, type
+// definitions, functions, and dependencies.
+type EventsByModuleEventsEventSendingModuleMoveModulePackageMovePackage struct {
+	Address iotago.Address `json:"address"`
+}
+
+// GetAddress returns EventsByModuleEventsEventSendingModuleMoveModulePackageMovePackage.Address, and is useful for accessing the field via an interface.
+func (v *EventsByModuleEventsEventSendingModuleMoveModulePackageMovePackage) GetAddress() iotago.Address {
+	return v.Address
+}
+
+// EventsByModuleEventsEventSubscriptionPayload includes the requested fields of the GraphQL interface EventSubscriptionPayload.
+//
+// EventsByModuleEventsEventSubscriptionPayload is implemented by the following types:
+// EventsByModuleEventsEvent
+// EventsByModuleEventsLagged
+// The GraphQL type's documentation follows.
+//
+// Possible responses from a subscription.
+//
+// It could be one of the following:
+// - A successful payload from the subscription stream.
+// - A notice that the subscription has been lagged behind the network with the
+// number of lost payloads.
+type EventsByModuleEventsEventSubscriptionPayload interface {
+	implementsGraphQLInterfaceEventsByModuleEventsEventSubscriptionPayload()
+	// GetTypename returns the receiver's concrete GraphQL type-name (see interface doc for possible values).
+	GetTypename() string
+}
+
+func (v *EventsByModuleEventsEvent) implementsGraphQLInterfaceEventsByModuleEventsEventSubscriptionPayload() {
+}
+func (v *EventsByModuleEventsLagged) implementsGraphQLInterfaceEventsByModuleEventsEventSubscriptionPayload() {
+}
+
+func __unmarshalEventsByModuleEventsEventSubscriptionPayload(b []byte, v *EventsByModuleEventsEventSubscriptionPayload) error {
+	if string(b) == "null" {
+		return nil
+	}
+
+	var tn struct {
+		TypeName string `json:"__typename"`
+	}
+	err := json.Unmarshal(b, &tn)
+	if err != nil {
+		return err
+	}
+
+	switch tn.TypeName {
+	case "Event":
+		*v = new(EventsByModuleEventsEvent)
+		return json.Unmarshal(b, *v)
+	case "Lagged":
+		*v = new(EventsByModuleEventsLagged)
+		return json.Unmarshal(b, *v)
+	case "":
+		return fmt.Errorf(
+			"response was missing EventSubscriptionPayload.__typename")
+	default:
+		return fmt.Errorf(
+			`unexpected concrete type for EventsByModuleEventsEventSubscriptionPayload: "%v"`, tn.TypeName)
+	}
+}
+
+func __marshalEventsByModuleEventsEventSubscriptionPayload(v *EventsByModuleEventsEventSubscriptionPayload) ([]byte, error) {
+
+	var typename string
+	switch v := (*v).(type) {
+	case *EventsByModuleEventsEvent:
+		typename = "Event"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*EventsByModuleEventsEvent
+		}{typename, v}
+		return json.Marshal(result)
+	case *EventsByModuleEventsLagged:
+		typename = "Lagged"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*EventsByModuleEventsLagged
+		}{typename, v}
+		return json.Marshal(result)
+	case nil:
+		return []byte("null"), nil
+	default:
+		return nil, fmt.Errorf(
+			`unexpected concrete type for EventsByModuleEventsEventSubscriptionPayload: "%T"`, v)
+	}
+}
+
+// EventsByModuleEventsEventTypeMoveType includes the requested fields of the GraphQL type MoveType.
+// The GraphQL type's documentation follows.
+//
+// Represents concrete types (no type parameters, no references).
+type EventsByModuleEventsEventTypeMoveType struct {
+	// Flat representation of the type signature, as a displayable string.
+	Repr string `json:"repr"`
+}
+
+// GetRepr returns EventsByModuleEventsEventTypeMoveType.Repr, and is useful for accessing the field via an interface.
+func (v *EventsByModuleEventsEventTypeMoveType) GetRepr() string { return v.Repr }
+
+// EventsByModuleEventsLagged includes the requested fields of the GraphQL type Lagged.
+// The GraphQL type's documentation follows.
+//
+// Notifies that the subscription consumer has fallen behind the live
+// subscription stream and missed one or more payloads.
+type EventsByModuleEventsLagged struct {
+	Typename string `json:"__typename"`
+	// Number of missed payloads since the previous emitted one.
+	Count int `json:"count"`
+}
+
+// GetTypename returns EventsByModuleEventsLagged.Typename, and is useful for accessing the field via an interface.
+func (v *EventsByModuleEventsLagged) GetTypename() string { return v.Typename }
+
+// GetCount returns EventsByModuleEventsLagged.Count, and is useful for accessing the field via an interface.
+func (v *EventsByModuleEventsLagged) GetCount() int { return v.Count }
+
+// EventsByModuleResponse is returned by EventsByModule on success.
+type EventsByModuleResponse struct {
+	// Subscribe to incoming events from the IOTA network.
+	//
+	// If no filter is provided, all events will be returned.
+	Events EventsByModuleEventsEventSubscriptionPayload `json:"-"`
+}
+
+// GetEvents returns EventsByModuleResponse.Events, and is useful for accessing the field via an interface.
+func (v *EventsByModuleResponse) GetEvents() EventsByModuleEventsEventSubscriptionPayload {
+	return v.Events
+}
+
+func (v *EventsByModuleResponse) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*EventsByModuleResponse
+		Events json.RawMessage `json:"events"`
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.EventsByModuleResponse = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	{
+		dst := &v.Events
+		src := firstPass.Events
+		if len(src) != 0 && string(src) != "null" {
+			err = __unmarshalEventsByModuleEventsEventSubscriptionPayload(
+				src, dst)
+			if err != nil {
+				return fmt.Errorf(
+					"unable to unmarshal EventsByModuleResponse.Events: %w", err)
+			}
+		}
+	}
+	return nil
+}
+
+type __premarshalEventsByModuleResponse struct {
+	Events json.RawMessage `json:"events"`
+}
+
+func (v *EventsByModuleResponse) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *EventsByModuleResponse) __premarshalJSON() (*__premarshalEventsByModuleResponse, error) {
+	var retval __premarshalEventsByModuleResponse
+
+	{
+
+		dst := &retval.Events
+		src := v.Events
+		var err error
+		*dst, err = __marshalEventsByModuleEventsEventSubscriptionPayload(
+			&src)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"unable to marshal EventsByModuleResponse.Events: %w", err)
+		}
+	}
 	return &retval, nil
 }
 
@@ -9479,6 +9766,605 @@ var AllTransactionBlockKindInput = []TransactionBlockKindInput{
 	TransactionBlockKindInputEndOfEpochTx,
 }
 
+// TransactionsBySignerResponse is returned by TransactionsBySigner on success.
+type TransactionsBySignerResponse struct {
+	// Subscribe to incoming transactions from the IOTA network.
+	//
+	// If no filter is provided, all transactions will be returned.
+	Transactions TransactionsBySignerTransactionsTransactionBlockSubscriptionPayload `json:"-"`
+}
+
+// GetTransactions returns TransactionsBySignerResponse.Transactions, and is useful for accessing the field via an interface.
+func (v *TransactionsBySignerResponse) GetTransactions() TransactionsBySignerTransactionsTransactionBlockSubscriptionPayload {
+	return v.Transactions
+}
+
+func (v *TransactionsBySignerResponse) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*TransactionsBySignerResponse
+		Transactions json.RawMessage `json:"transactions"`
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.TransactionsBySignerResponse = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	{
+		dst := &v.Transactions
+		src := firstPass.Transactions
+		if len(src) != 0 && string(src) != "null" {
+			err = __unmarshalTransactionsBySignerTransactionsTransactionBlockSubscriptionPayload(
+				src, dst)
+			if err != nil {
+				return fmt.Errorf(
+					"unable to unmarshal TransactionsBySignerResponse.Transactions: %w", err)
+			}
+		}
+	}
+	return nil
+}
+
+type __premarshalTransactionsBySignerResponse struct {
+	Transactions json.RawMessage `json:"transactions"`
+}
+
+func (v *TransactionsBySignerResponse) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *TransactionsBySignerResponse) __premarshalJSON() (*__premarshalTransactionsBySignerResponse, error) {
+	var retval __premarshalTransactionsBySignerResponse
+
+	{
+
+		dst := &retval.Transactions
+		src := v.Transactions
+		var err error
+		*dst, err = __marshalTransactionsBySignerTransactionsTransactionBlockSubscriptionPayload(
+			&src)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"unable to marshal TransactionsBySignerResponse.Transactions: %w", err)
+		}
+	}
+	return &retval, nil
+}
+
+// TransactionsBySignerTransactionsLagged includes the requested fields of the GraphQL type Lagged.
+// The GraphQL type's documentation follows.
+//
+// Notifies that the subscription consumer has fallen behind the live
+// subscription stream and missed one or more payloads.
+type TransactionsBySignerTransactionsLagged struct {
+	Typename string `json:"__typename"`
+}
+
+// GetTypename returns TransactionsBySignerTransactionsLagged.Typename, and is useful for accessing the field via an interface.
+func (v *TransactionsBySignerTransactionsLagged) GetTypename() string { return v.Typename }
+
+// TransactionsBySignerTransactionsTransactionBlock includes the requested fields of the GraphQL type TransactionBlock.
+type TransactionsBySignerTransactionsTransactionBlock struct {
+	Typename string `json:"__typename"`
+	// The address corresponding to the public key that signed this
+	// transaction. System transactions do not have senders.
+	Sender TransactionsBySignerTransactionsTransactionBlockSenderAddress `json:"sender"`
+	// The type of this transaction as well as the commands and/or parameters
+	// comprising the transaction of this kind.
+	Kind TransactionsBySignerTransactionsTransactionBlockKind `json:"-"`
+	// A 32-byte hash that uniquely identifies the transaction block contents,
+	// encoded in Base58. This serves as a unique id for the block on
+	// chain.
+	Digest string `json:"digest"`
+	// The effects field captures the results to the chain of executing this
+	// transaction.
+	Effects TransactionsBySignerTransactionsTransactionBlockEffects `json:"effects"`
+}
+
+// GetTypename returns TransactionsBySignerTransactionsTransactionBlock.Typename, and is useful for accessing the field via an interface.
+func (v *TransactionsBySignerTransactionsTransactionBlock) GetTypename() string { return v.Typename }
+
+// GetSender returns TransactionsBySignerTransactionsTransactionBlock.Sender, and is useful for accessing the field via an interface.
+func (v *TransactionsBySignerTransactionsTransactionBlock) GetSender() TransactionsBySignerTransactionsTransactionBlockSenderAddress {
+	return v.Sender
+}
+
+// GetKind returns TransactionsBySignerTransactionsTransactionBlock.Kind, and is useful for accessing the field via an interface.
+func (v *TransactionsBySignerTransactionsTransactionBlock) GetKind() TransactionsBySignerTransactionsTransactionBlockKind {
+	return v.Kind
+}
+
+// GetDigest returns TransactionsBySignerTransactionsTransactionBlock.Digest, and is useful for accessing the field via an interface.
+func (v *TransactionsBySignerTransactionsTransactionBlock) GetDigest() string { return v.Digest }
+
+// GetEffects returns TransactionsBySignerTransactionsTransactionBlock.Effects, and is useful for accessing the field via an interface.
+func (v *TransactionsBySignerTransactionsTransactionBlock) GetEffects() TransactionsBySignerTransactionsTransactionBlockEffects {
+	return v.Effects
+}
+
+func (v *TransactionsBySignerTransactionsTransactionBlock) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*TransactionsBySignerTransactionsTransactionBlock
+		Kind json.RawMessage `json:"kind"`
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.TransactionsBySignerTransactionsTransactionBlock = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	{
+		dst := &v.Kind
+		src := firstPass.Kind
+		if len(src) != 0 && string(src) != "null" {
+			err = __unmarshalTransactionsBySignerTransactionsTransactionBlockKind(
+				src, dst)
+			if err != nil {
+				return fmt.Errorf(
+					"unable to unmarshal TransactionsBySignerTransactionsTransactionBlock.Kind: %w", err)
+			}
+		}
+	}
+	return nil
+}
+
+type __premarshalTransactionsBySignerTransactionsTransactionBlock struct {
+	Typename string `json:"__typename"`
+
+	Sender TransactionsBySignerTransactionsTransactionBlockSenderAddress `json:"sender"`
+
+	Kind json.RawMessage `json:"kind"`
+
+	Digest string `json:"digest"`
+
+	Effects TransactionsBySignerTransactionsTransactionBlockEffects `json:"effects"`
+}
+
+func (v *TransactionsBySignerTransactionsTransactionBlock) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *TransactionsBySignerTransactionsTransactionBlock) __premarshalJSON() (*__premarshalTransactionsBySignerTransactionsTransactionBlock, error) {
+	var retval __premarshalTransactionsBySignerTransactionsTransactionBlock
+
+	retval.Typename = v.Typename
+	retval.Sender = v.Sender
+	{
+
+		dst := &retval.Kind
+		src := v.Kind
+		var err error
+		*dst, err = __marshalTransactionsBySignerTransactionsTransactionBlockKind(
+			&src)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"unable to marshal TransactionsBySignerTransactionsTransactionBlock.Kind: %w", err)
+		}
+	}
+	retval.Digest = v.Digest
+	retval.Effects = v.Effects
+	return &retval, nil
+}
+
+// TransactionsBySignerTransactionsTransactionBlockEffects includes the requested fields of the GraphQL type TransactionBlockEffects.
+// The GraphQL type's documentation follows.
+//
+// The effects representing the result of executing a transaction block.
+type TransactionsBySignerTransactionsTransactionBlockEffects struct {
+	// The effect this transaction had on objects on-chain.
+	ObjectChanges TransactionsBySignerTransactionsTransactionBlockEffectsObjectChangesObjectChangeConnection `json:"objectChanges"`
+}
+
+// GetObjectChanges returns TransactionsBySignerTransactionsTransactionBlockEffects.ObjectChanges, and is useful for accessing the field via an interface.
+func (v *TransactionsBySignerTransactionsTransactionBlockEffects) GetObjectChanges() TransactionsBySignerTransactionsTransactionBlockEffectsObjectChangesObjectChangeConnection {
+	return v.ObjectChanges
+}
+
+// TransactionsBySignerTransactionsTransactionBlockEffectsObjectChangesObjectChangeConnection includes the requested fields of the GraphQL type ObjectChangeConnection.
+type TransactionsBySignerTransactionsTransactionBlockEffectsObjectChangesObjectChangeConnection struct {
+	// A list of nodes.
+	Nodes []TransactionsBySignerTransactionsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange `json:"nodes"`
+}
+
+// GetNodes returns TransactionsBySignerTransactionsTransactionBlockEffectsObjectChangesObjectChangeConnection.Nodes, and is useful for accessing the field via an interface.
+func (v *TransactionsBySignerTransactionsTransactionBlockEffectsObjectChangesObjectChangeConnection) GetNodes() []TransactionsBySignerTransactionsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange {
+	return v.Nodes
+}
+
+// TransactionsBySignerTransactionsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange includes the requested fields of the GraphQL type ObjectChange.
+// The GraphQL type's documentation follows.
+//
+// Effect on an individual Object (keyed by its ID).
+type TransactionsBySignerTransactionsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange struct {
+	// The address of the object that has changed.
+	Address iotago.Address `json:"address"`
+	// The contents of the object immediately after the transaction.
+	OutputState TransactionsBySignerTransactionsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject `json:"outputState"`
+}
+
+// GetAddress returns TransactionsBySignerTransactionsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange.Address, and is useful for accessing the field via an interface.
+func (v *TransactionsBySignerTransactionsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange) GetAddress() iotago.Address {
+	return v.Address
+}
+
+// GetOutputState returns TransactionsBySignerTransactionsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange.OutputState, and is useful for accessing the field via an interface.
+func (v *TransactionsBySignerTransactionsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChange) GetOutputState() TransactionsBySignerTransactionsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject {
+	return v.OutputState
+}
+
+// TransactionsBySignerTransactionsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject includes the requested fields of the GraphQL type Object.
+// The GraphQL type's documentation follows.
+//
+// An object in IOTA is a package (set of Move bytecode modules) or object
+// (typed data structure with fields) with additional metadata detailing its
+// id, version, transaction digest, owner field indicating how this object can
+// be accessed.
+type TransactionsBySignerTransactionsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject struct {
+	Version uint64 `json:"version"`
+}
+
+// GetVersion returns TransactionsBySignerTransactionsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject.Version, and is useful for accessing the field via an interface.
+func (v *TransactionsBySignerTransactionsTransactionBlockEffectsObjectChangesObjectChangeConnectionNodesObjectChangeOutputStateObject) GetVersion() uint64 {
+	return v.Version
+}
+
+// TransactionsBySignerTransactionsTransactionBlockKind includes the requested fields of the GraphQL interface TransactionBlockKind.
+//
+// TransactionsBySignerTransactionsTransactionBlockKind is implemented by the following types:
+// TransactionsBySignerTransactionsTransactionBlockKindAuthenticatorStateUpdateTransaction
+// TransactionsBySignerTransactionsTransactionBlockKindConsensusCommitPrologueTransaction
+// TransactionsBySignerTransactionsTransactionBlockKindEndOfEpochTransaction
+// TransactionsBySignerTransactionsTransactionBlockKindGenesisTransaction
+// TransactionsBySignerTransactionsTransactionBlockKindProgrammableTransactionBlock
+// TransactionsBySignerTransactionsTransactionBlockKindRandomnessStateUpdateTransaction
+// The GraphQL type's documentation follows.
+//
+// The kind of transaction block, either a programmable transaction or a system
+// transaction.
+type TransactionsBySignerTransactionsTransactionBlockKind interface {
+	implementsGraphQLInterfaceTransactionsBySignerTransactionsTransactionBlockKind()
+	// GetTypename returns the receiver's concrete GraphQL type-name (see interface doc for possible values).
+	GetTypename() string
+}
+
+func (v *TransactionsBySignerTransactionsTransactionBlockKindAuthenticatorStateUpdateTransaction) implementsGraphQLInterfaceTransactionsBySignerTransactionsTransactionBlockKind() {
+}
+func (v *TransactionsBySignerTransactionsTransactionBlockKindConsensusCommitPrologueTransaction) implementsGraphQLInterfaceTransactionsBySignerTransactionsTransactionBlockKind() {
+}
+func (v *TransactionsBySignerTransactionsTransactionBlockKindEndOfEpochTransaction) implementsGraphQLInterfaceTransactionsBySignerTransactionsTransactionBlockKind() {
+}
+func (v *TransactionsBySignerTransactionsTransactionBlockKindGenesisTransaction) implementsGraphQLInterfaceTransactionsBySignerTransactionsTransactionBlockKind() {
+}
+func (v *TransactionsBySignerTransactionsTransactionBlockKindProgrammableTransactionBlock) implementsGraphQLInterfaceTransactionsBySignerTransactionsTransactionBlockKind() {
+}
+func (v *TransactionsBySignerTransactionsTransactionBlockKindRandomnessStateUpdateTransaction) implementsGraphQLInterfaceTransactionsBySignerTransactionsTransactionBlockKind() {
+}
+
+func __unmarshalTransactionsBySignerTransactionsTransactionBlockKind(b []byte, v *TransactionsBySignerTransactionsTransactionBlockKind) error {
+	if string(b) == "null" {
+		return nil
+	}
+
+	var tn struct {
+		TypeName string `json:"__typename"`
+	}
+	err := json.Unmarshal(b, &tn)
+	if err != nil {
+		return err
+	}
+
+	switch tn.TypeName {
+	case "AuthenticatorStateUpdateTransaction":
+		*v = new(TransactionsBySignerTransactionsTransactionBlockKindAuthenticatorStateUpdateTransaction)
+		return json.Unmarshal(b, *v)
+	case "ConsensusCommitPrologueTransaction":
+		*v = new(TransactionsBySignerTransactionsTransactionBlockKindConsensusCommitPrologueTransaction)
+		return json.Unmarshal(b, *v)
+	case "EndOfEpochTransaction":
+		*v = new(TransactionsBySignerTransactionsTransactionBlockKindEndOfEpochTransaction)
+		return json.Unmarshal(b, *v)
+	case "GenesisTransaction":
+		*v = new(TransactionsBySignerTransactionsTransactionBlockKindGenesisTransaction)
+		return json.Unmarshal(b, *v)
+	case "ProgrammableTransactionBlock":
+		*v = new(TransactionsBySignerTransactionsTransactionBlockKindProgrammableTransactionBlock)
+		return json.Unmarshal(b, *v)
+	case "RandomnessStateUpdateTransaction":
+		*v = new(TransactionsBySignerTransactionsTransactionBlockKindRandomnessStateUpdateTransaction)
+		return json.Unmarshal(b, *v)
+	case "":
+		return fmt.Errorf(
+			"response was missing TransactionBlockKind.__typename")
+	default:
+		return fmt.Errorf(
+			`unexpected concrete type for TransactionsBySignerTransactionsTransactionBlockKind: "%v"`, tn.TypeName)
+	}
+}
+
+func __marshalTransactionsBySignerTransactionsTransactionBlockKind(v *TransactionsBySignerTransactionsTransactionBlockKind) ([]byte, error) {
+
+	var typename string
+	switch v := (*v).(type) {
+	case *TransactionsBySignerTransactionsTransactionBlockKindAuthenticatorStateUpdateTransaction:
+		typename = "AuthenticatorStateUpdateTransaction"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*TransactionsBySignerTransactionsTransactionBlockKindAuthenticatorStateUpdateTransaction
+		}{typename, v}
+		return json.Marshal(result)
+	case *TransactionsBySignerTransactionsTransactionBlockKindConsensusCommitPrologueTransaction:
+		typename = "ConsensusCommitPrologueTransaction"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*TransactionsBySignerTransactionsTransactionBlockKindConsensusCommitPrologueTransaction
+		}{typename, v}
+		return json.Marshal(result)
+	case *TransactionsBySignerTransactionsTransactionBlockKindEndOfEpochTransaction:
+		typename = "EndOfEpochTransaction"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*TransactionsBySignerTransactionsTransactionBlockKindEndOfEpochTransaction
+		}{typename, v}
+		return json.Marshal(result)
+	case *TransactionsBySignerTransactionsTransactionBlockKindGenesisTransaction:
+		typename = "GenesisTransaction"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*TransactionsBySignerTransactionsTransactionBlockKindGenesisTransaction
+		}{typename, v}
+		return json.Marshal(result)
+	case *TransactionsBySignerTransactionsTransactionBlockKindProgrammableTransactionBlock:
+		typename = "ProgrammableTransactionBlock"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*TransactionsBySignerTransactionsTransactionBlockKindProgrammableTransactionBlock
+		}{typename, v}
+		return json.Marshal(result)
+	case *TransactionsBySignerTransactionsTransactionBlockKindRandomnessStateUpdateTransaction:
+		typename = "RandomnessStateUpdateTransaction"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*TransactionsBySignerTransactionsTransactionBlockKindRandomnessStateUpdateTransaction
+		}{typename, v}
+		return json.Marshal(result)
+	case nil:
+		return []byte("null"), nil
+	default:
+		return nil, fmt.Errorf(
+			`unexpected concrete type for TransactionsBySignerTransactionsTransactionBlockKind: "%T"`, v)
+	}
+}
+
+// TransactionsBySignerTransactionsTransactionBlockKindAuthenticatorStateUpdateTransaction includes the requested fields of the GraphQL type AuthenticatorStateUpdateTransaction.
+// The GraphQL type's documentation follows.
+//
+// System transaction for updating the on-chain state used by zkLogin.
+type TransactionsBySignerTransactionsTransactionBlockKindAuthenticatorStateUpdateTransaction struct {
+	Typename string `json:"__typename"`
+}
+
+// GetTypename returns TransactionsBySignerTransactionsTransactionBlockKindAuthenticatorStateUpdateTransaction.Typename, and is useful for accessing the field via an interface.
+func (v *TransactionsBySignerTransactionsTransactionBlockKindAuthenticatorStateUpdateTransaction) GetTypename() string {
+	return v.Typename
+}
+
+// TransactionsBySignerTransactionsTransactionBlockKindConsensusCommitPrologueTransaction includes the requested fields of the GraphQL type ConsensusCommitPrologueTransaction.
+// The GraphQL type's documentation follows.
+//
+// System transaction that runs at the beginning of a checkpoint, and is
+// responsible for setting the current value of the clock, based on the
+// timestamp from consensus.
+type TransactionsBySignerTransactionsTransactionBlockKindConsensusCommitPrologueTransaction struct {
+	Typename string `json:"__typename"`
+}
+
+// GetTypename returns TransactionsBySignerTransactionsTransactionBlockKindConsensusCommitPrologueTransaction.Typename, and is useful for accessing the field via an interface.
+func (v *TransactionsBySignerTransactionsTransactionBlockKindConsensusCommitPrologueTransaction) GetTypename() string {
+	return v.Typename
+}
+
+// TransactionsBySignerTransactionsTransactionBlockKindEndOfEpochTransaction includes the requested fields of the GraphQL type EndOfEpochTransaction.
+// The GraphQL type's documentation follows.
+//
+// System transaction that supersedes `ChangeEpochTransaction` as the new way
+// to run transactions at the end of an epoch. Behaves similarly to
+// `ChangeEpochTransaction` but can accommodate other optional transactions to
+// run at the end of the epoch.
+type TransactionsBySignerTransactionsTransactionBlockKindEndOfEpochTransaction struct {
+	Typename string `json:"__typename"`
+}
+
+// GetTypename returns TransactionsBySignerTransactionsTransactionBlockKindEndOfEpochTransaction.Typename, and is useful for accessing the field via an interface.
+func (v *TransactionsBySignerTransactionsTransactionBlockKindEndOfEpochTransaction) GetTypename() string {
+	return v.Typename
+}
+
+// TransactionsBySignerTransactionsTransactionBlockKindGenesisTransaction includes the requested fields of the GraphQL type GenesisTransaction.
+// The GraphQL type's documentation follows.
+//
+// System transaction that initializes the network and writes the initial set
+// of objects on-chain.
+type TransactionsBySignerTransactionsTransactionBlockKindGenesisTransaction struct {
+	Typename string `json:"__typename"`
+}
+
+// GetTypename returns TransactionsBySignerTransactionsTransactionBlockKindGenesisTransaction.Typename, and is useful for accessing the field via an interface.
+func (v *TransactionsBySignerTransactionsTransactionBlockKindGenesisTransaction) GetTypename() string {
+	return v.Typename
+}
+
+// TransactionsBySignerTransactionsTransactionBlockKindProgrammableTransactionBlock includes the requested fields of the GraphQL type ProgrammableTransactionBlock.
+// The GraphQL type's documentation follows.
+//
+// A user transaction that allows the interleaving of native commands (like
+// transfer, split coins, merge coins, etc) and move calls, executed
+// atomically.
+type TransactionsBySignerTransactionsTransactionBlockKindProgrammableTransactionBlock struct {
+	Typename string `json:"__typename"`
+	// The transaction commands, executed sequentially.
+	Transactions TransactionsBySignerTransactionsTransactionBlockKindProgrammableTransactionBlockTransactionsProgrammableTransactionConnection `json:"transactions"`
+}
+
+// GetTypename returns TransactionsBySignerTransactionsTransactionBlockKindProgrammableTransactionBlock.Typename, and is useful for accessing the field via an interface.
+func (v *TransactionsBySignerTransactionsTransactionBlockKindProgrammableTransactionBlock) GetTypename() string {
+	return v.Typename
+}
+
+// GetTransactions returns TransactionsBySignerTransactionsTransactionBlockKindProgrammableTransactionBlock.Transactions, and is useful for accessing the field via an interface.
+func (v *TransactionsBySignerTransactionsTransactionBlockKindProgrammableTransactionBlock) GetTransactions() TransactionsBySignerTransactionsTransactionBlockKindProgrammableTransactionBlockTransactionsProgrammableTransactionConnection {
+	return v.Transactions
+}
+
+// TransactionsBySignerTransactionsTransactionBlockKindProgrammableTransactionBlockTransactionsProgrammableTransactionConnection includes the requested fields of the GraphQL type ProgrammableTransactionConnection.
+type TransactionsBySignerTransactionsTransactionBlockKindProgrammableTransactionBlockTransactionsProgrammableTransactionConnection struct {
+	Typename string `json:"__typename"`
+}
+
+// GetTypename returns TransactionsBySignerTransactionsTransactionBlockKindProgrammableTransactionBlockTransactionsProgrammableTransactionConnection.Typename, and is useful for accessing the field via an interface.
+func (v *TransactionsBySignerTransactionsTransactionBlockKindProgrammableTransactionBlockTransactionsProgrammableTransactionConnection) GetTypename() string {
+	return v.Typename
+}
+
+// TransactionsBySignerTransactionsTransactionBlockKindRandomnessStateUpdateTransaction includes the requested fields of the GraphQL type RandomnessStateUpdateTransaction.
+// The GraphQL type's documentation follows.
+//
+// System transaction to update the source of on-chain randomness.
+type TransactionsBySignerTransactionsTransactionBlockKindRandomnessStateUpdateTransaction struct {
+	Typename string `json:"__typename"`
+}
+
+// GetTypename returns TransactionsBySignerTransactionsTransactionBlockKindRandomnessStateUpdateTransaction.Typename, and is useful for accessing the field via an interface.
+func (v *TransactionsBySignerTransactionsTransactionBlockKindRandomnessStateUpdateTransaction) GetTypename() string {
+	return v.Typename
+}
+
+// TransactionsBySignerTransactionsTransactionBlockSenderAddress includes the requested fields of the GraphQL type Address.
+// The GraphQL type's documentation follows.
+//
+// The 32-byte address that is an account address (corresponding to a public
+// key).
+type TransactionsBySignerTransactionsTransactionBlockSenderAddress struct {
+	Address iotago.Address `json:"address"`
+}
+
+// GetAddress returns TransactionsBySignerTransactionsTransactionBlockSenderAddress.Address, and is useful for accessing the field via an interface.
+func (v *TransactionsBySignerTransactionsTransactionBlockSenderAddress) GetAddress() iotago.Address {
+	return v.Address
+}
+
+// TransactionsBySignerTransactionsTransactionBlockSubscriptionPayload includes the requested fields of the GraphQL interface TransactionBlockSubscriptionPayload.
+//
+// TransactionsBySignerTransactionsTransactionBlockSubscriptionPayload is implemented by the following types:
+// TransactionsBySignerTransactionsLagged
+// TransactionsBySignerTransactionsTransactionBlock
+// The GraphQL type's documentation follows.
+//
+// Possible responses from a subscription.
+//
+// It could be one of the following:
+// - A successful payload from the subscription stream.
+// - A notice that the subscription has been lagged behind the network with the
+// number of lost payloads.
+type TransactionsBySignerTransactionsTransactionBlockSubscriptionPayload interface {
+	implementsGraphQLInterfaceTransactionsBySignerTransactionsTransactionBlockSubscriptionPayload()
+	// GetTypename returns the receiver's concrete GraphQL type-name (see interface doc for possible values).
+	GetTypename() string
+}
+
+func (v *TransactionsBySignerTransactionsLagged) implementsGraphQLInterfaceTransactionsBySignerTransactionsTransactionBlockSubscriptionPayload() {
+}
+func (v *TransactionsBySignerTransactionsTransactionBlock) implementsGraphQLInterfaceTransactionsBySignerTransactionsTransactionBlockSubscriptionPayload() {
+}
+
+func __unmarshalTransactionsBySignerTransactionsTransactionBlockSubscriptionPayload(b []byte, v *TransactionsBySignerTransactionsTransactionBlockSubscriptionPayload) error {
+	if string(b) == "null" {
+		return nil
+	}
+
+	var tn struct {
+		TypeName string `json:"__typename"`
+	}
+	err := json.Unmarshal(b, &tn)
+	if err != nil {
+		return err
+	}
+
+	switch tn.TypeName {
+	case "Lagged":
+		*v = new(TransactionsBySignerTransactionsLagged)
+		return json.Unmarshal(b, *v)
+	case "TransactionBlock":
+		*v = new(TransactionsBySignerTransactionsTransactionBlock)
+		return json.Unmarshal(b, *v)
+	case "":
+		return fmt.Errorf(
+			"response was missing TransactionBlockSubscriptionPayload.__typename")
+	default:
+		return fmt.Errorf(
+			`unexpected concrete type for TransactionsBySignerTransactionsTransactionBlockSubscriptionPayload: "%v"`, tn.TypeName)
+	}
+}
+
+func __marshalTransactionsBySignerTransactionsTransactionBlockSubscriptionPayload(v *TransactionsBySignerTransactionsTransactionBlockSubscriptionPayload) ([]byte, error) {
+
+	var typename string
+	switch v := (*v).(type) {
+	case *TransactionsBySignerTransactionsLagged:
+		typename = "Lagged"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*TransactionsBySignerTransactionsLagged
+		}{typename, v}
+		return json.Marshal(result)
+	case *TransactionsBySignerTransactionsTransactionBlock:
+		typename = "TransactionBlock"
+
+		premarshaled, err := v.__premarshalJSON()
+		if err != nil {
+			return nil, err
+		}
+		result := struct {
+			TypeName string `json:"__typename"`
+			*__premarshalTransactionsBySignerTransactionsTransactionBlock
+		}{typename, premarshaled}
+		return json.Marshal(result)
+	case nil:
+		return []byte("null"), nil
+	default:
+		return nil, fmt.Errorf(
+			`unexpected concrete type for TransactionsBySignerTransactionsTransactionBlockSubscriptionPayload: "%T"`, v)
+	}
+}
+
 // TryGetPastObjectCurrentObject includes the requested fields of the GraphQL type Object.
 // The GraphQL type's documentation follows.
 //
@@ -9924,6 +10810,14 @@ type __DryRunTransactionBlockInput struct {
 // GetTxBytes returns __DryRunTransactionBlockInput.TxBytes, and is useful for accessing the field via an interface.
 func (v *__DryRunTransactionBlockInput) GetTxBytes() string { return v.TxBytes }
 
+// __EventsByModuleInput is used internally by genqlient
+type __EventsByModuleInput struct {
+	EmittingModule string `json:"emittingModule"`
+}
+
+// GetEmittingModule returns __EventsByModuleInput.EmittingModule, and is useful for accessing the field via an interface.
+func (v *__EventsByModuleInput) GetEmittingModule() string { return v.EmittingModule }
+
 // __ExecuteTransactionBlockInput is used internally by genqlient
 type __ExecuteTransactionBlockInput struct {
 	TxBytes    string   `json:"txBytes"`
@@ -10348,6 +11242,14 @@ func (v *__QueryTransactionBlocksInput) GetAfter() *string { return v.After }
 // GetFilter returns __QueryTransactionBlocksInput.Filter, and is useful for accessing the field via an interface.
 func (v *__QueryTransactionBlocksInput) GetFilter() *TransactionBlockFilter { return v.Filter }
 
+// __TransactionsBySignerInput is used internally by genqlient
+type __TransactionsBySignerInput struct {
+	SigningAddress iotago.Address `json:"signingAddress"`
+}
+
+// GetSigningAddress returns __TransactionsBySignerInput.SigningAddress, and is useful for accessing the field via an interface.
+func (v *__TransactionsBySignerInput) GetSigningAddress() iotago.Address { return v.SigningAddress }
+
 // __TryGetPastObjectInput is used internally by genqlient
 type __TryGetPastObjectInput struct {
 	Id                      iotago.Address `json:"id"`
@@ -10578,6 +11480,79 @@ func DryRunTransactionBlock(
 	)
 
 	return data_, err_
+}
+
+// The subscription executed by EventsByModule.
+const EventsByModule_Operation = `
+subscription EventsByModule ($emittingModule: String!) {
+	events(filter: {emittingModule:$emittingModule}) {
+		__typename
+		... on Event {
+			sendingModule {
+				package {
+					address
+				}
+				name
+			}
+			sender {
+				address
+			}
+			type {
+				repr
+			}
+			timestamp
+			json
+		}
+		... on Lagged {
+			count
+		}
+	}
+}
+`
+
+// To unsubscribe, use [graphql.WebSocketClient.Unsubscribe]
+func EventsByModule(
+	ctx_ context.Context,
+	client_ graphql.WebSocketClient,
+	emittingModule string,
+) (dataChan_ chan EventsByModuleWsResponse, subscriptionID_ string, err_ error) {
+	req_ := &graphql.Request{
+		OpName: "EventsByModule",
+		Query:  EventsByModule_Operation,
+		Variables: &__EventsByModuleInput{
+			EmittingModule: emittingModule,
+		},
+	}
+
+	dataChan_ = make(chan EventsByModuleWsResponse)
+	subscriptionID_, err_ = client_.Subscribe(req_, dataChan_, EventsByModuleForwardData)
+
+	return dataChan_, subscriptionID_, err_
+}
+
+type EventsByModuleWsResponse graphql.BaseResponse[*EventsByModuleResponse]
+
+func EventsByModuleForwardData(interfaceChan interface{}, jsonRawMsg json.RawMessage) error {
+	var gqlResp graphql.Response
+	var wsResp EventsByModuleWsResponse
+	err := json.Unmarshal(jsonRawMsg, &gqlResp)
+	if err != nil {
+		return err
+	}
+	if len(gqlResp.Errors) == 0 {
+		err = json.Unmarshal(jsonRawMsg, &wsResp)
+		if err != nil {
+			return err
+		}
+	} else {
+		wsResp.Errors = gqlResp.Errors
+	}
+	dataChan_, ok := interfaceChan.(chan EventsByModuleWsResponse)
+	if !ok {
+		return errors.New("failed to cast interface into 'chan EventsByModuleWsResponse'")
+	}
+	dataChan_ <- wsResp
+	return nil
 }
 
 // The mutation executed by ExecuteTransactionBlock.
@@ -11036,7 +12011,7 @@ func GetCoins(
 
 // The query executed by GetDynamicFieldObject.
 const GetDynamicFieldObject_Operation = `
-query GetDynamicFieldObject ($parentId: IotaAddress!, $name: DynamicFieldName!, $showBcs: Boolean = false, $showPreviousTransaction: Boolean = false, $showDisplay: Boolean = false, $showStorageRebate: Boolean = false) {
+query GetDynamicFieldObject ($parentId: IotaAddress!, $name: DynamicFieldName!, $showBcs: Boolean = true, $showPreviousTransaction: Boolean = true, $showDisplay: Boolean = true, $showStorageRebate: Boolean = true) {
 	object(address: $parentId) {
 		dynamicObjectField(name: $name) {
 			name {
@@ -12753,6 +13728,84 @@ func QueryTransactionBlocks(
 	)
 
 	return data_, err_
+}
+
+// The subscription executed by TransactionsBySigner.
+const TransactionsBySigner_Operation = `
+subscription TransactionsBySigner ($signingAddress: IotaAddress!) {
+	transactions(filter: {signingAddress:$signingAddress}) {
+		__typename
+		... on TransactionBlock {
+			sender {
+				address
+			}
+			kind {
+				__typename
+				... on ProgrammableTransactionBlock {
+					transactions {
+						__typename
+					}
+				}
+			}
+			digest
+			effects {
+				objectChanges {
+					nodes {
+						address
+						outputState {
+							version
+						}
+					}
+				}
+			}
+		}
+	}
+}
+`
+
+// To unsubscribe, use [graphql.WebSocketClient.Unsubscribe]
+func TransactionsBySigner(
+	ctx_ context.Context,
+	client_ graphql.WebSocketClient,
+	signingAddress iotago.Address,
+) (dataChan_ chan TransactionsBySignerWsResponse, subscriptionID_ string, err_ error) {
+	req_ := &graphql.Request{
+		OpName: "TransactionsBySigner",
+		Query:  TransactionsBySigner_Operation,
+		Variables: &__TransactionsBySignerInput{
+			SigningAddress: signingAddress,
+		},
+	}
+
+	dataChan_ = make(chan TransactionsBySignerWsResponse)
+	subscriptionID_, err_ = client_.Subscribe(req_, dataChan_, TransactionsBySignerForwardData)
+
+	return dataChan_, subscriptionID_, err_
+}
+
+type TransactionsBySignerWsResponse graphql.BaseResponse[*TransactionsBySignerResponse]
+
+func TransactionsBySignerForwardData(interfaceChan interface{}, jsonRawMsg json.RawMessage) error {
+	var gqlResp graphql.Response
+	var wsResp TransactionsBySignerWsResponse
+	err := json.Unmarshal(jsonRawMsg, &gqlResp)
+	if err != nil {
+		return err
+	}
+	if len(gqlResp.Errors) == 0 {
+		err = json.Unmarshal(jsonRawMsg, &wsResp)
+		if err != nil {
+			return err
+		}
+	} else {
+		wsResp.Errors = gqlResp.Errors
+	}
+	dataChan_, ok := interfaceChan.(chan TransactionsBySignerWsResponse)
+	if !ok {
+		return errors.New("failed to cast interface into 'chan TransactionsBySignerWsResponse'")
+	}
+	dataChan_ <- wsResp
+	return nil
 }
 
 // The query executed by TryGetPastObject.

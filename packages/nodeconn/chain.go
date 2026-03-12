@@ -158,7 +158,7 @@ func (ncc *ncChain) postTxLoop(ctx context.Context, packageID iotago.PackageID) 
 	}
 }
 
-func (ncc *ncChain) syncChainState(ctx context.Context) error {
+func (ncc *ncChain) syncChainState(ctx context.Context) (iotago.Address, error) {
 	ncc.LogInfof("Synchronizing chain state for %s...", ncc.chainID)
 
 	moveAnchor, err := ncc.feed.FetchCurrentState(ctx, ncc.nodeConn.maxNumberOfRequests, func(err error, req *iscmove.RefWithObject[iscmove.Request]) {
@@ -177,24 +177,24 @@ func (ncc *ncChain) syncChainState(ctx context.Context) error {
 		ncc.requestHandler(onLedgerReq)
 	})
 	if err != nil {
-		return err
+		return iotago.Address{}, err
 	}
 
 	anchor := isc.NewStateAnchor(moveAnchor, ncc.feed.GetISCPackageID())
 	l1Params, err := ncc.nodeConn.L1ParamsFetcher().GetOrFetchLatest(ctx)
 	if err != nil {
-		return err
+		return iotago.Address{}, err
 	}
 	ncc.anchorHandler(&anchor, l1Params)
 
 	ncc.LogInfof("Synchronizing chain state for %s... done", ncc.chainID)
-	return nil
+	return *moveAnchor.Owner, nil
 }
 
-func (ncc *ncChain) subscribeToUpdates(ctx context.Context, anchorID iotago.ObjectID) {
+func (ncc *ncChain) subscribeToUpdates(ctx context.Context, anchorID iotago.ObjectID, signerAddress iotago.Address) {
 	anchorUpdates := make(chan *iscmove.AnchorWithRef)
 	newRequests := make(chan *iscmove.RefWithObject[iscmove.Request])
-	ncc.feed.SubscribeToUpdates(ctx, anchorID, anchorUpdates, newRequests)
+	ncc.feed.SubscribeToUpdates(ctx, anchorID, signerAddress, anchorUpdates, newRequests)
 
 	ncc.shutdownWaitGroup.Add(1)
 	go func() {
