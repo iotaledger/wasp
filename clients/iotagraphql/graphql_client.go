@@ -16,7 +16,6 @@ import (
 	"github.com/gorilla/websocket"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql/graphqltypes"
@@ -31,12 +30,21 @@ type GraphQLClient struct {
 	url                     string
 	faucetURL               string
 	client                  graphql.Client
-	wsClient                graphql.WebSocketClient
 	httpClient              *http.Client
 	WaitUntilEffectsVisible *WaitParams
 	FaucetRetryParams       *WaitParams
 	tickingTime             time.Duration
-	log                     log.Logger
+}
+
+// newWebSocketClient creates a new WebSocket client, dials the connection, and returns it ready for subscriptions.
+func (c *GraphQLClient) newWebSocketClient(ctx context.Context) (graphql.WebSocketClient, error) {
+	url := c.url + "/subscriptions"
+	fmt.Printf("dialing WebSocket connection to %s", url)
+	wsClient := graphql.NewClientUsingWebSocket(url, &WebSocketDialer{})
+	if _, err := wsClient.Start(ctx); err != nil {
+		return nil, err
+	}
+	return wsClient, nil
 }
 
 func NewGraphQLClient(url, faucetURL string) *GraphQLClient {
@@ -52,12 +60,20 @@ type WebSocketDialer struct {
 }
 
 func (w *WebSocketDialer) DialContext(ctx context.Context, urlStr string, requestHeader http.Header) (graphql.WSConn, error) {
-	conn, _, err := w.Dialer.DialContext(ctx, urlStr, requestHeader)
+	conn, resp, err := w.Dialer.DialContext(ctx, urlStr, requestHeader)
+	if err != nil && resp != nil {
+		fmt.Printf("[WebSocketDialer] handshake failed: url=%s status=%d\n", urlStr, resp.StatusCode)
+	} else if err != nil {
+		fmt.Printf("[WebSocketDialer] dial failed: url=%s err=%v\n", urlStr, err)
+	} else {
+		fmt.Printf("[WebSocketDialer] connected: url=%s\n", urlStr)
+	}
 	return conn, err
 }
 
 func NewGraphQLClientWithTimeout(url, faucetURL string, timeout time.Duration, waitParams *WaitParams) *GraphQLClient {
 	httpClient := &http.Client{
+
 		Timeout: timeout,
 	}
 
@@ -65,7 +81,6 @@ func NewGraphQLClientWithTimeout(url, faucetURL string, timeout time.Duration, w
 		url:                     strings.TrimRight(url, "/"),
 		faucetURL:               faucetURL,
 		client:                  graphql.NewClient(url, httpClient),
-		wsClient:                graphql.NewClientUsingWebSocket(url, &WebSocketDialer{}),
 		httpClient:              httpClient,
 		WaitUntilEffectsVisible: waitParams,
 		tickingTime:             250 * time.Millisecond,

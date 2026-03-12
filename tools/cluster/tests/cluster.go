@@ -62,8 +62,8 @@ func newCluster(t *testing.T, opt ...waspClusterOpts) *cluster.Cluster {
 	l1 = l1starter.ClusterStart(l1starter.L1EndpointConfig{
 		IsLocal:       false,
 		RandomizeSeed: true,
-		APIURL:        iotaconn.DevnetGraphQLEndpointURL,
-		FaucetURL:     iotaconn.DevnetFaucetURL,
+		APIURL:        iotaconn.AlphanetGraphQLEndpointURL,
+		FaucetURL:     iotaconn.AlphanetFaucetURL,
 	})
 
 	clusterConfig := cluster.NewConfig(

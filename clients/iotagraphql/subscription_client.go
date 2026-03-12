@@ -21,8 +21,15 @@ func (c *GraphQLClient) SubscribeTransaction(
 		return fmt.Errorf("subscribeTransaction via GraphQL requires ChangedObject filter")
 	}
 
-	dataChan, _, err := graphqltypes.TransactionsBySigner(ctx, c.wsClient, *filter.FromAddress)
+	wsClient, err := c.newWebSocketClient(ctx)
 	if err != nil {
+		return fmt.Errorf("failed to start WebSocket connection: %w", err)
+	}
+
+	fmt.Printf("subscribing to transactions from address: %s\n", filter.FromAddress.String())
+	dataChan, _, err := graphqltypes.TransactionsBySigner(ctx, wsClient, *filter.FromAddress)
+	if err != nil {
+		wsClient.Close()
 		return fmt.Errorf("failed to subscribe to transactions: %w", err)
 	}
 
@@ -40,20 +47,21 @@ func (c *GraphQLClient) forwardTransactionResponses(
 	for {
 		select {
 		case <-ctx.Done():
-			c.log.LogWarnf("context done: %v", ctx.Err())
+			fmt.Printf("context done: %v", ctx.Err())
 			return
 		case resp, ok := <-dataChan:
+			fmt.Printf("received transaction response: %+v\n", resp)
 			if !ok {
-				c.log.LogWarnf("data channel closed: %v", dataChan)
+				fmt.Printf("data channel closed: %v", dataChan)
 				return
 			}
 			if len(resp.Errors) > 0 {
-				c.log.LogErrorf("error forwarding transaction responses: %v", resp.Errors)
+				fmt.Printf("error forwarding transaction responses: %v", resp.Errors)
 				continue
 			}
 			txBlock := resp.GetTxBySignerTransactionBlock()
 			if txBlock == nil {
-				c.log.LogWarnf("can't get transaction block from response: %v", resp)
+				fmt.Printf("can't get transaction block from response: %v", resp)
 				continue
 			}
 
@@ -63,10 +71,11 @@ func (c *GraphQLClient) forwardTransactionResponses(
 
 			effects := convertGraphQLTxToEffects(txBlock)
 
+			fmt.Printf("forwarding transaction effects: %+v", effects)
 			select {
 			case resultCh <- effects:
 			case <-ctx.Done():
-				c.log.LogWarnf("context done: %v", ctx.Err())
+				fmt.Printf("context done: %v", ctx.Err())
 				return
 			}
 		}
@@ -119,6 +128,11 @@ func (c *GraphQLClient) SubscribeEvent(
 		return fmt.Errorf("subscribeEvent via GraphQL requires MoveModule.Package filter")
 	}
 
+	wsClient, err := c.newWebSocketClient(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to start WebSocket connection: %w", err)
+	}
+
 	// Format: "package" or "package::module"
 	var emittingModule string
 	if filter.MoveEventType.Module == "" {
@@ -127,8 +141,10 @@ func (c *GraphQLClient) SubscribeEvent(
 		emittingModule = fmt.Sprintf("%s::%s", filter.MoveEventType.Address, filter.MoveEventType.Module)
 	}
 
-	dataChan, _, err := graphqltypes.EventsByModule(ctx, c.wsClient, emittingModule)
+	fmt.Printf("subscribing to events from module: %s\n", emittingModule)
+	dataChan, _, err := graphqltypes.EventsByModule(ctx, wsClient, emittingModule)
 	if err != nil {
+		wsClient.Close()
 		return fmt.Errorf("failed to subscribe to events: %w", err)
 	}
 
@@ -145,29 +161,31 @@ func (c *GraphQLClient) forwardEventResponses(
 	for {
 		select {
 		case <-ctx.Done():
-			c.log.LogWarnf("context done: %v", ctx.Err())
+			fmt.Printf("context done: %v", ctx.Err())
 			return
 		case resp, ok := <-dataChan:
+			fmt.Printf("received event response: %+v\n", resp)
 			if !ok {
-				c.log.LogWarnf("data channel closed: %v", dataChan)
+				fmt.Printf("data channel closed: %v", dataChan)
 				return
 			}
 			if len(resp.Errors) > 0 {
-				c.log.LogErrorf("error forwarding event responses: %v", resp.Errors)
+				fmt.Printf("error forwarding event responses: %v", resp.Errors)
 				continue
 			}
 			event := resp.GetEvent()
 			if event == nil {
-				c.log.LogWarnf("can't get event from response: %v", resp)
+				fmt.Printf("can't get event from response: %v", resp)
 				continue
 			}
 
 			iotaEvent := convertGraphQLEventToIotaEvent(event)
 
+			fmt.Printf("forwarding event: %+v", iotaEvent)
 			select {
 			case resultCh <- iotaEvent:
 			case <-ctx.Done():
-				c.log.LogWarnf("context done: %v", ctx.Err())
+				fmt.Printf("context done: %v", ctx.Err())
 				return
 			}
 		}
@@ -198,5 +216,6 @@ func convertGraphQLEventToIotaEvent(event *graphqltypes.EventsByModuleEventsEven
 		TransactionModule: iotago.Identifier(event.SendingModule.Name),
 		Sender:            sender,
 		Type:              eventType,
+		Bcs:               event.Bcs,
 	}
 }

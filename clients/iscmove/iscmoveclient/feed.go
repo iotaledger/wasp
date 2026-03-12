@@ -95,7 +95,7 @@ func (f *ChainFeed) subscribeToNewRequests(
 ) {
 	for {
 		events := make(chan *iotagraphql.IotaEvent)
-		err := f.httpClient.SubscribeEvent(
+		err := f.wsClient.SubscribeEvent(
 			ctx,
 			&iotagraphql.IotaEventFilter{
 				MoveModule: &iotagraphql.IotaEventFilterMoveModule{
@@ -140,6 +140,7 @@ func (f *ChainFeed) consumeRequestEvents(
 			if !ok {
 				return
 			}
+			fmt.Printf("feed: consumeRequestEvents: received request event: %+v\n", ev)
 			var reqEvent iscmove.RequestEvent
 			err := iotagraphql.UnmarshalBCS(ev.Bcs, &reqEvent)
 			if err != nil {
@@ -148,9 +149,13 @@ func (f *ChainFeed) consumeRequestEvents(
 			}
 
 			// skip if event is not from current anchor
+			fmt.Printf("feed: consumeRequestEvents: anchorID: %s, reqEvent.Anchor: %s\n", anchorID.String(), reqEvent.Anchor.String())
 			if reqEvent.Anchor != anchorID {
+				fmt.Printf("feed: consumeRequestEvents: skipping request event: %+v\n", reqEvent)
 				continue
 			}
+
+			fmt.Printf("feed: consumeRequestEvents: fetching request: %s\n", reqEvent.RequestID.String())
 
 			reqWithObj, err := f.httpClient.GetRequestFromObjectID(ctx, &reqEvent.RequestID)
 			if err != nil {
@@ -158,6 +163,7 @@ func (f *ChainFeed) consumeRequestEvents(
 				continue
 			}
 
+			fmt.Printf("feed: consumeRequestEvents: sending request to channel: %+v\n", reqWithObj)
 			requests <- reqWithObj
 
 			f.log.LogDebugf("REQUEST[%s] SENT TO CHANNEL %s\n", reqEvent.RequestID.String(), time.Now().String())
@@ -172,7 +178,7 @@ func (f *ChainFeed) subscribeToAnchorUpdates(
 ) {
 	for {
 		changes := make(chan *iotagraphql.IotaTransactionBlockEffects)
-		err := f.httpClient.SubscribeTransaction(
+		err := f.wsClient.SubscribeTransaction(
 			ctx,
 			&iotagraphql.TransactionFilter{
 				FromAddress:   &signerAddress,
@@ -209,6 +215,7 @@ func (f *ChainFeed) consumeAnchorUpdates(
 			if !ok {
 				return
 			}
+			fmt.Printf("feed: consumeAnchorUpdates: received anchor update: %+v\n", change)
 			for _, obj := range change.V1.Mutated {
 				if *obj.Reference.ObjectID != f.anchorAddress {
 					continue

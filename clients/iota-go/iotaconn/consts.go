@@ -17,7 +17,7 @@ const (
 	DevnetFaucetURL   = "https://faucet.devnet.iota.cafe/gas"
 
 	LocalnetGraphQLEndpointURL = "http://localhost:9125"
-	AlphanetGraphQLEndpointURL = "https://graphql.iota-rebased-alphanet.iota.cafe"
+	AlphanetGraphQLEndpointURL = "https://graphql.alphanet.iota.cafe"
 	TestnetGraphQLEndpointURL  = "https://graphql.testnet.iota.cafe"
 	DevnetGraphQLEndpointURL   = "https://graphql.devnet.iota.cafe"
 )

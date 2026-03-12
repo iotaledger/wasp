@@ -130,7 +130,7 @@ var waspConfigTemplate = `
     "limits": {
       "timeout": "30s",
       "readTimeout": "10s",
-      "writeTimeout": "10s",
+      "writeTimeout": "60s",
       "maxBodyLength": "2M"
     },
     "debugRequestLoggerEnabled": false

@@ -516,6 +516,8 @@ type EventsByModuleEventsEvent struct {
 	Type EventsByModuleEventsEventTypeMoveType `json:"type"`
 	// UTC timestamp in milliseconds since epoch (1/1/1970)
 	Timestamp time.Time `json:"timestamp"`
+	// The BCS representation of this value, Base64 encoded.
+	Bcs iotago.Base64Data `json:"bcs"`
 	// Representation of a Move value in JSON, where:
 	//
 	// - Addresses, IDs, and UIDs are represented in canonical form, as JSON
@@ -550,6 +552,9 @@ func (v *EventsByModuleEventsEvent) GetType() EventsByModuleEventsEventTypeMoveT
 
 // GetTimestamp returns EventsByModuleEventsEvent.Timestamp, and is useful for accessing the field via an interface.
 func (v *EventsByModuleEventsEvent) GetTimestamp() time.Time { return v.Timestamp }
+
+// GetBcs returns EventsByModuleEventsEvent.Bcs, and is useful for accessing the field via an interface.
+func (v *EventsByModuleEventsEvent) GetBcs() iotago.Base64Data { return v.Bcs }
 
 // GetJson returns EventsByModuleEventsEvent.Json, and is useful for accessing the field via an interface.
 func (v *EventsByModuleEventsEvent) GetJson() json.RawMessage { return v.Json }
@@ -11501,6 +11506,7 @@ subscription EventsByModule ($emittingModule: String!) {
 				repr
 			}
 			timestamp
+			bcs
 			json
 		}
 		... on Lagged {

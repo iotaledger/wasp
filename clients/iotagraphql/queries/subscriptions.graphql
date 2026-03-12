@@ -51,6 +51,7 @@ subscription EventsByModule($emittingModule: String!) {
         repr
       }
       timestamp
+      bcs
       json
     }
     ... on Lagged {
