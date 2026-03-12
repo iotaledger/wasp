@@ -27,7 +27,7 @@ func TestClusterSingleNode(t *testing.T) {
 
 func TestClusterMultiNodeCommittee(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping cluster tests in short modezxc")
+		t.Skip("Skipping cluster tests in short mode")
 	}
 
 	// setup a cluster with 4 nodes

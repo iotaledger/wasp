@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
@@ -140,6 +141,9 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 		require.Equal(t, 0, out.NeedPublishTX().Size())
 		require.NotNil(t, ncm)
 		require.Equal(t, 1, ncm.Size())
+
+		t.Logf("NeedConsensusMap after initial Anchor received: %v", ncm.AsMap())
+
 		ncm.ForEach(func(nck chainmanager.NeedConsensusKey, nc *chainmanager.NeedConsensus) bool {
 			require.Nil(t, nc.BaseStateAnchor)
 			require.Equal(t, uint32(1), nc.LogIndex.AsUint32())
@@ -157,6 +161,28 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	}
 	tc.WithInputs(inputs).RunAll()
 	tc.PrintAllStatusStrings("Next Anchor received", t.Logf)
+
+	// Checking that we did not immediately advance to the next LI, but instead scheduled it for the next Tick after the configured consensusDelay.
+	for nid := range nodes {
+		ncm := needCons[nid]
+		require.Equal(t, 1, ncm.Size())
+	}
+
+	// Ticks are not sent automatically in this test - we wait just to verify it.
+	time.Sleep(time.Second)
+	for nid := range nodes {
+		ncm := needCons[nid]
+		require.Equal(t, 1, ncm.Size())
+	}
+
+	// Simulating tick
+	inputs = map[gpa.NodeID]gpa.Input{}
+	for nid := range nodes {
+		inputs[nid] = chainmanager.NewInputCanPropose()
+	}
+	tc.WithInputs(inputs).RunAll()
+	tc.PrintAllStatusStrings("CanPropose tick received", t.Logf)
+
 	//
 	// Now the next consensus instance should be requested.
 	// Since the previous consensus decided ⊥, now all the nodes will propose the latest Anchor received from L1.
@@ -165,7 +191,10 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 		ncm := needCons[nid]
 		require.Equal(t, 0, out.NeedPublishTX().Size())
 		require.NotNil(t, ncm)
+		t.Logf("NeedConsensusMap after next Anchor received: %v", ncm.AsMap())
+
 		require.Equal(t, 2, ncm.Size())
+
 		ncm.ForEach(func(nck chainmanager.NeedConsensusKey, nc *chainmanager.NeedConsensus) bool {
 			switch nc.LogIndex.AsUint32() {
 			case 1:
