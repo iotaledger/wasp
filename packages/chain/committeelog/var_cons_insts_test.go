@@ -61,4 +61,3 @@ func TestVarConsInsts_ConsOutputSkipDefersUntilTick(t *testing.T) {
 	require.Equal(t, LogIndex(1), lastTickLI)
 	require.Contains(t, persisted, LogIndex(1))
 }
-
