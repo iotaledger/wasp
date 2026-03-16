@@ -484,7 +484,7 @@ func TestInvalidAllowance(t *testing.T) {
 		&iscmoveclient.CreateAndSendRequestWithAssetsRequest{
 			Signer:        ch.ChainAdmin,
 			PackageID:     ch.Env.ISCPackageID(),
-			AnchorAddress: ch.ID().AsAddress().AsIotaAddress(),
+			AnchorAddress: lo.ToPtr(ch.ID().AsAddress().AsIotaAddress()),
 			Assets:        isc.NewAssets(1 * isc.Million).AsISCMove(),
 			Message: &iscmove.Message{
 				Contract: uint32(accounts.Contract.Hname()),

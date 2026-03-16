@@ -6,6 +6,8 @@ import (
 	"math"
 	"sync"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/clients"
 	"github.com/iotaledger/wasp/v2/clients/apiclient"
@@ -167,7 +169,7 @@ func (c *Client) postSingleRequest(
 		&iscmoveclient.CreateAndSendRequestWithAssetsRequest{
 			Signer:           c.KeyPair,
 			PackageID:        *iscPackageID,
-			AnchorAddress:    c.ChainID.AsAddress().AsIotaAddress(),
+			AnchorAddress:    lo.ToPtr(c.ChainID.AsAddress().AsIotaAddress()),
 			Assets:           transferAssets,
 			Message:          msg,
 			AllowanceBCS:     allowanceBCS,

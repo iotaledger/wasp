@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
-	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/parameters/l1paramsfetcher"
 	"github.com/iotaledger/wasp/v2/packages/parameters/parameterstest"
@@ -50,10 +49,10 @@ func TestDepositFundsToGasCoin(t *testing.T) {
 
 	kp := cryptolib.NewKeyPair()
 	wallet := providers.NewUnsafeInMemoryTestingSeed(kp, 0)
-	require.NoError(t, client.RequestFundsFromFaucet(context.Background(), *kp.Address().AsIotaAddress()))
-	require.NoError(t, client.RequestFundsFromFaucet(context.Background(), *kp.Address().AsIotaAddress()))
+	require.NoError(t, client.RequestFundsFromFaucet(context.Background(), kp.Address().AsIotaAddress()))
+	require.NoError(t, client.RequestFundsFromFaucet(context.Background(), kp.Address().AsIotaAddress()))
 
-	baseCoin := iotagraphql.CoinType(coin.BaseTokenType.String())
+	baseCoin := iotagraphql.IotaCoinType
 	coins, err := client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{
 		CoinType: &baseCoin,
 		Owner:    kp.Address().AsIotaAddress(),
@@ -61,11 +60,11 @@ func TestDepositFundsToGasCoin(t *testing.T) {
 	require.NoError(t, err)
 
 	coinID1 := coins.Address.Coins.Nodes[1].ObjectID()
-	res, err := client.TransferIota(context.Background(), iotagraphql.TransferIotaRequest{
-		Signer:    kp.Address().AsIotaAddress(),
-		GasBudget: iotagraphql.NewBigIntInt64(iotagraphql.DefaultGasBudget),
-		Recipient: committeeAddress.AsIotaAddress(),
-		ObjectID:  &coinID1,
+	res, err := client.PayAllIota(context.Background(), iotagraphql.PayAllIotaRequest{
+		Signer:     kp.Address().AsIotaAddress(),
+		GasBudget:  iotagraphql.NewBigIntInt64(iotagraphql.DefaultGasBudget),
+		Recipient:  committeeAddress.AsIotaAddress(),
+		InputCoins: []iotago.ObjectID{coinID1},
 	})
 	require.NoError(t, err)
 
@@ -73,11 +72,11 @@ func TestDepositFundsToGasCoin(t *testing.T) {
 	require.NoError(t, err)
 
 	coinID0 := coins.Address.Coins.Nodes[0].ObjectID()
-	res2, err := client.TransferIota(context.Background(), iotagraphql.TransferIotaRequest{
-		Signer:    kp.Address().AsIotaAddress(),
-		GasBudget: iotagraphql.NewBigIntInt64(iotagraphql.DefaultGasBudget),
-		Recipient: committeeAddress.AsIotaAddress(),
-		ObjectID:  &coinID0,
+	res2, err := client.PayAllIota(context.Background(), iotagraphql.PayAllIotaRequest{
+		Signer:     kp.Address().AsIotaAddress(),
+		GasBudget:  iotagraphql.NewBigIntInt64(iotagraphql.DefaultGasBudget),
+		Recipient:  committeeAddress.AsIotaAddress(),
+		InputCoins: []iotago.ObjectID{coinID0},
 	})
 	require.NoError(t, err)
 
@@ -104,7 +103,7 @@ func TestDepositFundsToGasCoin(t *testing.T) {
 	)
 
 	txData := iotago.NewProgrammable(
-		committeeAddress.AsIotaAddress(),
+		lo.ToPtr(committeeAddress.AsIotaAddress()),
 		ptb.Finish(),
 		[]*iotago.ObjectRef{selectedCoinToPayForGas},
 		iotagraphql.DefaultGasBudget,
@@ -127,7 +126,7 @@ func TestCreateTX(t *testing.T) {
 	client := cliclients.L1Client()
 	kp := cryptolib.NewKeyPair()
 	wallet := providers.NewUnsafeInMemoryTestingSeed(kp, 0)
-	require.NoError(t, client.RequestFundsFromFaucet(context.Background(), *kp.Address().AsIotaAddress()))
+	require.NoError(t, client.RequestFundsFromFaucet(context.Background(), kp.Address().AsIotaAddress()))
 	packageID := lo.Must(client.L2().DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(kp)))
 
 	ptb := iotago.NewProgrammableTransactionBuilder()
@@ -136,14 +135,15 @@ func TestCreateTX(t *testing.T) {
 	t.Log("Creating new coin and transfer it to the Committee address")
 
 	l1Params := lo.Must(l1paramsfetcher.FetchLatest(context.Background(), client.GetIotaClient()))
-	newGasCoinAddress := lo.Must(chain.CreateAndSendGasCoin(context.Background(), client, wallet, committeeAddress.AsIotaAddress(), l1Params))
+	committeeIotaAddr := committeeAddress.AsIotaAddress()
+	newGasCoinAddress := lo.Must(chain.CreateAndSendGasCoin(context.Background(), client, wallet, &committeeIotaAddr, l1Params))
 
 	gasCoinResp := lo.Must(client.GetObject(context.Background(), newGasCoinAddress))
 	gasCoin := lo.Must(gasCoinResp.Object.ObjectRef())
 
 	t.Logf("Gas coin ref: %v\n", gasCoin)
 
-	tx := iotago.NewProgrammable(committeeAddress.AsIotaAddress(), ptb.Finish(), []*iotago.ObjectRef{gasCoin}, 9999999, 1000)
+	tx := iotago.NewProgrammable(lo.ToPtr(committeeAddress.AsIotaAddress()), ptb.Finish(), []*iotago.ObjectRef{gasCoin}, 9999999, 1000)
 	txnBytes := lo.Must(bcs.Marshal(&tx))
 
 	t.Logf("Test Transaction hex:\n%s\n", hexutil.Encode(txnBytes))

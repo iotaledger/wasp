@@ -105,6 +105,7 @@ func (c *FakeIotaClient) SignAndExecuteTxWithRetry(
 	gasBudget uint64,
 	gasPrice uint64,
 ) (*iotagraphql.ExecuteTransactionBlockResponse, error) {
+	addr := signer.Address()
 	var gasPayments []*iotago.ObjectRef
 	if gasCoin != nil {
 		updated, err := c.UpdateObjectRef(ctx, gasCoin)
@@ -113,11 +114,7 @@ func (c *FakeIotaClient) SignAndExecuteTxWithRetry(
 		}
 		gasPayments = []*iotago.ObjectRef{updated}
 	} else {
-		addr := signer.Address()
-		if addr == nil {
-			return nil, fmt.Errorf("FakeIotaClient: signer has no address")
-		}
-		coins := c.Store.GetCoinsByOwner(*addr, IotaCoinTypeStr)
+		coins := c.Store.GetCoinsByOwner(addr, IotaCoinTypeStr)
 		if len(coins) == 0 {
 			return nil, fmt.Errorf("FakeIotaClient: no gas coins for %s", addr.String())
 		}
@@ -126,12 +123,7 @@ func (c *FakeIotaClient) SignAndExecuteTxWithRetry(
 		}
 	}
 
-	addr := signer.Address()
-	if addr == nil {
-		return nil, fmt.Errorf("FakeIotaClient: signer has no address")
-	}
-
-	tx := iotago.NewProgrammable(addr, pt, gasPayments, gasBudget, gasPrice)
+	tx := iotago.NewProgrammable(&addr, pt, gasPayments, gasBudget, gasPrice)
 	txBytes, err := bcs.Marshal(&tx)
 	if err != nil {
 		return nil, fmt.Errorf("FakeIotaClient: BCS marshal tx: %w", err)
@@ -265,11 +257,7 @@ func (c *FakeIotaClient) GetDynamicFields(
 	_ context.Context,
 	req iotagraphql.GetDynamicFieldsRequest,
 ) (*graphqltypes.GetDynamicFieldsResponse, error) {
-	if req.ParentObjectID == nil {
-		return nil, fmt.Errorf("FakeIotaClient: GetDynamicFields: parentObjectID is nil")
-	}
-
-	fields := c.Store.GetDynamicFields(*req.ParentObjectID)
+	fields := c.Store.GetDynamicFields(req.ParentObjectID)
 	nodes := make([]graphqltypes.GetDynamicFieldsOwnerDynamicFieldsDynamicFieldConnectionNodesDynamicField, 0, len(fields))
 
 	for _, df := range fields {
@@ -314,15 +302,11 @@ func (c *FakeIotaClient) GetOwnedObjects(
 	_ context.Context,
 	req iotagraphql.GetOwnedObjectsRequest,
 ) (*graphqltypes.GetOwnedObjectsResponse, error) {
-	if req.Address == nil {
-		return nil, fmt.Errorf("FakeIotaClient: GetOwnedObjects: address is nil")
-	}
-
 	var objs []*SimObject
 	if req.Filter != nil && req.Filter.Type != nil {
-		objs = c.Store.GetByOwnerAndType(*req.Address, *req.Filter.Type)
+		objs = c.Store.GetByOwnerAndType(req.Address, *req.Filter.Type)
 	} else {
-		objs = c.Store.GetByOwner(*req.Address)
+		objs = c.Store.GetByOwner(req.Address)
 	}
 
 	nodes := make([]graphqltypes.GetOwnedObjectsAddressObjectsMoveObjectConnectionNodesMoveObject, 0, len(objs))
@@ -342,24 +326,28 @@ func (c *FakeIotaClient) GetOwnedObjects(
 }
 
 func (c *FakeIotaClient) GetCoins(_ context.Context, req iotagraphql.GetCoinsRequest) (*iotagraphql.GetCoinsResponse, error) {
-	if req.Owner == nil {
-		return nil, fmt.Errorf("FakeIotaClient: GetCoins: owner is nil")
+	var coins []*SimObject
+	if req.CoinType == nil {
+		allObjs := c.Store.GetByOwner(req.Owner)
+		for _, obj := range allObjs {
+			if _, ok := extractCoinType(obj.Type); ok {
+				coins = append(coins, obj)
+			}
+		}
+	} else {
+		coinType := string(*req.CoinType)
+		coins = c.Store.GetCoinsByOwner(req.Owner, coinType)
 	}
 
-	coinType := IotaCoinTypeStr
-	if req.CoinType != nil {
-		coinType = string(*req.CoinType)
-	}
-
-	coins := c.Store.GetCoinsByOwner(*req.Owner, coinType)
 	coinNodes := make([]graphqltypes.CoinData, 0, len(coins))
-	for _, coin := range coins {
-		coinNodes = append(coinNodes, buildCoinData(coin, coinType))
+	for _, obj := range coins {
+		ct, _ := extractCoinType(obj.Type)
+		coinNodes = append(coinNodes, buildCoinData(obj, ct))
 	}
 
 	return &graphqltypes.GetCoinsResponse{
 		Address: graphqltypes.GetCoinsAddress{
-			Address: *req.Owner,
+			Address: req.Owner,
 			Coins: graphqltypes.GetCoinsAddressCoinsCoinConnection{
 				Nodes: coinNodes,
 			},
@@ -367,40 +355,13 @@ func (c *FakeIotaClient) GetCoins(_ context.Context, req iotagraphql.GetCoinsReq
 	}, nil
 }
 
-func (c *FakeIotaClient) GetAllCoins(_ context.Context, req iotagraphql.GetAllCoinsRequest) (*iotagraphql.GetAllCoinsResponse, error) {
-	if req.Owner == nil {
-		return nil, fmt.Errorf("FakeIotaClient: GetAllCoins: owner is nil")
-	}
-
-	allObjs := c.Store.GetByOwner(*req.Owner)
-	coinNodes := make([]graphqltypes.CoinData, 0)
-	for _, obj := range allObjs {
-		if ct, ok := extractCoinType(obj.Type); ok {
-			coinNodes = append(coinNodes, buildCoinData(obj, ct))
-		}
-	}
-
-	return &graphqltypes.GetAllCoinsResponse{
-		Address: graphqltypes.GetAllCoinsAddress{
-			Address: *req.Owner,
-			Coins: graphqltypes.GetAllCoinsAddressCoinsCoinConnection{
-				Nodes: coinNodes,
-			},
-		},
-	}, nil
-}
-
 func (c *FakeIotaClient) GetBalance(_ context.Context, req iotagraphql.GetBalanceRequest) (*iotagraphql.Balance, error) {
-	if req.Owner == nil {
-		return nil, fmt.Errorf("FakeIotaClient: GetBalance: owner is nil")
-	}
-
 	coinType := IotaCoinTypeStr
 	if req.CoinType != "" {
 		coinType = string(req.CoinType)
 	}
 
-	coins := c.Store.GetCoinsByOwner(*req.Owner, coinType)
+	coins := c.Store.GetCoinsByOwner(req.Owner, coinType)
 	var total uint64
 	for _, coin := range coins {
 		total += DecodeCoinObjectBalance(coin.Data)
@@ -465,7 +426,7 @@ func (c *FakeIotaClient) GetCoinObjsForTargetAmount(
 	gasAmount uint64,
 ) (iotagraphql.Coins, error) {
 	coins, err := c.GetCoins(ctx, iotagraphql.GetCoinsRequest{
-		Owner: &address,
+		Owner: address,
 		Limit: 50,
 	})
 	if err != nil {
@@ -483,7 +444,7 @@ func (c *FakeIotaClient) GetCoinObjsForTargetAmount(
 }
 
 func (c *FakeIotaClient) PayIota(_ context.Context, req iotagraphql.PayIotaRequest) (*iotagraphql.TransactionBytes, error) {
-	if req.Signer == nil || len(req.InputCoins) == 0 || len(req.Recipients) == 0 || len(req.Amount) == 0 {
+	if len(req.InputCoins) == 0 || len(req.Recipients) == 0 || len(req.Amount) == 0 {
 		return nil, fmt.Errorf("FakeIotaClient: PayIota: missing required fields")
 	}
 
@@ -529,7 +490,7 @@ func (c *FakeIotaClient) PayIota(_ context.Context, req iotagraphql.PayIotaReque
 		gasBudget = req.GasBudget.Uint64()
 	}
 
-	tx := iotago.NewProgrammable(req.Signer, pt, gasPayments, gasBudget, defaultGasPrice)
+	tx := iotago.NewProgrammable(&req.Signer, pt, gasPayments, gasBudget, defaultGasPrice)
 	txBytes, err := bcs.Marshal(&tx)
 	if err != nil {
 		return nil, fmt.Errorf("FakeIotaClient: PayIota: BCS marshal: %w", err)
@@ -538,19 +499,11 @@ func (c *FakeIotaClient) PayIota(_ context.Context, req iotagraphql.PayIotaReque
 	return &graphqltypes.TransactionBytes{TxBytes: txBytes}, nil
 }
 
-func (c *FakeIotaClient) MergeCoins(_ context.Context, req iotagraphql.MergeCoinsRequest) (*iotagraphql.TransactionBytes, error) {
-	return nil, fmt.Errorf("FakeIotaClient: MergeCoins not implemented")
-}
-
 func (c *FakeIotaClient) PayAllIota(_ context.Context, req iotagraphql.PayAllIotaRequest) (*iotagraphql.TransactionBytes, error) {
 	return nil, fmt.Errorf("FakeIotaClient: PayAllIota not implemented")
 }
 
 func (c *FakeIotaClient) Publish(_ context.Context, req iotagraphql.PublishRequest) (*iotagraphql.TransactionBytes, error) {
-	if req.Sender == nil {
-		return nil, fmt.Errorf("FakeIotaClient: Publish: sender is nil")
-	}
-
 	modules := make([][]byte, len(req.CompiledModules))
 	for i, module := range req.CompiledModules {
 		if module == nil {
@@ -561,7 +514,7 @@ func (c *FakeIotaClient) Publish(_ context.Context, req iotagraphql.PublishReque
 
 	ptb := iotago.NewProgrammableTransactionBuilder()
 	capArg := ptb.PublishUpgradeable(modules, req.Dependencies)
-	ptb.TransferArgs(req.Sender, []iotago.Argument{capArg})
+	ptb.TransferArgs(&req.Sender, []iotago.Argument{capArg})
 	pt := ptb.Finish()
 
 	gasBudget := uint64(50_000_000)
@@ -569,24 +522,20 @@ func (c *FakeIotaClient) Publish(_ context.Context, req iotagraphql.PublishReque
 		gasBudget = req.GasBudget.Uint64()
 	}
 
-	coins := c.Store.GetCoinsByOwner(*req.Sender, IotaCoinTypeStr)
+	coins := c.Store.GetCoinsByOwner(req.Sender, IotaCoinTypeStr)
 	if len(coins) == 0 {
 		return nil, fmt.Errorf("FakeIotaClient: Publish: no gas coins for %s", req.Sender.String())
 	}
 
 	gasPayments := []*iotago.ObjectRef{coins[0].Ref()}
 
-	tx := iotago.NewProgrammable(req.Sender, pt, gasPayments, gasBudget, defaultGasPrice)
+	tx := iotago.NewProgrammable(&req.Sender, pt, gasPayments, gasBudget, defaultGasPrice)
 	txBytes, err := bcs.Marshal(&tx)
 	if err != nil {
 		return nil, fmt.Errorf("FakeIotaClient: Publish: BCS marshal: %w", err)
 	}
 
 	return &graphqltypes.TransactionBytes{TxBytes: txBytes}, nil
-}
-
-func (c *FakeIotaClient) TransferIota(_ context.Context, req iotagraphql.TransferIotaRequest) (*iotagraphql.TransactionBytes, error) {
-	return nil, fmt.Errorf("FakeIotaClient: TransferIota not implemented")
 }
 
 func (c *FakeIotaClient) TransferObject(_ context.Context, req iotagraphql.TransferObjectRequest) (*iotagraphql.TransactionBytes, error) {
@@ -600,43 +549,20 @@ func (c *FakeIotaClient) GetReferenceGasPrice(_ context.Context) (*iotagraphql.B
 func (c *FakeIotaClient) GetLatestIotaSystemState(_ context.Context) (*iotagraphql.GetLatestIotaSystemStateResponse, error) {
 	now := time.Now()
 	epochStart := now.Add(-1 * time.Hour)
-	epochEnd := now.Add(23 * time.Hour)
 
 	return &graphqltypes.GetLatestIotaSystemStateResponse{
 		Epoch: graphqltypes.GetLatestIotaSystemStateEpoch{
-			EpochId:            0,
-			StartTimestamp:     epochStart,
-			EndTimestamp:       epochEnd,
-			ReferenceGasPrice:  *graphqltypes.NewBigInt(defaultGasPrice),
-			IotaTotalSupply:    *graphqltypes.NewBigInt(10_000_000_000_000_000_000), // 10B IOTA
-			SystemStateVersion: 1,
+			EpochId:           0,
+			StartTimestamp:    epochStart,
+			ReferenceGasPrice: *graphqltypes.NewBigInt(defaultGasPrice),
+			IotaTotalSupply:   *graphqltypes.NewBigInt(10_000_000_000_000_000_000), // 10B IOTA
 			ProtocolConfigs: graphqltypes.GetLatestIotaSystemStateEpochProtocolConfigs{
 				ProtocolVersion: 1,
 			},
-			SafeMode: graphqltypes.GetLatestIotaSystemStateEpochSafeMode{
-				GasSummary: graphqltypes.GetLatestIotaSystemStateEpochSafeModeGasSummaryGasCostSummary{
-					ComputationCost:         *graphqltypes.NewBigInt(0),
-					NonRefundableStorageFee: *graphqltypes.NewBigInt(0),
-					StorageCost:             *graphqltypes.NewBigInt(0),
-					StorageRebate:           *graphqltypes.NewBigInt(0),
-				},
-			},
-			StorageFund: graphqltypes.GetLatestIotaSystemStateEpochStorageFund{
-				NonRefundableBalance:      *graphqltypes.NewBigInt(0),
-				TotalObjectStorageRebates: *graphqltypes.NewBigInt(0),
-			},
 			SystemParameters: graphqltypes.GetLatestIotaSystemStateEpochSystemParameters{
-				MinValidatorCount:              4,
-				MaxValidatorCount:              150,
-				MinValidatorJoiningStake:       *graphqltypes.NewBigInt(30_000_000_000_000),
-				DurationMs:                     *graphqltypes.NewBigInt(86_400_000),
-				ValidatorLowStakeThreshold:     *graphqltypes.NewBigInt(20_000_000_000_000),
-				ValidatorLowStakeGracePeriod:   *graphqltypes.NewBigInt(7),
-				ValidatorVeryLowStakeThreshold: *graphqltypes.NewBigInt(15_000_000_000_000),
+				DurationMs: *graphqltypes.NewBigInt(86_400_000),
 			},
-			ValidatorSet: graphqltypes.GetLatestIotaSystemStateEpochValidatorSet{
-				TotalStake: *graphqltypes.NewBigInt(1_000_000_000_000_000),
-			},
+			ValidatorSet: graphqltypes.GetLatestIotaSystemStateEpochValidatorSet{},
 		},
 	}, nil
 }
@@ -677,13 +603,14 @@ func (c *FakeIotaClient) MintToken(
 	})
 	pt := ptb.Finish()
 
-	coins := c.Store.GetCoinsByOwner(*signer.Address(), IotaCoinTypeStr)
+	mintAddr := signer.Address()
+	coins := c.Store.GetCoinsByOwner(mintAddr, IotaCoinTypeStr)
 	if len(coins) == 0 {
 		return nil, fmt.Errorf("FakeIotaClient: MintToken: no gas coins")
 	}
 	gasPayments := []*iotago.ObjectRef{coins[0].Ref()}
 
-	tx := iotago.NewProgrammable(signer.Address(), pt, gasPayments, iotagraphql.DefaultGasBudget, defaultGasPrice)
+	tx := iotago.NewProgrammable(&mintAddr, pt, gasPayments, iotagraphql.DefaultGasBudget, defaultGasPrice)
 	txBytes, err := bcs.Marshal(&tx)
 	if err != nil {
 		return nil, fmt.Errorf("FakeIotaClient: MintToken: %w", err)

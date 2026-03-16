@@ -50,7 +50,7 @@ func (r *RemoteIotaNode) IsLocal() bool {
 func (r *RemoteIotaNode) Start(ctx context.Context) {
 	client := r.L1Client()
 
-	err := client.RequestFundsFromFaucet(ctx, *r.iscPackageOwner.Address())
+	err := client.RequestFundsFromFaucet(ctx, r.iscPackageOwner.Address())
 	if err != nil {
 		panic(fmt.Errorf("faucet request failed: %w for url: %s", err, r.faucetURL))
 	}

@@ -1,30 +1,3 @@
-query QueryTransactionBlocks(
-	# @genqlient(pointer: true)
-	$first: Int
-	# @genqlient(pointer: true)
-	$last: Int
-	# @genqlient(pointer: true)
-	$before: String
-	# @genqlient(pointer: true)
-	$after: String
-	# @genqlient(pointer: true)
-	$filter: TransactionBlockFilter
-) {
-	transactionBlocks(first: $first, after: $after, last: $last, before: $before, filter: $filter) {
-		pageInfo {
-			...PAGE_INFO
-		}
-		# @genqlient(typename: "TxBlockData")
-		nodes {
-			...TX_CORE
-			# @genqlient(typename: "TxEffects")
-			effects {
-				...TX_EFFECTS
-			}
-		}
-	}
-}
-
 query GetTransactionBlock($digest: String!) {
 	# @genqlient(typename: "TxBlockData")
 	transactionBlock(digest: $digest) {
@@ -32,70 +5,6 @@ query GetTransactionBlock($digest: String!) {
 		# @genqlient(typename: "TxEffects")
 		effects {
 			...TX_EFFECTS
-		}
-	}
-}
-
-query MultiGetTransactionBlocks(
-	$digests: [String!]!
-	# @genqlient(pointer: true)
-	$limit: Int
-	# @genqlient(pointer: true)
-	$cursor: String
-) {
-	transactionBlocks(first: $limit, after: $cursor, filter: { transactionIds: $digests }) {
-		pageInfo {
-			...PAGE_INFO
-		}
-		# @genqlient(typename: "TxBlockData")
-		nodes {
-			...TX_CORE
-			# @genqlient(typename: "TxEffects")
-			effects {
-				...TX_EFFECTS
-			}
-		}
-	}
-}
-
-query PaginateTransactionBlockLists(
-	$digest: String!
-	$hasMoreEvents: Boolean!
-	$hasMoreBalanceChanges: Boolean!
-	$hasMoreObjectChanges: Boolean!
-	$afterEvents: String
-	$afterBalanceChanges: String
-	$afterObjectChanges: String
-) {
-	transactionBlock(digest: $digest) {
-		effects {
-			events(after: $afterEvents) @include(if: $hasMoreEvents) {
-				pageInfo {
-					...PAGE_INFO
-				}
-				# @genqlient(typename: "EventData")
-				nodes {
-					...EVENT_FIELDS
-				}
-			}
-			balanceChanges(after: $afterBalanceChanges) @include(if: $hasMoreBalanceChanges) {
-				pageInfo {
-					...PAGE_INFO
-				}
-				# @genqlient(typename: "BalanceChangeData")
-				nodes {
-					...BALANCE_CHANGE
-				}
-			}
-			objectChanges(after: $afterObjectChanges) @include(if: $hasMoreObjectChanges) {
-				pageInfo {
-					...PAGE_INFO
-				}
-				# @genqlient(typename: "ObjectChangeData")
-				nodes {
-					...OBJECT_CHANGE
-				}
-			}
 		}
 	}
 }

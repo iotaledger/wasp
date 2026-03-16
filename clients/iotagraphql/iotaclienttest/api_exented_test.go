@@ -27,7 +27,7 @@ func TestGetDynamicFields(t *testing.T) {
 
 	t.Run("GetDynamicFields", func(t *testing.T) {
 		resp, err := client.GetDynamicFields(ctx, iotagraphql.GetDynamicFieldsRequest{
-			ParentObjectID: iotago.MustObjectIDFromHex("0x5"),
+			ParentObjectID: *iotago.MustObjectIDFromHex("0x5"),
 		})
 		require.NoError(t, err)
 		require.NotNil(t, resp)
@@ -80,7 +80,7 @@ func TestGetOwnedObjects(t *testing.T) {
 			objs, err := client.GetOwnedObjects(
 				ctx, iotagraphql.GetOwnedObjectsRequest{
 					Address: owner,
-					Filter:  &graphqltypes.ObjectFilter{Owner: owner},
+					Filter:  &graphqltypes.ObjectFilter{Owner: &owner},
 					Limit:   &limit,
 				},
 			)

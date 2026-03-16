@@ -442,9 +442,10 @@ func (env *Solo) IotaFaucetURL() string {
 }
 
 func (ch *Chain) GetLatestAnchor() *isc.StateAnchor {
+	anchorAddr := ch.ChainID.AsAddress().AsIotaAddress()
 	anchor, err := ch.Env.ISCMoveClient().GetAnchorFromObjectID(
 		ch.Env.ctx,
-		ch.ChainID.AsAddress().AsIotaAddress(),
+		&anchorAddr,
 	)
 	require.NoError(ch.Env.T, err)
 
@@ -472,9 +473,10 @@ func (env *Solo) GetCoin(id *iotago.ObjectID) *coin.CoinWithRef {
 }
 
 func (ch *Chain) GetLatestGasCoin() *coin.CoinWithRef {
+	gasCoinAnchorAddr := ch.ChainID.AsAddress().AsIotaAddress()
 	anchor, err := ch.Env.ISCMoveClient().GetAnchorFromObjectID(
 		ch.Env.ctx,
-		ch.ChainID.AsAddress().AsIotaAddress(),
+		&gasCoinAnchorAddr,
 	)
 	require.NoError(ch.Env.T, err)
 
@@ -493,7 +495,8 @@ func (ch *Chain) GetLatestAnchorWithBalances() (*isc.StateAnchor, *isc.Assets) {
 // collateBatch selects requests to be processed in a batch
 func (ch *Chain) collateBatch(maxRequestsInBlock int) []isc.Request {
 	reqs := make([]*iscmove.RefWithObject[iscmove.Request], 0)
-	err := ch.Env.ISCMoveClient().GetRequestsSorted(ch.Env.ctx, ch.Env.ISCPackageID(), ch.ChainID.AsAddress().AsIotaAddress(), maxRequestsInBlock, func(err error, i *iscmove.RefWithObject[iscmove.Request]) {
+	reqsAnchorAddr := ch.ChainID.AsAddress().AsIotaAddress()
+	err := ch.Env.ISCMoveClient().GetRequestsSorted(ch.Env.ctx, ch.Env.ISCPackageID(), &reqsAnchorAddr, maxRequestsInBlock, func(err error, i *iscmove.RefWithObject[iscmove.Request]) {
 		require.NoError(ch.Env.T, err)
 		reqs = append(reqs, i)
 	})
@@ -603,7 +606,7 @@ func (env *Solo) L1CoinBalance(addr *cryptolib.Address, coinType coin.Type) coin
 
 // L1CoinBalances returns all ftokens of the address contained in the UTXODB ledger
 func (env *Solo) L1CoinBalances(addr *cryptolib.Address) isc.CoinBalances {
-	r, err := env.L1Client().GetAllBalances(env.ctx, *addr.AsIotaAddress())
+	r, err := env.L1Client().GetAllBalances(env.ctx, addr.AsIotaAddress())
 	require.NoError(env.T, err)
 	cb := isc.NewCoinBalances()
 	for _, b := range r {
@@ -618,8 +621,9 @@ func (env *Solo) executePTB(
 	gasPaymentCoins []*iotago.ObjectRef,
 	gasBudget, gasPrice uint64,
 ) *iotagraphql.ExecuteTransactionBlockResponse {
+	walletAddr := wallet.Address().AsIotaAddress()
 	tx := iotago.NewProgrammable(
-		wallet.Address().AsIotaAddress(),
+		&walletAddr,
 		ptb,
 		gasPaymentCoins,
 		gasBudget,
@@ -676,7 +680,8 @@ func (env *Solo) L1MintCoin(
 	coinType := fmt.Sprintf("%s::%s::%s", packageID.String(), moduleName, typeTag)
 
 	// Wait for the coin to be available via GetCoins before returning
-	env.WaitForCoinToBeIndexed(keyPair.Address().AsIotaAddress(), coinRef.ObjectID, iotagraphql.CoinType(coinType))
+	coinOwnerAddr := keyPair.Address().AsIotaAddress()
+	env.WaitForCoinToBeIndexed(&coinOwnerAddr, coinRef.ObjectID, iotagraphql.CoinType(coinType))
 	return coinRef
 }
 
@@ -701,7 +706,7 @@ func (env *Solo) WaitForCoinToBeIndexed(owner *iotago.Address, coinID *iotago.Ob
 		case <-ticker.C:
 			// Query for this specific coin type using GetCoins
 			coins, err := env.ISCMoveClient().GetCoins(ctx, iotagraphql.GetCoinsRequest{
-				Owner:    owner,
+				Owner:    *owner,
 				CoinType: &coinType,
 			})
 			if err != nil {

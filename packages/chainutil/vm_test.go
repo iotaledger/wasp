@@ -10,6 +10,8 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
@@ -71,7 +73,7 @@ func initChain(chainCreator *cryptolib.KeyPair, store state.Store) *isc.StateAnc
 				Version:  0,
 			},
 			Object: &anchor,
-			Owner:  chainCreator.Address().AsIotaAddress(),
+			Owner:  lo.ToPtr(chainCreator.Address().AsIotaAddress()),
 		},
 		iotago.PackageID{},
 	)
