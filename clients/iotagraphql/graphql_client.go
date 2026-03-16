@@ -73,7 +73,7 @@ func (c *GraphQLClient) RequestFundsFromFaucet(ctx context.Context, address iota
 
 	initial, err := c.getIotaBalanceSnapshot(ctx, address)
 	for i := 0; err != nil && i < params.Attempts; i++ {
-		if waitErr := waitWithContext(ctx, 1, params.DelayBetweenAttempts); waitErr != nil {
+		if waitErr := waitWithContext(ctx, params.DelayBetweenAttempts); waitErr != nil {
 			return waitErr
 		}
 		initial, err = c.getIotaBalanceSnapshot(ctx, address)
@@ -92,7 +92,7 @@ func (c *GraphQLClient) RequestFundsFromFaucet(ctx context.Context, address iota
 			return nil
 		}
 		if i < params.Attempts-1 {
-			if waitErr := waitWithContext(ctx, 1, params.DelayBetweenAttempts); waitErr != nil {
+			if waitErr := waitWithContext(ctx, params.DelayBetweenAttempts); waitErr != nil {
 				return waitErr
 			}
 		}
@@ -127,18 +127,16 @@ func (c *GraphQLClient) getIotaBalanceSnapshot(ctx context.Context, address iota
 	}, nil
 }
 
-func waitWithContext(ctx context.Context, attempts int, delay time.Duration) error {
-	for i := 0; i < attempts; i++ {
-		if delay <= 0 {
-			continue
-		}
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(delay):
-		}
+func waitWithContext(ctx context.Context, delay time.Duration) error {
+	if delay <= 0 {
+		return nil
 	}
-	return nil
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-time.After(delay):
+		return nil
+	}
 }
 
 func requestFundsFromFaucetRaw(ctx context.Context, address iotago.Address, faucetURL string) error {
@@ -190,8 +188,8 @@ func requestFundsFromFaucetRaw(ctx context.Context, address iotago.Address, fauc
 	}
 }
 
-func (c *GraphQLClient) Query(ctx context.Context, query string, variables map[string]interface{}) ([]byte, error) {
-	requestBody := map[string]interface{}{
+func (c *GraphQLClient) Query(ctx context.Context, query string, variables map[string]any) ([]byte, error) {
+	requestBody := map[string]any{
 		"query":     query,
 		"variables": variables,
 	}
@@ -235,13 +233,6 @@ func bigIntToUint64(b *BigInt, fieldName string) (uint64, error) {
 	return b.Uint64(), nil
 }
 
-func validateRequired(val interface{}, paramName string) error {
-	if val == nil {
-		return fmt.Errorf("%s is required", paramName)
-	}
-	return nil
-}
-
 func (c *GraphQLClient) GetDynamicFieldObject(
 	ctx context.Context,
 	req GetDynamicFieldObjectRequest,
@@ -261,16 +252,9 @@ func (c *GraphQLClient) GetDynamicFieldObject(
 		Bcs:  bcsData,
 	}
 
-	showBcs := true
-	showPreviousTransaction := true
-	showDisplay := true
-	showStorageRebate := true
-
-	// Try querying as an object first
-	objResp, objErr := graphqltypes.GetDynamicFieldObject(ctx, c.client, req.ParentObjectID, nameInput,
-		&showBcs, &showPreviousTransaction, &showDisplay, &showStorageRebate)
-
-	return objResp, objErr
+	opts := showAllObjectOptions()
+	return graphqltypes.GetDynamicFieldObject(ctx, c.client, req.ParentObjectID, nameInput,
+		opts.Bcs, opts.PreviousTransaction, opts.Display, opts.StorageRebate)
 }
 
 func (c *GraphQLClient) GetDynamicFields(
@@ -284,10 +268,6 @@ func (c *GraphQLClient) GetOwnedObjects(
 	ctx context.Context,
 	req GetOwnedObjectsRequest,
 ) (*graphqltypes.GetOwnedObjectsResponse, error) {
-	if err := validateRequired(req.Address, "address"); err != nil {
-		return nil, err
-	}
-
 	filter := req.Filter
 	opts := showAllObjectOptions()
 
@@ -303,12 +283,7 @@ func (c *GraphQLClient) DryRunTransaction(
 ) (*graphqltypes.DryRunTransactionBlockResponse, error) {
 	txBytes := txDataBytes.String()
 
-	resp, err := graphqltypes.DryRunTransactionBlock(ctx, c.client, txBytes)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp, nil
+	return graphqltypes.DryRunTransactionBlock(ctx, c.client, txBytes)
 }
 
 func (c *GraphQLClient) ExecuteTransactionBlock(
@@ -329,12 +304,7 @@ func (c *GraphQLClient) ExecuteTransactionBlock(
 		sigStrings[i] = iotago.Base64Data(sigBytes).String()
 	}
 
-	resp, err := graphqltypes.ExecuteTransactionBlock(ctx, c.client, txBytes, sigStrings)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp, nil
+	return graphqltypes.ExecuteTransactionBlock(ctx, c.client, txBytes, sigStrings)
 }
 
 func (c *GraphQLClient) GetLatestIotaSystemState(ctx context.Context) (*GetLatestIotaSystemStateResponse, error) {
@@ -379,33 +349,18 @@ func (c *GraphQLClient) PayAllIota(
 	}
 	pt := ptb.Finish()
 
-	var err error
 	gasBudget := uint64(DefaultGasBudget)
 	if req.GasBudget != nil {
+		var err error
 		gasBudget, err = bigIntToUint64(req.GasBudget, "gasBudget")
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	gasPayment := make([]*iotago.ObjectRef, 0, len(req.InputCoins))
-
-	for _, coinID := range req.InputCoins {
-		var objResp *graphqltypes.GetObjectResponse
-		objResp, err = c.GetObject(ctx, coinID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get object %s: %w", coinID.String(), err)
-		}
-		if objResp.Object.IsNotFound() {
-			return nil, fmt.Errorf("object %s not found", coinID.String())
-		}
-
-		var objRef *iotago.ObjectRef
-		objRef, err = objResp.Object.ObjectRef()
-		if err != nil {
-			return nil, fmt.Errorf("failed to get ref for %s: %w", coinID.String(), err)
-		}
-		gasPayment = append(gasPayment, objRef)
+	gasPayment, err := c.fetchObjectRefs(ctx, req.InputCoins)
+	if err != nil {
+		return nil, err
 	}
 
 	tx := iotago.NewProgrammable(
@@ -560,7 +515,7 @@ func (c *GraphQLClient) resolveGasObject(
 	if signer == nil {
 		return nil, fmt.Errorf("signer address is required to select a gas coin")
 	}
-	const pageLimit = int(50)
+	const pageLimit = 50
 	var cursor *string
 	for {
 		coins, err := c.GetCoins(ctx, GetCoinsRequest{
@@ -906,7 +861,15 @@ type objectShowOptions struct {
 
 func showAllObjectOptions() objectShowOptions {
 	t := true
-	return objectShowOptions{&t, &t, &t, &t, &t, &t, &t}
+	return objectShowOptions{
+		Bcs:                 &t,
+		Owner:               &t,
+		PreviousTransaction: &t,
+		Content:             &t,
+		Display:             &t,
+		Type:                &t,
+		StorageRebate:       &t,
+	}
 }
 
 func (c *GraphQLClient) GetObject(ctx context.Context, objectID iotago.ObjectID) (*graphqltypes.GetObjectResponse, error) {
@@ -941,7 +904,7 @@ func (c *GraphQLClient) TryGetPastObject(
 }
 
 func (c *GraphQLClient) Health(ctx context.Context) error {
-	return fmt.Errorf("not implemented: %s", "Health")
+	return fmt.Errorf("not implemented: Health")
 }
 
 func (c *GraphQLClient) GetIotaClient() *GraphQLClient {
@@ -949,7 +912,7 @@ func (c *GraphQLClient) GetIotaClient() *GraphQLClient {
 }
 
 func (c *GraphQLClient) DeployISCContracts(ctx context.Context, signer iotasigner.Signer) (iotago.PackageID, error) {
-	return iotago.PackageID{}, fmt.Errorf("not implemented: %s", "DeployISCContracts")
+	return iotago.PackageID{}, fmt.Errorf("not implemented: DeployISCContracts")
 }
 
 func (c *GraphQLClient) FindCoinsForGasPayment(
