@@ -21,6 +21,7 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotatest"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql/graphqltypes"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/v2/packages/chain"
@@ -337,9 +338,12 @@ func (tnc *testNodeConn) PublishTX(
 		return err
 	}
 
-	time.Sleep(1 * time.Second)
-
-	resTxBlock, err := tnc.l1Client.GetTransactionBlock(ctx, *iotago.MustNewDigest(res.ExecuteTransactionBlock.Effects.TransactionBlock.Digest))
+	digest := *iotago.MustNewDigest(res.ExecuteTransactionBlock.Effects.TransactionBlock.Digest)
+	var resTxBlock *graphqltypes.GetTransactionBlockResponse
+	require.Eventually(tnc.t, func() bool {
+		resTxBlock, err = tnc.l1Client.GetTransactionBlock(ctx, digest)
+		return err == nil
+	}, 15*time.Second, 200*time.Millisecond, "GetTransactionBlock timed out after tx execution")
 	if err != nil {
 		tnc.t.Logf("GetTransactionBlock, err=%v", err)
 		return err
