@@ -109,7 +109,7 @@ func (ncc *ncChain) postTxLoop(ctx context.Context, packageID iotago.PackageID) 
 		}
 
 		if dryRes.DryRunTransactionBlock.Transaction.Effects.IsFailed() {
-			return nil, fmt.Errorf("failed to dry-run Anchor transaction: response.Effects.Failed")
+			return nil, fmt.Errorf("failed to dry-run Anchor transaction: %s", dryRes.DryRunTransactionBlock.Transaction.Effects.GetErrors())
 		}
 
 		if dryRes.DryRunTransactionBlock.Transaction.Effects.IsSuccess() {
@@ -132,18 +132,17 @@ func (ncc *ncChain) postTxLoop(ctx context.Context, packageID iotago.PackageID) 
 			return nil, fmt.Errorf("error executing tx: %s Digest: %s", res.ExecuteTransactionBlock.Effects.GetErrors(), res.ExecuteTransactionBlock.Effects.TransactionBlock.Digest)
 		}
 
-		anchorInfo, err := res.ExecuteTransactionBlock.Effects.GetMutatedObjectByID(ncc.chainID.AsObjectID())
+		anchorRef, err := res.ExecuteTransactionBlock.Effects.GetMutatedObjectByID(ncc.chainID.AsObjectID())
 		if err != nil {
 			return nil, err
 		}
 
-		anchor, err := ncc.nodeConn.httpClient.L2().GetAnchorFromObjectID(ctx, anchorInfo.ObjectID)
+		anchor, err := ncc.nodeConn.httpClient.L2().GetAnchorFromObjectRef(ctx, anchorRef)
 		if err != nil {
 			return nil, err
 		}
 
 		stateAnchor := isc.NewStateAnchor(anchor, packageID)
-
 		return &stateAnchor, nil
 	}
 

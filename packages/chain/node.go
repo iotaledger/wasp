@@ -704,9 +704,13 @@ func (cni *chainNodeImpl) handleNeedPublishTX(ctx context.Context, upd *chainman
 			subCtx, subCancel := context.WithCancel(ctx)
 			cni.publishingTXes.Set(txDigest.HashValue(), subCancel)
 			publishStart := time.Now()
-			cni.log.LogDebugf("XXX: PublishTX %s ..., consumed anchor=%v", txDigest, needPublishTx.BaseAnchorRef)
+			cni.log.LogDebugf("PublishTX %s ..., consumed anchor=%v", txDigest, needPublishTx.BaseAnchorRef)
 			if err := cni.nodeConn.PublishTX(subCtx, cni.chainID, *txToPost.Tx, func(_ iotasigner.SignedTransaction, newStateAnchor *isc.StateAnchor, err error) {
-				cni.log.LogDebugf("XXX: PublishTX %s done, next anchor=%v, err=%v", txDigest, newStateAnchor, err)
+				if err != nil {
+					cni.log.LogErrorf("PublishTX %s FAILED: %v", txDigest, err)
+				} else {
+					cni.log.LogDebugf("PublishTX %s done, next anchor=%v", txDigest, newStateAnchor)
+				}
 				cni.chainMetrics.NodeConn.TXPublishResult(err == nil, time.Since(publishStart))
 
 				cni.recvTxPublishedPipe.In() <- &txPublished{
