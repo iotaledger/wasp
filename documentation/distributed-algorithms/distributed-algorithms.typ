@@ -7,6 +7,9 @@
 )
 #set heading(numbering: "1.")
 
+// all links to code pointing to some commit hash, to avoid broken links in the future when the code changes.
+#let codelink(dest, body) = link("https://github.com/iotaledger/wasp/blob/baa9674e79aa0e5cc7cfe5a1260cb7c4cb2f86ab" + dest, body)
+
 #title()
 
 A core aspect of how ISC works is through the use of distributed algorithms
@@ -24,9 +27,6 @@ understand the basics of distributed algorithms and the different types of
 well-known algorithms that exist.
 
 #outline()
-
-// all links to code pointing to some commit hash, just in case the code changes in the future.
-#let codelink(dest, body) = link("https://github.com/iotaledger/wasp/blob/baa9674e79aa0e5cc7cfe5a1260cb7c4cb2f86ab" + dest, body)
 
 = GPA
 
@@ -124,16 +124,21 @@ type GPA interface {
 }
 ```
 
+== `AckHandler` and `OwnHandler`
+
+TODO
+
 == Alternative implementation
 
-There is an experimental alternative implementation of GPA called
+There is an experimental alternative implementation of some of the distributed
+algorithms called
 #link("https://github.com/dessaya/wasp/tree/actors/packages/actors")[actors],
-in which the single-threaded and pseudo-functional design principles are lifted,
-and the algorithms are implemented using Go's concurrency primitives such as
-goroutines and channels. As a result, the code tends to be more straightforward
-and easier to read. The Consensus protocol and all its subcomponents are
-implemented using actors, although it has not been thoroughly tested and so it
-is currently unsuitable for production use.
+in which the single-threaded and pseudo-functional design principles of GPA are
+lifted, and the algorithms are implemented using Go's concurrency primitives
+such as goroutines and channels. As a result, the code tends to be more
+straightforward and easier to read. The Consensus protocol and all its
+subcomponents are implemented using actors, although it has not been thoroughly
+tested and so it is currently unsuitable for production use.
 
 = `Chains` and `chainNodeImpl`
 
@@ -151,13 +156,130 @@ providing access to them. It contains:
 = `AccessMgr`
 
 This component is responsible for keeping track of trusted nodes and which nodes
-have access to which chains.
+have access to which chains. There is exactly one `AccessMgr` per Wasp node (as
+opposed to one per chain), and it is owned by `Chains`.
 
-It has a GPA implementation, which is responsible for sharing this information
-with other nodes. Its specification is documented
-#codelink("/packages/chains/accessmanager/dist/WaspChainAccessNodesV4.tla")[here].
+Each node can designate other nodes as *access nodes* for the chains it manages.
+However, the access nodes have no way of knowing from their own configuration
+alone which nodes consider them access nodes. The purpose of `AccessMgr` is to
+solve this problem: it runs a distributed protocol that informs each access node
+which nodes will act as *servers* for it.
 
-TODO
+The design goals are:
+
+- Nodes not related to a chain should get no information about it.
+- The list of server nodes should be _transient_ (not persisted) to avoid state
+  desynchronization.
+- The algorithm must work in an asynchronous setting.
+
+== Architecture
+
+The #codelink("/packages/chains/accessmanager/access_manager.go")[`AccessMgr`]
+struct is the outer wrapper. It runs a single goroutine
+(#codelink("/packages/chains/accessmanager/access_manager.go#L119")[`run`]) that
+processes events from several
+channels#footnote[#codelink("/packages/util/pipe/pipe.go")[Pipes] are used
+instead of channels, to avoid blocking goroutines.]:
+
+- The set of trusted peers changes
+- The access node list for a particular chain is updated
+- A chain is deactivated on this node
+
+Each of these translates into a GPA `Input` that is fed into the inner
+`GPA:AccessMgr` instance. Network messages from peers are similarly received
+via a channel and passed as GPA `Message` calls. Outgoing messages produced by the
+GPA are serialized and sent over the peering network.
+
+== `AccessMgr` GPA
+
+The inner GPA component is implemented in
+#codelink("/packages/chains/accessmanager/dist/access_manager_dist.go")[`access_manager_dist.go`]
+and has a formal TLA+ specification in
+#codelink("/packages/chains/accessmanager/dist/WaspChainAccessNodesV4.tla")[`WaspChainAccessNodesV4.tla`].
+
+=== State
+
+The GPA maintains two maps:
+
+- *Per-node state*
+  (#codelink("/packages/chains/accessmanager/dist/access_manager_dist.go#L35")[`accessMgrNode`]):
+  for each trusted peer, tracks:
+  - `accessFor`: the set of chains for which _we_ have granted access to that
+    peer (i.e. we act as server).
+  - `serverFor`: the set of chains for which _the peer_ has granted access to us
+    (i.e. they act as server).
+  - `ourLC` / `peerLC`: logical clocks used to detect stale messages and drive
+    convergence.
+
+- *Per-chain state*
+  (#codelink("/packages/chains/accessmanager/dist/access_manager_dist.go#L36")[`accessMgrChain`]):
+  for each active chain, tracks:
+  - `access`: which nodes have been granted access.
+  - `server`: which nodes have confirmed they will serve us (i.e. the nodes that
+    consider _us_ an access node for this chain).
+
+=== Inputs
+
+The GPA accepts three kinds of inputs, corresponding to TLA+ spec actions:
+
++ *`inputAccessNodes`*
+  (#codelink("/packages/chains/accessmanager/dist/input_access_nodes.go")[`input_access_nodes.go`]):
+  the access node list for a chain has been updated. The first reception of this
+  input for a chain implicitly _activates_ the chain (corresponding to
+  `ChainActivate` in the spec). Subsequent receptions correspond to
+  `AccessNodeAdd` / `AccessNodeDel`. For each trusted peer, a
+  #codelink("/packages/chains/accessmanager/dist/msg_access.go")[`msgAccess`]
+  message is sent with the updated access grants.
+
++ *`inputChainDisabled`*
+  (#codelink("/packages/chains/accessmanager/dist/input_chain_disabled.go")[`input_chain_disabled.go`]):
+  the chain has been deactivated. All peers are notified that access is revoked
+  (`ChainDeactivate` in the spec).
+
++ *`inputTrustedNodes`*
+  (#codelink("/packages/chains/accessmanager/dist/input_trusted_nodes.go")[`input_trusted_nodes.go`]):
+  the set of trusted peers has changed. New peers are initialized and sent the
+  current access state; removed peers are disconnected and their server status is
+  cleared. This corresponds to `Reboot` in the spec.
+
+=== Message exchange
+
+All peer-to-peer communication uses a single message type,
+#codelink("/packages/chains/accessmanager/dist/msg_access.go")[`msgAccess`],
+which carries four fields:
+
+- `senderLClock`: the sender's logical clock (version of its access grants).
+- `receiverLClock`: the last known logical clock of the receiver (acts as an
+  acknowledgment).
+- `accessForChains`: the set of chains for which the sender grants access to the
+  receiver.
+- `serverForChains`: the set of chains for which the sender believes the receiver
+  grants access to the sender (echo / ack).
+
+=== Convergence
+
+The protocol converges through a simple echo/ack mechanism driven by logical
+clocks (#codelink("/packages/chains/accessmanager/dist/access_manager_dist.go#L337")[`handleMsgAccess`]).
+When a node receives a message, it checks whether:
+
++ The peer's access information matches what we already know (`serverFor`).
++ The echoed server information matches our current access grants (`accessFor`).
++ The logical clocks are consistent (not outdated and not exceeding ours).
+
+If all conditions hold, the state is converged for this peer and no reply is
+needed. Otherwise, a reply is sent with the node's current state, incrementing
+the logical clock if necessary. This ensures that after all in-flight messages
+are delivered, both sides agree on who serves whom. The liveness property proved
+in the TLA+ spec (`ServerGetsKnown`) states that if node _n_ has granted access
+to node _a_ for chain _c_, and both have the chain active, then eventually _a_
+will learn that _n_ is a server for it.
+
+When the set of server nodes for a chain changes, a callback
+(#codelink("/packages/chains/accessmanager/dist/access_manager_dist.go#L38")[`serversUpdatedCB`])
+is invoked, which propagates the updated server list to the rest of the system
+(e.g. so the node knows where to send its queries). Note that the use of
+callbacks by the GPA component violates the pseudo-functional design principle
+of the GPA framework.
 
 = `ChainMgr`
 

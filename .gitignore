@@ -8,7 +8,6 @@ wasp.log
 /submsg
 waspdb**/
 cluster-data/
-dist/
 .idea/
 .vscode/
 .tlacache/
