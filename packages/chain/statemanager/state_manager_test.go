@@ -3,6 +3,7 @@ package statemanager
 import (
 	"context"
 	"math/rand"
+	"runtime"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -212,6 +213,7 @@ func TestCruelWorld(t *testing.T) {
 
 func getRandomProducedBlockAIndex(blockProduced []*atomic.Bool) int {
 	for !blockProduced[0].Load() {
+		runtime.Gosched() // yield to avoid pegging a CPU while waiting for the first block
 	}
 	var maxIndex int
 	for maxIndex < len(blockProduced) && blockProduced[maxIndex].Load() {
