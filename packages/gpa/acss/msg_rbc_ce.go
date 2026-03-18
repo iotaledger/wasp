@@ -13,13 +13,12 @@ import (
 //
 // > RBC(C||E)
 type msgRBCCEPayload struct {
-	gpa.BasicMessage
 	suite suites.Suite
 	data  []byte `bcs:"export"`
 	err   error  // Transient field, should not be serialized.
 }
 
-var _ gpa.Message = new(msgRBCCEPayload)
+var _ gpa.MessagePayload = new(msgRBCCEPayload)
 
 func (m *msgRBCCEPayload) MsgType() gpa.MessageType {
 	return msgTypeRBCCEPayload

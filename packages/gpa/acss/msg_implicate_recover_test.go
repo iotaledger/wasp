@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testval"
 )
 
@@ -22,8 +21,6 @@ func TestMsgImplicateRecoverSerialization(t *testing.T) {
 		_, err := cryptorand.Read(b)
 		require.NoError(t, err)
 		msg := &msgImplicateRecover{
-			gpa.NodeID{},
-			gpa.NodeID{},
 			msgImplicateRecoverKindIMPLICATE,
 			int(uint16(rand.Intn(math.MaxUint16 + 1))),
 			b,
@@ -33,8 +30,6 @@ func TestMsgImplicateRecoverSerialization(t *testing.T) {
 	}
 	{
 		msg := &msgImplicateRecover{
-			gpa.NodeID{},
-			gpa.NodeID{},
 			msgImplicateRecoverKindIMPLICATE,
 			int(math.MaxUint16),
 			testval.TestBytes(10),
@@ -47,8 +42,6 @@ func TestMsgImplicateRecoverSerialization(t *testing.T) {
 		_, err := cryptorand.Read(b)
 		require.NoError(t, err)
 		msg := &msgImplicateRecover{
-			gpa.NodeID{},
-			gpa.NodeID{},
 			msgImplicateRecoverKindRECOVER,
 			int(uint16(rand.Intn(math.MaxUint16 + 1))),
 			b,
@@ -58,8 +51,6 @@ func TestMsgImplicateRecoverSerialization(t *testing.T) {
 	}
 	{
 		msg := &msgImplicateRecover{
-			gpa.NodeID{},
-			gpa.NodeID{},
 			msgImplicateRecoverKindRECOVER,
 			int(math.MaxUint16),
 			testval.TestBytes(10),

@@ -9,17 +9,15 @@ import (
 )
 
 type msgMissingRequest struct {
-	gpa.BasicMessage
 	requestRef *isc.RequestRef `bcs:"export"`
 }
 
-var _ gpa.Message = new(msgMissingRequest)
+var _ gpa.MessagePayload = new(msgMissingRequest)
 
-func newMsgMissingRequest(requestRef *isc.RequestRef, recipient gpa.NodeID) gpa.Message {
-	return &msgMissingRequest{
-		BasicMessage: gpa.NewBasicMessage(recipient),
-		requestRef:   requestRef,
-	}
+func newMsgMissingRequest(requestRef *isc.RequestRef, recipient gpa.NodeID) gpa.MessageOut {
+	return gpa.NewMessageOut(recipient, &msgMissingRequest{
+		requestRef: requestRef,
+	})
 }
 
 func (msg *msgMissingRequest) MsgType() gpa.MessageType {

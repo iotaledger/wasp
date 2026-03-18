@@ -13,12 +13,12 @@ const (
 	msgTypeWrapped
 )
 
-// UnmarshalMessage implements the gpa.GPA interface.
-func (a *ABA) UnmarshalMessage(data []byte) (gpa.Message, error) {
-	return gpa.UnmarshalMessage(data, gpa.Mapper{
-		msgTypeVote: func() gpa.Message { return new(msgVote) },
-		msgTypeDone: func() gpa.Message { return new(msgDone) },
-	}, gpa.Fallback{
-		msgTypeWrapped: a.msgWrapper.UnmarshalMessage,
+// UnmarshalPayload implements the gpa.GPA interface.
+func (a *ABA) UnmarshalPayload(data []byte) (gpa.MessagePayload, error) {
+	return gpa.UnmarshalPayload(data, gpa.PayloadAllocator{
+		msgTypeVote: func() gpa.MessagePayload { return new(msgVote) },
+		msgTypeDone: func() gpa.MessagePayload { return new(msgDone) },
+	}, gpa.PayloadFallback{
+		msgTypeWrapped: a.msgWrapper.UnmarshalPayload,
 	})
 }

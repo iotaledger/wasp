@@ -16,11 +16,10 @@ const (
 
 // This message is used a vote for the "Bracha-style totality" agreement.
 type msgVote struct {
-	gpa.BasicMessage
 	kind msgVoteKind `bcs:"export"`
 }
 
-var _ gpa.Message = new(msgVote)
+var _ gpa.MessagePayload = new(msgVote)
 
 func (m *msgVote) MsgType() gpa.MessageType {
 	return msgTypeVote

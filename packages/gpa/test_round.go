@@ -26,16 +26,16 @@ func NewTestRound(nodeIDs []NodeID, me NodeID) GPA {
 	return NewOwnHandler(me, &testRound{me: me, nodeIDs: nodeIDs, received: map[NodeID]bool{}})
 }
 
-func (tr *testRound) Input(input Input) OutMessages {
-	msgs := make([]Message, len(tr.nodeIDs))
+func (tr *testRound) Input(input Input) []MessageOut {
+	msgs := make([]MessageOut, len(tr.nodeIDs))
 	for i := range msgs {
-		msgs[i] = &testRoundMsg{BasicMessage: NewBasicMessage(tr.nodeIDs[i])}
+		msgs[i] = NewMessageOut(tr.nodeIDs[i], &testRoundMsg{})
 	}
-	return NoMessages().AddMany(msgs)
+	return msgs
 }
 
-func (tr *testRound) Message(msg Message) OutMessages {
-	from := msg.(*testRoundMsg).sender
+func (tr *testRound) Message(msg MessageIn) []MessageOut {
+	from := msg.Sender
 	if tr.received[from] {
 		panic(errors.New("duplicate message"))
 	}
@@ -55,17 +55,15 @@ func (tr *testRound) StatusString() string {
 	return fmt.Sprintf("{testRound, received=%v}", tr.received)
 }
 
-func (tr *testRound) UnmarshalMessage(data []byte) (Message, error) {
-	return UnmarshalMessage(data, Mapper{
-		msgTypeTestRound: func() Message { return new(testRoundMsg) },
+func (tr *testRound) UnmarshalPayload(data []byte) (MessagePayload, error) {
+	return UnmarshalPayload(data, PayloadAllocator{
+		msgTypeTestRound: func() MessagePayload { return &testRoundMsg{} },
 	})
 }
 
-type testRoundMsg struct {
-	BasicMessage
-}
+type testRoundMsg struct{}
 
-var _ Message = new(testRoundMsg)
+var _ MessagePayload = new(testRoundMsg)
 
 func (msg *testRoundMsg) MsgType() MessageType {
 	return msgTypeTestRound

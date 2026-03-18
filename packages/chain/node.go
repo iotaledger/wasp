@@ -662,13 +662,12 @@ func (cni *chainNodeImpl) handleMilestoneTimestamp(timestamp time.Time) {
 }
 
 func (cni *chainNodeImpl) handleNetMessage(recv *peering.PeerMessageIn) {
-	msg, err := cni.chainMgr.UnmarshalMessage(recv.MsgData)
+	msg, err := cni.chainMgr.UnmarshalPayload(recv.MsgData)
 	if err != nil {
 		cni.log.LogWarnf("cannot parse message: %v", err)
 		return
 	}
-	msg.SetSender(cni.pubKeyAsNodeID(recv.SenderPubKey))
-	cni.sendMessages(cni.chainMgr.Message(msg))
+	cni.sendMessages(cni.chainMgr.Message(gpa.NewMessageIn(cni.pubKeyAsNodeID(recv.SenderPubKey), msg)))
 }
 
 func (cni *chainNodeImpl) handleNeedConsensus(ctx context.Context, upd *chainmanager.NeedConsensusMap) {
@@ -835,20 +834,17 @@ func (cni *chainNodeImpl) cleanupPublishingTXes(neededPostTXes *shrinkingmap.Shr
 	})
 }
 
-func (cni *chainNodeImpl) sendMessages(outMsgs gpa.OutMessages) {
-	if outMsgs == nil {
-		return
-	}
-	outMsgs.MustIterate(func(msg gpa.Message) {
-		recipientPubKey, ok := cni.netPeerPubs[msg.Recipient()]
+func (cni *chainNodeImpl) sendMessages(outMsgs []gpa.MessageOut) {
+	for _, msg := range outMsgs {
+		recipientPubKey, ok := cni.netPeerPubs[msg.Recipient]
 		if !ok {
-			cni.log.LogWarnf("Pub key for the recipient not found: %v", msg.Recipient())
+			cni.log.LogWarnf("Pub key for the recipient not found: %v", msg.Recipient)
 			return
 		}
-		msgBytes := lo.Must(gpa.MarshalMessage(msg))
+		msgBytes := lo.Must(gpa.MarshalPayload(msg.Payload))
 		pm := peering.NewPeerMessageData(cni.netPeeringID, peering.ReceiverChain, msgTypeChainMgr, msgBytes)
 		cni.net.SendMsgByPubKey(recipientPubKey, pm)
-	})
+	}
 }
 
 // activeAccessNodes = ∪{{Self}, accessNodesFromNode, accessNodesFromACT, accessNodesFromCNF, activeCommitteeNodes}

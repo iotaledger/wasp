@@ -8,21 +8,19 @@ import (
 )
 
 type BlockMessage struct {
-	gpa.BasicMessage
 	block state.Block
 }
 
-var _ gpa.Message = new(BlockMessage)
+var _ gpa.MessagePayload = new(BlockMessage)
 
-func NewBlockMessage(block state.Block, to gpa.NodeID) *BlockMessage {
+func NewBlockMessage(block state.Block) *BlockMessage {
 	return &BlockMessage{
-		BasicMessage: gpa.NewBasicMessage(to),
-		block:        block,
+		block: block,
 	}
 }
 
 func NewEmptyBlockMessage() *BlockMessage {
-	return NewBlockMessage(nil, gpa.NodeID{})
+	return NewBlockMessage(nil)
 }
 
 func (msg *BlockMessage) GetBlock() state.Block {
@@ -32,7 +30,6 @@ func (msg *BlockMessage) GetBlock() state.Block {
 func (msg *BlockMessage) UnmarshalBCS(d *bcs.Decoder) error {
 	msg.block = state.NewBlock()
 	d.Decode(msg.block)
-
 	return nil
 }
 

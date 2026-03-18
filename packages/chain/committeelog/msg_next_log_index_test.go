@@ -9,13 +9,11 @@ import (
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/packages/chain/committeelog"
-	"github.com/iotaledger/wasp/v2/packages/gpa"
 )
 
 func TestMsgNextLogIndexSerialization(t *testing.T) {
 	{
 		msg := &committeelog.MsgNextLogIndex{
-			gpa.BasicMessage{},
 			committeelog.LogIndex(rand.Int31()),
 			committeelog.MsgNextLogIndexCauseStarted,
 			false,
@@ -25,7 +23,6 @@ func TestMsgNextLogIndexSerialization(t *testing.T) {
 	}
 	{
 		msg := &committeelog.MsgNextLogIndex{
-			gpa.BasicMessage{},
 			committeelog.LogIndex(758493),
 			committeelog.MsgNextLogIndexCauseStarted,
 			false,
@@ -35,7 +32,6 @@ func TestMsgNextLogIndexSerialization(t *testing.T) {
 	}
 	{
 		msg := &committeelog.MsgNextLogIndex{
-			gpa.BasicMessage{},
 			committeelog.LogIndex(rand.Int31()),
 			committeelog.MsgNextLogIndexCauseStarted,
 			true,
@@ -45,7 +41,6 @@ func TestMsgNextLogIndexSerialization(t *testing.T) {
 	}
 	{
 		msg := &committeelog.MsgNextLogIndex{
-			gpa.BasicMessage{},
 			committeelog.LogIndex(59329892),
 			committeelog.MsgNextLogIndexCauseStarted,
 			true,

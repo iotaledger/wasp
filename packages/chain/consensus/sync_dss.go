@@ -5,6 +5,7 @@ package consensus
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/iotaledger/wasp/v2/packages/chain/distsign"
@@ -25,7 +26,7 @@ func NewSyncDistributedSignature(c *Consensus) *SyncDistributedSignature {
 	return &SyncDistributedSignature{c: c}
 }
 
-func (sub *SyncDistributedSignature) InitialInputReceived() gpa.OutMessages {
+func (sub *SyncDistributedSignature) InitialInputReceived() []gpa.MessageOut {
 	if sub.initialInputsReady {
 		return nil
 	}
@@ -33,24 +34,24 @@ func (sub *SyncDistributedSignature) InitialInputReceived() gpa.OutMessages {
 	return sub.c.uponDistributedSignatureInitialInputsReady()
 }
 
-func (sub *SyncDistributedSignature) DistributedSignatureReady(output gpa.Output) gpa.OutMessages {
+func (sub *SyncDistributedSignature) DistributedSignatureReady(output gpa.Output) []gpa.MessageOut {
 	if output == nil || (sub.indexProposalReady && sub.outputReady) {
 		return nil
 	}
-	msgs := gpa.NoMessages()
+	var msgs []gpa.MessageOut
 	distSignOutput := output.(*distsign.Output)
 	if !sub.indexProposalReady && distSignOutput.ProposedIndexes != nil {
 		sub.indexProposalReady = true
-		msgs.AddAll(sub.c.uponDistributedSignatureIndexProposalReady(distSignOutput.ProposedIndexes))
+		msgs = slices.Concat(msgs, sub.c.uponDistributedSignatureIndexProposalReady(distSignOutput.ProposedIndexes))
 	}
 	if !sub.outputReady && distSignOutput.Signature != nil {
 		sub.outputReady = true
-		msgs.AddAll(sub.c.uponDistributedSignatureOutputReady(distSignOutput.Signature))
+		msgs = slices.Concat(msgs, sub.c.uponDistributedSignatureOutputReady(distSignOutput.Signature))
 	}
 	return msgs
 }
 
-func (sub *SyncDistributedSignature) DecidedIndexProposalsReceived(decidedIndexProposals map[gpa.NodeID][]int) gpa.OutMessages {
+func (sub *SyncDistributedSignature) DecidedIndexProposalsReceived(decidedIndexProposals map[gpa.NodeID][]int) []gpa.MessageOut {
 	if sub.DecidedIndexProposals != nil || decidedIndexProposals == nil {
 		return nil
 	}
@@ -58,7 +59,7 @@ func (sub *SyncDistributedSignature) DecidedIndexProposalsReceived(decidedIndexP
 	return sub.tryCompleteSigning()
 }
 
-func (sub *SyncDistributedSignature) MessageToSignReceived(messageToSign []byte) gpa.OutMessages {
+func (sub *SyncDistributedSignature) MessageToSignReceived(messageToSign []byte) []gpa.MessageOut {
 	if sub.MessageToSign != nil || messageToSign == nil {
 		return nil
 	}
@@ -66,7 +67,7 @@ func (sub *SyncDistributedSignature) MessageToSignReceived(messageToSign []byte)
 	return sub.tryCompleteSigning()
 }
 
-func (sub *SyncDistributedSignature) tryCompleteSigning() gpa.OutMessages {
+func (sub *SyncDistributedSignature) tryCompleteSigning() []gpa.MessageOut {
 	if sub.signingInputsReady || sub.MessageToSign == nil || sub.DecidedIndexProposals == nil {
 		return nil
 	}

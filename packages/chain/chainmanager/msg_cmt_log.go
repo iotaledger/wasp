@@ -13,12 +13,12 @@ import (
 // is by CommitteeID, not by integer index.
 type msgCommitteeLog struct {
 	committeeAddr cryptolib.Address
-	wrapped       gpa.Message
+	wrapped       gpa.MessagePayload
 }
 
-var _ gpa.Message = new(msgCommitteeLog)
+var _ gpa.MessagePayload = new(msgCommitteeLog)
 
-func NewMsgCommitteeLog(committeeAddr cryptolib.Address, wrapped gpa.Message) gpa.Message {
+func NewMsgCommitteeLog(committeeAddr cryptolib.Address, wrapped gpa.MessagePayload) gpa.MessagePayload {
 	return &msgCommitteeLog{
 		committeeAddr: committeeAddr,
 		wrapped:       wrapped,
@@ -33,16 +33,8 @@ func (msg *msgCommitteeLog) String() string {
 	return fmt.Sprintf("{chainMgr.msgCommitteeLog, committeeAddr=%v, wrapped=%+v}", msg.committeeAddr.String(), msg.wrapped)
 }
 
-func (msg *msgCommitteeLog) Recipient() gpa.NodeID {
-	return msg.wrapped.Recipient()
-}
-
-func (msg *msgCommitteeLog) SetSender(sender gpa.NodeID) {
-	msg.wrapped.SetSender(sender)
-}
-
 func (msg *msgCommitteeLog) MarshalBCS(e *bcs.Encoder) error {
-	wrappedBytes, err := gpa.MarshalMessage(msg.wrapped)
+	wrappedBytes, err := gpa.MarshalPayload(msg.wrapped)
 	if err != nil {
 		return fmt.Errorf("marshaling wrapped message: %w", err)
 	}
@@ -58,7 +50,7 @@ func (msg *msgCommitteeLog) UnmarshalBCS(d *bcs.Decoder) error {
 	wrappedBytes := bcs.Decode[[]byte](d)
 
 	var err error
-	msg.wrapped, err = committeelog.UnmarshalMessage(wrappedBytes)
+	msg.wrapped, err = committeelog.UnmarshalPayload(wrappedBytes)
 	if err != nil {
 		return fmt.Errorf("unmarshaling wrapped message: %w", err)
 	}

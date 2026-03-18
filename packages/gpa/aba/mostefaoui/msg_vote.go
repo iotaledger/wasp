@@ -4,6 +4,10 @@
 package mostefaoui
 
 import (
+	"fmt"
+
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/v2/packages/gpa"
 )
 
@@ -14,28 +18,39 @@ const (
 	AUX
 )
 
+func (v msgVoteType) String() string {
+	switch v {
+	case BVAL:
+		return "BVAL"
+	case AUX:
+		return "AUX"
+	default:
+		return "Unknown"
+	}
+}
+
 type msgVote struct {
-	gpa.BasicMessage
 	round    int         `bcs:"export,type=u16"`
 	voteType msgVoteType `bcs:"export"`
 	value    bool        `bcs:"export"`
 }
 
-var _ gpa.Message = new(msgVote)
+var _ gpa.MessagePayload = new(msgVote)
 
-func multicastMsgVote(recipients []gpa.NodeID, round int, voteType msgVoteType, value bool) gpa.OutMessages {
-	msgs := gpa.NoMessages()
-	for _, recipient := range recipients {
-		msgs.Add(&msgVote{
-			BasicMessage: gpa.NewBasicMessage(recipient),
-			round:        round,
-			voteType:     voteType,
-			value:        value,
+func multicastMsgVote(recipients []gpa.NodeID, round int, voteType msgVoteType, value bool) []gpa.MessageOut {
+	return lo.Map(recipients, func(recipient gpa.NodeID, _ int) gpa.MessageOut {
+		return gpa.NewMessageOut(recipient, &msgVote{
+			round:    round,
+			voteType: voteType,
+			value:    value,
 		})
-	}
-	return msgs
+	})
 }
 
 func (msg *msgVote) MsgType() gpa.MessageType {
 	return msgTypeVote
+}
+
+func (msg *msgVote) String() string {
+	return fmt.Sprintf("mostefaoui/Vote(round=%d, type=%s, value=%t)", msg.round, msg.voteType.String(), msg.value)
 }

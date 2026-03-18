@@ -24,13 +24,6 @@ func (m *TestMsg) MsgType() gpa.MessageType {
 	return TestMsgID1
 }
 
-func (m *TestMsg) Recipient() gpa.NodeID {
-	return gpa.NodeID{}
-}
-
-func (m *TestMsg) SetSender(gpa.NodeID) {
-}
-
 type WrappedMsg struct {
 	C []bool
 }
@@ -39,22 +32,15 @@ func (m *WrappedMsg) MsgType() gpa.MessageType {
 	return TestMsgWrapped
 }
 
-func (m *WrappedMsg) Recipient() gpa.NodeID {
-	return gpa.NodeID{}
-}
-
-func (m *WrappedMsg) SetSender(gpa.NodeID) {
-}
-
-func TestUnmarshalMessage(t *testing.T) {
-	decodeWrapped := func(b []byte) (gpa.Message, error) {
+func TestUnmarshalPayload(t *testing.T) {
+	decodeWrapped := func(b []byte) (gpa.MessagePayload, error) {
 		return bcs.Unmarshal[*WrappedMsg](b)
 	}
 
-	unmarshal := func(data []byte) (gpa.Message, error) {
-		return gpa.UnmarshalMessage(data, gpa.Mapper{
-			TestMsgID1: func() gpa.Message { return &TestMsg{} },
-		}, gpa.Fallback{
+	unmarshal := func(data []byte) (gpa.MessagePayload, error) {
+		return gpa.UnmarshalPayload(data, gpa.PayloadAllocator{
+			TestMsgID1: func() gpa.MessagePayload { return &TestMsg{} },
+		}, gpa.PayloadFallback{
 			TestMsgWrapped: decodeWrapped,
 		})
 	}

@@ -5,6 +5,7 @@ package mostefaoui
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/iotaledger/wasp/v2/packages/gpa"
 )
@@ -24,14 +25,14 @@ type varAuxVals struct {
 	f         int
 	nodeIDs   []gpa.NodeID
 	recv      map[gpa.NodeID]bool
-	readyCB   func(auxVals []bool) gpa.OutMessages
+	readyCB   func(auxVals []bool) []gpa.MessageOut
 	ready     bool
 	round     int
 	sent      bool
 	binValues []bool
 }
 
-func newAuxVals(nodeIDs []gpa.NodeID, f int, readyCB func(auxVals []bool) gpa.OutMessages) *varAuxVals {
+func newAuxVals(nodeIDs []gpa.NodeID, f int, readyCB func(auxVals []bool) []gpa.MessageOut) *varAuxVals {
 	v := &varAuxVals{
 		n:         len(nodeIDs),
 		f:         f,
@@ -61,23 +62,23 @@ func (v *varAuxVals) startRound(round int) {
 // >           bin_values_r may continue to change as BVAL_r messages
 // >           are received, thus this condition may be triggered upon
 // >           arrival of either an AUX_r or a BVAL_r message)
-func (v *varAuxVals) binValuesUpdated(binValues []bool) gpa.OutMessages {
-	msgs := gpa.NoMessages()
+func (v *varAuxVals) binValuesUpdated(binValues []bool) []gpa.MessageOut {
+	var msgs []gpa.MessageOut
 	if len(binValues) == 1 {
-		msgs.AddAll(v.multicast(binValues[0]))
+		msgs = slices.Concat(msgs, v.multicast(binValues[0]))
 	}
 	v.binValues = binValues
-	return msgs.AddAll(v.tryOutput())
+	return slices.Concat(msgs, v.tryOutput())
 }
 
 // >         ∗ wait until at least (N − f) AUX_r messages have been
 // >           received, such that the set of values carried by these
 // >           messages, vals are a subset of bin_values_r ...
-func (v *varAuxVals) msgVoteAUXReceived(msg *msgVote) gpa.OutMessages {
-	if _, ok := v.recv[msg.Sender()]; ok {
+func (v *varAuxVals) msgVoteAUXReceived(msg gpa.TypedMessageIn[*msgVote]) []gpa.MessageOut {
+	if _, ok := v.recv[msg.Sender]; ok {
 		return nil // Duplicate.
 	}
-	v.recv[msg.Sender()] = msg.value
+	v.recv[msg.Sender] = msg.Payload.value
 	return v.tryOutput()
 }
 
@@ -87,7 +88,7 @@ func (v *varAuxVals) msgVoteAUXReceived(msg *msgVote) gpa.OutMessages {
 // >           bin_values_r may continue to change as BVAL_r messages
 // >           are received, thus this condition may be triggered upon
 // >           arrival of either an AUX_r or a BVAL_r message)
-func (v *varAuxVals) tryOutput() gpa.OutMessages {
+func (v *varAuxVals) tryOutput() []gpa.MessageOut {
 	if v.ready || len(v.recv) < v.n-v.f || v.binValues == nil {
 		return nil
 	}
@@ -128,7 +129,7 @@ func (v *varAuxVals) tryOutput() gpa.OutMessages {
 	return nil
 }
 
-func (v *varAuxVals) multicast(value bool) gpa.OutMessages {
+func (v *varAuxVals) multicast(value bool) []gpa.MessageOut {
 	if v.sent {
 		return nil
 	}

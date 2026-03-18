@@ -13,10 +13,10 @@ const (
 	msgTypeBlockProduced
 )
 
-func (cmi *ChainMgr) UnmarshalMessage(data []byte) (gpa.Message, error) {
-	return gpa.UnmarshalMessage(data, gpa.Mapper{
-		msgTypeCommitteeLog: func() gpa.Message { return new(msgCommitteeLog) },
-		msgTypeBlockProduced: func() gpa.Message {
+func (cmi *ChainMgr) UnmarshalPayload(data []byte) (gpa.MessagePayload, error) {
+	return gpa.UnmarshalPayload(data, gpa.PayloadAllocator{
+		msgTypeCommitteeLog: func() gpa.MessagePayload { return new(msgCommitteeLog) },
+		msgTypeBlockProduced: func() gpa.MessagePayload {
 			msgBlock := new(msgBlockProduced)
 
 			// TODO: Validate if we ever have different block implementations.

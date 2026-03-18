@@ -30,6 +30,7 @@ package acs
 import (
 	"fmt"
 	"math"
+	"slices"
 
 	"github.com/iotaledger/hive.go/log"
 
@@ -130,7 +131,7 @@ func (a *ACS) AsGPA() gpa.GPA {
 
 // Input implements the gpa.GPA interface:
 // >   • upon receiving input v_i, input v_i to RBC_i
-func (a *ACS) Input(input gpa.Input) gpa.OutMessages {
+func (a *ACS) Input(input gpa.Input) []gpa.MessageOut {
 	if _, ok := input.([]byte); !ok {
 		panic("input has to be []byte")
 	}
@@ -138,36 +139,32 @@ func (a *ACS) Input(input gpa.Input) gpa.OutMessages {
 		return nil // Duplicate input.
 	}
 	a.rbcInput = true
-	msgs := gpa.NoMessages()
 	sub, subMsgs, err := a.msgWrapper.DelegateInput(subsystemRBC, a.nodeIdx[a.me], input)
 	if err != nil {
 		panic(fmt.Errorf("cannot provide input to RBC: %w", err))
 	}
-	msgs.AddAll(subMsgs)
-	msgs.AddAll(a.tryHandleRBCOutput(a.me, sub))
-	return msgs
+	return slices.Concat(
+		subMsgs,
+		a.tryHandleRBCOutput(a.me, sub),
+	)
 }
 
-func (a *ACS) Message(msg gpa.Message) gpa.OutMessages {
-	msgT, ok := msg.(*gpa.WrappingMsg)
+func (a *ACS) Message(msg gpa.MessageIn) []gpa.MessageOut {
+	msgT, ok := msg.Payload.(*gpa.WrappingMsg)
 	if !ok {
 		a.log.LogWarnf("unexpected message of type %T: %+v", msg, msg)
 		return nil
 	}
-	msgs := gpa.NoMessages()
-	sub, subMsgs, err := a.msgWrapper.DelegateMessage(msgT)
+	sub, subMsgs, err := a.msgWrapper.DelegateMessage(gpa.AsTypedMessageIn[*gpa.WrappingMsg](msg))
 	if err != nil {
 		a.log.LogWarnf("cannot delegate a message: %v", err)
 		return nil
 	}
-	msgs.AddAll(subMsgs)
 	switch msgT.Subsystem() {
 	case subsystemRBC:
-		msgs.AddAll(a.tryHandleRBCOutput(a.nodeIDs[msgT.Index()], sub))
-		return msgs
+		return slices.Concat(subMsgs, a.tryHandleRBCOutput(a.nodeIDs[msgT.Index()], sub))
 	case subsystemABA:
-		msgs.AddAll(a.tryHandleABAOutput(a.nodeIDs[msgT.Index()], sub))
-		return msgs
+		return slices.Concat(subMsgs, a.tryHandleABAOutput(a.nodeIDs[msgT.Index()], sub))
 	default:
 		a.log.LogWarnf("unexpected subsystem: %v", msgT.Subsystem())
 		return nil
@@ -176,7 +173,7 @@ func (a *ACS) Message(msg gpa.Message) gpa.OutMessages {
 
 // >   • upon delivery of v_j from RBC_j, if input has not yet been
 // >     provided to BA_j, then provide input 1 to BA_j.
-func (a *ACS) tryHandleRBCOutput(nodeID gpa.NodeID, rbcInst gpa.GPA) gpa.OutMessages {
+func (a *ACS) tryHandleRBCOutput(nodeID gpa.NodeID, rbcInst gpa.GPA) []gpa.MessageOut {
 	out := rbcInst.Output()
 	if out == nil {
 		return nil // Output not ready yet.
@@ -191,28 +188,28 @@ func (a *ACS) tryHandleRBCOutput(nodeID gpa.NodeID, rbcInst gpa.GPA) gpa.OutMess
 		return nil // We already provided an input to the ABA.
 	}
 	a.abaInputs[nodeID] = true
-	msgs := gpa.NoMessages()
 	sub, subMsgs, err := a.msgWrapper.DelegateInput(subsystemABA, a.nodeIdx[nodeID], true)
 	if err != nil {
 		panic(fmt.Errorf("cannot provide input to ABA: %w", err))
 	}
-	msgs.AddAll(subMsgs)
-	msgs.AddAll(a.tryHandleABAOutput(nodeID, sub))
-	return msgs
+	return slices.Concat(
+		subMsgs,
+		a.tryHandleABAOutput(nodeID, sub),
+	)
 }
 
 // >   • upon delivery of value 1 from at least N − f instances of BA,
 // >     provide input 0 to each instance of BA that has not yet been
 // >     provided input.
-func (a *ACS) tryHandleABAOutput(nodeID gpa.NodeID, abaInst gpa.GPA) gpa.OutMessages {
+func (a *ACS) tryHandleABAOutput(nodeID gpa.NodeID, abaInst gpa.GPA) []gpa.MessageOut {
 	out := abaInst.Output()
 	if out == nil {
 		return nil // Output not ready yet.
 	}
 	abaOut := out.(*mostefaoui.Output)
-	msgs := gpa.NoMessages()
+	var msgs []gpa.MessageOut
 	if abaOut.Terminated {
-		msgs.AddAll(a.termCond.abaTerminated(nodeID))
+		msgs = a.termCond.abaTerminated(nodeID)
 	}
 
 	if _, ok := a.abaOutputs[nodeID]; ok {
@@ -241,8 +238,11 @@ func (a *ACS) tryHandleABAOutput(nodeID gpa.NodeID, abaInst gpa.GPA) gpa.OutMess
 			if err != nil {
 				panic(fmt.Errorf("cannot provide input to ABA: %w", err))
 			}
-			msgs.AddAll(subMsgs)
-			msgs.AddAll(a.tryHandleABAOutput(nid, sub))
+			msgs = slices.Concat(
+				msgs,
+				subMsgs,
+				a.tryHandleABAOutput(nid, sub),
+			)
 		}
 	}
 	return msgs
@@ -274,7 +274,7 @@ func (a *ACS) tryOutput() {
 	}
 }
 
-func (a *ACS) uponTermCondition() gpa.OutMessages {
+func (a *ACS) uponTermCondition() []gpa.MessageOut {
 	if a.output != nil {
 		a.output.Terminated = true
 	}

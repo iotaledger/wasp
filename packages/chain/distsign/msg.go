@@ -24,10 +24,10 @@ func (d *DistributedSignature) msgWrapperFunc(subsystem byte, index int) (gpa.GP
 	return nil, fmt.Errorf("unexpected subsystem: %v", subsystem)
 }
 
-func (d *DistributedSignature) UnmarshalMessage(data []byte) (gpa.Message, error) {
-	return gpa.UnmarshalMessage(data, gpa.Mapper{
-		msgTypePartialSig: func() gpa.Message { return &msgPartialSig{suite: d.suite} },
-	}, gpa.Fallback{
-		msgTypeWrapped: d.msgWrapper.UnmarshalMessage,
+func (d *DistributedSignature) UnmarshalPayload(data []byte) (gpa.MessagePayload, error) {
+	return gpa.UnmarshalPayload(data, gpa.PayloadAllocator{
+		msgTypePartialSig: func() gpa.MessagePayload { return &msgPartialSig{suite: d.suite} },
+	}, gpa.PayloadFallback{
+		msgTypeWrapped: d.msgWrapper.UnmarshalPayload,
 	})
 }

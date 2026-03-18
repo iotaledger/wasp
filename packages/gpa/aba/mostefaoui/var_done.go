@@ -5,6 +5,7 @@ package mostefaoui
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
@@ -24,12 +25,12 @@ type varDone struct {
 	f       int
 	round   int
 	recv    map[gpa.NodeID]int // All the received DONE messages and last our decision.
-	doneCB  func() gpa.OutMessages
+	doneCB  func()
 	done    bool
 	log     log.Logger
 }
 
-func newVarDone(nodeIDs []gpa.NodeID, me gpa.NodeID, f int, doneCB func() gpa.OutMessages, log log.Logger) *varDone {
+func newVarDone(nodeIDs []gpa.NodeID, me gpa.NodeID, f int, doneCB func(), log log.Logger) *varDone {
 	return &varDone{
 		nodeIDs: nodeIDs,
 		me:      me,
@@ -46,28 +47,32 @@ func (v *varDone) startRound(round int) {
 	v.round = round
 }
 
-func (v *varDone) outputProduced() gpa.OutMessages {
+func (v *varDone) setDone() {
+	if !v.done {
+		v.done = true
+		v.doneCB()
+	}
+}
+
+func (v *varDone) outputProduced() []gpa.MessageOut {
 	if firstDoneRound, ok := v.recv[v.me]; ok && firstDoneRound < v.round {
 		// We have decided for the second time. That's enough.
-		if !v.done {
-			v.done = true
-			return v.doneCB()
-		}
+		v.setDone()
 		return nil
 	}
 
 	v.recv[v.me] = v.round
-	msgs := gpa.NoMessages()
-	msgs.AddAll(multicastMsgDone(v.nodeIDs, v.me, v.round))
-	msgs.AddAll(v.tryComplete())
-	return msgs
+	return slices.Concat(
+		multicastMsgDone(v.nodeIDs, v.me, v.round),
+		v.tryComplete(),
+	)
 }
 
-func (v *varDone) msgDoneReceived(msg *msgDone) gpa.OutMessages {
-	if _, ok := v.recv[msg.Sender()]; ok {
+func (v *varDone) msgDoneReceived(msg gpa.TypedMessageIn[*msgDone]) []gpa.MessageOut {
+	if _, ok := v.recv[msg.Sender]; ok {
 		return nil // Duplicate
 	}
-	v.recv[msg.Sender()] = msg.round
+	v.recv[msg.Sender] = msg.Payload.round
 	return v.tryComplete()
 }
 
@@ -78,7 +83,7 @@ func (v *varDone) isDone() bool {
 // If others (more than F) have decided in previous epochs, then we are
 // among the others, who decided in a subsequent round, therefore we don't
 // need to wait for more epochs to close the process.
-func (v *varDone) tryComplete() gpa.OutMessages {
+func (v *varDone) tryComplete() []gpa.MessageOut {
 	if v.done || len(v.recv) <= v.f {
 		return nil
 	}
@@ -94,8 +99,7 @@ func (v *varDone) tryComplete() gpa.OutMessages {
 		}
 	}
 	if count > v.f {
-		v.done = true
-		return v.doneCB()
+		v.setDone()
 	}
 	return nil
 }

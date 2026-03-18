@@ -70,7 +70,7 @@ func New(
 	return cc
 }
 
-func (cc *ccImpl) Input(input gpa.Input) gpa.OutMessages {
+func (cc *ccImpl) Input(input gpa.Input) []gpa.MessageOut {
 	if input != nil {
 		panic(errors.New("input must be nil"))
 	}
@@ -89,32 +89,31 @@ func (cc *ccImpl) Input(input gpa.Input) gpa.OutMessages {
 		return nil
 	}
 	cc.tryOutput()
-	msgs := gpa.NoMessages()
+	var msgs []gpa.MessageOut
 	for _, nodeID := range cc.nodeIDs {
 		if nodeID != cc.me {
-			msgs.Add(&msgSigShare{
-				BasicMessage: gpa.NewBasicMessage(nodeID),
-				sigShare:     sigShare,
-			})
+			msgs = append(msgs, gpa.NewMessageOut(nodeID, &msgSigShare{
+				sigShare: sigShare,
+			}))
 		}
 	}
 	return msgs
 }
 
-func (cc *ccImpl) Message(msg gpa.Message) gpa.OutMessages {
+func (cc *ccImpl) Message(msg gpa.MessageIn) []gpa.MessageOut {
 	if cc.output != nil {
 		// Decided, don't need to process messages anymore.
 		return nil
 	}
-	shareMsg, ok := msg.(*msgSigShare)
+	shareMsg, ok := msg.Payload.(*msgSigShare)
 	if !ok {
 		panic(fmt.Errorf("unexpected message: %+v", msg))
 	}
-	if _, ok := cc.sigShares[shareMsg.Sender()]; ok {
+	if _, ok := cc.sigShares[msg.Sender]; ok {
 		// Drop a duplicate.
 		return nil
 	}
-	cc.sigShares[shareMsg.Sender()] = shareMsg.sigShare
+	cc.sigShares[msg.Sender] = shareMsg.sigShare
 	cc.tryOutput()
 	return nil
 }

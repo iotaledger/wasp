@@ -4,24 +4,24 @@
 package mostefaoui
 
 import (
+	"fmt"
+
 	"github.com/iotaledger/wasp/v2/packages/gpa"
 )
 
 type msgDone struct {
-	gpa.BasicMessage
 	round int `bcs:"type=u16,export"`
 }
 
-var _ gpa.Message = new(msgDone)
+var _ gpa.MessagePayload = new(msgDone)
 
-func multicastMsgDone(recipients []gpa.NodeID, me gpa.NodeID, round int) gpa.OutMessages {
-	msgs := gpa.NoMessages()
+func multicastMsgDone(recipients []gpa.NodeID, me gpa.NodeID, round int) []gpa.MessageOut {
+	var msgs []gpa.MessageOut
 	for _, recipient := range recipients {
 		if recipient != me {
-			msgs.Add(&msgDone{
-				BasicMessage: gpa.NewBasicMessage(recipient),
-				round:        round,
-			})
+			msgs = append(msgs, gpa.NewMessageOut(recipient, &msgDone{
+				round: round,
+			}))
 		}
 	}
 	return msgs
@@ -29,4 +29,8 @@ func multicastMsgDone(recipients []gpa.NodeID, me gpa.NodeID, round int) gpa.Out
 
 func (msg *msgDone) MsgType() gpa.MessageType {
 	return msgTypeDone
+}
+
+func (msg *msgDone) String() string {
+	return fmt.Sprintf("mostefaoui/Done(round=%d)", msg.round)
 }

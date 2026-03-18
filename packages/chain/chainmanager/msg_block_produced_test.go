@@ -5,7 +5,6 @@ import (
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner/iotasignertest"
-	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/state"
 	"github.com/iotaledger/wasp/v2/packages/state/statetest"
 )
@@ -13,7 +12,6 @@ import (
 func TestMsgBlockProducedSerialization(t *testing.T) {
 	randomSignedTransaction := iotasignertest.RandomSignedTransaction()
 	msg := &msgBlockProduced{
-		gpa.BasicMessage{},
 		&randomSignedTransaction,
 		statetest.RandomBlock(),
 	}
@@ -23,7 +21,6 @@ func TestMsgBlockProducedSerialization(t *testing.T) {
 	})
 
 	msg = &msgBlockProduced{
-		gpa.BasicMessage{},
 		&iotasignertest.TestSignedTransaction,
 		statetest.TestBlock(),
 	}

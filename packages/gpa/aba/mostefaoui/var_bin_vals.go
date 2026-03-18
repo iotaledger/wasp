@@ -5,6 +5,7 @@ package mostefaoui
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/iotaledger/wasp/v2/packages/gpa"
 )
@@ -23,7 +24,7 @@ type varBinVals struct {
 	n         int
 	f         int
 	nodeIDs   []gpa.NodeID
-	updateCB  func(binVals []bool) gpa.OutMessages
+	updateCB  func(binVals []bool) []gpa.MessageOut
 	round     int
 	est       bool
 	recvT     map[gpa.NodeID]bool
@@ -33,7 +34,7 @@ type varBinVals struct {
 	binValues []bool
 }
 
-func newBinVals(nodeIDs []gpa.NodeID, f int, updateCB func(binVals []bool) gpa.OutMessages) *varBinVals {
+func newBinVals(nodeIDs []gpa.NodeID, f int, updateCB func(binVals []bool) []gpa.MessageOut) *varBinVals {
 	v := &varBinVals{
 		n:        len(nodeIDs),
 		f:        f,
@@ -45,7 +46,7 @@ func newBinVals(nodeIDs []gpa.NodeID, f int, updateCB func(binVals []bool) gpa.O
 
 // >     – multicast BVAL_r(est_r)
 // >     – bin_values_r := {}
-func (v *varBinVals) startRound(round int, est bool) gpa.OutMessages {
+func (v *varBinVals) startRound(round int, est bool) []gpa.MessageOut {
 	v.round = round
 	v.est = est
 	v.recvT = map[gpa.NodeID]bool{}
@@ -61,22 +62,22 @@ func (v *varBinVals) startRound(round int, est bool) gpa.OutMessages {
 // >     – upon receiving BVAL_r(b) messages from 2f + 1 nodes,
 // >       bin_values_r := bin_values_r ∪ {b}
 // >     – wait until bin_values_r != {}, then
-func (v *varBinVals) msgVoteBVALReceived(msg *msgVote) gpa.OutMessages {
-	recv := v.recv(msg.value) // NOTE: A reference to a field.
+func (v *varBinVals) msgVoteBVALReceived(msg gpa.TypedMessageIn[*msgVote]) []gpa.MessageOut {
+	recv := v.recv(msg.Payload.value) // NOTE: A reference to a field.
 
-	if ok := recv[msg.Sender()]; ok {
+	if ok := recv[msg.Sender]; ok {
 		return nil // Duplicate.
 	}
-	recv[msg.Sender()] = true
+	recv[msg.Sender] = true
 
-	msgs := gpa.NoMessages()
+	var msgs []gpa.MessageOut
 	if len(recv) == v.f+1 {
-		msgs.AddAll(v.multicast(msg.value)) // This checks, if already sent.
+		msgs = v.multicast(msg.Payload.value) // This checks, if already sent.
 	}
 
 	if len(recv) == 2*v.f+1 {
-		v.binValues = append(v.binValues, msg.value)
-		return msgs.AddAll(v.updateCB(v.binValues))
+		v.binValues = append(v.binValues, msg.Payload.value)
+		return slices.Concat(msgs, v.updateCB(v.binValues))
 	}
 	return msgs
 }
@@ -97,7 +98,7 @@ func (v *varBinVals) recv(value bool) map[gpa.NodeID]bool {
 	return v.recvF
 }
 
-func (v *varBinVals) multicast(value bool) gpa.OutMessages {
+func (v *varBinVals) multicast(value bool) []gpa.MessageOut {
 	sent := v.sent(value)
 	if *sent {
 		return nil

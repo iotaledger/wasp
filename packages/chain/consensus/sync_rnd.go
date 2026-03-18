@@ -4,6 +4,8 @@
 package consensus
 
 import (
+	"slices"
+
 	"github.com/iotaledger/wasp/v2/packages/gpa"
 )
 
@@ -26,17 +28,18 @@ func NewSyncRND(
 	}
 }
 
-func (sub *SyncRND) CanProceed(dataToSign []byte) gpa.OutMessages {
+func (sub *SyncRND) CanProceed(dataToSign []byte) []gpa.MessageOut {
 	if sub.dataToSign != nil || dataToSign == nil {
 		return nil
 	}
 	sub.dataToSign = dataToSign
-	return gpa.NoMessages().
-		AddAll(sub.c.uponRNDInputsReady(sub.dataToSign)).
-		AddAll(sub.tryComplete())
+	return slices.Concat(
+		sub.c.uponRNDInputsReady(sub.dataToSign),
+		sub.tryComplete(),
+	)
 }
 
-func (sub *SyncRND) BLSPartialSigReceived(sender gpa.NodeID, partialSig []byte) gpa.OutMessages {
+func (sub *SyncRND) BLSPartialSigReceived(sender gpa.NodeID, partialSig []byte) []gpa.MessageOut {
 	if _, ok := sub.blsPartialSigs[sender]; ok {
 		return nil // Duplicate, ignore it.
 	}
@@ -44,7 +47,7 @@ func (sub *SyncRND) BLSPartialSigReceived(sender gpa.NodeID, partialSig []byte) 
 	return sub.tryComplete()
 }
 
-func (sub *SyncRND) tryComplete() gpa.OutMessages {
+func (sub *SyncRND) tryComplete() []gpa.MessageOut {
 	if sub.sigSharesReady || sub.dataToSign == nil || len(sub.blsPartialSigs) < sub.blsThreshold {
 		return nil
 	}

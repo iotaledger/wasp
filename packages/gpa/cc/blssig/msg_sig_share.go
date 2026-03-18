@@ -8,11 +8,10 @@ import (
 )
 
 type msgSigShare struct {
-	gpa.BasicMessage
 	sigShare []byte `bcs:"export"`
 }
 
-var _ gpa.Message = new(msgSigShare)
+var _ gpa.MessagePayload = new(msgSigShare)
 
 func (msg *msgSigShare) MsgType() gpa.MessageType {
 	return msgTypeSigShare

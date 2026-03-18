@@ -12,9 +12,9 @@ const (
 	msgTypeMissingRequest
 )
 
-func (dsi *distSyncImpl) UnmarshalMessage(data []byte) (msg gpa.Message, err error) {
-	return gpa.UnmarshalMessage(data, gpa.Mapper{
-		msgTypeMissingRequest: func() gpa.Message { return new(msgMissingRequest) },
-		msgTypeShareRequest:   func() gpa.Message { return new(msgShareRequest) },
+func (dsi *distSyncImpl) UnmarshalPayload(data []byte) (msg gpa.MessagePayload, err error) {
+	return gpa.UnmarshalPayload(data, gpa.PayloadAllocator{
+		msgTypeMissingRequest: func() gpa.MessagePayload { return new(msgMissingRequest) },
+		msgTypeShareRequest:   func() gpa.MessagePayload { return new(msgShareRequest) },
 	})
 }

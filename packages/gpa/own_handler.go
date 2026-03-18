@@ -3,7 +3,10 @@
 
 package gpa
 
-import "fmt"
+import (
+	"fmt"
+	"slices"
+)
 
 // OwnHandler is a GPA instance handling own messages immediately.
 //
@@ -11,31 +14,28 @@ import "fmt"
 // protocols, one just send a message, and this handler passes it back
 // as an ordinary message.
 type OwnHandler struct {
-	me           NodeID
-	target       GPA
-	outPredicate func(msg Message) bool
+	me     NodeID
+	target GPA
 }
 
 var _ GPA = &OwnHandler{}
 
-func NewOwnHandlerWithOutPredicate(me NodeID, target GPA, outPredicate func(Message) bool) GPA {
-	return &OwnHandler{me: me, target: target, outPredicate: outPredicate}
+func NewOwnHandlerWithOutPredicate(me NodeID, target GPA) GPA {
+	return &OwnHandler{me: me, target: target}
 }
 
 func NewOwnHandler(me NodeID, target GPA) GPA {
-	return NewOwnHandlerWithOutPredicate(me, target, func(msg Message) bool { return false })
+	return NewOwnHandlerWithOutPredicate(me, target)
 }
 
-func (o *OwnHandler) Input(input Input) OutMessages {
+func (o *OwnHandler) Input(input Input) []MessageOut {
 	msgs := o.target.Input(input)
-	outMsgs := NoMessages()
-	return o.handleMsgs(msgs, outMsgs)
+	return o.handleMsgs(msgs)
 }
 
-func (o *OwnHandler) Message(msg Message) OutMessages {
+func (o *OwnHandler) Message(msg MessageIn) []MessageOut {
 	msgs := o.target.Message(msg)
-	outMsgs := NoMessages()
-	return o.handleMsgs(msgs, outMsgs)
+	return o.handleMsgs(msgs)
 }
 
 func (o *OwnHandler) Output() Output {
@@ -46,21 +46,20 @@ func (o *OwnHandler) StatusString() string {
 	return fmt.Sprintf("{OWN%s}", o.target.StatusString())
 }
 
-func (o *OwnHandler) UnmarshalMessage(data []byte) (Message, error) {
-	return o.target.UnmarshalMessage(data)
+func (o *OwnHandler) UnmarshalPayload(data []byte) (MessagePayload, error) {
+	return o.target.UnmarshalPayload(data)
 }
 
-func (o *OwnHandler) handleMsgs(msgs, outMsgs OutMessages) OutMessages {
-	if msgs == nil {
-		return outMsgs
-	}
-	msgs.MustIterate(func(msg Message) {
-		if msg.Recipient() == o.me && !o.outPredicate(msg) {
-			msg.SetSender(o.me)
-			msgs.AddAll(o.target.Message(msg))
-		} else {
-			outMsgs.Add(msg)
+func (o *OwnHandler) handleMsgs(msgs []MessageOut) []MessageOut {
+	var outMsgs []MessageOut
+	for len(msgs) > 0 {
+		var msg MessageOut
+		msg, msgs = msgs[0], msgs[1:]
+		if msg.Recipient == o.me {
+			msgs = slices.Concat(msgs, o.target.Message(NewMessageIn(o.me, msg.Payload)))
+			continue
 		}
-	})
+		outMsgs = append(outMsgs, msg)
+	}
 	return outMsgs
 }
