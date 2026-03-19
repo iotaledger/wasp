@@ -1,12 +1,12 @@
 package iotaconn
 
 const (
-	LocalnetEndpointURL = "http://localhost:9000"
+	LocalnetEndpointURL = "http://localhost:9125"
 	AlphanetEndpointURL = "https://api.alphanet.iota.cafe"
 	TestnetEndpointURL  = "https://api.testnet.iota.cafe"
 	DevnetEndpointURL   = "https://api.devnet.iota.cafe"
 
-	LocalnetWebsocketEndpointURL = "ws://localhost:9000"
+	LocalnetWebsocketEndpointURL = "ws://localhost:9125"
 	AlphanetWebsocketEndpointURL = "wss://api.alphanet.iota.cafe"
 	TestnetWebsocketEndpointURL  = "wss://api.testnet.iota.cafe"
 	DevnetWebsocketEndpointURL   = "wss://api.devnet.iota.cafe"
