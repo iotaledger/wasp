@@ -124,9 +124,55 @@ type GPA interface {
 }
 ```
 
-== `AckHandler` and `OwnHandler`
+== `OwnHandler` and `AckHandler`
 
-TODO
+GPA instances produce outgoing messages addressed to other nodes, but the GPA
+interface itself says nothing about _how_ those messages are delivered. Two
+reusable GPA wrappers handle common delivery concerns: `OwnHandler` and
+`AckHandler`. They are typically composed together (with `OwnHandler` as the
+inner layer and `AckHandler` as the outer layer) so that the wrapped GPA
+benefits from both.
+
+=== `OwnHandler`
+
+#codelink("/packages/gpa/own_handler.go")[`OwnHandler`] intercepts outgoing
+messages whose recipient is the local node and feeds them back into the wrapped
+GPA as ordinary incoming messages, looping until no more self-addressed messages
+are produced. This means the actual GPA implementation never needs to special-case
+"messages to self" -- it can simply send a message to any node (including
+itself), and `OwnHandler` takes care of short-circuiting the delivery. Messages
+addressed to other nodes pass through unchanged.
+
+=== `AckHandler`
+
+#codelink("/packages/gpa/ack_handler.go")[`AckHandler`] wraps a GPA to
+provide a *reliable channel* abstraction over an unreliable network. It ensures
+every message is eventually delivered by resending unacknowledged messages
+periodically, and piggy-backing acknowledgements on outgoing traffic.
+
+The key mechanisms are:
+
+- *Batching:* outgoing messages to the same peer are grouped into a single
+  `ackHandlerBatch`, which is assigned a monotonically increasing batch ID.
+
+- *Acknowledgements:* each batch carries an `acks` field listing the IDs of
+  previously received batches from that peer. This way, acknowledgements travel
+  for free inside regular traffic. If there is no outgoing traffic, the tick
+  handler will trigger resends which implicitly carry the pending acks.
+
+- *Resending:* a periodic tick input (produced by `MakeTickInput`) checks all
+  unacknowledged batches. Any batch older than the configured `resendPeriod` is
+  resent. Once an ack for a batch is received, it is removed from the
+  unacknowledged set.
+
+- *Peer initialization:* before sending payload batches to a peer for the first
+  time, `AckHandler` performs a lightweight handshake (`ackHandlerReset`) to
+  learn the peer's latest known batch ID. This avoids ID collisions after
+  restarts. Messages are queued in `initPending` until the handshake completes.
+
+- *Deduplication:* received batch IDs are tracked in `recvAcksIn`, so
+  duplicate deliveries (due to resends) are detected and not forwarded to the
+  nested GPA a second time.
 
 == Alternative implementation
 
@@ -139,6 +185,89 @@ such as goroutines and channels. As a result, the code tends to be more
 straightforward and easier to read. The Consensus protocol and all its
 subcomponents are implemented using actors, although it has not been thoroughly
 tested and so it is currently unsuitable for production use.
+
+= TLA+ specifications
+
+#link("https://lamport.azurewebsites.net/tla/tla.html")[TLA+] is a formal
+specification language designed by Leslie Lamport for modeling and verifying
+concurrent and distributed systems. A TLA+ specification describes a system as a
+state machine: an initial state predicate together with a next-state relation
+over a set of variables. Properties such as safety invariants and liveness
+conditions are expressed in temporal logic, and can be verified automatically
+using the TLC model checker (for finite instances) or mechanically proved using
+the TLAPS proof system. Writing a TLA+ specification forces the author to think
+precisely about the algorithm's correctness before (or alongside) implementing
+it in code, and the model checker can find subtle bugs that are difficult to
+catch with testing alone.
+
+Several of the distributed algorithms in ISC have accompanying TLA+
+specifications. These live alongside the Go implementation in the same package
+directory. @tlalist lists all available TLA+ specifications.
+
+#figure(
+  rect[
+    #set align(left)
+    #set list(marker: [--])
+
+    - #codelink("/packages/chains/accessmanager/dist/WaspChainAccessNodesV4.tla")[`WaspChainAccessNodesV4.tla`]
+      -- Models the access node management protocol (`GPA:AccessMgr`). Verifies
+      that access nodes eventually learn which nodes will serve them
+      (`ServerGetsKnown`).
+
+    - #codelink("/packages/chain/committeelog/WaspChainCmtLogSUI.tla")[`WaspChainCmtLogSUI.tla`]
+      -- Specifies the committee log adjusted to the SUI-based L1
+      (`CommitteeLog`). Ensures self-stabilization: crashed nodes can reboot and
+      rejoin consensus without persistent internal state. Verifies
+      `MaxLIWillDecide` and `NoRebootsAllDecide`.
+
+    - #codelink("/packages/chain/committeelog/WaspChainRecovery.tla")[`WaspChainRecovery.tla`]
+      -- Models committee recovery when more than _F_ nodes have crashed
+      (possibly losing persistent storage). Defines rules for rejoining without
+      appearing byzantine.
+
+    - #codelink("/packages/chain/WaspChainConsensus.tla")[`WaspChainConsensus.tla`]
+      -- Models the interaction of the consensus log with the L1 chain, including
+      TX rejections and L1 reorganizations.
+
+    - #codelink("/packages/chain/WaspChainConsensusJournal.tla")[`WaspChainConsensusJournal.tla`]
+      -- Checks how lagging nodes can recover by their log indexes. Verifies
+      that an _N−F_ quorum at the same LogIndex can complete ACS and advance.
+
+    - #codelink("/packages/chain/consensus/WaspConsensusRecovery.tla")[`WaspConsensusRecovery.tla`]
+      -- Checks whether quorums are sufficient in the consensus protocol to
+      ensure certificate-based recovery after a quorum assumption violation.
+
+    - #codelink("/packages/chain/distsign/WaspDSSInsts.tla")[`WaspDSSInsts.tla`]
+      -- Models the use of DSS (Distributed Schnorr Signature) nonces across
+      consensus rounds. Verifies that nonces are used exactly once and that
+      faulty nodes cannot force others to drop nonces.
+
+    - #codelink("/packages/gpa/acss/WaspACSS.tla")[`WaspACSS.tla`]
+      -- Specifies Asynchronous Complete Secret Sharing (ACSS), abstracting
+      away cryptographic details.
+
+    - #codelink("/packages/gpa/acss/RBC.tla")[`RBC.tla`]
+      -- Models Reliable Broadcast as a black-box based on its standard
+      properties (validity, integrity, termination, uniform agreement).
+
+    - #codelink("/packages/gpa/rbc/bracha/BrachaRBC.tla")[`BrachaRBC.tla`]
+      -- Specifies Bracha's Reliable Broadcast algorithm with support for
+      dynamic monotonic predicates, based on the original Bracha 1987 paper and
+      the Das, Xiang & Ren variant.
+
+    - #codelink("/documentation/tla/IscBatchTimestamp.tla")[`IscBatchTimestamp.tla`]
+      -- Models batch timestamp selection. Verifies that timestamps are
+      non-decreasing along a chain when taking the maximum of proposed
+      timestamps while excluding the _F_ highest values.
+
+    - #codelink("/packages/chain/WaspByzEnv.tla")[`WaspByzEnv.tla`]
+      -- Shared helper module defining standard BFT node sets and quorum sizes
+      (_F+1_, _2F+1_, _N−F_) under the assumption _N > 3F_. Extended by most
+      other specifications.
+  ],
+  caption: [TLA+ specifications in the ISC repository.],
+  placement: auto,
+) <tlalist>
 
 = `Chains` and `chainNodeImpl`
 
@@ -283,11 +412,318 @@ of the GPA framework.
 
 = `ChainMgr`
 
-TODO
+#codelink("/packages/chain/chainmanager/chain_manager.go")[`ChainMgr`] is a
+per-chain GPA that acts as the central coordinator for a single chain within a
+node. Its main responsibilities are:
 
-== `CommitteeLog`
+- *Track the correct branch:* maintain the latest confirmed anchor received from
+  L1 and determine which state the chain should build upon.
+- *Manage committee logs:* maintain one
+  #codelink("/packages/chain/committeelog/cmt_log.go")[`CommitteeLog`] instance
+  for each committee this node participates in, and decide which committee is the
+  _active_ one.
+- *Drive consensus:* based on `CommitteeLog` output, signal when a new consensus
+  instance is needed (`NeedConsensus`) and which base anchor it should use.
+- *Publish transactions:* collect signed transactions produced by consensus and
+  request their publication to L1 (`NeedPublishTX`).
+- *Inform access nodes:* when a new block is produced, send it to access nodes
+  (via #codelink("/packages/chain/chainmanager/msg_block_produced.go")[`msgBlockProduced`])
+  so they can update their active state without waiting for L1 confirmation.
 
-TODO
+== State
+
+The key variables tracked by `ChainMgr` (documented in detail in the
+#codelink("/packages/chain/chainmanager/chain_manager.go#L15")[source file header])
+are:
+
+- #codelink("/packages/chain/chainmanager/chain_manager.go#L198")[`latestConfirmedAnchor`]:
+  the most recent anchor confirmed on L1. Updated whenever a new confirmed
+  anchor is received from the node connection.
+- #codelink("/packages/chain/chainmanager/chain_manager.go#L197")[`latestActiveCommittee`]:
+  the committee address of the currently active committee. (The node could be
+  participating in multiple committees e.g. in case of an ongoing rotation).
+- #codelink("/packages/chain/chainmanager/chain_manager.go#L203")[`needConsensus`]:
+  a map of consensus instances that need to be started, keyed by
+  `(committeeAddr, logIndex)`. Populated from the output of some
+  #link(<cmtlog>)[`CommitteeLog` GPA instance].
+- #codelink("/packages/chain/chainmanager/chain_manager.go#L205")[`needPublishTX`]:
+  a map of transactions awaiting publication to L1. Entries are added when
+  #link(<cons>)[Consensus] completes and removed when a publish result is
+  received.
+- #codelink("/packages/chain/chainmanager/chain_manager.go")[`committeeLogs`]:
+  a map of `committeeLogInst` structs, each wrapping a `CommitteeLog` GPA
+  instance and its associated committee address and DK share.
+
+== Inputs
+
+`ChainMgr` accepts the following inputs:
+
+- #codelink("/packages/chain/chainmanager/input_alias_output_received.go")[`inputAnchorConfirmed`]:
+  a new anchor has been confirmed on L1. `ChainMgr` updates
+  `latestConfirmedAnchor`, looks up the committee for the new state controller,
+  and forwards the anchor to the corresponding `CommitteeLog`. If this node is
+  not in the new committee (in case of rotation), the previously active
+  committee (if any) is suspended.
+
+- #codelink("/packages/chain/chainmanager/input_chain_tx_publish_result.go")[`inputChainTxPublishResult`]:
+  the result of publishing a transaction to L1. The transaction is removed from
+  `needPublishTX`. If the transaction was rejected, the result is forwarded to
+  the `CommitteeLog` so it can recover.
+
+- #codelink("/packages/chain/chainmanager/input_consensus_output_done.go")[`inputConsensusOutputDone`]:
+  a consensus instance completed successfully and produced a signed transaction.
+  The transaction is added to `needPublishTX`, and the produced block is sent
+  to access nodes via `msgBlockProduced`.
+
+- #codelink("/packages/chain/chainmanager/input_consensus_output_skip.go")[`inputConsensusOutputSkip`]:
+  a consensus instance decided to skip. Forwarded to the corresponding
+  `CommitteeLog`.
+
+- #codelink("/packages/chain/chainmanager/input_consensus_timeout.go")[`inputConsensusTimeout`]:
+  a consensus instance timed out. Forwarded to the corresponding `CommitteeLog`
+  so it can advance its log index.
+
+- #codelink("/packages/chain/chainmanager/input_can_propose.go")[`inputCanPropose`]:
+  signals that conditions are met to propose a new block (e.g. the Mempool has
+  pending requests). Broadcast to all `CommitteeLog` instances.
+
+== Messages
+
+`ChainMgr` exchanges two message types with peers:
+
+- #codelink("/packages/chain/chainmanager/msg_cmt_log.go")[`msgCommitteeLog`]:
+  a wrapper that carries a `CommitteeLog` message and a committee address. When
+  a `CommitteeLog` produces outgoing messages, `ChainMgr` wraps them with
+  the committee address so the receiver can route them to the correct
+  `CommitteeLog` instance.
+
+- #codelink("/packages/chain/chainmanager/msg_block_produced.go")[`msgBlockProduced`]:
+  sent by committee nodes to access nodes after consensus completes. It carries
+  the signed transaction and the produced block, allowing access nodes to update
+  their state before the transaction is confirmed on L1.
+
+== `HandleCommitteeLogOutput`
+
+The
+#codelink("/packages/chain/chainmanager/chain_manager.go#L500")[`handleCommitteeLogOutput`]
+method is invoked whenever a `CommitteeLog` instance produces output. This
+method decides whether the active committee should change and whether new
+Consensus instances are needed:
+
++ If the reporting committee _is_ the active committee (or no committee is
+  active yet), it becomes (or remains) the active committee and
+  `needConsensus` is updated from its output.
++ If the reporting committee is _different_ from the active one and its output
+  requests a new consensus, the previously active committee is suspended and the
+  reporting committee takes over.
++ If the reporting committee is different but has no consensus request, nothing
+  changes -- there is no reason to switch.
+
+This logic ensures that committee rotations (triggered by L1 governance
+changes) are handled smoothly: the old committee is suspended and the new one
+takes over as soon as it has work to do.
+
+== `CommitteeLog` <cmtlog>
+
+#codelink("/packages/chain/committeelog/cmt_log.go")[`CommitteeLog`] is the
+GPA responsible for producing a _log of block decisions_ for a given chain.
+There is one `CommitteeLog` instance for each committee this node
+participates in (managed by `ChainMgr`). Its two main functions are:
+
++ *Propose when to start a consensus instance*, identified by a
+  #codelink("/packages/chain/committeelog/logindex.go")[Log Index] (LI),
+  a monotonically increasing number that is kept in sync across the committee.
++ *Propose the base anchor for that consensus instance.*
+
+The algorithm has a formal TLA+ specification in
+#codelink("/packages/chain/committeelog/WaspChainCmtLogSUI.tla")[`WaspChainCmtLogSUI.tla`].
+
+`CommitteeLog` is composed of three internal subcomponents that interact via
+callbacks:
+
++ #codelink("/packages/chain/committeelog/var_log_index.go")[`VarLogIndex`]:
+  Determines the current log index the committee should work on. It collects
+  #codelink("/packages/chain/committeelog/msg_next_log_index.go")[`MsgNextLogIndex`]
+  votes from peers using a
+  #codelink("/packages/chain/committeelog/quorum_counter.go")[`QuorumCounter`].
+  When F+1 nodes report that they have started consensus at a given LI, the node
+  advances its own `agreedLI` to match. On boot, the node starts from `minLI =
+  persistedLI + 1` so it never replays a log index it may have already
+  participated in.
+
++ #codelink("/packages/chain/committeelog/var_localview.go")[`VarLocalView`]:
+  Tracks the latest confirmed anchor from L1. When the tip anchor changes, it
+  notifies `VarConsInsts` so that a concrete anchor can be proposed.
+
++ #codelink("/packages/chain/committeelog/var_cons_insts.go")[`VarConsInsts`]:
+  Maintains a sliding window of consensus instances
+  (keyed by LI), each mapped to either an anchor or ⊥. It receives
+  signals from the other two subcomponents:
+  - From `VarLogIndex`: the latest LI seen by a quorum (`LatestSeenLI`).
+  - From `VarLocalView`: the latest confirmed L1 anchor (`LatestL1Anchor`).
+
+  When a consensus instance completes, `VarConsInsts` advances the window:
+  - *Done* (`ConsOutputDone`): the produced anchor becomes the input for
+    `LI+1`.
+  - *Skip* (`ConsOutputSkip`): no block was produced; `LI+1` gets the latest
+    L1 anchor (or waits for one).
+  - *Timeout* (`ConsOutputTimeout`): `LI+1` is proposed with ⊥, signaling
+    uncertainty.
+
+  The current window of `(LI → anchor | ⊥)` entries is published as the
+  #codelink("/packages/chain/committeelog/cmt_log.go#L53")[`CommitteeLog`
+  output], which `ChainMgr` reads to populate its `NeedConsensus` map.
+
+= `StateMgr`
+
+#codelink("/packages/chain/statemanager/state_manager.go")[`StateMgr`] is
+responsible for ensuring that the node has all the blocks it needs to
+participate in the chain. When a consensus instance starts, it may reference a
+base anchor whose corresponding block is not yet in the local store (e.g.\ after
+a reboot, or when the node is lagging behind). `StateMgr` fetches the missing
+blocks from peer nodes, commits them to the store, and notifies the requesting
+component (Consensus, Mempool) when the state is ready.
+
+There is one `StateMgr` per chain, managed by `chainNodeImpl`.
+
+== Outer wrapper
+
+The
+#codelink("/packages/chain/statemanager/state_manager.go")[`stateManager`]
+struct is the outer wrapper. Like `AccessMgr`, it runs a single goroutine that
+processes events from several pipes:
+
+- *Input pipe:* carries `StateMgr` GPA inputs coming from Consensus and Mempool.
+- *Message pipe:* carries `StateMgr` GPA messages (block requests and responses).
+- *Node public keys pipe:* updates the set of peers available for block fetching
+  (server nodes, committee nodes).
+- *Preliminary block pipe:* receives blocks forwarded by `ChainMgr`'s
+  `msgBlockProduced` mechanism, saving them to the WAL.
+
+The wrapper also manages a
+#codelink("/packages/chain/statemanager/gpa/utils/block_wal.go")[Block WAL]
+(write-ahead log) for crash recovery, a
+#codelink("/packages/chain/statemanager/gpa/utils/block_cache.go")[block cache]
+for recently seen blocks, and a
+#codelink("/packages/chain/statemanager/snapshots")[snapshot manager] for
+loading snapshots on boot.
+
+== `StateMgr` GPA
+
+Blocks are not stored on L1 -- only anchors (commitments) are. When a node needs
+to reconstruct the chain state, it must obtain the actual block data from other
+nodes. The
+#codelink("/packages/chain/statemanager/gpa/state_manager_gpa.go")[`StateMgr`
+GPA subcomponent] encapsulates this block-fetching logic as a distributed
+protocol: it knows which blocks are missing, asks peers for them, and commits
+them to the local store in the correct order.
+
+Its core mechanism is _block chain tracing_: given a target block commitment, it
+walks backwards through the chain of `PreviousL1Commitment` pointers until it
+finds a block that is already in the store. Any missing blocks along the way are
+queued for fetching from peers. Once all blocks in the chain are available, they
+are committed to the store in order.
+
+=== Inputs
+
+Note: some of the inputs accepted by `StateMgr` serve as a request-response
+mechanism for other components, which violates the pseudo-functional design
+principle of GPA.
+
+- #codelink("/packages/chain/statemanager/gpa/inputs/consensus_state_proposal.go")[`ConsensusStateProposal`]:
+  #link(<cons>)[Consensus] asks `StateMgr` to ensure all blocks up to a given anchor are
+  available. Responds (via a channel) once the chain is complete.
+- #codelink("/packages/chain/statemanager/gpa/inputs/consensus_decided_state.go")[`ConsensusDecidedState`]:
+  #link(<cons>)[Consensus] asks for the chain state at a given commitment. Responds with the
+  state once all blocks are committed.
+- #codelink("/packages/chain/statemanager/gpa/inputs/consensus_block_produced.go")[`ConsensusBlockProduced`]:
+  #link(<cons>)[Consensus] has produced a new block (state draft). `StateMgr` commits it to the
+  store and adds it to the cache.
+- #codelink("/packages/chain/statemanager/gpa/inputs/chain_fetch_state_diff.go")[`ChainFetchStateDiff`]:
+  the Mempool asks for the state difference between two anchors (used to
+  determine which requests are already processed). Responds with the diff once
+  both states are available.
+- #codelink("/packages/chain/statemanager/gpa/inputs/state_manager_timer_tick.go")[`StateManagerTimerTick`]:
+  periodic tick that retries pending `GetBlock` requests, cleans expired cache
+  entries, and removes stale callbacks.
+
+=== Messages
+
+- #codelink("/packages/chain/statemanager/gpa/messages/get_block_message.go")[`GetBlockMessage`]:
+  requests a block identified by its L1 commitment from a peer. Sent to a
+  random subset of known peers.
+- #codelink("/packages/chain/statemanager/gpa/messages/block_message.go")[`BlockMessage`]:
+  a response carrying the requested block. Upon receipt, the block is added to
+  the cache and the block chain tracing continues from where it left off.
+
+= Mempool
+
+The #codelink("/packages/chain/mempool/mempool.go")[`Mempool`] manages the pool
+of pending requests for a single chain. Its main
+responsibilities are:
+
+- *Provide proposal sets for consensus:* when a #link(<cons>)[Consensus] instance starts, it
+  asks the Mempool for a set of request refs to include in the next block.
+- *Provide resolved requests:* after Consensus decides on a set of request
+  refs, it asks the Mempool for the actual request objects.
+- *Share off-ledger requests between nodes:* off-ledger requests arrive via the
+  API at a single node and must be disseminated to the committee and server
+  nodes so they can participate in Consensus. This is the job of the
+  Mempool GPA subcomponent.
+- *Track the chain head:* when the chain advances (or rolls back), the Mempool
+  adjusts its request set accordingly -- removing processed requests, re-adding
+  requests from reverted blocks, and refreshing on-ledger requests from L1 if
+  needed.
+
+There is one Mempool per chain, managed by `chainNodeImpl`.
+
+== Outer wrapper
+
+The #codelink("/packages/chain/mempool/mempool.go")[`mempoolImpl`] struct is the
+outer wrapper. It runs a single goroutine
+(#codelink("/packages/chain/mempool/mempool.go")[`run`]) processing events from
+pipes for: tracking new chain heads, receiving on-ledger and off-ledger
+requests, consensus proposal/request queries, server/access node updates, and
+network messages. It maintains two request pools:
+
+- #codelink("/packages/chain/mempool/typed_pool.go")[`typedPool`] (used for
+  on-ledger requests): stores requests keyed by their ref, with
+  type-specific limits and eviction policies.
+- #codelink("/packages/chain/mempool/offledger_pool.go")[`offLedgerPool`]:
+  stores off-ledger requests with per-account limits and nonce-based ordering.
+
+== Mempool GPA
+
+The inner GPA is implemented in
+#codelink("/packages/chain/mempool/distsync/dist_sync.go")[`dist_sync.go`]. Its
+purpose is to ensure that all committee nodes have the same off-ledger requests
+available for Consensus. Without this component, an off-ledger request submitted
+to a single node's API would never reach the other committee members, and
+Consensus would fail to include it.
+
+=== Inputs
+
+- #codelink("/packages/chain/mempool/distsync/input_publish_request.go")[`inputPublishRequest`]:
+  when a new off-ledger request is received locally, it is sent to all committee
+  nodes (or all server nodes if the committee is not yet known) via
+  `msgShareRequest`.
+- #codelink("/packages/chain/mempool/distsync/input_request_needed.go")[`inputRequestNeeded`]:
+  when Consensus references a request that this node does not have, a
+  `msgMissingRequest` is sent to all committee nodes. On subsequent timer ticks,
+  if the request is still missing, queries are sent to random server nodes.
+- #codelink("/packages/chain/mempool/distsync/input_server_nodes.go")[`inputServerNodes`]:
+  the set of server and committee nodes has been updated.
+- #codelink("/packages/chain/mempool/distsync/input_access_nodes.go")[`inputAccessNodes`]:
+  the set of access and committee nodes has been updated.
+
+=== Messages
+
+- #codelink("/packages/chain/mempool/distsync/msg_share_request.go")[`msgShareRequest`]:
+  carries a full request object. The recipient adds the request to the local
+  pool. If it was received from outside the committee and is new to this node,
+  it is re-propagated to the committee to ensure full dissemination.
+- #codelink("/packages/chain/mempool/distsync/msg_missing_request.go")[`msgMissingRequest`]:
+  carries a request reference. The recipient replies `msgShareRequest` if it has it.
 
 = `Consensus`
 
