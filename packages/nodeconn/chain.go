@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/hive.go/log"
@@ -48,6 +49,8 @@ func newNCChain(
 	anchorHandler chain.AnchorHandler,
 	wsURL string,
 	httpURL string,
+	anchorFetchMaxAttempts int,
+	anchorFetchRetryDelay time.Duration,
 ) (*ncChain, error) {
 	packageID, err := nodeConn.httpClient.L2().GetISCPackageIDForAnchor(ctx, chainID.AsObjectID())
 	if err != nil {
@@ -63,6 +66,8 @@ func newNCChain(
 		nodeConn.Logger,
 		wsURL,
 		httpURL,
+		anchorFetchMaxAttempts,
+		anchorFetchRetryDelay,
 	)
 	if err != nil {
 		return nil, err

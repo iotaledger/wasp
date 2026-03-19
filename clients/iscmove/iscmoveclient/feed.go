@@ -14,11 +14,13 @@ import (
 )
 
 type ChainFeed struct {
-	wsClient      *Client // FIXME this should be removed after we migrate to GqraphQL subscriptions
-	httpClient    *Client
-	iscPackageID  iotago.PackageID
-	anchorAddress iotago.ObjectID
-	log           log.Logger
+	wsClient               *Client // FIXME this should be removed after we migrate to GqraphQL subscriptions
+	httpClient             *Client
+	iscPackageID           iotago.PackageID
+	anchorAddress          iotago.ObjectID
+	anchorFetchMaxAttempts int
+	anchorFetchRetryDelay  time.Duration
+	log                    log.Logger
 }
 
 func NewChainFeed(
@@ -28,6 +30,8 @@ func NewChainFeed(
 	log log.Logger,
 	wsURL string,
 	httpURL string,
+	anchorFetchMaxAttempts int,
+	anchorFetchRetryDelay time.Duration,
 ) (*ChainFeed, error) {
 	graphqlLog := log.NewChildLogger("graphql")
 	wsGQL := iotagraphql.NewGraphQLClientWithWaitParams(wsURL, "", iotagraphql.WaitForEffectsEnabled).WithLogger(graphqlLog)
@@ -37,11 +41,13 @@ func NewChainFeed(
 	httpClient := NewClient(httpGQL)
 
 	return &ChainFeed{
-		wsClient:      wsClient,
-		httpClient:    httpClient,
-		iscPackageID:  iscPackageID,
-		anchorAddress: anchorAddress,
-		log:           log.NewChildLogger("iscmove-chainfeed"),
+		wsClient:               wsClient,
+		httpClient:             httpClient,
+		iscPackageID:           iscPackageID,
+		anchorAddress:          anchorAddress,
+		anchorFetchMaxAttempts: anchorFetchMaxAttempts,
+		anchorFetchRetryDelay:  anchorFetchRetryDelay,
+		log:                    log.NewChildLogger("iscmove-chainfeed"),
 	}, nil
 }
 
@@ -223,38 +229,54 @@ func (f *ChainFeed) consumeAnchorUpdates(
 
 				f.log.LogDebugf("POLLING ANCHOR %s, %s", f.anchorAddress, time.Now().String())
 
-				r, err := f.httpClient.TryGetPastObject(ctx, f.anchorAddress, obj.Reference.Version)
+				anchorWithRef, err := f.fetchAnchorWithRetry(ctx, obj.Reference.Version)
 				if err != nil {
-					f.log.LogErrorf("consumeAnchorUpdates: cannot fetch Anchor: %s", err)
-					continue
-				}
-				if r.Object.IsNotFound() {
-					f.log.LogErrorf("consumeAnchorUpdates: cannot fetch Anchor: version %d not found", obj.Reference.Version)
+					f.log.LogErrorf("consumeAnchorUpdates: giving up on anchor version %d: %s", obj.Reference.Version, err)
 					continue
 				}
 
-				var anchor *iscmove.Anchor
-				err = iotagraphql.UnmarshalBCS(r.Object.BcsBytes(), &anchor)
-				if err != nil {
-					f.log.LogErrorf("ID: %s\nAssetBagID: %s\n", anchor.ID, anchor.Assets.Value.ID)
-					f.log.LogErrorf("consumeAnchorUpdates: failed to unmarshal BCS: %s", err)
-					continue
-				}
-
-				objRef, err := r.Object.ObjectRef()
-				if err != nil {
-					f.log.LogErrorf("consumeAnchorUpdates: failed to get object ref: %s", err)
-					continue
-				}
-				anchorCh <- &iscmove.AnchorWithRef{
-					ObjectRef: *objRef,
-					Object:    anchor,
-					Owner:     r.Object.OwnerAddress(),
-				}
-				f.log.LogDebugf("ANCHOR[%s] SENT TO CHANNEL %s\n", anchor.ID.String(), time.Now().String())
+				anchorCh <- anchorWithRef
+				f.log.LogDebugf("ANCHOR[%s] SENT TO CHANNEL %s\n", anchorWithRef.Object.ID.String(), time.Now().String())
 			}
 		}
 	}
+}
+
+
+func (f *ChainFeed) fetchAnchorWithRetry(ctx context.Context, version uint64) (*iscmove.AnchorWithRef, error) {
+	for attempt := range f.anchorFetchMaxAttempts {
+		r, err := f.httpClient.TryGetPastObject(ctx, f.anchorAddress, version)
+		if err != nil {
+			f.log.LogDebugf("fetchAnchorWithRetry: attempt %d/%d failed: %s", attempt+1, f.anchorFetchMaxAttempts, err)
+		} else if r.Object.IsNotFound() {
+			f.log.LogDebugf("fetchAnchorWithRetry: attempt %d/%d version %d not found", attempt+1, f.anchorFetchMaxAttempts, version)
+		} else {
+			var anchor *iscmove.Anchor
+			err = iotagraphql.UnmarshalBCS(r.Object.BcsBytes(), &anchor)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal anchor BCS: %w", err)
+			}
+			objRef, err := r.Object.ObjectRef()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get object ref: %w", err)
+			}
+
+			f.log.LogDebugf("fetchAnchorWithRetry: found anchor after %d/%d attempts.", attempt+1, f.anchorFetchMaxAttempts)
+
+			return &iscmove.AnchorWithRef{
+				ObjectRef: *objRef,
+				Object:    anchor,
+				Owner:     r.Object.OwnerAddress(),
+			}, nil
+		}
+
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(f.anchorFetchRetryDelay):
+		}
+	}
+	return nil, fmt.Errorf("anchor version %d not available after %d attempts", version, f.anchorFetchMaxAttempts)
 }
 
 func (f *ChainFeed) GetISCPackageID() iotago.PackageID {

@@ -97,12 +97,14 @@ Example:
 
 ## <a id="l1"></a> 3. L1
 
-| Name                  | Description                                                                                        | Type   | Default value           |
-| --------------------- | -------------------------------------------------------------------------------------------------- | ------ | ----------------------- |
-| websocketURL          | The WS address to which to connect to                                                              | string | "ws://localhost:9000"   |
-| httpURL               | The HTTP address to which to connect to                                                            | string | "http://localhost:9000" |
-| maxConnectionAttempts | The amount of times the connection to INX will be attempted before it fails (1 attempt per second) | uint   | 30                      |
-| targetNetworkName     | The network name on which the node should operate on (optional)                                    | string | ""                      |
+| Name                   | Description                                                                                        | Type   | Default value           |
+| ---------------------- | -------------------------------------------------------------------------------------------------- | ------ | ----------------------- |
+| websocketURL           | The WS address to which to connect to                                                              | string | "ws://localhost:9000"   |
+| httpURL                | The HTTP address to which to connect to                                                            | string | "http://localhost:9000" |
+| maxConnectionAttempts  | The amount of times the connection to INX will be attempted before it fails (1 attempt per second) | uint   | 30                      |
+| targetNetworkName      | The network name on which the node should operate on (optional)                                    | string | ""                      |
+| anchorFetchMaxAttempts | Max retry attempts when fetching an anchor version from the indexer                                | int    | 20                      |
+| anchorFetchRetryDelay  | Delay between anchor fetch retries                                                                 | string | "500ms"                 |
 
 Example:
 
@@ -112,7 +114,9 @@ Example:
       "websocketURL": "ws://localhost:9000",
       "httpURL": "http://localhost:9000",
       "maxConnectionAttempts": 30,
-      "targetNetworkName": ""
+      "targetNetworkName": "",
+      "anchorFetchMaxAttempts": 20,
+      "anchorFetchRetryDelay": "500ms"
     }
   }
 ```

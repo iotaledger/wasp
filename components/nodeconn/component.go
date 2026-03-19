@@ -51,6 +51,8 @@ func provide(c *dig.Container) error {
 			chains.ParamsChains.MempoolMaxOnledgerInPool,
 			ParamsL1.WebsocketURL,
 			ParamsL1.HttpURL,
+			ParamsL1.AnchorFetchMaxAttempts,
+			ParamsL1.AnchorFetchRetryDelay,
 			Component.NewChildLogger("nc"),
 			deps.ShutdownHandler,
 		)

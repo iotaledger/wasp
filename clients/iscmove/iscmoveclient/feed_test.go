@@ -3,6 +3,7 @@ package iscmoveclient_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
@@ -51,6 +52,8 @@ func TestRequestsFeed(t *testing.T) {
 		log,
 		iotaconn.AlphanetWebsocketEndpointURL,
 		iotaconn.AlphanetEndpointURL,
+		20,
+		500*time.Millisecond,
 	)
 	require.NoError(t, err)
 	defer func() {

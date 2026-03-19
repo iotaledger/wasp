@@ -21,7 +21,9 @@
     "websocketURL": "ws://localhost:9000",
     "httpURL": "http://localhost:9000",
     "maxConnectionAttempts": 30,
-    "targetNetworkName": ""
+    "targetNetworkName": "",
+    "anchorFetchMaxAttempts": 20,
+    "anchorFetchRetryDelay": "500ms"
   },
   "cache": {
     "cacheSize": "64MiB",
