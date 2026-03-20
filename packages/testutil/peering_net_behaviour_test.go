@@ -4,6 +4,7 @@
 package testutil // not `..._test` because it uses peeringMsg.
 
 import (
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -43,15 +44,19 @@ func TestPeeringNetUnreliable(t *testing.T) {
 	//
 	// Receiver process.
 	stopCh := make(chan bool)
+	doneCh := make(chan []time.Duration, 1)
 	startTime := time.Now()
-	durations := make([]time.Duration, 0)
+	var recvCount atomic.Int64
 	go func() {
+		durations := make([]time.Duration, 0)
 		for {
 			select {
 			case <-stopCh:
+				doneCh <- durations
 				return
 			case <-outCh:
 				durations = append(durations, time.Since(startTime))
+				recvCount.Add(1)
 			}
 		}
 	}()
@@ -65,8 +70,11 @@ func TestPeeringNetUnreliable(t *testing.T) {
 	for i := 0; i < 2000; i++ {
 		inCh <- &peeringMsg{from: someNode.identity.GetPublicKey()}
 	}
-	time.Sleep(1000 * time.Millisecond)
+	require.Eventually(t, func() bool {
+		return recvCount.Load() >= 1000
+	}, 5*time.Second, 100*time.Millisecond, "expected at least 1000 messages to be processed")
 	stopCh <- true
+	durations := <-doneCh
 
 	//
 	// Validate the results (with some tolerance for randomness).
@@ -93,15 +101,19 @@ func TestPeeringNetGoodQuality(t *testing.T) {
 	//
 	// Receiver process.
 	stopCh := make(chan bool)
+	doneCh := make(chan []time.Duration, 1)
 	startTime := time.Now()
-	durations := make([]time.Duration, 0)
+	var recvCount atomic.Int64
 	go func() {
+		durations := make([]time.Duration, 0)
 		for {
 			select {
 			case <-stopCh:
+				doneCh <- durations
 				return
 			case <-outCh:
 				durations = append(durations, time.Since(startTime))
+				recvCount.Add(1)
 			}
 		}
 	}()
@@ -115,8 +127,11 @@ func TestPeeringNetGoodQuality(t *testing.T) {
 	for i := 0; i < 1000; i++ {
 		inCh <- &peeringMsg{from: someNode.identity.GetPublicKey()}
 	}
-	time.Sleep(500 * time.Millisecond)
+	require.Eventually(t, func() bool {
+		return recvCount.Load() >= 1000
+	}, 5*time.Second, 50*time.Millisecond, "expected all 1000 messages to be processed")
 	stopCh <- true
+	durations := <-doneCh
 
 	//
 	// Validate the results (with some tolerance for randomness).

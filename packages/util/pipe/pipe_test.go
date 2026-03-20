@@ -1,9 +1,9 @@
 package pipe
 
 import (
+	"runtime"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -241,7 +241,7 @@ func testPipeConcurrentWriteReadLen[E IntConvertible](factory Factory[E], p Pipe
 				length := p.Len()
 				t.Logf("current channel length is %d", length)
 				// no asserts here - the read/write process is asynchronous
-				time.Sleep(10 * time.Millisecond)
+				runtime.Gosched()
 			}
 		}
 	}()

@@ -169,7 +169,7 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 
 	// assert state
 	for i, node := range te.nodes {
-		for {
+		require.Eventually(t, func() bool {
 			latestState, err := node.LatestState(chain.ActiveOrCommittedState)
 			require.NoError(t, err)
 			cnt := inccounter.NewStateAccess(latestState).GetCounter()
@@ -186,26 +186,25 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 					require.NoError(t, err)
 					require.GreaterOrEqual(t, incCount, inccounter.NewStateAccess(st).GetCounter())
 				*/
-				break
+				return true
 			}
-			time.Sleep(100 * time.Millisecond)
 
-			if reliable {
-				continue
+			if !reliable {
+				//
+				// For the unreliable-network tests we have to retry the requests.
+				// That's because the gossip in the mempool is primitive for now.
+				for ii := range incCount {
+					scRequest := isc.NewOffLedgerRequest(
+						te.chainID,
+						inccounter.FuncIncCounter.Message(nil),
+						uint64(ii),
+						20000,
+					).Sign(scClient)
+					te.nodes[0].ReceiveOffLedgerRequest(scRequest, scClient.GetPublicKey())
+				}
 			}
-			//
-			// For the unreliable-network tests we have to retry the requests.
-			// That's because the gossip in the mempool is primitive for now.
-			for ii := range incCount {
-				scRequest := isc.NewOffLedgerRequest(
-					te.chainID,
-					inccounter.FuncIncCounter.Message(nil),
-					uint64(ii),
-					20000,
-				).Sign(scClient)
-				te.nodes[0].ReceiveOffLedgerRequest(scRequest, scClient.GetPublicKey())
-			}
-		}
+			return false
+		}, timeUntilContextDeadline(ctxTimeout), 100*time.Millisecond, "counter did not reach expected value for node %v", i)
 		// Check if LastAnchor() works as expected.
 		awaitPredicate(te, ctxTimeout, "LatestAnchor", func() bool {
 			confirmedAnchor, err := node.LatestAnchor(chain.ConfirmedState)
@@ -254,19 +253,26 @@ func awaitRequestsProcessed(ctx context.Context, te *testEnv, requests []isc.Req
 }
 
 func awaitPredicate(te *testEnv, ctx context.Context, desc string, predicate func() bool) {
-	for {
-		select {
-		case <-ctx.Done():
-			require.FailNowf(te.t, "awaitPredicate failed: %s", desc)
-		default:
-			if predicate() {
-				te.log.LogDebugf("Predicate %v become true.", desc)
-				return
-			}
-			te.log.LogDebugf("Predicate %v still false, will retry.", desc)
-			time.Sleep(100 * time.Millisecond)
+	require.Eventually(te.t, func() bool {
+		if predicate() {
+			te.log.LogDebugf("Predicate %v become true.", desc)
+			return true
 		}
+		te.log.LogDebugf("Predicate %v still false, will retry.", desc)
+		return false
+	}, timeUntilContextDeadline(ctx), 10*time.Millisecond, "awaitPredicate failed: %s", desc)
+}
+
+// timeUntilContextDeadline returns the remaining time until the context deadline,
+// or a default duration if the context has no deadline.
+func timeUntilContextDeadline(ctx context.Context) time.Duration {
+	if deadline, ok := ctx.Deadline(); ok {
+		if d := time.Until(deadline); d > 0 {
+			return d
+		}
+		return time.Millisecond
 	}
+	return 2 * time.Second
 }
 
 ////////////////////////////////////////////////////////////////////////////////

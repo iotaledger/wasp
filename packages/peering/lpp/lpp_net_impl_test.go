@@ -18,9 +18,12 @@ import (
 )
 
 func TestLPPPeeringImpl(t *testing.T) {
-	// This test is prone to cause simultaneous connections, which breaks the quic connections
-	// Therefore, a sleep is introduced to give some time to connect to the nodes properly.
+	// This test is prone to cause simultaneous connections, which breaks the quic connections.
+	// Nodes are created and started with staggered sleeps to prevent simultaneous QUIC connection
+	// attempts. require.Eventually is used for the final connection-liveness check before sending.
 	const sleepTimeToSettleConnection = 750 * time.Millisecond
+	const connectionTimeout = 15 * time.Second
+	const connectionTick = 50 * time.Millisecond
 	var err error
 	log := testlogger.NewLogger(t)
 	defer log.Shutdown()
@@ -38,7 +41,6 @@ func TestLPPPeeringImpl(t *testing.T) {
 	for _, tnm := range tnms {
 		for i := range peeringURLs {
 			_, err = tnm.TrustPeer(keys[i].GetPublicKey().String(), keys[i].GetPublicKey(), peeringURLs[i])
-			time.Sleep(sleepTimeToSettleConnection)
 			require.NoError(t, err)
 		}
 	}
@@ -56,7 +58,6 @@ func TestLPPPeeringImpl(t *testing.T) {
 
 	for i := range nodes {
 		go nodes[i].Run(context.Background())
-
 		time.Sleep(sleepTimeToSettleConnection)
 	}
 
@@ -75,12 +76,15 @@ func TestLPPPeeringImpl(t *testing.T) {
 		doneCh <- true
 	})
 
-	time.Sleep(sleepTimeToSettleConnection)
+	// Wait for node2→node0 connection to be live before sending (replaces the original 750ms sleep).
+	require.Eventually(t, func() bool {
+		p, err := nodes[2].PeerByPubKey(keys[0].GetPublicKey())
+		return err == nil && p.IsAlive()
+	}, connectionTimeout, connectionTick, "node2 did not establish a live connection to node0")
 
 	n0p2.SendMsg(peering.NewPeerMessageData(chain1, receiver, 125, nil))
 	n1p1.SendMsg(peering.NewPeerMessageData(chain1, receiver, 125, nil))
 	n2p0.SendMsg(peering.NewPeerMessageData(chain2, receiver, 125, nil))
 
 	<-doneCh
-	time.Sleep(100 * time.Millisecond)
 }

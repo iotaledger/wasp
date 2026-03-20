@@ -103,27 +103,18 @@ func testBasic(t *testing.T, n int, reliable bool) {
 		am.ChainAccessNodes(chainID, peerPubKeys)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), testmisc.GetTimeout(1*time.Minute))
-	defer cancel()
-
 	//
 	// Wait for everyone to get the server nodes.
-	for done := false; !done; {
-		func() {
-			require.NoError(t, ctx.Err(), "timeout: wait for everyone to get the server nodes")
+	require.Eventually(t, func() bool {
+		nodeServersMx.Lock()
+		defer nodeServersMx.Unlock()
 
-			time.Sleep(100 * time.Millisecond)
-			done = true
-			nodeServersMx.Lock()
-			defer nodeServersMx.Unlock()
-
-			for i := range nodeServers {
-				if !util.Same(nodeServers[i], peerPubKeys) {
-					t.Logf("Wait for node %v", i)
-					done = false
-					break
-				}
+		for i := range nodeServers {
+			if !util.Same(nodeServers[i], peerPubKeys) {
+				t.Logf("Wait for node %v", i)
+				return false
 			}
-		}()
-	}
+		}
+		return true
+	}, testmisc.GetTimeout(1*time.Minute), 100*time.Millisecond, "timeout: wait for everyone to get the server nodes")
 }
