@@ -252,8 +252,6 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	}
 }
 
-// setupChainMgr creates the common test infrastructure for chain manager tests.
-// Returns nodeIDs, nodes, needCons map, committeeAddr, initial anchor, and the test context.
 func setupChainMgr(t *testing.T, n, f int) (
 	[]gpa.NodeID,
 	map[gpa.NodeID]gpa.GPA,
