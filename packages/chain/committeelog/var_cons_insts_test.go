@@ -23,11 +23,11 @@ type vciTestEnv struct {
 	cbLIs     []LogIndex // LogIndexes passed to the onLIInc callback.
 }
 
-func newVCITestEnv(t *testing.T, minLI LogIndex) *vciTestEnv {
+func newVCITestEnv(t *testing.T) *vciTestEnv {
 	t.Helper()
 	env := &vciTestEnv{}
 	env.vci = NewVarConsInsts(
-		minLI,
+		0,
 		func(li LogIndex) {
 			env.persisted = append(env.persisted, li)
 		},
@@ -52,7 +52,7 @@ func (env *vciTestEnv) lastCBLI() LogIndex {
 // TestVarConsInsts_ConsOutputSkipDefersUntilTick verifies that after a SKIP
 // decision, advancing to the next log index is deferred until Tick is called.
 func TestVarConsInsts_ConsOutputSkipDefersUntilTick(t *testing.T) {
-	env := newVCITestEnv(t, 0)
+	env := newVCITestEnv(t)
 	vci := env.vci
 	vci.lastAnchor = makeAnchor()
 
@@ -81,7 +81,7 @@ func TestVarConsInsts_ConsOutputSkipDefersUntilTick(t *testing.T) {
 // TestVarConsInsts_ConsecutiveSkipsEachDeferred verifies that multiple
 // consecutive SKIP decisions each require their own Tick to advance.
 func TestVarConsInsts_ConsecutiveSkipsEachDeferred(t *testing.T) {
-	env := newVCITestEnv(t, 0)
+	env := newVCITestEnv(t)
 	vci := env.vci
 	vci.lastAnchor = makeAnchor()
 
@@ -122,7 +122,7 @@ func TestVarConsInsts_ConsecutiveSkipsEachDeferred(t *testing.T) {
 // ConsOutputSkip is called when lastAnchor is nil. The advancement should be
 // deferred until LatestL1Anchor provides the anchor.
 func TestVarConsInsts_SkipWithNoAnchorThenAnchorArrives(t *testing.T) {
-	env := newVCITestEnv(t, 0)
+	env := newVCITestEnv(t)
 	vci := env.vci
 
 	// lastAnchor is nil (default after construction).
@@ -150,7 +150,7 @@ func TestVarConsInsts_SkipWithNoAnchorThenAnchorArrives(t *testing.T) {
 // TestVarConsInsts_SkipWithNoAnchorTickDoesNotAdvance verifies that Tick alone
 // cannot resolve a pending skip when lastAnchor is nil.
 func TestVarConsInsts_SkipWithNoAnchorTickDoesNotAdvance(t *testing.T) {
-	env := newVCITestEnv(t, 0)
+	env := newVCITestEnv(t)
 	vci := env.vci
 
 	// Skip with no anchor.
@@ -169,7 +169,7 @@ func TestVarConsInsts_SkipWithNoAnchorTickDoesNotAdvance(t *testing.T) {
 // arrives before the tick resolves a pending skip, the Done takes precedence
 // and the pending skip becomes a no-op (because trySet deduplicates).
 func TestVarConsInsts_SkipThenDoneBeforeTick(t *testing.T) {
-	env := newVCITestEnv(t, 0)
+	env := newVCITestEnv(t)
 	vci := env.vci
 	vci.lastAnchor = makeAnchor()
 
@@ -196,7 +196,7 @@ func TestVarConsInsts_SkipThenDoneBeforeTick(t *testing.T) {
 // skips happen before a tick, the second one overwrites the first and only
 // the later target LI is used.
 func TestVarConsInsts_SkipPendingOverwrittenByLaterSkip(t *testing.T) {
-	env := newVCITestEnv(t, 0)
+	env := newVCITestEnv(t)
 	vci := env.vci
 	vci.lastAnchor = makeAnchor()
 
@@ -224,7 +224,7 @@ func TestVarConsInsts_SkipPendingOverwrittenByLaterSkip(t *testing.T) {
 // TestVarConsInsts_TickWithNoPendingSkipIsHarmless verifies that Tick does
 // nothing special when there is no pending skip.
 func TestVarConsInsts_TickWithNoPendingSkipIsHarmless(t *testing.T) {
-	env := newVCITestEnv(t, 0)
+	env := newVCITestEnv(t)
 	vci := env.vci
 	vci.lastAnchor = makeAnchor()
 
@@ -242,7 +242,7 @@ func TestVarConsInsts_TickWithNoPendingSkipIsHarmless(t *testing.T) {
 // LatestL1Anchor while a skip is pending (and lastAnchor was already set)
 // does NOT prematurely apply the pending skip — only Tick should do that.
 func TestVarConsInsts_SkipWithAnchorThenAnchorUpdate(t *testing.T) {
-	env := newVCITestEnv(t, 0)
+	env := newVCITestEnv(t)
 	vci := env.vci
 	vci.lastAnchor = makeAnchor()
 
@@ -271,7 +271,7 @@ func TestVarConsInsts_SkipWithAnchorThenAnchorUpdate(t *testing.T) {
 // skip with no anchor → anchor arrives (advances) → skip again with anchor →
 // tick advances.
 func TestVarConsInsts_SkipNoAnchorThenSkipAgainAfterAnchor(t *testing.T) {
-	env := newVCITestEnv(t, 0)
+	env := newVCITestEnv(t)
 	vci := env.vci
 
 	// Skip at LI==0 with no anchor.

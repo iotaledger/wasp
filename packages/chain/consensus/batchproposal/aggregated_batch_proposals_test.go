@@ -31,7 +31,7 @@ func makeSharedGasCoin() *coin.CoinWithRef {
 // index. All proposals must share the same gas coin for F+1 agreement.
 func makeValidProposal(
 	nodeIndex uint16,
-	n int,
+	n int, //nolint:unparam
 	anchor *isc.StateAnchor,
 	reqRefs []*isc.RequestRef,
 	gasCoin *coin.CoinWithRef,

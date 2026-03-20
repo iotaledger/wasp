@@ -252,7 +252,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	}
 }
 
-func setupChainMgr(t *testing.T, n, f int) (
+func setupChainMgr(t *testing.T, n, f int) ( //nolint:gocritic
 	[]gpa.NodeID,
 	map[gpa.NodeID]gpa.GPA,
 	map[gpa.NodeID]*chainmanager.NeedConsensusMap,

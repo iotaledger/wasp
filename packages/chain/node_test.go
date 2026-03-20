@@ -5,8 +5,9 @@ package chain_test
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
-	"math/rand"
+	mrand "math/rand"
 	"sync"
 	"testing"
 	"time"
@@ -278,7 +279,7 @@ func testNodeSkipRecovery(t *testing.T, n, f int, timeout time.Duration, node l1
 	rand.Read(badDigest[:])
 	badRef := iotago.ObjectRef{
 		ObjectID: &badObjID,
-		Version:  rand.Uint64(),
+		Version:  mrand.Uint64(),
 		Digest:   &badDigest,
 	}
 	var badBagID iotago.Address
@@ -659,7 +660,7 @@ type testEnv struct {
 func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoint) *testEnv {
 	te := &testEnv{t: t}
 	te.ctx, te.ctxCancel = context.WithCancel(context.Background())
-	te.log = testlogger.NewLogger(t).NewChildLogger(fmt.Sprintf("%04d", rand.Intn(10000))) // For test instance ID.
+	te.log = testlogger.NewLogger(t).NewChildLogger(fmt.Sprintf("%04d", mrand.Intn(10000))) // For test instance ID.
 
 	te.iscPackageID = node.ISCPackageID()
 	te.l1Client = node.L1Client()
