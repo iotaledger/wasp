@@ -252,6 +252,217 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	}
 }
 
+// setupChainMgr creates the common test infrastructure for chain manager tests.
+// Returns nodeIDs, nodes, needCons map, committeeAddr, initial anchor, and the test context.
+func setupChainMgr(t *testing.T, n, f int) (
+	[]gpa.NodeID,
+	map[gpa.NodeID]gpa.GPA,
+	map[gpa.NodeID]*chainmanager.NeedConsensusMap,
+	*cryptolib.Address,
+	*isc.StateAnchor,
+	*gpa.TestContext,
+) {
+	t.Helper()
+	log := testlogger.NewLogger(t)
+	t.Cleanup(func() { log.Shutdown() })
+
+	_, peerIdentities := testpeers.SetupKeys(uint16(n))
+	nodeIDs := make([]gpa.NodeID, len(peerIdentities))
+	for i, pid := range peerIdentities {
+		nodeIDs[i] = gpa.NodeIDFromPublicKey(pid.GetPublicKey())
+	}
+	committeeAddr, dkRegs := testpeers.SetupDistributedKeyGenerationTrivial(t, n, f, peerIdentities, nil)
+	require.NotNil(t, committeeAddr)
+
+	committeeAddrSigner := testpeers.NewTestDistributedSignatureSigner(committeeAddr, dkRegs, nodeIDs, peerIdentities, log)
+	tcl := newTestChainLedger(t, committeeAddrSigner)
+	anchor, deposit := tcl.MakeTxChainOrigin()
+
+	nodes := map[gpa.NodeID]gpa.GPA{}
+	stores := map[gpa.NodeID]state.Store{}
+	needCons := map[gpa.NodeID]*chainmanager.NeedConsensusMap{}
+	for i, nid := range nodeIDs {
+		consensusStateRegistry := testutil.NewConsensusStateRegistry()
+		stores[nid] = statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+		_, err := origin.InitChainByStateMetadataBytes(stores[nid], anchor.GetStateMetadata(), deposit, parameterstest.L1Mock)
+		require.NoError(t, err)
+		needConsensusCB := func(upd *chainmanager.NeedConsensusMap) {
+			needCons[nid] = upd
+		}
+		cm, err := chainmanager.New(
+			nid,
+			anchor.ChainID(),
+			stores[nid],
+			consensusStateRegistry,
+			dkRegs[i],
+			gpa.NodeIDFromPublicKey,
+			needConsensusCB,
+			func(upd *chainmanager.NeedPublishTXMap) {},
+			func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey) {
+				return []*cryptolib.PublicKey{}, []*cryptolib.PublicKey{}
+			},
+			func(ao *isc.StateAnchor) {},
+			func(state.Block) {},
+			func(tcrypto.DKShare) {},
+			true, // deriveAnchorByQuorum
+			-1,   // pipeliningLimit
+			1,    // postponeRecoveryMilestones
+			nil,  // metrics
+			log.NewChildLogger(nid.ShortString()),
+		)
+		require.NoError(t, err)
+		nodes[nid] = cm.AsGPA()
+	}
+	tc := gpa.NewTestContext(nodes)
+	return nodeIDs, nodes, needCons, committeeAddr, anchor, tc
+}
+
+// provideInitialAnchor sends an initial anchor to all nodes and returns the initial log index.
+func provideInitialAnchor(
+	t *testing.T,
+	nodes map[gpa.NodeID]gpa.GPA,
+	needCons map[gpa.NodeID]*chainmanager.NeedConsensusMap,
+	committeeAddr *cryptolib.Address,
+	anchor *isc.StateAnchor,
+	tc *gpa.TestContext,
+) committeelog.LogIndex {
+	t.Helper()
+	inputs := map[gpa.NodeID]gpa.Input{}
+	for nid := range nodes {
+		inputs[nid] = chainmanager.NewInputAnchorConfirmed(committeeAddr, anchor)
+	}
+	tc.WithInputs(inputs).RunAll()
+
+	var initLI committeelog.LogIndex
+	for nid := range nodes {
+		ncm := needCons[nid]
+		require.Equal(t, 1, ncm.Size())
+		ncm.ForEach(func(_ chainmanager.NeedConsensusKey, nc *chainmanager.NeedConsensus) bool {
+			initLI = nc.LogIndex
+			return true
+		})
+	}
+	return initLI
+}
+
+// sendSkip sends a consensus skip output to all nodes.
+func sendSkip(
+	nodes map[gpa.NodeID]gpa.GPA,
+	committeeAddr *cryptolib.Address,
+	li committeelog.LogIndex,
+	tc *gpa.TestContext,
+) {
+	inputs := map[gpa.NodeID]gpa.Input{}
+	for nid := range nodes {
+		inputs[nid] = chainmanager.NewInputConsensusOutputSkip(*committeeAddr, li)
+	}
+	tc.WithInputs(inputs).RunAll()
+}
+
+// sendTick sends a CanPropose tick to all nodes.
+func sendTick(
+	nodes map[gpa.NodeID]gpa.GPA,
+	tc *gpa.TestContext,
+) {
+	inputs := map[gpa.NodeID]gpa.Input{}
+	for nid := range nodes {
+		inputs[nid] = chainmanager.NewInputCanPropose()
+	}
+	tc.WithInputs(inputs).RunAll()
+}
+
+// maxLIInNeedConsensus returns the highest LogIndex in the NeedConsensusMap.
+func maxLIInNeedConsensus(ncm *chainmanager.NeedConsensusMap) committeelog.LogIndex {
+	var maxLI committeelog.LogIndex
+	ncm.ForEach(func(_ chainmanager.NeedConsensusKey, nc *chainmanager.NeedConsensus) bool {
+		if nc.LogIndex > maxLI {
+			maxLI = nc.LogIndex
+		}
+		return true
+	})
+	return maxLI
+}
+
+// TestChainMgrConsecutiveSkips verifies that multiple consecutive skip decisions
+// each require a tick before the next consensus instance is scheduled.
+func TestChainMgrConsecutiveSkips(t *testing.T) {
+	nodeIDs, nodes, needCons, committeeAddr, anchor, tc := setupChainMgr(t, 4, 1)
+	initLI := provideInitialAnchor(t, nodes, needCons, committeeAddr, anchor, tc)
+
+	for nid := range nodes {
+		require.Equal(t, 1, needCons[nid].Size())
+	}
+
+	// First skip: should NOT immediately advance.
+	sendSkip(nodes, committeeAddr, initLI, tc)
+	for nid := range nodes {
+		require.Equal(t, 1, needCons[nid].Size(), "skip should not immediately advance")
+	}
+
+	// Tick resolves the first skip → LI advances.
+	sendTick(nodes, tc)
+	for nid := range nodes {
+		require.Equal(t, 2, needCons[nid].Size(), "tick should have advanced to next LI")
+	}
+	li2 := maxLIInNeedConsensus(needCons[nodeIDs[0]])
+
+	// Second skip: should NOT immediately advance.
+	sendSkip(nodes, committeeAddr, li2, tc)
+	for nid := range nodes {
+		require.Equal(t, 2, needCons[nid].Size(), "second skip should not immediately advance")
+	}
+
+	// Second tick resolves the second skip.
+	sendTick(nodes, tc)
+	for nid := range nodes {
+		require.Equal(t, 3, needCons[nid].Size(), "second tick should advance to next LI")
+	}
+	li3 := maxLIInNeedConsensus(needCons[nodeIDs[0]])
+	require.Greater(t, li3.AsUint32(), li2.AsUint32())
+}
+
+// TestChainMgrSkipThenDoneBeforeTick verifies that if a consensus Done
+// (publish result) arrives before the tick resolves a pending skip,
+// the system behaves correctly — the Done advances the log index, and
+// the subsequent tick does not cause a spurious double-advance.
+func TestChainMgrSkipThenDoneBeforeTick(t *testing.T) {
+	nodeIDs, nodes, needCons, committeeAddr, anchor, tc := setupChainMgr(t, 4, 1)
+	initLI := provideInitialAnchor(t, nodes, needCons, committeeAddr, anchor, tc)
+
+	// Skip at initLI: pending, not yet advanced.
+	sendSkip(nodes, committeeAddr, initLI, tc)
+	for nid := range nodes {
+		require.Equal(t, 1, needCons[nid].Size())
+	}
+
+	// Before the tick, simulate a publish result (Done) at initLI.
+	// This advances the log index immediately.
+	txDigest := iotatest.RandomDigest()
+	nextSI := anchor.Anchor().Object.StateIndex + uint32(1)
+	nextAnchor := isctest.RandomStateAnchor(isctest.RandomAnchorOption{
+		ID:         anchor.GetObjectID(),
+		StateIndex: &nextSI,
+	})
+	doneInputs := map[gpa.NodeID]gpa.Input{}
+	for _, nid := range nodeIDs {
+		doneInputs[nid] = chainmanager.NewInputChainTxPublishResult(
+			*committeeAddr, initLI, *txDigest, &nextAnchor, true,
+		)
+	}
+	tc.WithInputs(doneInputs).RunAll()
+
+	// The Done should have advanced the log index.
+	sizeAfterDone := needCons[nodeIDs[0]].Size()
+	require.Greater(t, sizeAfterDone, 1, "Done should have advanced the log index")
+
+	// Now send a tick. The pending skip should be a no-op (already superseded by Done).
+	sendTick(nodes, tc)
+	for nid := range nodes {
+		require.Equal(t, sizeAfterDone, needCons[nid].Size(),
+			"tick after Done should not cause spurious advance")
+	}
+}
+
 func newTestChainLedger(t *testing.T, originator cryptolib.Signer) *testchain.TestChainLedger {
 	l1client := l1starter.Instance().L1Client()
 	l1client.RequestFunds(context.Background(), *originator.Address())

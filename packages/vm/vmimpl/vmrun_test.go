@@ -185,6 +185,81 @@ func runRequestsAndTransitionAnchor(
 	return block, anchor
 }
 
+// TestVMSkipsAlreadyProcessedRequests verifies that when the VM receives requests
+// that were already processed in a prior block, all of them are skipped and the
+// VMTaskResult has 0 RequestResults. This is the root cause of consensus "Skipped"
+// status when the same requests are re-proposed.
+func TestVMSkipsAlreadyProcessedRequests(t *testing.T) {
+	chainCreator := cryptolib.KeyPairFromSeed(cryptolib.SeedFromBytes([]byte("chainCreator")))
+	store := indexedstore.New(statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
+	anchor := initChain(chainCreator, store)
+	chainID := anchor.ChainID()
+
+	sender := cryptolib.KeyPairFromSeed(cryptolib.SeedFromBytes([]byte("sender")))
+	const baseTokens = 1 * isc.Million
+	req := makeOnLedgerRequest(t, sender, chainID, accounts.FuncDeposit.Message(), baseTokens)
+
+	// First run: process the request successfully.
+	block, _ := runRequestsAndTransitionAnchor(t, anchor, store, []isc.Request{req})
+
+	// Verify the request is now in the blocklog.
+	{
+		st := lo.Must(store.StateByTrieRoot(block.TrieRoot()))
+		isProcessed := lo.Must(blocklog.NewStateReaderFromChainState(st).IsRequestProcessed(req.ID()))
+		require.True(t, isProcessed, "request should be in the blocklog after first run")
+	}
+
+	// Build a proper anchor for the second VM run, preserving the Owner.
+	stateMetadata := lo.Must(transaction.StateMetadataFromBytes(anchor.GetStateMetadata()))
+	st := lo.Must(store.StateByTrieRoot(block.TrieRoot()))
+	chainInfo := governance.NewStateReaderFromChainState(st).GetChainInfo(anchor.ChainID())
+	newStateMetadata := transaction.NewStateMetadata(
+		stateMetadata.SchemaVersion,
+		block.L1Commitment(),
+		stateMetadata.GasCoinObjectID,
+		chainInfo.GasFeePolicy,
+		stateMetadata.InitParams,
+		stateMetadata.InitDeposit,
+		chainInfo.PublicURL,
+	)
+	nextAnchorRef := iscmove.AnchorWithRef{
+		ObjectRef: *anchor.GetObjectRef(),
+		Object: &iscmove.Anchor{
+			ID:            *anchor.Anchor().ObjectID,
+			Assets:        anchor.Anchor().Object.Assets,
+			StateIndex:    anchor.GetStateIndex() + 1,
+			StateMetadata: newStateMetadata.Bytes(),
+		},
+		Owner: anchor.Anchor().Owner,
+	}
+	nextAnchor := isc.NewStateAnchor(&nextAnchorRef, anchor.ISCPackage())
+
+	// Second run: submit the same request again on the new state.
+	// The VM should skip it because it's already in the blocklog.
+	task := &vm.VMTask{
+		Processors: coreprocessors.NewConfigWithTestContracts(),
+		Anchor:     &nextAnchor,
+		GasCoin: &coin.CoinWithRef{
+			Value: isc.GasCoinTargetValue,
+			Type:  coin.BaseTokenType,
+			Ref:   iotatest.RandomObjectRef(),
+		},
+		L1Params:             parameterstest.L1Mock,
+		Store:                store,
+		Requests:             []isc.Request{req}, // same request, already processed
+		Timestamp:            time.Time{},
+		Entropy:              [32]byte{},
+		ValidatorFeeTarget:   nil,
+		EstimateGasMode:      false,
+		EnableGasBurnLogging: false,
+		Migrations:           allmigrations.DefaultScheme,
+		Log:                  testlogger.NewLogger(t),
+	}
+	res, err := Run(task)
+	require.NoError(t, err)
+	require.Len(t, res.RequestResults, 0, "all requests should be skipped because they were already processed")
+}
+
 func TestOnLedgerAccountsDeposit(t *testing.T) {
 	chainCreator := cryptolib.KeyPairFromSeed(cryptolib.SeedFromBytes([]byte("chainCreator")))
 	store := indexedstore.New(statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
@@ -225,4 +300,46 @@ func TestOnLedgerAccountsDeposit(t *testing.T) {
 			GetRequestReceipt(req.ID()))
 		require.EqualValues(t, baseTokens-receipt.GasFeeCharged, senderL2Balance.BaseTokens())
 	}
+}
+
+// TestVMSkipsNotEnoughFundsForMinFee verifies that when an on-ledger request
+// carries fewer base tokens than the minimum gas fee, the VM skips it via
+// vmexceptions.ErrNotEnoughFundsForMinFee and produces 0 RequestResults.
+// This is the exact scenario from issue #723.
+func TestVMSkipsNotEnoughFundsForMinFee(t *testing.T) {
+	chainCreator := cryptolib.KeyPairFromSeed(cryptolib.SeedFromBytes([]byte("chainCreator")))
+	store := indexedstore.New(statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
+	anchor := initChain(chainCreator, store)
+	chainID := anchor.ChainID()
+
+	sender := cryptolib.KeyPairFromSeed(cryptolib.SeedFromBytes([]byte("poorSender")))
+	// The default gas fee policy charges 10 tokens per gas unit, and the minimum
+	// gas per request is 10,000 units, so minFee = 100,000 base tokens.
+	// Sending only 1 token guarantees ErrNotEnoughFundsForMinFee.
+	const tinyBaseTokens = 1
+	req := makeOnLedgerRequest(t, sender, chainID, accounts.FuncDeposit.Message(), tinyBaseTokens)
+
+	task := &vm.VMTask{
+		Processors: coreprocessors.NewConfigWithTestContracts(),
+		Anchor:     anchor,
+		GasCoin: &coin.CoinWithRef{
+			Value: isc.GasCoinTargetValue,
+			Type:  coin.BaseTokenType,
+			Ref:   iotatest.RandomObjectRef(),
+		},
+		L1Params:             parameterstest.L1Mock,
+		Store:                store,
+		Requests:             []isc.Request{req},
+		Timestamp:            time.Time{},
+		Entropy:              [32]byte{},
+		ValidatorFeeTarget:   nil,
+		EstimateGasMode:      false,
+		EnableGasBurnLogging: false,
+		Migrations:           allmigrations.DefaultScheme,
+		Log:                  testlogger.NewLogger(t),
+	}
+	res, err := Run(task)
+	require.NoError(t, err)
+	require.Len(t, res.RequestResults, 0,
+		"request should be skipped because sender doesn't have enough funds for the minimum fee")
 }
