@@ -28,12 +28,4 @@ jobs:
 
       - name: Test
         run: |
-          TEST_SHORT_PKGS="$(go list ./... \
-            | grep -v '/tools/cluster' \
-            | grep -v '/clients/apiclient' \
-            | grep -v '/clients/apiextensions' \
-            | grep -v '/clients/chainclient' \
-            | grep -v '/clients/multiclient' \
-            | grep -v '/clients/iotagraphql/iotaclienttest' \
-          )"
-          go test --short --count 1 -parallel 1 -timeout 60m -failfast $TEST_SHORT_PKGS
+          make test-short-simulator

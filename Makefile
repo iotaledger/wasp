@@ -51,6 +51,15 @@ test: install
 test-short:
 	go test -race -ldflags $(BUILD_LD_FLAGS) --short --count 1 -timeout 60m -failfast $(strip $(TEST_SHORT_PKGS))
 
+test-short-simulator:	
+	go test --short --count 1 -parallel 1 -timeout 60m -failfast $(shell go list ./... \
+	| grep -v '/tools/cluster' \
+	| grep -v '/clients/apiclient' \
+	| grep -v '/clients/apiextensions' \
+	| grep -v '/clients/chainclient' \
+	| grep -v '/clients/multiclient' \
+	| grep -v '/clients/iotagraphql/iotaclienttest')
+
 test-cluster: install
 	go test -race -ldflags $(BUILD_LD_FLAGS) --count 1 -timeout 25m -failfast $(shell go list ./tools/cluster/tests/...)
 

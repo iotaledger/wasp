@@ -26,14 +26,16 @@ const (
 type FakeIotaClient struct {
 	Store         *ObjectStore
 	Executor      *Executor
+	execMu        sync.Mutex // serializes ExecuteTransactionBlock for deduplication
 	faucetMu      sync.Mutex
-	faucetCounter uint64 // monotonic counter for unique faucet coin IDs
+	faucetCounter uint64    // monotonic counter for unique faucet coin IDs
+	epochStart    time.Time // fixed epoch start for deterministic L1 params
 }
 
 var _ iotagraphql.IotaClient = (*FakeIotaClient)(nil)
 
 func NewFakeIotaClient(store *ObjectStore, executor *Executor) *FakeIotaClient {
-	return &FakeIotaClient{Store: store, Executor: executor}
+	return &FakeIotaClient{Store: store, Executor: executor, epochStart: time.Now().Add(-1 * time.Hour)}
 }
 
 func (c *FakeIotaClient) ExecuteTransactionBlock(
@@ -41,12 +43,24 @@ func (c *FakeIotaClient) ExecuteTransactionBlock(
 	txDataBytes iotago.Base64Data,
 	signatures []*iotasigner.Signature,
 ) (*graphqltypes.ExecuteTransactionBlockResponse, error) {
+	// Serialize execution to prevent concurrent duplicate transactions from racing.
+	c.execMu.Lock()
+	defer c.execMu.Unlock()
+
 	tx, err := bcs.Unmarshal[iotago.TransactionData](txDataBytes)
 	if err != nil {
 		return nil, fmt.Errorf("FakeIotaClient: BCS unmarshal TransactionData: %w", err)
 	}
 	if tx.V1 == nil {
 		return nil, fmt.Errorf("FakeIotaClient: TransactionData.V1 is nil")
+	}
+
+	// Deduplicate: if this exact transaction was already executed, return the cached result.
+	txDigest, err := tx.Digest()
+	if err == nil {
+		if existing, ok := c.Store.GetTx(*txDigest); ok {
+			return existing.Effects, nil
+		}
 	}
 
 	validated, err := ValidateTransaction(c.Store, tx.V1)
@@ -547,8 +561,7 @@ func (c *FakeIotaClient) GetReferenceGasPrice(_ context.Context) (*iotagraphql.B
 }
 
 func (c *FakeIotaClient) GetLatestIotaSystemState(_ context.Context) (*iotagraphql.GetLatestIotaSystemStateResponse, error) {
-	now := time.Now()
-	epochStart := now.Add(-1 * time.Hour)
+	epochStart := c.epochStart
 
 	return &graphqltypes.GetLatestIotaSystemStateResponse{
 		Epoch: graphqltypes.GetLatestIotaSystemStateEpoch{
