@@ -10,7 +10,6 @@ import (
 	"io"
 	"math"
 	"math/big"
-	"sync"
 	"testing"
 	"time"
 
@@ -1470,11 +1469,10 @@ func TestChangeGasPerToken(t *testing.T) {
 	require.Greater(t, fee2, fee)
 }
 
-func TestGasPriceIgnoredInEstimateGas(t *testing.T) { //nolint:tparallel
-	t.Parallel()
+func TestGasPriceIgnoredInEstimateGas(t *testing.T) {
 	env := InitEVM(t)
 
-	var gasLimit sync.Map
+	var gasLimits []uint64
 
 	for _, gasPrice := range []*big.Int{
 		nil,
@@ -1482,7 +1480,7 @@ func TestGasPriceIgnoredInEstimateGas(t *testing.T) { //nolint:tparallel
 		big.NewInt(10),
 		big.NewInt(100),
 	} {
-		t.Run(fmt.Sprintf("%v", gasPrice), func(t *testing.T) { //nolint:gocritic// false positive
+		t.Run(fmt.Sprintf("%v", gasPrice), func(t *testing.T) { //nolint:gocritic // false positive
 			ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 			storage := env.deployStorageContract(ethKey)
 
@@ -1492,15 +1490,10 @@ func TestGasPriceIgnoredInEstimateGas(t *testing.T) { //nolint:tparallel
 			}}, "store", uint32(3))
 			require.NoError(t, err)
 
-			gasLimit.Store(gasPrice, gas)
+			gasLimits = append(gasLimits, gas)
 		})
 	}
 
-	var gasLimits []uint64
-	gasLimit.Range(func(key, value any) bool {
-		gasLimits = append(gasLimits, value.(uint64))
-		return true
-	})
 	t.Log("gas limit", gasLimits)
 	require.Len(t, lo.Uniq(gasLimits), 1)
 }
