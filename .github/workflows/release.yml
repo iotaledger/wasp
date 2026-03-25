@@ -58,6 +58,8 @@ jobs:
     environment: release
     name: Release Docker
     runs-on: ubuntu-latest
+    env:
+      GOFLAGS: -mod=vendor
     outputs:
       version: ${{ steps.tagger.outputs.tag }}
     steps:

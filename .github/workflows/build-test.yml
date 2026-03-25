@@ -6,6 +6,9 @@ on:
     paths-ignore:
       - "**/README.md"
 
+env:
+  GOFLAGS: -mod=vendor
+
 jobs:
   build:
     name: Build only
@@ -50,7 +53,7 @@ jobs:
 
       - name: Test
         run: |
-          TEST_SHORT_PKGS="$(go list ./... \
+          TEST_SHORT_PKGS="$(GOFLAGS=-mod=vendor go list ./... \
             | grep -v '/tools/cluster' \
           )" make test-short
 
