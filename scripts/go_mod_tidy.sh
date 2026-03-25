@@ -1,15 +1,19 @@
 #!/bin/bash
 
-go mod tidy
+GOFLAGS= go mod tidy
 
 pushd tools/gendoc
-go mod tidy
+GOFLAGS= go mod tidy
 popd
 
 pushd tools/wasp-cli
-go mod tidy
+GOFLAGS= go mod tidy
 popd
 
 pushd tools/evm/evmemulator
-go mod tidy
+GOFLAGS= go mod tidy
 popd
+
+# Re-vendor after tidy
+go work vendor
+./scripts/vendor_fix_cgo.sh

@@ -10,4 +10,4 @@ BUILD_LD_FLAGS="-X=github.com/iotaledger/wasp/v2/components/app.Version=$GIT_REF
 # go run -ldflags="$BUILD_LD_FLAGS" ./main.go "$@"
 
 # During development the version is unset, therefore 0 to not commit a new api client each time.
-go run $SCRIPTPATH/main.go "$@"
+GOFLAGS= go run $SCRIPTPATH/main.go "$@"
