@@ -20,19 +20,10 @@ WORKDIR /scratch
 # Prepare the folder where we are putting all the files
 RUN mkdir /app
 
-# Make sure that modules only get pulled when the module file has changed
-COPY go.mod go.sum ./
-
-RUN --mount=type=cache,target=/root/.cache/go-build \
-  --mount=type=cache,target=/root/go/pkg/mod \
-  go mod download
-
-# Project build stage
+# Copy source and vendor
 COPY . .
 
-RUN --mount=type=cache,target=/root/.cache/go-build \
-  --mount=type=cache,target=/root/go/pkg/mod \
-  cd ./tools/wasp-cli && go build -o /app/wasp-cli -a -ldflags=${BUILD_LD_FLAGS} .
+RUN go build -mod=vendor -o /app/wasp-cli -a -ldflags=${BUILD_LD_FLAGS} ./tools/wasp-cli/
 
 ############################
 # Image
