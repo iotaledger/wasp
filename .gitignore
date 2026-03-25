@@ -12,7 +12,6 @@ dist/
 .idea/
 .vscode/
 .tlacache/
-vendor/
 *.bat
 *.bak
 Cargo.lock
