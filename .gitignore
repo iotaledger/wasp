@@ -9,6 +9,7 @@ wasp.log
 waspdb**/
 cluster-data/
 dist/
+!vendor/**/dist/
 .idea/
 .vscode/
 .tlacache/
