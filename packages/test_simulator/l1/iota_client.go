@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql/graphqltypes"
+	"github.com/samber/lo"
 )
 
 const (
@@ -59,7 +60,14 @@ func (c *FakeIotaClient) ExecuteTransactionBlock(
 	txDigest, err := tx.Digest()
 	if err == nil {
 		if existing, ok := c.Store.GetTx(*txDigest); ok {
-			return existing.Effects, nil
+			signaturesStr := string(lo.Must(json.Marshal(signatures)))
+			existingSigsStr := string(lo.Must(json.Marshal(existing.Signatures)))
+
+			if signaturesStr == existingSigsStr {
+				return existing.Effects, nil
+			} else {
+				return nil, fmt.Errorf("FakeIotaClient: The transaction is already finalized but with different user signatures")
+			}
 		}
 	}
 
