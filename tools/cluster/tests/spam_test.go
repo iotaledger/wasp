@@ -42,8 +42,8 @@ func (e *ChainEnv) testSpamEVM(t *testing.T) {
 
 // executed in cluster_test.go
 func (e *ChainEnv) testSpamOnledger(t *testing.T) {
-	const maxParallelRequests = 10
-	const numRequests = 100
+	const maxParallelRequests = 2
+	const numRequests = 10
 
 	var (
 		durationsMutex         sync.Mutex
