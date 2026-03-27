@@ -64,15 +64,17 @@ type WebSocketDialer struct {
 
 func (w *WebSocketDialer) DialContext(ctx context.Context, urlStr string, requestHeader http.Header) (graphql.WSConn, error) {
 	conn, resp, err := w.Dialer.DialContext(ctx, urlStr, requestHeader)
-	if err != nil && resp != nil {
-		w.log.LogErrorf("dialing WebSocket failed: url=%s status=%d", urlStr, resp.StatusCode)
+	if resp != nil {
+		resp.Body.Close()
+		if err != nil {
+			w.log.LogErrorf("dialing WebSocket failed: url=%s status=%d", urlStr, resp.StatusCode)
+		}
 	}
 	return conn, err
 }
 
 func NewGraphQLClientWithTimeout(url, faucetURL string, timeout time.Duration, waitParams *WaitParams) *GraphQLClient {
 	httpClient := &http.Client{
-
 		Timeout: timeout,
 	}
 

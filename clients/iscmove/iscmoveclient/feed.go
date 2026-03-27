@@ -242,7 +242,6 @@ func (f *ChainFeed) consumeAnchorUpdates(
 	}
 }
 
-
 func (f *ChainFeed) fetchAnchorWithRetry(ctx context.Context, version uint64) (*iscmove.AnchorWithRef, error) {
 	for attempt := range f.anchorFetchMaxAttempts {
 		r, err := f.httpClient.TryGetPastObject(ctx, f.anchorAddress, version)

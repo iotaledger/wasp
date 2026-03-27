@@ -190,7 +190,7 @@ func (c *Client) GetAnchorFromObjectRef(
 
 		select {
 		case <-ctx.Done():
-			return nil, fmt.Errorf("context cancelled waiting for anchor version %d: %w", anchorRef.Version, ctx.Err())
+			return nil, fmt.Errorf("context canceled waiting for anchor version %d: %w", anchorRef.Version, ctx.Err())
 		case <-ticker.C:
 		}
 	}

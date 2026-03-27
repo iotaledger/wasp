@@ -96,13 +96,13 @@ func convertGraphQLTxToEffects(txBlock *graphqltypes.TransactionsBySignerTransac
 	}, 0, len(txBlock.Effects.ObjectChanges.Nodes))
 
 	for _, change := range txBlock.Effects.ObjectChanges.Nodes {
-		objectID := iotago.ObjectID(change.Address)
+		objectID := change.Address
 		mutated = append(mutated, struct {
 			Reference iotago.ObjectRef
 		}{
 			Reference: iotago.ObjectRef{
 				ObjectID: &objectID,
-				Version:  iotago.SequenceNumber(change.OutputState.Version),
+				Version:  change.OutputState.Version,
 			},
 		})
 	}
@@ -207,11 +207,11 @@ func convertGraphQLEventToIotaEvent(event *graphqltypes.EventsByModuleEventsEven
 	}
 
 	packageAddr := event.SendingModule.Package.Address
-	packageID := iotago.ObjectID(packageAddr)
+	packageID := packageAddr
 
 	return &IotaEvent{
 		PackageID:         &packageID,
-		TransactionModule: iotago.Identifier(event.SendingModule.Name),
+		TransactionModule: event.SendingModule.Name,
 		Sender:            sender,
 		Type:              eventType,
 		Bcs:               event.Bcs,
