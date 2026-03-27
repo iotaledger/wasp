@@ -23,8 +23,7 @@ func (e *ChainEnv) testOffLedgerDepositWithdrawTransfer(t *testing.T) {
 	_, addressUser2, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 	userClient1 := e.NewChainClient(keyPairUser1)
-	userClient1.DepositFunds(10 * isc.Million)
-	time.Sleep(3 * time.Second)
+	e.DepositFunds(10*isc.Million, keyPairUser1)
 	balance1 := e.GetL1Balance(lo.ToPtr(addressUser1.AsIotaAddress()), coin.BaseTokenType)
 
 	_, err = userClient1.PostOffLedgerRequest(context.Background(),

@@ -367,6 +367,8 @@ func moveObjectOwnerAddress(owner graphqltypes.RPC_MOVE_OBJECT_FIELDSOwnerObject
 	return nil
 }
 
+const graphQLMaxPageSize = 50
+
 func (c *Client) pullRequests(ctx context.Context, packageID iotago.Address, anchorAddress *iotago.ObjectID, maxAmountOfRequests int) (map[iotago.ObjectID]*pulledRequestData, error) {
 	pulledRequests := make(map[iotago.ObjectID]*pulledRequestData, maxAmountOfRequests)
 
@@ -375,37 +377,48 @@ func (c *Client) pullRequests(ctx context.Context, packageID iotago.Address, anc
 		Type: lo.ToPtr(structType),
 	}
 
-	limit := maxAmountOfRequests
-	objs, err := c.GetOwnedObjects(ctx, iotagraphql.GetOwnedObjectsRequest{
-		Address: *anchorAddress,
-		Filter:  filter,
-		Limit:   &limit,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch requests: %w", err)
-	}
+	var cursor *string
+	for len(pulledRequests) < maxAmountOfRequests {
+		if err := ctx.Err(); err != nil {
+			return nil, fmt.Errorf("context error while fetching requests: %w", err)
+		}
 
-	if err := ctx.Err(); err != nil {
-		return nil, fmt.Errorf("context error while fetching requests: %w", err)
-	}
-
-	for _, node := range objs.Address.Objects.Nodes {
-		objectID := node.ObjectId
-		digest, err := iotago.NewDigest(node.Digest)
+		remaining := maxAmountOfRequests - len(pulledRequests)
+		pageSize := min(remaining, graphQLMaxPageSize)
+		objs, err := c.GetOwnedObjects(ctx, iotagraphql.GetOwnedObjectsRequest{
+			Address: *anchorAddress,
+			Filter:  filter,
+			Limit:   &pageSize,
+			Cursor:  cursor,
+		})
 		if err != nil {
-			continue
+			return nil, fmt.Errorf("failed to fetch requests: %w", err)
 		}
-		objID := objectID
-		pulledRequests[objectID] = &pulledRequestData{
-			ObjectID: objectID,
-			Bcs:      node.Contents.Bcs,
-			Ref: iotago.ObjectRef{
-				ObjectID: &objID,
-				Version:  node.Version,
-				Digest:   digest,
-			},
-			Owner: moveObjectOwnerAddress(node.Owner),
+
+		for _, node := range objs.Address.Objects.Nodes {
+			objectID := node.ObjectId
+			digest, err := iotago.NewDigest(node.Digest)
+			if err != nil {
+				continue
+			}
+			objID := objectID
+			pulledRequests[objectID] = &pulledRequestData{
+				ObjectID: objectID,
+				Bcs:      node.Contents.Bcs,
+				Ref: iotago.ObjectRef{
+					ObjectID: &objID,
+					Version:  node.Version,
+					Digest:   digest,
+				},
+				Owner: moveObjectOwnerAddress(node.Owner),
+			}
 		}
+
+		if !objs.Address.Objects.PageInfo.HasNextPage {
+			break
+		}
+		endCursor := objs.Address.Objects.PageInfo.EndCursor
+		cursor = &endCursor
 	}
 
 	return pulledRequests, nil

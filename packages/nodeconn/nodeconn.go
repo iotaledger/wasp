@@ -54,13 +54,15 @@ func (g *SingleL1Info) GetL1Params() *parameters.L1Params {
 type nodeConnection struct {
 	log.Logger
 
-	httpClient          clients.L1Client
-	l1ParamsFetcher     l1paramsfetcher.L1ParamsFetcher
-	wsURL               string
-	httpURL             string
-	maxNumberOfRequests int
-	chainsLock          sync.RWMutex
-	chainsMap           *shrinkingmap.ShrinkingMap[isc.ChainID, *ncChain]
+	httpClient             clients.L1Client
+	l1ParamsFetcher        l1paramsfetcher.L1ParamsFetcher
+	wsURL                  string
+	httpURL                string
+	maxNumberOfRequests    int
+	anchorFetchMaxAttempts int
+	anchorFetchRetryDelay  time.Duration
+	chainsLock             sync.RWMutex
+	chainsMap              *shrinkingmap.ShrinkingMap[isc.ChainID, *ncChain]
 
 	shutdownHandler *shutdown.ShutdownHandler
 }
@@ -72,6 +74,8 @@ func New(
 	maxNumberOfRequests int,
 	wsURL string,
 	httpURL string,
+	anchorFetchMaxAttempts int,
+	anchorFetchRetryDelay time.Duration,
 	log log.Logger,
 	shutdownHandler *shutdown.ShutdownHandler,
 ) (chain.NodeConnection, error) {
@@ -81,12 +85,14 @@ func New(
 	}, iotagraphql.WaitForEffectsEnabled)
 
 	return &nodeConnection{
-		Logger:              log,
-		wsURL:               wsURL,
-		httpURL:             httpURL,
-		httpClient:          httpClient,
-		l1ParamsFetcher:     l1paramsfetcher.NewL1ParamsFetcher(httpClient.GetIotaClient(), log),
-		maxNumberOfRequests: maxNumberOfRequests,
+		Logger:                 log,
+		wsURL:                  wsURL,
+		httpURL:                httpURL,
+		httpClient:             httpClient,
+		l1ParamsFetcher:        l1paramsfetcher.NewL1ParamsFetcher(httpClient.GetIotaClient(), log),
+		maxNumberOfRequests:    maxNumberOfRequests,
+		anchorFetchMaxAttempts: anchorFetchMaxAttempts,
+		anchorFetchRetryDelay:  anchorFetchRetryDelay,
 		chainsMap: shrinkingmap.New[isc.ChainID, *ncChain](
 			shrinkingmap.WithShrinkingThresholdRatio(chainsCleanupThresholdRatio),
 			shrinkingmap.WithShrinkingThresholdCount(chainsCleanupThresholdCount),
@@ -198,7 +204,7 @@ func (nc *nodeConnection) RefreshOnLedgerRequests(ctx context.Context, chainID i
 	if !ok {
 		panic("unexpected chainID")
 	}
-	if err := ncChain.syncChainState(ctx); err != nil {
+	if _, err := ncChain.syncChainState(ctx); err != nil {
 		nc.LogErrorf("error refreshing outputs: %s", err.Error())
 	}
 }
@@ -284,7 +290,7 @@ func (nc *nodeConnection) createChain(
 	if readOnly {
 		ncc = nc.createReadOnlyChain(chainID)
 	} else {
-		ncc, err = newNCChain(ctx, nc, chainID, recvRequest, recvAnchor, nc.wsURL, nc.httpURL)
+		ncc, err = newNCChain(ctx, nc, chainID, recvRequest, recvAnchor, nc.wsURL, nc.httpURL, nc.anchorFetchMaxAttempts, nc.anchorFetchRetryDelay)
 		if err != nil {
 			return nil, err
 		}
@@ -309,11 +315,13 @@ func (nc *nodeConnection) createReadOnlyChain(chainID isc.ChainID) *ncChain {
 
 // initializeOperationalChain performs initialization steps for operational (non-readonly) chains
 func (nc *nodeConnection) initializeOperationalChain(ctx context.Context, ncc *ncChain, chainID isc.ChainID) {
-	if err := ncc.syncChainState(ctx); err != nil {
+	signerAddress, err := ncc.syncChainState(ctx)
+	if err != nil {
 		nc.LogErrorf("synchronizing chain state %s failed: %s", chainID, err.Error())
 		nc.shutdownHandler.SelfShutdown(
 			fmt.Sprintf("Cannot sync chain %s with L1, %s", ncc.chainID, err.Error()),
 			true)
+		return
 	}
-	ncc.subscribeToUpdates(ctx, chainID.AsObjectID())
+	ncc.subscribeToUpdates(ctx, chainID.AsObjectID(), signerAddress)
 }

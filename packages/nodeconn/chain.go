@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/hive.go/log"
@@ -48,6 +49,8 @@ func newNCChain(
 	anchorHandler chain.AnchorHandler,
 	wsURL string,
 	httpURL string,
+	anchorFetchMaxAttempts int,
+	anchorFetchRetryDelay time.Duration,
 ) (*ncChain, error) {
 	packageID, err := nodeConn.httpClient.L2().GetISCPackageIDForAnchor(ctx, chainID.AsObjectID())
 	if err != nil {
@@ -63,6 +66,8 @@ func newNCChain(
 		nodeConn.Logger,
 		wsURL,
 		httpURL,
+		anchorFetchMaxAttempts,
+		anchorFetchRetryDelay,
 	)
 	if err != nil {
 		return nil, err
@@ -109,7 +114,7 @@ func (ncc *ncChain) postTxLoop(ctx context.Context, packageID iotago.PackageID) 
 		}
 
 		if dryRes.DryRunTransactionBlock.Transaction.Effects.IsFailed() {
-			return nil, fmt.Errorf("failed to dry-run Anchor transaction: response.Effects.Failed")
+			return nil, fmt.Errorf("failed to dry-run Anchor transaction: %s", dryRes.DryRunTransactionBlock.Transaction.Effects.GetErrors())
 		}
 
 		if dryRes.DryRunTransactionBlock.Transaction.Effects.IsSuccess() {
@@ -132,18 +137,17 @@ func (ncc *ncChain) postTxLoop(ctx context.Context, packageID iotago.PackageID) 
 			return nil, fmt.Errorf("error executing tx: %s Digest: %s", res.ExecuteTransactionBlock.Effects.GetErrors(), res.ExecuteTransactionBlock.Effects.TransactionBlock.Digest)
 		}
 
-		anchorInfo, err := res.ExecuteTransactionBlock.Effects.GetMutatedObjectByID(ncc.chainID.AsObjectID())
+		anchorRef, err := res.ExecuteTransactionBlock.Effects.GetMutatedObjectByID(ncc.chainID.AsObjectID())
 		if err != nil {
 			return nil, err
 		}
 
-		anchor, err := ncc.nodeConn.httpClient.L2().GetAnchorFromObjectID(ctx, anchorInfo.ObjectID)
+		anchor, err := ncc.nodeConn.httpClient.L2().GetAnchorFromObjectRef(ctx, anchorRef)
 		if err != nil {
 			return nil, err
 		}
 
 		stateAnchor := isc.NewStateAnchor(anchor, packageID)
-
 		return &stateAnchor, nil
 	}
 
@@ -158,7 +162,7 @@ func (ncc *ncChain) postTxLoop(ctx context.Context, packageID iotago.PackageID) 
 	}
 }
 
-func (ncc *ncChain) syncChainState(ctx context.Context) error {
+func (ncc *ncChain) syncChainState(ctx context.Context) (iotago.Address, error) {
 	ncc.LogInfof("Synchronizing chain state for %s...", ncc.chainID)
 
 	moveAnchor, err := ncc.feed.FetchCurrentState(ctx, ncc.nodeConn.maxNumberOfRequests, func(err error, req *iscmove.RefWithObject[iscmove.Request]) {
@@ -177,24 +181,24 @@ func (ncc *ncChain) syncChainState(ctx context.Context) error {
 		ncc.requestHandler(onLedgerReq)
 	})
 	if err != nil {
-		return err
+		return iotago.Address{}, err
 	}
 
 	anchor := isc.NewStateAnchor(moveAnchor, ncc.feed.GetISCPackageID())
 	l1Params, err := ncc.nodeConn.L1ParamsFetcher().GetOrFetchLatest(ctx)
 	if err != nil {
-		return err
+		return iotago.Address{}, err
 	}
 	ncc.anchorHandler(&anchor, l1Params)
 
 	ncc.LogInfof("Synchronizing chain state for %s... done", ncc.chainID)
-	return nil
+	return *moveAnchor.Owner, nil
 }
 
-func (ncc *ncChain) subscribeToUpdates(ctx context.Context, anchorID iotago.ObjectID) {
+func (ncc *ncChain) subscribeToUpdates(ctx context.Context, anchorID iotago.ObjectID, signerAddress iotago.Address) {
 	anchorUpdates := make(chan *iscmove.AnchorWithRef)
 	newRequests := make(chan *iscmove.RefWithObject[iscmove.Request])
-	ncc.feed.SubscribeToUpdates(ctx, anchorID, anchorUpdates, newRequests)
+	ncc.feed.SubscribeToUpdates(ctx, anchorID, signerAddress, anchorUpdates, newRequests)
 
 	ncc.shutdownWaitGroup.Add(1)
 	go func() {

@@ -48,7 +48,7 @@ func SignatureFromReader(reader *bytes.Reader) (signature Signature, err error) 
 
 	n, err := reader.Read(buffer)
 	if err != nil {
-		err = ierrors.Wrapf(ErrParseBytesFailed, "failed to read signature bytes: %w", err)
+		err = ierrors.Wrapf(ErrParseBytesFailed, "failed to read signature bytes: %v", err)
 		return Signature{}, err
 	}
 

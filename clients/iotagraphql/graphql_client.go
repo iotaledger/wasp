@@ -13,8 +13,10 @@ import (
 	"time"
 
 	"github.com/Khan/genqlient/graphql"
+	"github.com/gorilla/websocket"
 
 	bcs "github.com/iotaledger/bcs-go"
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql/graphqltypes"
@@ -33,6 +35,18 @@ type GraphQLClient struct {
 	WaitUntilEffectsVisible *WaitParams
 	FaucetRetryParams       *WaitParams
 	tickingTime             time.Duration
+	log                     log.Logger
+}
+
+// newWebSocketClient creates a new WebSocket client, dials the connection, and returns it ready for subscriptions.
+func (c *GraphQLClient) newWebSocketClient(ctx context.Context) (graphql.WebSocketClient, error) {
+	url := c.url + "/subscriptions"
+	c.log.LogDebugf("dialing WebSocket connection to %s", url)
+	wsClient := graphql.NewClientUsingWebSocket(url, &WebSocketDialer{log: c.log})
+	if _, err := wsClient.Start(ctx); err != nil {
+		return nil, err
+	}
+	return wsClient, nil
 }
 
 func NewGraphQLClient(url, faucetURL string) *GraphQLClient {
@@ -43,10 +57,27 @@ func NewGraphQLClientWithWaitParams(url string, faucetURL string, waitParams *Wa
 	return NewGraphQLClientWithTimeout(url, faucetURL, 30*time.Second, waitParams)
 }
 
+type WebSocketDialer struct {
+	websocket.Dialer
+	log log.Logger
+}
+
+func (w *WebSocketDialer) DialContext(ctx context.Context, urlStr string, requestHeader http.Header) (graphql.WSConn, error) {
+	conn, resp, err := w.Dialer.DialContext(ctx, urlStr, requestHeader)
+	if resp != nil {
+		resp.Body.Close()
+		if err != nil {
+			w.log.LogErrorf("dialing WebSocket failed: url=%s status=%d", urlStr, resp.StatusCode)
+		}
+	}
+	return conn, err
+}
+
 func NewGraphQLClientWithTimeout(url, faucetURL string, timeout time.Duration, waitParams *WaitParams) *GraphQLClient {
 	httpClient := &http.Client{
 		Timeout: timeout,
 	}
+
 	return &GraphQLClient{
 		url:                     strings.TrimRight(url, "/"),
 		faucetURL:               faucetURL,
@@ -54,7 +85,13 @@ func NewGraphQLClientWithTimeout(url, faucetURL string, timeout time.Duration, w
 		httpClient:              httpClient,
 		WaitUntilEffectsVisible: waitParams,
 		tickingTime:             250 * time.Millisecond,
+		log:                     log.EmptyLogger,
 	}
+}
+
+func (c *GraphQLClient) WithLogger(logger log.Logger) *GraphQLClient {
+	c.log = logger
+	return c
 }
 
 // RequestFundsFromFaucet requests test funds for the provided address from the faucet endpoint.

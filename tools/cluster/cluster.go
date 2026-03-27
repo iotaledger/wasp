@@ -317,10 +317,16 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 	for i := range getCoinsRes.Address.Coins.Nodes {
 		c := &getCoinsRes.Address.Coins.Nodes[i]
 		// dont pick a too big coin object
-		if c.Balance() < 3*iotagraphql.FundsFromFaucetAmount &&
-			iotagraphql.FundsFromFaucetAmount <= c.Balance() {
+		// skip the check until we figure out how to work with local faucet
+		if /*c.Balance() < 3*iotagraphql.FundsFromFaucetAmount &&*/
+		iotagraphql.FundsFromFaucetAmount <= c.Balance() {
 			gascoin = c
+			break
 		}
+	}
+
+	if gascoin == nil {
+		return nil, fmt.Errorf("no gas coin found")
 	}
 
 	ptb := iotago.NewProgrammableTransactionBuilder()

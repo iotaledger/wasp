@@ -1,0 +1,61 @@
+
+subscription TransactionsBySigner($signingAddress: IotaAddress!){
+  transactions(
+    filter: {
+      signingAddress: $signingAddress
+    }
+  ){
+    ... on TransactionBlock{
+      sender{
+        address
+      }
+      kind {
+        ... on ProgrammableTransactionBlock {
+          transactions{
+            __typename
+          }
+        }
+      }
+      digest
+      effects {
+        objectChanges {
+          nodes {
+            address
+            outputState {
+              version
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+subscription EventsByModule($emittingModule: String!) {
+  events(
+    filter: {
+      emittingModule: $emittingModule
+    }
+  ) {
+    ... on Event {
+      sendingModule {
+        package {
+          address
+        }
+        name
+      }
+      sender {
+        address
+      }
+      type {
+        repr
+      }
+      timestamp
+      bcs
+      json
+    }
+    ... on Lagged {
+      count
+    }
+  }
+}

@@ -38,6 +38,10 @@ type L2Client interface {
 		ctx context.Context,
 		anchorObjectID *iotago.ObjectID,
 	) (*iscmove.RefWithObject[iscmove.Anchor], error)
+	GetAnchorFromObjectRef(
+		ctx context.Context,
+		anchorRef *iotago.ObjectRef,
+	) (*iscmove.RefWithObject[iscmove.Anchor], error)
 	GetRequestFromObjectID(
 		ctx context.Context,
 		reqID *iotago.ObjectID,

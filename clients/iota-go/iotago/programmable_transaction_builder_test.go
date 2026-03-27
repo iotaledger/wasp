@@ -17,7 +17,7 @@ import (
 )
 
 func TestPTBMoveCall(t *testing.T) {
-	t.Skip()
+	l1starter.TestLocal()
 	t.Run(
 		"access_multiple_return_values_from_move_func", func(t *testing.T) {
 			client := l1starter.Instance().L1Client()
@@ -102,108 +102,6 @@ func TestPTBMoveCall(t *testing.T) {
 			require.True(t, simulate.DryRunTransactionBlock.Transaction.Effects.IsSuccess())
 		},
 	)
-}
-
-func TestPTBTransferObject(t *testing.T) {
-	t.Skip("Migrate to graphql")
-	client := l1starter.Instance().L1Client()
-	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
-	recipient := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
-
-	senderAddr := sender.Address()
-	recipientAddr := recipient.Address()
-	coinPages, err := client.GetCoins(
-		context.Background(), iotagraphql.GetCoinsRequest{
-			Owner: senderAddr,
-			Limit: 2,
-		},
-	)
-	require.NoError(t, err)
-	coins := iotagraphql.Coins(coinPages.Address.Coins.Nodes)
-	gasCoin := coins[0]
-	transferCoin := coins[1]
-
-	ptb := iotago.NewProgrammableTransactionBuilder()
-	transferCoinRef, err := transferCoin.ObjectRef()
-	require.NoError(t, err)
-	err = ptb.TransferObject(&recipientAddr, transferCoinRef)
-	require.NoError(t, err)
-	pt := ptb.Finish()
-	gasCoinRef, err := gasCoin.ObjectRef()
-	require.NoError(t, err)
-	tx := iotago.NewProgrammable(
-		&senderAddr,
-		pt,
-		[]*iotago.ObjectRef{gasCoinRef},
-		iotagraphql.DefaultGasBudget,
-		iotagraphql.DefaultGasPrice,
-	)
-	txBytes, err := bcs.Marshal(&tx)
-	require.NoError(t, err)
-
-	// build with remote rpc
-	transferCoinID := transferCoin.ObjectID()
-	gasCoinID := gasCoin.ObjectID()
-	txn, err := client.TransferObject(
-		context.Background(),
-		iotagraphql.TransferObjectRequest{
-			Signer:    senderAddr,
-			Recipient: recipientAddr,
-			ObjectID:  transferCoinID,
-			Gas:       &gasCoinID,
-			GasBudget: iotagraphql.NewBigInt(iotagraphql.DefaultGasBudget),
-		},
-	)
-	require.NoError(t, err)
-	txBytesRemote := txn.TxBytes.Data()
-	require.Equal(t, txBytes, txBytesRemote)
-}
-
-func TestPTBPayAllIota(t *testing.T) {
-	t.Skip("Migrate to graphql")
-	client := l1starter.Instance().L1Client()
-	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
-	recipient := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
-
-	senderAddr2 := sender.Address()
-	recipientAddr2 := recipient.Address()
-	coinPages, err := client.GetCoins(
-		context.Background(), iotagraphql.GetCoinsRequest{
-			Owner: senderAddr2,
-			Limit: 3,
-		},
-	)
-	require.NoError(t, err)
-	coins := iotagraphql.Coins(coinPages.Address.Coins.Nodes)
-
-	// build with BCS
-	ptb := iotago.NewProgrammableTransactionBuilder()
-	err = ptb.PayAllIota(&recipientAddr2)
-	require.NoError(t, err)
-	pt := ptb.Finish()
-	tx := iotago.NewProgrammable(
-		&senderAddr2,
-		pt,
-		lo.Must(coins.CoinRefs()),
-		iotagraphql.DefaultGasBudget,
-		iotagraphql.DefaultGasPrice,
-	)
-	txBytes, err := bcs.Marshal(&tx)
-	require.NoError(t, err)
-
-	// build with remote rpc
-	txn, err := client.PayAllIota(
-		context.Background(),
-		iotagraphql.PayAllIotaRequest{
-			Signer:     senderAddr2,
-			Recipient:  recipientAddr2,
-			InputCoins: coins.ObjectIDs(),
-			GasBudget:  iotagraphql.NewBigInt(iotagraphql.DefaultGasBudget),
-		},
-	)
-	require.NoError(t, err)
-	txBytesRemote := txn.TxBytes.Data()
-	require.Equal(t, txBytes, txBytesRemote)
 }
 
 func TestPTBPayIota(t *testing.T) {

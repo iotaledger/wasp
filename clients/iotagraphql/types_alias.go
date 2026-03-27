@@ -25,6 +25,7 @@ type IotaEvent struct {
 	TransactionModule string
 	Sender            *iotago.Address
 	Bcs               []byte
+	Type              *iotago.StructTag
 }
 
 type IotaEventFilter struct {
@@ -52,6 +53,7 @@ type IotaAndOrEventFilter struct {
 }
 
 type TransactionFilter struct {
+	FromAddress   *iotago.Address
 	ChangedObject *iotago.ObjectID
 }
 

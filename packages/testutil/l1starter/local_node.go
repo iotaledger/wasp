@@ -137,10 +137,11 @@ func (in *LocalIotaNode) startPostgresContainer(ctx context.Context, networkName
 
 func (in *LocalIotaNode) startNodeContainer(ctx context.Context, networkName, imagePlatform string) {
 	nodeReq := testcontainers.ContainerRequest{
-		Image:         "iotaledger/iota-tools:devnet",
-		ImagePlatform: imagePlatform,
-		ExposedPorts:  []string{"9000/tcp", "9123/tcp"},
-		Networks:      []string{networkName},
+		Image:           "iotaledger/iota-tools:devnet",
+		ImagePlatform:   imagePlatform,
+		AlwaysPullImage: true,
+		ExposedPorts:    []string{"9000/tcp", "9123/tcp"},
+		Networks:        []string{networkName},
 		NetworkAliases: map[string][]string{
 			networkName: {"iota-node"},
 		},
@@ -187,10 +188,11 @@ func (in *LocalIotaNode) startNodeContainer(ctx context.Context, networkName, im
 
 func (in *LocalIotaNode) startIndexerContainer(ctx context.Context, networkName, imagePlatform string) {
 	indexerReq := testcontainers.ContainerRequest{
-		Image:         "iotaledger/iota-indexer:devnet",
-		ImagePlatform: imagePlatform,
-		Networks:      []string{networkName},
-		Entrypoint:    []string{"iota-indexer"},
+		Image:           "iotaledger/iota-indexer:devnet",
+		ImagePlatform:   imagePlatform,
+		AlwaysPullImage: true,
+		Networks:        []string{networkName},
+		Entrypoint:      []string{"iota-indexer"},
 		Cmd: []string{
 			"--db-url=postgres://postgres:postgrespw@postgres:5432/iota_indexer",
 			"--rpc-client-url=http://iota-node:9000",
@@ -213,11 +215,12 @@ func (in *LocalIotaNode) startIndexerContainer(ctx context.Context, networkName,
 
 func (in *LocalIotaNode) startGraphQLContainer(ctx context.Context, networkName, imagePlatform string) {
 	graphqlReq := testcontainers.ContainerRequest{
-		Image:         "iotaledger/iota-graphql-rpc:devnet",
-		ImagePlatform: imagePlatform,
-		ExposedPorts:  []string{"9125/tcp"},
-		Networks:      []string{networkName},
-		Entrypoint:    []string{"iota-graphql-rpc"},
+		Image:           "iotaledger/iota-graphql-rpc:devnet",
+		ImagePlatform:   imagePlatform,
+		AlwaysPullImage: true,
+		ExposedPorts:    []string{"9125/tcp"},
+		Networks:        []string{networkName},
+		Entrypoint:      []string{"iota-graphql-rpc"},
 		Cmd: []string{
 			"start-server",
 			"--host=0.0.0.0",

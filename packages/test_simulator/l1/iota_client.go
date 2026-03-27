@@ -640,6 +640,14 @@ func (c *FakeIotaClient) MintToken(
 	return c.SignAndExecuteTransaction(ctx, txBytes, signer)
 }
 
+func (c *FakeIotaClient) SubscribeEvent(_ context.Context, _ *iotagraphql.IotaEventFilter, _ chan<- *iotagraphql.IotaEvent) error {
+	return fmt.Errorf("FakeIotaClient: SubscribeEvent not implemented")
+}
+
+func (c *FakeIotaClient) SubscribeTransaction(_ context.Context, _ *iotagraphql.TransactionFilter, _ chan<- *iotagraphql.IotaTransactionBlockEffects) error {
+	return fmt.Errorf("FakeIotaClient: SubscribeTransaction not implemented")
+}
+
 func (c *FakeIotaClient) RequestFundsFromFaucet(_ context.Context, receiverAddress iotago.Address) error {
 	c.faucetMu.Lock()
 	defer c.faucetMu.Unlock()

@@ -33,7 +33,7 @@ func PrivateKeyFromMarshalUtil(reader *bytes.Reader) (privateKey PrivateKey, err
 
 	n, err := reader.Read(privateKeyBytes)
 	if err != nil {
-		err = ierrors.Wrapf(ErrParseBytesFailed, "failed to read PrivateKey bytes: %w", err)
+		err = ierrors.Wrapf(ErrParseBytesFailed, "failed to read PrivateKey bytes: %v", err)
 		return PrivateKey{}, err
 	}
 
@@ -43,7 +43,7 @@ func PrivateKeyFromMarshalUtil(reader *bytes.Reader) (privateKey PrivateKey, err
 	}
 
 	if err = privateKey.Scalar.UnmarshalBinary(privateKeyBytes); err != nil {
-		err = ierrors.Wrapf(ErrParseBytesFailed, "failed to unmarshal PrivateKey: %w", err)
+		err = ierrors.Wrapf(ErrParseBytesFailed, "failed to unmarshal PrivateKey: %v", err)
 
 		return PrivateKey{}, err
 	}
@@ -68,7 +68,7 @@ func (p PrivateKey) PublicKey() PublicKey {
 func (p PrivateKey) Sign(data []byte) (signatureWithPublicKey SignatureWithPublicKey, err error) {
 	sig, err := bdn.Sign(blsSuite, p.Scalar, data)
 	if err != nil {
-		err = ierrors.Wrapf(ErrBLSFailed, "failed to sign data: %w", err)
+		err = ierrors.Wrapf(ErrBLSFailed, "failed to sign data: %v", err)
 		return SignatureWithPublicKey{}, err
 	}
 

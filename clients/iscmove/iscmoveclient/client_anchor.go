@@ -3,6 +3,7 @@ package iscmoveclient
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
@@ -165,6 +166,34 @@ func (c *Client) GetAnchorFromObjectID(
 		*ref,
 		getObjectResponse.Object.OwnerAddress(),
 	)
+}
+
+func (c *Client) GetAnchorFromObjectRef(
+	ctx context.Context,
+	anchorRef *iotago.ObjectRef,
+) (*iscmove.AnchorWithRef, error) {
+	ticker := time.NewTicker(50 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		r, err := c.TryGetPastObject(ctx, *anchorRef.ObjectID, anchorRef.Version)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get anchor at version %d: %w", anchorRef.Version, err)
+		}
+		if !r.Object.IsNotFound() {
+			ref, err := r.Object.ObjectRef()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get anchor ref: %w", err)
+			}
+			return decodeAnchorBCS(r.Object.BcsBytes(), *ref, r.Object.OwnerAddress())
+		}
+
+		select {
+		case <-ctx.Done():
+			return nil, fmt.Errorf("context canceled waiting for anchor version %d: %w", anchorRef.Version, ctx.Err())
+		case <-ticker.C:
+		}
+	}
 }
 
 func decodeAnchorBCS(bcsBytes iotago.Base64Data, ref iotago.ObjectRef, owner *iotago.Address) (*iscmove.AnchorWithRef, error) {

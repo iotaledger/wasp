@@ -1,15 +1,19 @@
 package nodeconn
 
 import (
+	"time"
+
 	"github.com/iotaledger/hive.go/app"
 )
 
 type ParametersNodeCon struct {
 	WebsocketURL string `default:"ws://localhost:9000" usage:"the WS address to which to connect to"`
 	//nolint:staticcheck
-	HttpURL               string `default:"http://localhost:9000" usage:"the HTTP address to which to connect to"`
-	MaxConnectionAttempts uint   `default:"30" usage:"the amount of times the connection to INX will be attempted before it fails (1 attempt per second)"`
-	TargetNetworkName     string `default:"" usage:"the network name on which the node should operate on (optional)"`
+	HttpURL                string        `default:"http://localhost:9000" usage:"the HTTP address to which to connect to"`
+	MaxConnectionAttempts  uint          `default:"30" usage:"the amount of times the connection to INX will be attempted before it fails (1 attempt per second)"`
+	TargetNetworkName      string        `default:"" usage:"the network name on which the node should operate on (optional)"`
+	AnchorFetchMaxAttempts int           `default:"20" usage:"max retry attempts when fetching an anchor version from the indexer"`
+	AnchorFetchRetryDelay  time.Duration `default:"500ms" usage:"delay between anchor fetch retries"`
 }
 
 var ParamsL1 = &ParametersNodeCon{}

@@ -3,6 +3,7 @@ package iscmoveclient_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
@@ -51,6 +52,8 @@ func TestRequestsFeed(t *testing.T) {
 		log,
 		iotaconn.AlphanetWebsocketEndpointURL,
 		iotaconn.AlphanetEndpointURL,
+		20,
+		500*time.Millisecond,
 	)
 	require.NoError(t, err)
 	defer func() {
@@ -60,7 +63,7 @@ func TestRequestsFeed(t *testing.T) {
 
 	anchorUpdates := make(chan *iscmove.AnchorWithRef, 10)
 	newRequests := make(chan *iscmove.RefWithObject[iscmove.Request], 10)
-	chainFeed.SubscribeToUpdates(ctx, *anchor.ObjectID, anchorUpdates, newRequests)
+	chainFeed.SubscribeToUpdates(ctx, *anchor.ObjectID, anchorOwner.Address().AsIotaAddress(), anchorUpdates, newRequests)
 
 	// create a Request and send to anchor
 	txnResponse, err = client.CreateAndSendRequest(
