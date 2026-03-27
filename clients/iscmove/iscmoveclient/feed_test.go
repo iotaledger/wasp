@@ -63,7 +63,7 @@ func TestRequestsFeed(t *testing.T) {
 
 	anchorUpdates := make(chan *iscmove.AnchorWithRef, 10)
 	newRequests := make(chan *iscmove.RefWithObject[iscmove.Request], 10)
-	chainFeed.SubscribeToUpdates(ctx, *anchor.ObjectID, *anchorOwner.Address().AsIotaAddress(), anchorUpdates, newRequests)
+	chainFeed.SubscribeToUpdates(ctx, *anchor.ObjectID, anchorOwner.Address().AsIotaAddress(), anchorUpdates, newRequests)
 
 	// create a Request and send to anchor
 	txnResponse, err = client.CreateAndSendRequest(
