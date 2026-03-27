@@ -68,6 +68,7 @@ func TestMain(m *testing.M) {
 
 func TestNodeBasic(t *testing.T) {
 	t.Parallel()
+
 	tests := []tc{
 		{n: 1, f: 0, reliable: true, timeout: 60 * time.Second},   // Low N
 		{n: 2, f: 0, reliable: true, timeout: 80 * time.Second},   // Low N
