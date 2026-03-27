@@ -2,6 +2,7 @@ go 1.25.1
 
 use (
 	.
+	./tools/cluster
 	./tools/evm/evmemulator
 	./tools/gendoc
 	./tools/wasp-cli

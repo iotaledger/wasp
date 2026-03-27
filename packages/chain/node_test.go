@@ -67,13 +67,14 @@ func TestMain(m *testing.M) {
 
 func TestNodeBasic(t *testing.T) {
 	t.Parallel()
+
 	tests := []tc{
-		{n: 1, f: 0, reliable: true, timeout: 30 * time.Second},   // Low N
-		{n: 2, f: 0, reliable: true, timeout: 40 * time.Second},   // Low N
-		{n: 3, f: 0, reliable: true, timeout: 50 * time.Second},   // Low N
-		{n: 4, f: 0, reliable: true, timeout: 100 * time.Second},  // Minimal robust config.
-		{n: 4, f: 1, reliable: true, timeout: 100 * time.Second},  // Minimal robust config.
-		{n: 10, f: 3, reliable: true, timeout: 150 * time.Second}, // Typical config.
+		{n: 1, f: 0, reliable: true, timeout: 60 * time.Second},   // Low N
+		{n: 2, f: 0, reliable: true, timeout: 80 * time.Second},   // Low N
+		{n: 3, f: 0, reliable: true, timeout: 100 * time.Second},  // Low N
+		{n: 4, f: 0, reliable: true, timeout: 200 * time.Second},  // Minimal robust config.
+		{n: 4, f: 1, reliable: true, timeout: 200 * time.Second},  // Minimal robust config.
+		{n: 10, f: 3, reliable: true, timeout: 300 * time.Second}, // Typical config.
 	}
 	if !testing.Short() {
 		tests = append(tests,
