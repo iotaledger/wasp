@@ -23,10 +23,11 @@ func TestPTBMoveCall(t *testing.T) {
 			client := l1starter.Instance().L1Client()
 			sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
 
+			senderAddr := sender.Address()
 			txnBytes, err := client.Publish(
 				context.Background(),
 				iotagraphql.PublishRequest{
-					Sender:          sender.Address(),
+					Sender:          senderAddr,
 					CompiledModules: contracts.SDKVerify().Modules,
 					Dependencies:    contracts.SDKVerify().Dependencies,
 					GasBudget:       iotagraphql.NewBigInt(iotagraphql.DefaultGasBudget),
@@ -46,7 +47,7 @@ func TestPTBMoveCall(t *testing.T) {
 
 			coinPages, err := client.GetCoins(
 				context.Background(), iotagraphql.GetCoinsRequest{
-					Owner: sender.Address(),
+					Owner: senderAddr,
 					Limit: 3,
 				},
 			)
@@ -85,7 +86,7 @@ func TestPTBMoveCall(t *testing.T) {
 			coinRef, err := coins[0].ObjectRef()
 			require.NoError(t, err)
 			txData := iotago.NewProgrammable(
-				sender.Address(),
+				&senderAddr,
 				pt,
 				[]*iotago.ObjectRef{coinRef},
 				iotagraphql.DefaultGasBudget,
@@ -110,9 +111,12 @@ func TestPTBPayIota(t *testing.T) {
 	recipient1 := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
 	recipient2 := iotatest.MakeSignerWithFunds(2, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
 
+	senderAddr3 := sender.Address()
+	recipient1Addr := recipient1.Address()
+	recipient2Addr := recipient2.Address()
 	coinPages, err := client.GetCoins(
 		context.Background(), iotagraphql.GetCoinsRequest{
-			Owner: sender.Address(),
+			Owner: senderAddr3,
 			Limit: 1,
 		},
 	)
@@ -122,14 +126,14 @@ func TestPTBPayIota(t *testing.T) {
 
 	ptb := iotago.NewProgrammableTransactionBuilder()
 	err = ptb.PayIota(
-		[]*iotago.Address{recipient1.Address(), recipient2.Address()},
+		[]*iotago.Address{&recipient1Addr, &recipient2Addr},
 		[]uint64{123, 456},
 	)
 	require.NoError(t, err)
 	pt := ptb.Finish()
 
 	tx := iotago.NewProgrammable(
-		sender.Address(),
+		&senderAddr3,
 		pt,
 		[]*iotago.ObjectRef{
 			lo.Must(coin.ObjectRef()),
@@ -145,4 +149,20 @@ func TestPTBPayIota(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.True(t, simulate.DryRunTransactionBlock.Transaction.Effects.IsSuccess())
+
+	// build with remote rpc
+	coinID := coin.ObjectID()
+	txn, err := client.PayIota(
+		context.Background(),
+		iotagraphql.PayIotaRequest{
+			Signer:     senderAddr3,
+			InputCoins: []iotago.ObjectID{coinID},
+			Recipients: []*iotago.Address{&recipient1Addr, &recipient2Addr},
+			Amount:     []*iotagraphql.BigInt{iotagraphql.NewBigInt(123), iotagraphql.NewBigInt(456)},
+			GasBudget:  iotagraphql.NewBigInt(iotagraphql.DefaultGasBudget),
+		},
+	)
+	require.NoError(t, err)
+	txBytesRemote := txn.TxBytes.Data()
+	require.Equal(t, txBytes, txBytesRemote)
 }

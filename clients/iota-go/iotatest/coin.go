@@ -49,13 +49,14 @@ func EnsureCoinCount(t *testing.T, cryptolibSigner iotasigner.Signer, client cli
 	for i := range splitResults {
 		splitResults[i] = iotago.Argument{NestedResult: &iotago.NestedResult{Cmd: *splitCmd.Result, Result: uint16(i)}}
 	}
-	txb.TransferArgs(cryptolibSigner.Address(), splitResults)
+	addr := cryptolibSigner.Address()
+	txb.TransferArgs(&addr, splitResults)
 
 	gasPayments, err := existingCoins.CoinRefs()
 	require.NoError(t, err)
 
 	txData := iotago.NewProgrammable(
-		cryptolibSigner.Address(),
+		&addr,
 		txb.Finish(),
 		gasPayments,
 		iotagraphql.DefaultGasBudget,
@@ -88,7 +89,7 @@ func EnsureCoinSplitWithBalance(
 
 	coins, err := client.GetCoinObjsForTargetAmount(
 		context.Background(),
-		*cryptolibSigner.Address(),
+		cryptolibSigner.Address(),
 		splitBalance,
 		iotagraphql.DefaultGasBudget,
 	)
@@ -104,13 +105,14 @@ func EnsureCoinSplitWithBalance(
 			},
 		},
 	)
-	txb.TransferArg(cryptolibSigner.Address(), splitCmd)
+	addr2 := cryptolibSigner.Address()
+	txb.TransferArg(&addr2, splitCmd)
 
 	coinRef, err := coins[0].ObjectRef()
 	require.NoError(t, err)
 
 	txData := iotago.NewProgrammable(
-		cryptolibSigner.Address(),
+		&addr2,
 		txb.Finish(),
 		[]*iotago.ObjectRef{coinRef},
 		iotagraphql.DefaultGasBudget,

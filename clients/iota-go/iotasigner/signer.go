@@ -54,7 +54,7 @@ func BuildBip32Path(signatureFlag SignatureFlag, coinType Bip32CoinType, account
 }
 
 type Signer interface {
-	Address() *iotago.Address
+	Address() iotago.Address
 	Sign(msg []byte) (signature *Signature, err error)
 	SignTransactionBlock(txnBytes []byte, intent Intent) (*Signature, error)
 }
@@ -62,7 +62,7 @@ type Signer interface {
 type InMemorySigner struct {
 	ed25519Keypair *KeypairEd25519
 
-	address *iotago.Address
+	address iotago.Address
 }
 
 func NewSigner(seed []byte, flag KeySchemeFlag) *InMemorySigner {
@@ -84,7 +84,7 @@ func NewSigner(seed []byte, flag KeySchemeFlag) *InMemorySigner {
 			PriKey: prikey,
 			PubKey: pubkey,
 		},
-		address: iotago.MustAddressFromHex(addr),
+		address: *iotago.MustAddressFromHex(addr),
 	}
 }
 
@@ -141,7 +141,7 @@ func (s *InMemorySigner) Sign(msg []byte) (signature *Signature, err error) {
 	}, nil
 }
 
-func (s *InMemorySigner) Address() *iotago.Address {
+func (s *InMemorySigner) Address() iotago.Address {
 	return s.address
 }
 

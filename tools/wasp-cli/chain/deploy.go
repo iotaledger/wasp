@@ -71,7 +71,7 @@ func initializeNewChainState(chainAdmin *cryptolib.Address, gasCoinObject iotago
 }
 
 func CreateAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet wallets.Wallet, committeeAddress *iotago.Address, l1Params *parameters.L1Params) (iotago.ObjectID, error) {
-	coins, err := client.GetCoinObjsForTargetAmount(ctx, *wallet.Address().AsIotaAddress(), isc.GasCoinTargetValue, isc.GasCoinTargetValue)
+	coins, err := client.GetCoinObjsForTargetAmount(ctx, wallet.Address().AsIotaAddress(), isc.GasCoinTargetValue, isc.GasCoinTargetValue)
 	if err != nil {
 		return iotago.ObjectID{}, fmt.Errorf("GasCoin with targeting blanace not found: %w", err)
 	}
@@ -92,8 +92,9 @@ func CreateAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet w
 	if err != nil {
 		return iotago.ObjectID{}, err
 	}
+	walletIotaAddr := wallet.Address().AsIotaAddress()
 	txData := iotago.NewProgrammable(
-		wallet.Address().AsIotaAddress(),
+		&walletIotaAddr,
 		txb.Finish(),
 		[]*iotago.ObjectRef{coinRef},
 		uint64(isc.GasCoinTargetValue),
@@ -160,7 +161,8 @@ func initializeDeploymentWithGasCoin(ctx context.Context, signer wallets.Wallet,
 		return nil, err
 	}
 
-	gasCoin, err := CreateAndSendGasCoin(ctx, l1Client, signer, committeeAddr.AsIotaAddress(), l1Params)
+	committeeIotaAddr := committeeAddr.AsIotaAddress()
+	gasCoin, err := CreateAndSendGasCoin(ctx, l1Client, signer, &committeeIotaAddr, l1Params)
 	if err != nil {
 		return nil, err
 	}

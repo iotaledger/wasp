@@ -256,7 +256,7 @@ func (env *Solo) makeBaseTokenCoin(
 			Signer:     keyPair.Address().AsIotaAddress(),
 			InputCoins: []iotago.ObjectID{pickedCoinID},
 			Amount:     []*iotagraphql.BigInt{iotagraphql.NewBigInt(uint64(value))},
-			Recipients: []*iotago.Address{keyPair.Address().AsIotaAddress()},
+			Recipients: []*iotago.Address{lo.ToPtr(keyPair.Address().AsIotaAddress())},
 			GasBudget:  iotagraphql.NewBigInt(gasBudget),
 		},
 	))
@@ -305,7 +305,7 @@ func (ch *Chain) SendRequestWithL1GasBudget(
 		&iscmoveclient.CreateAndSendRequestWithAssetsRequest{
 			Signer:        keyPair,
 			PackageID:     ch.Env.ISCPackageID(),
-			AnchorAddress: ch.ID().AsAddress().AsIotaAddress(),
+			AnchorAddress: lo.ToPtr(ch.ID().AsAddress().AsIotaAddress()),
 			Assets:        req.assets.AsISCMove(),
 			Message: &iscmove.Message{
 				Contract: uint32(req.msg.Target.Contract),

@@ -11,7 +11,6 @@ type (
 	BigInt                           = graphqltypes.BigInt
 	CoinType                         = graphqltypes.CoinType
 	Coins                            = graphqltypes.Coins
-	GetAllCoinsResponse              = graphqltypes.GetAllCoinsResponse
 	GetCoinsResponse                 = graphqltypes.GetCoinsResponse
 	Balance                          = graphqltypes.Balance
 	TransactionBytes                 = graphqltypes.TransactionBytes

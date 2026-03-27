@@ -71,9 +71,8 @@ func NewAddressFromIota(addr *iotago.Address) *Address {
 	return &a
 }
 
-func (a *Address) AsIotaAddress() *iotago.Address {
-	result := iotago.Address(a[:])
-	return &result
+func (a *Address) AsIotaAddress() iotago.Address {
+	return iotago.Address(a[:])
 }
 
 func (a *Address) Equals(other *Address) bool {

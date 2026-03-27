@@ -60,9 +60,9 @@ func TestCreateOrigin(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	balancesSentSigner1, err := client.GetAllBalances(context.Background(), *sentSigner.Address().AsIotaAddress())
+	balancesSentSigner1, err := client.GetAllBalances(context.Background(), sentSigner.Address().AsIotaAddress())
 	require.NoError(t, err)
-	balancesStateSinger1, err := client.GetAllBalances(context.Background(), *stateSigner.Address().AsIotaAddress())
+	balancesStateSinger1, err := client.GetAllBalances(context.Background(), stateSigner.Address().AsIotaAddress())
 	require.NoError(t, err)
 
 	originDeposit := resGetCoins.Address.Coins.Nodes[2]
@@ -102,10 +102,10 @@ func TestCreateOrigin(t *testing.T) {
 
 	require.EqualValues(t, anchor.Object.StateMetadata, originStateMetadata.Bytes())
 
-	balancesSentSinger2, err := client.GetAllBalances(context.Background(), *sentSigner.Address().AsIotaAddress())
+	balancesSentSinger2, err := client.GetAllBalances(context.Background(), sentSigner.Address().AsIotaAddress())
 	require.NoError(t, err)
 	require.EqualValues(t, balancesSentSigner1[0].TotalBalance.Int64()-int64(originDeposit.Balance())-txnResponse.ExecuteTransactionBlock.Effects.GasFee(), balancesSentSinger2[0].TotalBalance.Int64())
-	balancesStateSinger2, err := client.GetAllBalances(context.Background(), *stateSigner.Address().AsIotaAddress())
+	balancesStateSinger2, err := client.GetAllBalances(context.Background(), stateSigner.Address().AsIotaAddress())
 	require.NoError(t, err)
 	require.Equal(t, balancesStateSinger1[0], balancesStateSinger2[0])
 }

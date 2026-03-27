@@ -2,53 +2,16 @@ query GetLatestIotaSystemState {
 	epoch {
 		epochId
 		startTimestamp
-		endTimestamp
 		referenceGasPrice
 		iotaTotalSupply
-		safeMode {
-			enabled
-			gasSummary {
-				computationCost
-				nonRefundableStorageFee
-				storageCost
-				storageRebate
-			}
-		}
-
-		storageFund {
-			nonRefundableBalance
-			totalObjectStorageRebates
-		}
-		systemStateVersion
 		systemParameters {
-			minValidatorCount
-			maxValidatorCount
-			minValidatorJoiningStake
 			durationMs
-			validatorLowStakeThreshold
-			validatorLowStakeGracePeriod
-			validatorVeryLowStakeThreshold
 		}
 		protocolConfigs {
 			protocolVersion
 		}
 		validatorSet {
-			activeValidators {
-				pageInfo {
-					...PAGE_INFO
-				}
-			}
-
-			inactivePoolsSize
 			pendingActiveValidatorsSize
-			stakingPoolMappingsSize
-			validatorCandidatesSize
-			pendingRemovals
-			totalStake
-			stakingPoolMappingsId
-			pendingActiveValidatorsId
-			validatorCandidatesId
-			inactivePoolsId
 		}
 	}
 }

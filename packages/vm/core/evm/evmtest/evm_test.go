@@ -10,7 +10,6 @@ import (
 	"io"
 	"math"
 	"math/big"
-	"sync"
 	"testing"
 	"time"
 
@@ -54,7 +53,6 @@ func TestMain(m *testing.M) {
 }
 
 func TestStorageContract(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.EthereumAccountByIndexWithL2Funds(0)
 	require.EqualValues(t, 1, env.getBlockNumber()) // evm block number is incremented along with ISC block index
@@ -97,7 +95,6 @@ func TestStorageContract(t *testing.T) {
 }
 
 func TestLowLevelCallRevert(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 
@@ -117,7 +114,6 @@ func TestLowLevelCallRevert(t *testing.T) {
 }
 
 func TestERC20Contract(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 
@@ -147,7 +143,6 @@ func TestERC20Contract(t *testing.T) {
 }
 
 func TestGetCode(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	erc20 := env.deployERC20Contract(ethKey, "TestCoin", "TEST")
@@ -160,7 +155,6 @@ func TestGetCode(t *testing.T) {
 }
 
 func TestGasCharged(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	storage := env.deployStorageContract(ethKey)
@@ -177,7 +171,6 @@ func TestGasCharged(t *testing.T) {
 }
 
 func TestGasRatio(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	env.Chain.MustDepositBaseTokensToL2(solo.DefaultChainAdminBaseTokens, nil)
 
@@ -211,7 +204,6 @@ func TestGasRatio(t *testing.T) {
 
 // tests that the gas limits are correctly enforced based on the base tokens sent
 func TestGasLimit(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	env.Chain.MustDepositBaseTokensToL2(solo.DefaultChainAdminBaseTokens, nil)
 
@@ -238,7 +230,6 @@ func TestGasLimit(t *testing.T) {
 }
 
 func TestNotEnoughISCGas(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	env.Chain.MustDepositBaseTokensToL2(solo.DefaultChainAdminBaseTokens, nil)
 
@@ -276,7 +267,6 @@ func TestNotEnoughISCGas(t *testing.T) {
 
 // ensure the amount of base tokens sent impacts the amount of gas used
 func TestLoop(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	loop := env.deployLoopContract(ethKey)
@@ -304,7 +294,6 @@ func TestLoop(t *testing.T) {
 }
 
 func TestLoopWithGasLeft(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
@@ -327,7 +316,6 @@ func TestLoopWithGasLeft(t *testing.T) {
 }
 
 func TestEstimateGasWithoutFunds(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
@@ -345,7 +333,6 @@ func TestEstimateGasWithoutFunds(t *testing.T) {
 }
 
 func TestLoopWithGasLeftEstimateGas(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
@@ -374,7 +361,6 @@ func TestLoopWithGasLeftEstimateGas(t *testing.T) {
 }
 
 func TestEstimateContractGas(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	env.Chain.MustDepositBaseTokensToL2(solo.DefaultChainAdminBaseTokens, nil)
 
@@ -405,7 +391,6 @@ func TestEstimateContractGas(t *testing.T) {
 }
 
 func TestCallViewGasLimit(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	loop := env.deployLoopContract(ethKey)
@@ -423,7 +408,6 @@ func TestCallViewGasLimit(t *testing.T) {
 }
 
 func TestMagicContract(t *testing.T) {
-	t.Parallel()
 	// deploy the evm contract, which starts an EVM chain and automatically
 	// deploys the isc.sol EVM contract at address 0x10740000...
 	env := InitEVM(t)
@@ -441,7 +425,6 @@ func TestMagicContract(t *testing.T) {
 }
 
 func TestISCChainAdmin(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 
@@ -455,7 +438,6 @@ func TestISCChainAdmin(t *testing.T) {
 }
 
 func TestISCTimestamp(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 
@@ -470,7 +452,6 @@ func TestISCTimestamp(t *testing.T) {
 }
 
 func TestISCCallView(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	var ret [][]byte
@@ -483,7 +464,6 @@ func TestISCCallView(t *testing.T) {
 }
 
 func TestISCTriggerEvent(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
@@ -501,7 +481,6 @@ func TestISCTriggerEvent(t *testing.T) {
 }
 
 func TestISCTriggerEventThenFail(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
@@ -517,7 +496,6 @@ func TestISCTriggerEventThenFail(t *testing.T) {
 }
 
 func TestISCEntropy(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
@@ -533,7 +511,6 @@ func TestISCEntropy(t *testing.T) {
 }
 
 func TestISCGetRequestID(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
@@ -549,7 +526,6 @@ func TestISCGetRequestID(t *testing.T) {
 }
 
 func TestReceiptOfFailedTxDoesNotContainEvents(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
@@ -563,7 +539,6 @@ func TestReceiptOfFailedTxDoesNotContainEvents(t *testing.T) {
 }
 
 func TestISCGetSenderAccount(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
@@ -577,7 +552,6 @@ func TestISCGetSenderAccount(t *testing.T) {
 }
 
 func TestSendNonPayableValueTX(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 
 	ethKey, ethAddress := env.Chain.NewEthereumAccountWithL2Funds()
@@ -613,7 +587,6 @@ func TestSendNonPayableValueTX(t *testing.T) {
 }
 
 func TestSendPayableValueTX(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 
 	ethKey, senderEthAddress := env.Chain.NewEthereumAccountWithL2Funds()
@@ -653,7 +626,6 @@ func TestSendPayableValueTX(t *testing.T) {
 }
 
 func TestSendBaseTokens(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 
 	ethKey, ethAddress := env.Chain.EthereumAccountByIndexWithL2Funds(0)
@@ -706,7 +678,6 @@ func TestSendBaseTokens(t *testing.T) {
 }
 
 func TestCannotDepleteAccount(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 
 	ethKey, ethAddress := env.Chain.NewEthereumAccountWithL2Funds()
@@ -746,7 +717,6 @@ func TestCannotDepleteAccount(t *testing.T) {
 }
 
 func TestISCCall(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
@@ -761,7 +731,6 @@ func TestISCCall(t *testing.T) {
 }
 
 func TestFibonacciContract(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	fibo := env.deployFibonacciContract(ethKey)
@@ -775,7 +744,6 @@ func TestFibonacciContract(t *testing.T) {
 }
 
 func TestEVMContractOwnsFundsL2Transfer(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
@@ -803,7 +771,6 @@ func TestEVMContractOwnsFundsL2Transfer(t *testing.T) {
 }
 
 func TestISCPanic(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 
@@ -821,7 +788,6 @@ func TestISCPanic(t *testing.T) {
 }
 
 func TestERC20BaseTokens(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()
 
@@ -927,7 +893,6 @@ func TestERC20BaseTokens(t *testing.T) {
 
 // test withdrawing ALL EVM balance to a L1 address via the magic contract
 func TestEVMWithdrawAll(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, ethAddress := env.Chain.NewEthereumAccountWithL2Funds()
 	_, receiver := env.solo.NewKeyPair()
@@ -988,7 +953,6 @@ func TestEVMWithdrawAll(t *testing.T) {
 }
 
 func TestEVMGasPriceMismatch(t *testing.T) {
-	t.Parallel()
 	for _, v := range []struct {
 		name          string
 		gasPerToken   util.Ratio32
@@ -1083,7 +1047,6 @@ func TestEVMGasPriceMismatch(t *testing.T) {
 		},
 	} {
 		t.Run(v.name, func(t *testing.T) {
-			t.Parallel()
 			env := InitEVM(t)
 			env.Chain.DepositBaseTokensToL2(10*isc.Million, nil)
 			feePolicy := env.Chain.GetGasFeePolicy()
@@ -1130,7 +1093,6 @@ func TestEVMGasPriceMismatch(t *testing.T) {
 }
 
 func TestEVMIntrinsicGas(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	sandbox := env.ISCMagicSandbox(ethKey)
@@ -1143,7 +1105,6 @@ func TestEVMIntrinsicGas(t *testing.T) {
 }
 
 func TestEVMTransferBaseTokens(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()
 	_, someEthereumAddr := solo.NewEthereumAccount()
@@ -1171,7 +1132,6 @@ func TestEVMTransferBaseTokens(t *testing.T) {
 }
 
 func TestSolidityTransferBaseTokens(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	_, someEthereumAddr := solo.NewEthereumAccount()
@@ -1235,7 +1195,6 @@ func TestSolidityTransferBaseTokens(t *testing.T) {
 }
 
 func TestSendEntireBalance(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()
 	_, someEthereumAddr := solo.NewEthereumAccount()
@@ -1297,7 +1256,6 @@ func TestSendEntireBalance(t *testing.T) {
 }
 
 func TestSolidityRevertMessage(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
@@ -1328,7 +1286,6 @@ func TestSolidityRevertMessage(t *testing.T) {
 }
 
 func TestCallContractCannotCauseStackOverflow(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 
@@ -1349,7 +1306,6 @@ func TestCallContractCannotCauseStackOverflow(t *testing.T) {
 }
 
 func TestStaticCall(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
@@ -1366,7 +1322,6 @@ func TestStaticCall(t *testing.T) {
 }
 
 func TestSelfDestruct(t *testing.T) {
-	t.Parallel()
 	// NOTE: since EIP-6780 self-destruct was deprecated
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.EthereumAccountByIndexWithL2Funds(0)
@@ -1399,7 +1354,6 @@ func TestSelfDestruct(t *testing.T) {
 }
 
 func TestSelfDestruct6780(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.EthereumAccountByIndexWithL2Funds(0)
 	iscTest := env.deployISCTestContract(ethKey)
@@ -1410,7 +1364,6 @@ func TestSelfDestruct6780(t *testing.T) {
 }
 
 func TestChangeGasLimit(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	env.Chain.MustDepositBaseTokensToL2(solo.DefaultChainAdminBaseTokens, nil)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
@@ -1437,7 +1390,6 @@ func TestChangeGasLimit(t *testing.T) {
 }
 
 func TestChangeGasPerToken(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	env.Chain.MustDepositBaseTokensToL2(solo.DefaultChainAdminBaseTokens, nil)
 
@@ -1470,11 +1422,10 @@ func TestChangeGasPerToken(t *testing.T) {
 	require.Greater(t, fee2, fee)
 }
 
-func TestGasPriceIgnoredInEstimateGas(t *testing.T) { //nolint:tparallel
-	t.Parallel()
+func TestGasPriceIgnoredInEstimateGas(t *testing.T) {
 	env := InitEVM(t)
 
-	var gasLimit sync.Map
+	var gasLimits []uint64
 
 	for _, gasPrice := range []*big.Int{
 		nil,
@@ -1482,7 +1433,7 @@ func TestGasPriceIgnoredInEstimateGas(t *testing.T) { //nolint:tparallel
 		big.NewInt(10),
 		big.NewInt(100),
 	} {
-		t.Run(fmt.Sprintf("%v", gasPrice), func(t *testing.T) { //nolint:gocritic// false positive
+		t.Run(fmt.Sprintf("%v", gasPrice), func(t *testing.T) { //nolint:gocritic // false positive
 			ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 			storage := env.deployStorageContract(ethKey)
 
@@ -1492,22 +1443,16 @@ func TestGasPriceIgnoredInEstimateGas(t *testing.T) { //nolint:tparallel
 			}}, "store", uint32(3))
 			require.NoError(t, err)
 
-			gasLimit.Store(gasPrice, gas)
+			gasLimits = append(gasLimits, gas)
 		})
 	}
 
-	var gasLimits []uint64
-	gasLimit.Range(func(key, value any) bool {
-		gasLimits = append(gasLimits, value.(uint64))
-		return true
-	})
 	t.Log("gas limit", gasLimits)
 	require.Len(t, lo.Uniq(gasLimits), 1)
 }
 
 // calling views via eth_call must not cost gas (still has a maximum budget, but simple view calls should pass)
 func TestEVMCallViewGas(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 
 	// issue a view call from an account with no funds
@@ -1521,7 +1466,6 @@ func TestEVMCallViewGas(t *testing.T) {
 }
 
 func TestGasPrice(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	env.Chain.DepositBaseTokensToL2(10*isc.Million, nil)
 
@@ -1561,7 +1505,6 @@ func TestGasPrice(t *testing.T) {
 }
 
 func TestTraceTransaction(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()
 
@@ -1597,7 +1540,6 @@ func TestTraceTransaction(t *testing.T) {
 }
 
 func TestCaller(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
@@ -1615,7 +1557,6 @@ func TestCaller(t *testing.T) {
 }
 
 func TestCustomError(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
@@ -1635,7 +1576,6 @@ func TestCustomError(t *testing.T) {
 }
 
 func TestEmitEventAndRevert(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
@@ -1647,7 +1587,6 @@ func TestEmitEventAndRevert(t *testing.T) {
 }
 
 func TestL1DepositEVM(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	// ensure that after a deposit to an EVM account, there is a tx/receipt for it to be auditable on the EVM side
 	wallet, l1Addr := env.solo.NewKeyPairWithFunds()
@@ -1716,7 +1655,6 @@ func TestL1DepositEVM(t *testing.T) {
 }
 
 func TestDecimalsConversion(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
@@ -1741,7 +1679,6 @@ func TestDecimalsConversion(t *testing.T) {
 }
 
 func TestPreEIP155Transaction(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.EthereumAccountByIndexWithL2Funds(0)
 
@@ -1760,7 +1697,6 @@ func TestPreEIP155Transaction(t *testing.T) {
 }
 
 func TestEVMEventOnFailedL1Deposit(t *testing.T) {
-	t.Parallel()
 	env := InitEVM(t)
 
 	// set gas policy to a higher price (so that it can fails when charging ISC gas)
@@ -1858,11 +1794,9 @@ func testEVMWithdrawWithFailedTx(t *testing.T, withdrawFirst bool) {
 }
 
 func TestEVM_WithdrawWithFailedTxAfter(t *testing.T) {
-	t.Parallel()
 	testEVMWithdrawWithFailedTx(t, true)
 }
 
 func TestEVM_WithdrawWithFailedTxBefore(t *testing.T) {
-	t.Parallel()
 	testEVMWithdrawWithFailedTx(t, false)
 }

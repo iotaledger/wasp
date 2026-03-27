@@ -737,7 +737,7 @@ func RandomOnLedgerDepositRequest(senders ...*cryptolib.Address) isc.OnLedgerReq
 			AllowanceBCS: bcs.MustMarshal(iscmove.NewAssets(10000)),
 			GasBudget:    100000,
 		},
-		Owner: sender.AsIotaAddress(),
+		Owner: lo.ToPtr(sender.AsIotaAddress()),
 	}
 	onReq, err := isc.OnLedgerFromMoveRequest(&req, sender)
 	if err != nil {

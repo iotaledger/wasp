@@ -4,6 +4,7 @@ import (
 	"math"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
@@ -205,7 +206,7 @@ func TestSendObjectsBack(t *testing.T) {
 
 	objRes, err := ch.Env.L1Client().GetObject(ch.Env.Ctx(), obj.ID)
 	require.NoError(t, err)
-	require.EqualValues(ch.Env.T, objRes.Object.OwnerAddress(), wallet.Address().AsIotaAddress())
+	require.EqualValues(ch.Env.T, objRes.Object.OwnerAddress(), lo.ToPtr(wallet.Address().AsIotaAddress()))
 }
 
 func TestNFTOffledgerWithdraw(t *testing.T) {
@@ -228,5 +229,5 @@ func TestNFTOffledgerWithdraw(t *testing.T) {
 
 	objRes, err := ch.Env.L1Client().GetObject(ch.Env.Ctx(), obj.ID)
 	require.NoError(t, err)
-	require.EqualValues(ch.Env.T, objRes.Object.OwnerAddress(), wallet.Address().AsIotaAddress())
+	require.EqualValues(ch.Env.T, objRes.Object.OwnerAddress(), lo.ToPtr(wallet.Address().AsIotaAddress()))
 }

@@ -142,7 +142,7 @@ type iotaBalanceSnapshot struct {
 }
 
 func (c *GraphQLClient) getIotaBalanceSnapshot(ctx context.Context, address iotago.Address) (iotaBalanceSnapshot, error) {
-	balance, err := c.GetBalance(ctx, GetBalanceRequest{Owner: &address})
+	balance, err := c.GetBalance(ctx, GetBalanceRequest{Owner: address})
 	if err != nil {
 		return iotaBalanceSnapshot{}, err
 	}
@@ -281,13 +281,6 @@ func (c *GraphQLClient) GetDynamicFieldObject(
 	ctx context.Context,
 	req GetDynamicFieldObjectRequest,
 ) (*GetDynamicFieldObjectResponse, error) {
-	if req.ParentObjectID == nil {
-		return nil, fmt.Errorf("parent object ID is required")
-	}
-	if req.Name == nil {
-		return nil, fmt.Errorf("dynamic field name is required")
-	}
-
 	valueJSON, err := json.Marshal(req.Name.Value)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal value to JSON: %w", err)
@@ -308,7 +301,8 @@ func (c *GraphQLClient) GetDynamicFieldObject(
 	showDisplay := true
 	showStorageRebate := true
 
-	objResp, objErr := graphqltypes.GetDynamicFieldObject(ctx, c.client, *req.ParentObjectID, nameInput,
+	// Try querying as an object first
+	objResp, objErr := graphqltypes.GetDynamicFieldObject(ctx, c.client, req.ParentObjectID, nameInput,
 		&showBcs, &showPreviousTransaction, &showDisplay, &showStorageRebate)
 
 	return objResp, objErr
@@ -318,7 +312,7 @@ func (c *GraphQLClient) GetDynamicFields(
 	ctx context.Context,
 	req GetDynamicFieldsRequest,
 ) (*graphqltypes.GetDynamicFieldsResponse, error) {
-	return graphqltypes.GetDynamicFields(ctx, c.client, *req.ParentObjectID, nil, req.Cursor)
+	return graphqltypes.GetDynamicFields(ctx, c.client, req.ParentObjectID, nil, req.Cursor)
 }
 
 func (c *GraphQLClient) GetOwnedObjects(
@@ -332,7 +326,7 @@ func (c *GraphQLClient) GetOwnedObjects(
 	filter := req.Filter
 	opts := showAllObjectOptions()
 
-	resp, err := graphqltypes.GetOwnedObjects(ctx, c.client, *req.Address, req.Limit, req.Cursor,
+	resp, err := graphqltypes.GetOwnedObjects(ctx, c.client, req.Address, req.Limit, req.Cursor,
 		opts.Bcs, opts.Content, opts.Display, opts.Type, opts.Owner, opts.PreviousTransaction, opts.StorageRebate, filter)
 
 	return resp, err
@@ -391,13 +385,6 @@ func (c *GraphQLClient) GetReferenceGasPrice(ctx context.Context) (*BigInt, erro
 	return resp.Epoch.ReferenceGasPrice.Clone(), nil
 }
 
-func (c *GraphQLClient) MergeCoins(
-	ctx context.Context,
-	req MergeCoinsRequest,
-) (*TransactionBytes, error) {
-	return nil, fmt.Errorf("not implemented: %s", "MergeCoins")
-}
-
 func (c *GraphQLClient) fetchObjectRefs(ctx context.Context, objectIDs []iotago.ObjectID) ([]*iotago.ObjectRef, error) {
 	refs := make([]*iotago.ObjectRef, 0, len(objectIDs))
 	for _, objID := range objectIDs {
@@ -417,79 +404,12 @@ func (c *GraphQLClient) fetchObjectRefs(ctx context.Context, objectIDs []iotago.
 	return refs, nil
 }
 
-func (c *GraphQLClient) Pay(
-	ctx context.Context,
-	req PayRequest,
-) (*TransactionBytes, error) {
-	coinRefs, err := c.fetchObjectRefs(ctx, req.InputCoins)
-	if err != nil {
-		return nil, err
-	}
-
-	amounts := make([]uint64, len(req.Amount))
-	for i, amt := range req.Amount {
-		val, convErr := bigIntToUint64(amt, fmt.Sprintf("amount[%d]", i))
-		if convErr != nil {
-			return nil, convErr
-		}
-		amounts[i] = val
-	}
-
-	ptb := iotago.NewProgrammableTransactionBuilder()
-	if err = ptb.Pay(coinRefs, req.Recipients, amounts); err != nil {
-		return nil, fmt.Errorf("failed to build Pay transaction: %w", err)
-	}
-	pt := ptb.Finish()
-
-	gasBudget := uint64(DefaultGasBudget)
-	if req.GasBudget != nil {
-		gasBudget, err = bigIntToUint64(req.GasBudget, "gasBudget")
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	// Gas must be provided explicitly because input coins are used in the Pay command
-	if req.Gas == nil {
-		return nil, fmt.Errorf("gas parameter is required for Pay via GraphQL (input coins cannot be used as gas)")
-	}
-
-	gasObj, err := c.GetObject(ctx, *req.Gas)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get gas object %s: %w", req.Gas.String(), err)
-	}
-	if gasObj.Object.IsNotFound() {
-		return nil, fmt.Errorf("gas object %s not found", req.Gas.String())
-	}
-
-	gasRef, err := gasObj.Object.ObjectRef()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get gas object ref %s: %w", req.Gas.String(), err)
-	}
-	gasPayment := []*iotago.ObjectRef{gasRef}
-
-	tx := iotago.NewProgrammable(
-		req.Signer,
-		pt,
-		gasPayment,
-		gasBudget,
-		DefaultGasPrice,
-	)
-
-	txBytes, err := bcs.Marshal(&tx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to serialize transaction: %w", err)
-	}
-
-	return &TransactionBytes{TxBytes: txBytes}, nil
-}
-
 func (c *GraphQLClient) PayAllIota(
 	ctx context.Context,
 	req PayAllIotaRequest,
 ) (*TransactionBytes, error) {
 	ptb := iotago.NewProgrammableTransactionBuilder()
-	if err := ptb.PayAllIota(req.Recipient); err != nil {
+	if err := ptb.PayAllIota(&req.Recipient); err != nil {
 		return nil, fmt.Errorf("failed to build PayAllIota transaction: %w", err)
 	}
 	pt := ptb.Finish()
@@ -524,7 +444,7 @@ func (c *GraphQLClient) PayAllIota(
 	}
 
 	tx := iotago.NewProgrammable(
-		req.Signer,
+		&req.Signer,
 		pt,
 		gasPayment,
 		gasBudget,
@@ -575,7 +495,7 @@ func (c *GraphQLClient) PayIota(
 	}
 
 	tx := iotago.NewProgrammable(
-		req.Signer,
+		&req.Signer,
 		pt,
 		coinRefs,
 		gasBudget,
@@ -594,9 +514,6 @@ func (c *GraphQLClient) Publish(
 	ctx context.Context,
 	req PublishRequest,
 ) (*TransactionBytes, error) {
-	if req.Sender == nil {
-		return nil, fmt.Errorf("Publish: sender address is required")
-	}
 	if len(req.CompiledModules) == 0 {
 		return nil, fmt.Errorf("Publish: at least one compiled module is required")
 	}
@@ -611,7 +528,7 @@ func (c *GraphQLClient) Publish(
 
 	ptb := iotago.NewProgrammableTransactionBuilder()
 	capArg := ptb.PublishUpgradeable(modules, req.Dependencies)
-	ptb.TransferArgs(req.Sender, []iotago.Argument{capArg})
+	ptb.TransferArgs(&req.Sender, []iotago.Argument{capArg})
 	pt := ptb.Finish()
 
 	gasBudget := uint64(DefaultGasBudget)
@@ -623,14 +540,14 @@ func (c *GraphQLClient) Publish(
 		}
 	}
 
-	gasRef, err := c.resolveGasObject(ctx, req.Sender, req.Gas, nil)
+	gasRef, err := c.resolveGasObject(ctx, &req.Sender, req.Gas, nil)
 	if err != nil {
 		return nil, err
 	}
 	gasPayment := []*iotago.ObjectRef{gasRef}
 
 	tx := iotago.NewProgrammable(
-		req.Sender,
+		&req.Sender,
 		pt,
 		gasPayment,
 		gasBudget,
@@ -682,7 +599,7 @@ func (c *GraphQLClient) resolveGasObject(
 	var cursor *string
 	for {
 		coins, err := c.GetCoins(ctx, GetCoinsRequest{
-			Owner:  signer,
+			Owner:  *signer,
 			Limit:  pageLimit,
 			Cursor: cursor,
 		})
@@ -703,28 +620,11 @@ func (c *GraphQLClient) resolveGasObject(
 	return nil, fmt.Errorf("no suitable gas coin found; provide Gas explicitly")
 }
 
-func (c *GraphQLClient) TransferIota(
-	ctx context.Context,
-	req TransferIotaRequest,
-) (*TransactionBytes, error) {
-	return nil, fmt.Errorf("not implemented: %s", "TransferIota")
-}
-
 func (c *GraphQLClient) TransferObject(
 	ctx context.Context,
 	req TransferObjectRequest,
 ) (*TransactionBytes, error) {
-	if req.Signer == nil {
-		return nil, fmt.Errorf("TransferObject: signer address is required")
-	}
-	if req.ObjectID == nil {
-		return nil, fmt.Errorf("TransferObject: object ID is required")
-	}
-	if req.Recipient == nil {
-		return nil, fmt.Errorf("TransferObject: recipient address is required")
-	}
-
-	objResp, err := c.GetObject(ctx, *req.ObjectID)
+	objResp, err := c.GetObject(ctx, req.ObjectID)
 	if err != nil {
 		return nil, fmt.Errorf("TransferObject: failed to get object: %w", err)
 	}
@@ -735,7 +635,7 @@ func (c *GraphQLClient) TransferObject(
 
 	ptb := iotago.NewProgrammableTransactionBuilder()
 	objArg := ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: objRef})
-	ptb.TransferArgs(req.Recipient, []iotago.Argument{objArg})
+	ptb.TransferArgs(&req.Recipient, []iotago.Argument{objArg})
 	pt := ptb.Finish()
 
 	gasBudget := uint64(DefaultGasBudget)
@@ -746,13 +646,13 @@ func (c *GraphQLClient) TransferObject(
 		}
 	}
 
-	gasRef, err := c.resolveGasObject(ctx, req.Signer, req.Gas, nil)
+	gasRef, err := c.resolveGasObject(ctx, &req.Signer, req.Gas, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	tx := iotago.NewProgrammable(
-		req.Signer,
+		&req.Signer,
 		pt,
 		[]*iotago.ObjectRef{gasRef},
 		gasBudget,
@@ -775,7 +675,7 @@ func (c *GraphQLClient) GetCoinObjsForTargetAmount(
 ) (Coins, error) {
 	coins, err := c.GetCoins(
 		ctx, GetCoinsRequest{
-			Owner: &address,
+			Owner: address,
 			Limit: 50,
 		},
 	)
@@ -905,6 +805,7 @@ func (c *GraphQLClient) MintToken(
 	var txnBytes []byte
 	var txnResponse *graphqltypes.ExecuteTransactionBlockResponse
 	var gasPayments []*iotago.ObjectRef
+	signerAddr := signer.Address()
 
 	for i := 0; i < maxRetries; i++ {
 		updatedTreasuryCap, updateErr := c.UpdateObjectRef(ctx, treasuryCap)
@@ -926,20 +827,20 @@ func (c *GraphQLClient) MintToken(
 					Arguments: []iotago.Argument{
 						ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: treasuryCap}),
 						ptb.MustForceSeparatePure(mintAmount),
-						ptb.MustForceSeparatePure(signer.Address()),
+						ptb.MustForceSeparatePure(signerAddr),
 					},
 				},
 			},
 		)
 		pt := ptb.Finish()
 
-		gasPayments, err = c.FindCoinsForGasPayment(ctx, signer.Address(), pt, DefaultGasBudget)
+		gasPayments, err = c.FindCoinsForGasPayment(ctx, signerAddr, pt, DefaultGasBudget)
 		if err != nil {
 			return nil, fmt.Errorf("failed to find gas payment: %w", err)
 		}
 
 		tx := iotago.NewProgrammable(
-			signer.Address(),
+			&signerAddr,
 			pt,
 			gasPayments,
 			DefaultGasBudget,
@@ -975,30 +876,13 @@ func (c *GraphQLClient) GetAllBalances(ctx context.Context, owner iotago.Address
 	return balances, nil
 }
 
-func (c *GraphQLClient) GetAllCoins(ctx context.Context, req GetAllCoinsRequest) (*GetAllCoinsResponse, error) {
-	if req.Owner == nil {
-		return nil, fmt.Errorf("owner address is required")
-	}
-
-	var limitPtr *int
-	if req.Limit > 0 {
-		limitPtr = &req.Limit
-	}
-
-	resp, err := graphqltypes.GetAllCoins(ctx, c.client, *req.Owner, limitPtr, req.Cursor)
-	return resp, err
-}
-
 func (c *GraphQLClient) GetBalance(ctx context.Context, req GetBalanceRequest) (*Balance, error) {
-	if req.Owner == nil {
-		return nil, fmt.Errorf("owner address is required")
-	}
 	var coinTypePtr *string
 	if req.CoinType != "" {
 		s := string(req.CoinType)
 		coinTypePtr = &s
 	}
-	resp, err := graphqltypes.GetBalance(ctx, c.client, *req.Owner, coinTypePtr)
+	resp, err := graphqltypes.GetBalance(ctx, c.client, req.Owner, coinTypePtr)
 	if err != nil {
 		return nil, err
 	}
@@ -1027,10 +911,6 @@ func (c *GraphQLClient) GetCoinMetadata(ctx context.Context, coinType CoinType) 
 }
 
 func (c *GraphQLClient) GetCoins(ctx context.Context, req GetCoinsRequest) (*graphqltypes.GetCoinsResponse, error) {
-	if req.Owner == nil {
-		return nil, fmt.Errorf("owner address is required")
-	}
-
 	var limitPtr *int
 	if req.Limit > 0 {
 		limitPtr = &req.Limit
@@ -1042,7 +922,7 @@ func (c *GraphQLClient) GetCoins(ctx context.Context, req GetCoinsRequest) (*gra
 		coinTypePtr = &s
 	}
 
-	resp, err := graphqltypes.GetCoins(ctx, c.client, *req.Owner, limitPtr, req.Cursor, coinTypePtr)
+	resp, err := graphqltypes.GetCoins(ctx, c.client, req.Owner, limitPtr, req.Cursor, coinTypePtr)
 	return resp, err
 }
 
@@ -1109,7 +989,7 @@ func (c *GraphQLClient) DeployISCContracts(ctx context.Context, signer iotasigne
 
 func (c *GraphQLClient) FindCoinsForGasPayment(
 	ctx context.Context,
-	owner *iotago.Address,
+	owner iotago.Address,
 	pt iotago.ProgrammableTransaction,
 	gasBudget uint64,
 ) ([]*iotago.ObjectRef, error) {
@@ -1151,9 +1031,10 @@ func (c *GraphQLClient) SignAndExecuteTxWithRetry(
 	var txnResponse *graphqltypes.ExecuteTransactionBlockResponse
 	var gasPayments []*iotago.ObjectRef
 	var updatedGasCoin *iotago.ObjectRef
+	signerAddr := signer.Address()
 	for i := 0; i < 5; i++ {
 		if gasCoin == nil {
-			gasPayments, err = c.FindCoinsForGasPayment(ctx, signer.Address(), pt, gasBudget)
+			gasPayments, err = c.FindCoinsForGasPayment(ctx, signerAddr, pt, gasBudget)
 			if err != nil {
 				return nil, fmt.Errorf("failed to find gas payment: %w", err)
 			}
@@ -1169,7 +1050,7 @@ func (c *GraphQLClient) SignAndExecuteTxWithRetry(
 		}
 
 		tx := iotago.NewProgrammable(
-			signer.Address(),
+			&signerAddr,
 			pt,
 			gasPayments,
 			gasBudget,

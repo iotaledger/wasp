@@ -6,49 +6,32 @@ import (
 )
 
 type GetDynamicFieldObjectRequest struct {
-	ParentObjectID *iotago.ObjectID
-	Name           *iotago.DynamicFieldName
+	ParentObjectID iotago.ObjectID
+	Name           iotago.DynamicFieldName
 }
 
 type GetDynamicFieldsRequest struct {
-	ParentObjectID *iotago.ObjectID
+	ParentObjectID iotago.ObjectID
 	Cursor         *string // optional, opaque GraphQL cursor
 	Limit          *int    // optional
 }
 
 type GetOwnedObjectsRequest struct {
-	Address *iotago.Address
+	Address iotago.Address
 	Filter  *graphqltypes.ObjectFilter // optional
 	Cursor  *string                    // optional, opaque GraphQL cursor
 	Limit   *int                       // optional
 }
 
-type MergeCoinsRequest struct {
-	Signer      *iotago.Address
-	PrimaryCoin *iotago.ObjectID
-	CoinToMerge *iotago.ObjectID
-	Gas         *iotago.ObjectID // optional
-	GasBudget   *graphqltypes.BigInt
-}
-
-type PayRequest struct {
-	Signer     *iotago.Address
-	InputCoins []iotago.ObjectID
-	Recipients []*iotago.Address
-	Amount     []*graphqltypes.BigInt
-	Gas        *iotago.ObjectID // optional
-	GasBudget  *graphqltypes.BigInt
-}
-
 type PayAllIotaRequest struct {
-	Signer     *iotago.Address
-	Recipient  *iotago.Address
+	Signer     iotago.Address
+	Recipient  iotago.Address
 	InputCoins []iotago.ObjectID
 	GasBudget  *graphqltypes.BigInt
 }
 
 type PayIotaRequest struct {
-	Signer     *iotago.Address
+	Signer     iotago.Address
 	InputCoins []iotago.ObjectID
 	Recipients []*iotago.Address
 	Amount     []*graphqltypes.BigInt
@@ -56,7 +39,7 @@ type PayIotaRequest struct {
 }
 
 type PublishRequest struct {
-	Sender          *iotago.Address
+	Sender          iotago.Address
 	CompiledModules []*iotago.Base64Data
 	Dependencies    []*iotago.ObjectID
 	Gas             *iotago.ObjectID // optional
@@ -64,34 +47,20 @@ type PublishRequest struct {
 }
 
 type TransferObjectRequest struct {
-	Signer    *iotago.Address
-	ObjectID  *iotago.ObjectID
+	Signer    iotago.Address
+	ObjectID  iotago.ObjectID
 	Gas       *iotago.ObjectID // optional
 	GasBudget *graphqltypes.BigInt
-	Recipient *iotago.Address
-}
-
-type TransferIotaRequest struct {
-	Signer    *iotago.Address
-	ObjectID  *iotago.ObjectID
-	GasBudget *graphqltypes.BigInt
-	Recipient *iotago.Address
-	Amount    *graphqltypes.BigInt // optional
-}
-
-type GetAllCoinsRequest struct {
-	Owner  *iotago.Address
-	Cursor *string // optional, opaque GraphQL cursor
-	Limit  int     // optional
+	Recipient iotago.Address
 }
 
 type GetBalanceRequest struct {
-	Owner    *iotago.Address
+	Owner    iotago.Address
 	CoinType graphqltypes.CoinType // optional
 }
 
 type GetCoinsRequest struct {
-	Owner    *iotago.Address
+	Owner    iotago.Address
 	CoinType *graphqltypes.CoinType // optional
 	Cursor   *string                // optional
 	Limit    int                    // optional

@@ -124,7 +124,7 @@ func (clu *Cluster) NewKeyPairWithFunds() (*cryptolib.KeyPair, *cryptolib.Addres
 }
 
 func (clu *Cluster) RequestFunds(addr *cryptolib.Address) error {
-	return clu.l1.RequestFundsFromFaucet(context.Background(), *addr.AsIotaAddress())
+	return clu.l1.RequestFundsFromFaucet(context.Background(), addr.AsIotaAddress())
 }
 
 func (clu *Cluster) L1Client() clients.L1Client {
@@ -334,7 +334,8 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 	if err != nil {
 		return nil, fmt.Errorf("cant get gas coin ref: %w", err)
 	}
-	err = ptb.TransferObject(stateAddr.AsIotaAddress(), gascoinRef)
+	stateIotaAddr := stateAddr.AsIotaAddress()
+	err = ptb.TransferObject(&stateIotaAddr, gascoinRef)
 	if err != nil {
 		return nil, fmt.Errorf("cant transfer gas coin: %w", err)
 	}
@@ -942,7 +943,7 @@ func (clu *Cluster) ActiveNodes() []int {
 func (clu *Cluster) AddressBalances(addr *cryptolib.Address) *isc.Assets {
 	// get funds controlled by addr
 
-	balances, err := clu.l1.GetAllBalances(context.Background(), *addr.AsIotaAddress())
+	balances, err := clu.l1.GetAllBalances(context.Background(), addr.AsIotaAddress())
 	if err != nil {
 		clu.log.LogPanicf("[cluster] failed to GetAllBalances for address[%v]", addr.String())
 		return nil

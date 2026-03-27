@@ -134,7 +134,7 @@ func runImportChain(dbPath string, node string, peers []string, quorum int, chai
 
 	transferAnchor, err := cliclients.L1Client().TransferObject(ctx, iotagraphql.TransferObjectRequest{
 		Signer:    kp.Address().AsIotaAddress(),
-		ObjectID:  anchor.ObjectID,
+		ObjectID:  *anchor.ObjectID,
 		Recipient: result.committeeAddress.AsIotaAddress(),
 		GasBudget: iotagraphql.NewBigInt(iotagraphql.DefaultGasBudget),
 	})

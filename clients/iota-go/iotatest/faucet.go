@@ -19,7 +19,7 @@ func MakeSignerWithFundsFromSeed(seed []byte, index int, faucetURL, apiURL strin
 	signer := iotasigner.NewSignerByIndex(seed, keySchemeFlag, index)
 
 	client := iotagraphql.NewGraphQLClient(apiURL, faucetURL)
-	if err := client.RequestFundsFromFaucet(context.Background(), *signer.Address()); err != nil {
+	if err := client.RequestFundsFromFaucet(context.Background(), signer.Address()); err != nil {
 		panic(err)
 	}
 	return signer

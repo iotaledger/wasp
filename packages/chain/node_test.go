@@ -21,6 +21,7 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotatest"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql/graphqltypes"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/v2/packages/chain"
@@ -108,7 +109,7 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 
 	// Create SC L1Client account with some deposit
 	scClient := cryptolib.NewKeyPair()
-	err := te.l1Client.RequestFundsFromFaucet(context.Background(), *scClient.Address().AsIotaAddress())
+	err := te.l1Client.RequestFundsFromFaucet(context.Background(), scClient.Address().AsIotaAddress())
 	require.NoError(t, err)
 
 	//
@@ -168,7 +169,7 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 
 	// assert state
 	for i, node := range te.nodes {
-		for {
+		require.Eventually(t, func() bool {
 			latestState, err := node.LatestState(chain.ActiveOrCommittedState)
 			require.NoError(t, err)
 			cnt := inccounter.NewStateAccess(latestState).GetCounter()
@@ -185,26 +186,25 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 					require.NoError(t, err)
 					require.GreaterOrEqual(t, incCount, inccounter.NewStateAccess(st).GetCounter())
 				*/
-				break
+				return true
 			}
-			time.Sleep(100 * time.Millisecond)
 
-			if reliable {
-				continue
+			if !reliable {
+				//
+				// For the unreliable-network tests we have to retry the requests.
+				// That's because the gossip in the mempool is primitive for now.
+				for ii := range incCount {
+					scRequest := isc.NewOffLedgerRequest(
+						te.chainID,
+						inccounter.FuncIncCounter.Message(nil),
+						uint64(ii),
+						20000,
+					).Sign(scClient)
+					te.nodes[0].ReceiveOffLedgerRequest(scRequest, scClient.GetPublicKey())
+				}
 			}
-			//
-			// For the unreliable-network tests we have to retry the requests.
-			// That's because the gossip in the mempool is primitive for now.
-			for ii := range incCount {
-				scRequest := isc.NewOffLedgerRequest(
-					te.chainID,
-					inccounter.FuncIncCounter.Message(nil),
-					uint64(ii),
-					20000,
-				).Sign(scClient)
-				te.nodes[0].ReceiveOffLedgerRequest(scRequest, scClient.GetPublicKey())
-			}
-		}
+			return false
+		}, timeUntilContextDeadline(ctxTimeout), 100*time.Millisecond, "counter did not reach expected value for node %v", i)
 		// Check if LastAnchor() works as expected.
 		awaitPredicate(te, ctxTimeout, "LatestAnchor", func() bool {
 			confirmedAnchor, err := node.LatestAnchor(chain.ConfirmedState)
@@ -253,19 +253,26 @@ func awaitRequestsProcessed(ctx context.Context, te *testEnv, requests []isc.Req
 }
 
 func awaitPredicate(te *testEnv, ctx context.Context, desc string, predicate func() bool) {
-	for {
-		select {
-		case <-ctx.Done():
-			require.FailNowf(te.t, "awaitPredicate failed: %s", desc)
-		default:
-			if predicate() {
-				te.log.LogDebugf("Predicate %v become true.", desc)
-				return
-			}
-			te.log.LogDebugf("Predicate %v still false, will retry.", desc)
-			time.Sleep(100 * time.Millisecond)
+	require.Eventually(te.t, func() bool {
+		if predicate() {
+			te.log.LogDebugf("Predicate %v become true.", desc)
+			return true
 		}
+		te.log.LogDebugf("Predicate %v still false, will retry.", desc)
+		return false
+	}, timeUntilContextDeadline(ctx), 10*time.Millisecond, "awaitPredicate failed: %s", desc)
+}
+
+// timeUntilContextDeadline returns the remaining time until the context deadline,
+// or a default duration if the context has no deadline.
+func timeUntilContextDeadline(ctx context.Context) time.Duration {
+	if deadline, ok := ctx.Deadline(); ok {
+		if d := time.Until(deadline); d > 0 {
+			return d
+		}
+		return time.Millisecond
 	}
+	return 2 * time.Second
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -337,9 +344,12 @@ func (tnc *testNodeConn) PublishTX(
 		return err
 	}
 
-	time.Sleep(1 * time.Second)
-
-	resTxBlock, err := tnc.l1Client.GetTransactionBlock(ctx, *iotago.MustNewDigest(res.ExecuteTransactionBlock.Effects.TransactionBlock.Digest))
+	digest := *iotago.MustNewDigest(res.ExecuteTransactionBlock.Effects.TransactionBlock.Digest)
+	var resTxBlock *graphqltypes.GetTransactionBlockResponse
+	require.Eventually(tnc.t, func() bool {
+		resTxBlock, err = tnc.l1Client.GetTransactionBlock(ctx, digest)
+		return err == nil
+	}, 15*time.Second, 200*time.Millisecond, "GetTransactionBlock timed out after tx execution")
 	if err != nil {
 		tnc.t.Logf("GetTransactionBlock, err=%v", err)
 		return err
@@ -518,7 +528,7 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 	te.committeeAddress, dkShareProviders = testpeers.SetupDistributedKeyGenerationTrivial(t, n, f, te.peerIdentities, nil)
 	te.committeeSigner = testpeers.NewTestDistributedSignatureSigner(te.committeeAddress, dkShareProviders, gpa.MakeTestNodeIDs(n), te.peerIdentities, te.log)
 
-	require.NoError(t, node.L1Client().RequestFundsFromFaucet(context.Background(), *te.committeeSigner.Address().AsIotaAddress()))
+	require.NoError(t, node.L1Client().RequestFundsFromFaucet(context.Background(), te.committeeSigner.Address().AsIotaAddress()))
 	iotatest.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(te.committeeSigner), node.L1Client(), isc.GasCoinTargetValue*10)
 
 	iscPackageID := node.ISCPackageID()

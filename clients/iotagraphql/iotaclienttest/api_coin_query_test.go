@@ -16,7 +16,7 @@ func TestGetAllBalances(t *testing.T) {
 	client := l1starter.Instance().L1Client()
 	owner := l1starter.ISCPackageOwner.Address()
 
-	balances, err := client.GetAllBalances(context.Background(), *owner)
+	balances, err := client.GetAllBalances(context.Background(), owner)
 	require.NoError(t, err)
 	require.NotEmpty(t, balances)
 
@@ -38,7 +38,7 @@ func TestGetAllCoins(t *testing.T) {
 	client := iotagraphql.NewGraphQLClientWithTimeout(graphqlURL, faucetURL, 90*time.Second, nil)
 
 	limit := int(3)
-	respWithLimit, err := client.GetAllCoins(context.Background(), iotagraphql.GetAllCoinsRequest{
+	respWithLimit, err := client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{
 		Owner: owner,
 		Limit: limit,
 	})
@@ -47,7 +47,7 @@ func TestGetAllCoins(t *testing.T) {
 	require.LessOrEqual(t, len(respWithLimit.Address.Coins.Nodes), limit)
 	require.NotEmpty(t, respWithLimit.Address.Coins.PageInfo.EndCursor)
 
-	respNoLimit, err := client.GetAllCoins(context.Background(), iotagraphql.GetAllCoinsRequest{
+	respNoLimit, err := client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{
 		Owner: owner,
 	})
 	require.NoError(t, err)

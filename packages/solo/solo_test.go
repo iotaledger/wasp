@@ -91,8 +91,9 @@ func TestDryRunForRequest(t *testing.T) {
 
 	tx := req.Finish()
 
+	senderAddr := sender.Address().AsIotaAddress()
 	txData := iotago.NewProgrammable(
-		sender.Address().AsIotaAddress(),
+		&senderAddr,
 		tx,
 		[]*iotago.ObjectRef{},
 		2*iotagraphql.DefaultGasBudget,

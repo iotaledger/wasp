@@ -82,7 +82,7 @@ type CreateAndSendRequestWithAssetsRequest struct {
 func (c *Client) selectProperGasCoinAndBalance(ctx context.Context, req *CreateAndSendRequestWithAssetsRequest) (iotagraphql.Coins, uint64, error) {
 	iotaBalance := req.Assets.BaseToken()
 
-	coinOptions, err := c.GetCoinObjsForTargetAmount(ctx, *req.Signer.Address().AsIotaAddress(), iotaBalance.Uint64(), iotagraphql.DefaultGasBudget)
+	coinOptions, err := c.GetCoinObjsForTargetAmount(ctx, req.Signer.Address().AsIotaAddress(), iotaBalance.Uint64(), iotagraphql.DefaultGasBudget)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -386,7 +386,7 @@ func (c *Client) pullRequests(ctx context.Context, packageID iotago.Address, anc
 		remaining := maxAmountOfRequests - len(pulledRequests)
 		pageSize := min(remaining, graphQLMaxPageSize)
 		objs, err := c.GetOwnedObjects(ctx, iotagraphql.GetOwnedObjectsRequest{
-			Address: anchorAddress,
+			Address: *anchorAddress,
 			Filter:  filter,
 			Limit:   &pageSize,
 			Cursor:  cursor,

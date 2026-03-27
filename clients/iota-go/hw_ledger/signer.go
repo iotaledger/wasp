@@ -21,13 +21,13 @@ func NewLedgerSigner(device *HWLedger, bip32Path string, askForPublicKeyConfirma
 	}
 }
 
-func (s *Signer) Address() *iotago.Address {
+func (s *Signer) Address() iotago.Address {
 	pubKey, err := s.device.GetPublicKey(s.bip32Path, s.askForPublicKeyConfirmation)
 	if err != nil {
 		panic(err)
 	}
 
-	return iotago.AddressFromArray(pubKey.Address)
+	return *iotago.AddressFromArray(pubKey.Address)
 }
 
 func (s *Signer) Sign(msg []byte) (signature *iotasigner.Signature, err error) {

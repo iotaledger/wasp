@@ -74,7 +74,7 @@ func initChain(chainCreator *cryptolib.KeyPair, store state.Store) *isc.StateAnc
 			Version:  0,
 		},
 		Object: &anchor,
-		Owner:  chainCreator.Address().AsIotaAddress(),
+		Owner:  lo.ToPtr(chainCreator.Address().AsIotaAddress()),
 	}, iotago.ObjectID{})
 
 	return &stateAnchor

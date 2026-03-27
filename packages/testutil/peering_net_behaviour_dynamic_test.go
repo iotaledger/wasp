@@ -4,6 +4,7 @@
 package testutil // not `..._test` because it uses peeringMsg.
 
 import (
+	"math"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -63,18 +64,15 @@ func TestPeeringNetDynamicUnreliable(t *testing.T) {
 	for i := 0; i < 1000; i++ {
 		sendMessage(&someNode, inCh)
 	}
-	time.Sleep(500 * time.Millisecond)
 	//
 	// Validate the results (with some tolerance for randomness).
-	{ // 50% of messages dropped + 50% duplicated -> delivered ~75%
-		require.Greater(t, recvLoop.ReceivedCount(), 500)
-		require.Less(t, recvLoop.ReceivedCount(), 900)
-	}
-	{ // Average should be between the specified boundaries.
-		avgDuration := recvLoop.AverageDuration()
-		require.Greater(t, avgDuration, int64(50))
-		require.Less(t, avgDuration, int64(100))
-	}
+	// 50% of messages dropped + 50% duplicated -> delivered ~75%
+	// Average should be between the specified boundaries.
+	require.Eventually(t, func() bool {
+		count := recvLoop.ReceivedCount()
+		avgDur := recvLoop.AverageDuration()
+		return count > 500 && count < 900 && avgDur > 50 && avgDur < 100
+	}, 5*time.Second, 10*time.Millisecond)
 	//
 	// Stop the test.
 	recvLoop.Stop()
@@ -98,9 +96,9 @@ func TestPeeringNetDynamicChanging(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		sendMessage(&someNode, inCh)
 	}
-	time.Sleep(100 * time.Millisecond)
-	require.Equal(t, 100, recvLoop.ReceivedCount())
-	require.Less(t, recvLoop.AverageDuration(), int64(20))
+	require.Eventually(t, func() bool {
+		return recvLoop.ReceivedCount() == 100 && recvLoop.AverageDuration() < int64(20)
+	}, 5*time.Second, 10*time.Millisecond, "expected 100 messages with avg duration < 20ms")
 	recvLoop.Reset()
 
 	deliver40Name := "Deliver40"
@@ -109,9 +107,9 @@ func TestPeeringNetDynamicChanging(t *testing.T) {
 	for i := 0; i < 1000; i++ {
 		sendMessage(&someNode, inCh)
 	}
-	time.Sleep(100 * time.Millisecond)
-	require.InDelta(t, 280, recvLoop.ReceivedCount(), 90)
-	require.Less(t, recvLoop.AverageDuration(), int64(20))
+	require.Eventually(t, func() bool {
+		return math.Abs(float64(recvLoop.ReceivedCount())-280) <= 90 && recvLoop.AverageDuration() < int64(20)
+	}, 5*time.Second, 10*time.Millisecond, "expected ~280 messages (±90) with avg duration < 20ms")
 	recvLoop.Reset()
 
 	delayName := "Delay"
@@ -119,27 +117,30 @@ func TestPeeringNetDynamicChanging(t *testing.T) {
 	for i := 0; i < 1000; i++ {
 		sendMessage(&someNode, inCh)
 	}
-	time.Sleep(150 * time.Millisecond)
-	require.InDelta(t, 280, recvLoop.ReceivedCount(), 90)
-	require.InDelta(t, 45, recvLoop.AverageDuration(), 20)
+	require.Eventually(t, func() bool {
+		return math.Abs(float64(recvLoop.ReceivedCount())-280) <= 90 && math.Abs(float64(recvLoop.AverageDuration())-45) <= 20
+	}, 5*time.Second, 10*time.Millisecond, "expected ~280 messages (±90) with avg duration ~45ms (±20ms)")
 	recvLoop.Reset()
 
 	behavior.RemoveHandler(deliver40Name) // 70% delivery probability and 20-70 ms delay
 	for i := 0; i < 1000; i++ {
 		sendMessage(&someNode, inCh)
 	}
-	time.Sleep(150 * time.Millisecond)
-	require.InDelta(t, 700, recvLoop.ReceivedCount(), 90)
-	require.InDelta(t, 45, recvLoop.AverageDuration(), 20)
-	recvLoop.Reset()
+	require.Eventually(t, func() bool {
+		return math.Abs(float64(recvLoop.ReceivedCount())-700) <= 90 && math.Abs(float64(recvLoop.AverageDuration())-45) <= 20
+	}, 5*time.Second, 10*time.Millisecond, "expected ~700 messages (±90) with avg duration ~45ms (±20ms)")
 
 	behavior.RemoveHandler(delayName) // 70% delivery probability without a delay
+	// Let any in-flight delayed messages from the previous batch drain before
+	// resetting stats, so they don't pollute the next section's average duration.
+	time.Sleep(100 * time.Millisecond)
+	recvLoop.Reset()
 	for i := 0; i < 1000; i++ {
 		sendMessage(&someNode, inCh)
 	}
-	time.Sleep(100 * time.Millisecond)
-	require.InDelta(t, 700, recvLoop.ReceivedCount(), 90)
-	require.Less(t, recvLoop.AverageDuration(), int64(20))
+	require.Eventually(t, func() bool {
+		return math.Abs(float64(recvLoop.ReceivedCount())-700) <= 90 && recvLoop.AverageDuration() < int64(20)
+	}, 5*time.Second, 10*time.Millisecond, "expected ~700 messages (±90) with avg duration < 20ms")
 	recvLoop.Reset()
 
 	// Stop the test.
@@ -161,9 +162,9 @@ func TestPeeringNetDynamicLosingChannel(t *testing.T) {
 	for i := 0; i < 1000; i++ {
 		sendMessage(&someNode, inCh)
 	}
-	time.Sleep(100 * time.Millisecond)
-	require.InDelta(t, 500, recvLoop.ReceivedCount(), 90)
-	require.Less(t, recvLoop.AverageDuration(), int64(20))
+	require.Eventually(t, func() bool {
+		return math.Abs(float64(recvLoop.ReceivedCount())-500) <= 90 && recvLoop.AverageDuration() < int64(20)
+	}, 5*time.Second, 10*time.Millisecond, "expected ~500 messages (±90) with avg duration < 20ms")
 
 	// Stop the test.
 	recvLoop.Stop()
@@ -187,9 +188,9 @@ func TestPeeringNetDynamicRepeatingChannel(t *testing.T) {
 	for i := 0; i < 1000; i++ {
 		sendMessage(&someNode, inCh)
 	}
-	time.Sleep(100 * time.Millisecond)
-	require.InDelta(t, 2500, recvLoop.ReceivedCount(), 90)
-	require.Less(t, recvLoop.AverageDuration(), int64(20))
+	require.Eventually(t, func() bool {
+		return math.Abs(float64(recvLoop.ReceivedCount())-2500) <= 90 && recvLoop.AverageDuration() < int64(20)
+	}, 5*time.Second, 10*time.Millisecond, "expected ~2500 messages (±90) with avg duration < 20ms")
 
 	// Stop the test.
 	recvLoop.Stop()
@@ -213,9 +214,9 @@ func TestPeeringNetDynamicDelayingChannel(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		sendMessage(&someNode, inCh)
 	}
-	time.Sleep(100 * time.Millisecond)
-	require.Equal(t, 100, recvLoop.ReceivedCount())
-	require.InDelta(t, 50, recvLoop.AverageDuration(), 20)
+	require.Eventually(t, func() bool {
+		return recvLoop.ReceivedCount() == 100 && math.Abs(float64(recvLoop.AverageDuration())-50) <= 20
+	}, 5*time.Second, 10*time.Millisecond, "expected 100 messages with avg duration ~50ms (±20ms)")
 
 	// Stop the test.
 	recvLoop.Stop()
@@ -247,10 +248,9 @@ func TestPeeringNetDynamicPeerDisconnected(t *testing.T) {
 		sendMessage(&connectedNode, inChD)   // Won't be received - destination is disconnected
 		sendMessage(&disconnectedNode, inCh) // Won't be received - source is disconnected
 	}
-	time.Sleep(100 * time.Millisecond)
-	require.Equal(t, 100, recvLoop.ReceivedCount())
-	require.Less(t, recvLoop.AverageDuration(), int64(20))
-	require.Equal(t, 0, recvLoopD.ReceivedCount())
+	require.Eventually(t, func() bool {
+		return recvLoop.ReceivedCount() == 100 && recvLoop.AverageDuration() < int64(20) && recvLoopD.ReceivedCount() == 0
+	}, 5*time.Second, 10*time.Millisecond, "expected 100 messages on connected node and 0 on disconnected node with avg duration < 20ms")
 
 	// Stop the test.
 	recvLoop.Stop()

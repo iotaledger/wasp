@@ -22,7 +22,7 @@ func TryMergeAllCoins(ctx context.Context) error {
 	client := cliclients.L1Client()
 	w := wallet.Load()
 
-	coins, err := client.GetAllCoins(ctx, iotagraphql.GetAllCoinsRequest{
+	coins, err := client.GetCoins(ctx, iotagraphql.GetCoinsRequest{
 		Owner: w.Address().AsIotaAddress(),
 	})
 	if err != nil {
@@ -112,8 +112,9 @@ func TryManageCoinsAmount(ctx context.Context) {
 	pt := ptb.Finish()
 	gasRef, err := coins[0].ObjectRef()
 	log.Check(err)
+	wAddr := w.Address().AsIotaAddress()
 	tx := iotago.NewProgrammable(
-		w.Address().AsIotaAddress(),
+		&wAddr,
 		pt,
 		[]*iotago.ObjectRef{gasRef},
 		iotagraphql.DefaultGasBudget,
@@ -153,7 +154,7 @@ func mergeCoinsAndExecute(
 	)
 	pt := ptb.Finish()
 
-	gasCoins, err := client.GetCoinObjsForTargetAmount(ctx, *owner.Address(), iotagraphql.DefaultGasPrice, gasBudget)
+	gasCoins, err := client.GetCoinObjsForTargetAmount(ctx, owner.Address(), iotagraphql.DefaultGasPrice, gasBudget)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find gas payment: %w", err)
 	}
@@ -174,8 +175,9 @@ func mergeCoinsAndExecute(
 		return nil, fmt.Errorf("failed to get coin refs: %w", err)
 	}
 
+	ownerAddr := owner.Address()
 	tx := iotago.NewProgrammable(
-		owner.Address(),
+		&ownerAddr,
 		pt,
 		coinRefs,
 		gasBudget,
