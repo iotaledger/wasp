@@ -77,7 +77,8 @@ func New(
 	longTermSecretShare tcrypto.SecretShare,
 	log log.Logger,
 ) *DSS {
-	d := &DSS{suite: suite,
+	d := &DSS{
+		suite:                    suite,
 		withWrappers:             nil, // Set bellow.
 		me:                       me,
 		mySK:                     mySK,
