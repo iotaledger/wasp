@@ -14,7 +14,7 @@ const (
 	msgTypeWrapped
 )
 
-func (d *DistributedSignature) msgWrapperFunc(subsystem byte, index int) (gpa.GPA, error) {
+func (d *DSS) msgWrapperFunc(subsystem byte, index int) (gpa.GPA, error) {
 	if subsystem == subsystemDKG {
 		if index != 0 {
 			return nil, fmt.Errorf("unexpected DKG index: %v", index)
@@ -24,7 +24,7 @@ func (d *DistributedSignature) msgWrapperFunc(subsystem byte, index int) (gpa.GP
 	return nil, fmt.Errorf("unexpected subsystem: %v", subsystem)
 }
 
-func (d *DistributedSignature) UnmarshalMessage(data []byte) (gpa.Message, error) {
+func (d *DSS) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	return gpa.UnmarshalMessage(data, gpa.Mapper{
 		msgTypePartialSig: func() gpa.Message { return &msgPartialSig{suite: d.suite} },
 	}, gpa.Fallback{

@@ -10,7 +10,6 @@ import (
 
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
-	"github.com/iotaledger/wasp/v2/packages/chain/distsign"
 	"github.com/iotaledger/wasp/v2/packages/chain/dss"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
@@ -25,7 +24,7 @@ type testDssSigner struct {
 	log      log.Logger
 }
 
-func NewTestDistributedSignatureSigner(
+func NewTestDSSSigner(
 	addr *cryptolib.Address,
 	reg []registry.DKShareRegistry,
 	nodeIDs []gpa.NodeID,
@@ -60,12 +59,12 @@ func (sig *testDssSigner) Sign(messageToSign []byte) (*cryptolib.Signature, erro
 
 	//
 	// Setup nodes.
-	dsss := map[gpa.NodeID]*distsign.DistributedSignature{}
+	dsss := map[gpa.NodeID]*dss.DSS{}
 	gpas := map[gpa.NodeID]gpa.GPA{}
 	for idx, nid := range sig.nodeIDs {
 		dks := sig.dkShares[idx]
 		privKey := lo.Must(sig.nodeKeys[idx].GetPrivateKey().AsKyberKeyPair()).Private
-		dsss[nid] = distsign.New(edSuite, sig.nodeIDs, nodePKs, f, nid, privKey, dks.DSS(), sig.log)
+		dsss[nid] = dss.New(edSuite, sig.nodeIDs, nodePKs, f, nid, privKey, dks.DSS(), sig.log)
 		gpas[nid] = dsss[nid].AsGPA()
 	}
 	tc := gpa.NewTestContext(gpas)

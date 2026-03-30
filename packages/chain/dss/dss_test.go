@@ -13,7 +13,6 @@ import (
 
 	"github.com/iotaledger/hive.go/log"
 
-	"github.com/iotaledger/wasp/v2/packages/chain/distsign"
 	"github.com/iotaledger/wasp/v2/packages/chain/dss"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/gpa/adkg"
@@ -40,10 +39,10 @@ func TestBasic(t *testing.T) {
 
 		//
 		// Setup nodes.
-		dsss := map[gpa.NodeID]*distsign.DistributedSignature{}
+		dsss := map[gpa.NodeID]*dss.DSS{}
 		gpas := map[gpa.NodeID]gpa.GPA{}
 		for _, nid := range nodeIDs {
-			dsss[nid] = distsign.New(suite, nodeIDs, nodePKs, f, nid, nodeSKs[nid], longTermSecretShares[nid], log)
+			dsss[nid] = dss.New(suite, nodeIDs, nodePKs, f, nid, nodeSKs[nid], longTermSecretShares[nid], log)
 			gpas[nid] = dsss[nid].AsGPA()
 		}
 		tc := gpa.NewTestContext(gpas)

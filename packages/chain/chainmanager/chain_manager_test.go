@@ -71,7 +71,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	t.Logf("Committee addressB: %v", committeeAddrB)
 	//
 	// Chain identifiers.
-	committeeAddrASigner := testpeers.NewTestDistributedSignatureSigner(committeeAddrA, dkRegs, nodeIDs, peerIdentities, log)
+	committeeAddrASigner := testpeers.NewTestDSSSigner(committeeAddrA, dkRegs, nodeIDs, peerIdentities, log)
 	tcl := newTestChainLedger(t, committeeAddrASigner)
 	anchor, deposit := tcl.MakeTxChainOrigin()
 	//
