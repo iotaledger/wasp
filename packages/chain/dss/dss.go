@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// Package distsign runs a NonceDKG and signs the supplied hash.
+// Package dss runs a NonceDKG and signs the supplied hash.
 //
 // This is a simplified implementation.
 // Later the DKG part can be run in advance, while waiting for transactions.
@@ -20,7 +20,7 @@
 // TODO: Make sure no two signatures are ever produced by the nonce-dkg for the same
 //
 //	base TX. That would reveal the permanent private key of the committee.
-package distsign
+package dss
 
 import (
 	"fmt"
@@ -77,8 +77,7 @@ func New(
 	longTermSecretShare tcrypto.SecretShare,
 	log log.Logger,
 ) *DistributedSignature {
-	d := &DistributedSignature{
-		suite:                      suite,
+	d := &DistributedSignature{suite: suite,
 		withWrappers:               nil, // Set bellow.
 		me:                         me,
 		mySK:                       mySK,

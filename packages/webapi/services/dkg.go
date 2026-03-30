@@ -75,10 +75,10 @@ func (d *DKGService) createDKModel(dkShare tcrypto.DKShare) (*models.DKSharesInf
 		return nil, err
 	}
 
-	distributesSignaturePublicShares := dkShare.DSSPublicShares()
-	pubKeySharesHex := make([]string, len(distributesSignaturePublicShares))
-	for i := range distributesSignaturePublicShares {
-		publicKeyShare, err := distributesSignaturePublicShares[i].MarshalBinary()
+	dssPublicShares := dkShare.DSSPublicShares()
+	pubKeySharesHex := make([]string, len(dssPublicShares))
+	for i := range dssPublicShares {
+		publicKeyShare, err := dssPublicShares[i].MarshalBinary()
 		if err != nil {
 			return nil, err
 		}
