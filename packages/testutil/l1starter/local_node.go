@@ -61,7 +61,7 @@ func (in *LocalIotaNode) start(ctx context.Context) {
 		ExposedPorts:  []string{"9000/tcp", "9123/tcp"},
 		WaitingFor:    portWaiter,
 		Cmd: []string{
-			"iota-localnode",
+			"iota-localnet",
 			"start",
 			"--force-regenesis",
 			"--with-faucet",
