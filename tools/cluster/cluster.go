@@ -210,19 +210,19 @@ func (clu *Cluster) DeployDefaultChain() (*Chain, error) {
 	if quorum < minQuorum {
 		quorum = minQuorum
 	}
-	return clu.DeployChainWithDistKeyGen(committee, committee, uint16(quorum))
+	return clu.DeployChainWithDKG(committee, committee, uint16(quorum))
 }
 
-func (clu *Cluster) InitDistributedKeyGeneration(committeeNodeCount int) ([]int, *cryptolib.Address, error) {
+func (clu *Cluster) InitDKG(committeeNodeCount int) ([]int, *cryptolib.Address, error) {
 	cmt := util.MakeRange(0, committeeNodeCount-1) // End is inclusive for some reason.
 	quorum := uint16((2*len(cmt))/3 + 1)
 
-	address, err := clu.RunDistributedKeyGeneration(cmt, quorum)
+	address, err := clu.RunDKG(cmt, quorum)
 
 	return cmt, address, err
 }
 
-func (clu *Cluster) RunDistributedKeyGeneration(committeeNodes []int, threshold uint16, timeout ...time.Duration) (*cryptolib.Address, error) {
+func (clu *Cluster) RunDKG(committeeNodes []int, threshold uint16, timeout ...time.Duration) (*cryptolib.Address, error) {
 	var addr *cryptolib.Address
 	var err error
 	err = Retry(func() error {
@@ -230,7 +230,6 @@ func (clu *Cluster) RunDistributedKeyGeneration(committeeNodes []int, threshold 
 			threshold = (uint16(len(committeeNodes))*2)/3 + 1
 		}
 		apiHosts := clu.Config.APIHosts(committeeNodes)
-
 		peerPubKeys := make([]string, 0)
 		for _, i := range committeeNodes {
 			//nolint:bodyclose // false positive
@@ -245,7 +244,7 @@ func (clu *Cluster) RunDistributedKeyGeneration(committeeNodes []int, threshold 
 		distKeyGenInitiatorIndex := rand.Intn(len(apiHosts))
 		client := clu.WaspClientFromHostName(apiHosts[distKeyGenInitiatorIndex])
 
-		addr, err = apilib.RunDistributedKeyGeneration(context.Background(), client, peerPubKeys, threshold, timeout...)
+		addr, err = apilib.RunDKG(context.Background(), client, peerPubKeys, threshold, timeout...)
 		return err
 	}, 5)
 
@@ -256,8 +255,8 @@ func (clu *Cluster) RunDistributedKeyGeneration(committeeNodes []int, threshold 
 	return addr, nil
 }
 
-func (clu *Cluster) DeployChainWithDistKeyGen(allPeers, committeeNodes []int, quorum uint16, blockKeepAmount ...int32) (*Chain, error) {
-	stateAddr, err := clu.RunDistributedKeyGeneration(committeeNodes, quorum)
+func (clu *Cluster) DeployChainWithDKG(allPeers, committeeNodes []int, quorum uint16, blockKeepAmount ...int32) (*Chain, error) {
+	stateAddr, err := clu.RunDKG(committeeNodes, quorum)
 	if err != nil {
 		return nil, err
 	}

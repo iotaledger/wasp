@@ -63,8 +63,8 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	for i, pid := range peerIdentities {
 		nodeIDs[i] = gpa.NodeIDFromPublicKey(pid.GetPublicKey())
 	}
-	committeeAddrA, dkRegs := testpeers.SetupDistributedKeyGenerationTrivial(t, n, f, peerIdentities, nil)
-	committeeAddrB, dkRegs := testpeers.SetupDistributedKeyGenerationTrivial(t, n, f, peerIdentities, dkRegs)
+	committeeAddrA, dkRegs := testpeers.SetupDkgTrivial(t, n, f, peerIdentities, nil)
+	committeeAddrB, dkRegs := testpeers.SetupDkgTrivial(t, n, f, peerIdentities, dkRegs)
 	require.NotNil(t, committeeAddrA)
 	require.NotNil(t, committeeAddrB)
 	t.Logf("Committee addressA: %v", committeeAddrA)

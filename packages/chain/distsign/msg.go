@@ -15,11 +15,11 @@ const (
 )
 
 func (d *DistributedSignature) msgWrapperFunc(subsystem byte, index int) (gpa.GPA, error) {
-	if subsystem == subsystemDistributedKeyGeneration {
+	if subsystem == subsystemDKG {
 		if index != 0 {
 			return nil, fmt.Errorf("unexpected DKG index: %v", index)
 		}
-		return d.distributedKeyGen, nil
+		return d.dkg, nil
 	}
 	return nil, fmt.Errorf("unexpected subsystem: %v", subsystem)
 }

@@ -33,7 +33,7 @@ import (
 	"github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/v2/packages/gpa"
-	"github.com/iotaledger/wasp/v2/packages/gpa/asyncdistkeygen/nonce"
+	"github.com/iotaledger/wasp/v2/packages/gpa/adkg/nonce"
 	"github.com/iotaledger/wasp/v2/packages/tcrypto"
 )
 
@@ -43,28 +43,28 @@ type Output struct {
 }
 
 const (
-	subsystemDistributedKeyGeneration byte = iota
+	subsystemDKG byte = iota
 )
 
 type DistributedSignature struct {
-	suite                           suites.Suite
-	withWrappers                    gpa.GPA // This instance, with all the wrappers.
-	me                              gpa.NodeID
-	mySK                            kyber.Scalar
-	nodeIDs                         []gpa.NodeID
-	nodePKs                         map[gpa.NodeID]kyber.Point
-	f                               int
-	longTermSecretShare             tcrypto.SecretShare
-	distributedKeyGen               gpa.GPA
-	distKeyGenOutIndexes            []int                // Intermediate DKG output.
-	distKeyGenDecidedIndexProposals map[gpa.NodeID][]int // ACS decision.
-	distKeyGenOutNonce              dss.DistKeyShare     // Final DKG output.
-	messageToSign                   []byte
-	distSignPartialSigBuffer        *shrinkingmap.ShrinkingMap[gpa.NodeID, *dss.PartialSig] // Accumulate early partial signatures
-	distributedSignatureSigner      *dss.DSS
-	signature                       []byte // The output.
-	msgWrapper                      *gpa.MsgWrapper
-	log                             log.Logger
+	suite                      suites.Suite
+	withWrappers               gpa.GPA // This instance, with all the wrappers.
+	me                         gpa.NodeID
+	mySK                       kyber.Scalar
+	nodeIDs                    []gpa.NodeID
+	nodePKs                    map[gpa.NodeID]kyber.Point
+	f                          int
+	longTermSecretShare        tcrypto.SecretShare
+	dkg                        gpa.GPA
+	dkgOutIndexes              []int                // Intermediate DKG output.
+	dkgDecidedIndexProposals   map[gpa.NodeID][]int // ACS decision.
+	dkgOutNonce                dss.DistKeyShare     // Final DKG output.
+	messageToSign              []byte
+	distSignPartialSigBuffer   *shrinkingmap.ShrinkingMap[gpa.NodeID, *dss.PartialSig] // Accumulate early partial signatures
+	distributedSignatureSigner *dss.DSS
+	signature                  []byte // The output.
+	msgWrapper                 *gpa.MsgWrapper
+	log                        log.Logger
 }
 
 func New(
@@ -78,22 +78,22 @@ func New(
 	log log.Logger,
 ) *DistributedSignature {
 	d := &DistributedSignature{
-		suite:                           suite,
-		withWrappers:                    nil, // Set bellow.
-		me:                              me,
-		mySK:                            mySK,
-		nodeIDs:                         nodeIDs,
-		nodePKs:                         nodePKs,
-		f:                               f,
-		longTermSecretShare:             longTermSecretShare,
-		distributedKeyGen:               nonce.New(suite, nodeIDs, nodePKs, f, me, mySK, log),
-		distKeyGenOutIndexes:            nil, // To be decided.
-		distKeyGenDecidedIndexProposals: nil, // To be received.
-		distKeyGenOutNonce:              nil, // To be decided.
-		messageToSign:                   nil, // Will be received later.
-		distSignPartialSigBuffer:        shrinkingmap.New[gpa.NodeID, *dss.PartialSig](),
-		distributedSignatureSigner:      nil, // Will be created when indexProposals and message to sign will be created.
-		log:                             log,
+		suite:                      suite,
+		withWrappers:               nil, // Set bellow.
+		me:                         me,
+		mySK:                       mySK,
+		nodeIDs:                    nodeIDs,
+		nodePKs:                    nodePKs,
+		f:                          f,
+		longTermSecretShare:        longTermSecretShare,
+		dkg:                        nonce.New(suite, nodeIDs, nodePKs, f, me, mySK, log),
+		dkgOutIndexes:              nil, // To be decided.
+		dkgDecidedIndexProposals:   nil, // To be received.
+		dkgOutNonce:                nil, // To be decided.
+		messageToSign:              nil, // Will be received later.
+		distSignPartialSigBuffer:   shrinkingmap.New[gpa.NodeID, *dss.PartialSig](),
+		distributedSignatureSigner: nil, // Will be created when indexProposals and message to sign will be created.
+		log:                        log,
 	}
 	d.msgWrapper = gpa.NewMsgWrapper(msgTypeWrapped, d.msgWrapperFunc)
 	d.withWrappers = gpa.NewOwnHandler(me, d)
@@ -110,8 +110,8 @@ func (d *DistributedSignature) Input(input gpa.Input) gpa.OutMessages {
 	d.log.LogDebugf("Input %+v", input)
 	switch input := input.(type) {
 	case *inputStart:
-		msgs := d.msgWrapper.WrapMessages(subsystemDistributedKeyGeneration, 0, d.distributedKeyGen.Input(nonce.NewInputStart()))
-		return d.tryHandleDistributedKeyGenerationOutput(msgs)
+		msgs := d.msgWrapper.WrapMessages(subsystemDKG, 0, d.dkg.Input(nonce.NewInputStart()))
+		return d.tryHandleDkgOutput(msgs)
 	case *inputDecided:
 		return d.handleDecided(input)
 	}
@@ -125,9 +125,9 @@ func (d *DistributedSignature) Message(msg gpa.Message) gpa.OutMessages {
 		d.log.LogDebugf("Message %+v", msg)
 		return d.handlePartialSig(msgT)
 	case *gpa.WrappingMsg:
-		if msgT.Subsystem() == subsystemDistributedKeyGeneration && msgT.Index() == 0 {
-			msgs := d.msgWrapper.WrapMessages(subsystemDistributedKeyGeneration, 0, d.distributedKeyGen.Message(msgT.Wrapped()))
-			return d.tryHandleDistributedKeyGenerationOutput(msgs)
+		if msgT.Subsystem() == subsystemDKG && msgT.Index() == 0 {
+			msgs := d.msgWrapper.WrapMessages(subsystemDKG, 0, d.dkg.Message(msgT.Wrapped()))
+			return d.tryHandleDkgOutput(msgs)
 		}
 		d.log.LogWarnf("unknown wrapped message %+v, wrapped %T: %v", msgT, msgT.Wrapped(), msgT.Wrapped())
 		return nil
@@ -138,30 +138,30 @@ func (d *DistributedSignature) Message(msg gpa.Message) gpa.OutMessages {
 
 // Output provides the output, if any.
 func (d *DistributedSignature) Output() gpa.Output {
-	if d.distKeyGenOutIndexes == nil && d.signature == nil {
+	if d.dkgOutIndexes == nil && d.signature == nil {
 		return nil
 	}
 	return &Output{
-		ProposedIndexes: d.distKeyGenOutIndexes,
+		ProposedIndexes: d.dkgOutIndexes,
 		Signature:       d.signature,
 	}
 }
 
-func (d *DistributedSignature) tryHandleDistributedKeyGenerationOutput(msgs gpa.OutMessages) gpa.OutMessages {
-	distKeyGenOut := d.distributedKeyGen.Output()
-	if d.distKeyGenOutIndexes == nil && distKeyGenOut != nil && distKeyGenOut.(*nonce.Output).Indexes != nil {
-		d.distKeyGenOutIndexes = distKeyGenOut.(*nonce.Output).Indexes
+func (d *DistributedSignature) tryHandleDkgOutput(msgs gpa.OutMessages) gpa.OutMessages {
+	dkgOut := d.dkg.Output()
+	if d.dkgOutIndexes == nil && dkgOut != nil && dkgOut.(*nonce.Output).Indexes != nil {
+		d.dkgOutIndexes = dkgOut.(*nonce.Output).Indexes
 	}
-	if d.distKeyGenOutNonce == nil && distKeyGenOut != nil && distKeyGenOut.(*nonce.Output).PriShare != nil {
-		d.distKeyGenOutNonce = tcrypto.NewDistKeyShare(
-			distKeyGenOut.(*nonce.Output).PriShare,
-			distKeyGenOut.(*nonce.Output).Commits,
+	if d.dkgOutNonce == nil && dkgOut != nil && dkgOut.(*nonce.Output).PriShare != nil {
+		d.dkgOutNonce = tcrypto.NewDistKeyShare(
+			dkgOut.(*nonce.Output).PriShare,
+			dkgOut.(*nonce.Output).Commits,
 			len(d.nodeIDs),
-			distKeyGenOut.(*nonce.Output).Threshold,
+			dkgOut.(*nonce.Output).Threshold,
 		)
 		//
 		// Create a partial signature.
-		dssSigner, err := dss.NewDSS(d.suite, d.mySK, d.nodePKArray(), d.longTermSecretShare, d.distKeyGenOutNonce, d.messageToSign, d.longTermSecretShare.Threshold())
+		dssSigner, err := dss.NewDSS(d.suite, d.mySK, d.nodePKArray(), d.longTermSecretShare, d.dkgOutNonce, d.messageToSign, d.longTermSecretShare.Threshold())
 		if err != nil {
 			d.log.LogError("Failed to create DSS Signer: %v", err)
 			return msgs
@@ -248,16 +248,16 @@ func (d *DistributedSignature) handlePartialSig(msg *msgPartialSig) gpa.OutMessa
 }
 
 func (d *DistributedSignature) handleDecided(input *inputDecided) gpa.OutMessages {
-	if d.distKeyGenDecidedIndexProposals != nil {
+	if d.dkgDecidedIndexProposals != nil {
 		d.log.LogWarn("Duplicate will be dropped: DecidedIndexes=%+v", input.decidedIndexProposals)
 		return nil
 	}
-	d.distKeyGenDecidedIndexProposals = input.decidedIndexProposals
+	d.dkgDecidedIndexProposals = input.decidedIndexProposals
 	d.messageToSign = input.messageToSign
 
 	decisionInput := nonce.NewInputAgreementResult(input.decidedIndexProposals)
-	msgs := d.msgWrapper.WrapMessages(subsystemDistributedKeyGeneration, 0, d.distributedKeyGen.Input(decisionInput))
-	return d.tryHandleDistributedKeyGenerationOutput(msgs)
+	msgs := d.msgWrapper.WrapMessages(subsystemDKG, 0, d.dkg.Input(decisionInput))
+	return d.tryHandleDkgOutput(msgs)
 }
 
 func (d *DistributedSignature) nodePKArray() []kyber.Point {
@@ -269,5 +269,5 @@ func (d *DistributedSignature) nodePKArray() []kyber.Point {
 }
 
 func (d *DistributedSignature) StatusString() string {
-	return fmt.Sprintf("{DSS, dkg=%v}", d.distributedKeyGen.StatusString())
+	return fmt.Sprintf("{DSS, dkg=%v}", d.dkg.StatusString())
 }

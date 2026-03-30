@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package distkeygen
+package dkg
 
 import (
 	"context"
@@ -71,14 +71,14 @@ func NewNode(
 		initMsgQueue:    make(chan *initiatorInitMsgIn),
 		log:             log,
 	}
-	unhook := netProvider.Attach(&initPeeringID, peering.ReceiverDistributedKeyGenerationInit, n.receiveInitMessage)
+	unhook := netProvider.Attach(&initPeeringID, peering.ReceiverDkgInit, n.receiveInitMessage)
 	n.cleanupFunc = unhook
 	go n.recvLoop()
 	return &n, nil
 }
 
 func (n *Node) receiveInitMessage(peerMsg *peering.PeerMessageIn) {
-	if peerMsg.MsgReceiver != peering.ReceiverDistributedKeyGenerationInit {
+	if peerMsg.MsgReceiver != peering.ReceiverDkgInit {
 		panic(fmt.Errorf("DKG init handler does not accept peer messages of other receiver type %v, message type=%v",
 			peerMsg.MsgReceiver, peerMsg.MsgType))
 	}
@@ -133,14 +133,14 @@ func (n *Node) GenerateDistributedKey(
 	}
 	//
 	// Setup network connections.
-	distKeyGeneratorID := peering.RandomPeeringID()
+	dkgID := peering.RandomPeeringID()
 	var netGroup peering.GroupProvider
-	if netGroup, err = n.netProvider.PeerGroup(distKeyGeneratorID, peerPubs); err != nil {
+	if netGroup, err = n.netProvider.PeerGroup(dkgID, peerPubs); err != nil {
 		return nil, err
 	}
 	defer netGroup.Close()
 	recvCh := make(chan *peering.PeerMessageIn, peerCount*2)
-	unhook := n.netProvider.Attach(&distKeyGeneratorID, peering.ReceiverDistributedKeyGeneration, func(recv *peering.PeerMessageIn) {
+	unhook := n.netProvider.Attach(&dkgID, peering.ReceiverDkg, func(recv *peering.PeerMessageIn) {
 		recvCh <- recv
 	})
 	defer util.ExecuteIfNotNil(unhook)
@@ -165,14 +165,14 @@ func (n *Node) GenerateDistributedKey(
 	if err = n.exchangeInitiatorAcks(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, rabinStep0Initialize,
 		func(peerIdx uint16, peer peering.PeerSender) {
 			n.log.LogDebugf("Initiator sends step=%v command to %v", rabinStep0Initialize, peer.PeeringURL())
-			peer.SendMsg(makePeerMessage(initPeeringID, peering.ReceiverDistributedKeyGenerationInit, rabinStep0Initialize, &initiatorInitMsg{
-				distKeyGeneratorRef: distKeyGeneratorID.String(), // It could be some other identifier.
-				peeringID:           distKeyGeneratorID,
-				peerPubs:            peerPubs,
-				initiatorPub:        n.identity.GetPublicKey(),
-				threshold:           threshold,
-				timeout:             timeout,
-				roundRetry:          roundRetry,
+			peer.SendMsg(makePeerMessage(initPeeringID, peering.ReceiverDkgInit, rabinStep0Initialize, &initiatorInitMsg{
+				dkgRef:       dkgID.String(), // It could be some other identifier.
+				peeringID:    dkgID,
+				peerPubs:     peerPubs,
+				initiatorPub: n.identity.GetPublicKey(),
+				threshold:    threshold,
+				timeout:      timeout,
+				roundRetry:   roundRetry,
 			}))
 		},
 	); err != nil {
@@ -182,19 +182,19 @@ func (n *Node) GenerateDistributedKey(
 	// Perform the DKG steps, each step in parallel, all steps sequentially.
 	// Step numbering (R) is according to <https://github.com/dedis/kyber/blob/master/share/dkg/rabin/dkg.go>.
 	if peerCount > 1 {
-		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, distKeyGeneratorID, rabinStep1R21SendDeals); err != nil {
+		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, dkgID, rabinStep1R21SendDeals); err != nil {
 			return nil, err
 		}
-		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, distKeyGeneratorID, rabinStep2R22SendResponses); err != nil {
+		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, dkgID, rabinStep2R22SendResponses); err != nil {
 			return nil, err
 		}
-		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, distKeyGeneratorID, rabinStep3R23SendJustifications); err != nil {
+		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, dkgID, rabinStep3R23SendJustifications); err != nil {
 			return nil, err
 		}
-		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, distKeyGeneratorID, rabinStep4R4SendSecretCommits); err != nil {
+		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, dkgID, rabinStep4R4SendSecretCommits); err != nil {
 			return nil, err
 		}
-		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, distKeyGeneratorID, rabinStep5R5SendComplaintCommits); err != nil {
+		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, dkgID, rabinStep5R5SendComplaintCommits); err != nil {
 			return nil, err
 		}
 	}
@@ -205,7 +205,7 @@ func (n *Node) GenerateDistributedKey(
 	if err = n.exchangeInitiatorMsgs(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, rabinStep6R6SendReconstructCommits,
 		func(peerIdx uint16, peer peering.PeerSender) {
 			n.log.LogDebugf("Initiator sends step=%v command to %v", rabinStep6R6SendReconstructCommits, peer.PeeringURL())
-			peer.SendMsg(makePeerMessage(distKeyGeneratorID, peering.ReceiverDistributedKeyGeneration, rabinStep6R6SendReconstructCommits, &initiatorStepMsg{}))
+			peer.SendMsg(makePeerMessage(dkgID, peering.ReceiverDkg, rabinStep6R6SendReconstructCommits, &initiatorStepMsg{}))
 		},
 		func(recv *peering.PeerMessageGroupIn, initMsg initiatorMsg) (bool, error) {
 			switch msg := initMsg.(type) {
@@ -244,7 +244,7 @@ func (n *Node) GenerateDistributedKey(
 	if err = n.exchangeInitiatorAcks(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, rabinStep7CommitAndTerminate,
 		func(peerIdx uint16, peer peering.PeerSender) {
 			n.log.LogDebugf("Initiator sends step=%v command to %v", rabinStep7CommitAndTerminate, peer.PeeringURL())
-			peer.SendMsg(makePeerMessage(distKeyGeneratorID, peering.ReceiverDistributedKeyGeneration, rabinStep7CommitAndTerminate, &initiatorDoneMsg{
+			peer.SendMsg(makePeerMessage(dkgID, peering.ReceiverDkg, rabinStep7CommitAndTerminate, &initiatorDoneMsg{
 				edPubShares:  edPublicShares,
 				blsPubShares: blsPublicShares,
 			}))
@@ -317,11 +317,11 @@ func (n *Node) onInitMsg(msg *initiatorInitMsgIn) {
 	var err error
 	var p *proc
 	n.procLock.RLock()
-	if n.processes.Has(msg.distKeyGeneratorRef) {
+	if n.processes.Has(msg.dkgRef) {
 		// To have idempotence for retries, we need to consider duplicate
 		// messages as success, if process is already created.
 		n.procLock.RUnlock()
-		n.netProvider.SendMsgByPubKey(msg.SenderPubKey, makePeerMessage(msg.peeringID, peering.ReceiverDistributedKeyGeneration, msg.step, &initiatorStatusMsg{
+		n.netProvider.SendMsgByPubKey(msg.SenderPubKey, makePeerMessage(msg.peeringID, peering.ReceiverDkg, msg.step, &initiatorStatusMsg{
 			error: nil,
 		}))
 		return
@@ -332,10 +332,10 @@ func (n *Node) onInitMsg(msg *initiatorInitMsgIn) {
 		// be locked because of the naive implementation of `event.Event`. It locks on all the callbacks.
 		n.procLock.Lock()
 		if p, err = onInitiatorInit(msg.peeringID, &msg.initiatorInitMsg, n); err == nil {
-			n.processes.Set(p.distKeyGeneratorRef, p)
+			n.processes.Set(p.dkgRef, p)
 		}
 		n.procLock.Unlock()
-		n.netProvider.SendMsgByPubKey(msg.SenderPubKey, makePeerMessage(msg.peeringID, peering.ReceiverDistributedKeyGeneration, msg.step, &initiatorStatusMsg{
+		n.netProvider.SendMsgByPubKey(msg.SenderPubKey, makePeerMessage(msg.peeringID, peering.ReceiverDkg, msg.step, &initiatorStatusMsg{
 			error: err,
 		}))
 	}()
@@ -346,7 +346,7 @@ func (n *Node) dropProcess(p *proc) bool {
 	n.procLock.Lock()
 	defer n.procLock.Unlock()
 
-	return n.processes.Delete(p.distKeyGeneratorRef)
+	return n.processes.Delete(p.dkgRef)
 }
 
 func (n *Node) exchangeInitiatorStep(
@@ -355,12 +355,12 @@ func (n *Node) exchangeInitiatorStep(
 	recvCh chan *peering.PeerMessageIn,
 	retryTimeout time.Duration,
 	giveUpTimeout time.Duration,
-	distKeyGeneratorID peering.PeeringID,
+	dkgID peering.PeeringID,
 	step byte,
 ) error {
 	sendCB := func(peerIdx uint16, peer peering.PeerSender) {
 		n.log.LogDebugf("Initiator sends step=%v command to %v", step, peer.PeeringURL())
-		peer.SendMsg(makePeerMessage(distKeyGeneratorID, peering.ReceiverDistributedKeyGeneration, step, &initiatorStepMsg{}))
+		peer.SendMsg(makePeerMessage(dkgID, peering.ReceiverDkg, step, &initiatorStepMsg{}))
 	}
 	return n.exchangeInitiatorAcks(netGroup, peers, recvCh, retryTimeout, giveUpTimeout, step, sendCB)
 }

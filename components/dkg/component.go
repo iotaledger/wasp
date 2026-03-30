@@ -1,15 +1,15 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// Package distkeygen implements Distributed Key Generation functionality.
-package distkeygen
+// Package dkg implements Distributed Key Generation functionality.
+package dkg
 
 import (
 	"go.uber.org/dig"
 
 	"github.com/iotaledger/hive.go/app"
 
-	"github.com/iotaledger/wasp/v2/packages/distkeygen"
+	"github.com/iotaledger/wasp/v2/packages/dkg"
 	"github.com/iotaledger/wasp/v2/packages/peering"
 	"github.com/iotaledger/wasp/v2/packages/registry"
 )
@@ -35,11 +35,11 @@ func provide(c *dig.Container) error {
 	type nodeResult struct {
 		dig.Out
 
-		Node *distkeygen.Node
+		Node *dkg.Node
 	}
 
 	if err := c.Provide(func(deps nodeDeps) nodeResult {
-		node, err := distkeygen.NewNode(
+		node, err := dkg.NewNode(
 			deps.NodeIdentityProvider.NodeIdentity(),
 			deps.NetworkProvider,
 			deps.DKShareRegistry,

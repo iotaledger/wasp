@@ -76,7 +76,7 @@ func TestDepositFailsAsQuorumNotMet(t *testing.T) {
 
 func initializeStabilityTest(t *testing.T, numValidators, clusterSize int) *SabotageEnv {
 	env := SetupWithChain(t, waspClusterOpts{nNodes: clusterSize})
-	_, _, err := env.Clu.InitDistributedKeyGeneration(numValidators)
+	_, _, err := env.Clu.InitDKG(numValidators)
 
 	require.NoError(t, err)
 
