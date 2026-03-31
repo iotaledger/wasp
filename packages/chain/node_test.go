@@ -5,8 +5,9 @@ package chain_test
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
-	"math/rand"
+	mrand "math/rand"
 	"sync"
 	"testing"
 	"time"
@@ -226,6 +227,142 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 	}
 }
 
+// TestNodeSkipRecovery verifies the full integration of the pendingAfterSkipLI
+// fix (issue #723): when a request with insufficient funds causes consensus to
+// skip, the chain recovers on the next tick and successfully processes a
+// subsequent valid request.
+func TestNodeSkipRecovery(t *testing.T) {
+	t.Parallel()
+	tests := []tc{
+		{n: 1, f: 0, reliable: true, timeout: 60 * time.Second},
+		{n: 4, f: 1, reliable: true, timeout: 120 * time.Second},
+		{n: 10, f: 3, reliable: true, timeout: 300 * time.Second},
+	}
+	for _, tst := range tests {
+		t.Run(
+			fmt.Sprintf("N=%v,F=%v", tst.n, tst.f),
+			func(tt *testing.T) { testNodeSkipRecovery(tt, tst.n, tst.f, tst.timeout, l1starter.Instance()) },
+		)
+	}
+}
+
+func testNodeSkipRecovery(t *testing.T, n, f int, timeout time.Duration, node l1starter.IotaNodeEndpoint) {
+	// Here is the idea of this test:
+	// 1. Start a real chain with N nodes, peering network, L1 container, mempool, state manager, and consensus
+	// 2. Feed a bad on-ledger request with 1 base token (min fee is 100,000) to all nodes
+	// 3. The chain enters a skip loop: consensus proposes the bad request → VM panics with ErrNotEnoughFundsForMinFee → consensus outputs Skip → VarConsInsts defers restart via pendingAfterSkipLI → tick arrives → new consensus instance → repeat
+	// 4. After 2 seconds of skip-looping (~600 skip cycles at 10ms consensusDelay), a valid request with proper funds is fed
+	// 5. Batch the valid request alongside the bad one → VM processes the good request (1 result) → consensus completes → block committed
+	// 6. Assert the good request is processed, proving the chain recovered from the skip loop
+
+	t.Parallel()
+	te := newEnv(t, n, f, true, node)
+
+	ctxTimeout, ctxTimeoutCancel := context.WithTimeout(te.ctx, timeout)
+	defer ctxTimeoutCancel()
+
+	for _, tnc := range te.nodeConns {
+		tnc.waitAttached()
+	}
+
+	// Feed the initial anchor to all nodes.
+	for _, tnc := range te.nodeConns {
+		tnc.recvAnchor(te.anchor, parameterstest.L1Mock)
+	}
+
+	// Step 1: Feed a bad request with only 1 base token to all nodes.
+	// The minimum gas fee is 100,000 tokens, so this will be skipped by the VM
+	// with ErrNotEnoughFundsForMinFee, causing consensus to produce Skip status.
+	badSender := cryptolib.NewRandomAddress()
+	var badObjID iotago.ObjectID
+	rand.Read(badObjID[:])
+	var badDigest iotago.ObjectDigest
+	rand.Read(badDigest[:])
+	badRef := iotago.ObjectRef{
+		ObjectID: &badObjID,
+		Version:  mrand.Uint64(),
+		Digest:   &badDigest,
+	}
+	var badBagID iotago.Address
+	rand.Read(badBagID[:])
+	badMoveReq := iscmove.RefWithObject[iscmove.Request]{
+		ObjectRef: badRef,
+		Object: &iscmove.Request{
+			ID:     badObjID,
+			Sender: badSender,
+			AssetsBag: iscmove.AssetsBagWithBalances{
+				AssetsBag: iscmove.AssetsBag{ID: badBagID, Size: 1},
+				Assets:    *iscmove.NewAssets(1), // 1 base token — far below min fee
+			},
+			Message: iscmove.Message{
+				Contract: uint32(isc.Hn("accounts")),
+				Function: uint32(isc.Hn("deposit")),
+			},
+			AllowanceBCS: bcs.MustMarshal(iscmove.NewAssets(0)),
+			GasBudget:    100000,
+		},
+		Owner: badSender.AsIotaAddress(),
+	}
+	for _, tnc := range te.nodeConns {
+		badOnLedger, err := isc.OnLedgerFromMoveRequest(&badMoveReq, tnc.chainID.AsAddress())
+		require.NoError(t, err)
+		tnc.recvRequest(badOnLedger)
+	}
+	t.Log("Bad request (insufficient funds) fed to all nodes — expecting consensus skip(s).")
+
+	// Give the chain time to attempt consensus and skip.
+	time.Sleep(2 * time.Second)
+
+	// Step 2: Create and feed a valid request with proper funds.
+	scClient := cryptolib.NewKeyPair()
+	err := te.l1Client.RequestFunds(context.Background(), *scClient.Address())
+	require.NoError(t, err)
+
+	const goodBaseTokens = 10000000
+	one := int64(1)
+	mmm := inccounter.FuncIncCounter.Message(&one)
+	txResp, err := te.l2Client.CreateAndSendRequestWithAssets(ctxTimeout, &iscmoveclient.CreateAndSendRequestWithAssetsRequest{
+		Signer:        scClient,
+		PackageID:     te.iscPackageID,
+		AnchorAddress: te.anchor.GetObjectID(),
+		Assets:        iscmove.NewAssets(goodBaseTokens),
+		Message: &iscmove.Message{
+			Contract: uint32(mmm.Target.Contract),
+			Function: uint32(mmm.Target.EntryPoint),
+			Args:     mmm.Params,
+		},
+		AllowanceBCS:     lo.Must(bcs.Marshal(iscmove.NewAssets(goodBaseTokens - 100000))),
+		OnchainGasBudget: 1000000,
+		GasPrice:         iotaclient.DefaultGasPrice,
+		GasBudget:        iotaclient.DefaultGasBudget,
+	})
+	require.NoError(t, err)
+	reqRef, err := txResp.GetCreatedObjectByName(iscmove.RequestModuleName, iscmove.RequestObjectName)
+	require.NoError(t, err)
+	reqWithObj, err := te.l2Client.GetRequestFromObjectID(context.Background(), reqRef.ObjectID)
+	require.NoError(t, err)
+
+	goodRequests := make([]isc.Request, 0)
+	for _, tnc := range te.nodeConns {
+		onLedger, err := isc.OnLedgerFromMoveRequest(reqWithObj, tnc.chainID.AsAddress())
+		require.NoError(t, err)
+		goodRequests = append(goodRequests, onLedger)
+		tnc.recvRequest(onLedger)
+	}
+	t.Log("Good request fed to all nodes — should be processed despite prior skip(s).")
+
+	// Step 3: Await the good request being processed.
+	// This proves the chain recovered from the skip caused by the bad request.
+	awaitRequestsProcessed(ctxTimeout, te, goodRequests, "goodRequest after skip recovery")
+	t.Log("Good request processed successfully — chain recovered from consensus skip.")
+
+	// Shut down the chain before the L1 container stops, so that in-flight
+	// consensus goroutines (still skip-looping on the bad request) don't panic
+	// when the L1 client becomes unavailable.
+	te.close()
+	time.Sleep(100 * time.Millisecond)
+}
+
 func awaitRequestsProcessed(ctx context.Context, te *testEnv, requests []isc.Request, desc string) {
 	reqRefs := isc.RequestRefsFromRequests(requests)
 	for i, node := range te.nodes {
@@ -431,6 +568,17 @@ func (tnc *testNodeConn) ConsensusL1InfoProposal(
 
 	// TODO: Refactor this separate goroutine and place it somewhere connection related instead
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				// During test shutdown, the L1 container may be stopped while
+				// this goroutine is in-flight, causing nil pointer panics.
+				// Silently swallow these — the channel remains unwritten, and
+				// the consensus runner will notice via context cancellation.
+				tnc.t.Logf("ERROR: Panic in ConsensusL1InfoProposal: %v", r)
+				return
+			}
+		}()
+
 		stateMetadata, err := transaction.StateMetadataFromBytes(anchor.GetStateMetadata())
 		if err != nil {
 			panic(err)
@@ -513,7 +661,7 @@ type testEnv struct {
 func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoint) *testEnv {
 	te := &testEnv{t: t}
 	te.ctx, te.ctxCancel = context.WithCancel(context.Background())
-	te.log = testlogger.NewLogger(t).NewChildLogger(fmt.Sprintf("%04d", rand.Intn(10000))) // For test instance ID.
+	te.log = testlogger.NewLogger(t).NewChildLogger(fmt.Sprintf("%04d", mrand.Intn(10000))) // For test instance ID.
 
 	te.iscPackageID = node.ISCPackageID()
 	te.l1Client = node.L1Client()

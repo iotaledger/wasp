@@ -24,7 +24,12 @@ type VarConsInsts struct {
 	persistCB   func(li LogIndex)
 	outputCB    func(lis Output)
 	delayed     []LogIndex
-	log         log.Logger
+	// pendingAfterSkipLI holds the next log index to advance to after a
+	// consensus instance terminates with a SKIP/⊥ decision. It is applied on
+	// the next Tick, which is driven by consensusDelay in the chain node.
+	pendingAfterSkipLI  LogIndex
+	hasPendingAfterSkip bool
+	log                 log.Logger
 }
 
 // NewVarConsInsts is a constructor.
@@ -66,7 +71,12 @@ func (vci *VarConsInsts) ConsOutputSkip(li LogIndex, cb onLIInc) gpa.OutMessages
 		vci.lastLI = li.Next() // Will be set in LatestL1Anchor.
 		return nil
 	}
-	return vci.trySet(li.Next(), vci.lastAnchor, cb)
+	// Defer advancing to the next LI until the next Tick, which is driven by
+	// consensusDelay. This way, consecutive consensus runs are spaced by at
+	// least the configured delay instead of tight-looping on SKIP results.
+	vci.pendingAfterSkipLI = li.Next()
+	vci.hasPendingAfterSkip = true
+	return nil
 }
 
 // ConsOutputTimeout - Consensus at LI indicated a timeout.
@@ -102,10 +112,18 @@ func (vci *VarConsInsts) Tick(cb onLIInc) gpa.OutMessages {
 		vci.delayed[i] = vci.delayed[i-1]
 	}
 	vci.delayed[0] = NilLogIndex()
-	if last.IsNil() {
-		return nil
+	msgs := gpa.NoMessages()
+	if !last.IsNil() {
+		msgs.AddAll(vci.trySet(last, nil, cb))
 	}
-	return vci.trySet(last, nil, cb)
+	// Apply any pending advancement scheduled after a SKIP decision. This
+	// ensures that the next consensus attempt only starts after at least one
+	// consensusDelay tick has passed.
+	if vci.hasPendingAfterSkip && vci.lastAnchor != nil {
+		msgs.AddAll(vci.trySet(vci.pendingAfterSkipLI, vci.lastAnchor, cb))
+		vci.hasPendingAfterSkip = false
+	}
+	return msgs
 }
 
 func (vci *VarConsInsts) trySet(li LogIndex, ao *isc.StateAnchor, cb onLIInc) gpa.OutMessages {

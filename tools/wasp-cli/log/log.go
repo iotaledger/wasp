@@ -138,6 +138,7 @@ func PrintCLIOutput(output CLIOutput) {
 }
 
 // PrintCLIOutputDeprecated is the old implementation, kept for reference
+//
 // Deprecated: Use format.PrintLegacyOutput instead for new code
 func PrintCLIOutputDeprecated(output CLIOutput) {
 	outputText, err := GetCLIOutputText(output)
