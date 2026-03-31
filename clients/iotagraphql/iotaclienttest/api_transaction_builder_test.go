@@ -199,8 +199,10 @@ func TestPay(t *testing.T) {
 func TestPayAllIota(t *testing.T) {
 	t.Skip("FIXME there is only 1 coin object, because there is only 1 coin object returned from faucet")
 	client := l1starter.Instance().L1Client()
-	signer := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
-	recipient := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
+	signer := iotatest.MakeSigner(0)
+	require.NoError(t, client.RequestFundsFromFaucet(t.Context(), signer.Address()))
+	recipient := iotatest.MakeSigner(1)
+	require.NoError(t, client.RequestFundsFromFaucet(t.Context(), recipient.Address()))
 
 	limit := int(3)
 	coinPages, err := client.GetCoins(
@@ -242,7 +244,8 @@ func TestPublish(t *testing.T) {
 	client := l1starter.Instance().L1Client()
 	// Use the faucet URL from the running node (LoadConfig() leaves it empty when using the local testnode).
 	// Use the waiting version to ensure coins are visible before proceeding.
-	signer := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
+	signer := iotatest.MakeSigner(0)
+	require.NoError(t, client.RequestFundsFromFaucet(t.Context(), signer.Address()))
 
 	testcoinBytecode := contracts.Testcoin()
 
