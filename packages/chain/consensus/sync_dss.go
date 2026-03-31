@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/iotaledger/wasp/v2/packages/chain/distsign"
+	"github.com/iotaledger/wasp/v2/packages/chain/dss"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
 )
 
-type SyncDistributedSignature struct {
+type SyncDSS struct {
 	c                     *Consensus
 	DecidedIndexProposals map[gpa.NodeID][]int
 	MessageToSign         []byte
@@ -21,36 +21,36 @@ type SyncDistributedSignature struct {
 	outputReady           bool
 }
 
-func NewSyncDistributedSignature(c *Consensus) *SyncDistributedSignature {
-	return &SyncDistributedSignature{c: c}
+func NewSyncDSS(c *Consensus) *SyncDSS {
+	return &SyncDSS{c: c}
 }
 
-func (sub *SyncDistributedSignature) InitialInputReceived() gpa.OutMessages {
+func (sub *SyncDSS) InitialInputReceived() gpa.OutMessages {
 	if sub.initialInputsReady {
 		return nil
 	}
 	sub.initialInputsReady = true
-	return sub.c.uponDistributedSignatureInitialInputsReady()
+	return sub.c.uponDSSInitialInputsReady()
 }
 
-func (sub *SyncDistributedSignature) DistributedSignatureReady(output gpa.Output) gpa.OutMessages {
+func (sub *SyncDSS) DSSOutputReceived(output gpa.Output) gpa.OutMessages {
 	if output == nil || (sub.indexProposalReady && sub.outputReady) {
 		return nil
 	}
 	msgs := gpa.NoMessages()
-	distSignOutput := output.(*distsign.Output)
-	if !sub.indexProposalReady && distSignOutput.ProposedIndexes != nil {
+	dssOutput := output.(*dss.Output)
+	if !sub.indexProposalReady && dssOutput.ProposedIndexes != nil {
 		sub.indexProposalReady = true
-		msgs.AddAll(sub.c.uponDistributedSignatureIndexProposalReady(distSignOutput.ProposedIndexes))
+		msgs.AddAll(sub.c.uponDSSIndexProposalReady(dssOutput.ProposedIndexes))
 	}
-	if !sub.outputReady && distSignOutput.Signature != nil {
+	if !sub.outputReady && dssOutput.Signature != nil {
 		sub.outputReady = true
-		msgs.AddAll(sub.c.uponDistributedSignatureOutputReady(distSignOutput.Signature))
+		msgs.AddAll(sub.c.uponDSSOutputReady(dssOutput.Signature))
 	}
 	return msgs
 }
 
-func (sub *SyncDistributedSignature) DecidedIndexProposalsReceived(decidedIndexProposals map[gpa.NodeID][]int) gpa.OutMessages {
+func (sub *SyncDSS) DecidedIndexProposalsReceived(decidedIndexProposals map[gpa.NodeID][]int) gpa.OutMessages {
 	if sub.DecidedIndexProposals != nil || decidedIndexProposals == nil {
 		return nil
 	}
@@ -58,7 +58,7 @@ func (sub *SyncDistributedSignature) DecidedIndexProposalsReceived(decidedIndexP
 	return sub.tryCompleteSigning()
 }
 
-func (sub *SyncDistributedSignature) MessageToSignReceived(messageToSign []byte) gpa.OutMessages {
+func (sub *SyncDSS) MessageToSignReceived(messageToSign []byte) gpa.OutMessages {
 	if sub.MessageToSign != nil || messageToSign == nil {
 		return nil
 	}
@@ -66,17 +66,17 @@ func (sub *SyncDistributedSignature) MessageToSignReceived(messageToSign []byte)
 	return sub.tryCompleteSigning()
 }
 
-func (sub *SyncDistributedSignature) tryCompleteSigning() gpa.OutMessages {
+func (sub *SyncDSS) tryCompleteSigning() gpa.OutMessages {
 	if sub.signingInputsReady || sub.MessageToSign == nil || sub.DecidedIndexProposals == nil {
 		return nil
 	}
 	sub.signingInputsReady = true
-	return sub.c.uponDistributedSignatureSigningInputsReceived(sub.DecidedIndexProposals, sub.MessageToSign)
+	return sub.c.uponDSSSigningInputsReceived(sub.DecidedIndexProposals, sub.MessageToSign)
 }
 
 // String tries to provide useful human-readable compact status.
-func (sub *SyncDistributedSignature) String() string {
-	str := "DistributedSignature"
+func (sub *SyncDSS) String() string {
+	str := "DSS"
 	if sub.indexProposalReady && sub.outputReady {
 		return str + statusStrOK
 	}
@@ -88,7 +88,7 @@ func (sub *SyncDistributedSignature) String() string {
 	if sub.outputReady {
 		str += "/sig=OK"
 	} else if sub.signingInputsReady {
-		str += "/sig[WaitingForDistributedSignature]"
+		str += "/sig[WaitingForDSS]"
 	} else {
 		wait := []string{}
 		if sub.MessageToSign == nil {

@@ -111,7 +111,7 @@ type testRotationSingleRotation struct {
 }
 
 func newTestRotationSingleRotation(t *testing.T, clu *cluster.Cluster, committee []int, quorum uint16) testRotationSingleRotation {
-	address, err := clu.RunDistributedKeyGeneration(committee, quorum)
+	address, err := clu.RunDKG(committee, quorum)
 	require.NoError(t, err)
 	return testRotationSingleRotation{
 		Committee: committee,

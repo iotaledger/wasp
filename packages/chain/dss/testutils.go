@@ -1,4 +1,4 @@
-package distsign
+package dss
 
 import (
 	"fortio.org/safecast"
@@ -8,24 +8,24 @@ import (
 
 //nolint:gocyclo
 func GenDistSecret(suite dkg.Suite, nbParticipants int, partSec []kyber.Scalar, partPubs []kyber.Point) []*dkg.DistKeyShare {
-	distKeyGenerators := make([]*dkg.DistKeyGenerator, nbParticipants)
+	dkgs := make([]*dkg.DistKeyGenerator, nbParticipants)
 	for i := 0; i < nbParticipants; i++ {
-		generator, err := dkg.NewDistKeyGenerator(suite, suite, partSec[i], partPubs, nbParticipants/2+1)
+		dkg, err := dkg.NewDistKeyGenerator(suite, suite, partSec[i], partPubs, nbParticipants/2+1)
 		if err != nil {
 			panic(err)
 		}
-		distKeyGenerators[i] = generator
+		dkgs[i] = dkg
 	}
 	// full secret sharing exchange
 	// 1. broadcast deals
 	resps := make([]*dkg.Response, 0, nbParticipants*nbParticipants)
-	for _, generator := range distKeyGenerators {
-		deals, err := generator.Deals()
+	for _, dkg := range dkgs {
+		deals, err := dkg.Deals()
 		if err != nil {
 			panic(err)
 		}
 		for i, d := range deals {
-			resp, err := distKeyGenerators[i].ProcessDeal(d)
+			resp, err := dkgs[i].ProcessDeal(d)
 			if err != nil {
 				panic(err)
 			}
@@ -37,28 +37,28 @@ func GenDistSecret(suite dkg.Suite, nbParticipants int, partSec []kyber.Scalar, 
 	}
 	// 2. Broadcast responses
 	for _, resp := range resps {
-		for h, generator := range distKeyGenerators {
+		for h, dkg := range dkgs {
 			// ignore all messages from ourself
 			if resp.Response.Index == safecast.MustConvert[uint32](h) {
 				continue
 			}
-			j, err := generator.ProcessResponse(resp)
+			j, err := dkg.ProcessResponse(resp)
 			if err != nil || j != nil {
 				panic("wrongProcessResponse")
 			}
 		}
 	}
 	// 4. Broadcast secret commitment
-	for i, generator := range distKeyGenerators {
-		scs, err := generator.SecretCommits()
+	for i, dkg := range dkgs {
+		scs, err := dkg.SecretCommits()
 		if err != nil {
 			panic("wrong SecretCommits")
 		}
-		for j, generator2 := range distKeyGenerators {
+		for j, dkg2 := range dkgs {
 			if i == j {
 				continue
 			}
-			cc, err := generator2.ProcessSecretCommits(scs)
+			cc, err := dkg2.ProcessSecretCommits(scs)
 			if err != nil || cc != nil {
 				panic("wrong ProcessSecretCommits")
 			}
@@ -66,9 +66,9 @@ func GenDistSecret(suite dkg.Suite, nbParticipants int, partSec []kyber.Scalar, 
 	}
 
 	// 5. reveal shares
-	dkss := make([]*dkg.DistKeyShare, len(distKeyGenerators))
-	for i, generator := range distKeyGenerators {
-		dks, err := generator.DistKeyShare()
+	dkss := make([]*dkg.DistKeyShare, len(dkgs))
+	for i, dkg := range dkgs {
+		dks, err := dkg.DistKeyShare()
 		if err != nil {
 			panic(err)
 		}

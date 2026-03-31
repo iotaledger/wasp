@@ -76,7 +76,7 @@ func runSignAndPost(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	log := hivelog.NewLogger(hivelog.WithName("disrec"))
-	signer := testpeers.NewTestDistributedSignatureSigner(committeeAddress, dkRegistries, nodeIDs, peerIdentities, log)
+	signer := testpeers.NewTestDSSSigner(committeeAddress, dkRegistries, nodeIDs, peerIdentities, log)
 
 	// Sign and Post the TX to the L1.
 	iotaL1ClientURL := args[3]

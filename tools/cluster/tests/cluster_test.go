@@ -27,7 +27,7 @@ func TestClusterSingleNode(t *testing.T) {
 
 func TestClusterMultiNodeCommittee(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping cluster tests in short modezxc")
+		t.Skip("Skipping cluster tests in short mode")
 	}
 
 	// setup a cluster with 4 nodes
@@ -48,14 +48,14 @@ func TestClusterMultiNodeCommittee(t *testing.T) {
 }
 
 func createTestWrapper(t *testing.T, clusterSize int, committee []int) *ChainEnv {
-	distKeyGenQuorum := uint16((2*len(committee))/3 + 1)
+	dkgQuorum := uint16((2*len(committee))/3 + 1)
 	clu := newCluster(t, waspClusterOpts{nNodes: clusterSize})
-	distKeyGenAddr, err := clu.RunDistributedKeyGeneration(committee, distKeyGenQuorum)
+	dkgAddr, err := clu.RunDKG(committee, dkgQuorum)
 	require.NoError(t, err)
 
 	// create a fresh new chain for the test
 	allNodes := clu.Config.AllNodes()
-	chain, err := clu.DeployChain(allNodes, allNodes, distKeyGenQuorum, distKeyGenAddr, false)
+	chain, err := clu.DeployChain(allNodes, allNodes, dkgQuorum, dkgAddr, false)
 	require.NoError(t, err)
 	env := newChainEnv(t, clu, chain)
 

@@ -70,7 +70,7 @@ func testConsBasic(t *testing.T, n, f int) {
 	//
 	// Node Identities and shared key.
 	_, peerIdentities := testpeers.SetupKeys(uint16(n))
-	committeeAddress, dkShareProviders := testpeers.SetupDistributedKeyGenerationTrivial(t, n, f, peerIdentities, nil)
+	committeeAddress, dkShareProviders := testpeers.SetupDkgTrivial(t, n, f, peerIdentities, nil)
 	var chainID isc.ChainID
 
 	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(committeeAddress)).Encode()

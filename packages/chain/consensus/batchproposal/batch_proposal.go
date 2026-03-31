@@ -15,21 +15,21 @@ import (
 )
 
 type BatchProposal struct {
-	nodeIndex                     uint16               `bcs:"export"`          // Just for a double-check.
-	baseAnchor                    *isc.StateAnchor     `bcs:"export,optional"` // Proposed Base Anchor to use.
-	distributedStateIndexProposal util.BitVector       `bcs:"export"`          // DSS Index proposal.
-	rotateTo                      *iotago.Address      `bcs:"export,optional"` // Suggestion to rotate the committee, optional.
-	timeData                      time.Time            `bcs:"export"`          // Our view of time.
-	validatorFeeDestination       isc.AgentID          `bcs:"export"`          // Proposed destination for fees.
-	requestRefs                   []*isc.RequestRef    `bcs:"export"`          // Requests we propose to include into the execution.
-	gasCoins                      []*coin.CoinWithRef  `bcs:"export,optional"` // Coins to use for gas payment.
-	l1params                      *parameters.L1Params `bcs:"export,optional"` // The L1Params for current state
+	nodeIndex               uint16               `bcs:"export"`          // Just for a double-check.
+	baseAnchor              *isc.StateAnchor     `bcs:"export,optional"` // Proposed Base Anchor to use.
+	dssIndexProposal        util.BitVector       `bcs:"export"`          // DSS Index proposal.
+	rotateTo                *iotago.Address      `bcs:"export,optional"` // Suggestion to rotate the committee, optional.
+	timeData                time.Time            `bcs:"export"`          // Our view of time.
+	validatorFeeDestination isc.AgentID          `bcs:"export"`          // Proposed destination for fees.
+	requestRefs             []*isc.RequestRef    `bcs:"export"`          // Requests we propose to include into the execution.
+	gasCoins                []*coin.CoinWithRef  `bcs:"export,optional"` // Coins to use for gas payment.
+	l1params                *parameters.L1Params `bcs:"export,optional"` // The L1Params for current state
 }
 
 func NewBatchProposal(
 	nodeIndex uint16,
 	baseAnchor *isc.StateAnchor,
-	distSignIndexProposal util.BitVector,
+	dssIndexProposal util.BitVector,
 	rotateTo *iotago.Address,
 	timeData time.Time,
 	validatorFeeDestination isc.AgentID,
@@ -38,15 +38,15 @@ func NewBatchProposal(
 	l1params *parameters.L1Params,
 ) *BatchProposal {
 	return &BatchProposal{
-		nodeIndex:                     nodeIndex,
-		baseAnchor:                    baseAnchor,
-		distributedStateIndexProposal: distSignIndexProposal,
-		rotateTo:                      rotateTo,
-		timeData:                      timeData,
-		validatorFeeDestination:       validatorFeeDestination,
-		requestRefs:                   requestRefs,
-		gasCoins:                      gasCoins,
-		l1params:                      l1params,
+		nodeIndex:               nodeIndex,
+		baseAnchor:              baseAnchor,
+		dssIndexProposal:        dssIndexProposal,
+		rotateTo:                rotateTo,
+		timeData:                timeData,
+		validatorFeeDestination: validatorFeeDestination,
+		requestRefs:             requestRefs,
+		gasCoins:                gasCoins,
+		l1params:                l1params,
 	}
 }
 

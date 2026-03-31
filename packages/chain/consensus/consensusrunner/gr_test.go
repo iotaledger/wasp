@@ -110,7 +110,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 	)
 	defer peeringNetwork.Close()
 	networkProviders := peeringNetwork.NetworkProviders()
-	committeeAddress, dkShareProviders := testpeers.SetupDistributedKeyGenerationTrivial(t, n, f, peerIdentities, nil)
+	committeeAddress, dkShareProviders := testpeers.SetupDkgTrivial(t, n, f, peerIdentities, nil)
 	//
 	// Initialize the DSS subsystem in each node / chain.
 	nodes := make([]*consensusrunner.ConsensusRunner, len(peerIdentities))

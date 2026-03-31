@@ -12,8 +12,8 @@ import (
 
 	hivelog "github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
-	"github.com/iotaledger/wasp/v2/packages/gpa/asyncdistkeygen"
-	"github.com/iotaledger/wasp/v2/packages/gpa/asyncdistkeygen/nonce"
+	"github.com/iotaledger/wasp/v2/packages/gpa/adkg"
+	"github.com/iotaledger/wasp/v2/packages/gpa/adkg/nonce"
 	"github.com/iotaledger/wasp/v2/packages/tcrypto"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
 )
@@ -93,7 +93,7 @@ func TestBasic(t *testing.T) {
 				commits = o.(*nonce.Output).Commits
 			}
 		}
-		asyncdistkeygen.VerifyPriShares(t, suite, nodeIDs, nodePKs, nodeSKs, pubKey, priShares, commits, f)
+		adkg.VerifyPriShares(t, suite, nodeIDs, nodePKs, nodeSKs, pubKey, priShares, commits, f)
 	}
 	t.Run("n=1,f=0", func(tt *testing.T) { test(tt, 1, 0) })
 	t.Run("n=2,f=0", func(tt *testing.T) { test(tt, 2, 0) })

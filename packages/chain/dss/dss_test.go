@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package distsign_test
+package dss_test
 
 import (
 	"bytes"
@@ -13,9 +13,9 @@ import (
 
 	"github.com/iotaledger/hive.go/log"
 
-	"github.com/iotaledger/wasp/v2/packages/chain/distsign"
+	"github.com/iotaledger/wasp/v2/packages/chain/dss"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
-	"github.com/iotaledger/wasp/v2/packages/gpa/asyncdistkeygen"
+	"github.com/iotaledger/wasp/v2/packages/gpa/adkg"
 	"github.com/iotaledger/wasp/v2/packages/tcrypto"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
 )
@@ -35,34 +35,34 @@ func TestBasic(t *testing.T) {
 			nodePKs[nodeIDs[i]] = suite.Point().Mul(nodeSKs[nodeIDs[i]], nil)
 		}
 
-		longTermPK, longTermSecretShares := asyncdistkeygen.MakeTestDistributedKey(tt, suite, nodeIDs, nodeSKs, nodePKs, f, log)
+		longTermPK, longTermSecretShares := adkg.MakeTestDistributedKey(tt, suite, nodeIDs, nodeSKs, nodePKs, f, log)
 
 		//
 		// Setup nodes.
-		distributedSignatures := map[gpa.NodeID]*distsign.DistributedSignature{}
+		dsss := map[gpa.NodeID]*dss.DSS{}
 		gpas := map[gpa.NodeID]gpa.GPA{}
 		for _, nid := range nodeIDs {
-			distributedSignatures[nid] = distsign.New(suite, nodeIDs, nodePKs, f, nid, nodeSKs[nid], longTermSecretShares[nid], log)
-			gpas[nid] = distributedSignatures[nid].AsGPA()
+			dsss[nid] = dss.New(suite, nodeIDs, nodePKs, f, nid, nodeSKs[nid], longTermSecretShares[nid], log)
+			gpas[nid] = dsss[nid].AsGPA()
 		}
 		tc := gpa.NewTestContext(gpas)
 		//
 		// Run the DKG
 		inputs := make(map[gpa.NodeID]gpa.Input)
 		for _, nid := range nodeIDs {
-			inputs[nid] = distsign.NewInputStart() // Input is only a signal here.
+			inputs[nid] = dss.NewInputStart() // Input is only a signal here.
 		}
 		tc.WithInputs(inputs).WithInputProbability(0.01)
 		tc.RunUntil(tc.NumberOfOutputsPredicate(n - f))
 		//
 		// Check the INTERMEDIATE result.
-		intermediateOutputs := map[gpa.NodeID]*distsign.Output{}
+		intermediateOutputs := map[gpa.NodeID]*dss.Output{}
 		for nid := range gpas {
 			nodeOutput := gpas[nid].Output()
 			if nodeOutput == nil {
 				continue
 			}
-			intermediateOutput := nodeOutput.(*distsign.Output)
+			intermediateOutput := nodeOutput.(*dss.Output)
 			require.NotNil(tt, intermediateOutput)
 			require.NotNil(tt, intermediateOutput.ProposedIndexes)
 			require.Nil(tt, intermediateOutput.Signature)
@@ -76,8 +76,8 @@ func TestBasic(t *testing.T) {
 			decidedProposals[nid] = intermediateOutputs[nid].ProposedIndexes
 		}
 		messageToSign := []byte{112, 117, 116, 105, 110, 32, 99, 104, 117, 105, 108, 111}
-		for nid := range distributedSignatures {
-			tc.WithInput(nid, distsign.NewInputDecided(decidedProposals, messageToSign))
+		for nid := range dsss {
+			tc.WithInput(nid, dss.NewInputDecided(decidedProposals, messageToSign))
 		}
 		//
 		// Run the ADKG with agreement already decided.
@@ -89,11 +89,11 @@ func TestBasic(t *testing.T) {
 		for _, n := range gpas {
 			o := n.Output()
 			require.NotNil(tt, o)
-			require.NotNil(tt, o.(*distsign.Output).Signature)
+			require.NotNil(tt, o.(*dss.Output).Signature)
 			if signature == nil {
-				signature = o.(*distsign.Output).Signature
+				signature = o.(*dss.Output).Signature
 			}
-			require.True(tt, bytes.Equal(signature, o.(*distsign.Output).Signature))
+			require.True(tt, bytes.Equal(signature, o.(*dss.Output).Signature))
 		}
 		require.NoError(tt, eddsa.Verify(longTermPK, messageToSign, signature))
 	}

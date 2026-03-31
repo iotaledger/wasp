@@ -26,10 +26,10 @@ import (
 
 type batchProposalSet map[gpa.NodeID]*BatchProposal
 
-func (s batchProposalSet) decidedDistributedSignatureIndexProposals() map[gpa.NodeID][]int {
+func (s batchProposalSet) decidedDSSIndexProposals() map[gpa.NodeID][]int {
 	ips := map[gpa.NodeID][]int{}
 	for nid, batchProposal := range s {
-		ips[nid] = batchProposal.distributedStateIndexProposal.AsInts()
+		ips[nid] = batchProposal.dssIndexProposal.AsInts()
 	}
 	return ips
 }

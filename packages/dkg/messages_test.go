@@ -1,4 +1,4 @@
-package distkeygen
+package dkg
 
 import (
 	"testing"
@@ -29,13 +29,13 @@ func TestInitiatorMsgSerialization(t *testing.T) {
 	// Make sure to fill in all the fields that get serialized.
 	// First we test with an empty peerPubs array.
 	msg := &initiatorInitMsg{
-		step:                69,
-		distKeyGeneratorRef: "some text",
-		peerPubs:            []*cryptolib.PublicKey{},
-		initiatorPub:        pubKey1,
-		threshold:           12321,
-		timeout:             time.Duration(time.Now().UnixNano()),
-		roundRetry:          time.Duration(time.Now().UnixNano() + 1),
+		step:         69,
+		dkgRef:       "some text",
+		peerPubs:     []*cryptolib.PublicKey{},
+		initiatorPub: pubKey1,
+		threshold:    12321,
+		timeout:      time.Duration(time.Now().UnixNano()),
+		roundRetry:   time.Duration(time.Now().UnixNano() + 1),
 	}
 	bcs.TestCodec(t, msg)
 
@@ -58,13 +58,13 @@ func TestInitiatorMsgSerialization(t *testing.T) {
 	})))
 
 	msg = &initiatorInitMsg{
-		step:                69,
-		distKeyGeneratorRef: "some text",
-		peerPubs:            []*cryptolib.PublicKey{},
-		initiatorPub:        pubKey1,
-		threshold:           12321,
-		timeout:             time.Duration(123),
-		roundRetry:          time.Duration(456),
+		step:         69,
+		dkgRef:       "some text",
+		peerPubs:     []*cryptolib.PublicKey{},
+		initiatorPub: pubKey1,
+		threshold:    12321,
+		timeout:      time.Duration(123),
+		roundRetry:   time.Duration(456),
 	}
 	bcs.TestCodecAndHash(t, msg, "abb7088a6892")
 	msg.peerPubs = []*cryptolib.PublicKey{pubKey2}
