@@ -24,7 +24,7 @@ import (
 type VMTask struct {
 	Processors *processors.Config
 	Anchor     *isc.StateAnchor
-	// GasCoin is allowed to be nil iif EstimateGasMode == true || EVMTracer != nil,
+	// GasCoin is allowed to be nil if EstimateGasMode == true || EVMTracer != nil,
 	// in which case no PTB will be produced.
 	GasCoin            *coin.CoinWithRef
 	Store              state.Store

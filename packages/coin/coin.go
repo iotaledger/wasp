@@ -61,7 +61,7 @@ func IsBaseToken(t string) (bool, error) {
 }
 
 // Type is the representation of a Iota coin type, e.g. `0x000...0002::iota::IOTA`
-// Two instances of Type are equal iif they represent the same coin type.
+// Two instances of Type are equal if they represent the same coin type.
 type Type = iotago.ObjectType
 
 func TypeFromString(s string) (Type, error) {
