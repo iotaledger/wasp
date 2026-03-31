@@ -298,7 +298,7 @@ func TestPayIota(t *testing.T) {
 	require.Empty(t, simulate.Effects.Data.V1.Status.Error)
 	require.True(t, simulate.Effects.Data.IsSuccess())
 
-	// 3 stands for the three amounts (3 crated IOTA objects) in unsafe_payIota API
+	// 3 stands for the three amounts (3 created IOTA objects) in unsafe_payIota API
 	amountNum := uint(3)
 	require.Len(t, simulate.ObjectChanges, limit+int(amountNum))
 	delObjNum := uint(0)

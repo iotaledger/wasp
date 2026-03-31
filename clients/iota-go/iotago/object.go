@@ -52,7 +52,7 @@ type Object struct {
 }
 
 // ObjectType is the representation of a Iota object type, e.g. `0x000...0002::iota::IOTA`
-// Two instances of ObjectType are equal iif they represent the same type.
+// Two instances of ObjectType are equal if they represent the same type.
 type ObjectType struct { // struct to enforce using the constructor functions
 	s string
 }
