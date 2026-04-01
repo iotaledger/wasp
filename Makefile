@@ -52,7 +52,7 @@ test-short:
 	go test -race -ldflags $(BUILD_LD_FLAGS) --short --count 1 -timeout 60m -failfast $(strip $(TEST_SHORT_PKGS))
 
 test-short-simulator:	
-	go test --short --count 1 -parallel 1 -timeout 60m -failfast $(shell go list ./... \
+	TEST_L1STARTER_IS_SIMULATOR=true go test --short --count 1 -parallel 1 -timeout 60m -failfast $(shell go list ./... \
 	| grep -v '/tools/cluster' \
 	| grep -v '/clients/apiclient' \
 	| grep -v '/clients/apiextensions' \
