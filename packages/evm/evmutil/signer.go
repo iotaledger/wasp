@@ -13,7 +13,11 @@ import (
 )
 
 func Signer(chainID *big.Int) types.Signer {
-	return types.NewEIP155Signer(chainID)
+	// Handle pre-EIP-155 transactions (chainID 0 or nil)
+	if chainID == nil || chainID.Sign() == 0 {
+		return types.HomesteadSigner{}
+	}
+	return types.NewPragueSigner(chainID)
 }
 
 func GetSender(tx *types.Transaction) (common.Address, error) {

@@ -13,6 +13,10 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/vm/gas"
 )
 
+const (
+	DefaultChainID = uint16(1074)
+)
+
 func DummyOffledgerRequest() isc.OffLedgerRequest {
 	contract := isc.Hn("somecontract")
 	entrypoint := isc.Hn("someentrypoint")
@@ -34,7 +38,7 @@ func DummyEVMRequest(chainID isc.ChainID, gasPrice *big.Int) isc.OffLedgerReques
 		panic(err)
 	}
 
-	tx := types.MustSignNewTx(key, types.NewEIP155Signer(big.NewInt(0)),
+	tx := types.MustSignNewTx(key, types.NewEIP155Signer(big.NewInt(int64(DefaultChainID))),
 		&types.LegacyTx{
 			Nonce:    0,
 			To:       &common.MaxAddress,

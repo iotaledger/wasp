@@ -17,6 +17,7 @@ require (
 	github.com/btcsuite/btcd/btcutil v1.1.6
 	github.com/bygui86/multi-profile/v2 v2.1.0
 	github.com/coder/websocket v1.8.13
+	github.com/consensys/gnark-crypto v0.19.0
 	github.com/dustin/go-humanize v1.0.1
 	github.com/ethereum/go-ethereum v1.15.5
 	github.com/golang-jwt/jwt/v5 v5.2.2
@@ -83,7 +84,6 @@ require (
 	github.com/bits-and-blooms/bitset v1.22.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/consensys/gnark-crypto v0.18.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/platforms v0.2.1 // indirect
 	github.com/cpuguy83/dockercfg v0.3.2 // indirect
