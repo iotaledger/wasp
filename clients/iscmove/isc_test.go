@@ -58,7 +58,7 @@ func TestISCCodec(t *testing.T) {
 		Assets: *iscmove.NewAssets(123456).
 			SetCoin(iotajsonrpc.MustCoinTypeFromString("0x1::a::A"), 100).
 			AddObject(*iotatest.TestAddress, iotago.MustTypeFromString("0x2::a::B")),
-	}, "17fd55be42d7")
+	}, "06caa3333f80")
 }
 
 func TestUnmarshalBCS(t *testing.T) {

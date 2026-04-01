@@ -11,8 +11,7 @@ type ResourceType struct {
 	Module     Identifier
 	ObjectName Identifier // it can be function name or struct name, etc.
 
-	SubType1 *ResourceType `bcs:"optional"`
-	SubType2 *ResourceType `bcs:"optional"`
+	SubTypes []*ResourceType `bcs:"optional"`
 }
 
 func IsSameResource(a, b string) (bool, error) {
@@ -36,56 +35,104 @@ func MustNewResourceType(s string) *ResourceType {
 }
 
 func NewResourceType(str string) (*ResourceType, error) {
-	var err error
-
+	// Find the generic part <...>
 	ltIdx := strings.Index(str, "<")
-	var subType1, subType2 *ResourceType
+	var subTypes []*ResourceType
+	var baseStr string
+
 	if ltIdx != -1 {
 		gtIdx := strings.LastIndex(str, ">")
 		if gtIdx != len(str)-1 {
 			return nil, errors.New("invalid type string literal")
 		}
-		commaIdx := strings.Index(str, ",")
-		if commaIdx == -1 {
-			subType1, err = NewResourceType(str[ltIdx+1 : gtIdx])
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			subType1, err = NewResourceType(str[ltIdx+1 : commaIdx])
-			if err != nil {
-				return nil, err
-			}
-			subType2, err = NewResourceType(strings.TrimSpace(str[commaIdx+1 : gtIdx]))
-			if err != nil {
-				return nil, err
-			}
+
+		// Extract the base type (before <)
+		baseStr = str[:ltIdx]
+
+		genericPart := str[ltIdx+1 : gtIdx]
+		if genericPart == "" {
+			return nil, errors.New("empty generic parameters")
 		}
+
+		subtypeStrs, err := splitSubtypes(genericPart)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, subtypeStr := range subtypeStrs {
+			subtype, err := NewResourceType(strings.TrimSpace(subtypeStr))
+			if err != nil {
+				return nil, err
+			}
+			subTypes = append(subTypes, subtype)
+		}
+	} else {
+		baseStr = str
 	}
 
-	parts := strings.Split(str, "::")
+	// Parse the base type (address::module::name)
+	parts := strings.Split(baseStr, "::")
+	if len(parts) != 3 {
+		return nil, fmt.Errorf("invalid resource type string: %q", str)
+	}
+
 	addr, err := AddressFromHex(parts[0])
 	if err != nil {
 		return nil, err
 	}
-	if len(parts) < 3 {
-		return nil, fmt.Errorf("invalid resource type string: %q", str)
-	}
+
 	module := parts[1]
-	var objectName string
-	if idx := strings.Index(parts[2], "<"); idx > 0 {
-		objectName = parts[2][:idx]
-	} else {
-		objectName = parts[2]
-	}
+	objectName := parts[2]
 
 	return &ResourceType{
 		Address:    addr,
 		Module:     module,
 		ObjectName: objectName,
-		SubType1:   subType1,
-		SubType2:   subType2,
+		SubTypes:   subTypes,
 	}, nil
+}
+
+// splitSubtypes splits a string by commas at depth 0 only
+// e.g. "A<B,C>, D" -> ["A<B,C>", "D"]
+func splitSubtypes(s string) ([]string, error) {
+	var result []string
+	var current strings.Builder
+	depth := 0
+
+	for _, r := range s {
+		switch r {
+		case '<':
+			depth++
+		case '>':
+			depth--
+			if depth < 0 {
+				return nil, errors.New("unmatched closing bracket")
+			}
+		case ',':
+			if depth == 0 {
+				part := strings.TrimSpace(current.String())
+				if part == "" {
+					return nil, errors.New("empty subtype entry")
+				}
+				result = append(result, part)
+				current.Reset()
+				continue
+			}
+		}
+		current.WriteRune(r)
+	}
+
+	if depth != 0 {
+		return nil, errors.New("unmatched brackets")
+	}
+
+	part := strings.TrimSpace(current.String())
+	if part == "" {
+		return nil, errors.New("empty subtype entry")
+	}
+	result = append(result, part)
+
+	return result, nil
 }
 
 func (t *ResourceType) UnmarshalJSON(data []byte) error {
@@ -101,6 +148,7 @@ func (t *ResourceType) Contains(address *Address, moduleName string, funcName st
 	if t == nil {
 		return false
 	}
+
 	if t.Module == moduleName && t.ObjectName == funcName {
 		if address == nil {
 			return true
@@ -109,42 +157,46 @@ func (t *ResourceType) Contains(address *Address, moduleName string, funcName st
 			return true
 		}
 	}
-	if t.SubType1 == nil {
-		return false
+
+	for _, subType := range t.SubTypes {
+		if subType.Contains(address, moduleName, funcName) {
+			return true
+		}
 	}
-	return t.SubType1.Contains(address, moduleName, funcName) || t.SubType2.Contains(address, moduleName, funcName)
+
+	return false
 }
 
 func (t *ResourceType) String() string {
-	if t.SubType2 != nil {
-		return fmt.Sprintf(
-			"%v::%v::%v<%v, %v>",
-			t.Address.String(),
-			t.Module,
-			t.ObjectName,
-			t.SubType1.String(),
-			t.SubType1.String(),
-		)
-	} else if t.SubType1 != nil {
-		return fmt.Sprintf("%v::%v::%v<%v>", t.Address.String(), t.Module, t.ObjectName, t.SubType1.String())
-	} else {
+	if len(t.SubTypes) == 0 {
 		return fmt.Sprintf("%v::%v::%v", t.Address.String(), t.Module, t.ObjectName)
 	}
+
+	var subtypeStrs []string
+	for _, subtype := range t.SubTypes {
+		subtypeStrs = append(subtypeStrs, subtype.String())
+	}
+
+	return fmt.Sprintf("%v::%v::%v<%v>",
+		t.Address.String(),
+		t.Module,
+		t.ObjectName,
+		strings.Join(subtypeStrs, ", "))
 }
 
 func (t *ResourceType) ShortString() string {
-	if t.SubType2 != nil {
-		return fmt.Sprintf(
-			"%v::%v::%v<%v, %v>",
-			t.Address.ShortString(),
-			t.Module,
-			t.ObjectName,
-			t.SubType1.ShortString(),
-			t.SubType1.ShortString(),
-		)
-	} else if t.SubType1 != nil {
-		return fmt.Sprintf("%v::%v::%v<%v>", t.Address.ShortString(), t.Module, t.ObjectName, t.SubType1.ShortString())
-	} else {
+	if len(t.SubTypes) == 0 {
 		return fmt.Sprintf("%v::%v::%v", t.Address.ShortString(), t.Module, t.ObjectName)
 	}
+
+	var subtypeStrs []string
+	for _, subtype := range t.SubTypes {
+		subtypeStrs = append(subtypeStrs, subtype.ShortString())
+	}
+
+	return fmt.Sprintf("%v::%v::%v<%v>",
+		t.Address.ShortString(),
+		t.Module,
+		t.ObjectName,
+		strings.Join(subtypeStrs, ", "))
 }
