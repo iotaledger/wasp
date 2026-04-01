@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
@@ -81,6 +82,7 @@ func (ch *Chain) EstimateOnLedgerRequest(dryRunRes *iotajsonrpc.DryRunTransactio
 }
 
 func (ch *Chain) runTaskNoLock(reqs []isc.Request, estimateGas bool) *vm.VMTaskResult {
+	ch.Env.AdvanceClockBy(time.Millisecond)
 	task := &vm.VMTask{
 		Processors:         ch.proc,
 		Anchor:             ch.GetLatestAnchor(),

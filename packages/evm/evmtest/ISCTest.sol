@@ -26,6 +26,10 @@ contract ISCTest {
         emit EntropyEvent(e);
     }
 
+    function getTimestampAndBlockNumber() public view returns (uint256 timestamp, uint256 blockNumber) {
+        return (block.timestamp, block.number);
+    }
+
     event RequestIDEvent(ISCRequestID reqID);
 
     function emitRequestID() public {

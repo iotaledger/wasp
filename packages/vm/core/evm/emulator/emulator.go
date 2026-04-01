@@ -217,8 +217,10 @@ func (e *EVMEmulator) CallContract(call ethereum.CallMsg, gasEstimateMode bool) 
 		call.Value = big.NewInt(0)
 	}
 
-	pendingHeader := e.BlockchainDB().GetPendingHeader(e.ctx.Timestamp())
-
+	// Using the latest committed header (instead of the "pending" header) so
+	// that the executed call sees the same block number and timestamp (instead
+	// of block number + 1).
+	header := e.BlockchainDB().GetCurrentBlock().Header()
 	statedb := e.StateDB()
 
 	// don't commit changes to state
@@ -228,7 +230,7 @@ func (e *EVMEmulator) CallContract(call ethereum.CallMsg, gasEstimateMode bool) 
 	return e.applyMessage(
 		coreMsgFromCallMsg(call, gasEstimateMode, statedb),
 		statedb,
-		pendingHeader,
+		header,
 		nil,
 		nil,
 	)

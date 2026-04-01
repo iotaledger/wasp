@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/big"
 	"testing"
+	"time"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -15,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/packages/chainutil"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/hashing"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
 	"github.com/iotaledger/wasp/v2/packages/origin"
@@ -103,7 +105,16 @@ func TestEVMCall(t *testing.T) {
 
 	logger := testlogger.NewLogger(t)
 
-	result, err := chainutil.EVMCall(anchor, parameterstest.L1Mock, store, coreprocessors.NewConfig(), logger, msg)
+	result, err := chainutil.EVMCall(
+		anchor,
+		parameterstest.L1Mock,
+		store,
+		coreprocessors.NewConfig(),
+		logger,
+		time.Now(),
+		hashing.PseudoRandomHash(nil),
+		msg,
+	)
 	if err != nil {
 		t.Fatalf("failed to call EVM: %v", err)
 	}

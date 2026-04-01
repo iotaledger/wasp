@@ -247,7 +247,6 @@ func (clu *Cluster) RunDKG(committeeNodes []int, threshold uint16, timeout ...ti
 		addr, err = apilib.RunDKG(context.Background(), client, peerPubKeys, threshold, timeout...)
 		return err
 	}, 5)
-
 	if err != nil {
 		return nil, err
 	}

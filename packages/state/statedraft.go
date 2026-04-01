@@ -4,6 +4,7 @@
 package state
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/iotaledger/wasp/v2/packages/isc"
@@ -24,10 +25,19 @@ type stateDraft struct {
 
 var _ StateDraft = &stateDraft{}
 
+// OriginTimestamp is the timestamp stored in the origin ISC block.
+// Cannot use time.Unix(0, 0) because bcs-go would encode it as the zero time (time.Time{} != time.Unix(0, 0)).
+// Also cannot use the zero time because it is before the unix epoch, and that introduces subtle bugs.
+// TODO: make configurable
+var OriginTimestamp = time.Unix(1, 0)
+
 func newOriginStateDraft() *stateDraft {
-	return &stateDraft{
+	d := &stateDraft{
 		BufferedKVStore: buffered.NewBufferedKVStore(dict.Dict{}),
 	}
+	d.Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.Encode(uint32(0)))
+	d.Set(kv.Key(coreutil.StatePrefixTimestamp), codec.Encode(OriginTimestamp))
+	return d
 }
 
 func newEmptyStateDraft(prevL1Commitment *L1Commitment, baseState State) *stateDraft {
@@ -39,9 +49,12 @@ func newEmptyStateDraft(prevL1Commitment *L1Commitment, baseState State) *stateD
 }
 
 func newStateDraft(timestamp time.Time, prevL1Commitment *L1Commitment, baseState State) *stateDraft {
+	if !timestamp.IsZero() && timestamp.Before(time.Unix(0, 0)) {
+		panic(fmt.Sprintf("timestamp %s is before unix epoch", timestamp.String()))
+	}
 	d := newEmptyStateDraft(prevL1Commitment, baseState)
-	d.Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.Encode[uint32](baseState.BlockIndex()+1))
-	d.Set(kv.Key(coreutil.StatePrefixTimestamp), codec.Encode[time.Time](timestamp))
+	d.Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.Encode(baseState.BlockIndex()+1))
+	d.Set(kv.Key(coreutil.StatePrefixTimestamp), codec.Encode(timestamp))
 	d.Set(kv.Key(coreutil.StatePrefixPrevL1Commitment), prevL1Commitment.Bytes())
 	return d
 }

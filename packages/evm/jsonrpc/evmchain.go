@@ -26,6 +26,7 @@ import (
 	"github.com/iotaledger/hive.go/runtime/event"
 	"github.com/iotaledger/wasp/v2/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/v2/packages/evm/evmutil"
+	"github.com/iotaledger/wasp/v2/packages/hashing"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/kv"
 	"github.com/iotaledger/wasp/v2/packages/kv/buffered"
@@ -475,7 +476,19 @@ func (e *EVMChain) CallContract(callMsg ethereum.CallMsg, blockNumberOrHash *rpc
 	if err != nil {
 		return nil, err
 	}
-	return e.backend.EVMCall(anchor, callMsg, blockinfo.L1Params)
+
+	// make sure that the entropy received by the call is deterministic for
+	// each block, but also different from the entropy used in any of the
+	// requests that are committed in the block.
+	entropy := hashing.HashData(blockinfo.Entropy[:])
+
+	return e.backend.EVMCall(
+		anchor,
+		blockinfo.Timestamp,
+		entropy,
+		callMsg,
+		blockinfo.L1Params,
+	)
 }
 
 func (e *EVMChain) EstimateGas(callMsg ethereum.CallMsg, blockNumberOrHash *rpc.BlockNumberOrHash) (uint64, error) {

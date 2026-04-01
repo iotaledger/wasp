@@ -11,7 +11,6 @@ import (
 	"math"
 	"math/big"
 	"testing"
-	"time"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -444,11 +443,7 @@ func TestISCTimestamp(t *testing.T) {
 	var ret int64
 	env.ISCMagicSandbox(ethKey).callView("getTimestampUnixSeconds", nil, &ret)
 
-	require.WithinRange(t,
-		time.Unix(ret, 0),
-		time.Now().Add(-1*time.Hour),
-		time.Now().Add(1*time.Hour),
-	)
+	require.Equal(t, env.Chain.GetLatestBlockInfo().Timestamp.Unix(), ret)
 }
 
 func TestISCCallView(t *testing.T) {

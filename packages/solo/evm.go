@@ -55,13 +55,21 @@ func (b *jsonRPCSoloBackend) EVMSendTransaction(tx *types.Transaction) error {
 	return err
 }
 
-func (b *jsonRPCSoloBackend) EVMCall(anchor *isc.StateAnchor, callMsg ethereum.CallMsg, l1Params *parameters.L1Params) ([]byte, error) {
+func (b *jsonRPCSoloBackend) EVMCall(
+	anchor *isc.StateAnchor,
+	blockTime time.Time,
+	entropy hashing.HashValue,
+	callMsg ethereum.CallMsg,
+	l1Params *parameters.L1Params,
+) ([]byte, error) {
 	return chainutil.EVMCall(
 		anchor,
 		l1Params,
 		b.Chain.store,
 		b.Chain.proc,
 		b.Chain.log,
+		blockTime,
+		entropy,
 		callMsg,
 	)
 }

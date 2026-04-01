@@ -170,6 +170,7 @@ func New(t Context, initOptions ...*InitOptions) *Solo {
 		seed:                 cryptolib.NewSeed(),
 		publisher:            publisher.New(opt.Log.NewChildLogger("publisher")),
 		l1ParamsFetcher:      parameters.NewL1ParamsFetcher(l1starter.Instance().L1Client().IotaClient(), opt.Log),
+		mockTime:             state.OriginTimestamp,
 		ctx:                  ctx,
 	}
 	_ = ret.publisher.Events.Published.Hook(func(ev *publisher.ISCEvent[any]) {
