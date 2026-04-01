@@ -1,8 +1,10 @@
 package util
 
-import "fortio.org/safecast"
+import (
+	"strconv"
 
-import "strconv"
+	"fortio.org/safecast"
+)
 
 func DecodeUint64(numberAsString string) (uint64, error) {
 	val, err := strconv.ParseInt(numberAsString, 10, 64)
