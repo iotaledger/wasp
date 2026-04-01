@@ -25,7 +25,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/chain"
 	"github.com/iotaledger/wasp/v2/packages/chains"
 	"github.com/iotaledger/wasp/v2/packages/daemon"
-	"github.com/iotaledger/wasp/v2/packages/distkeygen"
+	"github.com/iotaledger/wasp/v2/packages/dkg"
 	"github.com/iotaledger/wasp/v2/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/metrics"
@@ -225,7 +225,7 @@ func provide(c *dig.Container) error {
 		NodeIdentityProvider  registry.NodeIdentityProvider
 		NetworkProvider       peering.NetworkProvider       `name:"networkProvider"`
 		TrustedNetworkManager peering.TrustedNetworkManager `name:"trustedNetworkManager"`
-		Node                  *distkeygen.Node
+		Node                  *dkg.Node
 		UserManager           *users.UserManager
 		Publisher             *publisher.Publisher
 		NodeConn              chain.NodeConnection
@@ -282,7 +282,7 @@ func provide(c *dig.Container) error {
 			func() *chains.Chains {
 				return deps.Chains
 			},
-			func() *distkeygen.Node {
+			func() *dkg.Node {
 				return deps.Node
 			},
 			deps.ShutdownHandler,

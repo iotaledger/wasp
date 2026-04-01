@@ -365,7 +365,7 @@ func setupClusterTest(t *testing.T, clusterSize int, committee []int, dirnameOpt
 		dirName: dirname,
 	})
 
-	addr, err := clu.RunDistributedKeyGeneration(committee, quorum)
+	addr, err := clu.RunDKG(committee, quorum)
 	require.NoError(t, err)
 
 	t.Logf("generated state address: %s", addr.String())

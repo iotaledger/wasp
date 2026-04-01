@@ -53,7 +53,7 @@ func TestBatchProposal1Serialization(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, batchProposal.nodeIndex, bpDecoded.nodeIndex)
 	require.Equal(t, batchProposal.baseAnchor, bpDecoded.baseAnchor)
-	require.Equal(t, batchProposal.distributedStateIndexProposal, bpDecoded.distributedStateIndexProposal)
+	require.Equal(t, batchProposal.dssIndexProposal, bpDecoded.dssIndexProposal)
 	require.Equal(t, batchProposal.timeData.UnixNano(), bpDecoded.timeData.UnixNano())
 	require.Equal(t, batchProposal.validatorFeeDestination, bpDecoded.validatorFeeDestination)
 	require.Equal(t, batchProposal.requestRefs, bpDecoded.requestRefs)

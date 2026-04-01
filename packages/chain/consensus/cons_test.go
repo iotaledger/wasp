@@ -70,7 +70,7 @@ func testConsBasic(t *testing.T, n, f int) {
 	//
 	// Node Identities and shared key.
 	_, peerIdentities := testpeers.SetupKeys(uint16(n))
-	committeeAddress, dkShareProviders := testpeers.SetupDistributedKeyGenerationTrivial(t, n, f, peerIdentities, nil)
+	committeeAddress, dkShareProviders := testpeers.SetupDkgTrivial(t, n, f, peerIdentities, nil)
 	var chainID isc.ChainID
 
 	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(committeeAddress)).Encode()
@@ -267,6 +267,523 @@ func testConsBasic(t *testing.T, n, f int) {
 		require.NotNil(t, out.Result.Block)
 		require.Equal(t, out.Result.Block, out0.Result.Block)
 		require.Equal(t, out.Result.Transaction, out0.Result.Transaction)
+	}
+}
+
+// TestConsSkipVMAlreadyProcessed verifies that consensus produces Skipped status
+// when the real VM returns 0 processed requests because all proposed requests
+// were already processed in a prior block. This is the skip path from issue #723.
+//
+// The test runs two full consensus rounds:
+//   - Round 1: processes requests normally → Completed
+//   - Round 2: same requests re-proposed on new state → VM skips them → Skipped
+func TestConsSkipVMAlreadyProcessed(t *testing.T) {
+	t.Parallel()
+	type test struct {
+		n int
+		f int
+	}
+	tests := []test{
+		{n: 1, f: 0},
+		{n: 4, f: 1},
+		{n: 10, f: 3},
+	}
+	for _, test := range tests {
+		t.Run(
+			fmt.Sprintf("N=%v,F=%v", test.n, test.f),
+			func(tt *testing.T) { testConsSkipVMAlreadyProcessed(tt, test.n, test.f) },
+		)
+	}
+}
+
+func testConsSkipVMAlreadyProcessed(t *testing.T, n, f int) {
+	t.Parallel()
+	log := testlogger.NewLogger(t)
+	defer log.Shutdown()
+	//
+	// Node Identities and shared key.
+	_, peerIdentities := testpeers.SetupKeys(uint16(n))
+	committeeAddress, dkShareProviders := testpeers.SetupDkgTrivial(t, n, f, peerIdentities, nil)
+	var chainID isc.ChainID
+
+	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(committeeAddress)).Encode()
+	db := mapdb.NewMapDB()
+	store := indexedstore.New(statetest.NewStoreWithUniqueWriteMutex(db))
+	_, stateMetadata := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, iotago.ObjectID{}, 0, parameterstest.L1Mock)
+
+	stateAnchor0x := isctest.RandomStateAnchor(isctest.RandomAnchorOption{StateMetadata: stateMetadata})
+	stateAnchor0 := &stateAnchor0x
+
+	reqs := []isc.Request{
+		RandomOnLedgerDepositRequest(stateAnchor0.Owner()),
+	}
+	reqRefs := isc.RequestRefsFromRequests(reqs)
+	gasCoin := coin.CoinWithRef{
+		Type:  coin.BaseTokenType,
+		Value: coin.Value(100),
+		Ref:   iotatest.RandomObjectRef(),
+	}
+
+	//
+	// Construct the nodes.
+	consInstID := []byte{1, 2, 3}
+	chainStates := map[gpa.NodeID]state.Store{}
+	procConfig := coreprocessors.NewConfigWithTestContracts()
+	nodeIDs := gpa.NodeIDsFromPublicKeys(testpeers.PublicKeys(peerIdentities))
+	nodes := map[gpa.NodeID]gpa.GPA{}
+	for i, nid := range nodeIDs {
+		nodeLog := log.NewChildLogger(nid.ShortString())
+		nodeSK := peerIdentities[i].GetPrivateKey()
+		nodeDKShare, err := dkShareProviders[i].LoadDKShare(committeeAddress)
+		require.NoError(t, err)
+		chainStates[nid] = statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+		_, err = origin.InitChainByStateMetadataBytes(chainStates[nid], stateAnchor0.GetStateMetadata(), 0, parameterstest.L1Mock)
+		require.NoError(t, err)
+		nodes[nid] = consensus.New(
+			chainID,
+			chainStates[nid],
+			nid,
+			nodeSK,
+			nodeDKShare,
+			nil, // rotateTo
+			procConfig,
+			consInstID,
+			gpa.NodeIDFromPublicKey,
+			accounts.CommonAccount(),
+			nodeLog,
+		).AsGPA()
+	}
+	tc := gpa.NewTestContext(nodes)
+
+	// =========================================================================
+	// ROUND 1: Run consensus to completion — requests get processed.
+	// =========================================================================
+	t.Log("############ ROUND 1: Provide Inputs.")
+	now := time.Now()
+	inputs := map[gpa.NodeID]gpa.Input{}
+	for _, nid := range nodeIDs {
+		inputs[nid] = consensus.NewInputProposal(stateAnchor0)
+	}
+	tc.WithInputs(inputs).RunAll()
+
+	t.Log("############ ROUND 1: Provide TimeData and Proposals from SM/MP.")
+	for nid, node := range nodes {
+		out := node.Output().(*consensus.Output)
+		require.Equal(t, consensus.Running, out.Status)
+		tc.WithInput(nid, consensus.NewInputMempoolProposal(reqRefs))
+		tc.WithInput(nid, consensus.NewInputStateMgrProposalConfirmed())
+		tc.WithInput(nid, consensus.NewInputTimeData(now))
+		tc.WithInput(nid, consensus.NewInputL1Info([]*coin.CoinWithRef{&gasCoin}, parameterstest.L1Mock))
+	}
+	tc.RunAll()
+
+	t.Log("############ ROUND 1: Provide Decided Data from SM/MP.")
+	for nid, node := range nodes {
+		out := node.Output().(*consensus.Output)
+		require.Equal(t, consensus.Running, out.Status)
+		require.NotNil(t, out.NeedMempoolRequests)
+		require.NotNil(t, out.NeedStateMgrDecidedState)
+		l1Commitment, err := transaction.L1CommitmentFromAnchor(out.NeedStateMgrDecidedState)
+		require.NoError(t, err)
+		chainState, err := chainStates[nid].StateByTrieRoot(l1Commitment.TrieRoot())
+		require.NoError(t, err)
+		tc.WithInput(nid, consensus.NewInputMempoolRequests(reqs))
+		tc.WithInput(nid, consensus.NewInputStateMgrDecidedVirtualState(chainState))
+	}
+	tc.RunAll()
+
+	t.Log("############ ROUND 1: Run real VM.")
+	for nid, node := range nodes {
+		out := node.Output().(*consensus.Output)
+		require.Equal(t, consensus.Running, out.Status)
+		require.NotNil(t, out.NeedVMResult)
+		out.NeedVMResult.Log = hivelog.NewLogger(hivelog.WithLevel(hivelog.LevelError))
+		vmResult, err := vmimpl.Run(out.NeedVMResult)
+		require.NoError(t, err)
+		require.Greater(t, len(vmResult.RequestResults), 0, "round 1 should process requests")
+		tc.WithInput(nid, consensus.NewInputVMResult(vmResult))
+	}
+	tc.RunAll()
+
+	t.Log("############ ROUND 1: Save blocks.")
+	blocks := map[gpa.NodeID]state.Block{}
+	for nid, node := range nodes {
+		out := node.Output().(*consensus.Output)
+		require.Equal(t, consensus.Running, out.Status)
+		require.NotNil(t, out.NeedStateMgrSaveBlock)
+		block, _, _ := lo.Must3(chainStates[nid].Commit(out.NeedStateMgrSaveBlock))
+		require.NotNil(t, block)
+		blocks[nid] = block
+		tc.WithInput(nid, consensus.NewInputStateMgrBlockSaved(block))
+	}
+	tc.RunAll()
+
+	t.Log("############ ROUND 1: Verify Completed.")
+	for _, node := range nodes {
+		out := node.Output().(*consensus.Output)
+		require.Equal(t, consensus.Completed, out.Status)
+		require.True(t, out.Terminated)
+	}
+
+	// =========================================================================
+	// ROUND 2: New consensus instances on the updated state, same requests.
+	// The real VM should skip them all → Skipped status.
+	// =========================================================================
+	t.Log("############ ROUND 2: Build anchor pointing to block 1.")
+
+	// Build anchor1 from the committed block1 state.
+	block1 := blocks[nodeIDs[0]]
+	origMeta, err := transaction.StateMetadataFromBytes(stateAnchor0.GetStateMetadata())
+	require.NoError(t, err)
+	newMeta := transaction.NewStateMetadata(
+		origMeta.SchemaVersion,
+		block1.L1Commitment(),
+		origMeta.GasCoinObjectID,
+		origMeta.GasFeePolicy,
+		origMeta.InitParams,
+		origMeta.InitDeposit,
+		origMeta.PublicURL,
+	)
+	anchor1Ref := &iscmove.AnchorWithRef{
+		ObjectRef: *stateAnchor0.GetObjectRef(),
+		Object: &iscmove.Anchor{
+			ID:            *stateAnchor0.Anchor().ObjectID,
+			Assets:        stateAnchor0.Anchor().Object.Assets,
+			StateIndex:    stateAnchor0.GetStateIndex() + 1,
+			StateMetadata: newMeta.Bytes(),
+		},
+		Owner: stateAnchor0.Anchor().Owner,
+	}
+	stateAnchor1 := isc.NewStateAnchor(anchor1Ref, stateAnchor0.ISCPackage())
+
+	consInstID2 := []byte{4, 5, 6}
+	nodes2 := map[gpa.NodeID]gpa.GPA{}
+	for i, nid := range nodeIDs {
+		nodeLog := log.NewChildLogger(nid.ShortString() + "-r2")
+		nodeSK := peerIdentities[i].GetPrivateKey()
+		nodeDKShare, err := dkShareProviders[i].LoadDKShare(committeeAddress)
+		require.NoError(t, err)
+		nodes2[nid] = consensus.New(
+			chainID,
+			chainStates[nid], // reuse stores with block 1 committed
+			nid,
+			nodeSK,
+			nodeDKShare,
+			nil,
+			procConfig,
+			consInstID2,
+			gpa.NodeIDFromPublicKey,
+			accounts.CommonAccount(),
+			nodeLog,
+		).AsGPA()
+	}
+	tc2 := gpa.NewTestContext(nodes2)
+
+	t.Log("############ ROUND 2: Provide Inputs.")
+	inputs2 := map[gpa.NodeID]gpa.Input{}
+	for _, nid := range nodeIDs {
+		inputs2[nid] = consensus.NewInputProposal(&stateAnchor1)
+	}
+	tc2.WithInputs(inputs2).RunAll()
+
+	t.Log("############ ROUND 2: Provide TimeData and Proposals from SM/MP.")
+	for nid, node := range nodes2 {
+		out := node.Output().(*consensus.Output)
+		require.Equal(t, consensus.Running, out.Status)
+		tc2.WithInput(nid, consensus.NewInputMempoolProposal(reqRefs))
+		tc2.WithInput(nid, consensus.NewInputStateMgrProposalConfirmed())
+		tc2.WithInput(nid, consensus.NewInputTimeData(now))
+		tc2.WithInput(nid, consensus.NewInputL1Info([]*coin.CoinWithRef{&gasCoin}, parameterstest.L1Mock))
+	}
+	tc2.RunAll()
+
+	t.Log("############ ROUND 2: Provide Decided Data from SM/MP.")
+	for nid, node := range nodes2 {
+		out := node.Output().(*consensus.Output)
+		require.Equal(t, consensus.Running, out.Status)
+		require.NotNil(t, out.NeedMempoolRequests)
+		require.NotNil(t, out.NeedStateMgrDecidedState)
+		l1Commitment, err := transaction.L1CommitmentFromAnchor(out.NeedStateMgrDecidedState)
+		require.NoError(t, err)
+		chainState, err := chainStates[nid].StateByTrieRoot(l1Commitment.TrieRoot())
+		require.NoError(t, err)
+		tc2.WithInput(nid, consensus.NewInputMempoolRequests(reqs)) // same requests
+		tc2.WithInput(nid, consensus.NewInputStateMgrDecidedVirtualState(chainState))
+	}
+	tc2.RunAll()
+
+	t.Log("############ ROUND 2: Run real VM — should skip all requests.")
+	for nid, node := range nodes2 {
+		out := node.Output().(*consensus.Output)
+		require.Equal(t, consensus.Running, out.Status)
+		require.NotNil(t, out.NeedVMResult, "consensus should request VM result")
+		out.NeedVMResult.Log = hivelog.NewLogger(hivelog.WithLevel(hivelog.LevelError))
+		vmResult, err := vmimpl.Run(out.NeedVMResult)
+		require.NoError(t, err)
+		require.Len(t, vmResult.RequestResults, 0, "VM should skip already-processed requests")
+		tc2.WithInput(nid, consensus.NewInputVMResult(vmResult))
+	}
+	tc2.RunAll()
+
+	t.Log("############ ROUND 2: Verify Skipped status.")
+	tc2.PrintAllStatusStrings("After round 2 VM result", t.Logf)
+	for _, node := range nodes2 {
+		out := node.Output().(*consensus.Output)
+		require.Equal(t, consensus.Skipped, out.Status, "consensus should be Skipped when VM produces 0 results")
+		require.True(t, out.Terminated)
+		require.Nil(t, out.NeedVMResult)
+		require.Nil(t, out.NeedStateMgrSaveBlock)
+		require.Nil(t, out.Result)
+	}
+}
+
+// TestConsSkipVMNotEnoughFunds verifies that consensus produces Skipped status
+// when the real VM skips all requests because the sender doesn't have enough
+// base tokens to cover the minimum gas fee (ErrNotEnoughFundsForMinFee).
+// This is the exact scenario from issue #723.
+func TestConsSkipVMNotEnoughFunds(t *testing.T) {
+	t.Parallel()
+	type test struct {
+		n int
+		f int
+	}
+	tests := []test{
+		{n: 1, f: 0},
+		{n: 4, f: 1},
+		{n: 10, f: 3},
+	}
+	for _, test := range tests {
+		t.Run(
+			fmt.Sprintf("N=%v,F=%v", test.n, test.f),
+			func(tt *testing.T) { testConsSkipVMNotEnoughFunds(tt, test.n, test.f) },
+		)
+	}
+}
+
+func testConsSkipVMNotEnoughFunds(t *testing.T, n, f int) {
+	t.Parallel()
+
+	log := testlogger.NewLogger(t)
+	defer log.Shutdown()
+	//
+	// Node Identities and shared key.
+	_, peerIdentities := testpeers.SetupKeys(uint16(n))
+	committeeAddress, dkShareProviders := testpeers.SetupDkgTrivial(t, n, f, peerIdentities, nil)
+	var chainID isc.ChainID
+
+	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(committeeAddress)).Encode()
+	db := mapdb.NewMapDB()
+	store := indexedstore.New(statetest.NewStoreWithUniqueWriteMutex(db))
+	_, stateMetadata := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, iotago.ObjectID{}, 0, parameterstest.L1Mock)
+
+	stateAnchor0x := isctest.RandomStateAnchor(isctest.RandomAnchorOption{StateMetadata: stateMetadata})
+	stateAnchor0 := &stateAnchor0x
+
+	// Create a request with only 1 base token — far below the minimum gas fee
+	// of 100,000 tokens (10,000 gas units * 10 tokens/gas with default policy).
+	reqs := []isc.Request{
+		RandomOnLedgerDepositRequestWithAmount(1, stateAnchor0.Owner()),
+	}
+	reqRefs := isc.RequestRefsFromRequests(reqs)
+	gasCoin := coin.CoinWithRef{
+		Type:  coin.BaseTokenType,
+		Value: coin.Value(100),
+		Ref:   iotatest.RandomObjectRef(),
+	}
+
+	//
+	// Construct the nodes.
+	consInstID := []byte{1, 2, 3}
+	chainStates := map[gpa.NodeID]state.Store{}
+	procConfig := coreprocessors.NewConfigWithTestContracts()
+	nodeIDs := gpa.NodeIDsFromPublicKeys(testpeers.PublicKeys(peerIdentities))
+	nodes := map[gpa.NodeID]gpa.GPA{}
+	for i, nid := range nodeIDs {
+		nodeLog := log.NewChildLogger(nid.ShortString())
+		nodeSK := peerIdentities[i].GetPrivateKey()
+		nodeDKShare, err := dkShareProviders[i].LoadDKShare(committeeAddress)
+		require.NoError(t, err)
+		chainStates[nid] = statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+		_, err = origin.InitChainByStateMetadataBytes(chainStates[nid], stateAnchor0.GetStateMetadata(), 0, parameterstest.L1Mock)
+		require.NoError(t, err)
+		nodes[nid] = consensus.New(
+			chainID,
+			chainStates[nid],
+			nid,
+			nodeSK,
+			nodeDKShare,
+			nil, // rotateTo
+			procConfig,
+			consInstID,
+			gpa.NodeIDFromPublicKey,
+			accounts.CommonAccount(),
+			nodeLog,
+		).AsGPA()
+	}
+	tc := gpa.NewTestContext(nodes)
+	//
+	// Step 1: Provide initial inputs.
+	t.Log("############ Provide Inputs.")
+	now := time.Now()
+	inputs := map[gpa.NodeID]gpa.Input{}
+	for _, nid := range nodeIDs {
+		inputs[nid] = consensus.NewInputProposal(stateAnchor0)
+	}
+	tc.WithInputs(inputs).RunAll()
+	//
+	// Step 2: Provide SM and MP responses on proposals (and time data).
+	t.Log("############ Provide TimeData and Proposals from SM/MP.")
+	for nid, node := range nodes {
+		out := node.Output().(*consensus.Output)
+		require.Equal(t, consensus.Running, out.Status)
+		tc.WithInput(nid, consensus.NewInputMempoolProposal(reqRefs))
+		tc.WithInput(nid, consensus.NewInputStateMgrProposalConfirmed())
+		tc.WithInput(nid, consensus.NewInputTimeData(now))
+		tc.WithInput(nid, consensus.NewInputL1Info([]*coin.CoinWithRef{&gasCoin}, parameterstest.L1Mock))
+	}
+	tc.RunAll()
+	//
+	// Step 3: Provide Decided data from SM and MP.
+	t.Log("############ Provide Decided Data from SM/MP.")
+	for nid, node := range nodes {
+		out := node.Output().(*consensus.Output)
+		require.Equal(t, consensus.Running, out.Status)
+		require.NotNil(t, out.NeedMempoolRequests)
+		require.NotNil(t, out.NeedStateMgrDecidedState)
+		l1Commitment, err := transaction.L1CommitmentFromAnchor(out.NeedStateMgrDecidedState)
+		require.NoError(t, err)
+		chainState, err := chainStates[nid].StateByTrieRoot(l1Commitment.TrieRoot())
+		require.NoError(t, err)
+		tc.WithInput(nid, consensus.NewInputMempoolRequests(reqs))
+		tc.WithInput(nid, consensus.NewInputStateMgrDecidedVirtualState(chainState))
+	}
+	tc.RunAll()
+	//
+	// Step 4: Run the real VM — it should skip the request due to insufficient funds.
+	t.Log("############ Run real VM — should skip due to not enough funds for min fee.")
+	for nid, node := range nodes {
+		out := node.Output().(*consensus.Output)
+		require.Equal(t, consensus.Running, out.Status)
+		require.NotNil(t, out.NeedVMResult, "consensus should request VM result")
+		out.NeedVMResult.Log = hivelog.NewLogger(hivelog.WithLevel(hivelog.LevelError))
+		vmResult, err := vmimpl.Run(out.NeedVMResult)
+		require.NoError(t, err)
+		require.Len(t, vmResult.RequestResults, 0,
+			"VM should skip request — sender has insufficient funds for minimum gas fee")
+		tc.WithInput(nid, consensus.NewInputVMResult(vmResult))
+	}
+	tc.RunAll()
+	//
+	// Verify: all nodes should have Skipped status.
+	t.Log("############ Verify Skipped status.")
+	tc.PrintAllStatusStrings("After VM with not enough funds", t.Logf)
+	for _, node := range nodes {
+		out := node.Output().(*consensus.Output)
+		require.Equal(t, consensus.Skipped, out.Status,
+			"consensus should be Skipped when VM produces 0 results due to insufficient funds")
+		require.True(t, out.Terminated)
+		require.Nil(t, out.NeedVMResult)
+		require.Nil(t, out.NeedStateMgrSaveBlock)
+		require.Nil(t, out.Result)
+	}
+}
+
+// TestConsSkipACSNilProposals verifies that consensus produces Skipped status
+// when all nodes propose nil base anchor (void proposals), causing
+// AggregateBatchProposals to decide the batch should be skipped.
+func TestConsSkipACSNilProposals(t *testing.T) {
+	t.Parallel()
+	testConsSkipACSNilProposals(t, 1, 0)
+}
+
+func testConsSkipACSNilProposals(t *testing.T, n, f int) {
+	log := testlogger.NewLogger(t)
+	defer log.Shutdown()
+	//
+	// Node Identities and shared key.
+	_, peerIdentities := testpeers.SetupKeys(uint16(n))
+	committeeAddress, dkShareProviders := testpeers.SetupDkgTrivial(t, n, f, peerIdentities, nil)
+	var chainID isc.ChainID
+
+	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(committeeAddress)).Encode()
+	db := mapdb.NewMapDB()
+	store := indexedstore.New(statetest.NewStoreWithUniqueWriteMutex(db))
+	_, stateMetadata := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, iotago.ObjectID{}, 0, parameterstest.L1Mock)
+
+	stateAnchor0x := isctest.RandomStateAnchor(isctest.RandomAnchorOption{StateMetadata: stateMetadata})
+	stateAnchor0 := &stateAnchor0x
+
+	gasCoin := coin.CoinWithRef{
+		Type:  coin.BaseTokenType,
+		Value: coin.Value(100),
+		Ref:   iotatest.RandomObjectRef(),
+	}
+
+	//
+	// Construct the nodes.
+	consInstID := []byte{1, 2, 3}
+	procConfig := coreprocessors.NewConfig()
+	nodeIDs := gpa.NodeIDsFromPublicKeys(testpeers.PublicKeys(peerIdentities))
+	nodes := map[gpa.NodeID]gpa.GPA{}
+	for i, nid := range nodeIDs {
+		nodeLog := log.NewChildLogger(nid.ShortString())
+		nodeSK := peerIdentities[i].GetPrivateKey()
+		nodeDKShare, err := dkShareProviders[i].LoadDKShare(committeeAddress)
+		require.NoError(t, err)
+		chainStore := statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+		_, err = origin.InitChainByStateMetadataBytes(chainStore, stateAnchor0.GetStateMetadata(), 0, parameterstest.L1Mock)
+		require.NoError(t, err)
+		nodes[nid] = consensus.New(
+			chainID,
+			chainStore,
+			nid,
+			nodeSK,
+			nodeDKShare,
+			nil, // rotateTo
+			procConfig,
+			consInstID,
+			gpa.NodeIDFromPublicKey,
+			accounts.CommonAccount(),
+			nodeLog,
+		).AsGPA()
+	}
+	tc := gpa.NewTestContext(nodes)
+	//
+	// Step 1: Provide initial nil proposal (no base anchor known).
+	// This is the ⊥ proposal: the node has no anchor yet.
+	t.Log("############ Provide nil (⊥) Inputs.")
+	now := time.Now()
+	inputs := map[gpa.NodeID]gpa.Input{}
+	for _, nid := range nodeIDs {
+		inputs[nid] = consensus.NewInputProposal(nil) // nil = ⊥ proposal
+	}
+	tc.WithInputs(inputs).RunAll()
+	//
+	// Step 2: Provide time data and empty mempool/state proposals.
+	// With nil anchor, the mempool proposal will be empty and state proposal will be nil.
+	t.Log("############ Provide TimeData and empty proposals.")
+	for nid, node := range nodes {
+		out := node.Output().(*consensus.Output)
+		require.Equal(t, consensus.Running, out.Status)
+		// Provide empty proposals matching the nil anchor context.
+		tc.WithInput(nid, consensus.NewInputMempoolProposal(nil))
+		tc.WithInput(nid, consensus.NewInputStateMgrProposalConfirmed())
+		tc.WithInput(nid, consensus.NewInputTimeData(now))
+		tc.WithInput(nid, consensus.NewInputL1Info([]*coin.CoinWithRef{&gasCoin}, parameterstest.L1Mock))
+	}
+	tc.RunAll()
+	tc.PrintAllStatusStrings("After nil proposals", t.Logf)
+	//
+	// Verify: all nodes should have Skipped status because all proposed nil anchor.
+	// The ACS output will have >F nil proposals → shouldBeSkipped=true.
+	t.Log("############ Verify Skipped status.")
+	for _, node := range nodes {
+		out := node.Output().(*consensus.Output)
+		require.Equal(t, consensus.Skipped, out.Status,
+			"consensus should be Skipped when all nodes propose nil anchor")
+		require.True(t, out.Terminated)
+		require.Nil(t, out.NeedVMResult)
+		require.Nil(t, out.Result)
 	}
 }
 
@@ -715,6 +1232,10 @@ func (tci *testConsInst) tryCloseCompInputPipe() {
 */
 
 func RandomOnLedgerDepositRequest(senders ...*cryptolib.Address) isc.OnLedgerRequest {
+	return RandomOnLedgerDepositRequestWithAmount(iotagraphql.CoinValue(rand.Int63()), senders...)
+}
+
+func RandomOnLedgerDepositRequestWithAmount(amount iotagraphql.CoinValue, senders ...*cryptolib.Address) isc.OnLedgerRequest {
 	sender := cryptolib.NewRandomAddress()
 	if len(senders) != 0 {
 		sender = senders[0]
@@ -722,7 +1243,7 @@ func RandomOnLedgerDepositRequest(senders ...*cryptolib.Address) isc.OnLedgerReq
 	ref := iotatest.RandomObjectRef()
 	a := iscmove.AssetsBagWithBalances{
 		AssetsBag: iscmove.AssetsBag{ID: *iotatest.RandomAddress(), Size: 1},
-		Assets:    *iscmove.NewAssets(iotagraphql.CoinValue(rand.Int63())),
+		Assets:    *iscmove.NewAssets(amount),
 	}
 	req := iscmove.RefWithObject[iscmove.Request]{
 		ObjectRef: *ref,

@@ -22,14 +22,14 @@ import (
 type SyncACS struct {
 	c *Consensus
 
-	baseStateAnchor                   *isc.StateAnchor
-	baseStateAnchorReceived           bool
-	RequestRefs                       []*isc.RequestRef
-	DistributedSignatureIndexProposal []int
-	TimeData                          time.Time
-	gasCoins                          []*coin.CoinWithRef
-	l1params                          *parameters.L1Params
-	l1InfoReceived                    bool
+	baseStateAnchor         *isc.StateAnchor
+	baseStateAnchorReceived bool
+	RequestRefs             []*isc.RequestRef
+	DSSIndexProposal        []int
+	TimeData                time.Time
+	gasCoins                []*coin.CoinWithRef
+	l1params                *parameters.L1Params
+	l1InfoReceived          bool
 
 	inputsReady bool
 	outputReady bool
@@ -61,11 +61,11 @@ func (sub *SyncACS) MempoolRequestsReceived(requestRefs []*isc.RequestRef) gpa.O
 	return sub.tryCompleteInput()
 }
 
-func (sub *SyncACS) DistributedSignatureIndexProposalReceived(distSignIndexProposal []int) gpa.OutMessages {
-	if sub.DistributedSignatureIndexProposal != nil {
+func (sub *SyncACS) DSSIndexProposalReceived(dssIndexProposal []int) gpa.OutMessages {
+	if sub.DSSIndexProposal != nil {
 		return nil
 	}
-	sub.DistributedSignatureIndexProposal = distSignIndexProposal
+	sub.DSSIndexProposal = dssIndexProposal
 	return sub.tryCompleteInput()
 }
 
@@ -91,11 +91,11 @@ func (sub *SyncACS) tryCompleteInput() gpa.OutMessages {
 	if sub.inputsReady || !sub.baseStateAnchorReceived {
 		return nil
 	}
-	if sub.RequestRefs == nil || sub.DistributedSignatureIndexProposal == nil || sub.TimeData.IsZero() || !sub.l1InfoReceived {
+	if sub.RequestRefs == nil || sub.DSSIndexProposal == nil || sub.TimeData.IsZero() || !sub.l1InfoReceived {
 		return nil
 	}
 	sub.inputsReady = true
-	return sub.c.uponACSInputsReceived(sub.baseStateAnchor, sub.RequestRefs, sub.DistributedSignatureIndexProposal, sub.TimeData, sub.gasCoins, sub.l1params)
+	return sub.c.uponACSInputsReceived(sub.baseStateAnchor, sub.RequestRefs, sub.DSSIndexProposal, sub.TimeData, sub.gasCoins, sub.l1params)
 }
 
 func (sub *SyncACS) ACSOutputReceived(output gpa.Output) gpa.OutMessages {
@@ -132,8 +132,8 @@ func (sub *SyncACS) String() string {
 		if sub.RequestRefs == nil {
 			wait = append(wait, "RequestRefs")
 		}
-		if sub.DistributedSignatureIndexProposal == nil {
-			wait = append(wait, "DistributedSignatureIndexProposal")
+		if sub.DSSIndexProposal == nil {
+			wait = append(wait, "DSSIndexProposal")
 		}
 		if sub.TimeData.IsZero() {
 			wait = append(wait, "TimeData")

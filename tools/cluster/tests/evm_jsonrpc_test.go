@@ -33,7 +33,7 @@ func TestEVMJsonRPCClusterAccessNode(t *testing.T) {
 		t.Skip("Skipping cluster tests in short mode")
 	}
 	clu := newCluster(t, waspClusterOpts{nNodes: 5})
-	chain, err := clu.DeployChainWithDistKeyGen(clu.Config.AllNodes(), []int{0, 1, 2, 3}, uint16(3))
+	chain, err := clu.DeployChainWithDKG(clu.Config.AllNodes(), []int{0, 1, 2, 3}, uint16(3))
 	require.NoError(t, err)
 	env := newChainEnv(t, clu, chain)
 	e := newClusterTestEnv(t, env, 4) // node #4 is an access node
@@ -45,7 +45,7 @@ func TestEVMJsonRPCZeroGasFee(t *testing.T) {
 		t.Skip("Skipping cluster tests in short mode")
 	}
 	clu := newCluster(t, waspClusterOpts{nNodes: 5})
-	chain, err := clu.DeployChainWithDistKeyGen(clu.Config.AllNodes(), []int{0, 1, 2, 3}, uint16(3))
+	chain, err := clu.DeployChainWithDKG(clu.Config.AllNodes(), []int{0, 1, 2, 3}, uint16(3))
 	require.NoError(t, err)
 	env := newChainEnv(t, clu, chain)
 	e := newClusterTestEnv(t, env, 4) // node #4 is an access node

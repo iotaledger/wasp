@@ -33,8 +33,8 @@ func TestExecuteTransactionBlockDeduplication(t *testing.T) {
 	f := 1
 	_, peerIdentities := testpeers.SetupKeys(uint16(n))
 	nodeIDs := gpa.MakeTestNodeIDs(n)
-	committeeAddr, dkRegs := testpeers.SetupDistributedKeyGenerationTrivial(t, n, f, peerIdentities, nil)
-	dssSigner := testpeers.NewTestDistributedSignatureSigner(committeeAddr, dkRegs, nodeIDs, peerIdentities, log)
+	committeeAddr, dkRegs := testpeers.SetupDkgTrivial(t, n, f, peerIdentities, nil)
+	dssSigner := testpeers.NewTestDSSSigner(committeeAddr, dkRegs, nodeIDs, peerIdentities, log)
 	signer := cryptolib.SignerToIotaSigner(dssSigner)
 
 	// Fund the DSS signer address

@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package distkeygen_test
+package dkg_test
 
 // TODO: Tests with corrupted messages.
 // TODO: Tests with byzantine messages.
@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	hivelog "github.com/iotaledger/hive.go/log"
-	"github.com/iotaledger/wasp/v2/packages/distkeygen"
+	"github.com/iotaledger/wasp/v2/packages/dkg"
 	"github.com/iotaledger/wasp/v2/packages/registry"
 	"github.com/iotaledger/wasp/v2/packages/tcrypto"
 	"github.com/iotaledger/wasp/v2/packages/testutil"
@@ -41,20 +41,20 @@ func TestBasic(t *testing.T) {
 	networkProviders := peeringNetwork.NetworkProviders()
 	//
 	// Initialize the DKG subsystem in each node.
-	distKeyGenNodes := make([]*distkeygen.Node, len(peeringURLs))
+	dkgNodes := make([]*dkg.Node, len(peeringURLs))
 	dkShareRegistries := make([]registry.DKShareRegistry, len(peeringURLs))
 	for i := range peeringURLs {
-		dkShareRegistries[i] = testutil.NewDistributedKeyGenerationRegistry(peerIdentities[i].GetPrivateKey())
-		distKeyGenNode, err := distkeygen.NewNode(
+		dkShareRegistries[i] = testutil.NewDkgRegistry(peerIdentities[i].GetPrivateKey())
+		dkgNode, err := dkg.NewNode(
 			peerIdentities[i], networkProviders[i], dkShareRegistries[i],
 			testlogger.WithLevel(log.NewChildLogger(fmt.Sprintf("PeeringURL:%s", peeringURLs[i])), hivelog.LevelDebug, false),
 		)
 		require.NoError(t, err)
-		distKeyGenNodes[i] = distKeyGenNode
+		dkgNodes[i] = dkgNode
 	}
 	//
 	// Initiate the key generation from some client node.
-	dkShare, err := distKeyGenNodes[0].GenerateDistributedKey(
+	dkShare, err := dkgNodes[0].GenerateDistributedKey(
 		testpeers.PublicKeys(peerIdentities),
 		threshold,
 		1*time.Second,
@@ -123,19 +123,19 @@ func TestUnreliableNet(t *testing.T) {
 	networkProviders := peeringNetwork.NetworkProviders()
 	//
 	// Initialize the DKG subsystem in each node.
-	distKeyGenNodes := make([]*distkeygen.Node, len(peerPeeringURLs))
+	dkgNodes := make([]*dkg.Node, len(peerPeeringURLs))
 	for i := range peerPeeringURLs {
-		dksReg := testutil.NewDistributedKeyGenerationRegistry(peerIdentities[i].GetPrivateKey())
-		distKeyGenNode, err := distkeygen.NewNode(
+		dksReg := testutil.NewDkgRegistry(peerIdentities[i].GetPrivateKey())
+		dkgNode, err := dkg.NewNode(
 			peerIdentities[i], networkProviders[i], dksReg,
 			testlogger.WithLevel(log.NewChildLogger(fmt.Sprintf("PeeringURL:%s", peerPeeringURLs[i])), hivelog.LevelDebug, false),
 		)
 		require.NoError(t, err)
-		distKeyGenNodes[i] = distKeyGenNode
+		dkgNodes[i] = dkgNode
 	}
 	//
 	// Initiate the key generation from some client node.
-	dkShare, err := distKeyGenNodes[0].GenerateDistributedKey(
+	dkShare, err := dkgNodes[0].GenerateDistributedKey(
 		testpeers.PublicKeys(peerIdentities),
 		threshold,
 		100*time.Millisecond, // Round retry.
@@ -167,19 +167,19 @@ func TestLowN(t *testing.T) {
 		networkProviders := peeringNetwork.NetworkProviders()
 		//
 		// Initialize the DKG subsystem in each node.
-		distKeyGenNodes := make([]*distkeygen.Node, len(peerPeeringURLs))
+		dkgNodes := make([]*dkg.Node, len(peerPeeringURLs))
 		for i := range peerPeeringURLs {
-			dksReg := testutil.NewDistributedKeyGenerationRegistry(peerIdentities[i].GetPrivateKey())
-			distKeyGenNode, err := distkeygen.NewNode(
+			dksReg := testutil.NewDkgRegistry(peerIdentities[i].GetPrivateKey())
+			dkgNode, err := dkg.NewNode(
 				peerIdentities[i], networkProviders[i], dksReg,
 				testlogger.WithLevel(log.NewChildLogger(fmt.Sprintf("PeeringURL:%s", peerPeeringURLs[i])), hivelog.LevelDebug, false),
 			)
 			require.NoError(t, err)
-			distKeyGenNodes[i] = distKeyGenNode
+			dkgNodes[i] = dkgNode
 		}
 		//
 		// Initiate the key generation from some client node.
-		dkShare, err := distKeyGenNodes[0].GenerateDistributedKey(
+		dkShare, err := dkgNodes[0].GenerateDistributedKey(
 			testpeers.PublicKeys(peerIdentities),
 			threshold,
 			1*time.Second,

@@ -72,7 +72,7 @@ func AggregateBatchProposals(inputs map[gpa.NodeID][]byte, nodeIDs []gpa.NodeID,
 	aggregatedL1Params := batchProposals.aggregatedL1Params(f)
 	aggregatedBatchProposals := &AggregatedBatchProposals{
 		batchProposalSet:      batchProposals,
-		decidedIndexProposals: batchProposals.decidedDistributedSignatureIndexProposals(),
+		decidedIndexProposals: batchProposals.decidedDSSIndexProposals(),
 		decidedBaseAnchor:     decidedBaseAnchor,
 		decidedRequestRefs:    batchProposals.decidedRequestRefs(f, decidedBaseAnchor),
 		decidedRotateTo:       batchProposals.decidedRotateTo(f),
@@ -99,7 +99,7 @@ func (p *AggregatedBatchProposals) ShouldBeSkipped() bool {
 	return p.shouldBeSkipped
 }
 
-func (p *AggregatedBatchProposals) DecidedDistributedSignatureIndexProposals() map[gpa.NodeID][]int {
+func (p *AggregatedBatchProposals) DecidedDSSIndexProposals() map[gpa.NodeID][]int {
 	if p.shouldBeSkipped {
 		panic("trying to use aggregated proposal marked to be skipped")
 	}

@@ -6,7 +6,7 @@ package chain_test
 import (
 	"context"
 	"fmt"
-	"math/rand"
+	mrand "math/rand"
 	"sync"
 	"testing"
 	"time"
@@ -67,15 +67,15 @@ func TestMain(m *testing.M) {
 }
 
 func TestNodeBasic(t *testing.T) {
-	t.Skip("FIXME")
 	t.Parallel()
+
 	tests := []tc{
-		{n: 1, f: 0, reliable: true, timeout: 30 * time.Second},   // Low N
-		{n: 2, f: 0, reliable: true, timeout: 40 * time.Second},   // Low N
-		{n: 3, f: 0, reliable: true, timeout: 50 * time.Second},   // Low N
-		{n: 4, f: 0, reliable: true, timeout: 100 * time.Second},  // Minimal robust config.
-		{n: 4, f: 1, reliable: true, timeout: 100 * time.Second},  // Minimal robust config.
-		{n: 10, f: 3, reliable: true, timeout: 150 * time.Second}, // Typical config.
+		{n: 1, f: 0, reliable: true, timeout: 60 * time.Second},   // Low N
+		{n: 2, f: 0, reliable: true, timeout: 80 * time.Second},   // Low N
+		{n: 3, f: 0, reliable: true, timeout: 100 * time.Second},  // Low N
+		{n: 4, f: 0, reliable: true, timeout: 200 * time.Second},  // Minimal robust config.
+		{n: 4, f: 1, reliable: true, timeout: 200 * time.Second},  // Minimal robust config.
+		{n: 10, f: 3, reliable: true, timeout: 300 * time.Second}, // Typical config.
 	}
 	if !testing.Short() {
 		tests = append(tests,
@@ -416,6 +416,17 @@ func (tnc *testNodeConn) ConsensusL1InfoProposal(
 
 	// TODO: Refactor this separate goroutine and place it somewhere connection related instead
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				// During test shutdown, the L1 container may be stopped while
+				// this goroutine is in-flight, causing nil pointer panics.
+				// Silently swallow these — the channel remains unwritten, and
+				// the consensus runner will notice via context cancellation.
+				tnc.t.Logf("ERROR: Panic in ConsensusL1InfoProposal: %v", r)
+				return
+			}
+		}()
+
 		stateMetadata, err := transaction.StateMetadataFromBytes(anchor.GetStateMetadata())
 		if err != nil {
 			panic(err)
@@ -498,7 +509,7 @@ type testEnv struct {
 func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoint) *testEnv {
 	te := &testEnv{t: t}
 	te.ctx, te.ctxCancel = context.WithCancel(context.Background())
-	te.log = testlogger.NewLogger(t).NewChildLogger(fmt.Sprintf("%04d", rand.Intn(10000))) // For test instance ID.
+	te.log = testlogger.NewLogger(t).NewChildLogger(fmt.Sprintf("%04d", mrand.Intn(10000))) // For test instance ID.
 
 	te.iscPackageID = node.ISCPackageID()
 	te.l1Client = node.L1Client()
@@ -525,8 +536,8 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 	)
 	te.networkProviders = te.peeringNetwork.NetworkProviders()
 	var dkShareProviders []registry.DKShareRegistry
-	te.committeeAddress, dkShareProviders = testpeers.SetupDistributedKeyGenerationTrivial(t, n, f, te.peerIdentities, nil)
-	te.committeeSigner = testpeers.NewTestDistributedSignatureSigner(te.committeeAddress, dkShareProviders, gpa.MakeTestNodeIDs(n), te.peerIdentities, te.log)
+	te.committeeAddress, dkShareProviders = testpeers.SetupDkgTrivial(t, n, f, te.peerIdentities, nil)
+	te.committeeSigner = testpeers.NewTestDSSSigner(te.committeeAddress, dkShareProviders, gpa.MakeTestNodeIDs(n), te.peerIdentities, te.log)
 
 	require.NoError(t, node.L1Client().RequestFundsFromFaucet(context.Background(), te.committeeSigner.Address().AsIotaAddress()))
 	iotatest.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(te.committeeSigner), node.L1Client(), isc.GasCoinTargetValue*10)

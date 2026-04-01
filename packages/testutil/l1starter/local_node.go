@@ -150,7 +150,7 @@ func (in *LocalIotaNode) startNodeContainer(ctx context.Context, networkName, im
 			wait.ForListeningPort("9123/tcp"),
 		).WithDeadline(4 * time.Minute),
 		Cmd: []string{
-			"iota",
+			"iota-localnet",
 			"start",
 			"--force-regenesis",
 			"--with-faucet=0.0.0.0:9123",

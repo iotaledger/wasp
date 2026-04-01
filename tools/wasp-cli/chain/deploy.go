@@ -151,7 +151,7 @@ func initializeDeploymentWithGasCoin(ctx context.Context, signer wallets.Wallet,
 		return nil, fmt.Errorf("a chain has already been deployed")
 	}
 
-	committeeAddr, err := doDistributedKeyGeneration(ctx, node, peers, quorum)
+	committeeAddr, err := doDKG(ctx, node, peers, quorum)
 	if err != nil {
 		return nil, err
 	}

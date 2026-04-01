@@ -14,7 +14,7 @@ import (
 	"github.com/iotaledger/wasp/v2/clients"
 	"github.com/iotaledger/wasp/v2/packages/authentication"
 	"github.com/iotaledger/wasp/v2/packages/chains"
-	"github.com/iotaledger/wasp/v2/packages/distkeygen"
+	"github.com/iotaledger/wasp/v2/packages/dkg"
 	"github.com/iotaledger/wasp/v2/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/v2/packages/metrics"
 	"github.com/iotaledger/wasp/v2/packages/parameters/l1paramsfetcher"
@@ -88,7 +88,7 @@ func Init(
 	dkShareRegistry registry.DKShareRegistry,
 	nodeIdentityProvider registry.NodeIdentityProvider,
 	chainsProvider chains.Provider,
-	distKeyGenNodeProvider distkeygen.NodeProvider,
+	dkgNodeProvider dkg.NodeProvider,
 	shutdownHandler *shutdown.ShutdownHandler,
 	chainMetricsProvider *metrics.ChainMetricsProvider,
 	authConfig authentication.AuthConfiguration,
@@ -113,7 +113,7 @@ func Init(
 	peeringService := services.NewPeeringService(chainsProvider, networkProvider, trustedNetworkManager)
 	evmService := services.NewEVMService(chainsProvider, chainService, networkProvider, pub, indexDBPath, chainMetricsProvider, jsonrpcParams, logger.NewChildLogger("EVMService"))
 	nodeService := services.NewNodeService(chainRecordRegistry, nodeIdentityProvider, chainsProvider, shutdownHandler, trustedNetworkManager, l1ParamsFetcher)
-	distKeyGenService := services.NewDistributedKeyGenerationService(dkShareRegistry, distKeyGenNodeProvider, trustedNetworkManager)
+	dkgService := services.NewDKGService(dkShareRegistry, dkgNodeProvider, trustedNetworkManager)
 	userService := services.NewUserService(userManager)
 	// --
 
@@ -122,7 +122,7 @@ func Init(
 	controllersToLoad := []interfaces.APIController{
 		chain.NewChainController(logger, chainService, committeeService, evmService, nodeService, offLedgerService, registryService, accountDumpsPath, l1Client),
 		apimetrics.NewMetricsController(chainService, metricsService),
-		node.NewNodeController(waspVersion, config, distKeyGenService, nodeService, peeringService),
+		node.NewNodeController(waspVersion, config, dkgService, nodeService, peeringService),
 		requests.NewRequestsController(chainService, offLedgerService, peeringService),
 		users.NewUsersController(userService),
 		corecontracts.NewCoreContractsController(chainService),

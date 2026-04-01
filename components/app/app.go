@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/wasp/v2/components/cache"
 	"github.com/iotaledger/wasp/v2/components/chains"
 	"github.com/iotaledger/wasp/v2/components/database"
-	distkeygen "github.com/iotaledger/wasp/v2/components/distkeygen"
+	"github.com/iotaledger/wasp/v2/components/dkg"
 	"github.com/iotaledger/wasp/v2/components/logger"
 	"github.com/iotaledger/wasp/v2/components/nodeconn"
 	"github.com/iotaledger/wasp/v2/components/peering"
@@ -46,7 +46,7 @@ func App() *app.App {
 			database.Component,
 			registry.Component,
 			peering.Component,
-			distkeygen.Component,
+			dkg.Component,
 			processors.Component,
 			chains.Component,
 			publisher.Component,

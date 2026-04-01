@@ -14,9 +14,11 @@ By default, the L1starter will always start a local node, this can be configured
 
 ```json
 {
-  "IS_LOCAL": false,
-  "API_URL": "https://api.alphanet.iota.cafe",
-  "FAUCET_URL": "https://faucet.alphanet.iota.cafe/gas"
+  "l1starter": {
+    "IS_LOCAL": false,
+    "API_URL": "https://api.alphanet.iota.cafe",
+    "FAUCET_URL": "https://faucet.alphanet.iota.cafe/gas"
+  }
 }
 ```
 
