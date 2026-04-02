@@ -16,12 +16,19 @@ import (
 	bcs "github.com/iotaledger/bcs-go"
 )
 
+func TestMain(m *testing.M) {
+	l1starter.TestMain(m)
+}
+
 func TestPTBMoveCall(t *testing.T) {
-	l1starter.TestLocal()
+	if l1starter.IsSimulatorConfigured() {
+		t.Skip("test does not work with simulator")
+	}
 	t.Run(
 		"access_multiple_return_values_from_move_func", func(t *testing.T) {
 			client := l1starter.Instance().L1Client()
-			sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
+			sender := iotatest.MakeSigner(0)
+			require.NoError(t, client.RequestFundsFromFaucet(t.Context(), sender.Address()))
 
 			senderAddr := sender.Address()
 			txnBytes, err := client.Publish(
@@ -105,11 +112,16 @@ func TestPTBMoveCall(t *testing.T) {
 }
 
 func TestPTBPayIota(t *testing.T) {
-	l1starter.TestLocal()
+	if l1starter.IsSimulatorConfigured() {
+		t.Skip("test does not work with simulator")
+	}
 	client := l1starter.Instance().L1Client()
-	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
-	recipient1 := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
-	recipient2 := iotatest.MakeSignerWithFunds(2, l1starter.Instance().FaucetURL(), l1starter.Instance().APIURL())
+	sender := iotatest.MakeSigner(0)
+	require.NoError(t, client.RequestFundsFromFaucet(t.Context(), sender.Address()))
+	recipient1 := iotatest.MakeSigner(1)
+	require.NoError(t, client.RequestFundsFromFaucet(t.Context(), recipient1.Address()))
+	recipient2 := iotatest.MakeSigner(2)
+	require.NoError(t, client.RequestFundsFromFaucet(t.Context(), recipient2.Address()))
 
 	senderAddr3 := sender.Address()
 	recipient1Addr := recipient1.Address()
