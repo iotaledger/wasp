@@ -137,7 +137,7 @@ func (in *LocalIotaNode) startPostgresContainer(ctx context.Context, networkName
 
 func (in *LocalIotaNode) startNodeContainer(ctx context.Context, networkName, imagePlatform string) {
 	nodeReq := testcontainers.ContainerRequest{
-		Image:           "iotaledger/iota-tools:devnet",
+		Image:           "iotaledger/iota-tools:v1.19.1",
 		ImagePlatform:   imagePlatform,
 		AlwaysPullImage: true,
 		ExposedPorts:    []string{"9000/tcp", "9123/tcp"},
@@ -150,7 +150,7 @@ func (in *LocalIotaNode) startNodeContainer(ctx context.Context, networkName, im
 			wait.ForListeningPort("9123/tcp"),
 		).WithDeadline(4 * time.Minute),
 		Cmd: []string{
-			"iota-localnet",
+			"iota",
 			"start",
 			"--force-regenesis",
 			"--with-faucet=0.0.0.0:9123",
@@ -188,7 +188,7 @@ func (in *LocalIotaNode) startNodeContainer(ctx context.Context, networkName, im
 
 func (in *LocalIotaNode) startIndexerContainer(ctx context.Context, networkName, imagePlatform string) {
 	indexerReq := testcontainers.ContainerRequest{
-		Image:           "iotaledger/iota-indexer:devnet",
+		Image:           "iotaledger/iota-indexer:v1.19.1",
 		ImagePlatform:   imagePlatform,
 		AlwaysPullImage: true,
 		Networks:        []string{networkName},
@@ -215,7 +215,7 @@ func (in *LocalIotaNode) startIndexerContainer(ctx context.Context, networkName,
 
 func (in *LocalIotaNode) startGraphQLContainer(ctx context.Context, networkName, imagePlatform string) {
 	graphqlReq := testcontainers.ContainerRequest{
-		Image:           "iotaledger/iota-graphql-rpc:devnet",
+		Image:           "iotaledger/iota-graphql-rpc:v1.19.1",
 		ImagePlatform:   imagePlatform,
 		AlwaysPullImage: true,
 		ExposedPorts:    []string{"9125/tcp"},
