@@ -40,6 +40,10 @@ func LoadConfig(sectionName string) (_ *koanf.Koanf, configFound bool) {
 
 	c := koanf.New(".")
 	if err := c.Load(file.Provider(path.Join(GetRootDir(), testconfigFile)), json.Parser()); err != nil {
+		if !os.IsNotExist(err) {
+			panic(fmt.Errorf("failed to load test config file: %v", err))
+		}
+
 		fmt.Printf("config file %v not found - using default values\n", testconfigFile)
 	} else {
 		subKeys := c.Cut(sectionName)
