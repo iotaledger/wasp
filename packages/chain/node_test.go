@@ -62,14 +62,7 @@ type tc struct {
 	timeout  time.Duration
 }
 
-func TestMain(m *testing.M) {
-	l1starter.TestMain(m)
-}
-
 func TestNodeBasic(t *testing.T) {
-	t.Skip("FIXME")
-	t.Parallel()
-
 	tests := []tc{
 		{n: 1, f: 0, reliable: true, timeout: 60 * time.Second},   // Low N
 		{n: 2, f: 0, reliable: true, timeout: 80 * time.Second},   // Low N
@@ -89,14 +82,13 @@ func TestNodeBasic(t *testing.T) {
 	for _, tst := range tests {
 		t.Run(
 			fmt.Sprintf("N=%v,F=%v,Reliable=%v", tst.n, tst.f, tst.reliable),
-			func(tt *testing.T) { testNodeBasic(tt, tst.n, tst.f, tst.reliable, tst.timeout, l1starter.Instance()) },
+			func(tt *testing.T) { testNodeBasic(tt, tst.n, tst.f, tst.reliable, tst.timeout) },
 		)
 	}
 }
 
-func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration, node l1starter.IotaNodeEndpoint) {
-	t.Parallel()
-	te := newEnv(t, n, f, reliable, node)
+func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration) {
+	te := newEnv(t, n, f, reliable)
 	defer te.close()
 
 	ctxTimeout, ctxTimeoutCancel := context.WithTimeout(te.ctx, timeout)
@@ -502,19 +494,15 @@ type testEnv struct {
 	nodeConns        []*testNodeConn
 	nodes            []chain.Chain
 
+	iscPackageID iotago.PackageID
 	l1Client     clients.L1Client
 	l2Client     clients.L2Client
-	iscPackageID iotago.PackageID
 }
 
-func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoint) *testEnv {
+func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	te := &testEnv{t: t}
 	te.ctx, te.ctxCancel = context.WithCancel(context.Background())
 	te.log = testlogger.NewLogger(t).NewChildLogger(fmt.Sprintf("%04d", mrand.Intn(10000))) // For test instance ID.
-
-	te.iscPackageID = node.ISCPackageID()
-	te.l1Client = node.L1Client()
-	te.l2Client = te.l1Client.L2()
 
 	//
 	// Create a fake network and keys for the tests.
@@ -540,10 +528,16 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 	te.committeeAddress, dkShareProviders = testpeers.SetupDkgTrivial(t, n, f, te.peerIdentities, nil)
 	te.committeeSigner = testpeers.NewTestDSSSigner(te.committeeAddress, dkShareProviders, gpa.MakeTestNodeIDs(n), te.peerIdentities, te.log)
 
-	require.NoError(t, node.L1Client().RequestFundsFromFaucet(context.Background(), te.committeeSigner.Address().AsIotaAddress()))
-	iotatest.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(te.committeeSigner), node.L1Client(), isc.GasCoinTargetValue*10)
+	simulator := l1starter.NewSimulatorNode(l1starter.ISCPackageOwner)
+	simulator.Start(t.Context())
+	te.iscPackageID = simulator.ISCPackageID()
+	te.l1Client = simulator.L1Client()
+	te.l2Client = simulator.L1Client().L2()
 
-	iscPackageID := node.ISCPackageID()
+	require.NoError(t, te.l1Client.RequestFundsFromFaucet(context.Background(), te.committeeSigner.Address().AsIotaAddress()))
+	iotatest.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(te.committeeSigner), te.l1Client, isc.GasCoinTargetValue*10)
+
+	iscPackageID := te.iscPackageID
 	te.tcl = testchain.NewTestChainLedger(t, te.committeeSigner, &iscPackageID, te.l1Client)
 	var originDeposit coin.Value
 	te.anchor, originDeposit = te.tcl.MakeTxChainOrigin()
