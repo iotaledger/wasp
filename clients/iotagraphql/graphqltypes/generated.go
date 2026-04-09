@@ -7812,7 +7812,7 @@ fragment TX_EFFECTS on TransactionBlockEffects {
 			... BALANCE_CHANGE
 		}
 	}
-	objectChanges {
+	objectChanges(first: 50) {
 		pageInfo {
 			... PAGE_INFO
 		}
@@ -8066,7 +8066,7 @@ fragment TX_EFFECTS on TransactionBlockEffects {
 			... BALANCE_CHANGE
 		}
 	}
-	objectChanges {
+	objectChanges(first: 50) {
 		pageInfo {
 			... PAGE_INFO
 		}
@@ -8953,7 +8953,7 @@ fragment TX_EFFECTS on TransactionBlockEffects {
 			... BALANCE_CHANGE
 		}
 	}
-	objectChanges {
+	objectChanges(first: 50) {
 		pageInfo {
 			... PAGE_INFO
 		}

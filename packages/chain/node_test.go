@@ -67,7 +67,6 @@ func TestMain(m *testing.M) {
 }
 
 func TestNodeBasic(t *testing.T) {
-	t.Skip("FIXME")
 	t.Parallel()
 
 	tests := []tc{
@@ -363,7 +362,7 @@ func (tnc *testNodeConn) PublishTX(
 		return err
 	}
 
-	anchor, err := tnc.l2Client.GetAnchorFromObjectID(ctx, anchorInfo.ObjectID)
+	anchor, err := tnc.l2Client.GetAnchorFromObjectRef(ctx, anchorInfo)
 	if err != nil {
 		return err
 	}

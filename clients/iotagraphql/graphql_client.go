@@ -323,6 +323,8 @@ func (c *GraphQLClient) DryRunTransaction(
 	return graphqltypes.DryRunTransactionBlock(ctx, c.client, txBytes)
 }
 
+// NOTE: Many of list fields in result are populated with only a single page of results (e.g. object changes).
+// If the transaction has many changes, some of them may be missing from the response.
 func (c *GraphQLClient) ExecuteTransactionBlock(
 	ctx context.Context,
 	txDataBytes iotago.Base64Data,
@@ -341,7 +343,19 @@ func (c *GraphQLClient) ExecuteTransactionBlock(
 		sigStrings[i] = iotago.Base64Data(sigBytes).String()
 	}
 
-	return graphqltypes.ExecuteTransactionBlock(ctx, c.client, txBytes, sigStrings)
+	resp, err := graphqltypes.ExecuteTransactionBlock(ctx, c.client, txBytes, sigStrings)
+	if err != nil {
+		return nil, err
+	}
+
+	txBlock, err := c.waitForEffectsIndexed(ctx, resp.ExecuteTransactionBlock.Effects.TransactionBlock.Digest)
+	if err != nil {
+		return resp, fmt.Errorf("transaction succeeded but effects not yet indexed: %w", err)
+	}
+
+	resp.ExecuteTransactionBlock.Effects = txBlock.TransactionBlock.Effects
+
+	return resp, err
 }
 
 func (c *GraphQLClient) GetLatestIotaSystemState(ctx context.Context) (*GetLatestIotaSystemStateResponse, error) {
@@ -646,6 +660,8 @@ func (c *GraphQLClient) GetCoinObjsForTargetAmount(
 	return pickedCoins.Coins, nil
 }
 
+// NOTE: Many of list fields in result are populated with only a single page of results (e.g. object changes).
+// If the transaction has many changes, some of them may be missing from the response.
 func (c *GraphQLClient) SignAndExecuteTransaction(
 	ctx context.Context,
 	txnBytes []byte,
@@ -655,46 +671,38 @@ func (c *GraphQLClient) SignAndExecuteTransaction(
 	if err != nil {
 		return nil, fmt.Errorf("failed to sign transaction block: %w", err)
 	}
-	resp, err := c.ExecuteTransactionBlock(ctx, txnBytes, []*iotasigner.Signature{signature})
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute transaction: %w", err)
-	}
-
-	txDigest := resp.ExecuteTransactionBlock.Effects.TransactionBlock.Digest
-	if err := c.waitForEffectsIndexed(ctx, txDigest); err != nil {
-		return resp, fmt.Errorf("transaction succeeded but effects not yet indexed: %w", err)
-	}
-
-	return resp, nil
+	return c.ExecuteTransactionBlock(ctx, txnBytes, []*iotasigner.Signature{signature})
 }
 
-func (c *GraphQLClient) waitForEffectsIndexed(ctx context.Context, txDigest string) error {
+func (c *GraphQLClient) waitForEffectsIndexed(ctx context.Context, txDigest string) (*graphqltypes.GetTransactionBlockResponse, error) {
 	params := c.WaitUntilEffectsVisible
 	if params == nil {
 		params = WaitForEffectsEnabled
 	}
 
-	var objectChanges []graphqltypes.ObjectChangeData
+	var txBlock *graphqltypes.GetTransactionBlockResponse
+
 	for i := range params.Attempts {
-		res, err := graphqltypes.GetTransactionBlock(ctx, c.client, txDigest)
+		var err error
+
+		txBlock, err = graphqltypes.GetTransactionBlock(ctx, c.client, txDigest)
 		if err == nil &&
-			res.TransactionBlock.Effects.Checkpoint.SequenceNumber > 0 &&
-			res.TransactionBlock.Effects.GasEffects.GasObject.Digest != "" {
-			objectChanges = res.TransactionBlock.Effects.ObjectChanges.Nodes
+			txBlock.TransactionBlock.Effects.Checkpoint.SequenceNumber > 0 &&
+			txBlock.TransactionBlock.Effects.GasEffects.GasObject.Digest != "" {
 			break
 		}
 
 		if i == params.Attempts-1 {
-			return fmt.Errorf("transaction %s not indexed after %d attempts", txDigest, params.Attempts)
+			return nil, fmt.Errorf("transaction %s not indexed after %d attempts", txDigest, params.Attempts)
 		}
 		select {
 		case <-ctx.Done():
-			return ctx.Err()
+			return nil, ctx.Err()
 		case <-time.After(params.DelayBetweenAttempts):
 		}
 	}
 
-	for _, change := range objectChanges {
+	for _, change := range txBlock.TransactionBlock.Effects.ObjectChanges.Nodes {
 		if change.IdDeleted || change.OutputState.Digest == "" {
 			continue
 		}
@@ -703,11 +711,11 @@ func (c *GraphQLClient) waitForEffectsIndexed(ctx context.Context, txDigest stri
 		targetVersion := change.OutputState.Version
 
 		if err := c.waitForObjectAtVersion(ctx, objectID, targetVersion, params); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	return nil
+	return txBlock, nil
 }
 
 func (c *GraphQLClient) waitForObjectAtVersion(
@@ -925,6 +933,8 @@ func (c *GraphQLClient) GetObject(ctx context.Context, objectID iotago.ObjectID)
 	)
 }
 
+// NOTE: Many of list fields in result are populated with only a single page of results (e.g. object changes).
+// If the transaction has many changes, some of them may be missing from the response.
 func (c *GraphQLClient) GetTransactionBlock(ctx context.Context, digest iotago.TransactionDigest) (*graphqltypes.GetTransactionBlockResponse, error) {
 	return graphqltypes.GetTransactionBlock(ctx, c.client, digest.String())
 }
