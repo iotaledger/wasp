@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql/graphqltypes"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/testutil/l1starter"
@@ -73,6 +74,8 @@ func TestExecuteTransactionBlockDeduplication(t *testing.T) {
 	// Execute again with the same signature — should return the same result
 	resp2, err := client.ExecuteTransactionBlock(ctx, txBytes, []*iotasigner.Signature{sig1})
 	require.NoError(t, err)
+	setEmptyPaginationInfo(resp1)
+	setEmptyPaginationInfo(resp2)
 	require.Equal(t, resp1, resp2)
 
 	// Sign again — DSS produces a different valid signature for the same data
@@ -83,4 +86,9 @@ func TestExecuteTransactionBlockDeduplication(t *testing.T) {
 	_, err = client.ExecuteTransactionBlock(ctx, txBytes, []*iotasigner.Signature{sig2})
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "The transaction is already finalized but with different user signatures")
+}
+
+func setEmptyPaginationInfo(resp *graphqltypes.ExecuteTransactionBlockResponse) {
+	resp.ExecuteTransactionBlock.Effects.ObjectChanges.PageInfo = graphqltypes.TX_EFFECTSObjectChangesObjectChangeConnectionPageInfo{}
+	resp.ExecuteTransactionBlock.Effects.BalanceChanges.PageInfo = graphqltypes.TX_EFFECTSBalanceChangesBalanceChangeConnectionPageInfo{}
 }
