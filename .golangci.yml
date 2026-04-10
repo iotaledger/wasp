@@ -83,6 +83,7 @@ linters:
     staticcheck:
       checks:
         - all
+        - '-ST1020' # comment on exported method FooBar should be of the form "FooBar ..."
       initialisms:
         - ACL
         - API
