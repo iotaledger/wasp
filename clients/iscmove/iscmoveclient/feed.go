@@ -183,6 +183,7 @@ func (f *ChainFeed) subscribeToAnchorUpdates(
 	anchorCh chan<- *iscmove.AnchorWithRef,
 ) {
 	for {
+		f.log.LogInfof("subscribeToAnchorUpdates: subscribing with signer address %s", signerAddress)
 		changes := make(chan *iotagraphql.IotaTransactionBlockEffects)
 		err := f.wsClient.SubscribeTransaction(
 			ctx,
@@ -199,7 +200,12 @@ func (f *ChainFeed) subscribeToAnchorUpdates(
 		if err != nil {
 			f.log.LogErrorf("subscribeToAnchorUpdates: failed to call SubscribeEvent(): %s", err)
 		} else {
-			f.consumeAnchorUpdates(ctx, changes, anchorCh)
+			newSignerAddress := f.consumeAnchorUpdates(ctx, changes, anchorCh, signerAddress)
+			if newSignerAddress != nil {
+				f.log.LogInfof("subscribeToAnchorUpdates: anchor owner changed from %s to %s, re-subscribing", signerAddress, *newSignerAddress)
+				signerAddress = *newSignerAddress
+				continue
+			}
 		}
 		if ctx.Err() != nil {
 			f.log.LogErrorf("subscribeToAnchorUpdates: ctx.Err(): %s", ctx.Err())
@@ -208,18 +214,21 @@ func (f *ChainFeed) subscribeToAnchorUpdates(
 	}
 }
 
+// consumeAnchorUpdates processes anchor updates from the subscription.
+// It returns a new signer address if the anchor owner changed (rotation), or nil otherwise.
 func (f *ChainFeed) consumeAnchorUpdates(
 	ctx context.Context,
 	changes <-chan *iotagraphql.IotaTransactionBlockEffects,
 	anchorCh chan<- *iscmove.AnchorWithRef,
-) {
+	currentSignerAddress iotago.Address,
+) *iotago.Address {
 	for {
 		select {
 		case <-ctx.Done():
-			return
+			return nil
 		case change, ok := <-changes:
 			if !ok {
-				return
+				return nil
 			}
 			f.log.LogDebugf("consumeAnchorUpdates: received anchor update: %+v", change)
 			for _, obj := range change.V1.Mutated {
@@ -237,6 +246,12 @@ func (f *ChainFeed) consumeAnchorUpdates(
 
 				anchorCh <- anchorWithRef
 				f.log.LogDebugf("ANCHOR[%s] SENT TO CHANNEL %s\n", anchorWithRef.Object.ID.String(), time.Now().String())
+
+				// Detect rotation: if the anchor owner changed, re-subscribe with the new signer address
+				if anchorWithRef.Owner != nil && *anchorWithRef.Owner != currentSignerAddress {
+					newAddr := *anchorWithRef.Owner
+					return &newAddr
+				}
 			}
 		}
 	}
