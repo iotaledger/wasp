@@ -23,8 +23,8 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/apiclient"
 	"github.com/iotaledger/wasp/v2/clients/apiextensions"
 	"github.com/iotaledger/wasp/v2/clients/chainclient"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/evm/evmtest"
@@ -76,7 +76,7 @@ func (e *ChainEnv) checkRootsOutside() {
 
 func (e *ChainEnv) GetL1Balance(addr *iotago.Address, coinType coin.Type) coin.Value {
 	l1client := e.Chain.Cluster.L1Client()
-	getBalance, err := l1client.GetBalance(context.TODO(), iotaclient.GetBalanceRequest{Owner: addr})
+	getBalance, err := l1client.GetBalance(context.TODO(), iotagraphql.GetBalanceRequest{Owner: *addr})
 	require.NoError(e.t, err)
 	return coin.Value(getBalance.TotalBalance.Uint64())
 }
@@ -441,7 +441,7 @@ func (e *clusterTestEnv) newEthereumAccountWithL2Funds(baseTokens ...coin.Value)
 	if len(baseTokens) > 0 {
 		amount = baseTokens[0]
 	} else {
-		amount = e.Clu.L1BaseTokens(walletAddr) - transferAllowanceToGasBudgetBaseTokens - iotaclient.DefaultGasBudget
+		amount = e.Clu.L1BaseTokens(walletAddr) - transferAllowanceToGasBudgetBaseTokens - iotagraphql.DefaultGasBudget
 	}
 	tx, err := e.Chain.Client(walletKey).PostRequest(
 		context.Background(),
@@ -449,7 +449,7 @@ func (e *clusterTestEnv) newEthereumAccountWithL2Funds(baseTokens ...coin.Value)
 		chainclient.PostRequestParams{
 			Transfer:  isc.NewAssets(amount + transferAllowanceToGasBudgetBaseTokens),
 			Allowance: isc.NewAssets(amount),
-			GasBudget: iotaclient.DefaultGasBudget,
+			GasBudget: iotagraphql.DefaultGasBudget,
 		},
 	)
 	require.NoError(e.T, err)

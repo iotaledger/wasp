@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/v2/clients"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
@@ -20,17 +20,25 @@ import (
 )
 
 func (env *Solo) L1Client() clients.L1Client {
+	if l1starter.IsSimulatorConfigured() {
+		return l1starter.Instance().L1Client()
+	}
 	return clients.NewL1Client(clients.L1Config{
 		APIURL:    env.l1Config.IotaRPCURL,
 		FaucetURL: env.l1Config.IotaFaucetURL,
-	}, iotaclient.WaitForEffectsEnabled)
+	}, iotagraphql.WaitForEffectsEnabled)
 }
 
 func (env *Solo) ISCMoveClient() *iscmoveclient.Client {
-	return iscmoveclient.NewHTTPClient(
-		env.l1Config.IotaRPCURL,
-		env.l1Config.IotaFaucetURL,
-		l1starter.WaitUntilEffectsVisible,
+	if l1starter.IsSimulatorConfigured() {
+		return iscmoveclient.NewClient(l1starter.Instance().L1Client().GetIotaClient())
+	}
+	return iscmoveclient.NewClient(
+		iotagraphql.NewGraphQLClientWithWaitParams(
+			env.l1Config.IotaRPCURL,
+			env.l1Config.IotaFaucetURL,
+			l1starter.WaitUntilEffectsVisible,
+		),
 	)
 }
 
@@ -102,11 +110,11 @@ func (env *Solo) NewKeyPairWithFunds(seed ...*cryptolib.Seed) (*cryptolib.KeyPai
 
 func (env *Solo) GetFundsFromFaucet(target *cryptolib.Address) {
 	currentBalance := env.L1BaseTokens(target)
-	err := iotaclient.RequestFundsFromFaucet(env.ctx, target.AsIotaAddress(), env.l1Config.IotaFaucetURL)
+	err := env.L1Client().RequestFundsFromFaucet(env.ctx, target.AsIotaAddress())
 	env.WaitForNewBalance(target, currentBalance)
 	require.NoError(env.T, err)
 	env.WaitForNewBalance(target, currentBalance)
-	require.GreaterOrEqual(env.T, env.L1BaseTokens(target), coin.Value(iotaclient.FundsFromFaucetAmount))
+	require.GreaterOrEqual(env.T, env.L1BaseTokens(target), coin.Value(iotagraphql.FundsFromFaucetAmount))
 }
 
 func (env *Solo) NewKeyPair(seedOpt ...*cryptolib.Seed) (*cryptolib.KeyPair, *cryptolib.Address) {

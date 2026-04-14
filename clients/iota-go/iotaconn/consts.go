@@ -1,12 +1,12 @@
 package iotaconn
 
 const (
-	LocalnetEndpointURL = "http://localhost:9000"
+	LocalnetEndpointURL = "http://localhost:9125"
 	AlphanetEndpointURL = "https://api.alphanet.iota.cafe"
 	TestnetEndpointURL  = "https://api.testnet.iota.cafe"
 	DevnetEndpointURL   = "https://api.devnet.iota.cafe"
 
-	LocalnetWebsocketEndpointURL = "ws://localhost:9000"
+	LocalnetWebsocketEndpointURL = "ws://localhost:9125"
 	AlphanetWebsocketEndpointURL = "wss://api.alphanet.iota.cafe"
 	TestnetWebsocketEndpointURL  = "wss://api.testnet.iota.cafe"
 	DevnetWebsocketEndpointURL   = "wss://api.devnet.iota.cafe"
@@ -16,8 +16,8 @@ const (
 	TestnetFaucetURL  = "https://faucet.testnet.iota.cafe/gas"
 	DevnetFaucetURL   = "https://faucet.devnet.iota.cafe/gas"
 
-	LocalnetGraphQLEndpointURL = "http://localhost:9000"
-	AlphanetGraphQLEndpointURL = "https://graphql.iota-rebased-alphanet.iota.cafe"
+	LocalnetGraphQLEndpointURL = "http://localhost:9125"
+	AlphanetGraphQLEndpointURL = "https://graphql.alphanet.iota.cafe"
 	TestnetGraphQLEndpointURL  = "https://graphql.testnet.iota.cafe"
 	DevnetGraphQLEndpointURL   = "https://graphql.devnet.iota.cafe"
 )

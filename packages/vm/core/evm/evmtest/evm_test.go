@@ -1425,7 +1425,7 @@ func TestChangeGasPerToken(t *testing.T) {
 func TestGasPriceIgnoredInEstimateGas(t *testing.T) {
 	env := InitEVM(t)
 
-	var gasLimit []uint64
+	var gasLimits []uint64
 
 	for _, gasPrice := range []*big.Int{
 		nil,
@@ -1443,12 +1443,12 @@ func TestGasPriceIgnoredInEstimateGas(t *testing.T) {
 			}}, "store", uint32(3))
 			require.NoError(t, err)
 
-			gasLimit = append(gasLimit, gas)
+			gasLimits = append(gasLimits, gas)
 		})
 	}
 
-	t.Log("gas limit", gasLimit)
-	require.Len(t, lo.Uniq(gasLimit), 1)
+	t.Log("gas limit", gasLimits)
+	require.Len(t, lo.Uniq(gasLimits), 1)
 }
 
 // calling views via eth_call must not cost gas (still has a maximum budget, but simple view calls should pass)

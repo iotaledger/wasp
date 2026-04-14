@@ -13,8 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/v2/clients/chainclient"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/util"
@@ -45,15 +44,15 @@ func testAccessNodesOnLedger(t *testing.T, numRequests, numValidatorNodes, clust
 
 	for i := 0; i < numRequests; i++ {
 		_, err := client.PostRequest(context.Background(), accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
-			GasBudget:   iotaclient.DefaultGasBudget,
-			Allowance:   isc.NewAssets(iotaclient.DefaultGasBudget),
-			L2GasBudget: iotaclient.DefaultGasBudget,
-			Transfer:    isc.NewAssets(iotaclient.DefaultGasBudget),
+			GasBudget:   iotagraphql.DefaultGasBudget,
+			Allowance:   isc.NewAssets(iotagraphql.DefaultGasBudget),
+			L2GasBudget: iotagraphql.DefaultGasBudget,
+			Transfer:    isc.NewAssets(iotagraphql.DefaultGasBudget),
 		})
 		require.NoError(t, err)
 	}
 
-	expectedBalance := (iotaclient.DefaultGasBudget - BaseTokensDepositFee) * numRequests
+	expectedBalance := (iotagraphql.DefaultGasBudget - BaseTokensDepositFee) * numRequests
 
 	waitUntil(t, e.balanceEquals(isc.NewAddressAgentID(client.KeyPair.Address()), expectedBalance), e.Clu.AllNodes(), 240*time.Second, fmt.Sprintf("balance to be %d", expectedBalance))
 }
@@ -83,8 +82,8 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 
 	accountsClient, _ := e.NewRandomChainClient()
 
-	coinType := iotajsonrpc.IotaCoinType.String()
-	balance, err := accountsClient.L1Client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{
+	coinType := iotagraphql.IotaCoinType
+	balance, err := accountsClient.L1Client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{
 		CoinType: &coinType,
 		Owner:    accountsClient.KeyPair.Address().AsIotaAddress(),
 	})
@@ -92,8 +91,8 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 	require.NoError(t, err)
 
 	tx, err := accountsClient.PostRequest(context.Background(), accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
-		Transfer:  isc.NewAssets(coin.Value(balance.Data[0].Balance.Uint64()) - iotaclient.DefaultGasBudget),
-		GasBudget: iotaclient.DefaultGasBudget,
+		Transfer:  isc.NewAssets(coin.Value(balance.Address.Coins.Nodes[0].CoinBalance.Uint64()) - iotagraphql.DefaultGasBudget),
+		GasBudget: iotagraphql.DefaultGasBudget,
 	})
 	require.NoError(t, err)
 
@@ -107,14 +106,14 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 
 	for i := range numRequests {
 		_, err2 := accountsClient.PostOffLedgerRequest(context.Background(), accounts.FuncTransferAllowanceTo.Message(someRandomsAddress), chainclient.PostRequestParams{
-			Allowance: isc.NewAssets(iotaclient.DefaultGasBudget),
-			GasBudget: iotaclient.DefaultGasBudget,
+			Allowance: isc.NewAssets(iotagraphql.DefaultGasBudget),
+			GasBudget: iotagraphql.DefaultGasBudget,
 			Nonce:     nonce + uint64(i),
 		})
 		require.NoError(t, err2)
 	}
 
-	expectedBalance := iotaclient.DefaultGasBudget * numRequests
+	expectedBalance := iotagraphql.DefaultGasBudget * numRequests
 
 	waitUntil(t, e.balanceEquals(someRandomsAddress, expectedBalance), util.MakeRange(0, clusterSize-1), to, "requests counted")
 }

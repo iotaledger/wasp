@@ -16,8 +16,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
@@ -81,32 +80,24 @@ func runSignAndPost(cmd *cobra.Command, args []string) error {
 	// Sign and Post the TX to the L1.
 	iotaL1ClientURL := args[3]
 	ctx := context.Background()
-	httpClient := iscmoveclient.NewHTTPClient(iotaL1ClientURL, "", iotaclient.WaitForEffectsEnabled)
-	res, execErr := httpClient.SignAndExecuteTransaction(ctx, &iotaclient.SignAndExecuteTransactionRequest{
-		TxDataBytes: txBytes,
-		Signer:      cryptolib.SignerToIotaSigner(signer),
-		Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
-			ShowEffects:        true,
-			ShowObjectChanges:  true,
-			ShowBalanceChanges: true,
-			ShowEvents:         true,
-		},
-	})
+	httpClient := iscmoveclient.NewClient(iotagraphql.NewGraphQLClientWithWaitParams(iotaL1ClientURL, "", iotagraphql.WaitForEffectsEnabled))
+	res, execErr := httpClient.SignAndExecuteTransaction(ctx, txBytes, cryptolib.SignerToIotaSigner(signer))
 	if execErr != nil {
 		return fmt.Errorf("error executing tx: %w, res: %v", execErr, res)
 	}
-	if !res.Effects.Data.IsSuccess() {
-		return fmt.Errorf("error executing tx: %s, digest: %s", res.Effects.Data.V1.Status.Error, res.Digest)
+	effects := &res.ExecuteTransactionBlock.Effects
+	if !effects.IsSuccess() {
+		return fmt.Errorf("error executing tx: status=%s, errors=%v", effects.GetStatus(), res.ExecuteTransactionBlock.Errors)
 	}
 
-	log.LogInfof("Transaction posted! Digest: %s\n", res.Digest)
+	log.LogInfof("Transaction posted! Digest: %s\n", effects.TransactionBlock.Digest)
 	log.LogInfo("Transaction data:")
 
-	if objChanges, err := json.MarshalIndent(res.ObjectChanges, "\t", " "); err == nil {
+	if objChanges, err := json.MarshalIndent(effects.GetObjectChanges(), "\t", " "); err == nil {
 		log.LogInfof("Object Changes:\n%v\n", string(objChanges))
 	}
-	if effects, err := json.MarshalIndent(res.Effects, "\t", " "); err == nil {
-		log.LogInfof("Effects:\n%v\n", string(effects))
+	if effectsJSON, err := json.MarshalIndent(effects, "\t", " "); err == nil {
+		log.LogInfof("Effects:\n%v\n", string(effectsJSON))
 	}
 	return nil
 }

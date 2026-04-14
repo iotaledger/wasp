@@ -7,7 +7,7 @@ import (
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql/graphqltypes"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 )
@@ -53,13 +53,8 @@ func OnLedgerFromMoveRequest(request *iscmove.RefWithObject[iscmove.Request], an
 	}, nil
 }
 
-func ReconstructOnLedgerRequest(dryRunRes *iotajsonrpc.DryRunTransactionBlockResponse) (OnLedgerRequest, error) {
+func ReconstructOnLedgerRequest(dryRunRes *graphqltypes.DryRunTransactionBlockDryRunTransactionBlockDryRunResult) (OnLedgerRequest, error) {
 	assets, request, sender, err := DecodeDryRunTransaction(dryRunRes)
-	if err != nil {
-		return nil, err
-	}
-
-	gasBudget, err := request.GasBudget.Int64()
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +82,7 @@ func ReconstructOnLedgerRequest(dryRunRes *iotajsonrpc.DryRunTransactionBlockRes
 				Params: request.Message.Args,
 			},
 			AllowanceBCS: request.AllowanceBCS,
-			GasBudget:    uint64(gasBudget), //nolint:gosec
+			GasBudget:    request.GasBudget,
 		},
 	}
 	return r, nil

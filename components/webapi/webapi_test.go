@@ -55,7 +55,15 @@ func TestInternalServerErrors(t *testing.T) {
 	}()
 	defer e.Shutdown(context.Background())
 
-	time.Sleep(5 * time.Second)
+	// wait for the server to start accepting connections
+	require.Eventually(t, func() bool {
+		resp, err := http.Get("http://localhost:9999/")
+		if err != nil {
+			return false
+		}
+		resp.Body.Close()
+		return true
+	}, 5*time.Second, 10*time.Millisecond)
 
 	// query the endpoint
 	req, err := http.NewRequest(http.MethodGet, "http://localhost:9999/test", http.NoBody)

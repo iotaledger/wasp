@@ -11,6 +11,7 @@ import (
 
 type L1EndpointConfig struct {
 	IsLocal       bool
+	IsSimulator   bool
 	RandomizeSeed bool
 	APIURL        string
 	FaucetURL     string
@@ -32,6 +33,12 @@ func TryDockerAvailability(ctx context.Context) error {
 
 func LoadConfig() *L1EndpointConfig {
 	c, configFound := testconfig.LoadConfig("l1starter")
+
+	if c.Bool("IS_SIMULATOR") {
+		return &L1EndpointConfig{
+			IsSimulator: true,
+		}
+	}
 
 	if !configFound {
 		fmt.Println("No l1starter config found - using local node")

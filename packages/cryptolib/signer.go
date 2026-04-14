@@ -19,7 +19,7 @@ func SignerToIotaSigner(s Signer) iotasigner.Signer {
 	return &iotaSigner{s}
 }
 
-func (is *iotaSigner) Address() *iotago.Address {
+func (is *iotaSigner) Address() iotago.Address {
 	return is.s.Address().AsIotaAddress()
 }
 

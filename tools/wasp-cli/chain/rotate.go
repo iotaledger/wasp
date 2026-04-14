@@ -11,7 +11,7 @@ import (
 
 	"github.com/iotaledger/wasp/v2/clients/apiclient"
 	"github.com/iotaledger/wasp/v2/clients/chainclient"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
@@ -68,7 +68,7 @@ func setMaintenanceStatus(ctx context.Context, client *apiclient.APIClient, chai
 		msg = governance.FuncStopMaintenance.Message()
 	}
 	postRequest(ctx, client, chain, msg, chainclient.PostRequestParams{
-		GasBudget: iotaclient.DefaultGasBudget,
+		GasBudget: iotagraphql.DefaultGasBudget,
 	}, offledger)
 }
 

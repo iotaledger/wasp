@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/v2/clients/chainclient"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/parameters"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/accounts"
@@ -44,12 +44,12 @@ func initSetCoinMetadataCmd() *cobra.Command {
 				return fmt.Errorf("invalid coin type: %s => %v", coinType, err)
 			}
 
-			coinInfo, err := cliclients.L1Client().GetCoinMetadata(ctx, args[0])
+			coinInfo, err := cliclients.L1Client().GetCoinMetadata(ctx, iotagraphql.CoinType(args[0]))
 			if err != nil {
 				return err
 			}
 
-			totalSupply, err := cliclients.L1Client().GetTotalSupply(ctx, args[0])
+			totalSupply, err := cliclients.L1Client().GetTotalSupply(ctx, iotagraphql.CoinType(args[0]))
 			if err != nil {
 				return err
 			}
@@ -59,13 +59,13 @@ func initSetCoinMetadataCmd() *cobra.Command {
 				Name:        coinInfo.Name,
 				Symbol:      coinInfo.Symbol,
 				Description: coinInfo.Description,
-				IconURL:     coinInfo.IconUrl,
+				IconURL:     coinInfo.IconURL,
 				Decimals:    coinInfo.Decimals,
 				TotalSupply: coin.Value(totalSupply.Value.Uint64()),
 			})
 
 			postRequest(ctx, client, chainAliasName, request, chainclient.PostRequestParams{
-				GasBudget: iotaclient.DefaultGasBudget,
+				GasBudget: iotagraphql.DefaultGasBudget,
 			}, withOffLedger)
 			return nil
 		},

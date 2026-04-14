@@ -1,24 +1,12 @@
-query DryRunTransactionBlock(
-	$txBytes: String!
-	# @genqlient(pointer: true)
-	$showBalanceChanges: Boolean = false
-	# @genqlient(pointer: true)
-	$showEffects: Boolean = false
-	# @genqlient(pointer: true)
-	$showRawEffects: Boolean = false
-	# @genqlient(pointer: true)
-	$showEvents: Boolean = false
-	# @genqlient(pointer: true)
-	$showInput: Boolean = false
-	# @genqlient(pointer: true)
-	$showObjectChanges: Boolean = false
-	# @genqlient(pointer: true)
-	$showRawInput: Boolean = false
-) {
+query DryRunTransactionBlock($txBytes: String!) {
 	dryRunTransactionBlock(txBytes: $txBytes) {
-		error
+		# @genqlient(typename: "TxBlockData")
 		transaction {
-			...RPC_TRANSACTION_FIELDS
+			...TX_CORE
+			# @genqlient(typename: "TxEffects")
+			effects {
+				...TX_EFFECTS
+			}
 		}
 	}
 }

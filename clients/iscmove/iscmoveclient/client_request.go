@@ -9,9 +9,9 @@ import (
 	"github.com/samber/lo"
 	"golang.org/x/exp/maps"
 
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql/graphqltypes"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 )
@@ -33,12 +33,15 @@ type CreateAndSendRequestRequest struct {
 func (c *Client) CreateAndSendRequest(
 	ctx context.Context,
 	req *CreateAndSendRequestRequest,
-) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
-	anchorRes, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: req.AnchorAddress})
+) (*graphqltypes.ExecuteTransactionBlockResponse, error) {
+	anchorRes, err := c.GetObject(ctx, *req.AnchorAddress)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor ref: %w", err)
 	}
-	anchorRef := anchorRes.Data.Ref()
+	anchorRef, err := anchorRes.Object.ObjectRef()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get anchor object ref: %w", err)
+	}
 
 	ptb := iotago.NewProgrammableTransactionBuilder()
 
@@ -76,59 +79,97 @@ type CreateAndSendRequestWithAssetsRequest struct {
 	GasBudget        uint64
 }
 
-func (c *Client) selectProperGasCoinAndBalance(ctx context.Context, req *CreateAndSendRequestWithAssetsRequest) ([]*iotajsonrpc.Coin, uint64, error) {
+func (c *Client) selectProperGasCoinAndBalance(ctx context.Context, req *CreateAndSendRequestWithAssetsRequest) (iotagraphql.Coins, uint64, error) {
 	iotaBalance := req.Assets.BaseToken()
 
-	coinOptions, err := c.GetCoinObjsForTargetAmount(ctx, req.Signer.Address().AsIotaAddress(), iotaBalance.Uint64(), iotaclient.DefaultGasBudget)
+	coinOptions, err := c.GetCoinObjsForTargetAmount(ctx, req.Signer.Address().AsIotaAddress(), iotaBalance.Uint64(), iotagraphql.DefaultGasBudget)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	coin, err := coinOptions.PickMultipleCoinsNoLess(iotaBalance.Uint64())
+	coins, err := coinOptions.PickMultipleCoinsNoLess(iotaBalance.Uint64())
 	if err != nil {
 		return nil, 0, err
 	}
 
-	return coin, iotaBalance.Uint64(), nil
+	return coins, iotaBalance.Uint64(), nil
+}
+
+type placedCoinInfo struct {
+	Ref      *iotago.ObjectRef
+	Amount   uint64
+	CoinType iotagraphql.CoinType
+}
+
+func (c *Client) collectPlacedCoins(
+	ctx context.Context,
+	req *CreateAndSendRequestWithAssetsRequest,
+) ([]placedCoinInfo, error) {
+	var placedCoins []placedCoinInfo
+	for cointype, bal := range req.Assets.Coins.Iterate() {
+		if lo.Must(iotago.IsSameResource(cointype.String(), iotagraphql.IotaCoinType.String())) {
+			continue
+		}
+
+		ct := iotagraphql.CoinType(cointype.String())
+		coinsOfType, err := c.GetCoins(ctx, iotagraphql.GetCoinsRequest{
+			Owner:    req.Signer.Address().AsIotaAddress(),
+			CoinType: &ct,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to get coins of type %s: %w", cointype, err)
+		}
+
+		coin, ok := lo.Find(coinsOfType.Address.Coins.Nodes, func(coin iotagraphql.Coin) bool {
+			coinID := coin.ObjectID()
+			if lo.ContainsBy(req.GasPayments, func(ref *iotago.ObjectRef) bool {
+				return ref.ObjectID.Equals(coinID)
+			}) {
+				return false
+			}
+			return coin.Balance() >= bal.Uint64()
+		})
+		if !ok {
+			return nil, fmt.Errorf("cannot find coin for type %s", cointype)
+		}
+
+		coinRef, err := coin.ObjectRef()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get coin ref for type %s: %w", cointype, err)
+		}
+		updatedRef, err := c.UpdateObjectRef(ctx, coinRef)
+		if err != nil {
+			return nil, fmt.Errorf("failed to update coin ref for type %s: %w", cointype, err)
+		}
+
+		// Use the unwrapped coin type from the Assets iterator (e.g. "0x...::testcoin::TESTCOIN")
+		// instead of the GraphQL response type which includes the Coin<> wrapper
+		placedCoins = append(placedCoins, placedCoinInfo{
+			Ref:      updatedRef,
+			Amount:   bal.Uint64(),
+			CoinType: cointype,
+		})
+	}
+	return placedCoins, nil
 }
 
 //nolint:funlen
 func (c *Client) CreateAndSendRequestWithAssets(
 	ctx context.Context,
 	req *CreateAndSendRequestWithAssetsRequest,
-) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
-	anchorRes, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: req.AnchorAddress})
+) (*graphqltypes.ExecuteTransactionBlockResponse, error) {
+	anchorRes, err := c.GetObject(ctx, *req.AnchorAddress)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor ref: %w", err)
 	}
-	anchorRef := anchorRes.Data.Ref()
-
-	allCoins, err := c.GetAllCoins(ctx, iotaclient.GetAllCoinsRequest{Owner: req.Signer.Address().AsIotaAddress()})
+	anchorRef, err := anchorRes.Object.ObjectRef()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get anchor ref: %w", err)
+		return nil, fmt.Errorf("failed to get anchor object ref: %w", err)
 	}
-	var placedCoins []lo.Tuple2[*iotajsonrpc.Coin, uint64]
-	// assume we can find it in the first page
-	for cointype, bal := range req.Assets.Coins.Iterate() {
-		if lo.Must(iotago.IsSameResource(cointype.String(), iotajsonrpc.IotaCoinType.String())) {
-			continue
-		}
 
-		coin, ok := lo.Find(allCoins.Data, func(coin *iotajsonrpc.Coin) bool {
-			if !lo.Must(iotago.IsSameResource(cointype.String(), string(coin.CoinType))) {
-				return false
-			}
-			if lo.ContainsBy(req.GasPayments, func(ref *iotago.ObjectRef) bool {
-				return ref.ObjectID.Equals(*coin.CoinObjectID)
-			}) {
-				return false
-			}
-			return coin.Balance.Uint64() >= bal.Uint64()
-		})
-		if !ok {
-			return nil, fmt.Errorf("cannot find coin for type %s", cointype)
-		}
-		placedCoins = append(placedCoins, lo.Tuple2[*iotajsonrpc.Coin, uint64]{A: coin, B: bal.Uint64()})
+	placedCoins, err := c.collectPlacedCoins(ctx, req)
+	if err != nil {
+		return nil, err
 	}
 
 	ptb := iotago.NewProgrammableTransactionBuilder()
@@ -141,41 +182,80 @@ func (c *Client) CreateAndSendRequestWithAssets(
 		return nil, fmt.Errorf("failed to find an IOTA coin with proper balance ref: %w", err)
 	}
 
+	if len(gasCoins) > 1 {
+		primaryIdx := 0
+		primaryBal := gasCoins[0].Balance()
+		for i := 1; i < len(gasCoins); i++ {
+			bal := gasCoins[i].Balance()
+			if bal > primaryBal {
+				primaryIdx = i
+				primaryBal = bal
+			}
+		}
+		if primaryIdx != 0 {
+			gasCoins[0], gasCoins[primaryIdx] = gasCoins[primaryIdx], gasCoins[0]
+		}
+	}
+
 	if balance > 0 {
+		if gasCoins[0].Balance() < balance {
+			if len(gasCoins) == 1 {
+				return nil, fmt.Errorf("insufficient balance in gas coin: need %d, have %d", balance, gasCoins[0].Balance())
+			}
+			coinsToMerge := make([]iotago.Argument, 0, len(gasCoins)-1)
+			for i := 1; i < len(gasCoins); i++ {
+				var ref *iotago.ObjectRef
+				ref, err = gasCoins[i].ObjectRef()
+				if err != nil {
+					return nil, fmt.Errorf("failed to get gas coin ref: %w", err)
+				}
+				coinsToMerge = append(coinsToMerge, ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: ref}))
+			}
+			ptb.Command(iotago.Command{
+				MergeCoins: &iotago.ProgrammableMergeCoins{
+					Destination: iotago.GetArgumentGasCoin(),
+					Sources:     coinsToMerge,
+				},
+			})
+		}
 		ptb = PTBAssetsBagPlaceCoinWithAmount(
 			ptb,
 			req.PackageID,
 			argAssetsBag,
 			iotago.GetArgumentGasCoin(),
-			iotajsonrpc.CoinValue(balance),
-			iotajsonrpc.IotaCoinType,
+			iotagraphql.CoinValue(balance),
+			iotagraphql.IotaCoinType,
 		)
 	}
 
 	// Then the rest of the coins
-	for _, tuple := range placedCoins {
+	for _, placed := range placedCoins {
 		ptb = PTBAssetsBagPlaceCoinWithAmount(
 			ptb,
 			req.PackageID,
 			argAssetsBag,
-			ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: tuple.A.Ref()}),
-			iotajsonrpc.CoinValue(tuple.B),
-			tuple.A.CoinType,
+			ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: placed.Ref}),
+			iotagraphql.CoinValue(placed.Amount),
+			placed.CoinType,
 		)
 	}
 
-	// Place the non-coin objects
 	for id, t := range req.Assets.Objects.Iterate() {
-		objRes, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: &id})
+		var objRes *graphqltypes.GetObjectResponse
+		objRes, err = c.GetObject(ctx, id)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get object %s: %w", id, err)
 		}
-		ref := objRes.Data.Ref()
+		var ref *iotago.ObjectRef
+		ref, err = objRes.Object.ObjectRef()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get ref for object %s: %w", id, err)
+		}
 		ptb = PTBAssetsBagPlaceObject(
 			ptb,
 			req.PackageID,
 			argAssetsBag,
-			ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: &ref}),
+			ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: ref}),
 			t,
 		)
 	}
@@ -189,9 +269,9 @@ func (c *Client) CreateAndSendRequestWithAssets(
 		req.AllowanceBCS,
 		req.OnchainGasBudget,
 	)
-	var gasCoinRefs []*iotago.ObjectRef
-	for _, gasCoin := range gasCoins {
-		gasCoinRefs = append(gasCoinRefs, gasCoin.Ref())
+	gasCoinRefs, err := gasCoins.CoinRefs()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get gas coin refs: %w", err)
 	}
 	return c.SignAndExecutePTB(
 		ctx,
@@ -207,20 +287,21 @@ func (c *Client) GetRequestFromObjectID(
 	ctx context.Context,
 	reqID *iotago.ObjectID,
 ) (*iscmove.RefWithObject[iscmove.Request], error) {
-	getObjectResponse, err := c.GetObject(ctx, iotaclient.GetObjectRequest{
-		ObjectID: reqID,
-		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true},
-	})
+	getObjectResponse, err := c.GetObject(ctx, *reqID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get request content: %w", err)
 	}
-	if getObjectResponse.Data == nil {
+	if getObjectResponse.Object.IsNotFound() {
 		return nil, fmt.Errorf("request %s not found", *reqID)
 	}
-	return c.parseRequestAndFetchAssetsBag(ctx, getObjectResponse.Data)
+	ref, err := getObjectResponse.Object.ObjectRef()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get request ref: %w", err)
+	}
+	return c.parseRequestAndFetchAssetsBag(ctx, getObjectResponse.Object.BcsBytes(), *ref, getObjectResponse.Object.OwnerAddress())
 }
 
-func (c *Client) parseRequestAndFetchAssetsBag(ctx context.Context, obj *iotajsonrpc.IotaObjectData) (*iscmove.RefWithObject[iscmove.Request], error) {
+func (c *Client) parseRequestAndFetchAssetsBag(ctx context.Context, bcsBytes iotago.Base64Data, objRef iotago.ObjectRef, owner *iotago.Address) (*iscmove.RefWithObject[iscmove.Request], error) {
 	// intermediateMoveRequest is used to decode actual requests coming from move.
 	// The only difference between this and MoveRequest is the AssetsBag
 	// The Balances in AssetsBagWithBalance are unavailable in the bcs encoded Request coming from L1
@@ -237,7 +318,7 @@ func (c *Client) parseRequestAndFetchAssetsBag(ctx context.Context, obj *iotajso
 	}
 
 	var intermediateRequest intermediateMoveRequest
-	err := iotaclient.UnmarshalBCS(obj.Bcs.Data.MoveObject.BcsBytes, &intermediateRequest)
+	err := iotagraphql.UnmarshalBCS(bcsBytes, &intermediateRequest)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
 	}
@@ -259,66 +340,85 @@ func (c *Client) parseRequestAndFetchAssetsBag(ctx context.Context, obj *iotajso
 	}
 
 	return &iscmove.RefWithObject[iscmove.Request]{
-		ObjectRef: obj.Ref(),
+		ObjectRef: objRef,
 		Object:    req.ToRequest(),
-		Owner:     obj.Owner.AddressOwner,
+		Owner:     owner,
 	}, nil
 }
 
-func (c *Client) pullRequests(ctx context.Context, packageID iotago.Address, anchorAddress *iotago.ObjectID, maxAmountOfRequests int) (map[iotago.ObjectID]*iotajsonrpc.IotaObjectData, error) {
-	pulledRequests := make(map[iotago.ObjectID]*iotajsonrpc.IotaObjectData, maxAmountOfRequests)
+type pulledRequestData struct {
+	ObjectID iotago.ObjectID
+	Bcs      iotago.Base64Data
+	Ref      iotago.ObjectRef
+	Owner    *iotago.Address
+}
 
-	query := &iotajsonrpc.IotaObjectResponseQuery{
-		Filter: &iotajsonrpc.IotaObjectDataFilter{
-			StructType: &iotago.StructTag{
-				Address: &packageID,
-				Module:  iscmove.RequestModuleName,
-				Name:    iscmove.RequestObjectName,
-			},
-		},
-		Options: &iotajsonrpc.IotaObjectDataOptions{
-			ShowBcs:   true,
-			ShowOwner: true,
-		},
+func moveObjectOwnerAddress(owner graphqltypes.RPC_MOVE_OBJECT_FIELDSOwnerObjectOwner) *iotago.Address {
+	addrOwner, ok := owner.(*graphqltypes.RPC_MOVE_OBJECT_FIELDSOwnerAddressOwner)
+	if !ok {
+		return nil
+	}
+	if addr := addrOwner.Owner.AsAddress.Address; addr != (iotago.Address{}) {
+		return &addr
+	}
+	if addr := addrOwner.Owner.AsObject.Address; addr != (iotago.Address{}) {
+		return &addr
+	}
+	return nil
+}
+
+const graphQLMaxPageSize = 50
+
+func (c *Client) pullRequests(ctx context.Context, packageID iotago.Address, anchorAddress *iotago.ObjectID, maxAmountOfRequests int) (map[iotago.ObjectID]*pulledRequestData, error) {
+	pulledRequests := make(map[iotago.ObjectID]*pulledRequestData, maxAmountOfRequests)
+
+	structType := fmt.Sprintf("%s::%s::%s", packageID.String(), iscmove.RequestModuleName, iscmove.RequestObjectName)
+	filter := &graphqltypes.ObjectFilter{
+		Type: lo.ToPtr(structType),
 	}
 
-	var cursor *iotago.ObjectID
+	var cursor *string
 	for len(pulledRequests) < maxAmountOfRequests {
-		objs, err := c.GetOwnedObjects(ctx, iotaclient.GetOwnedObjectsRequest{
-			Address: anchorAddress,
-			Query:   query,
+		if err := ctx.Err(); err != nil {
+			return nil, fmt.Errorf("context error while fetching requests: %w", err)
+		}
+
+		remaining := maxAmountOfRequests - len(pulledRequests)
+		pageSize := min(remaining, graphQLMaxPageSize)
+		objs, err := c.GetOwnedObjects(ctx, iotagraphql.GetOwnedObjectsRequest{
+			Address: *anchorAddress,
+			Filter:  filter,
+			Limit:   &pageSize,
 			Cursor:  cursor,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch requests: %w", err)
 		}
 
-		if err := ctx.Err(); err != nil {
-			return nil, fmt.Errorf("context error while fetching requests: %w", err)
-		}
-
-		if objs == nil || len(objs.Data) == 0 {
-			break
-		}
-
-		// Process the fetched objects
-		for _, req := range objs.Data {
-			if req.Data == nil || req.Data.ObjectID == nil {
+		for _, node := range objs.Address.Objects.Nodes {
+			objectID := node.ObjectId
+			digest, err := iotago.NewDigest(node.Digest)
+			if err != nil {
 				continue
 			}
-
-			pulledRequests[*req.Data.ObjectID] = req.Data
-			if len(pulledRequests) >= maxAmountOfRequests {
-				break
+			objID := objectID
+			pulledRequests[objectID] = &pulledRequestData{
+				ObjectID: objectID,
+				Bcs:      node.Contents.Bcs,
+				Ref: iotago.ObjectRef{
+					ObjectID: &objID,
+					Version:  node.Version,
+					Digest:   digest,
+				},
+				Owner: moveObjectOwnerAddress(node.Owner),
 			}
 		}
 
-		// Update cursor for next iteration
-		if objs.NextCursor == nil {
+		if !objs.Address.Objects.PageInfo.HasNextPage {
 			break
 		}
-
-		cursor = objs.NextCursor
+		endCursor := objs.Address.Objects.PageInfo.EndCursor
+		cursor = &endCursor
 	}
 
 	return pulledRequests, nil
@@ -350,7 +450,8 @@ func (c *Client) GetRequestsSorted(ctx context.Context, packageID iotago.Package
 
 	// TODO: Improve loading of the requests by requesting in parallel
 	for _, reqID := range sortedRequestIDs {
-		ref, err := c.parseRequestAndFetchAssetsBag(ctx, pulledRequests[reqID])
+		reqData := pulledRequests[reqID]
+		ref, err := c.parseRequestAndFetchAssetsBag(ctx, reqData.Bcs, reqData.Ref, reqData.Owner)
 		cb(err, ref)
 	}
 
@@ -374,7 +475,7 @@ func (c *Client) GetRequests(
 	parsedRequests := make([]*iscmove.RefWithObject[iscmove.Request], 0)
 
 	for _, reqData := range requests {
-		req, err := c.parseRequestAndFetchAssetsBag(ctx, reqData)
+		req, err := c.parseRequestAndFetchAssetsBag(ctx, reqData.Bcs, reqData.Ref, reqData.Owner)
 		if err != nil {
 			return nil, fmt.Errorf("failed to decode request: %w", err)
 		}

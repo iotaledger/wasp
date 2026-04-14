@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/v2/clients/chainclient"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/isc"
@@ -91,17 +91,17 @@ func (e *SabotageEnv) sendRequests(numRequests int, messageDelay time.Duration) 
 	client, _ := e.chainEnv.NewRandomChainClient()
 	for i := 0; i < numRequests; i++ {
 		_, err := client.PostRequest(context.Background(), accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
-			GasBudget:   iotaclient.DefaultGasBudget,
-			Allowance:   isc.NewAssets(iotaclient.DefaultGasBudget),
-			L2GasBudget: iotaclient.DefaultGasBudget,
-			Transfer:    isc.NewAssets(iotaclient.DefaultGasBudget),
+			GasBudget:   iotagraphql.DefaultGasBudget,
+			Allowance:   isc.NewAssets(iotagraphql.DefaultGasBudget),
+			L2GasBudget: iotagraphql.DefaultGasBudget,
+			Transfer:    isc.NewAssets(iotagraphql.DefaultGasBudget),
 		})
 		require.NoError(e.chainEnv.t, err)
 
 		time.Sleep(messageDelay)
 	}
 
-	return client, (iotaclient.DefaultGasBudget - BaseTokensDepositFee) * numRequests
+	return client, (iotagraphql.DefaultGasBudget - BaseTokensDepositFee) * numRequests
 }
 
 func (e *SabotageEnv) setSabotageValidators(breakCount int) {

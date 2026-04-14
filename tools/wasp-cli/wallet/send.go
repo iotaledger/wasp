@@ -7,12 +7,12 @@ import (
 
 	"fortio.org/safecast"
 
+	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/cliclients"
@@ -64,26 +64,31 @@ func initSendFundsCmd() *cobra.Command { //nolint:funlen
 
 			ptb := iotago.NewProgrammableTransactionBuilder()
 
-			coinPage, err := client.GetAllCoins(
-				context.Background(), iotaclient.GetAllCoinsRequest{
+			coinPage, err := client.GetCoins(
+				context.Background(), iotagraphql.GetCoinsRequest{
 					Owner: senderAddress.AsIotaAddress(),
 				},
 			)
 			if err != nil {
 				return err
 			}
+			allCoins := iotagraphql.Coins(coinPage.Address.Coins.Nodes)
 			for cointype, balance := range tokens.Coins.Iterate() {
-				var pickedCoin *iotajsonrpc.PickedCoins
-				pickedCoin, err = iotajsonrpc.PickupCoinsWithCointype(
-					coinPage,
+				pickedCoin, pickErr := iotagraphql.PickupCoinsWithCointype(
+					allCoins,
 					balance.BigInt(),
-					iotajsonrpc.MustCoinTypeFromString(cointype.String()),
+					iotagraphql.MustCoinTypeFromString(cointype.String()),
 				)
-				if err != nil {
-					return err
+				if pickErr != nil {
+					return pickErr
 				}
 
-				err = ptb.Pay(pickedCoin.CoinRefs(), []*iotago.Address{targetAddress.AsIotaAddress()}, []uint64{balance.Uint64()})
+				coinRefs, refErr := pickedCoin.CoinRefs()
+				if refErr != nil {
+					return refErr
+				}
+
+				err = ptb.Pay(coinRefs, []*iotago.Address{lo.ToPtr(targetAddress.AsIotaAddress())}, []uint64{balance.Uint64()})
 				if err != nil {
 					return err
 				}
@@ -91,27 +96,35 @@ func initSendFundsCmd() *cobra.Command { //nolint:funlen
 
 			pt := ptb.Finish()
 
-			coins, err := client.GetCoinObjsForTargetAmount(context.Background(), senderAddress.AsIotaAddress(), iotaclient.DefaultGasPrice, iotaclient.DefaultGasBudget)
+			gasCoins, err := client.GetCoinObjsForTargetAmount(context.Background(), senderAddress.AsIotaAddress(), iotagraphql.DefaultGasPrice, iotagraphql.DefaultGasBudget)
 			if err != nil {
 				return fmt.Errorf("failed to find gas payment: %w", err)
 			}
-			coins, err = iotajsonrpc.PickupCoinsWithFilter(
-				coins,
-				iotaclient.DefaultGasBudget,
-				func(c *iotajsonrpc.Coin) bool { return !pt.IsInInputObjects(c.CoinObjectID) },
+			gasCoins, err = iotagraphql.PickupCoinsWithFilter(
+				gasCoins,
+				iotagraphql.DefaultGasBudget,
+				func(c iotagraphql.Coin) bool {
+					addr := c.ObjectID()
+					return !pt.IsInInputObjects(&addr)
+				},
 			)
 			if err != nil {
 				return fmt.Errorf("failed to find gas payment: %w", err)
 			}
-			if len(coins) == 0 {
+			if len(gasCoins) == 0 {
 				return fmt.Errorf("no coin found as gas payment")
 			}
+			gasCoinRefs, err := gasCoins.CoinRefs()
+			if err != nil {
+				return err
+			}
+			senderIotaAddr := senderAddress.AsIotaAddress()
 			tx := iotago.NewProgrammable(
-				senderAddress.AsIotaAddress(),
+				&senderIotaAddr,
 				pt,
-				coins.CoinRefs(),
-				iotaclient.DefaultGasBudget,
-				iotaclient.DefaultGasPrice,
+				gasCoinRefs,
+				iotagraphql.DefaultGasBudget,
+				iotagraphql.DefaultGasPrice,
 			)
 			txBytes, err := bcs.Marshal(&tx)
 			if err != nil {
@@ -120,14 +133,8 @@ func initSendFundsCmd() *cobra.Command { //nolint:funlen
 
 			res, err := client.SignAndExecuteTransaction(
 				context.Background(),
-				&iotaclient.SignAndExecuteTransactionRequest{
-					Signer:      cryptolib.SignerToIotaSigner(myWallet),
-					TxDataBytes: txBytes,
-					Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
-						ShowEffects:       true,
-						ShowObjectChanges: true,
-					},
-				},
+				txBytes,
+				cryptolib.SignerToIotaSigner(myWallet),
 			)
 			if err != nil {
 				return err

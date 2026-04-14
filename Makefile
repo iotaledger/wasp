@@ -8,6 +8,7 @@ DOCKER_BUILD_ARGS = # E.g. make docker-build "DOCKER_BUILD_ARGS=--tag wasp:devel
 #
 TEST_PKG=./...
 TEST_ARG=
+TEST_SHORT_PKGS ?= $(shell go list ./... | tr '\n' ' ')
 
 BUILD_PKGS ?= ./
 BUILD_CMD=go build -o . -ldflags $(BUILD_LD_FLAGS)
@@ -38,6 +39,9 @@ build-lint: build lint
 gendoc:
 	./scripts/gendoc.sh
 
+genqlient:
+	cd clients/iotagraphql && GOTOOLCHAIN=go1.24.6 go run github.com/Khan/genqlient@v0.8.1
+
 test-full: install
 	go test -tags runheavy -race -ldflags $(BUILD_LD_FLAGS) ./... --timeout 60m --count 1 -failfast
 
@@ -45,7 +49,16 @@ test: install
 	go test -race -ldflags $(BUILD_LD_FLAGS) $(TEST_PKG) --timeout 90m --count 1 -failfast  $(TEST_ARG)
 
 test-short:
-	go test -race -ldflags $(BUILD_LD_FLAGS) --short --count 1 -timeout 60m -failfast $(shell go list ./...)
+	go test -race -ldflags $(BUILD_LD_FLAGS) --short --count 1 -timeout 60m -failfast $(strip $(TEST_SHORT_PKGS))
+
+test-short-simulator:	
+	TEST_L1STARTER_IS_SIMULATOR=true go test --short --count 1 -parallel 1 -timeout 60m -failfast $(shell go list ./... \
+	| grep -v '/tools/cluster' \
+	| grep -v '/clients/apiclient' \
+	| grep -v '/clients/apiextensions' \
+	| grep -v '/clients/chainclient' \
+	| grep -v '/clients/multiclient' \
+	| grep -v '/clients/iotagraphql/iotaclienttest')
 
 test-cluster: install
 	go test -race -ldflags $(BUILD_LD_FLAGS) --count 1 -timeout 25m -failfast $(shell go list ./tools/cluster/tests/...)
@@ -99,4 +112,4 @@ deps-versions:
 		awk -F ":" '{ print $$1 }' | \
 		{ read from ; read to; awk -v s="$$from" -v e="$$to" 'NR>1*s&&NR<1*e' packages/testutil/privtangle/privtangle.go; }
 
-.PHONY: all compile-solidity build-cli build-full build build-lint test-full test test-short install-cli install-full install lint gofumpt-list docker-build deps-versions
+.PHONY: all compile-solidity build-cli build-full build build-lint test-full test test-short install-cli install-full install lint gofumpt-list docker-build deps-versions genqlient

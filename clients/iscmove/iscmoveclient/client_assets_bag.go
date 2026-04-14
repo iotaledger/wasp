@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql/graphqltypes"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 )
 
@@ -15,62 +15,71 @@ func (c *Client) GetAssetsBagWithBalances(
 	ctx context.Context,
 	assetsBagID *iotago.ObjectID,
 ) (*iscmove.AssetsBagWithBalances, error) {
-	fields, err := c.GetDynamicFields(ctx, iotaclient.GetDynamicFieldsRequest{ParentObjectID: assetsBagID})
+	fields, err := c.GetDynamicFields(ctx, iotagraphql.GetDynamicFieldsRequest{ParentObjectID: *assetsBagID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get DynamicFields in AssetsBag: %w", err)
 	}
 
+	nodes := fields.Owner.DynamicFields.Nodes
 	bag := iscmove.AssetsBagWithBalances{
 		AssetsBag: iscmove.AssetsBag{
 			ID:   *assetsBagID,
-			Size: uint64(len(fields.Data)),
+			Size: uint64(len(nodes)),
 		},
 		Assets: *iscmove.NewEmptyAssets(),
 	}
-	for _, data := range fields.Data {
-		// for coins the "field name" is of type 0x1::ascii::String
-		// for non-coins it's 0x2::object::ID
-		isCoin, err := iotago.IsSameResource(data.Name.Type, "0x1::ascii::String")
+	for _, node := range nodes {
+		nameTypeRepr := node.Name.Type.Repr
+		isCoin, err := iotago.IsSameResource(nameTypeRepr, "0x1::ascii::String")
 		if err != nil {
 			return nil, fmt.Errorf("failed to check if resource is coin: %w", err)
 		}
 
 		if isCoin {
-			resGetObject, err := c.GetObject(ctx, iotaclient.GetObjectRequest{
-				ObjectID: &data.ObjectID,
-				Options:  &iotajsonrpc.IotaObjectDataOptions{ShowContent: true},
-			})
+			// Extract the coin type string from the JSON name value
+			var nameStr string
+			if err := json.Unmarshal(node.Name.Json, &nameStr); err != nil {
+				return nil, fmt.Errorf("failed to unmarshal coin type name: %w", err)
+			}
+			cointype, err := iotagraphql.CoinTypeFromString("0x" + nameStr)
 			if err != nil {
-				return nil, fmt.Errorf("failed to call GetObject for Balance: %w", err)
+				return nil, fmt.Errorf("failed to convert cointype: %w", err)
 			}
 
-			if resGetObject.Data == nil || resGetObject.Data.Content == nil || resGetObject.Data.Content.Data.MoveObject == nil {
-				return nil, fmt.Errorf("content data of AssetBag nil! (%s)", assetsBagID)
+			var balanceJSON json.RawMessage
+			switch v := node.Value.(type) {
+			case *graphqltypes.GetDynamicFieldsOwnerDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObject:
+				balanceJSON = v.Contents.Json
+			case *graphqltypes.GetDynamicFieldsOwnerDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveValue:
+				balanceJSON = v.Json
+			default:
+				return nil, fmt.Errorf("coin dynamic field value is neither MoveObject nor MoveValue")
 			}
+
+			if len(balanceJSON) == 0 || string(balanceJSON) == "null" {
+				return nil, fmt.Errorf("balance JSON is empty or null for coin type %s", cointype)
+			}
+
 			var coinBalance struct {
-				ID    *iotajsonrpc.MoveUID
-				Name  *iotago.ResourceType
-				Value *iotajsonrpc.BigInt
+				Value *iotagraphql.BigInt `json:"value"`
+			}
+			if err := json.Unmarshal(balanceJSON, &coinBalance); err != nil {
+				return nil, fmt.Errorf("failed to unmarshal balance JSON: %w", err)
 			}
 
-			err = json.Unmarshal(resGetObject.Data.Content.Data.MoveObject.Fields, &coinBalance)
-			if err != nil {
-				return nil, fmt.Errorf("failed to unmarshal fields in Balance: %w", err)
-			}
-
-			cointype, err := iotajsonrpc.CoinTypeFromString("0x" + data.Name.Value.(string))
-			if err != nil {
-				return nil, fmt.Errorf("failed to convert cointype from iotajsonrpc: %w", err)
-			}
-
-			bag.SetCoin(cointype, iotajsonrpc.CoinValue(coinBalance.Value.Uint64()))
+			bag.SetCoin(cointype, iotagraphql.CoinValue(coinBalance.Value.Uint64()))
 		} else {
-			// non-coin asset (i.e. an "object", nft, etc)
-			typ, err := iotago.ObjectTypeFromString(data.ObjectType)
+			// non-coin asset (object, NFT, etc.)
+			moveObj, ok := node.Value.(*graphqltypes.GetDynamicFieldsOwnerDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObject)
+			if !ok {
+				return nil, fmt.Errorf("non-coin dynamic field is not a MoveObject")
+			}
+			typ, err := iotago.ObjectTypeFromString(moveObj.Contents.Type.Repr)
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse ObjectType: %w", err)
 			}
-			bag.AddObject(data.ObjectID, typ)
+			objectID := moveObj.Address
+			bag.AddObject(objectID, typ)
 		}
 	}
 

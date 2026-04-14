@@ -1,27 +1,10 @@
-mutation ExecuteTransactionBlock(
-	$txBytes: String!
-	$signatures: [String!]!
-	# @genqlient(pointer: true)
-	$showBalanceChanges: Boolean = false
-	# @genqlient(pointer: true)
-	$showEffects: Boolean = false
-	# @genqlient(pointer: true)
-	$showRawEffects: Boolean = false
-	# @genqlient(pointer: true)
-	$showEvents: Boolean = false
-	# @genqlient(pointer: true)
-	$showInput: Boolean = false
-	# @genqlient(pointer: true)
-	$showObjectChanges: Boolean = false
-	# @genqlient(pointer: true)
-	$showRawInput: Boolean = false
-) {
+mutation ExecuteTransactionBlock($txBytes: String!, $signatures: [String!]!) {
 	executeTransactionBlock(txBytes: $txBytes, signatures: $signatures) {
 		errors
+
+		# @genqlient(typename: "TxEffects")
 		effects {
-			transactionBlock {
-				...RPC_TRANSACTION_FIELDS
-			}
+			...TX_EFFECTS
 		}
 	}
 }

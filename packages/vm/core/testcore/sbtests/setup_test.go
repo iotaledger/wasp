@@ -5,7 +5,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
+	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/solo"
@@ -29,15 +30,16 @@ func setupChain(t *testing.T) (*solo.Solo, *solo.Chain) {
 		Debug:             false,
 		GasBurnLogEnabled: true,
 	})
-	chain, _ := env.NewChainExt(nil, 10_000, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
-	err := chain.SendFromL1ToL2AccountBaseTokens(iotaclient.FundsFromFaucetAmount/10, solo.BaseTokensForL2Gas, chain.AdminAgentID(), chain.ChainAdmin)
+	chain, _ := env.NewChainExt(nil, 100_000, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
+	transferTotal := coin.Value(iotagraphql.FundsFromFaucetAmount / 10)
+	err := chain.SendFromL1ToL2AccountBaseTokens(transferTotal, solo.BaseTokensForL2Gas, chain.AdminAgentID(), chain.ChainAdmin)
 	require.NoError(t, err)
 	return env, chain
 }
 
 func setupDeployer(t *testing.T, ch *solo.Chain) (*cryptolib.KeyPair, isc.AgentID) {
 	user, userAddr := ch.Env.NewKeyPairWithFunds()
-	ch.Env.AssertL1BaseTokens(userAddr, iotaclient.FundsFromFaucetAmount)
+	ch.Env.AssertL1BaseTokens(userAddr, coin.Value(iotagraphql.FundsFromFaucetAmount))
 
 	err := ch.DepositBaseTokensToL2(solo.BaseTokensForL2Gas, user)
 	require.NoError(t, err)

@@ -10,7 +10,7 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/v2/packages/coin"
@@ -30,7 +30,7 @@ import (
 func TestInitLoad(t *testing.T) {
 	env := solo.New(t)
 	user, userAddr := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
-	env.AssertL1BaseTokens(userAddr, iotaclient.FundsFromFaucetAmount)
+	env.AssertL1BaseTokens(userAddr, coin.Value(iotagraphql.FundsFromFaucetAmount))
 	var originAmount coin.Value = 10 * isc.Million
 	ch, _ := env.NewChainExt(user, originAmount, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 
@@ -99,7 +99,7 @@ func TestLedgerBaseConsistencyWithRequiredTopUpFee(t *testing.T) {
 			WithGasBudget(math.MaxUint64),
 		someUserWallet,
 	)
-	t.Logf("PTB gas fee: %d", ptbRes.Effects.Data.GasFee())
+	t.Logf("PTB gas fee: %d", ptbRes.ExecuteTransactionBlock.Effects.GasFee())
 	require.NoError(t, err)
 	ch.CheckChain()
 
@@ -139,7 +139,7 @@ func TestLedgerBaseConsistencyWithRequiredTopUpFee(t *testing.T) {
 	// the gas coin is topped up to GasCoinTargetValue, and then it is used
 	// to pay for L1 gas fee
 	require.EqualValues(t,
-		gasCoinValueBefore+deductedForGasCoin-coin.Value(ptbRes.Effects.Data.GasFee()),
+		gasCoinValueBefore+deductedForGasCoin-coin.Value(ptbRes.ExecuteTransactionBlock.Effects.GasFee()),
 		gasCoinValueAfter,
 	)
 
@@ -227,7 +227,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 			t.Logf("commonAccountBaseTokensBefore: %d, commonAccountBaseTokensAfter: %d", commonAccountBaseTokensBefore, commonAccountBaseTokensAfter)
 			originatorL2BaseTokensAfter := ch.L2BaseTokens(ch.AdminAgentID())
 			t.Logf("originatorL2BaseTokensBefore: %d, originatorL2BaseTokensAfter: %d", originatorL2BaseTokensBefore, originatorL2BaseTokensAfter)
-			l1GasFee := coin.Value(l1Res.Effects.Data.GasFee())
+			l1GasFee := coin.Value(l1Res.ExecuteTransactionBlock.Effects.GasFee())
 			l2GasFee := ch.LastReceipt().GasFeeCharged
 			t.Logf("l1GasFee: %d, l2GasFee: %d", l1GasFee, l2GasFee)
 
@@ -484,7 +484,7 @@ func TestInvalidAllowance(t *testing.T) {
 		&iscmoveclient.CreateAndSendRequestWithAssetsRequest{
 			Signer:        ch.ChainAdmin,
 			PackageID:     ch.Env.ISCPackageID(),
-			AnchorAddress: ch.ID().AsAddress().AsIotaAddress(),
+			AnchorAddress: lo.ToPtr(ch.ID().AsAddress().AsIotaAddress()),
 			Assets:        isc.NewAssets(1 * isc.Million).AsISCMove(),
 			Message: &iscmove.Message{
 				Contract: uint32(accounts.Contract.Hname()),
@@ -493,8 +493,8 @@ func TestInvalidAllowance(t *testing.T) {
 			},
 			AllowanceBCS:     []byte{1, 2, 3}, // invalid allowance
 			OnchainGasBudget: math.MaxUint64,
-			GasPrice:         iotaclient.DefaultGasPrice,
-			GasBudget:        iotaclient.DefaultGasBudget,
+			GasPrice:         iotagraphql.DefaultGasPrice,
+			GasBudget:        iotagraphql.DefaultGasBudget,
 		},
 	)
 	require.NoError(t, err)

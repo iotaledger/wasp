@@ -1,3 +1,7 @@
+# @genqlient(for: "ObjectFilter.type", pointer: true)
+# @genqlient(for: "ObjectFilter.owner", pointer: true)
+# @genqlient(for: "ObjectFilter.objectIds", pointer: true)
+# @genqlient(for: "ObjectFilter.objectKeys", pointer: true)
 query GetOwnedObjects(
 	$owner: IotaAddress!
 	# @genqlient(pointer: true)
@@ -24,8 +28,7 @@ query GetOwnedObjects(
 	address(address: $owner) {
 		objects(first: $limit, after: $cursor, filter: $filter) {
 			pageInfo {
-				hasNextPage
-				endCursor
+				...PAGE_INFO
 			}
 			nodes {
 				...RPC_MOVE_OBJECT_FIELDS
@@ -84,41 +87,10 @@ query TryGetPastObject(
 	}
 }
 
-query MultiGetObjects(
-	$ids: [IotaAddress!]!
-	# @genqlient(pointer: true)
-	$limit: Int
-	# @genqlient(pointer: true)
-	$cursor: String
-	# @genqlient(pointer: true)
-	$showBcs: Boolean = false
-	# @genqlient(pointer: true)
-	$showContent: Boolean = false
-	# @genqlient(pointer: true)
-	$showDisplay: Boolean = false
-	# @genqlient(pointer: true)
-	$showType: Boolean = false
-	# @genqlient(pointer: true)
-	$showOwner: Boolean = false
-	# @genqlient(pointer: true)
-	$showPreviousTransaction: Boolean = false
-	# @genqlient(pointer: true)
-	$showStorageRebate: Boolean = false
-) {
-	objects(first: $limit, after: $cursor, filter: { objectIds: $ids }) {
-		pageInfo {
-			hasNextPage
-			endCursor
-		}
-		nodes {
-			...RPC_OBJECT_FIELDS
-		}
-	}
-}
-
 fragment RPC_OBJECT_FIELDS on Object {
 	objectId: address
 	version
+	status
 	asMoveObjectType: asMoveObject @include(if: $showType) {
 		contents {
 			type {
@@ -154,6 +126,7 @@ fragment RPC_OBJECT_FIELDS on Object {
 	storageRebate @include(if: $showStorageRebate)
 	digest
 	version
+	status
 	display @include(if: $showDisplay) {
 		key
 		value
@@ -164,6 +137,7 @@ fragment RPC_OBJECT_FIELDS on Object {
 fragment RPC_MOVE_OBJECT_FIELDS on MoveObject {
 	objectId: address
 	bcs @include(if: $showBcs)
+	status
 	contents_type: contents @include(if: $showType) {
 		type {
 			repr

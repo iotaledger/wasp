@@ -8,7 +8,8 @@ const MaxPostedOutputsInOneRequest = 4
 
 func (reqctx *requestContext) send(params isc.RequestParameters) {
 	// simply send assets to a L1 address
-	reqctx.vm.txbuilder.SendAssets(params.TargetAddress.AsIotaAddress(), params.Assets)
+	targetAddr := params.TargetAddress.AsIotaAddress()
+	reqctx.vm.txbuilder.SendAssets(&targetAddr, params.Assets)
 
 	account := reqctx.CurrentContractAccountID()
 	reqctx.accountsStateWriter(false).DebitFromAccount(account, params.Assets.Coins)

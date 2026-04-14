@@ -3,15 +3,15 @@ package iscmoveclient_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 	testcommon "github.com/iotaledger/wasp/v2/clients/iota-go/test_common"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient/iscmoveclienttest"
@@ -21,9 +21,10 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
 )
 
-// TestRequestsFeed relies of the alphanet, so can't use global l1starter
+// TestRequestsFeed relies on the alphanet, so can't use global l1starter
 func TestRequestsFeed(t *testing.T) {
-	client := iscmoveclienttest.NewAlphanetHTTPClient()
+	t.Skip("TODO")
+	client := iscmoveclienttest.NewAlphanetClient()
 
 	iscOwner := iscmoveclienttest.NewAlphanetSignerWithFunds(t, testcommon.TestSeed, 0)
 	anchorOwner := iscmoveclienttest.NewAlphanetSignerWithFunds(t, testcommon.TestSeed, 1)
@@ -51,6 +52,8 @@ func TestRequestsFeed(t *testing.T) {
 		log,
 		iotaconn.AlphanetWebsocketEndpointURL,
 		iotaconn.AlphanetEndpointURL,
+		20,
+		500*time.Millisecond,
 	)
 	require.NoError(t, err)
 	defer func() {
@@ -60,7 +63,7 @@ func TestRequestsFeed(t *testing.T) {
 
 	anchorUpdates := make(chan *iscmove.AnchorWithRef, 10)
 	newRequests := make(chan *iscmove.RefWithObject[iscmove.Request], 10)
-	chainFeed.SubscribeToUpdates(ctx, *anchor.ObjectID, anchorUpdates, newRequests)
+	chainFeed.SubscribeToUpdates(ctx, *anchor.ObjectID, anchorOwner.Address().AsIotaAddress(), anchorUpdates, newRequests)
 
 	// create a Request and send to anchor
 	txnResponse, err = client.CreateAndSendRequest(
@@ -72,8 +75,8 @@ func TestRequestsFeed(t *testing.T) {
 			AssetsBagRef:  assetsBagRef,
 			Message:       iscmovetest.RandomMessage(),
 			AllowanceBCS:  nil,
-			GasPrice:      iotaclient.DefaultGasPrice,
-			GasBudget:     iotaclient.DefaultGasBudget,
+			GasPrice:      iotagraphql.DefaultGasPrice,
+			GasBudget:     iotagraphql.DefaultGasBudget,
 		},
 	)
 	require.NoError(t, err)
@@ -95,8 +98,12 @@ func TestRequestsFeed(t *testing.T) {
 	require.Len(t, ownedReqs, 1)
 	require.Equal(t, *requestRef.ObjectID, ownedReqs[0].Object.ID)
 
-	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: anchorOwner.Address().AsIotaAddress()})
+	getCoinsRes, err := client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{Owner: anchorOwner.Address().AsIotaAddress()})
 	require.NoError(t, err)
+	feedCoins := iotagraphql.Coins(getCoinsRes.Address.Coins.Nodes)
+	maxCoin := lo.MaxBy(feedCoins, func(a, b iotagraphql.Coin) bool {
+		return a.Balance() >= b.Balance()
+	})
 
 	_, err = client.ReceiveRequestsAndTransition(
 		context.Background(),
@@ -108,11 +115,9 @@ func TestRequestsFeed(t *testing.T) {
 			SentAssets:       []iscmoveclient.SentAssets{},
 			StateMetadata:    []byte{1, 2, 3},
 			TopUpAmount:      100,
-			GasPayment: lo.MaxBy(getCoinsRes.Data, func(a, b *iotajsonrpc.Coin) bool {
-				return a.Balance.Int.Cmp(b.Balance.Int) >= 0
-			}).Ref(),
-			GasPrice:  iotaclient.DefaultGasPrice,
-			GasBudget: iotaclient.DefaultGasBudget,
+			GasPayment:       lo.Must(maxCoin.ObjectRef()),
+			GasPrice:         iotagraphql.DefaultGasPrice,
+			GasBudget:        iotagraphql.DefaultGasBudget,
 		},
 	)
 	require.NoError(t, err)

@@ -6,9 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/cliclients"
@@ -27,21 +25,17 @@ func initRequestsCmd() *cobra.Command {
 
 			ctx := context.Background()
 
-			obj, err := cliclients.L1Client().GetObject(ctx, iotaclient.GetObjectRequest{
-				ObjectID: objectID,
-				Options: &iotajsonrpc.IotaObjectDataOptions{
-					ShowType: true,
-				},
-			})
+			obj, err := cliclients.L1Client().GetObject(ctx, *objectID)
 			if err != nil {
 				return err
 			}
 
-			if obj.Data.Type == nil {
+			typeRepr := obj.Object.TypeRepr()
+			if typeRepr == "" {
 				return fmt.Errorf("failed to get Anchor type")
 			}
 
-			resource, err := iotago.NewResourceType(*obj.Data.Type)
+			resource, err := iotago.NewResourceType(typeRepr)
 			if err != nil {
 				return err
 			}
@@ -55,7 +49,7 @@ func initRequestsCmd() *cobra.Command {
 				return fmt.Errorf("failed to get Anchors PackageID")
 			}
 
-			iscMoveClient := iscmoveclient.NewClient(cliclients.L1Client().IotaClient(), "")
+			iscMoveClient := iscmoveclient.NewClient(cliclients.L1Client().GetIotaClient())
 
 			requests := make([]*iscmove.RefWithObject[iscmove.Request], 0)
 			err = iscMoveClient.GetRequestsSorted(ctx, *packageID, objectID, 9999, func(err error, request *iscmove.RefWithObject[iscmove.Request]) {

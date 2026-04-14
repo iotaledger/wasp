@@ -26,7 +26,7 @@ func TestStart(t *testing.T) {
 	client := iotaNode.L1Client()
 	state, err := client.GetLatestIotaSystemState(ctx)
 	require.NoError(t, err)
-	require.EqualValues(t, 0, state.PendingActiveValidatorsSize.Uint64())
+	require.EqualValues(t, 0, state.Epoch.ValidatorSet.PendingActiveValidatorsSize)
 
 	w, cancel := context.WithTimeout(context.Background(), testmisc.GetTimeout(2*time.Second))
 	defer cancel()

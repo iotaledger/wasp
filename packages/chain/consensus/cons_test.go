@@ -13,7 +13,7 @@ import (
 	hivelog "github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/iotatest"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/packages/chain/consensus"
 	"github.com/iotaledger/wasp/v2/packages/coin"
@@ -303,7 +303,7 @@ func testConsSkipVMAlreadyProcessed(t *testing.T, n, f int) {
 	//
 	// Node Identities and shared key.
 	_, peerIdentities := testpeers.SetupKeys(uint16(n))
-	committeeAddress, dkShareProviders := testpeers.SetupDistributedKeyGenerationTrivial(t, n, f, peerIdentities, nil)
+	committeeAddress, dkShareProviders := testpeers.SetupDkgTrivial(t, n, f, peerIdentities, nil)
 	var chainID isc.ChainID
 
 	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(committeeAddress)).Encode()
@@ -568,7 +568,7 @@ func testConsSkipVMNotEnoughFunds(t *testing.T, n, f int) {
 	//
 	// Node Identities and shared key.
 	_, peerIdentities := testpeers.SetupKeys(uint16(n))
-	committeeAddress, dkShareProviders := testpeers.SetupDistributedKeyGenerationTrivial(t, n, f, peerIdentities, nil)
+	committeeAddress, dkShareProviders := testpeers.SetupDkgTrivial(t, n, f, peerIdentities, nil)
 	var chainID isc.ChainID
 
 	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(committeeAddress)).Encode()
@@ -702,7 +702,7 @@ func testConsSkipACSNilProposals(t *testing.T, n, f int) {
 	//
 	// Node Identities and shared key.
 	_, peerIdentities := testpeers.SetupKeys(uint16(n))
-	committeeAddress, dkShareProviders := testpeers.SetupDistributedKeyGenerationTrivial(t, n, f, peerIdentities, nil)
+	committeeAddress, dkShareProviders := testpeers.SetupDkgTrivial(t, n, f, peerIdentities, nil)
 	var chainID isc.ChainID
 
 	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(committeeAddress)).Encode()
@@ -1232,10 +1232,10 @@ func (tci *testConsInst) tryCloseCompInputPipe() {
 */
 
 func RandomOnLedgerDepositRequest(senders ...*cryptolib.Address) isc.OnLedgerRequest {
-	return RandomOnLedgerDepositRequestWithAmount(iotajsonrpc.CoinValue(rand.Int63()), senders...)
+	return RandomOnLedgerDepositRequestWithAmount(iotagraphql.CoinValue(rand.Int63()), senders...)
 }
 
-func RandomOnLedgerDepositRequestWithAmount(amount iotajsonrpc.CoinValue, senders ...*cryptolib.Address) isc.OnLedgerRequest {
+func RandomOnLedgerDepositRequestWithAmount(amount iotagraphql.CoinValue, senders ...*cryptolib.Address) isc.OnLedgerRequest {
 	sender := cryptolib.NewRandomAddress()
 	if len(senders) != 0 {
 		sender = senders[0]
@@ -1258,7 +1258,7 @@ func RandomOnLedgerDepositRequestWithAmount(amount iotajsonrpc.CoinValue, sender
 			AllowanceBCS: bcs.MustMarshal(iscmove.NewAssets(10000)),
 			GasBudget:    100000,
 		},
-		Owner: sender.AsIotaAddress(),
+		Owner: lo.ToPtr(sender.AsIotaAddress()),
 	}
 	onReq, err := isc.OnLedgerFromMoveRequest(&req, sender)
 	if err != nil {

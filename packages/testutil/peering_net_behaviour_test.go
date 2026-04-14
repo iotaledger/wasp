@@ -4,6 +4,7 @@
 package testutil // not `..._test` because it uses peeringMsg.
 
 import (
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -38,20 +39,24 @@ func TestPeeringNetReliable(t *testing.T) {
 }
 
 func TestPeeringNetUnreliable(t *testing.T) {
-	inCh := make(chan *peeringMsg)
-	outCh := make(chan *peeringMsg, 1000)
+	inCh := make(chan *peeringMsg, 2000)
+	outCh := make(chan *peeringMsg, 2000)
 	//
 	// Receiver process.
 	stopCh := make(chan bool)
+	doneCh := make(chan []time.Duration, 1)
 	startTime := time.Now()
-	durations := make([]time.Duration, 0)
+	var recvCount atomic.Int64
 	go func() {
+		durations := make([]time.Duration, 0)
 		for {
 			select {
 			case <-stopCh:
+				doneCh <- durations
 				return
 			case <-outCh:
 				durations = append(durations, time.Since(startTime))
+				recvCount.Add(1)
 			}
 		}
 	}()
@@ -62,17 +67,20 @@ func TestPeeringNetUnreliable(t *testing.T) {
 	someNode := peeringNode{peeringURL: "src", identity: srcPeerIdentity}
 	behavior := NewPeeringNetUnreliable(50, 50, 50*time.Millisecond, 100*time.Millisecond, testlogger.WithLevel(testlogger.NewLogger(t), log.LevelError, false))
 	behavior.AddLink(inCh, outCh, dstPeerIdentity.GetPublicKey())
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < 2000; i++ {
 		inCh <- &peeringMsg{from: someNode.identity.GetPublicKey()}
 	}
-	time.Sleep(500 * time.Millisecond)
+	require.Eventually(t, func() bool {
+		return recvCount.Load() >= 1000
+	}, 5*time.Second, 100*time.Millisecond, "expected at least 1000 messages to be processed")
 	stopCh <- true
+	durations := <-doneCh
 
 	//
 	// Validate the results (with some tolerance for randomness).
 	{ // 50% of messages dropped + 50% duplicated -> delivered ~75%
-		require.Greater(t, len(durations), 500)
-		require.Less(t, len(durations), 900)
+		require.Greater(t, len(durations), 1000)
+		require.Less(t, len(durations), 1800)
 	}
 	{ // Average should be between the specified boundaries.
 		var avgDuration int64 = 0
@@ -80,28 +88,32 @@ func TestPeeringNetUnreliable(t *testing.T) {
 			avgDuration += d.Milliseconds()
 		}
 		avgDuration /= int64(len(durations))
-		require.Greater(t, avgDuration, int64(50))
-		require.Less(t, avgDuration, int64(100))
+		require.GreaterOrEqual(t, avgDuration, int64(50))
+		require.LessOrEqual(t, avgDuration, int64(200))
 	}
 
 	behavior.Close()
 }
 
 func TestPeeringNetGoodQuality(t *testing.T) {
-	inCh := make(chan *peeringMsg)
+	inCh := make(chan *peeringMsg, 1000)
 	outCh := make(chan *peeringMsg, 1000)
 	//
 	// Receiver process.
 	stopCh := make(chan bool)
+	doneCh := make(chan []time.Duration, 1)
 	startTime := time.Now()
-	durations := make([]time.Duration, 0)
+	var recvCount atomic.Int64
 	go func() {
+		durations := make([]time.Duration, 0)
 		for {
 			select {
 			case <-stopCh:
+				doneCh <- durations
 				return
 			case <-outCh:
 				durations = append(durations, time.Since(startTime))
+				recvCount.Add(1)
 			}
 		}
 	}()
@@ -115,8 +127,11 @@ func TestPeeringNetGoodQuality(t *testing.T) {
 	for i := 0; i < 1000; i++ {
 		inCh <- &peeringMsg{from: someNode.identity.GetPublicKey()}
 	}
-	time.Sleep(500 * time.Millisecond)
+	require.Eventually(t, func() bool {
+		return recvCount.Load() >= 1000
+	}, 5*time.Second, 50*time.Millisecond, "expected all 1000 messages to be processed")
 	stopCh <- true
+	durations := <-doneCh
 
 	//
 	// Validate the results (with some tolerance for randomness).

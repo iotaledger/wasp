@@ -15,6 +15,8 @@ import (
 	ledger_go "github.com/iotaledger/wasp/v2/clients/iota-go/hw_ledger/ledger-go"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 )
 
 func initializeLedger(t *testing.T) *HWLedger {
@@ -65,12 +67,14 @@ func TestDeployChain(t *testing.T) {
 			APIURL:    iotaconn.AlphanetEndpointURL,
 			FaucetURL: iotaconn.AlphanetFaucetURL,
 		},
+		iotagraphql.WaitForEffectsEnabled,
 	)
 
 	pubKey, err := dev.GetPublicKey("44'/4218'/123'/0'/0'", false)
 	require.NoError(t, err)
 
-	err = l1.RequestFunds(context.Background(), pubKey.Address)
+	addr := cryptolib.Address(pubKey.Address)
+	err = l1.RequestFundsFromFaucet(context.Background(), addr.AsIotaAddress())
 	require.NoError(t, err)
 
 	signer := NewLedgerSigner(dev, "44'/4218'/123'/0'/0'", false)

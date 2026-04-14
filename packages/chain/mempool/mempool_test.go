@@ -15,8 +15,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/log"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/iotatest"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/chain"
 	consGR "github.com/iotaledger/wasp/v2/packages/chain/consensus/consensusrunner"
 	"github.com/iotaledger/wasp/v2/packages/chain/mempool"
@@ -88,6 +88,7 @@ func TestMempoolBasic(t *testing.T) {
 //   - Get proposals -- all received 1 request.
 func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 	t.Parallel()
+	var err error
 	te := newEnv(t, n, f, reliable)
 	defer te.close()
 
@@ -107,12 +108,18 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 		<-awaitTrackHeadChannels[i]
 	}
 
+	te.anchor, err = te.tcl.UpdateAnchor(te.anchor)
+	require.NoError(t, err)
+
 	onLedgerReq, err := te.tcl.MakeTxAccountsDeposit(te.chainOwner)
 	require.NoError(t, err)
 	for _, node := range te.mempools {
 		node.ReceiveOnLedgerRequest(onLedgerReq.(isc.OnLedgerRequest))
 	}
 	te.anchor = blockFn(te, []isc.Request{onLedgerReq}, te.anchor, tangleTime)
+
+	te.anchor, err = te.tcl.UpdateAnchor(te.anchor)
+	require.NoError(t, err)
 
 	offLedgerReq := isc.NewOffLedgerRequest(
 		te.chainID,
@@ -142,6 +149,9 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 		nodeDecidedReqs := <-decided[i]
 		require.Len(t, nodeDecidedReqs, 1)
 	}
+
+	te.anchor, err = te.tcl.UpdateAnchor(te.anchor)
+	require.NoError(t, err)
 
 	// Make a block consuming those 2 requests.
 	te.anchor = blockFn(te, []isc.Request{offLedgerReq}, te.anchor, tangleTime)
@@ -182,7 +192,6 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 }
 
 func TestMempoolsNonceGaps(t *testing.T) {
-	// TODO how to remove the sleeps?
 	// 1 node setup
 	// send nonces 0,1,3,6,10
 	// ask for proposal, assert 0,1 are proposed
@@ -239,7 +248,10 @@ func TestMempoolsNonceGaps(t *testing.T) {
 		t.Log("Sending off-ledger request with nonces 0,1,3,6,10")
 		require.Nil(t, te.mempools[chosenMempool].ReceiveOffLedgerRequest(req.(isc.OffLedgerRequest)))
 	}
-	time.Sleep(200 * time.Millisecond) // give some time for the requests to reach the pool
+	// Sleep to let all sent requests be processed by the mempool's run goroutine.
+	// ReceiveOffLedgerRequest and ConsensusProposalAsync use separate pipes in the
+	// same select, so without a delay the proposal can race ahead of pending requests.
+	time.Sleep(50 * time.Millisecond)
 
 	askProposalExpectReqs := func(anchor *isc.StateAnchor, reqs ...isc.Request) *isc.StateAnchor {
 		t.Log("Ask for proposals")
@@ -270,24 +282,25 @@ func TestMempoolsNonceGaps(t *testing.T) {
 	}
 
 	emptyProposalFn := func(anchor *isc.StateAnchor) {
-		// ask again, nothing to be proposed
-		//
-		// Ask proposals for the next
+		// Ask proposals — we expect none because of nonce gaps.
+		// Use a timeout instead of a non-blocking select so that async request
+		// processing has time to complete before we assert no proposals arrived.
 		proposals := make([]<-chan []*isc.RequestRef, len(te.mempools))
 		for i := range te.mempools {
-			proposals[i] = te.mempools[i].ConsensusProposalAsync(te.ctx, anchor, consGR.ConsensusID{}) // Intentionally invalid order (vs TrackNewChainHead).
+			proposals[i] = te.mempools[i].ConsensusProposalAsync(te.ctx, anchor, consGR.ConsensusID{})
 		}
-		//
-		// We should not get any requests, there is a gap in the nonces
 		for i := range te.mempools {
 			select {
 			case refs := <-proposals[i]:
 				t.Fatalf("should not get a value here, Got %+v", refs)
-			default:
-				// OK
+			case <-time.After(300 * time.Millisecond):
+				// OK: no proposals within timeout, as expected due to nonce gap
 			}
 		}
 	}
+
+	te.anchor, err = te.tcl.UpdateAnchor(te.anchor)
+	require.NoError(t, err)
 	// ask for proposal, assert 0,1 are proposed
 	te.anchor = askProposalExpectReqs(te.anchor, offLedgerReqs[0], offLedgerReqs[1])
 
@@ -298,7 +311,7 @@ func TestMempoolsNonceGaps(t *testing.T) {
 	reqNonce2 := createReqWithNonce(2)
 	t.Log("Sending off-ledger request with nonce 2")
 	require.Nil(t, te.mempools[chosenMempool].ReceiveOffLedgerRequest(reqNonce2))
-	time.Sleep(200 * time.Millisecond) // give some time for the requests to reach the pool
+	time.Sleep(50 * time.Millisecond) // let nonce 2 be processed before proposal is queued
 
 	// ask for proposal, assert 2,3 are proposed
 	te.anchor = askProposalExpectReqs(te.anchor, reqNonce2, offLedgerReqs[2])
@@ -310,15 +323,15 @@ func TestMempoolsNonceGaps(t *testing.T) {
 	reqNonce5 := createReqWithNonce(5)
 	t.Log("Sending off-ledger request with nonce 5")
 	require.Nil(t, te.mempools[chosenMempool].ReceiveOffLedgerRequest(reqNonce5))
-	time.Sleep(200 * time.Millisecond) // give some time for the requests to reach the pool
-
+	// emptyProposalFn waits up to 300ms internally, giving time for nonce 5 to be
+	// processed before asserting no proposals arrive (gap at 4 still blocks them).
 	emptyProposalFn(te.anchor)
 
 	// send nonce 4
 	reqNonce4 := createReqWithNonce(4)
 	t.Log("Sending off-ledger request with nonce 4")
 	require.Nil(t, te.mempools[chosenMempool].ReceiveOffLedgerRequest(reqNonce4))
-	time.Sleep(200 * time.Millisecond) // give some time for the requests to reach the pool
+	time.Sleep(50 * time.Millisecond) // let nonce 4 be processed before proposal is queued
 
 	// ask for proposal, assert 4,5,6 are proposed
 	askProposalExpectReqs(te.anchor, reqNonce4, reqNonce5, offLedgerReqs[3])
@@ -407,9 +420,10 @@ func TestMempoolOverrideNonce(t *testing.T) {
 		0,
 		gas.LimitsDefault.MaxGasPerRequest,
 	).Sign(te.chainOwner)
-	time.Sleep(400 * time.Millisecond) // give some time for the requests to reach the pool
 	require.NoError(t, te.mempools[0].ReceiveOffLedgerRequest(initialReq))
-	time.Sleep(200 * time.Millisecond) // give some time for the requests to reach the pool
+	// Small sleep to let initialReq be processed before overwritingReq arrives,
+	// so the nonce-0 slot exists in the pool and can be overwritten.
+	time.Sleep(50 * time.Millisecond)
 
 	overwritingReq := isc.NewOffLedgerRequest(
 		te.chainID,
@@ -419,7 +433,10 @@ func TestMempoolOverrideNonce(t *testing.T) {
 	).Sign(te.chainOwner)
 
 	require.NoError(t, te.mempools[0].ReceiveOffLedgerRequest(overwritingReq))
-	time.Sleep(200 * time.Millisecond) // give some time for the requests to reach the pool
+	// Sleep to let overwritingReq be processed by the mempool's run goroutine before
+	// ConsensusProposalAsync is queued. Both go through separate pipes processed by a
+	// single select, so without a delay the proposal can race ahead of the overwrite.
+	time.Sleep(50 * time.Millisecond)
 	reqRefs := <-te.mempools[0].ConsensusProposalAsync(te.ctx, te.anchor, consGR.ConsensusID{})
 	proposedReqs := <-te.mempools[0].ConsensusRequestsAsync(te.ctx, reqRefs)
 	require.Len(t, proposedReqs, 1)
@@ -479,7 +496,7 @@ func TestTTL(t *testing.T) {
 
 	reqs := <-mp.ConsensusProposalAsync(te.ctx, te.anchor, consGR.ConsensusID{})
 	require.Len(t, reqs, 1)
-	time.Sleep(201 * time.Millisecond)
+	time.Sleep(2 * 200 * time.Millisecond) // wait for TTL (200ms) to expire with margin
 
 	// we need to add some request because ConsensusProposalAsync will not return an empty list.
 	onLedgerReq2, err := te.tcl.MakeTxAccountsDeposit(te.chainOwner)
@@ -579,8 +596,8 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 
 	// Create ledger accounts. Requesting funds twice to get two coin objects (so we don't need to split one later)
 	te.chainOwner = cryptolib.NewKeyPair()
-	require.NoError(t, iotaclient.RequestFundsFromFaucet(context.Background(), te.chainOwner.Address().AsIotaAddress(), l1starter.Instance().FaucetURL()))
-	require.NoError(t, iotaclient.RequestFundsFromFaucet(context.Background(), te.chainOwner.Address().AsIotaAddress(), l1starter.Instance().FaucetURL()))
+	require.NoError(t, l1starter.Instance().L1Client().RequestFundsFromFaucet(context.Background(), te.chainOwner.Address().AsIotaAddress()))
+	require.NoError(t, l1starter.Instance().L1Client().RequestFundsFromFaucet(context.Background(), te.chainOwner.Address().AsIotaAddress()))
 
 	// Create a fake network and keys for the tests.
 	te.peeringURLs, te.peerIdentities = testpeers.SetupKeys(uint16(n))
@@ -605,7 +622,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 
 	l1client := l1starter.Instance().L1Client()
 
-	objs, err := l1client.GetAllCoins(context.Background(), iotaclient.GetAllCoinsRequest{
+	objs, err := l1client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{
 		Owner: te.chainOwner.Address().AsIotaAddress(),
 	})
 	require.NoError(t, err)

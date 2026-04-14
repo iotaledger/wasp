@@ -2,8 +2,8 @@ schema:
   - ./schema.graphql
 operations:
   - ./queries/*.graphql
-generated: ./generated.go
-package: iotagraphql
+generated: ./graphqltypes/generated.go
+package: graphqltypes
 
 bindings:
   IotaAddress:
@@ -15,7 +15,7 @@ bindings:
   JSON:
     type: encoding/json.RawMessage
   BigInt:
-    type: github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc.BigInt
+    type: github.com/iotaledger/wasp/v2/clients/iotagraphql/graphqltypes.BigInt
   DateTime:
     type: time.Time
   OpenMoveTypeSignature:

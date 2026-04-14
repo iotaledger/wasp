@@ -1,14 +1,13 @@
 package isc
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"strconv"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/iotatest"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql/graphqltypes"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
@@ -17,71 +16,123 @@ import (
 type EstimationRequest struct {
 	Message      iscmove.Message
 	AllowanceBCS []byte
-	GasBudget    json.Number
+	GasBudget    uint64
 }
 
-func DecodeCreateAndSendRequest(msg *EstimationRequest, cmd *iotago.ProgrammableMoveCall, inputs []iotajsonrpc.ProgrammableTransactionBlockPureInput) error {
+// getPureInput extracts the Pure bytes from a CallArg referenced by an Argument with Input type.
+func getPureInput(inputs []iotago.CallArg, arg iotago.Argument) ([]byte, error) {
+	if arg.Input == nil {
+		return nil, fmt.Errorf("expected Input argument, got %s", arg.String())
+	}
+	idx := int(*arg.Input)
+	if idx >= len(inputs) {
+		return nil, fmt.Errorf("input index %d out of range (have %d inputs)", idx, len(inputs))
+	}
+	if inputs[idx].Pure == nil {
+		return nil, fmt.Errorf("expected Pure input at index %d", idx)
+	}
+	return *inputs[idx].Pure, nil
+}
+
+func DecodeCreateAndSendRequest(msg *EstimationRequest, cmd *iotago.ProgrammableMoveCall, inputs []iotago.CallArg) error {
 	if len(cmd.Arguments) != 7 {
 		return errors.New("create_and_send_request has invalid parameters")
 	}
 
 	// contractHname
-	err := json.Unmarshal(inputs[*cmd.Arguments[2].Input].Value, &msg.Message.Contract)
+	pureBytes, err := getPureInput(inputs, cmd.Arguments[2])
 	if err != nil {
-		return fmt.Errorf("failed to decode contract hname: %v", err)
+		return fmt.Errorf("failed to get contract hname input: %w", err)
+	}
+	msg.Message.Contract, err = bcs.Unmarshal[uint32](pureBytes)
+	if err != nil {
+		return fmt.Errorf("failed to decode contract hname: %w", err)
 	}
 
 	// functionHname
-	err = json.Unmarshal(inputs[*cmd.Arguments[3].Input].Value, &msg.Message.Function)
+	pureBytes, err = getPureInput(inputs, cmd.Arguments[3])
 	if err != nil {
-		return fmt.Errorf("failed to decode function hname: %v", err)
+		return fmt.Errorf("failed to get function hname input: %w", err)
+	}
+	msg.Message.Function, err = bcs.Unmarshal[uint32](pureBytes)
+	if err != nil {
+		return fmt.Errorf("failed to decode function hname: %w", err)
 	}
 
 	// contractCallArgs
-	err = json.Unmarshal(inputs[*cmd.Arguments[4].Input].Value, &msg.Message.Args)
+	pureBytes, err = getPureInput(inputs, cmd.Arguments[4])
 	if err != nil {
-		return fmt.Errorf("failed to decode contract call args: %v", err)
+		return fmt.Errorf("failed to get contract call args input: %w", err)
+	}
+	msg.Message.Args, err = bcs.Unmarshal[[][]byte](pureBytes)
+	if err != nil {
+		return fmt.Errorf("failed to decode contract call args: %w", err)
 	}
 
 	// allowance
-	err = json.Unmarshal(inputs[*cmd.Arguments[5].Input].Value, &msg.AllowanceBCS)
+	pureBytes, err = getPureInput(inputs, cmd.Arguments[5])
 	if err != nil {
-		return fmt.Errorf("failed to decode allowance: %v", err)
+		return fmt.Errorf("failed to get allowance input: %w", err)
+	}
+	msg.AllowanceBCS, err = bcs.Unmarshal[[]byte](pureBytes)
+	if err != nil {
+		return fmt.Errorf("failed to decode allowance: %w", err)
 	}
 
 	// gasBudget
-	err = json.Unmarshal(inputs[*cmd.Arguments[6].Input].Value, &msg.GasBudget)
+	pureBytes, err = getPureInput(inputs, cmd.Arguments[6])
 	if err != nil {
-		return fmt.Errorf("failed to decode gas budget: %v", err)
+		return fmt.Errorf("failed to get gas budget input: %w", err)
+	}
+	msg.GasBudget, err = bcs.Unmarshal[uint64](pureBytes)
+	if err != nil {
+		return fmt.Errorf("failed to decode gas budget: %w", err)
 	}
 
 	return nil
 }
 
-func DecodeCoin(assets *Assets, cmd *iotago.ProgrammableMoveCall, inputs []iotajsonrpc.ProgrammableTransactionBlockPureInput) error {
-	var err error
+func DecodeCoin(assets *Assets, cmd *iotago.ProgrammableMoveCall, allCommands []iotago.Command, inputs []iotago.CallArg) error {
 	if len(cmd.Arguments) != 2 {
-		return fmt.Errorf("malformed PTB")
+		return fmt.Errorf("malformed PTB: place_coin expects 2 arguments, got %d", len(cmd.Arguments))
 	}
 
-	var amountString string
-	err = json.Unmarshal(inputs[*cmd.Arguments[0].Result].Value, &amountString)
-	if err != nil {
-		return fmt.Errorf("malformed PTB")
+	// place_coin arguments: [assetsBag, coin]
+	// The coin (arg[1]) is a Result from a SplitCoins command.
+	// We trace back to the SplitCoins to extract the amount from its Pure input.
+	coinArg := cmd.Arguments[1]
+	if coinArg.Result == nil {
+		return fmt.Errorf("expected Result argument for coin in place_coin")
 	}
 
-	amount, err := strconv.ParseUint(amountString, 10, 64)
+	cmdIdx := int(*coinArg.Result)
+	if cmdIdx >= len(allCommands) {
+		return fmt.Errorf("command index %d out of range", cmdIdx)
+	}
+
+	splitCmd := allCommands[cmdIdx]
+	if splitCmd.SplitCoins == nil {
+		return fmt.Errorf("expected SplitCoins command producing coin for place_coin, got command at index %d", cmdIdx)
+	}
+	if len(splitCmd.SplitCoins.Amounts) == 0 {
+		return fmt.Errorf("SplitCoins has no amounts")
+	}
+
+	amountBytes, err := getPureInput(inputs, splitCmd.SplitCoins.Amounts[0])
 	if err != nil {
-		err = fmt.Errorf("can't decode amount argument in place_coin command: %w", err)
-		return err
+		return fmt.Errorf("can't get amount from SplitCoins: %w", err)
+	}
+
+	amount, err := bcs.Unmarshal[uint64](amountBytes)
+	if err != nil {
+		return fmt.Errorf("can't decode amount: %w", err)
 	}
 
 	assets.AddCoin(coin.MustTypeFromString(cmd.TypeArguments[0].String()), coin.Value(amount))
 	return nil
 }
 
-func DecodeAsset(assets *Assets, cmd *iotago.ProgrammableMoveCall, inputs []iotajsonrpc.ProgrammableTransactionBlockPureInput) error {
-	var err error
+func DecodeAsset(assets *Assets, cmd *iotago.ProgrammableMoveCall) error {
 	if len(cmd.Arguments) != 2 {
 		return fmt.Errorf("malformed PTB")
 	}
@@ -105,19 +156,21 @@ func DecodeAsset(assets *Assets, cmd *iotago.ProgrammableMoveCall, inputs []iota
 	return err
 }
 
-// DecodeDryRunTransaction The intention of this parser is to make the use of the gas estimation easier.
-// We only accept the transactionBytes and select all needed inputs.
-// The upside is that a user can pass an unsigned transaction to estimate.
-// The downside is that any time we change create_and_send_request in the move contract, we need to update this logic.
-// I don't expect it to change often if ever, so that seems to be a straight forward way.
-func DecodeDryRunTransaction(dryRunRes *iotajsonrpc.DryRunTransactionBlockResponse) (*Assets, *EstimationRequest, *cryptolib.Address, error) {
-	tx := dryRunRes.Input.Data.V1.Transaction.Data.ProgrammableTransaction
-
-	var cmds []struct {
-		MoveCall *iotago.ProgrammableMoveCall `json:"MoveCall,omitempty"`
+// DecodeDryRunTransaction decodes the transaction from a dry run result to extract
+// assets, request info, and sender address.
+// TODO: This needs proper implementation - currently decodes the BCS transaction from the dry run response.
+func DecodeDryRunTransaction(dryRunRes *graphqltypes.DryRunTransactionBlockDryRunTransactionBlockDryRunResult) (*Assets, *EstimationRequest, *cryptolib.Address, error) {
+	txBcs := dryRunRes.Transaction.Bcs
+	txData, err := bcs.Unmarshal[iotago.TransactionData](txBcs)
+	if err != nil {
+		return nil, nil, cryptolib.NewEmptyAddress(), fmt.Errorf("failed to unmarshal transaction BCS: %w", err)
 	}
-	if err := json.Unmarshal(tx.Commands, &cmds); err != nil {
-		return nil, nil, cryptolib.NewEmptyAddress(), fmt.Errorf("can't decode dry run response: %w", err)
+	if txData.V1 == nil {
+		return nil, nil, cryptolib.NewEmptyAddress(), fmt.Errorf("only TransactionData V1 is supported")
+	}
+	pt := txData.V1.Kind.ProgrammableTransaction
+	if pt == nil {
+		return nil, nil, cryptolib.NewEmptyAddress(), fmt.Errorf("transaction is not a ProgrammableTransaction")
 	}
 
 	assets := NewAssets(0)
@@ -125,43 +178,27 @@ func DecodeDryRunTransaction(dryRunRes *iotajsonrpc.DryRunTransactionBlockRespon
 		Message: iscmove.Message{},
 	}
 
-	for _, moveCall := range cmds {
-		if cmd := moveCall.MoveCall; cmd != nil {
-			// take all placed coins into assets
+	for _, command := range pt.Commands {
+		if cmd := command.MoveCall; cmd != nil {
 			if cmd.Function == "place_coin" {
-				var inputs []iotajsonrpc.ProgrammableTransactionBlockPureInput
-				if err := json.Unmarshal(tx.Inputs, &inputs); err != nil {
-					return nil, nil, cryptolib.NewEmptyAddress(), fmt.Errorf("can't decode place_coin command: %w", err)
-				}
-
-				if err := DecodeCoin(assets, cmd, inputs); err != nil {
+				if err := DecodeCoin(assets, cmd, pt.Commands, pt.Inputs); err != nil {
 					return nil, nil, cryptolib.NewEmptyAddress(), fmt.Errorf("can't decode place_coin command: %w", err)
 				}
 			}
 
 			if cmd.Function == "place_asset" {
-				var inputs []iotajsonrpc.ProgrammableTransactionBlockPureInput
-				if err := json.Unmarshal(tx.Inputs, &inputs); err != nil {
-					return nil, nil, cryptolib.NewEmptyAddress(), fmt.Errorf("can't decode place_asset command: %w", err)
-				}
-
-				if err := DecodeAsset(assets, cmd, inputs); err != nil {
+				if err := DecodeAsset(assets, cmd); err != nil {
 					return nil, nil, cryptolib.NewEmptyAddress(), fmt.Errorf("can't decode place_asset command: %w", err)
 				}
 			}
 
 			if cmd.Function == "create_and_send_request" {
-				var inputs []iotajsonrpc.ProgrammableTransactionBlockPureInput
-				if err := json.Unmarshal(tx.Inputs, &inputs); err != nil {
-					return nil, nil, cryptolib.NewEmptyAddress(), fmt.Errorf("can't decode create_and_send_request command: %w", err)
-				}
-
-				if err := DecodeCreateAndSendRequest(request, cmd, inputs); err != nil {
+				if err := DecodeCreateAndSendRequest(request, cmd, pt.Inputs); err != nil {
 					return nil, nil, cryptolib.NewEmptyAddress(), fmt.Errorf("can't decode create_and_send_request command: %w", err)
 				}
 			}
 		}
 	}
 
-	return assets, request, cryptolib.NewAddressFromIota(&dryRunRes.Input.Data.V1.Sender), nil
+	return assets, request, cryptolib.NewAddressFromIota(&txData.V1.Sender), nil
 }

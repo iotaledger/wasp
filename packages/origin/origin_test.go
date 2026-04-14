@@ -4,12 +4,12 @@ import (
 	"context"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 	"pgregory.net/rapid"
 
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient/iscmoveclienttest"
@@ -47,16 +47,16 @@ func TestOrigin(t *testing.T) {
 }
 
 func TestCreateOrigin(t *testing.T) {
-	client := iscmoveclienttest.NewHTTPClient()
+	client := iscmoveclienttest.NewClient()
 	sentSigner := iscmoveclienttest.NewRandomSignerWithFunds(t, 0)
 	stateSigner := iscmoveclienttest.NewRandomSignerWithFunds(t, 1)
 	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
 	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(sentSigner.Address())).Encode()
 
-	coinType := iotajsonrpc.IotaCoinType.String()
+	coinType := iotagraphql.IotaCoinType
 	resGetCoins, err := client.GetCoins(
 		context.Background(),
-		iotaclient.GetCoinsRequest{Owner: sentSigner.Address().AsIotaAddress(), CoinType: &coinType},
+		iotagraphql.GetCoinsRequest{Owner: sentSigner.Address().AsIotaAddress(), CoinType: &coinType},
 	)
 	require.NoError(t, err)
 
@@ -65,8 +65,8 @@ func TestCreateOrigin(t *testing.T) {
 	balancesStateSinger1, err := client.GetAllBalances(context.Background(), stateSigner.Address().AsIotaAddress())
 	require.NoError(t, err)
 
-	originDeposit := resGetCoins.Data[2]
-	originDepositVal := coin.Value(originDeposit.Balance.Uint64())
+	originDeposit := resGetCoins.Address.Coins.Nodes[2]
+	originDepositVal := coin.Value(originDeposit.Balance())
 	l1commitment := origin.L1Commitment(schemaVersion, initParams, iotago.ObjectID{}, originDepositVal, parameterstest.L1Mock)
 	originStateMetadata := transaction.NewStateMetadata(
 		schemaVersion,
@@ -77,7 +77,7 @@ func TestCreateOrigin(t *testing.T) {
 		originDepositVal,
 		"https://iota.org",
 	)
-	gasCoin := resGetCoins.Data[0].Ref()
+	gasCoin := lo.Must(resGetCoins.Address.Coins.Nodes[0].ObjectRef())
 	txnResponse, anchorRef, err := startNewChain(
 		t,
 		client,
@@ -86,10 +86,10 @@ func TestCreateOrigin(t *testing.T) {
 			AnchorOwner:   stateSigner.Address(),
 			PackageID:     l1starter.ISCPackageID(),
 			StateMetadata: originStateMetadata.Bytes(),
-			InitCoinRef:   originDeposit.Ref(),
+			InitCoinRef:   lo.Must(originDeposit.ObjectRef()),
 			GasPayments:   []*iotago.ObjectRef{gasCoin},
-			GasPrice:      iotaclient.DefaultGasPrice,
-			GasBudget:     iotaclient.DefaultGasBudget,
+			GasPrice:      iotagraphql.DefaultGasPrice,
+			GasBudget:     iotagraphql.DefaultGasBudget,
 		},
 	)
 	require.NoError(t, err)
@@ -104,7 +104,7 @@ func TestCreateOrigin(t *testing.T) {
 
 	balancesSentSinger2, err := client.GetAllBalances(context.Background(), sentSigner.Address().AsIotaAddress())
 	require.NoError(t, err)
-	require.EqualValues(t, balancesSentSigner1[0].TotalBalance.Int64()-originDeposit.Balance.Int64()-txnResponse.Effects.Data.GasFee(), balancesSentSinger2[0].TotalBalance.Int64())
+	require.EqualValues(t, balancesSentSigner1[0].TotalBalance.Int64()-int64(originDeposit.Balance())-txnResponse.ExecuteTransactionBlock.Effects.GasFee(), balancesSentSinger2[0].TotalBalance.Int64())
 	balancesStateSinger2, err := client.GetAllBalances(context.Background(), stateSigner.Address().AsIotaAddress())
 	require.NoError(t, err)
 	require.Equal(t, balancesStateSinger1[0], balancesStateSinger2[0])
@@ -157,7 +157,7 @@ func startNewChain(
 	t *testing.T,
 	client *iscmoveclient.Client,
 	req *iscmoveclient.StartNewChainRequest,
-) (*iotajsonrpc.IotaTransactionBlockResponse, *iscmove.RefWithObject[iscmove.Anchor], error) {
+) (*iotagraphql.ExecuteTransactionBlockResponse, *iscmove.RefWithObject[iscmove.Anchor], error) {
 	ptb := iotago.NewProgrammableTransactionBuilder()
 	var argInitCoin iotago.Argument
 	if req.InitCoinRef != nil {

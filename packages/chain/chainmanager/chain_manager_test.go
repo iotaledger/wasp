@@ -269,10 +269,10 @@ func setupChainMgr(t *testing.T, n, f int) ( //nolint:gocritic
 	for i, pid := range peerIdentities {
 		nodeIDs[i] = gpa.NodeIDFromPublicKey(pid.GetPublicKey())
 	}
-	committeeAddr, dkRegs := testpeers.SetupDistributedKeyGenerationTrivial(t, n, f, peerIdentities, nil)
+	committeeAddr, dkRegs := testpeers.SetupDkgTrivial(t, n, f, peerIdentities, nil)
 	require.NotNil(t, committeeAddr)
 
-	committeeAddrSigner := testpeers.NewTestDistributedSignatureSigner(committeeAddr, dkRegs, nodeIDs, peerIdentities, log)
+	committeeAddrSigner := testpeers.NewTestDSSSigner(committeeAddr, dkRegs, nodeIDs, peerIdentities, log)
 	tcl := newTestChainLedger(t, committeeAddrSigner)
 	anchor, deposit := tcl.MakeTxChainOrigin()
 
@@ -463,8 +463,8 @@ func TestChainMgrSkipThenDoneBeforeTick(t *testing.T) {
 
 func newTestChainLedger(t *testing.T, originator cryptolib.Signer) *testchain.TestChainLedger {
 	l1client := l1starter.Instance().L1Client()
-	l1client.RequestFunds(context.Background(), *originator.Address())
-	l1client.RequestFunds(context.Background(), *originator.Address())
+	l1client.RequestFundsFromFaucet(context.Background(), originator.Address().AsIotaAddress())
+	l1client.RequestFundsFromFaucet(context.Background(), originator.Address().AsIotaAddress())
 
 	iscPackage, err := l1client.L2().DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(originator))
 	require.NoError(t, err)

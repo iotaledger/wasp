@@ -3,10 +3,11 @@ package iscmoveclient
 import (
 	"context"
 	"fmt"
+	"time"
 
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql/graphqltypes"
 
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
@@ -39,8 +40,8 @@ func (c *Client) UpdateAnchorStateMetadata(ctx context.Context, req *UpdateAncho
 		return false, fmt.Errorf("updating ptb state metadata failed: %w", err)
 	}
 
-	if len(res.Errors) > 0 {
-		return false, fmt.Errorf("updating ptb state metadata failed: %v", res.Errors)
+	if len(res.ExecuteTransactionBlock.Errors) > 0 {
+		return false, fmt.Errorf("updating ptb state metadata failed: %v", res.ExecuteTransactionBlock.Errors)
 	}
 
 	return true, nil
@@ -108,7 +109,7 @@ type ReceiveRequestsAndTransitionRequest struct {
 func (c *Client) ReceiveRequestsAndTransition(
 	ctx context.Context,
 	req *ReceiveRequestsAndTransitionRequest,
-) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+) (*graphqltypes.ExecuteTransactionBlockResponse, error) {
 	consumed := make([]ConsumedRequest, 0, len(req.ConsumedRequests))
 	for _, reqRef := range req.ConsumedRequests {
 		reqWithObj, err := c.GetRequestFromObjectID(ctx, reqRef.ObjectID)
@@ -149,58 +150,55 @@ func (c *Client) GetAnchorFromObjectID(
 	ctx context.Context,
 	anchorObjectID *iotago.ObjectID,
 ) (*iscmove.AnchorWithRef, error) {
-	getObjectResponse, err := c.GetObject(ctx, iotaclient.GetObjectRequest{
-		ObjectID: anchorObjectID,
-		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true},
-	})
+	getObjectResponse, err := c.GetObject(ctx, *anchorObjectID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor content: %w", err)
 	}
-	if getObjectResponse.Error != nil {
-		return nil, fmt.Errorf("failed to get anchor content: %s", getObjectResponse.Error.Data.String())
+	if getObjectResponse.Object.IsNotFound() || getObjectResponse.Object.IsDeleted() {
+		return nil, fmt.Errorf("anchor object %s not found or deleted", anchorObjectID)
+	}
+	ref, err := getObjectResponse.Object.ObjectRef()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get anchor ref: %w", err)
 	}
 	return decodeAnchorBCS(
-		getObjectResponse.Data.Bcs.Data.MoveObject.BcsBytes,
-		getObjectResponse.Data.Ref(),
-		getObjectResponse.Data.Owner.AddressOwner,
+		getObjectResponse.Object.BcsBytes(),
+		*ref,
+		getObjectResponse.Object.OwnerAddress(),
 	)
 }
 
-func (c *Client) GetPastAnchorFromObjectID(
+func (c *Client) GetAnchorFromObjectRef(
 	ctx context.Context,
-	anchorObjectID *iotago.ObjectID,
-	version uint64,
+	anchorRef *iotago.ObjectRef,
 ) (*iscmove.AnchorWithRef, error) {
-	getObjectResponse, err := c.TryGetPastObject(ctx, iotaclient.TryGetPastObjectRequest{
-		ObjectID: anchorObjectID,
-		Version:  version,
-		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get anchor content: %w", err)
+	ticker := time.NewTicker(50 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		r, err := c.TryGetPastObject(ctx, *anchorRef.ObjectID, anchorRef.Version)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get anchor at version %d: %w", anchorRef.Version, err)
+		}
+		if !r.Object.IsNotFound() {
+			ref, err := r.Object.ObjectRef()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get anchor ref: %w", err)
+			}
+			return decodeAnchorBCS(r.Object.BcsBytes(), *ref, r.Object.OwnerAddress())
+		}
+
+		select {
+		case <-ctx.Done():
+			return nil, fmt.Errorf("context canceled waiting for anchor version %d: %w", anchorRef.Version, ctx.Err())
+		case <-ticker.C:
+		}
 	}
-	if getObjectResponse.Data.ObjectDeleted != nil {
-		return nil, fmt.Errorf("failed to get anchor content: deleted")
-	}
-	if getObjectResponse.Data.ObjectNotExists != nil {
-		return nil, fmt.Errorf("failed to get anchor content: object does not exist")
-	}
-	if getObjectResponse.Data.VersionNotFound != nil {
-		return nil, fmt.Errorf("failed to get anchor content: version not found")
-	}
-	if getObjectResponse.Data.VersionTooHigh != nil {
-		return nil, fmt.Errorf("failed to get anchor content: version too high")
-	}
-	return decodeAnchorBCS(
-		getObjectResponse.Data.VersionFound.Bcs.Data.MoveObject.BcsBytes,
-		getObjectResponse.Data.VersionFound.Ref(),
-		getObjectResponse.Data.VersionFound.Owner.AddressOwner,
-	)
 }
 
 func decodeAnchorBCS(bcsBytes iotago.Base64Data, ref iotago.ObjectRef, owner *iotago.Address) (*iscmove.AnchorWithRef, error) {
 	var moveAnchor iscmove.Anchor
-	err := iotaclient.UnmarshalBCS(bcsBytes, &moveAnchor)
+	err := iotagraphql.UnmarshalBCS(bcsBytes, &moveAnchor)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
 	}

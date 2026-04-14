@@ -6,13 +6,14 @@ import (
 	"math"
 	"sync"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/clients"
 	"github.com/iotaledger/wasp/v2/clients/apiclient"
 	"github.com/iotaledger/wasp/v2/clients/apiextensions"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/v2/packages/coin"
@@ -84,7 +85,7 @@ func (par *PostRequestParams) GetGasBudget() uint64 {
 
 func (par *PostRequestParams) GetGasPrice() uint64 {
 	if par.GasPrice == 0 {
-		return iotaclient.DefaultGasPrice
+		return iotagraphql.DefaultGasPrice
 	}
 	return par.GasPrice
 }
@@ -108,7 +109,7 @@ func (c *Client) PostRequest(
 	ctx context.Context,
 	msg isc.Message,
 	param PostRequestParams,
-) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+) (*iotagraphql.ExecuteTransactionBlockResponse, error) {
 	if param.GasBudget == 0 {
 		return nil, fmt.Errorf("GasBudget is empty")
 	}
@@ -121,9 +122,9 @@ func (c *Client) PostMultipleRequests(
 	msg isc.Message,
 	requestsCount int,
 	params ...PostRequestParams,
-) ([]*iotajsonrpc.IotaTransactionBlockResponse, error) {
+) ([]*iotagraphql.ExecuteTransactionBlockResponse, error) {
 	var err error
-	txRes := make([]*iotajsonrpc.IotaTransactionBlockResponse, requestsCount)
+	txRes := make([]*iotagraphql.ExecuteTransactionBlockResponse, requestsCount)
 	for i := range requestsCount {
 		txRes[i], err = c.postSingleRequest(ctx, msg, params[i])
 		if err != nil {
@@ -137,11 +138,11 @@ func (c *Client) postSingleRequest(
 	ctx context.Context,
 	iscmsg isc.Message,
 	params PostRequestParams,
-) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+) (*iotagraphql.ExecuteTransactionBlockResponse, error) {
 	transferAssets := iscmove.NewAssets(0)
 	if params.Transfer != nil {
 		for coinType, coinbal := range params.Transfer.Coins.Iterate() {
-			transferAssets.SetCoin(iotajsonrpc.MustCoinTypeFromString(coinType.String()), iotajsonrpc.CoinValue(coinbal.Uint64()))
+			transferAssets.SetCoin(iotagraphql.MustCoinTypeFromString(coinType.String()), iotagraphql.CoinValue(coinbal.Uint64()))
 		}
 	}
 	msg := &iscmove.Message{
@@ -168,7 +169,7 @@ func (c *Client) postSingleRequest(
 		&iscmoveclient.CreateAndSendRequestWithAssetsRequest{
 			Signer:           c.KeyPair,
 			PackageID:        *iscPackageID,
-			AnchorAddress:    c.ChainID.AsAddress().AsIotaAddress(),
+			AnchorAddress:    lo.ToPtr(c.ChainID.AsAddress().AsIotaAddress()),
 			Assets:           transferAssets,
 			Message:          msg,
 			AllowanceBCS:     allowanceBCS,
@@ -233,11 +234,11 @@ func (c *Client) PostOffLedgerRequest(
 	return signed, err
 }
 
-func (c *Client) DepositFunds(n coin.Value) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+func (c *Client) DepositFunds(n coin.Value) (*iotagraphql.ExecuteTransactionBlockResponse, error) {
 	return c.PostRequest(context.Background(), accounts.FuncDeposit.Message(), PostRequestParams{
 		Transfer:  isc.NewAssets(n),
 		Allowance: isc.NewAssets(n),
-		GasBudget: iotaclient.DefaultGasBudget,
+		GasBudget: iotagraphql.DefaultGasBudget,
 	})
 }
 
@@ -245,7 +246,7 @@ func NewPostRequestParams() *PostRequestParams {
 	return &PostRequestParams{
 		Transfer:  isc.NewEmptyAssets(),
 		Allowance: isc.NewEmptyAssets(),
-		GasBudget: iotaclient.DefaultGasBudget,
+		GasBudget: iotagraphql.DefaultGasBudget,
 	}
 }
 

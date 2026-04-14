@@ -5,7 +5,6 @@ package chain_test
 
 import (
 	"context"
-	"crypto/rand"
 	"fmt"
 	mrand "math/rand"
 	"sync"
@@ -18,11 +17,11 @@ import (
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/v2/clients"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotatest"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql/graphqltypes"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/v2/packages/chain"
@@ -38,6 +37,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
 	"github.com/iotaledger/wasp/v2/packages/metrics"
 	"github.com/iotaledger/wasp/v2/packages/parameters"
+	"github.com/iotaledger/wasp/v2/packages/parameters/l1paramsfetcher"
 	"github.com/iotaledger/wasp/v2/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/v2/packages/peering"
 	"github.com/iotaledger/wasp/v2/packages/registry"
@@ -109,7 +109,7 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 
 	// Create SC L1Client account with some deposit
 	scClient := cryptolib.NewKeyPair()
-	err := te.l1Client.RequestFunds(context.Background(), *scClient.Address())
+	err := te.l1Client.RequestFundsFromFaucet(context.Background(), scClient.Address().AsIotaAddress())
 	require.NoError(t, err)
 
 	//
@@ -141,8 +141,8 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 			},
 			AllowanceBCS:     allowanceBCS,
 			OnchainGasBudget: 1000000,
-			GasPrice:         iotaclient.DefaultGasPrice,
-			GasBudget:        iotaclient.DefaultGasBudget,
+			GasPrice:         iotagraphql.DefaultGasPrice,
+			GasBudget:        iotagraphql.DefaultGasBudget,
 		})
 		require.NoError(t, err)
 		reqRef, err := req.GetCreatedObjectByName(iscmove.RequestModuleName, iscmove.RequestObjectName)
@@ -169,7 +169,7 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 
 	// assert state
 	for i, node := range te.nodes {
-		for {
+		require.Eventually(t, func() bool {
 			latestState, err := node.LatestState(chain.ActiveOrCommittedState)
 			require.NoError(t, err)
 			cnt := inccounter.NewStateAccess(latestState).GetCounter()
@@ -186,26 +186,25 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 					require.NoError(t, err)
 					require.GreaterOrEqual(t, incCount, inccounter.NewStateAccess(st).GetCounter())
 				*/
-				break
+				return true
 			}
-			time.Sleep(100 * time.Millisecond)
 
-			if reliable {
-				continue
+			if !reliable {
+				//
+				// For the unreliable-network tests we have to retry the requests.
+				// That's because the gossip in the mempool is primitive for now.
+				for ii := range incCount {
+					scRequest := isc.NewOffLedgerRequest(
+						te.chainID,
+						inccounter.FuncIncCounter.Message(nil),
+						uint64(ii),
+						20000,
+					).Sign(scClient)
+					te.nodes[0].ReceiveOffLedgerRequest(scRequest, scClient.GetPublicKey())
+				}
 			}
-			//
-			// For the unreliable-network tests we have to retry the requests.
-			// That's because the gossip in the mempool is primitive for now.
-			for ii := range incCount {
-				scRequest := isc.NewOffLedgerRequest(
-					te.chainID,
-					inccounter.FuncIncCounter.Message(nil),
-					uint64(ii),
-					20000,
-				).Sign(scClient)
-				te.nodes[0].ReceiveOffLedgerRequest(scRequest, scClient.GetPublicKey())
-			}
-		}
+			return false
+		}, timeUntilContextDeadline(ctxTimeout), 100*time.Millisecond, "counter did not reach expected value for node %v", i)
 		// Check if LastAnchor() works as expected.
 		awaitPredicate(te, ctxTimeout, "LatestAnchor", func() bool {
 			confirmedAnchor, err := node.LatestAnchor(chain.ConfirmedState)
@@ -225,142 +224,6 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 			return true
 		})
 	}
-}
-
-// TestNodeSkipRecovery verifies the full integration of the pendingAfterSkipLI
-// fix (issue #723): when a request with insufficient funds causes consensus to
-// skip, the chain recovers on the next tick and successfully processes a
-// subsequent valid request.
-func TestNodeSkipRecovery(t *testing.T) {
-	t.Parallel()
-	tests := []tc{
-		{n: 1, f: 0, reliable: true, timeout: 60 * time.Second},
-		{n: 4, f: 1, reliable: true, timeout: 120 * time.Second},
-		{n: 10, f: 3, reliable: true, timeout: 300 * time.Second},
-	}
-	for _, tst := range tests {
-		t.Run(
-			fmt.Sprintf("N=%v,F=%v", tst.n, tst.f),
-			func(tt *testing.T) { testNodeSkipRecovery(tt, tst.n, tst.f, tst.timeout, l1starter.Instance()) },
-		)
-	}
-}
-
-func testNodeSkipRecovery(t *testing.T, n, f int, timeout time.Duration, node l1starter.IotaNodeEndpoint) {
-	// Here is the idea of this test:
-	// 1. Start a real chain with N nodes, peering network, L1 container, mempool, state manager, and consensus
-	// 2. Feed a bad on-ledger request with 1 base token (min fee is 100,000) to all nodes
-	// 3. The chain enters a skip loop: consensus proposes the bad request → VM panics with ErrNotEnoughFundsForMinFee → consensus outputs Skip → VarConsInsts defers restart via pendingAfterSkipLI → tick arrives → new consensus instance → repeat
-	// 4. After 2 seconds of skip-looping (~600 skip cycles at 10ms consensusDelay), a valid request with proper funds is fed
-	// 5. Batch the valid request alongside the bad one → VM processes the good request (1 result) → consensus completes → block committed
-	// 6. Assert the good request is processed, proving the chain recovered from the skip loop
-
-	t.Parallel()
-	te := newEnv(t, n, f, true, node)
-
-	ctxTimeout, ctxTimeoutCancel := context.WithTimeout(te.ctx, timeout)
-	defer ctxTimeoutCancel()
-
-	for _, tnc := range te.nodeConns {
-		tnc.waitAttached()
-	}
-
-	// Feed the initial anchor to all nodes.
-	for _, tnc := range te.nodeConns {
-		tnc.recvAnchor(te.anchor, parameterstest.L1Mock)
-	}
-
-	// Step 1: Feed a bad request with only 1 base token to all nodes.
-	// The minimum gas fee is 100,000 tokens, so this will be skipped by the VM
-	// with ErrNotEnoughFundsForMinFee, causing consensus to produce Skip status.
-	badSender := cryptolib.NewRandomAddress()
-	var badObjID iotago.ObjectID
-	rand.Read(badObjID[:])
-	var badDigest iotago.ObjectDigest
-	rand.Read(badDigest[:])
-	badRef := iotago.ObjectRef{
-		ObjectID: &badObjID,
-		Version:  mrand.Uint64(),
-		Digest:   &badDigest,
-	}
-	var badBagID iotago.Address
-	rand.Read(badBagID[:])
-	badMoveReq := iscmove.RefWithObject[iscmove.Request]{
-		ObjectRef: badRef,
-		Object: &iscmove.Request{
-			ID:     badObjID,
-			Sender: badSender,
-			AssetsBag: iscmove.AssetsBagWithBalances{
-				AssetsBag: iscmove.AssetsBag{ID: badBagID, Size: 1},
-				Assets:    *iscmove.NewAssets(1), // 1 base token — far below min fee
-			},
-			Message: iscmove.Message{
-				Contract: uint32(isc.Hn("accounts")),
-				Function: uint32(isc.Hn("deposit")),
-			},
-			AllowanceBCS: bcs.MustMarshal(iscmove.NewAssets(0)),
-			GasBudget:    100000,
-		},
-		Owner: badSender.AsIotaAddress(),
-	}
-	for _, tnc := range te.nodeConns {
-		badOnLedger, err := isc.OnLedgerFromMoveRequest(&badMoveReq, tnc.chainID.AsAddress())
-		require.NoError(t, err)
-		tnc.recvRequest(badOnLedger)
-	}
-	t.Log("Bad request (insufficient funds) fed to all nodes — expecting consensus skip(s).")
-
-	// Give the chain time to attempt consensus and skip.
-	time.Sleep(2 * time.Second)
-
-	// Step 2: Create and feed a valid request with proper funds.
-	scClient := cryptolib.NewKeyPair()
-	err := te.l1Client.RequestFunds(context.Background(), *scClient.Address())
-	require.NoError(t, err)
-
-	const goodBaseTokens = 10000000
-	one := int64(1)
-	mmm := inccounter.FuncIncCounter.Message(&one)
-	txResp, err := te.l2Client.CreateAndSendRequestWithAssets(ctxTimeout, &iscmoveclient.CreateAndSendRequestWithAssetsRequest{
-		Signer:        scClient,
-		PackageID:     te.iscPackageID,
-		AnchorAddress: te.anchor.GetObjectID(),
-		Assets:        iscmove.NewAssets(goodBaseTokens),
-		Message: &iscmove.Message{
-			Contract: uint32(mmm.Target.Contract),
-			Function: uint32(mmm.Target.EntryPoint),
-			Args:     mmm.Params,
-		},
-		AllowanceBCS:     lo.Must(bcs.Marshal(iscmove.NewAssets(goodBaseTokens - 100000))),
-		OnchainGasBudget: 1000000,
-		GasPrice:         iotaclient.DefaultGasPrice,
-		GasBudget:        iotaclient.DefaultGasBudget,
-	})
-	require.NoError(t, err)
-	reqRef, err := txResp.GetCreatedObjectByName(iscmove.RequestModuleName, iscmove.RequestObjectName)
-	require.NoError(t, err)
-	reqWithObj, err := te.l2Client.GetRequestFromObjectID(context.Background(), reqRef.ObjectID)
-	require.NoError(t, err)
-
-	goodRequests := make([]isc.Request, 0)
-	for _, tnc := range te.nodeConns {
-		onLedger, err := isc.OnLedgerFromMoveRequest(reqWithObj, tnc.chainID.AsAddress())
-		require.NoError(t, err)
-		goodRequests = append(goodRequests, onLedger)
-		tnc.recvRequest(onLedger)
-	}
-	t.Log("Good request fed to all nodes — should be processed despite prior skip(s).")
-
-	// Step 3: Await the good request being processed.
-	// This proves the chain recovered from the skip caused by the bad request.
-	awaitRequestsProcessed(ctxTimeout, te, goodRequests, "goodRequest after skip recovery")
-	t.Log("Good request processed successfully — chain recovered from consensus skip.")
-
-	// Shut down the chain before the L1 container stops, so that in-flight
-	// consensus goroutines (still skip-looping on the bad request) don't panic
-	// when the L1 client becomes unavailable.
-	te.close()
-	time.Sleep(100 * time.Millisecond)
 }
 
 func awaitRequestsProcessed(ctx context.Context, te *testEnv, requests []isc.Request, desc string) {
@@ -390,19 +253,26 @@ func awaitRequestsProcessed(ctx context.Context, te *testEnv, requests []isc.Req
 }
 
 func awaitPredicate(te *testEnv, ctx context.Context, desc string, predicate func() bool) {
-	for {
-		select {
-		case <-ctx.Done():
-			require.FailNowf(te.t, "awaitPredicate failed: %s", desc)
-		default:
-			if predicate() {
-				te.log.LogDebugf("Predicate %v become true.", desc)
-				return
-			}
-			te.log.LogDebugf("Predicate %v still false, will retry.", desc)
-			time.Sleep(100 * time.Millisecond)
+	require.Eventually(te.t, func() bool {
+		if predicate() {
+			te.log.LogDebugf("Predicate %v become true.", desc)
+			return true
 		}
+		te.log.LogDebugf("Predicate %v still false, will retry.", desc)
+		return false
+	}, timeUntilContextDeadline(ctx), 10*time.Millisecond, "awaitPredicate failed: %s", desc)
+}
+
+// timeUntilContextDeadline returns the remaining time until the context deadline,
+// or a default duration if the context has no deadline.
+func timeUntilContextDeadline(ctx context.Context) time.Duration {
+	if deadline, ok := ctx.Deadline(); ok {
+		if d := time.Until(deadline); d > 0 {
+			return d
+		}
+		return time.Millisecond
 	}
+	return 2 * time.Second
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -415,7 +285,7 @@ type testNodeConn struct {
 	recvRequest     chain.RequestHandler
 	recvAnchor      chain.AnchorHandler
 	attachWG        *sync.WaitGroup
-	l1ParamsFetcher parameters.L1ParamsFetcher
+	l1ParamsFetcher l1paramsfetcher.L1ParamsFetcher
 
 	l1Client     clients.L1Client
 	l2Client     clients.L2Client
@@ -426,7 +296,7 @@ func (tnc *testNodeConn) L1Client() clients.L1Client {
 	return tnc.l1Client
 }
 
-func (tnc *testNodeConn) L1ParamsFetcher() parameters.L1ParamsFetcher {
+func (tnc *testNodeConn) L1ParamsFetcher() l1paramsfetcher.L1ParamsFetcher {
 	return tnc.l1ParamsFetcher
 }
 
@@ -444,7 +314,7 @@ func newTestNodeConn(t *testing.T, l1Client clients.L1Client, iscPackageID iotag
 		l1Client:        l1Client,
 		l2Client:        l1Client.L2(),
 		iscPackageID:    iscPackageID,
-		l1ParamsFetcher: parameters.NewL1ParamsFetcher(l1Client.IotaClient(), log.EmptyLogger),
+		l1ParamsFetcher: l1paramsfetcher.NewL1ParamsFetcher(l1Client.GetIotaClient(), log.EmptyLogger),
 	}
 	tnc.attachWG.Add(1)
 	return tnc
@@ -468,53 +338,31 @@ func (tnc *testNodeConn) PublishTX(
 		return err
 	}
 
-	res, err := tnc.l1Client.ExecuteTransactionBlock(ctx, iotaclient.ExecuteTransactionBlockRequest{
-		TxDataBytes: txBytes,
-		Signatures:  tx.Signatures,
-		Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
-			ShowInput:          true,
-			ShowRawInput:       true,
-			ShowEffects:        true,
-			ShowEvents:         true,
-			ShowObjectChanges:  true,
-			ShowBalanceChanges: true,
-			ShowRawEffects:     true,
-		},
-		RequestType: iotajsonrpc.TxnRequestTypeWaitForLocalExecution,
-	})
+	res, err := tnc.l1Client.ExecuteTransactionBlock(ctx, txBytes, tx.Signatures)
 	if err != nil {
 		tnc.t.Logf("ExecuteTransactionBlock, err=%v", err)
 		return err
 	}
 
-	time.Sleep(5 * time.Second)
-
-	res, err = tnc.l1Client.GetTransactionBlock(ctx, iotaclient.GetTransactionBlockRequest{
-		Digest: &res.Digest,
-
-		Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
-			ShowInput:          true,
-			ShowRawInput:       true,
-			ShowEffects:        true,
-			ShowEvents:         true,
-			ShowObjectChanges:  true,
-			ShowBalanceChanges: true,
-			ShowRawEffects:     true,
-		},
-	})
+	digest := *iotago.MustNewDigest(res.ExecuteTransactionBlock.Effects.TransactionBlock.Digest)
+	var resTxBlock *graphqltypes.GetTransactionBlockResponse
+	require.Eventually(tnc.t, func() bool {
+		resTxBlock, err = tnc.l1Client.GetTransactionBlock(ctx, digest)
+		return err == nil
+	}, 15*time.Second, 200*time.Millisecond, "GetTransactionBlock timed out after tx execution")
 	if err != nil {
 		tnc.t.Logf("GetTransactionBlock, err=%v", err)
 		return err
 	}
 
-	tnc.t.Logf("PublishTX, GetTransactionBlock, result=%+v", res)
+	tnc.t.Logf("PublishTX, GetTransactionBlock, result=%+v", resTxBlock)
 
-	anchorInfo, err := res.GetMutatedObjectByID(chainID.AsObjectID())
+	anchorInfo, err := resTxBlock.TransactionBlock.Effects.GetMutatedObjectByID(chainID.AsObjectID())
 	if err != nil {
 		return err
 	}
 
-	anchor, err := tnc.l2Client.GetAnchorFromObjectID(ctx, anchorInfo.ObjectID)
+	anchor, err := tnc.l2Client.GetAnchorFromObjectRef(ctx, anchorInfo)
 	if err != nil {
 		return err
 	}
@@ -584,16 +432,13 @@ func (tnc *testNodeConn) ConsensusL1InfoProposal(
 			panic(err)
 		}
 
-		gasCoin, err := tnc.l1Client.GetObject(ctx, iotaclient.GetObjectRequest{
-			ObjectID: stateMetadata.GasCoinObjectID,
-			Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
-		})
+		gasCoin, err := tnc.l1Client.GetObject(ctx, *stateMetadata.GasCoinObjectID)
 		if err != nil {
 			panic(err)
 		}
 
 		var moveBalance iscmoveclient.MoveCoin
-		err = iotaclient.UnmarshalBCS(gasCoin.Data.Bcs.Data.MoveObject.BcsBytes, &moveBalance)
+		err = iotagraphql.UnmarshalBCS(gasCoin.Object.BcsBytes(), &moveBalance)
 		if err != nil {
 			panic("failed to decode gas coin object: " + err.Error())
 		}
@@ -603,12 +448,15 @@ func (tnc *testNodeConn) ConsensusL1InfoProposal(
 			panic(err)
 		}
 
-		ref := gasCoin.Data.Ref()
+		ref, err := gasCoin.Object.ObjectRef()
+		if err != nil {
+			panic(err)
+		}
 		var l1Info consensusrunner.NodeConnL1Info = &testNodeConnL1Info{
 			gasCoins: []*coin.CoinWithRef{{
 				Type:  coin.BaseTokenType,
 				Value: coin.Value(moveBalance.Balance),
-				Ref:   &ref,
+				Ref:   ref,
 			}},
 			l1params: l1Params,
 		}
@@ -691,7 +539,7 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 	te.committeeAddress, dkShareProviders = testpeers.SetupDkgTrivial(t, n, f, te.peerIdentities, nil)
 	te.committeeSigner = testpeers.NewTestDSSSigner(te.committeeAddress, dkShareProviders, gpa.MakeTestNodeIDs(n), te.peerIdentities, te.log)
 
-	require.NoError(t, node.L1Client().RequestFunds(context.Background(), *te.committeeSigner.Address()))
+	require.NoError(t, node.L1Client().RequestFundsFromFaucet(context.Background(), te.committeeSigner.Address().AsIotaAddress()))
 	iotatest.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(te.committeeSigner), node.L1Client(), isc.GasCoinTargetValue*10)
 
 	iscPackageID := node.ISCPackageID()

@@ -461,7 +461,7 @@ func (c *Consensus) uponACSInputsReceived(
 	l1params *parameters.L1Params, // Can be nil.
 ) gpa.OutMessages {
 	rotateTo := c.rotateTo
-	if rotateTo != nil && rotateTo.Equals(*c.dkShare.GetAddress().AsIotaAddress()) {
+	if rotateTo != nil && rotateTo.Equals(c.dkShare.GetAddress().AsIotaAddress()) {
 		// Do not propose to rotate to the existing committee.
 		rotateTo = nil
 	}
@@ -611,7 +611,7 @@ func (c *Consensus) uponVMOutputReceived(vmResult *vm.VMTaskResult, aggregatedPr
 // TX
 
 func (c *Consensus) makeTransactionData(pt *iotago.ProgrammableTransaction, aggregatedProposals *batchproposal.AggregatedBatchProposals) *iotago.TransactionData {
-	sender := c.dkShare.GetAddress().AsIotaAddress()
+	senderAddr := c.dkShare.GetAddress().AsIotaAddress()
 	l1params := aggregatedProposals.AggregatedL1Params()
 	gasPrice := l1params.Protocol.ReferenceGasPrice.Uint64()
 	gasBudget := pt.EstimateGasBudget(gasPrice)
@@ -621,7 +621,7 @@ func (c *Consensus) makeTransactionData(pt *iotago.ProgrammableTransaction, aggr
 		gasPayment[i] = coinRef.Ref
 	}
 
-	tx := iotago.NewProgrammable(sender, *pt, gasPayment, gasBudget, gasPrice)
+	tx := iotago.NewProgrammable(&senderAddr, *pt, gasPayment, gasBudget, gasPrice)
 	return &tx
 }
 

@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/v2/clients/chainclient"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/isc"
@@ -27,7 +27,7 @@ func TestRebootAllNodes(t *testing.T) {
 	for _, keepDB := range keepDBCases {
 		t.Run(fmt.Sprintf("keepDB=%v", keepDB), func(t *testing.T) {
 			allNodes := []int{0, 1, 2, 3}
-			env := setupClusterTest(t, 4, allNodes)
+			env := createTestWrapper(t, 4, allNodes)
 			client, _ := env.NewRandomChainClient()
 
 			env.DepositFunds(100_000_000, client.KeyPair.(*cryptolib.KeyPair)) // For Off-ledger requests to pass.
@@ -55,7 +55,7 @@ func TestRebootDuringTasks(t *testing.T) {
 		t.Skip("Skipping cluster tests in short mode")
 	}
 
-	env := setupClusterTest(t, 4, []int{0, 1, 2, 3})
+	env := createTestWrapper(t, 4, []int{0, 1, 2, 3})
 	restartDelay := 20 * time.Second
 	restartCases := [][]int{
 		{1, 2, 3},
@@ -70,11 +70,11 @@ func TestRebootDuringTasks(t *testing.T) {
 
 	// keep the nodes spammed with deposit requests
 	go func() {
-		depositAmount := coin.Value(10_000 + iotaclient.DefaultGasBudget)
+		depositAmount := coin.Value(10_000 + iotagraphql.DefaultGasBudget)
 		for i := 0; i < postCount; i++ {
 			_, err = client.PostRequest(context.Background(), accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
 				Transfer:  isc.NewAssets(depositAmount),
-				GasBudget: iotaclient.DefaultGasBudget,
+				GasBudget: iotagraphql.DefaultGasBudget,
 			})
 			fmt.Printf("=====> deposit request sent: %d\n", i)
 			require.NoError(t, err)

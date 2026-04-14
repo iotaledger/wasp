@@ -9,7 +9,7 @@ import (
 
 	"github.com/iotaledger/wasp/v2/clients/apiclient"
 	"github.com/iotaledger/wasp/v2/clients/apiextensions"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
@@ -64,7 +64,7 @@ func (m *MultiClient) WaitUntilEVMRequestProcessedSuccessfully(ctx context.Conte
 
 // WaitUntilAllRequestsProcessed blocks until all requests in the given transaction have been processed
 // by all nodes
-func (m *MultiClient) WaitUntilAllRequestsProcessed(ctx context.Context, chainID isc.ChainID, tx *iotajsonrpc.IotaTransactionBlockResponse, waitForL1Confirmation bool, timeout time.Duration) ([]*apiclient.ReceiptResponse, error) {
+func (m *MultiClient) WaitUntilAllRequestsProcessed(ctx context.Context, chainID isc.ChainID, tx *iotagraphql.ExecuteTransactionBlockResponse, waitForL1Confirmation bool, timeout time.Duration) ([]*apiclient.ReceiptResponse, error) {
 	oldTimeout := m.Timeout
 	defer func() { m.Timeout = oldTimeout }()
 
@@ -82,7 +82,7 @@ func (m *MultiClient) WaitUntilAllRequestsProcessed(ctx context.Context, chainID
 
 // WaitUntilAllRequestsProcessedSuccessfully is similar to WaitUntilAllRequestsProcessed
 // but also checks the receipts and return an error if any of the requests was processed with an error
-func (m *MultiClient) WaitUntilAllRequestsProcessedSuccessfully(ctx context.Context, chainID isc.ChainID, tx *iotajsonrpc.IotaTransactionBlockResponse, waitForL1Confirmation bool, timeout time.Duration) ([]*apiclient.ReceiptResponse, error) {
+func (m *MultiClient) WaitUntilAllRequestsProcessedSuccessfully(ctx context.Context, chainID isc.ChainID, tx *iotagraphql.ExecuteTransactionBlockResponse, waitForL1Confirmation bool, timeout time.Duration) ([]*apiclient.ReceiptResponse, error) {
 	receipts, err := m.WaitUntilAllRequestsProcessed(ctx, chainID, tx, waitForL1Confirmation, timeout)
 	if err != nil {
 		return receipts, err

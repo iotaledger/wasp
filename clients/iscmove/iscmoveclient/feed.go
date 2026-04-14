@@ -7,20 +7,20 @@ import (
 
 	"github.com/iotaledger/hive.go/log"
 
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/serialization"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/packages/transaction"
 )
 
 type ChainFeed struct {
-	wsClient      *Client
-	httpClient    *Client
-	iscPackageID  iotago.PackageID
-	anchorAddress iotago.ObjectID
-	log           log.Logger
+	wsClient               *Client // FIXME this should be removed after we migrate to GqraphQL subscriptions
+	httpClient             *Client
+	iscPackageID           iotago.PackageID
+	anchorAddress          iotago.ObjectID
+	anchorFetchMaxAttempts int
+	anchorFetchRetryDelay  time.Duration
+	log                    log.Logger
 }
 
 func NewChainFeed(
@@ -30,20 +30,24 @@ func NewChainFeed(
 	log log.Logger,
 	wsURL string,
 	httpURL string,
+	anchorFetchMaxAttempts int,
+	anchorFetchRetryDelay time.Duration,
 ) (*ChainFeed, error) {
-	wsClient, err := NewWebsocketClient(ctx, wsURL, "", iotaclient.WaitForEffectsEnabled, log)
-	if err != nil {
-		return nil, err
-	}
+	graphqlLog := log.NewChildLogger("graphql")
+	wsGQL := iotagraphql.NewGraphQLClientWithWaitParams(wsURL, "", iotagraphql.WaitForEffectsEnabled).WithLogger(graphqlLog)
+	wsClient := NewClient(wsGQL)
 
-	httpClient := NewHTTPClient(httpURL, "", iotaclient.WaitForEffectsEnabled)
+	httpGQL := iotagraphql.NewGraphQLClientWithWaitParams(httpURL, "", iotagraphql.WaitForEffectsEnabled).WithLogger(graphqlLog)
+	httpClient := NewClient(httpGQL)
 
 	return &ChainFeed{
-		wsClient:      wsClient,
-		httpClient:    httpClient,
-		iscPackageID:  iscPackageID,
-		anchorAddress: anchorAddress,
-		log:           log.NewChildLogger("iscmove-chainfeed"),
+		wsClient:               wsClient,
+		httpClient:             httpClient,
+		iscPackageID:           iscPackageID,
+		anchorAddress:          anchorAddress,
+		anchorFetchMaxAttempts: anchorFetchMaxAttempts,
+		anchorFetchRetryDelay:  anchorFetchRetryDelay,
+		log:                    log.NewChildLogger("iscmove-chainfeed"),
 	}, nil
 }
 
@@ -78,13 +82,15 @@ func (f *ChainFeed) FetchCurrentState(ctx context.Context, maxAmountOfRequests i
 }
 
 // SubscribeToUpdates starts fetching updated versions of the Anchor and newly received requests in background.
+// signerAddress is the committee address that signs transactions updating the anchor.
 func (f *ChainFeed) SubscribeToUpdates(
 	ctx context.Context,
 	anchorID iotago.ObjectID,
+	signerAddress iotago.Address,
 	anchorCh chan<- *iscmove.AnchorWithRef,
 	requestsCh chan<- *iscmove.RefWithObject[iscmove.Request],
 ) {
-	go f.subscribeToAnchorUpdates(ctx, anchorCh)
+	go f.subscribeToAnchorUpdates(ctx, signerAddress, anchorCh)
 	go f.subscribeToNewRequests(ctx, anchorID, requestsCh)
 }
 
@@ -94,20 +100,18 @@ func (f *ChainFeed) subscribeToNewRequests(
 	requests chan<- *iscmove.RefWithObject[iscmove.Request],
 ) {
 	for {
-		events := make(chan *iotajsonrpc.IotaEvent)
+		events := make(chan *iotagraphql.IotaEvent)
 		err := f.wsClient.SubscribeEvent(
 			ctx,
-			&iotajsonrpc.EventFilter{
-				And: &iotajsonrpc.AndOrEventFilter{
-					Filter1: &iotajsonrpc.EventFilter{MoveEventType: &iotago.StructTag{
-						Address: &f.iscPackageID,
-						Module:  iscmove.RequestModuleName,
-						Name:    iscmove.RequestEventObjectName,
-					}},
-					Filter2: &iotajsonrpc.EventFilter{MoveEventField: &iotajsonrpc.EventFilterMoveEventField{
-						Path:  iscmove.RequestEventAnchorFieldName,
-						Value: anchorID.String(),
-					}},
+			&iotagraphql.IotaEventFilter{
+				MoveModule: &iotagraphql.IotaEventFilterMoveModule{
+					Package: &f.iscPackageID,
+					Module:  string(iscmove.RequestModuleName),
+				},
+				MoveEventType: &iotago.StructTag{
+					Address: &f.iscPackageID,
+					Module:  iscmove.RequestModuleName,
+					Name:    iscmove.RequestEventObjectName,
 				},
 			},
 			events,
@@ -119,9 +123,8 @@ func (f *ChainFeed) subscribeToNewRequests(
 		if err != nil {
 			f.log.LogErrorf("subscribeToNewRequests: failed to call SubscribeEvent(): %s", err)
 		} else {
-			f.consumeRequestEvents(ctx, events, requests)
+			f.consumeRequestEvents(ctx, events, requests, anchorID)
 		}
-		time.Sleep(1 * time.Second)
 		if ctx.Err() != nil {
 			f.log.LogErrorf("subscribeToNewRequests: ctx.Err(): %s", ctx.Err())
 			return
@@ -131,8 +134,9 @@ func (f *ChainFeed) subscribeToNewRequests(
 
 func (f *ChainFeed) consumeRequestEvents(
 	ctx context.Context,
-	events <-chan *iotajsonrpc.IotaEvent,
+	events <-chan *iotagraphql.IotaEvent,
 	requests chan<- *iscmove.RefWithObject[iscmove.Request],
+	anchorID iotago.ObjectID,
 ) {
 	for {
 		select {
@@ -142,12 +146,22 @@ func (f *ChainFeed) consumeRequestEvents(
 			if !ok {
 				return
 			}
+			f.log.LogDebugf("consumeRequestEvents: received request event: %+v", ev)
 			var reqEvent iscmove.RequestEvent
-			err := iotaclient.UnmarshalBCS(ev.Bcs, &reqEvent)
+			err := iotagraphql.UnmarshalBCS(ev.Bcs, &reqEvent)
 			if err != nil {
 				f.log.LogErrorf("consumeRequestEvents: cannot decode RequestEvent BCS: %s", err)
 				continue
 			}
+
+			// skip if event is not from current anchor
+			f.log.LogDebugf("consumeRequestEvents: anchorID: %s, reqEvent.Anchor: %s", anchorID.String(), reqEvent.Anchor.String())
+			if reqEvent.Anchor != anchorID {
+				f.log.LogDebugf("consumeRequestEvents: skipping request event for different anchor: %s", reqEvent.Anchor.String())
+				continue
+			}
+
+			f.log.LogDebugf("consumeRequestEvents: fetching request: %s", reqEvent.RequestID.String())
 
 			reqWithObj, err := f.httpClient.GetRequestFromObjectID(ctx, &reqEvent.RequestID)
 			if err != nil {
@@ -155,6 +169,7 @@ func (f *ChainFeed) consumeRequestEvents(
 				continue
 			}
 
+			f.log.LogDebugf("consumeRequestEvents: sending request to channel: %+v", reqWithObj)
 			requests <- reqWithObj
 
 			f.log.LogDebugf("REQUEST[%s] SENT TO CHANNEL %s\n", reqEvent.RequestID.String(), time.Now().String())
@@ -164,13 +179,16 @@ func (f *ChainFeed) consumeRequestEvents(
 
 func (f *ChainFeed) subscribeToAnchorUpdates(
 	ctx context.Context,
+	signerAddress iotago.Address,
 	anchorCh chan<- *iscmove.AnchorWithRef,
 ) {
 	for {
-		changes := make(chan *serialization.TagJson[iotajsonrpc.IotaTransactionBlockEffects])
+		f.log.LogInfof("subscribeToAnchorUpdates: subscribing with signer address %s", signerAddress)
+		changes := make(chan *iotagraphql.IotaTransactionBlockEffects)
 		err := f.wsClient.SubscribeTransaction(
 			ctx,
-			&iotajsonrpc.TransactionFilter{
+			&iotagraphql.TransactionFilter{
+				FromAddress:   &signerAddress,
 				ChangedObject: &f.anchorAddress,
 			},
 			changes,
@@ -182,9 +200,13 @@ func (f *ChainFeed) subscribeToAnchorUpdates(
 		if err != nil {
 			f.log.LogErrorf("subscribeToAnchorUpdates: failed to call SubscribeEvent(): %s", err)
 		} else {
-			f.consumeAnchorUpdates(ctx, changes, anchorCh)
+			newSignerAddress := f.consumeAnchorUpdates(ctx, changes, anchorCh, signerAddress)
+			if newSignerAddress != nil {
+				f.log.LogInfof("subscribeToAnchorUpdates: anchor owner changed from %s to %s, re-subscribing", signerAddress, *newSignerAddress)
+				signerAddress = *newSignerAddress
+				continue
+			}
 		}
-		time.Sleep(1 * time.Second)
 		if ctx.Err() != nil {
 			f.log.LogErrorf("subscribeToAnchorUpdates: ctx.Err(): %s", ctx.Err())
 			return
@@ -192,57 +214,83 @@ func (f *ChainFeed) subscribeToAnchorUpdates(
 	}
 }
 
+// consumeAnchorUpdates processes anchor updates from the subscription.
+// It returns a new signer address if the anchor owner changed (rotation), or nil otherwise.
 func (f *ChainFeed) consumeAnchorUpdates(
 	ctx context.Context,
-	changes <-chan *serialization.TagJson[iotajsonrpc.IotaTransactionBlockEffects],
+	changes <-chan *iotagraphql.IotaTransactionBlockEffects,
 	anchorCh chan<- *iscmove.AnchorWithRef,
-) {
+	currentSignerAddress iotago.Address,
+) *iotago.Address {
 	for {
 		select {
 		case <-ctx.Done():
-			return
+			return nil
 		case change, ok := <-changes:
 			if !ok {
-				return
+				return nil
 			}
-			for _, obj := range change.Data.V1.Mutated {
+			f.log.LogDebugf("consumeAnchorUpdates: received anchor update: %+v", change)
+			for _, obj := range change.V1.Mutated {
 				if *obj.Reference.ObjectID != f.anchorAddress {
 					continue
 				}
 
 				f.log.LogDebugf("POLLING ANCHOR %s, %s", f.anchorAddress, time.Now().String())
 
-				r, err := f.httpClient.TryGetPastObject(ctx, iotaclient.TryGetPastObjectRequest{
-					ObjectID: &f.anchorAddress,
-					Version:  obj.Reference.Version,
-					Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true, ShowContent: true},
-				})
+				anchorWithRef, err := f.fetchAnchorWithRetry(ctx, obj.Reference.Version)
 				if err != nil {
-					f.log.LogErrorf("consumeAnchorUpdates: cannot fetch Anchor: %s", err)
-					continue
-				}
-				if r.Data.VersionFound == nil {
-					f.log.LogErrorf("consumeAnchorUpdates: cannot fetch Anchor: version %d not found", obj.Reference.Version)
+					f.log.LogErrorf("consumeAnchorUpdates: giving up on anchor version %d: %s", obj.Reference.Version, err)
 					continue
 				}
 
-				var anchor *iscmove.Anchor
-				err = iotaclient.UnmarshalBCS(r.Data.VersionFound.Bcs.Data.MoveObject.BcsBytes, &anchor)
-				if err != nil {
-					f.log.LogErrorf("ID: %s\nAssetBagID: %s\n", anchor.ID, anchor.Assets.Value.ID)
-					f.log.LogErrorf("consumeAnchorUpdates: failed to unmarshal BCS: %s", err)
-					continue
-				}
+				anchorCh <- anchorWithRef
+				f.log.LogDebugf("ANCHOR[%s] SENT TO CHANNEL %s\n", anchorWithRef.Object.ID.String(), time.Now().String())
 
-				anchorCh <- &iscmove.AnchorWithRef{
-					ObjectRef: r.Data.VersionFound.Ref(),
-					Object:    anchor,
-					Owner:     r.Data.VersionFound.Owner.AddressOwner,
+				// Detect rotation: if the anchor owner changed, re-subscribe with the new signer address
+				if anchorWithRef.Owner != nil && *anchorWithRef.Owner != currentSignerAddress {
+					newAddr := *anchorWithRef.Owner
+					return &newAddr
 				}
-				f.log.LogDebugf("ANCHOR[%s] SENT TO CHANNEL %s\n", anchor.ID.String(), time.Now().String())
 			}
 		}
 	}
+}
+
+func (f *ChainFeed) fetchAnchorWithRetry(ctx context.Context, version uint64) (*iscmove.AnchorWithRef, error) {
+	for attempt := range f.anchorFetchMaxAttempts {
+		r, err := f.httpClient.TryGetPastObject(ctx, f.anchorAddress, version)
+		if err != nil {
+			f.log.LogDebugf("fetchAnchorWithRetry: attempt %d/%d failed: %s", attempt+1, f.anchorFetchMaxAttempts, err)
+		} else if r.Object.IsNotFound() {
+			f.log.LogDebugf("fetchAnchorWithRetry: attempt %d/%d version %d not found", attempt+1, f.anchorFetchMaxAttempts, version)
+		} else {
+			var anchor *iscmove.Anchor
+			err = iotagraphql.UnmarshalBCS(r.Object.BcsBytes(), &anchor)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal anchor BCS: %w", err)
+			}
+			objRef, err := r.Object.ObjectRef()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get object ref: %w", err)
+			}
+
+			f.log.LogDebugf("fetchAnchorWithRetry: found anchor after %d/%d attempts.", attempt+1, f.anchorFetchMaxAttempts)
+
+			return &iscmove.AnchorWithRef{
+				ObjectRef: *objRef,
+				Object:    anchor,
+				Owner:     r.Object.OwnerAddress(),
+			}, nil
+		}
+
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(f.anchorFetchRetryDelay):
+		}
+	}
+	return nil, fmt.Errorf("anchor version %d not available after %d attempts", version, f.anchorFetchMaxAttempts)
 }
 
 func (f *ChainFeed) GetISCPackageID() iotago.PackageID {
@@ -258,18 +306,18 @@ func (f *ChainFeed) GetChainGasCoin(ctx context.Context) (*iotago.ObjectRef, uin
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to fetch anchor: %w", err)
 	}
-	getObjRes, err := f.httpClient.GetObject(ctx, iotaclient.GetObjectRequest{
-		ObjectID: metadata.GasCoinObjectID,
-		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
-	})
+	getObjRes, err := f.httpClient.GetObject(ctx, *metadata.GasCoinObjectID)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to fetch gas coin object: %w", err)
 	}
 	var moveGasCoin MoveCoin
-	err = iotaclient.UnmarshalBCS(getObjRes.Data.Bcs.Data.MoveObject.BcsBytes, &moveGasCoin)
+	err = iotagraphql.UnmarshalBCS(getObjRes.Object.BcsBytes(), &moveGasCoin)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to decode gas coin object: %w", err)
 	}
-	gasCoinRef := getObjRes.Data.Ref()
-	return &gasCoinRef, moveGasCoin.Balance, nil
+	gasCoinRef, err := getObjRes.Object.ObjectRef()
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to get gas coin ref: %w", err)
+	}
+	return gasCoinRef, moveGasCoin.Balance, nil
 }

@@ -14,10 +14,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/iotatest"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/v2/packages/coin"
@@ -217,73 +216,76 @@ func (env *Solo) SelectCoinsForGas(
 	targetPTB *iotago.ProgrammableTransaction,
 	gasBudget uint64,
 ) []*iotago.ObjectRef {
-	pickedCoins, err := iotajsonrpc.PickupCoinsWithFilter(
+	pickedCoins, err := iotagraphql.PickupCoinsWithFilter(
 		env.L1BaseTokenCoins(addr),
 		gasBudget,
-		func(c *iotajsonrpc.Coin) bool { return !targetPTB.IsInInputObjects(c.CoinObjectID) },
+		func(c iotagraphql.Coin) bool {
+			id := c.ObjectID()
+			return !targetPTB.IsInInputObjects(&id)
+		},
 	)
 	require.NoError(env.T, err)
-	return pickedCoins.CoinRefs()
+	refs, err := pickedCoins.CoinRefs()
+	require.NoError(env.T, err)
+	return refs
 }
 
 func (env *Solo) makeBaseTokenCoin(
 	keyPair *cryptolib.KeyPair,
 	value coin.Value,
-	filter func(*iotajsonrpc.Coin) bool,
+	filter func(iotagraphql.Coin) bool,
 ) *iotago.ObjectRef {
 	allCoins := env.L1BaseTokenCoins(keyPair.Address())
 	require.NotEmpty(env.T, allCoins)
 
-	const gasBudget = iotaclient.DefaultGasBudget
+	const gasBudget = iotagraphql.DefaultGasBudget
 
-	pickedCoin, err := iotajsonrpc.PickupCoinWithFilter(
+	pickedCoin, ok, err := iotagraphql.PickupCoinWithFilter(
 		env.L1BaseTokenCoins(keyPair.Address()),
 		uint64(value+gasBudget),
 		filter,
 	)
 
 	require.NoError(env.T, err)
-	require.NotNil(env.T, pickedCoin)
+	require.True(env.T, ok, "no coin found with sufficient balance")
 
+	pickedCoinID := pickedCoin.ObjectID()
 	tx := lo.Must(env.L1Client().PayIota(
 		env.ctx,
-		iotaclient.PayIotaRequest{
+		iotagraphql.PayIotaRequest{
 			Signer:     keyPair.Address().AsIotaAddress(),
-			InputCoins: []*iotago.ObjectID{pickedCoin.CoinObjectID},
-			Amount:     []*iotajsonrpc.BigInt{iotajsonrpc.NewBigInt(uint64(value))},
-			Recipients: []*iotago.Address{keyPair.Address().AsIotaAddress()},
-			GasBudget:  iotajsonrpc.NewBigInt(gasBudget),
+			InputCoins: []iotago.ObjectID{pickedCoinID},
+			Amount:     []*iotagraphql.BigInt{iotagraphql.NewBigInt(uint64(value))},
+			Recipients: []*iotago.Address{lo.ToPtr(keyPair.Address().AsIotaAddress())},
+			GasBudget:  iotagraphql.NewBigInt(gasBudget),
 		},
 	))
 
-	var baseTokenCoin iotajsonrpc.OwnedObjectRef
-
-	env.MustWithWaitForNextVersion(pickedCoin.Ref(), func() {
+	pickedCoinRef, err := pickedCoin.ObjectRef()
+	require.NoError(env.T, err)
+	var baseTokenCoin *iotago.ObjectRef = nil
+	env.MustWithWaitForNextVersion(pickedCoinRef, func() {
 		txnResponse, err := env.L1Client().SignAndExecuteTransaction(
 			env.ctx,
-			&iotaclient.SignAndExecuteTransactionRequest{
-				TxDataBytes: tx.TxBytes,
-				Signer:      cryptolib.SignerToIotaSigner(keyPair),
-				Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
-					ShowEffects:        true,
-					ShowObjectChanges:  true,
-					ShowBalanceChanges: true,
-				},
-			},
+			tx.TxBytes,
+			cryptolib.SignerToIotaSigner(keyPair),
 		)
 
 		require.NoError(env.T, err)
-		require.True(env.T, txnResponse.Effects.Data.IsSuccess())
-		require.Len(env.T, txnResponse.Effects.Data.V1.Created, 1)
+		require.True(env.T, txnResponse.ExecuteTransactionBlock.Effects.IsSuccess())
 
-		baseTokenCoin = txnResponse.Effects.Data.V1.Created[0]
+		changes := txnResponse.ExecuteTransactionBlock.Effects.GetObjectChanges().Nodes
+		for i := range changes {
+			if changes[i].GetIdCreated() {
+				ref, refErr := changes[i].OutputState.ObjectRef()
+				require.NoError(env.T, refErr)
+				baseTokenCoin = ref
+			}
+		}
+		require.NotNil(env.T, baseTokenCoin)
 	})
 
-	return &iotago.ObjectRef{
-		ObjectID: baseTokenCoin.Reference.ObjectID,
-		Version:  baseTokenCoin.Reference.Version,
-		Digest:   &baseTokenCoin.Reference.Digest,
-	}
+	return baseTokenCoin
 }
 
 func (ch *Chain) SendRequestWithL1GasBudget(
@@ -292,7 +294,7 @@ func (ch *Chain) SendRequestWithL1GasBudget(
 	l1GasBudget uint64,
 ) (
 	isc.OnLedgerRequest,
-	*iotajsonrpc.IotaTransactionBlockResponse,
+	*iotagraphql.ExecuteTransactionBlockResponse,
 	error,
 ) {
 	if keyPair == nil {
@@ -303,7 +305,7 @@ func (ch *Chain) SendRequestWithL1GasBudget(
 		&iscmoveclient.CreateAndSendRequestWithAssetsRequest{
 			Signer:        keyPair,
 			PackageID:     ch.Env.ISCPackageID(),
-			AnchorAddress: ch.ID().AsAddress().AsIotaAddress(),
+			AnchorAddress: lo.ToPtr(ch.ID().AsAddress().AsIotaAddress()),
 			Assets:        req.assets.AsISCMove(),
 			Message: &iscmove.Message{
 				Contract: uint32(req.msg.Target.Contract),
@@ -312,7 +314,7 @@ func (ch *Chain) SendRequestWithL1GasBudget(
 			},
 			AllowanceBCS:     lo.Must(bcs.Marshal(req.allowance.AsISCMove())),
 			OnchainGasBudget: req.gasBudget,
-			GasPrice:         iotaclient.DefaultGasPrice,
+			GasPrice:         iotagraphql.DefaultGasPrice,
 			GasBudget:        l1GasBudget,
 		},
 	)
@@ -336,8 +338,8 @@ func (ch *Chain) GetL1RequestData(objectID iotago.ObjectID) isc.OnLedgerRequest 
 }
 
 // SendRequest creates a request based on parameters and sigScheme, then send it to the anchor.
-func (ch *Chain) SendRequest(req *CallParams, keyPair *cryptolib.KeyPair) (isc.OnLedgerRequest, *iotajsonrpc.IotaTransactionBlockResponse, error) {
-	return ch.SendRequestWithL1GasBudget(req, keyPair, iotaclient.DefaultGasBudget)
+func (ch *Chain) SendRequest(req *CallParams, keyPair *cryptolib.KeyPair) (isc.OnLedgerRequest, *iotagraphql.ExecuteTransactionBlockResponse, error) {
+	return ch.SendRequestWithL1GasBudget(req, keyPair, iotagraphql.DefaultGasBudget)
 }
 
 // PostRequestSync posts a request synchronously sent by the test program to
@@ -363,9 +365,9 @@ func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 
 func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) (
 	onLedregReq isc.OnLedgerRequest,
-	l1Res *iotajsonrpc.IotaTransactionBlockResponse,
+	l1Res *iotagraphql.ExecuteTransactionBlockResponse,
 	vmRes *vm.RequestResult,
-	anchorTransitionPTBRes *iotajsonrpc.IotaTransactionBlockResponse,
+	anchorTransitionPTBRes *iotagraphql.ExecuteTransactionBlockResponse,
 	err error,
 ) {
 	onLedregReq, l1Res, vmRes, anchorTransitionPTBRes, err = ch.PostRequestSyncExt(req, keyPair)
@@ -390,9 +392,9 @@ func (ch *Chain) PostRequestSyncExt(
 	keyPair *cryptolib.KeyPair,
 ) (
 	req isc.OnLedgerRequest,
-	l1Res *iotajsonrpc.IotaTransactionBlockResponse,
+	l1Res *iotagraphql.ExecuteTransactionBlockResponse,
 	vmRes *vm.RequestResult,
-	anchorTransitionPTBRes *iotajsonrpc.IotaTransactionBlockResponse,
+	anchorTransitionPTBRes *iotagraphql.ExecuteTransactionBlockResponse,
 	err error,
 ) {
 	if keyPair == nil {

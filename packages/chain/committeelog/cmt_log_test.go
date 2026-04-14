@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
@@ -165,8 +166,8 @@ func randomAnchorWithID(anchorID iotago.ObjectID, stateAddress *cryptolib.Addres
 		&iscmove.AnchorWithRef{
 			Object:    &anchor,
 			ObjectRef: *iotatest.RandomObjectRef(),
-			Owner:     stateAddress.AsIotaAddress(),
-		}, *cryptolib.NewRandomAddress().AsIotaAddress())
+			Owner:     lo.ToPtr(stateAddress.AsIotaAddress()),
+		}, cryptolib.NewRandomAddress().AsIotaAddress())
 
 	return &stateAnchor
 }

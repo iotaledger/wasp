@@ -7,7 +7,6 @@ import (
 	"github.com/iotaledger/wasp/v2/clients"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
-	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 )
 
 type RemoteIotaNode struct {
@@ -51,7 +50,7 @@ func (r *RemoteIotaNode) IsLocal() bool {
 func (r *RemoteIotaNode) Start(ctx context.Context) {
 	client := r.L1Client()
 
-	err := client.RequestFunds(ctx, *cryptolib.NewAddressFromIota(r.iscPackageOwner.Address()))
+	err := client.RequestFundsFromFaucet(ctx, r.iscPackageOwner.Address())
 	if err != nil {
 		panic(fmt.Errorf("faucet request failed: %w for url: %s", err, r.faucetURL))
 	}

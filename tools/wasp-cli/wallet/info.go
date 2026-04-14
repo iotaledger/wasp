@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/format"
@@ -50,7 +50,7 @@ var _ log.CLIOutput = &BalanceModel{}
 type BalanceModel struct {
 	AddressIndex uint32
 	Address      string
-	Balance      []*iotajsonrpc.Balance
+	Balance      []*iotagraphql.Balance
 }
 
 func (b *BalanceModel) AsText() (string, error) {

@@ -16,15 +16,14 @@ import (
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/clients"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/v2/packages/apilib"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
 	"github.com/iotaledger/wasp/v2/packages/origin"
 	"github.com/iotaledger/wasp/v2/packages/parameters"
+	"github.com/iotaledger/wasp/v2/packages/parameters/l1paramsfetcher"
 	"github.com/iotaledger/wasp/v2/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/v2/packages/state/statetest"
 	"github.com/iotaledger/wasp/v2/packages/transaction"
@@ -89,10 +88,15 @@ func CreateAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet w
 
 	txb.TransferArg(committeeAddress, splitCoinCmd)
 
+	coinRef, err := coins[0].ObjectRef()
+	if err != nil {
+		return iotago.ObjectID{}, err
+	}
+	walletIotaAddr := wallet.Address().AsIotaAddress()
 	txData := iotago.NewProgrammable(
-		wallet.Address().AsIotaAddress(),
+		&walletIotaAddr,
 		txb.Finish(),
-		[]*iotago.ObjectRef{coins[0].Ref()},
+		[]*iotago.ObjectRef{coinRef},
 		uint64(isc.GasCoinTargetValue),
 		l1Params.Protocol.ReferenceGasPrice.Uint64(),
 	)
@@ -104,20 +108,14 @@ func CreateAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet w
 
 	result, err := client.SignAndExecuteTransaction(
 		ctx,
-		&iotaclient.SignAndExecuteTransactionRequest{
-			Signer:      cryptolib.SignerToIotaSigner(wallet),
-			TxDataBytes: txnBytes,
-			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
-				ShowEffects:       true,
-				ShowObjectChanges: true,
-			},
-		},
+		txnBytes,
+		cryptolib.SignerToIotaSigner(wallet),
 	)
 	if err != nil {
 		return iotago.ObjectID{}, fmt.Errorf("failed to create GasCoin: %w", err)
 	}
 
-	gasCoin, err := result.GetCreatedCoinByType("iota", "IOTA")
+	gasCoin, err := result.ExecuteTransactionBlock.Effects.GetCreatedCoinByType("iota", "IOTA")
 	if err != nil {
 		return iotago.ObjectID{}, err
 	}
@@ -158,12 +156,13 @@ func initializeDeploymentWithGasCoin(ctx context.Context, signer wallets.Wallet,
 		return nil, err
 	}
 
-	l1Params, err := parameters.FetchLatest(ctx, l1Client.IotaClient())
+	l1Params, err := l1paramsfetcher.FetchLatest(ctx, l1Client.GetIotaClient())
 	if err != nil {
 		return nil, err
 	}
 
-	gasCoin, err := CreateAndSendGasCoin(ctx, l1Client, signer, committeeAddr.AsIotaAddress(), l1Params)
+	committeeIotaAddr := committeeAddr.AsIotaAddress()
+	gasCoin, err := CreateAndSendGasCoin(ctx, l1Client, signer, &committeeIotaAddr, l1Params)
 	if err != nil {
 		return nil, err
 	}

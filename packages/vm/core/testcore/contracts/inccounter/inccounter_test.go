@@ -6,6 +6,7 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/solo"
 	"github.com/iotaledger/wasp/v2/packages/solo/solobench"
 	"github.com/iotaledger/wasp/v2/packages/testutil/l1starter"
@@ -48,7 +49,7 @@ func TestIncDefaultParam(t *testing.T) {
 	checkCounter(chain, 0)
 
 	req := solo.NewCallParams(inccounter.FuncIncCounter.Message(nil)).
-		AddBaseTokens(1).
+		AddBaseTokens(1 * isc.Million).
 		WithMaxAffordableGasBudget()
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
@@ -64,7 +65,7 @@ func TestIncParam(t *testing.T) {
 
 	n := int64(3)
 	req := solo.NewCallParams(inccounter.FuncIncCounter.Message(&n)).
-		AddBaseTokens(1).
+		AddBaseTokens(1 * isc.Million).
 		WithMaxAffordableGasBudget()
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
@@ -84,7 +85,7 @@ func initBenchmark(b *testing.B) (*solo.Chain, []*solo.CallParams) {
 	// setup: prepare N requests that call FuncIncCounter
 	reqs := make([]*solo.CallParams, b.N)
 	for i := 0; i < b.N; i++ {
-		reqs[i] = solo.NewCallParams(inccounter.FuncIncCounter.Message(nil)).AddBaseTokens(1)
+		reqs[i] = solo.NewCallParams(inccounter.FuncIncCounter.Message(nil)).AddBaseTokens(1 * isc.Million)
 	}
 
 	return chain, reqs

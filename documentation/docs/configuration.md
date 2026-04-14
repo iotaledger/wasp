@@ -97,12 +97,14 @@ Example:
 
 ## <a id="l1"></a> 3. L1
 
-| Name                  | Description                                                                                        | Type   | Default value           |
-| --------------------- | -------------------------------------------------------------------------------------------------- | ------ | ----------------------- |
-| websocketURL          | The WS address to which to connect to                                                              | string | "ws://localhost:9000"   |
-| httpURL               | The HTTP address to which to connect to                                                            | string | "http://localhost:9000" |
-| maxConnectionAttempts | The amount of times the connection to INX will be attempted before it fails (1 attempt per second) | uint   | 30                      |
-| targetNetworkName     | The network name on which the node should operate on (optional)                                    | string | ""                      |
+| Name                   | Description                                                                                        | Type   | Default value           |
+| ---------------------- | -------------------------------------------------------------------------------------------------- | ------ | ----------------------- |
+| websocketURL           | The WS address to which to connect to                                                              | string | "ws://localhost:9000"   |
+| httpURL                | The HTTP address to which to connect to                                                            | string | "http://localhost:9000" |
+| maxConnectionAttempts  | The amount of times the connection to INX will be attempted before it fails (1 attempt per second) | uint   | 30                      |
+| targetNetworkName      | The network name on which the node should operate on (optional)                                    | string | ""                      |
+| anchorFetchMaxAttempts | Max retry attempts when fetching an anchor version from the indexer                                | int    | 20                      |
+| anchorFetchRetryDelay  | Delay between anchor fetch retries                                                                 | string | "500ms"                 |
 
 Example:
 
@@ -112,7 +114,9 @@ Example:
       "websocketURL": "ws://localhost:9000",
       "httpURL": "http://localhost:9000",
       "maxConnectionAttempts": 30,
-      "targetNetworkName": ""
+      "targetNetworkName": "",
+      "anchorFetchMaxAttempts": 20,
+      "anchorFetchRetryDelay": "500ms"
     }
   }
 ```
@@ -287,7 +291,7 @@ Example:
 | broadcastInterval                 | Time between re-broadcast of offledger requests; 0 value means that re-broadcasting is disabled                                                                                                                               | string  | "0s"          |
 | apiCacheTTL                       | Time to keep processed offledger requests in api cache                                                                                                                                                                        | string  | "5m"          |
 | pullMissingRequestsFromCommittee  | Whether or not to pull missing requests from other committee members                                                                                                                                                          | boolean | true          |
-| deriveAliasOutputByQuorum         | False means we propose own AliasOutput, true - by majority vote.                                                                                                                                                              | boolean | true          |
+| deriveAliasOutputByQuorum         | False means we propose own Anchor, true - by majority vote.                                                                                                                                                                   | boolean | true          |
 | pipeliningLimit                   | -1 -- infinite, 0 -- disabled, X -- build the chain if there is up to X transactions unconfirmed by L1.                                                                                                                       | int     | -1            |
 | postponeRecoveryMilestones        | Number of milestones to wait until a chain transition is considered as rejected                                                                                                                                               | int     | 3             |
 | consensusDelay                    | Minimal delay between consensus runs.                                                                                                                                                                                         | string  | "500ms"       |

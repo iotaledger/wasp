@@ -10,7 +10,7 @@ import (
 
 	"github.com/iotaledger/wasp/v2/clients/apiclient"
 	"github.com/iotaledger/wasp/v2/clients/apiextensions"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/config"
@@ -49,10 +49,10 @@ func WithOffLedgerRequest(ctx context.Context, client *apiclient.APIClient, f fu
 	}
 }
 
-func WithSCTransaction(ctx context.Context, client *apiclient.APIClient, f func() (*iotajsonrpc.IotaTransactionBlockResponse, error), forceWait ...time.Duration) *iotajsonrpc.IotaTransactionBlockResponse {
+func WithSCTransaction(ctx context.Context, client *apiclient.APIClient, f func() (*iotagraphql.ExecuteTransactionBlockResponse, error), forceWait ...time.Duration) *iotagraphql.ExecuteTransactionBlockResponse {
 	tx, err := f()
 	log.Check(err)
-	ref, err := tx.GetCreatedObjectByName(iscmove.RequestModuleName, iscmove.RequestObjectName)
+	ref, err := tx.ExecuteTransactionBlock.Effects.GetCreatedObjectByName(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	log.Check(err)
 	reqID := ref.ObjectID.String()
 	waitRequested := len(forceWait) > 0 || config.WaitForCompletion != config.DefaultWaitForCompletion
@@ -64,7 +64,7 @@ func WithSCTransaction(ctx context.Context, client *apiclient.APIClient, f func(
 	}
 
 	data := map[string]interface{}{
-		"transaction_digest":  tx.Digest,
+		"transaction_digest":  tx.ExecuteTransactionBlock.Effects.TransactionBlock.Digest,
 		"request_id":          reqID,
 		"wait_for_completion": waitRequested,
 	}

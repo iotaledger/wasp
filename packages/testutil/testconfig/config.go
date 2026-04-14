@@ -40,6 +40,10 @@ func LoadConfig(sectionName string) (_ *koanf.Koanf, configFound bool) {
 
 	c := koanf.New(".")
 	if err := c.Load(file.Provider(path.Join(GetRootDir(), testconfigFile)), json.Parser()); err != nil {
+		if !os.IsNotExist(err) {
+			panic(fmt.Errorf("failed to load test config file: %v", err))
+		}
+
 		fmt.Printf("config file %v not found - using default values\n", testconfigFile)
 	} else {
 		subKeys := c.Cut(sectionName)
@@ -51,12 +55,13 @@ func LoadConfig(sectionName string) (_ *koanf.Koanf, configFound bool) {
 		}
 	}
 
-	prefix := "TEST_"
-	removePrefix := strings.ToUpper(sectionName) + "_"
+	// Load environment variables with prefix TEST_{SECTION_NAME}_
+	// For example, to load variable IS_SIMULATOR from section l1starter,
+	// the environment variable should be named TEST_L1STARTER_IS_SIMULATOR.
+	prefix := "TEST_" + strings.ToUpper(sectionName) + "_"
 
 	envProvider := env.Provider(prefix, ".", func(s string) string {
-		s = strings.TrimPrefix(s, removePrefix)
-		return strings.ToLower(strings.ReplaceAll(s, "_", "."))
+		return strings.TrimPrefix(s, prefix)
 	})
 
 	if err := c.Load(envProvider, nil); err != nil {

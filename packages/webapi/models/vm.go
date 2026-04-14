@@ -6,8 +6,8 @@ import (
 	"math/big"
 	"reflect"
 
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql/graphqltypes"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/vm/gas"
 )
@@ -56,7 +56,7 @@ type OnLedgerEstimationResponse struct {
 	L2 *ReceiptResponse    `json:"l2" swagger:"required"`
 }
 
-func MapL1EstimationResult(gasSummary *iotajsonrpc.GasCostSummary) *L1EstimationResult {
+func MapL1EstimationResult(gasSummary *graphqltypes.TX_EFFECTSGasEffectsGasSummaryGasCostSummary) *L1EstimationResult {
 	// Total L1 gas = computation cost + storage cost - storage rebate
 	var totalGas big.Int
 	totalGas.Add(&totalGas, gasSummary.ComputationCost.Int)
@@ -69,9 +69,9 @@ func MapL1EstimationResult(gasSummary *iotajsonrpc.GasCostSummary) *L1Estimation
 		// See: https://docs.iota.org/about-iota/tokenomics/gas-in-iota#gas-budgets
 		gasBudget.Set(gasSummary.ComputationCost.Int)
 	}
-	if gasBudget.Cmp(big.NewInt(iotaclient.MinGasBudget)) < 0 {
+	if gasBudget.Cmp(big.NewInt(iotagraphql.MinGasBudget)) < 0 {
 		// L1 gas budget must be at least 1,000,000
-		gasBudget.SetInt64(iotaclient.MinGasBudget)
+		gasBudget.SetInt64(iotagraphql.MinGasBudget)
 	}
 
 	return &L1EstimationResult{

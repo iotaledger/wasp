@@ -9,7 +9,7 @@ import (
 
 	"github.com/iotaledger/wasp/v2/clients/apiclient"
 	"github.com/iotaledger/wasp/v2/clients/chainclient"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/util"
@@ -71,7 +71,7 @@ func (e *ChainEnv) newWalletWithL2Funds(waspnode int, waitOnNodes ...int) *chain
 	// deposit funds before sending the off-ledger requestargs
 	reqTx, err := chClient.PostRequest(context.Background(), accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
 		Transfer:  isc.NewAssets(baseTokes),
-		GasBudget: iotaclient.DefaultGasBudget,
+		GasBudget: iotagraphql.DefaultGasBudget,
 	})
 	require.NoError(e.t, err)
 

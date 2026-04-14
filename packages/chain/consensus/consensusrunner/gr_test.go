@@ -14,7 +14,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	hivelog "github.com/iotaledger/hive.go/log"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/v2/packages/chain/committeelog"
@@ -84,9 +83,9 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 	//
 	// Create ledger accounts. Requesting funds twice to get two coin objects (so we don't need to split one later)
 	originator := cryptolib.NewKeyPair()
-	err := iotaclient.RequestFundsFromFaucet(ctx, originator.Address().AsIotaAddress(), l1starter.Instance().FaucetURL())
+	err := l1starter.Instance().L1Client().RequestFundsFromFaucet(ctx, originator.Address().AsIotaAddress())
 	require.NoError(t, err)
-	err = iotaclient.RequestFundsFromFaucet(ctx, originator.Address().AsIotaAddress(), l1starter.Instance().FaucetURL())
+	err = l1starter.Instance().L1Client().RequestFundsFromFaucet(ctx, originator.Address().AsIotaAddress())
 	require.NoError(t, err)
 
 	//

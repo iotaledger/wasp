@@ -3,15 +3,15 @@ package tests
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/hive.go/lo"
 	"github.com/iotaledger/wasp/v2/clients/apiclient"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/tools/cluster"
@@ -89,19 +89,25 @@ func TestRotationOverlappingCommitteesWithConcurrentRequests(t *testing.T) {
 	chainObjId, err := iotago.ObjectIDFromHex(chain.ChainID.String())
 	require.NoError(t, err)
 
-	object, err := clu.L1Client().GetObject(context.Background(), iotaclient.GetObjectRequest{
-		ObjectID: chainObjId,
-		Options: &iotajsonrpc.IotaObjectDataOptions{
-			ShowContent: true,
-		},
-	})
+	object, err := clu.L1Client().GetObject(context.Background(), *chainObjId)
 	require.NoError(t, err)
 
 	var fieldMap map[string]interface{}
-	err = json.Unmarshal(object.Data.Content.Data.MoveObject.Fields, &fieldMap)
+	err = json.Unmarshal(object.Object.AsMoveObjectContent.Contents.Data, &fieldMap)
 	require.NoError(t, err)
 
-	require.Equal(t, int(fieldMap["state_index"].(float64)), int(newBlock.BlockIndex), "state index in anchor should equal to state index in storage")
+	fields, ok := fieldMap["Struct"].([]interface{})
+	require.True(t, ok, "fieldMap should have a Struct field")
+	stateIndexMaps := lo.Filter(fields, func(item interface{}) bool {
+		return item.(map[string]interface{})["name"] == "state_index"
+	})
+	require.Equal(t, len(stateIndexMaps), 1, "should have one state index map, got %d", len(stateIndexMaps))
+	stateIndexMap := stateIndexMaps[0].(map[string]interface{})
+	value, ok := stateIndexMap["value"].(map[string]interface{})["Number"]
+	require.True(t, ok, "value should be a map with a Number field")
+	index, err := strconv.Atoi(value.(string))
+	require.NoError(t, err)
+	require.Equal(t, index, int(newBlock.BlockIndex), "state index in anchor should equal to state index in storage")
 }
 
 type testRotationSingleRotation struct {

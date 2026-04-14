@@ -8,13 +8,13 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/clients"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/v2/packages/coin"
@@ -27,9 +27,6 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/v2/packages/vm/gas"
 )
-
-////////////////////////////////////////////////////////////////////////////////
-// TestChainLedger
 
 type TestChainLedger struct {
 	t           *testing.T
@@ -61,16 +58,18 @@ func (tcl *TestChainLedger) ChainID() isc.ChainID {
 }
 
 func (tcl *TestChainLedger) MakeTxChainOrigin() (*isc.StateAnchor, coin.Value) {
-	coinType := iotajsonrpc.IotaCoinType.String()
-	resGetCoins, err := tcl.l1client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: tcl.chainOwner.Address().AsIotaAddress(), CoinType: &coinType})
+	coinType := iotagraphql.IotaCoinType
+	resGetCoins, err := tcl.l1client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{Owner: tcl.chainOwner.Address().AsIotaAddress(), CoinType: &coinType})
 	require.NoError(tcl.t, err)
 	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
 	initParamsData := origin.DefaultInitParams(isc.NewAddressAgentID(tcl.chainOwner.Address()))
 	initParamsData.DeployTestContracts = true
 	initParams := initParamsData.Encode()
-	originDeposit := resGetCoins.Data[1]
-	originDepositVal := coin.Value(originDeposit.Balance.Uint64())
-	gasCoin := resGetCoins.Data[0].Ref()
+	coins := resGetCoins.Address.Coins.Nodes
+	originDeposit := coins[1]
+	originDepositVal := coin.Value(originDeposit.Balance())
+	gasCoin, err := coins[0].ObjectRef()
+	require.NoError(tcl.t, err)
 	l1commitment := origin.L1Commitment(schemaVersion, initParams, *gasCoin.ObjectID, originDepositVal, parameterstest.L1Mock)
 	stateMetadata := transaction.NewStateMetadata(
 		schemaVersion,
@@ -92,6 +91,8 @@ func (tcl *TestChainLedger) MakeTxChainOrigin() (*isc.StateAnchor, coin.Value) {
 		"https://iota.org",
 	)
 	// FIXME this may refer to the ObjectRef with older version, and trigger panic
+	originDepositRef, err := originDeposit.ObjectRef()
+	require.NoError(tcl.t, err)
 	anchorRef, err := tcl.l1client.L2().StartNewChain(
 		context.Background(),
 		&iscmoveclient.StartNewChainRequest{
@@ -99,10 +100,10 @@ func (tcl *TestChainLedger) MakeTxChainOrigin() (*isc.StateAnchor, coin.Value) {
 			AnchorOwner:   tcl.chainOwner.Address(),
 			PackageID:     *tcl.iscPackage,
 			StateMetadata: stateMetadata.Bytes(),
-			InitCoinRef:   originDeposit.Ref(),
+			InitCoinRef:   originDepositRef,
 			GasPayments:   []*iotago.ObjectRef{gasCoin},
-			GasPrice:      iotaclient.DefaultGasPrice,
-			GasBudget:     iotaclient.DefaultGasBudget,
+			GasPrice:      iotagraphql.DefaultGasPrice,
+			GasBudget:     iotagraphql.DefaultGasBudget,
 		},
 	)
 	require.NoError(tcl.t, err)
@@ -119,7 +120,7 @@ func (tcl *TestChainLedger) MakeTxAccountsDeposit(account *cryptolib.KeyPair) (i
 		&iscmoveclient.CreateAndSendRequestWithAssetsRequest{
 			Signer:        account,
 			PackageID:     *tcl.iscPackage,
-			AnchorAddress: tcl.chainID.AsAddress().AsIotaAddress(),
+			AnchorAddress: lo.ToPtr(tcl.chainID.AsAddress().AsIotaAddress()),
 			Assets:        iscmove.NewAssets(100_000_00),
 			Message: &iscmove.Message{
 				Contract: uint32(isc.Hn("accounts")),
@@ -127,8 +128,8 @@ func (tcl *TestChainLedger) MakeTxAccountsDeposit(account *cryptolib.KeyPair) (i
 			},
 			AllowanceBCS:     nil,
 			OnchainGasBudget: 1000,
-			GasPrice:         iotaclient.DefaultGasPrice,
-			GasBudget:        iotaclient.DefaultGasBudget,
+			GasPrice:         iotagraphql.DefaultGasPrice,
+			GasBudget:        iotagraphql.DefaultGasBudget,
 		},
 	)
 	if err != nil {
@@ -148,23 +149,30 @@ func (tcl *TestChainLedger) MakeTxAccountsDeposit(account *cryptolib.KeyPair) (i
 func (tcl *TestChainLedger) RunOnChainStateTransition(anchor *isc.StateAnchor, pt iotago.ProgrammableTransaction) (*isc.StateAnchor, error) {
 	signer := cryptolib.SignerToIotaSigner(tcl.chainOwner)
 
-	coinPage, err := tcl.l1client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: signer.Address()})
+	coinPage, err := tcl.l1client.GetCoins(context.Background(), iotagraphql.GetCoinsRequest{Owner: signer.Address()})
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch GasPayment object: %w", err)
 	}
 	var gasPayments []*iotago.ObjectRef
-	for _, coin := range coinPage.Data {
-		if !pt.IsInInputObjects(coin.CoinObjectID) {
-			gasPayments = []*iotago.ObjectRef{coin.Ref()}
+	for _, c := range coinPage.Address.Coins.Nodes {
+		objID := c.ObjectID()
+		if !pt.IsInInputObjects(&objID) {
+			var ref *iotago.ObjectRef
+			ref, err = c.ObjectRef()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get coin object ref: %w", err)
+			}
+			gasPayments = []*iotago.ObjectRef{ref}
 			break
 		}
 	}
+	signerAddr := signer.Address()
 	tx := iotago.NewProgrammable(
-		signer.Address(),
+		&signerAddr,
 		pt,
 		gasPayments,
-		iotaclient.DefaultGasBudget,
-		iotaclient.DefaultGasPrice,
+		iotagraphql.DefaultGasBudget,
+		iotagraphql.DefaultGasPrice,
 	)
 	txBytes, err := bcs.Marshal(&tx)
 	if err != nil {
@@ -172,11 +180,8 @@ func (tcl *TestChainLedger) RunOnChainStateTransition(anchor *isc.StateAnchor, p
 	}
 	_, err = tcl.l1client.SignAndExecuteTransaction(
 		context.Background(),
-		&iotaclient.SignAndExecuteTransactionRequest{
-			TxDataBytes: txBytes,
-			Signer:      signer,
-			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true},
-		},
+		txBytes,
+		signer,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to SignAndExecuteTransaction: %w", err)

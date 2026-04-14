@@ -11,8 +11,7 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/apiclient"
 	"github.com/iotaledger/wasp/v2/clients/apiextensions"
 	"github.com/iotaledger/wasp/v2/clients/chainclient"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/parameters"
@@ -181,7 +180,7 @@ func initDepositCmd() *cobra.Command {
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
 			util.TryManageCoinsAmount(ctx)
-			var res *iotajsonrpc.IotaTransactionBlockResponse
+			var res *iotagraphql.ExecuteTransactionBlockResponse
 			if strings.Contains(args[0], "|") {
 				// deposit to own agentID
 				var tokens *isc.Assets
@@ -192,13 +191,13 @@ func initDepositCmd() *cobra.Command {
 				allowance := tokens.Clone()
 				allowance.SetBaseTokens(allowance.BaseTokens())
 
-				res = util.WithSCTransaction(ctx, client, func() (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+				res = util.WithSCTransaction(ctx, client, func() (*iotagraphql.ExecuteTransactionBlockResponse, error) {
 					return cliclients.ChainClient(client, chainID).PostRequest(ctx,
 						accounts.FuncDeposit.Message(),
 						chainclient.PostRequestParams{
 							Transfer:    tokens,
 							Allowance:   allowance,
-							GasBudget:   iotaclient.DefaultGasBudget,
+							GasBudget:   iotagraphql.DefaultGasBudget,
 							L2GasBudget: isc.Million,
 						},
 					)
@@ -217,14 +216,14 @@ func initDepositCmd() *cobra.Command {
 				allowance := tokens.Clone()
 				allowance.SetBaseTokens(allowance.BaseTokens())
 
-				res = util.WithSCTransaction(ctx, client, func() (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+				res = util.WithSCTransaction(ctx, client, func() (*iotagraphql.ExecuteTransactionBlockResponse, error) {
 					return cliclients.ChainClient(client, chainID).PostRequest(
 						ctx,
 						accounts.FuncTransferAllowanceTo.Message(agentID),
 						chainclient.PostRequestParams{
 							Transfer:    tokens,
 							Allowance:   allowance,
-							GasBudget:   iotaclient.DefaultGasBudget,
+							GasBudget:   iotagraphql.DefaultGasBudget,
 							L2GasBudget: isc.Million,
 						},
 					)
@@ -233,11 +232,11 @@ func initDepositCmd() *cobra.Command {
 
 			if printReceipt {
 				if err := format.FormatSuccess("l1_gas_fee", map[string]interface{}{
-					"amount": res.Effects.Data.GasFee(),
+					"amount": res.ExecuteTransactionBlock.Effects.GasFee(),
 				}); err != nil {
 					return err
 				}
-				ref, err := res.GetCreatedObjectByName("request", "Request")
+				ref, err := res.ExecuteTransactionBlock.Effects.GetCreatedObjectByName("request", "Request")
 				if err != nil {
 					return err
 				}

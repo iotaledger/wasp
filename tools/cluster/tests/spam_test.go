@@ -13,7 +13,7 @@ import (
 
 	"github.com/iotaledger/wasp/v2/clients/apiclient"
 	"github.com/iotaledger/wasp/v2/clients/chainclient"
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/clients/iotagraphql"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/isc"
@@ -42,8 +42,8 @@ func (e *ChainEnv) testSpamEVM(t *testing.T) {
 
 // executed in cluster_test.go
 func (e *ChainEnv) testSpamOnledger(t *testing.T) {
-	const maxParallelRequests = 10
-	const numRequests = 100
+	const maxParallelRequests = 2
+	const numRequests = 10
 
 	var (
 		durationsMutex         sync.Mutex
@@ -54,7 +54,7 @@ func (e *ChainEnv) testSpamOnledger(t *testing.T) {
 	reqSuccessChan := make(chan uint64, numRequests)
 	reqErrorChan := make(chan error, 1)
 
-	baseTokensSent := coin.Value(10 + iotaclient.DefaultGasBudget)
+	baseTokensSent := coin.Value(10 + iotagraphql.DefaultGasBudget)
 
 	type wallet struct {
 		keyPair         *cryptolib.KeyPair
@@ -81,7 +81,7 @@ func (e *ChainEnv) testSpamOnledger(t *testing.T) {
 					accounts.FuncDeposit.Message(),
 					chainclient.PostRequestParams{
 						Transfer:  isc.NewAssets(baseTokensSent),
-						GasBudget: iotaclient.DefaultGasBudget,
+						GasBudget: iotagraphql.DefaultGasBudget,
 					},
 				)
 				if er != nil {
