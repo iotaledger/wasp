@@ -8,6 +8,6 @@ GIT_REF_TAG="$(git describe --tags)"
 
 BUILD_LD_FLAGS="-X=github.com/iotaledger/wasp/v2/components/app.Version=${GIT_REF_TAG}"
 
-go run -ldflags ${BUILD_LD_FLAGS} main.go
+GOFLAGS= go run -ldflags ${BUILD_LD_FLAGS} main.go
 
 cd ${CURRENT_DIR}

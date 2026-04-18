@@ -12,8 +12,6 @@
 *.toml
 *.tpl
 *.hcl
-go.work
-go.work.sum
 contracts/wasm
 Dockerfile
 docOps/
@@ -29,5 +27,6 @@ wal
 wasp
 !tools/wasp-cli
 !tools/evm/evmemulator
+!tools/gendoc
 wasp-cluster
 waspdb

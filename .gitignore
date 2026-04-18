@@ -8,11 +8,10 @@ wasp.log
 /submsg
 waspdb**/
 cluster-data/
-dist/
+/dist/
 .idea/
 .vscode/
 .tlacache/
-vendor/
 *.bat
 *.bak
 Cargo.lock
@@ -43,7 +42,7 @@ tests_output.log
 *.blk
 TMP*
 tmp.*
-sdk/
+/sdk/
 libiota_sdk.so
 libiota_sdk.dylib
 iota_sdk.dll

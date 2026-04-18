@@ -6,6 +6,9 @@ on:
     paths-ignore:
       - "**/README.md"
 
+env:
+  GOFLAGS: -mod=vendor
+
 jobs:
   test-short:
     name: Test (short, simulator)

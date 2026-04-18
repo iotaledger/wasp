@@ -8,11 +8,13 @@ DOCKER_BUILD_ARGS = # E.g. make docker-build "DOCKER_BUILD_ARGS=--tag wasp:devel
 #
 TEST_PKG=./...
 TEST_ARG=
-TEST_SHORT_PKGS ?= $(shell go list ./... | tr '\n' ' ')
+TEST_SHORT_PKGS ?= $(shell GOFLAGS=-mod=vendor go list ./... | tr '\n' ' ')
 
 BUILD_PKGS ?= ./
 BUILD_CMD=go build -o . -ldflags $(BUILD_LD_FLAGS)
 INSTALL_CMD=go install -ldflags $(BUILD_LD_FLAGS)
+
+export GOFLAGS := -mod=vendor
 
 # Docker image name and tag
 DOCKER_IMAGE_NAME=wasp
@@ -26,7 +28,7 @@ compile-solidity:
 	cd packages/evm/evmtest/wiki_how_tos && go generate
 
 build-cli:
-	cd tools/wasp-cli && go mod tidy && go build -ldflags $(BUILD_LD_FLAGS) -tags rocksdb -o ../../
+	go build -tags rocksdb -ldflags $(BUILD_LD_FLAGS) -o . ./tools/wasp-cli/
 
 build-full: build-cli
 	$(BUILD_CMD) ./...
@@ -40,7 +42,7 @@ gendoc:
 	./scripts/gendoc.sh
 
 genqlient:
-	cd clients/iotagraphql && GOTOOLCHAIN=go1.24.6 go run github.com/Khan/genqlient@v0.8.1
+	cd clients/iotagraphql && GOFLAGS= GOTOOLCHAIN=go1.24.6 go run github.com/Khan/genqlient@v0.8.1
 
 test-full: install
 	go test -tags runheavy -race -ldflags $(BUILD_LD_FLAGS) ./... --timeout 60m --count 1 -failfast
@@ -61,10 +63,10 @@ test-short-simulator:
 	| grep -v '/clients/iotagraphql/iotaclienttest')
 
 test-cluster: install
-	go test -race -ldflags $(BUILD_LD_FLAGS) --count 1 -timeout 25m -failfast $(shell go list ./tools/cluster/tests/...)
+	go test -race -ldflags $(BUILD_LD_FLAGS) --count 1 -timeout 25m -failfast $(shell GOFLAGS=-mod=vendor go list ./tools/cluster/tests/...)
 
 install-cli:
-	cd tools/wasp-cli && go mod tidy && go install -ldflags $(BUILD_LD_FLAGS)
+	go install -ldflags $(BUILD_LD_FLAGS) ./tools/wasp-cli/
 
 install-full: install-cli
 	$(INSTALL_CMD) ./...
@@ -78,7 +80,7 @@ lint: lint-wasp-cli
 	golangci-lint run --timeout 5m
 
 lint-wasp-cli:
-	cd ./tools/wasp-cli && golangci-lint run --timeout 5m
+	cd ./tools/wasp-cli && GOFLAGS= golangci-lint run --timeout 5m
 
 apiclient-docker:
 	./clients/apiclient/generate_client.sh docker
@@ -112,4 +114,12 @@ deps-versions:
 		awk -F ":" '{ print $$1 }' | \
 		{ read from ; read to; awk -v s="$$from" -v e="$$to" 'NR>1*s&&NR<1*e' packages/testutil/privtangle/privtangle.go; }
 
-.PHONY: all compile-solidity build-cli build-full build build-lint test-full test test-short install-cli install-full install lint gofumpt-list docker-build deps-versions genqlient
+vendor:
+	[ ! -d vendor ] || chmod -R u+w vendor
+	GOFLAGS= go work vendor
+	./scripts/vendor_fix_cgo.sh
+
+tidy:
+	GOFLAGS= ./scripts/go_mod_tidy.sh
+
+.PHONY: all compile-solidity build-cli build-full build build-lint test-full test test-short install-cli install-full install lint gofumpt-list docker-build deps-versions genqlient vendor tidy

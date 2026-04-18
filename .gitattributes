@@ -1,0 +1,3 @@
+vendor/** linguist-vendored
+# Vendored static libraries — mark as binary so git never diffs/merges them
+vendor/github.com/iotaledger/grocksdb/dist/**/*.a binary
